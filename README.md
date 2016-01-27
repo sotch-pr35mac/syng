@@ -26,6 +26,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 ## __Development Status__
 #### __What's Working__
    - Electron App Runs
+
 #### __What's Not__
 
 ## __Built On__
