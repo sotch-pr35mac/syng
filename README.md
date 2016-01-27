@@ -30,7 +30,8 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 
 #### __What's Not__
    - Search Functionality
-      - Right now, the search functionality depends on the `node-cc-cedict` package which relies on `sqlite3`. But for some reason `sqlite3` does not work on Electron. 
+      - Right now, the search functionality depends on the `node-cc-cedict` package which relies on `sqlite3`. But for some reason `sqlite3` does not work on Electron.
+      - A fix for this might be switching to [cc-cedict-php2json](https://github.com/pffy/php-cedict2json)
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
@@ -41,6 +42,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
       - A Material Design for the User Interface
    - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
       - Node.js framework for CC-CEDICT Dictionary
+      - An alternative to this might be: [cc-cedict-php2json](https://github.com/pffy/php-cedict2json)
 
 ## __Contributors__
 - [Preston Stosur-Bassett](http://www.stosur.info)
