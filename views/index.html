@@ -1,19 +1,54 @@
 <!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+  <title>Syng | 词应</title>
 
-		<!-- Define the Window Title -->
-		<title>Syng | 词应</title>
-		
-		<!-- Add Jquery to the Window -->
-		<script>window.$ = window.jQuery = require("../src/jquery.js");</script>
-	</head>
+  <!-- CSS  -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="../style/css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="../style/css/starter.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+</head>
+<body>
+  <nav class="light-blue lighten-1" role="navigation">
+    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Syng | 词应</a>
+      <ul class="right hide-on-med-and-down">
+        <li>
+			  <form>
+				  <div class="input-field">
+					  <input id="main-search" type="search" required>
+					  <label for="main-search"><i class="material-icons">search</i></label>
+					  <i class="material-icons">close</i>
+				  </div>
+			  </form>
+		  </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="section no-pad-bot" id="index-banner">
+    <div class="container">
+      <br><br>
+      <h1 class="header center orange-text">词应欢迎你</h1>
+      <div class="row center">
+        <h5 class="header col s12 light">Welcome to Syng: Search, Save, Study</h5>
+      </div>
+      <div class="row center">
+        <a href="#search" id="search-secondary" class="btn-large waves-effect waves-light orange">Search</a>&nbsp;
+		  <a href="#save" id="save-button" class="btn-large waves-effect waves-light orange">Save</a>&nbsp;
+		  <a href="#study" id="study-button" class="btn-large waves-effect waves-light orange">Study</a>
+      </div>
+      <br><br>
 
-	<body>
-		<center>
-			<h1>词应欢迎你!</h1>
-			<h2>Welcome to Syng</h2>
-		</center>
-	</body>
+    </div>
+  </div>
+
+  <!--  Scripts-->
+  <!-- <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> -->
+  <script>window.$ = window.jQuery = require("../src/jquery.js");</script>
+  <script>window.Hammer = require("../src/hammer.min.js");</script>
+  <script src="../src/materialize.js"></script>
+  <script src="../src/starter.js"></script>
+
+  </body>
 </html>
