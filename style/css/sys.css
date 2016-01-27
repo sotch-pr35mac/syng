@@ -17,3 +17,15 @@
 	margin-right: 30px;
 	cursor: pointer;
 }
+
+.titlebar-app-max {
+	-webkit-app-region: no-drag;
+	float: right;
+	margin-top: 20px;
+	margin-right: 40px;
+	cursor: pointer;
+}
+
+.titlebar-buttons {
+	-webkit-app-region: no-drag;
+}

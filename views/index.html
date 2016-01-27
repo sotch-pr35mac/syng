@@ -12,15 +12,35 @@
   <link href="../style/css/sys.css" type="text/css" rel="stylesheet">
 </head>
 <body>
-  <a href="#!" class="titlebar-app-close wave-effect wave-light red-text text-darken-1" id="XOUT">
-     <i class="material-icons">close</i>
-  </a>
-  <a href="#!" class="titlebar-app-min wave-effect wave-light red-text text-darken-1" id="WMIN">
-     <i class="material-icons">system_update_alt</i>
-  </a>
-  <nav class="light-blue lighten-1 non-system-titlebar" role="navigation">
-    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo center">S'yng | 词应</a>
-      <ul class="right hide-on-med-and-down">
+   <!-- <div class="titlebar-buttons">
+      <a href="#!" class="titlebar-app-close wave-effect wave-light red-text text-darken-1" id="XOUT">
+         <i class="material-icons" style="-webkit-app-region: no-drag;">close</i>
+      </a>
+      <a href="#!" class="titlebar-app-min wave-effect wave-light red-text text-darken-1" id="WMIN">
+         <i class="material-icons">system_update_alt</i>
+      </a>
+      <a href="#!" class="titlebar-app-max wave-effect wave-light red-text text-darken-1" id="WMAX">
+         <i class="material-icons">aspect_ratio</i>
+      </a>
+   </div> -->
+  <nav class="blue non-system-titlebar" role="navigation">
+    <div class="nav-wrapper"><a id="logo-container" href="#" class="brand-logo center">S'yng | 词应</a>
+      <ul class="right hide-on-med-and-down titlebar-buttons">
+         <li>
+            <a href="#!" id="WMAX">
+               <i class="material-icons">aspect_ratio</i>
+            </a>
+         </li>
+         <li>
+            <a href="#!" id="WMIN">
+               <i class="material-icons">system_update_alt</i>
+            </a>
+         </li>
+         <li>
+            <a href="#!" id="XOUT">
+               <i class="material-icons">close</i>
+            </a>
+         </li>
         <!-- <li>
 			  <form>
 				  <div class="input-field">
