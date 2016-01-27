@@ -26,8 +26,11 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 ## __Development Status__
 #### __What's Working__
    - Electron App Runs
+   - User Interface (Very Basic)
 
 #### __What's Not__
+   - Search Functionality
+      - Right now, the search functionality depends on the `node-cc-cedict` package which relies on `sqlite3`. But for some reason `sqlite3` does not work on Electron. 
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
@@ -36,8 +39,8 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
       - Chinese Dictionary Database
    - [Materialize](http://materializecss.com/)
       - A Material Design for the User Interface
+   - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
+      - Node.js framework for CC-CEDICT Dictionary
 
 ## __Contributors__
-- Preston Stosur-Bassett (Project Maintainer)
-    - [Email](mailto://preston@stosur.info)
-    - [Website](http://www.stosur.info/)
+- [Preston Stosur-Bassett](http://www.stosur.info)

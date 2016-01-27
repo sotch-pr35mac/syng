@@ -1,5 +1,17 @@
 {
-	"name": "Syng alpha",
-	"version": "0.0.1",
-	"main": "src/main.js"
+  "name": "Syng",
+  "version": "0.0.1",
+  "main": "src/main.js",
+  "dependencies": {
+    "cn-chars": "^0.1.1",
+    "electron-prebuilt": "^0.36.5",
+    "path": "^0.12.7",
+    "prettify-pinyin": "^0.1.5",
+    "sequelize": "^3.18.0",
+    "sqlite3": "^3.1.1",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.1.2"
+  }
 }

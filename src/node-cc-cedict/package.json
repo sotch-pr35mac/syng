@@ -1,0 +1,38 @@
+{
+  "name": "node-cc-cedict",
+  "version": "0.1.2",
+  "description": "Node.js Interface for CC-CEDICT",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/johnheroy/node-cc-cedict.git"
+  },
+  "keywords": [
+    "Chinese",
+    "English",
+    "Translation",
+    "Dictionary"
+  ],
+  "author": "John Heroy <johnheroy@gmail.com> (http://johnheroy.com/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/johnheroy/node-cc-cedict/issues"
+  },
+  "homepage": "https://github.com/johnheroy/node-cc-cedict",
+  "devDependencies": {
+    "mocha": "1.21.x"
+  },
+  "dependencies": {
+    "cn-chars": "0.1.x",
+    "prettify-pinyin": "0.1.x",
+    "sequelize": "^2.0.0-rc1",
+    "sqlite3": "^3.0.2",
+    "underscore": "^1.7.0"
+  }
+}

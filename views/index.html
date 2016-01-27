@@ -12,9 +12,9 @@
 </head>
 <body>
   <nav class="light-blue lighten-1" role="navigation">
-    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">Syng | 词应</a>
+    <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo center">S'yng | 词应</a>
       <ul class="right hide-on-med-and-down">
-        <li>
+        <!-- <li>
 			  <form>
 				  <div class="input-field">
 					  <input id="main-search" type="search" required>
@@ -22,7 +22,7 @@
 					  <i class="material-icons">close</i>
 				  </div>
 			  </form>
-		  </li>
+		  </li> -->
       </ul>
     </div>
   </nav>
@@ -33,13 +33,23 @@
       <div class="row center">
         <h5 class="header col s12 light">Welcome to Syng: Search, Save, Study</h5>
       </div>
-      <div class="row center">
-        <a href="#search" id="search-secondary" class="btn-large waves-effect waves-light orange">Search</a>&nbsp;
-		  <a href="#save" id="save-button" class="btn-large waves-effect waves-light orange">Save</a>&nbsp;
-		  <a href="#study" id="study-button" class="btn-large waves-effect waves-light orange">Study</a>
-      </div>
-      <br><br>
-
+		<div class="row center">
+			<nav>
+				<div class="nav-wrapper">
+					<form>
+						<div class="input-field">
+							<input id="search-bar" type="search" required>
+							<label for="search-bar"><i class="material-icons">search</i></label>
+							<i class="material-icons">close</i>
+						</div>
+					</form>
+				</div>
+			</nav>
+			<br>
+			<br>
+			<a class="waves-effect waves-light btn-large blue" id="chinese-to-english-search">中文 &rarr; English</a>&nbsp;&nbsp;&nbsp;
+			<a class="waves-effect waves-light btn-large blue" id="english-to-chinese-search">English &rarr; 中文</a>
+		</div>
     </div>
   </div>
 
@@ -49,6 +59,7 @@
   <script>window.Hammer = require("../src/hammer.min.js");</script>
   <script src="../src/materialize.js"></script>
   <script src="../src/starter.js"></script>
+  <script src="../src/search.js"></script>
 
   </body>
 </html>
