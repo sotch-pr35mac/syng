@@ -9,9 +9,16 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link href="../style/css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
   <link href="../style/css/starter.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+  <link href="../style/css/sys.css" type="text/css" rel="stylesheet">
 </head>
 <body>
-  <nav class="light-blue lighten-1" role="navigation">
+  <a href="#!" class="titlebar-app-close wave-effect wave-light red-text text-darken-1" id="XOUT">
+     <i class="material-icons">close</i>
+  </a>
+  <a href="#!" class="titlebar-app-min wave-effect wave-light red-text text-darken-1" id="WMIN">
+     <i class="material-icons">system_update_alt</i>
+  </a>
+  <nav class="light-blue lighten-1 non-system-titlebar" role="navigation">
     <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo center">S'yng | 词应</a>
       <ul class="right hide-on-med-and-down">
         <!-- <li>
@@ -23,6 +30,7 @@
 				  </div>
 			  </form>
 		  </li> -->
+        </li>
       </ul>
     </div>
   </nav>
@@ -60,6 +68,6 @@
   <script src="../src/materialize.js"></script>
   <script src="../src/starter.js"></script>
   <script src="../src/search.js"></script>
-
+  <script src="../src/sys.js"></script>
   </body>
 </html>
