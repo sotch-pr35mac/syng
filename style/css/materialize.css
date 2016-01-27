@@ -28,11 +28,11 @@
 }
 
 .materialize-red.lighten-2 {
-  background-color: #ee6e73 !important;
+  background-color: #2196F3 !important;
 }
 
 .materialize-red-text.text-lighten-2 {
-  color: #ee6e73 !important;
+  color: #2196F3 !important;
 }
 
 .materialize-red.lighten-1 {
@@ -668,11 +668,11 @@
 }
 
 .blue.lighten-2 {
-  background-color: #64B5F6 !important;
+  background-color: #2196F3 !important;
 }
 
 .blue-text.text-lighten-2 {
-  color: #64B5F6 !important;
+  color: #2196F3 !important;
 }
 
 .blue.lighten-1 {
@@ -2670,7 +2670,7 @@ ul li {
 blockquote {
   margin: 20px 0;
   padding-left: 1.5rem;
-  border-left: 5px solid #ee6e73;
+  border-left: 5px solid #2196F3;
 }
 
 i {
@@ -2727,7 +2727,7 @@ video.responsive-video {
 }
 
 .pagination li.active {
-  background-color: #ee6e73;
+  background-color: #2196F3;
 }
 
 .pagination li.disabled a {
@@ -2915,7 +2915,7 @@ ul.staggered-list li {
 footer.page-footer {
   margin-top: 20px;
   padding-top: 20px;
-  background-color: #ee6e73;
+  background-color: #2196F3;
 }
 
 footer.page-footer .footer-copyright {
@@ -7304,7 +7304,7 @@ nav ul a span.badge {
 
 nav {
   color: #fff;
-  background-color: #ee6e73;
+  background-color: #2196F3;
   width: 100%;
   height: 56px;
   line-height: 56px;
@@ -7994,7 +7994,7 @@ small {
 }
 
 .tabs .tab a {
-  color: #ee6e73;
+  color: #2196F3;
   display: block;
   width: 100%;
   height: 100%;
@@ -8733,7 +8733,7 @@ input[type=search]:disabled,
 input[type=search][readonly="readonly"],
 textarea.materialize-textarea:disabled,
 textarea.materialize-textarea[readonly="readonly"] {
-  color: rgba(0, 0, 0, 0.26);
+  color: #2196F3;
   border-bottom: 1px dotted rgba(0, 0, 0, 0.26);
 }
 
@@ -8760,7 +8760,7 @@ input[type=search]:disabled + label,
 input[type=search][readonly="readonly"] + label,
 textarea.materialize-textarea:disabled + label,
 textarea.materialize-textarea[readonly="readonly"] + label {
-  color: rgba(0, 0, 0, 0.26);
+  color: #2196F3;
 }
 
 input:not([type]):focus:not([readonly]),
@@ -8791,7 +8791,7 @@ input[type=tel]:focus:not([readonly]) + label,
 input[type=number]:focus:not([readonly]) + label,
 input[type=search]:focus:not([readonly]) + label,
 textarea.materialize-textarea:focus:not([readonly]) + label {
-  color: #26a69a;
+  color: #2196F3;
 }
 
 input:not([type]).valid, input:not([type]):focus.valid,
@@ -9850,7 +9850,7 @@ select {
 
 .side-nav .collapsible-body li.active,
 .side-nav.fixed .collapsible-body li.active {
-  background-color: #ee6e73;
+  background-color: #2196F3;
 }
 
 .side-nav .collapsible-body li.active a,
