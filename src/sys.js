@@ -10,7 +10,6 @@ function initializeSystemElements() {
 	$("#WMIN").click(function() {
 		var sysWin = BrowserWindow.getFocusedWindow();
 		sysWin.minimize();
-		alert("this also runs");
 	});
 
 	$("#WMAX").click(function() {

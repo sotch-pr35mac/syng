@@ -31,7 +31,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 #### __What's Not__
    - Search Functionality
       - Right now, the search functionality depends on the `node-cc-cedict` package which relies on `sqlite3`. But for some reason `sqlite3` does not work on Electron.
-      - A fix for this might be switching to [cc-cedict-php2json](https://github.com/pffy/php-cedict2json)
+      - The possible fix for this is to migrate `node-cc-cedict` sqlite database to [tingoDB](http://www.tingodb.com/) and then rewrite `node-cc-cedict` to work with tingoDB which is based off of mongoDB (so NoSQL) and then finish writing the `SearchByEnglish` function and implement it. That way we can use this method and this database, but avoid the incompatible sqlite package.
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
