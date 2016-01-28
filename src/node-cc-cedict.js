@@ -24,7 +24,7 @@ importer.importCollection('words', {
 	}
 });
 
-var Word = db.collection('words');
+var cedict = db.collection('Words');
 
 // Convert between traditional and simplified
 var cnchars = require('cn-chars');
@@ -41,27 +41,36 @@ module.exports.searchByChinese = function(str, cb) {
 	simplified = simplified.join('');
 	traditional = traditional.join('');
 
+	var query = {};
+
 	// Default search is simplified unless input string is traditional
-	// TODO: Change the query format to work with mongoDb
-	var query = {
-		where: {simplified: simplified}
-	};
 	if(traditional === str) {
-		query.where = {traditional: traditional};
+		query.traditional = traditional;
+	}
+	else {
+		query.simplified = simplified;
 	}
 
-	Word.findAll(query).exec(function(err, words) {
+	cedict.find(query, function(err, words) {
 		var results = [];
-		_.each(words, function(word) {
-			var pronunciation = word.pronunciation;
-			var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
-			results.push({
-				traditional: word.traditional,
-				simplified: word.simplified,
-				pronunciation: prettified,
-				definitions: word.definitions
+
+		if(err || words == undefined || words == null) {
+			console.log("There was an error when querying the cedict database.");
+			console.log(err);
+			// TODO: Report this error to the user.
+		}
+		else {
+			_.each(words, function(word) {
+				var pronunciation = word.pronunciation;
+				var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
+				results.push({
+					traditional: word.traditional,
+					simplified: word.simplified,
+					pronunciation: prettified,
+					definitions: word.definitions
+				});
 			});
-		});
+		}
 		cb(results);
 	});
 }
@@ -84,24 +93,30 @@ module.exports.searchByPinyin = function(str, cb) {
 
 	str = "[" + newStr.join(" ") + "]";
 
-	// TODO: Change query format to work with mongoDb
 	var query = {
-		where: {pronunciation: str}
+		pronunciation: str
 	};
 
-	Word.findAll(query).exec(function(words) {
+	cedict.find(query, function(err, words) {
 		var results = [];
 
-		_.each(words, function(word) {
-			var pronunciation = word.pronunciation;
-			var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
-			results.push({
-				traditional: word.traditional,
-				simplified: word.simplified,
-				pronunciation: prettified,
-				definitions: word.definitions
+		if(err || words == undefined || words == null) {
+			console.log("There was an error when querying the cedict database.");
+			console.log(err);
+			// TODO: Report this error to the user.
+		}
+		else {
+			_.each(words, function(word) {
+				var pronunciation = word.pronunciation;
+				var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
+				results.push({
+					traditional: word.traditional,
+					simplified: word.simplified,
+					pronunciation: prettified,
+					definitions: word.definitions
+				});
 			});
-		});
+		}
 		cb(results);
 	});
 }
