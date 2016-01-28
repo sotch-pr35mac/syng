@@ -5,11 +5,17 @@ function initializeSearch() {
 		//Chinese to English Search
 		var chineseText = $("#search-bar").val();
 
-		alert(chineseText);
-
+		alert("Click!");
 		cedict.searchByChinese(chineseText, function(englishText) {
 			alert(englishText);
 		});
+	});
+
+	$("#english-to-chinese-search").click(function() {
+		//English to Chinese Search
+		var englishTest = $("#search-bar").val();
+
+		alert("Clicked English to Chinese");
 	});
 }
 
