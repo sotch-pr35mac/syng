@@ -1,12 +1,18 @@
 var cedict = require("../src/node-cc-cedict/index.js");
 
-$(document).ready(function() {
-	//Chinese to English Search
+function initializeSearch() {
 	$("#chinese-to-english-search").click(function() {
+		//Chinese to English Search
 		var chineseText = $("#search-bar").val();
+
+		alert(chineseText);
 
 		cedict.searchByChinese(chineseText, function(englishText) {
 			alert(englishText);
 		});
 	});
+}
+
+$(document).ready(function() {
+	initializeSearch();
 });
