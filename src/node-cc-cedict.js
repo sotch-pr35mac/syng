@@ -24,7 +24,7 @@ importer.importCollection('words', {
 	}
 });
 
-var words = db.collection('words');
+var Word = db.collection('words');
 
 // Convert between traditional and simplified
 var cnchars = require('cn-chars');
@@ -42,6 +42,7 @@ module.exports.searchByChinese = function(str, cb) {
 	traditional = traditional.join('');
 
 	// Default search is simplified unless input string is traditional
+	// TODO: Change the query format to work with mongoDb
 	var query = {
 		where: {simplified: simplified}
 	};
@@ -49,7 +50,63 @@ module.exports.searchByChinese = function(str, cb) {
 		query.where = {traditional: traditional};
 	}
 
-	word.findAll(query).exec(function(err, searchResults) {
-		console.log(searchResults);
+	Word.findAll(query).exec(function(err, words) {
+		var results = [];
+		_.each(words, function(word) {
+			var pronunciation = word.pronunciation;
+			var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
+			results.push({
+				traditional: word.traditional,
+				simplified: word.simplified,
+				pronunciation: prettified,
+				definitions: word.definitions
+			});
+		});
+		cb(results);
 	});
+}
+
+module.exports.searchByPinyin = function(str, cb) {
+	//Catches dead-tones or 5th tones
+	var parts = str.split(" ");
+	var newStr = [];
+	_.each(parts, function(part) {
+		var numeric = part.replace(/\D/g,'');
+
+		if(numeric === "") {
+			part += "5";
+			newStr.push(part);
+		}
+		else {
+			newStr.push(part);
+		}
+	});
+
+	str = "[" + newStr.join(" ") + "]";
+
+	// TODO: Change query format to work with mongoDb
+	var query = {
+		where: {pronunciation: str}
+	};
+
+	Word.findAll(query).exec(function(words) {
+		var results = [];
+
+		_.each(words, function(word) {
+			var pronunciation = word.pronunciation;
+			var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
+			results.push({
+				traditional: word.traditional,
+				simplified: word.simplified,
+				pronunciation: prettified,
+				definitions: word.definitions
+			});
+		});
+		cb(results);
+	});
+}
+
+// TODO: Finish this function
+module.exports.searchByEnglish = function(str, cb) {
+
 }
