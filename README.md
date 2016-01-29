@@ -42,7 +42,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
       - Node.js framework for CC-CEDICT Dictionary
       - Modified to work with `tingoDb` instead of `sqlite` and support English search functionality
-    - [Franc](https://github.com/wooorm/franc)
+   - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
 
 ## __Getting Started__
