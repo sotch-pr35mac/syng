@@ -31,6 +31,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 #### __What's Not__
    - Search Functionality
       - When the database is queried it returns useless results.
+        - This might be because of the pre-existing Mongo Database that Tingodb is supposed to read from, it may be possible to perform a "first-run" check when the program opens, and if so, use JQuery's [getJSON](http://api.jquery.com/jQuery.getJSON/) to import the CC-CEDICT dictionary into the tingodb database, and then this function could also be used to perform updates to the dictionary without having to update the whole application. 
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
