@@ -90,10 +90,38 @@
 			</nav>
 			<br>
 			<br>
-			<a class="waves-effect waves-light btn-large blue" id="search-button">Search</a>
+			<a class="waves-effect waves-light btn-large blue modal-trigger" id="search-button" href="#search-results">Search</a>
 		</div>
     </div>
   </div>
+
+  <!-- Search Results Dialog -->
+  <div id="search-results" class="modal bottom-sheet">
+     <div class="modal-content">
+      <div id="results-container">
+      </div>
+      <div id="loading-dialog">
+         <center>
+           <div class="preloader-wrapper active">
+             <div class="spinner-layer spinner-blue-only">
+                 <div class="circle-clipper left">
+                    <div class="circle">
+                   </div>
+                </div>
+                <div class="gap-patch">
+                   <div class="circle">
+                   </div>
+                </div>
+                <div class="circle-clipper right">
+                   <div class="circle">
+                   </div>
+                </div>
+             </div>
+          </center>
+       </div>
+    </div>
+   </div>
+   </div>
 
   <!-- About Dialog (Modal) -->
   <div id="about-dialog" class="modal">

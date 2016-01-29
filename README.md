@@ -27,11 +27,14 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 #### __What's Working__
    - Electron App Runs
    - User Interface
+   - Basic Search Functionality (for Chinese and Pinyin)
+      - Works for one word at a time, with specific input formats
 
 #### __What's Not__
-   - Search Functionality
-      - When the database is queried it returns useless results.
-        - This might be because of the pre-existing Mongo Database that Tingodb is supposed to read from, it may be possible to perform a "first-run" check when the program opens, and if so, use JQuery's [getJSON](http://api.jquery.com/jQuery.getJSON/) to import the CC-CEDICT dictionary into the tingodb database, and then this function could also be used to perform updates to the dictionary without having to update the whole application. 
+   - Reliable and Quick Search & English Search
+      - Searching takes a really long time, and the results aren't great.
+         - The original implementation of the `node-cc-cedict` search engine used the `$where` clause, consider using that to aid this issue.
+      - Search from English to Chinese doesn't work yet
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
@@ -51,8 +54,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
     `cd /path/to/project`
 2. Install the dependencies
     `npm install`
-3. Download the database files [here](https://drive.google.com/folderview?id=0B6xRtoBgjYmvTTFWc19QU24tTkk&usp=sharing) and unzip it to `src/node-cc-cedict/db`.
-4. Run Syng
+3. Run Syng
     `electron .`
 
 ## __Contributors__

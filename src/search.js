@@ -4,6 +4,39 @@
 // Comment out the line below to unload the mongodb version of the dictionary search engine
 var cedict = require("../src/node-cc-cedict/node-cc-cedict.js");
 var franc = require("franc");
+var _ = require("underscore");
+
+function unDisplay() {
+	$("#search-results").closeModal();
+	$("#results-container").html("");
+	$("#loading-dialog").show();
+}
+
+function display(html) {
+	$("#loading-dialog").hide();
+	$("#results-container").html(html);
+
+	// Bind the new buttons
+	$("#close-search-results").click(function() {
+		unDisplay();
+	});
+}
+
+function displayNone() {
+	var resultHtml = "<a href='#' ids='close-search-results' class='secondary-content modal-action modal-close' onclick='unDisplay()'><i class='material-icons'>close</i></a><br><center><h4>No Results to Display</h4></center>";
+	display(resultHtml);
+}
+
+function displayResults(trans) {
+	var resultHtml = "<ul class='collection with-header'><li class='collection-header'><div>Search Results</div><a href='#' ids='close-search-results' class='secondary-content modal-action modal-close' onclick='unDisplay()'><i class='material-icons'>close</i></a></li>";
+	_.each(trans, function(word) {
+		var itemListing = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br> "+word.definitions+"<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
+		resultHtml += itemListing;
+	});
+	resultHtml += "</ul>";
+
+	display(resultHtml);
+}
 
 function initializeSearch() {
 	$("#search-button").click(function() {
@@ -14,6 +47,12 @@ function initializeSearch() {
 		if(lang == 'cmn') {
 			cedict.searchByChinese(text, function(results) {
 				console.log(results);
+				if(results.length < 1) {
+					displayNone();
+				}
+				else {
+					displayResults(results);
+				}
 			});
 		}
 		else if(lang == 'eng') {
@@ -25,7 +64,13 @@ function initializeSearch() {
 			}
 			else if(latinLang == "PY") {
 				cedict.searchByPinyin(text, function(results) {
-					cosnole.log(results);
+					console.log(results);
+					if(results.length < 1) {
+						displayNone();
+					}
+					else {
+						displayResults(results);
+					}
 				});
 			}
 			else {
