@@ -16,6 +16,10 @@ function initializeSystemElements() {
 		var sysWin = BrowserWindow.getFocusedWindow();
 		sysWin.maximize();
 	});
+
+	$('.modal-trigger').leanModal({
+		dismissible: false
+	});
 }
 
 $(document).ready(function() {

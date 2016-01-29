@@ -26,12 +26,11 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 ## __Development Status__
 #### __What's Working__
    - Electron App Runs
-   - User Interface (Very Basic)
+   - User Interface
 
 #### __What's Not__
    - Search Functionality
-      - Right now, the search functionality depends on the `node-cc-cedict` package which relies on `sqlite3`. But for some reason `sqlite3` does not work on Electron.
-      - The possible fix for this is to migrate `node-cc-cedict` sqlite database to [tingoDB](http://www.tingodb.com/) and then rewrite `node-cc-cedict` to work with tingoDB which is based off of mongoDB (so NoSQL) and then finish writing the `SearchByEnglish` function and implement it. That way we can use this method and this database, but avoid the incompatible sqlite package.
+      - When the database is queried it returns useless results.
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
@@ -42,7 +41,18 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
       - A Material Design for the User Interface
    - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
       - Node.js framework for CC-CEDICT Dictionary
-      - An alternative to this might be: [cc-cedict-php2json](https://github.com/pffy/php-cedict2json)
+      - Modified to work with `tingoDb` instead of `sqlite` and support English search functionality
+    - [Franc](https://github.com/wooorm/franc)
+      - Language Detection for Search
+
+## __Getting Started__
+1. First go to the project directory
+    `cd /path/to/project`
+2. Install the dependencies
+    `npm install`
+3. Download the database files [here](https://drive.google.com/folderview?id=0B6xRtoBgjYmvTTFWc19QU24tTkk&usp=sharing) and unzip it to `src/node-cc-cedict/db`.
+4. Run Syng
+    `electron .`
 
 ## __Contributors__
 - [Preston Stosur-Bassett](http://www.stosur.info)

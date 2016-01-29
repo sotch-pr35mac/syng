@@ -25,13 +25,18 @@
    </div> -->
    <!-- File Menu DropDown -->
    <ul id="file-menu" class="dropdown-content">
-      <li><a href="#!">About</a></li>
+      <li><a href="#about-dialog" class="modal-trigger">About</a></li>
+      <li><a href="#!" class="unsupported-feature">Bookmarks</a></li>
+      <li><a href="#!" class="unsupported-feature">Study</a></li>
    </ul>
   <nav class="blue non-system-titlebar" role="navigation">
     <div class="nav-wrapper"><a id="logo-container" href="#" class="brand-logo center">Syng | 词应</a>
       <ul class="left hide-on-med-and-down titlebar-buttons">
          <li>
             <a class="dropdown-button" href="#!" data-activates="file-menu">File</a>
+         </li>
+         <li>
+            <a href="#!" id="latin-language" class="tooltipped" data-position="bottom" data-delay="600" data-tooltip="The intended language of latin input. English or Pinyin. Use Pinyin tone numbers." >EN</a>
          </li>
       </ul>
       <ul class="right titlebar-buttons">
@@ -78,17 +83,47 @@
 						<div class="input-field">
 							<input id="search-bar" type="search" required>
 							<label for="search-bar"><i class="material-icons">search</i></label>
-							<i class="material-icons">close</i>
+							<i class="material-icons" id="clear-search">close</i>
 						</div>
 					</form>
 				</div>
 			</nav>
 			<br>
 			<br>
-			<a class="waves-effect waves-light btn-large blue" id="chinese-to-english-search">中文 &rarr; English</a>&nbsp;&nbsp;&nbsp;
-			<a class="waves-effect waves-light btn-large blue" id="english-to-chinese-search">English &rarr; 中文</a>
+			<a class="waves-effect waves-light btn-large blue" id="search-button">Search</a>
 		</div>
     </div>
+  </div>
+
+  <!-- About Dialog (Modal) -->
+  <div id="about-dialog" class="modal">
+     <div class="model-content container">
+        <br>
+        <br>
+        <center>
+           <h4>Syng | 词应</h4>
+           <h6>Dictionary App | 词典应用</h6>
+           <p>v0.0.1 (alpha)</p>
+        </center>
+        <p>
+           Syng is a free, open source, Chinese-To-English and English-To-Chinese dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.
+           To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng .
+           Syng is a stylized spelling of CiYing, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
+           Syng relies on many libraries and projects. Currently, Syng would not work if not for:
+           <ul>
+             <li><b>Electron:</b> Framework for Native Cross-Platform Support</li>
+             <li><b>CC-CEDICT:</b> Chinese Dictionary Database</li>
+             <li><b>Materialize:</b> A Material Design User Interface</li>
+             <li><b>node-cc-cedict</b>: Syng uses a modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>
+          </ul>
+        </p>
+        <br>
+        <br>
+        <br>
+     </div>
+     <div class="modal-footer">
+        <a href="#!" class="modal-action modal-close waves-effect btn-flat waves-blue">Close</a>
+     </div>
   </div>
 
   <!--  Scripts-->
@@ -97,9 +132,15 @@
   <script>window.Hammer = require("../src/hammer.min.js");</script>
   <script src="../src/materialize.js"></script>
   <script src="../src/starter.js"></script>
-  <!-- <script src"../src/index.js"></script> -->
-  <script src="../src/node-cc-cedict.js"></script>
   <script src="../src/search.js"></script>
   <script src="../src/sys.js"></script>
+
+  <script type="text/javascript">
+      $(document).ready(function() {
+         $(".unsupported-feature").click(function() {
+            alert("This is currently an unsupported feature. Sorry for the inconvience.");
+         });
+      });
+  </script>
   </body>
 </html>
