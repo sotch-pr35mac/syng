@@ -38,34 +38,37 @@ cedict.count(function(err, count) {
 	}
 });
 
-if(tradHashtable.isEmpty()) {
-	cedict.find().toArray(function(err, wordList) {
-		if(err || wordList == undefined || wordList == null) {
-			console.log("There was an error getting all the database entires.");
-			console.log(err);
-			// TODO: Report this issue to the user.
+if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
+	function getDatabase() {
+		cedict.find().toArray(function(err, wordList) {
+			if(err || wordList == undefined || wordList == null) {
+				console.log("There was an error getting all the database entires.");
+				console.log(err);
+				// TODO: Report this issue to the user.
+			}
+			else {
+				return wordList;
+			}
+		});
+	}
+
+	var wordList = getDatabase();
+
+	var tradIsEmpty = tradHashtable.isEmpty();
+	var simpIsEmpty = simpHashtable.isEmpty();
+
+	for(var i = 0; i < wordList.length; i++) {
+		if(tradIsEmpty == true) {
+			tradHashtable.put(wordList[i].traditional, wordList[i].id);
 		}
-		else {
-			_.each(wordList, function(word) {
-				tradHashtable.put(word.traditional, word.id);
-			});
+		if(simpIsEmpty == true) {
+			simpHashtable.put(wordList[i].simplified, wordList[i].id);
 		}
-	});
+	}
 }
-if(simpHashtable.isEmpty()) {
-	cedict.find().toArray(function(err, wordList) {
-		if(err || wordList == undefined || wordList == null) {
-			console.log("There was an error getting all the database entires.");
-			console.log(err);
-			// TODO: Report this issue to the user.
-		}
-		else {
-			_.each(wordList, function(word) {
-				simpHashtable.put(word.simplified, word.id);
-			});
-		}
-	});
-}
+
+// A little after adding the values
+console.log(tradHashtable.keys());
 
 module.exports.searchByChinese = function(str, cb) {
 	function searchByTraditional(trad, callback) {
@@ -185,6 +188,9 @@ module.exports.searchByChinese = function(str, cb) {
 		// Remove punctuation and whitespaces
 		traditional = traditional.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 		traditional = traditional.replace(" ", "");
+
+		console.log(traditional);
+		console.log(tradHashtable.keys());
 
 		searchByTraditional(traditional, function(res) { console.log });
 	}
