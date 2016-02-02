@@ -8,8 +8,11 @@ var SimpleHashTable = require('simple-hashtable'); // Hash table to store values
 var db = new Engine.Db("./src/node-cc-cedict/db/cc-cedict-tingodb", {});
 var cedict = db.collection('words');
 
-var simpHashtable = new SimpleHashTable();
-var tradHashtable = new SimpleHashTable();
+// var simpHashtable = new SimpleHashTable();
+// var tradHashtable = new SimpleHashTable();
+
+window.simpHashtable = new SimpleHashTable();
+window.tradHashtable = new SimpleHashTable();
 
 // Ensure that the database has been setup on this build
 cedict.count(function(err, count) {
@@ -39,6 +42,12 @@ cedict.count(function(err, count) {
 });
 
 if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
+	/*
+	*	TODO： Make it so a loading dialog start here
+	*/
+	console.log("should load loading dialog here");
+	$("#loading-dialog").show();
+
 	function getDatabase() {
 		cedict.find().toArray(function(err, wordList) {
 			if(err || wordList == undefined || wordList == null) {
@@ -47,12 +56,32 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 				// TODO: Report this issue to the user.
 			}
 			else {
-				return wordList;
+				//return wordList;
+
+				var tradIsEmpty = tradHashtable.isEmpty();
+				var simpIsEmpty = simpHashtable.isEmpty();
+
+				for(var i = 0; i < wordList.length; i++) {
+					if(tradIsEmpty == true) {
+						tradHashtable.put(wordList[i].traditional, wordList[i].id);
+					}
+					if(simpIsEmpty == true) {
+						simpHashtable.put(wordList[i].simplified, wordList[i].id);
+					}
+				}
+
+				/*
+				* TODO: Close the loading dialog here
+				*/
+				console.log("should close loading dialog now");
+				$("#loading-dialog").hide();
 			}
 		});
 	}
 
-	var wordList = getDatabase();
+	getDatabase();
+
+	/*var wordList = getDatabase();
 
 	var tradIsEmpty = tradHashtable.isEmpty();
 	var simpIsEmpty = simpHashtable.isEmpty();
@@ -64,34 +93,36 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 		if(simpIsEmpty == true) {
 			simpHashtable.put(wordList[i].simplified, wordList[i].id);
 		}
-	}
+	}*/
 }
 
 // A little after adding the values
-console.log(tradHashtable.keys());
+//console.log(tradHashtable.keys());
 
 module.exports.searchByChinese = function(str, cb) {
 	function searchByTraditional(trad, callback) {
+		console.log("started search");
 		var compounds = [];
 		var infiniteCheck = 0;
 		while(trad.length > 0 && infiniteCheck < 4000) {
-			if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(4))) {
-				var compoundId = tradHashtable.get(trad.substring(4));
+			console.log("while is running");
+			if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(0, 4))) {
+				var compoundId = tradHashtable.get(trad.substring(0, 4));
 				compounds.push(compoundId);
 				trad = trad.substring(4);
 			}
-			else if(trad.length >= 3 && tradHashtable.containsKey(trad.substring(3))) {
-				var compoundId = tradHashtable.get(trad.substring(3));
+			else if(trad.length >= 3 && tradHashtable.containsKey(trad.substring(0, 3))) {
+				var compoundId = tradHashtable.get(trad.substring(0, 3));
 				compounds.push(compoundId);
 				trad = trad.substring(3);
 			}
-			else if(trad.length >= 2 && tradHashtable.containsKey(trad.substring(2))) {
-				var compoundId = tradHashtable.get(trad.substring(2));
+			else if(trad.length >= 2 && tradHashtable.containsKey(trad.substring(0, 2))) {
+				var compoundId = tradHashtable.get(trad.substring(0, 2));
 				compounds.push(compoundId);
 				trad = trad.substring(2);
 			}
-			else if(trad.length >= 1 && tradHashtable.containsKey(trad.substring(1))) {
-				var compoundId = tradHashtable.get(trad.substring(1));
+			else if(trad.length >= 1 && tradHashtable.containsKey(trad.substring(0, 1))) {
+				var compoundId = tradHashtable.get(trad.substring(0, 1));
 				compounds.push(compoundId);
 				trad = trad.substring(1);
 			}
@@ -100,11 +131,12 @@ module.exports.searchByChinese = function(str, cb) {
 				console.log("The character wasn't recognized");
 				console.log("Length: "+trad.length >= 1);
 				console.log(tradHashtable.containsKey(trad.substring(1)));
+				console.log(trad.substring(0, 1));
 			}
 
 			infiniteCheck++;
 		}
-
+		console.log("finished search");
 		callback(compounds);
 	}
 
@@ -112,23 +144,23 @@ module.exports.searchByChinese = function(str, cb) {
 		var compounds = [];
 		var infiniteCheck = 0;
 		while(simp.length > 0 && infiniteCheck < 4000) {
-			if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(4))) {
-				var compoundId = simpHashtable.get(simp.substring(4));
+			if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(0, 4))) {
+				var compoundId = simpHashtable.get(simp.substring(0, 4));
 				compounds.push(compoundId);
 				simp = simp.substring(4);
 			}
-			else if(simp.length >= 3 && simpHashtable.containsKey(simp.substring(3))) {
-				var compoundId = simpHashtable.get(simp.substring(3));
+			else if(simp.length >= 3 && simpHashtable.containsKey(simp.substring(0, 3))) {
+				var compoundId = simpHashtable.get(simp.substring(0, 3));
 				compounds.push(compoundId);
 				simp = simp.substring(3);
 			}
-			else if(simp.length >= 2 && simpHashtable.containsKey(simp.substring(2))) {
-				var compoundId = simpHashtable.get(simp.substring(2));
+			else if(simp.length >= 2 && simpHashtable.containsKey(simp.substring(0, 2))) {
+				var compoundId = simpHashtable.get(simp.substring(0, 2));
 				compounds.push(compoundId);
 				simp = simp.substring(2);
 			}
-			else if(simp.length >= 1 && simpHashtable.containsKey(simp.substring(1))) {
-				var compoundId = simpHashtable.get(simp.substring(1));
+			else if(simp.length >= 1 && simpHashtable.containsKey(simp.substring(0, 1))) {
+				var compoundId = simpHashtable.get(simp.substring(0, 1));
 				compounds.push(compoundId);
 				simp = simp.substring(1);
 			}
@@ -189,17 +221,14 @@ module.exports.searchByChinese = function(str, cb) {
 		traditional = traditional.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 		traditional = traditional.replace(" ", "");
 
-		console.log(traditional);
-		console.log(tradHashtable.keys());
-
-		searchByTraditional(traditional, function(res) { console.log });
+		searchByTraditional(traditional, function(res) { queryDatabase(res); });
 	}
 	else {
 		// Remove puncuation and whitespace
 		simplified = simplified.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 		simplified = simplified.replace(" ", "");
 
-		searchBySimplified(simplified, queryDatabase());
+		searchBySimplified(simplified, function(res) { queryDatabase(res); });
 	}
 };
 
