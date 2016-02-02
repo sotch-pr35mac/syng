@@ -63,10 +63,12 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 
 				for(var i = 0; i < wordList.length; i++) {
 					if(tradIsEmpty == true) {
-						tradHashtable.put(wordList[i].traditional, wordList[i].id);
+						// tradHashtable.put(wordList[i].traditional, wordList[i].id);
+						tradHashtable.put(wordList[i].traditional, wordList[i]);
 					}
 					if(simpIsEmpty == true) {
-						simpHashtable.put(wordList[i].simplified, wordList[i].id);
+						// simpHashtable.put(wordList[i].simplified, wordList[i].id);
+						simpHashtable.put(wordList[i].simplified, wordList[i]);
 					}
 				}
 
@@ -221,14 +223,14 @@ module.exports.searchByChinese = function(str, cb) {
 		traditional = traditional.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 		traditional = traditional.replace(" ", "");
 
-		searchByTraditional(traditional, function(res) { queryDatabase(res); });
+		searchByTraditional(traditional, function(res) { cb(res); });
 	}
 	else {
 		// Remove puncuation and whitespace
 		simplified = simplified.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 		simplified = simplified.replace(" ", "");
 
-		searchBySimplified(simplified, function(res) { queryDatabase(res); });
+		searchBySimplified(simplified, function(res) { cb(res); });
 	}
 };
 
