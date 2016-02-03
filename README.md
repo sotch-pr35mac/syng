@@ -28,13 +28,10 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - Electron App Runs
    - User Interface
    - Basic Search Functionality (for Chinese and Pinyin)
-      - Works for one word at a time, with specific input formats
+      - Pinyin input requires a specific enterence format
 
 #### __What's Not__
-   - Reliable and Quick Search & English Search
-      - Searching takes a really long time, and the results aren't great.
-         - The original implementation of the `node-cc-cedict` search engine used the `$where` clause, consider using that to aid this issue.
-      - Search from English to Chinese doesn't work yet
+   - Search from English to Chinese doesn't work yet
 
 ## __Built On__
    - [Electron](http://electron.atom.io)

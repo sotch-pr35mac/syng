@@ -11,8 +11,11 @@ var cedict = db.collection('words');
 // var simpHashtable = new SimpleHashTable();
 // var tradHashtable = new SimpleHashTable();
 
+console.log(window.tradHashtable);
+
 window.simpHashtable = new SimpleHashTable();
 window.tradHashtable = new SimpleHashTable();
+window.pinyinHashtable = new SimpleHashTable();
 
 // Ensure that the database has been setup on this build
 cedict.count(function(err, count) {
@@ -46,7 +49,9 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 	*	TODO： Make it so a loading dialog start here
 	*/
 	console.log("should load loading dialog here");
-	$("#loading-dialog").show();
+	$(document).ready(function() {
+		$("#loading-dialog").show();
+	});
 
 	function getDatabase() {
 		cedict.find().toArray(function(err, wordList) {
@@ -60,6 +65,7 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 
 				var tradIsEmpty = tradHashtable.isEmpty();
 				var simpIsEmpty = simpHashtable.isEmpty();
+				var pinyinIsEmpty = pinyinHashtable.isEmpty();
 
 				for(var i = 0; i < wordList.length; i++) {
 					if(tradIsEmpty == true) {
@@ -70,13 +76,18 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 						// simpHashtable.put(wordList[i].simplified, wordList[i].id);
 						simpHashtable.put(wordList[i].simplified, wordList[i]);
 					}
+					if(pinyinIsEmpty == true) {
+						pinyinHashtable.put(wordList[i].pronunciation, wordList[i]);
+					}
 				}
 
 				/*
 				* TODO: Close the loading dialog here
 				*/
 				console.log("should close loading dialog now");
-				$("#loading-dialog").hide();
+				$(document).ready(function() {
+					$("#loading-dialog").hide();
+				});
 			}
 		});
 	}
