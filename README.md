@@ -38,6 +38,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
       - Framework for Native Cross-Platform Support
    - [CC-CEDICT](http://www.mdbg.net/chindict/chindict.php?page=cedict)
       - Chinese Dictionary Database
+      - The file has been modified to JSON
    - [Materialize](http://materializecss.com/)
       - A Material Design for the User Interface
    - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
@@ -56,3 +57,6 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 
 ## __Contributors__
 - [Preston Stosur-Bassett](http://www.stosur.info)
+
+## __License__
+This software is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).

@@ -3,7 +3,7 @@ var path = require("path");
 var Engine = require("tingodb")(); // Mongo-Style Database
 var cnchars = require('cn-chars'); // Convert between tradtitional and simplified
 var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
-var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their database id.
+var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their "word object"
 
 // Initialize the TingoDB that is storing the dictionary information
 var db = new Engine.Db("./src/node-cc-cedict/db/cc-cedict-tingodb", {});
