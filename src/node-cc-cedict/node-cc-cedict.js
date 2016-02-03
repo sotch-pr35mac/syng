@@ -5,17 +5,21 @@ var cnchars = require('cn-chars'); // Convert between tradtitional and simplifie
 var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
 var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their database id.
 
+// Initialize the TingoDB that is storing the dictionary information
 var db = new Engine.Db("./src/node-cc-cedict/db/cc-cedict-tingodb", {});
 var cedict = db.collection('words');
 
-// var simpHashtable = new SimpleHashTable();
-// var tradHashtable = new SimpleHashTable();
-
-console.log(window.tradHashtable);
-
-window.simpHashtable = new SimpleHashTable();
-window.tradHashtable = new SimpleHashTable();
-window.pinyinHashtable = new SimpleHashTable();
+// Create global hashtables that are going to serve as the lookup method for search
+// Using the hashtables over just a database query will dramatically incrase the speed
+/*
+*	TODO: Consolidate definitions and pinyin for words that share the same character
+*	DESC: We want to do this because the hashtable is using the character as the key, so if the character is the same then there is only 1 entry, and because
+*			of the way characters are being added to the hashtable, the last definition for that character found in the database query during initialization is
+*			going to be the one that is used.
+*/
+window.simpHashtable = new SimpleHashTable();	// Hashtable containing all simplified characters as key and their "word object" as the value
+window.tradHashtable = new SimpleHashTable();	// Hashtable containing all traditional characters as key and their "word object" as the value
+window.pinyinHashtable = new SimpleHashTable();	// Hashtable containing all pinyin that could be input as key, and their "word object" as the value
 
 // Ensure that the database has been setup on this build
 cedict.count(function(err, count) {
@@ -25,7 +29,10 @@ cedict.count(function(err, count) {
 		// TODO: Report the error to the user.
 	}
 	if(count == 0) {
+		// Open Loading Dialog so that the user can not search until the dictionary has been initialized
 		$("#search-results").openModal();
+
+		// Load the CC-CEDICT file into the database from a JSON BLOB that was converted from a CSV, which was convereted from a .u8 (CC-CEDICT file)
 		$.getJSON("../src/node-cc-cedict/db/cc-cedict.json", function(data) {
 			cedict.insert(data, {w:1}, function(err, result) {
 				if(err || result == undefined || result == null) {
@@ -34,9 +41,6 @@ cedict.count(function(err, count) {
 					// TODO: Report the error to the user.
 				}
 				else {
-					/*_.each(result, function(item) {
-						hashtable.put(item.simplified, item.id);
-					});*/
 					$("#search-results").closeModal();
 				}
 			});
@@ -44,136 +48,116 @@ cedict.count(function(err, count) {
 	}
 });
 
+// Check to see if the hashtables have been created and populated yet.
 if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 	// Open the loading dialog so the user can't search until the dictionary is initalized
-	$(document).ready(function() {
-		$("#search-results").openModal();
-	});
+	$("#search-results").openModal();
 
-	function getDatabase() {
-		cedict.find().toArray(function(err, wordList) {
-			if(err || wordList == undefined || wordList == null) {
-				console.log("There was an error getting all the database entires.");
-				console.log(err);
-				// TODO: Report this issue to the user.
-			}
-			else {
-				//return wordList;
+	cedict.find().toArray(function(err, wordList) {
+		if(err || wordList == undefined || wordList == null) {
+			console.log("There was an error getting all the database entires.");
+			console.log(err);
+			// TODO: Report this issue to the user.
+		}
+		else {
+			var tradIsEmpty = tradHashtable.isEmpty();
+			var simpIsEmpty = simpHashtable.isEmpty();
+			var pinyinIsEmpty = pinyinHashtable.isEmpty();
 
-				var tradIsEmpty = tradHashtable.isEmpty();
-				var simpIsEmpty = simpHashtable.isEmpty();
-				var pinyinIsEmpty = pinyinHashtable.isEmpty();
-
-				for(var i = 0; i < wordList.length; i++) {
-					if(tradIsEmpty == true) {
-						// tradHashtable.put(wordList[i].traditional, wordList[i].id);
-						tradHashtable.put(wordList[i].traditional, wordList[i]);
-					}
-					if(simpIsEmpty == true) {
-						// simpHashtable.put(wordList[i].simplified, wordList[i].id);
-						simpHashtable.put(wordList[i].simplified, wordList[i]);
-					}
-					if(pinyinIsEmpty == true) {
-						pinyinHashtable.put(wordList[i].pronunciation, wordList[i]);
-					}
+			for(var i = 0; i < wordList.length; i++) {
+				if(tradIsEmpty == true) {
+					/*
+					* 	TODO: Change pinyin (wordList.pronunciation) to use tone marks instead of tone numbers
+					*/
+					tradHashtable.put(wordList[i].traditional, wordList[i]);
 				}
-
-				// Close the loading dialog so that the user can now search
-				$(document).ready(function() {
-					$("#search-results").closeModal();
-				});
+				if(simpIsEmpty == true) {
+					/*
+					* 	TODO: Change pinyin (wordList.pronunciation) to use tone marks instead of tone numbers
+					*/
+					simpHashtable.put(wordList[i].simplified, wordList[i]);
+				}
+				if(pinyinIsEmpty == true) {
+					/*
+					*	TODO: Make the pinyin that gets put into the hashtable searchable by removing '[', ']', and tone numbers
+					*/
+					pinyinHashtable.put(wordList[i].pronunciation, wordList[i]);
+				}
 			}
-		});
-	}
 
-	getDatabase();
-
-	/*var wordList = getDatabase();
-
-	var tradIsEmpty = tradHashtable.isEmpty();
-	var simpIsEmpty = simpHashtable.isEmpty();
-
-	for(var i = 0; i < wordList.length; i++) {
-		if(tradIsEmpty == true) {
-			tradHashtable.put(wordList[i].traditional, wordList[i].id);
+			// Close the loading dialog so that the user can now search
+			$("#search-results").closeModal();
 		}
-		if(simpIsEmpty == true) {
-			simpHashtable.put(wordList[i].simplified, wordList[i].id);
-		}
-	}*/
+	});
 }
 
-// A little after adding the values
-//console.log(tradHashtable.keys());
-
+// Search using Chinese Characters (both simplified and traditional)
 module.exports.searchByChinese = function(str, cb) {
 	function searchByTraditional(trad, callback) {
-		console.log("started search");
-		var compounds = [];
-		var infiniteCheck = 0;
+		var compounds = [];	// Put all the compound words into this array so they can be searched as compound words
+		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 		while(trad.length > 0 && infiniteCheck < 4000) {
-			console.log("while is running");
+			// Check for 4, 3, and 2 character compound words
 			if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(0, 4))) {
-				var compoundId = tradHashtable.get(trad.substring(0, 4));
-				compounds.push(compoundId);
+				var compoundWord = tradHashtable.get(trad.substring(0, 4));
+				compounds.push(compoundWord);
 				trad = trad.substring(4);
 			}
 			else if(trad.length >= 3 && tradHashtable.containsKey(trad.substring(0, 3))) {
-				var compoundId = tradHashtable.get(trad.substring(0, 3));
-				compounds.push(compoundId);
+				var compoundWord = tradHashtable.get(trad.substring(0, 3));
+				compounds.push(compoundWord);
 				trad = trad.substring(3);
 			}
 			else if(trad.length >= 2 && tradHashtable.containsKey(trad.substring(0, 2))) {
-				var compoundId = tradHashtable.get(trad.substring(0, 2));
-				compounds.push(compoundId);
+				var compoundWord = tradHashtable.get(trad.substring(0, 2));
+				compounds.push(compoundWord);
 				trad = trad.substring(2);
 			}
 			else if(trad.length >= 1 && tradHashtable.containsKey(trad.substring(0, 1))) {
-				var compoundId = tradHashtable.get(trad.substring(0, 1));
-				compounds.push(compoundId);
+				var compoundWord = tradHashtable.get(trad.substring(0, 1));
+				compounds.push(compoundWord);
 				trad = trad.substring(1);
 			}
 			else {
-				//The character wasn't recognized at all
+				// The character wasn't recognized at all
 				console.log("The character wasn't recognized");
-				console.log("Length: "+trad.length >= 1);
-				console.log(tradHashtable.containsKey(trad.substring(1)));
 				console.log(trad.substring(0, 1));
 			}
 
 			infiniteCheck++;
 		}
-		console.log("finished search");
 		callback(compounds);
 	}
 
 	function searchBySimplified(simp, callback) {
-		var compounds = [];
-		var infiniteCheck = 0;
+		var compounds = [];	// Put all the compound words into this array so they can be searched as compound words
+		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 		while(simp.length > 0 && infiniteCheck < 4000) {
+			// Check for 4, 3, and 2 character compound words
 			if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(0, 4))) {
-				var compoundId = simpHashtable.get(simp.substring(0, 4));
-				compounds.push(compoundId);
+				var compoundWord = simpHashtable.get(simp.substring(0, 4));
+				compounds.push(compoundWord);
 				simp = simp.substring(4);
 			}
 			else if(simp.length >= 3 && simpHashtable.containsKey(simp.substring(0, 3))) {
-				var compoundId = simpHashtable.get(simp.substring(0, 3));
-				compounds.push(compoundId);
+				var compoundWord = simpHashtable.get(simp.substring(0, 3));
+				compounds.push(compoundWord);
 				simp = simp.substring(3);
 			}
 			else if(simp.length >= 2 && simpHashtable.containsKey(simp.substring(0, 2))) {
-				var compoundId = simpHashtable.get(simp.substring(0, 2));
-				compounds.push(compoundId);
+				var compoundWord = simpHashtable.get(simp.substring(0, 2));
+				compounds.push(compoundWord);
 				simp = simp.substring(2);
 			}
 			else if(simp.length >= 1 && simpHashtable.containsKey(simp.substring(0, 1))) {
-				var compoundId = simpHashtable.get(simp.substring(0, 1));
-				compounds.push(compoundId);
+				var compoundWord = simpHashtable.get(simp.substring(0, 1));
+				compounds.push(compoundWord);
 				simp = simp.substring(1);
 			}
 			else {
 				// The character wasn't recognized
 				console.log("The character wasn't recognized");
+				console.log(trad.substring(0, 1));
 			}
 
 			infiniteCheck++;
@@ -182,36 +166,7 @@ module.exports.searchByChinese = function(str, cb) {
 		callback(compounds);
 	}
 
-	var queryDatabase = function(queryArray) {
-		var query = {
-			id: { $in: queryArray }
-		};
-
-		cedict.find(query).toArray(function(err, words) {
-			if(err || words == undefined || words == null) {
-				console.log("There was an error when querying the database.");
-				console.log(err);
-				// TODO: Report this error to the user.
-				cb([]);
-			}
-			else {
-				var results = [];
-				_.each(words, function(word) {
-					var pronunciation = word.pronunciation;
-					var prettified = pinyin.prettify(pronunciation.slice(1, pronunciation.length - 1));
-					results.push({
-						traditional: word.traditional,
-						simplified: word.simplified,
-						pronunciation: prettified,
-						definitions: word.definitions,
-						id: word.id
-					});
-				});
-				cb(results);
-			}
-		});
-	}
-
+	// Convert characters to Simplified and Traditional in-case of input that contains both Traditional and Simplified
 	var simplified = str.slice().split("");
 	var traditional = str.slice().split("");
 
@@ -223,6 +178,7 @@ module.exports.searchByChinese = function(str, cb) {
 	simplified = simplified.join('');
 	traditional = traditional.join('');
 
+	// Search the traditional hashtable if the input was explicitly in tradtitional, otherwise search simplified
 	if(traditional === str) {
 		// Remove punctuation and whitespaces
 		traditional = traditional.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
@@ -241,6 +197,15 @@ module.exports.searchByChinese = function(str, cb) {
 	}
 };
 
+// Search by pinyin
+/*
+*	TODO: Make pinyin searchable WITH AND WITHOUT tone numbers
+*		DESC: The input 'ni2 hao3' and 'ni hao' should both return results containing the character 你好
+*	TODO: Make pinyin searchable through hashtable
+*		DESC: The current search method (querying the database) has been DEPRECIATED, the updated search method employs hashtable for faster search.
+*				This might pose a particular issue for tone numbers, we might have to employ 2 hashtables, 1 that has tone numbers and 1 without,
+*				And then we are going to have to figure out if the which one the user is trying to search with.
+*/
 module.exports.searchByPinyin = function(str, cb) {
 	//Catches dead-tones or 5th tones
 	var parts = str.split(" ");
@@ -289,5 +254,7 @@ module.exports.searchByPinyin = function(str, cb) {
 	});
 };
 
-
+/*
+*	TODO: Write this function
+*/
 module.exports.searchByEnglish = function(str, cb) {}
