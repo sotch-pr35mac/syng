@@ -45,12 +45,9 @@ cedict.count(function(err, count) {
 });
 
 if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
-	/*
-	*	TODO： Make it so a loading dialog start here
-	*/
-	console.log("should load loading dialog here");
+	// Open the loading dialog so the user can't search until the dictionary is initalized
 	$(document).ready(function() {
-		$("#loading-dialog").show();
+		$("#search-results").openModal();
 	});
 
 	function getDatabase() {
@@ -81,12 +78,9 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 					}
 				}
 
-				/*
-				* TODO: Close the loading dialog here
-				*/
-				console.log("should close loading dialog now");
+				// Close the loading dialog so that the user can now search
 				$(document).ready(function() {
-					$("#loading-dialog").hide();
+					$("#search-results").closeModal();
 				});
 			}
 		});

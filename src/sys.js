@@ -18,7 +18,7 @@ function initializeSystemElements() {
 	});
 
 	$('.modal-trigger').leanModal({
-		dismissible: true
+		dismissible: false
 	});
 }
 
