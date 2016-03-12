@@ -69,19 +69,47 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 					/*
 					* 	TODO: Change pinyin (wordList.pronunciation) to use tone marks instead of tone numbers
 					*/
-					tradHashtable.put(wordList[i].traditional, wordList[i]);
+
+					if(tradHashtable.containsKey(wordList[i].traditional) == false) {
+						var addWord = [];
+						addWord.push(wordList[i]);
+						tradHashtable.put(wordList[i].traditional, addWord);
+					}
+					else {
+						var addWord = tradHashtable.get(wordList[i].traditional);
+						addWord.push(wordList[i]);
+						tradHashtable.put(wordList[i].traditional, addWord);
+					}
 				}
 				if(simpIsEmpty == true) {
 					/*
 					* 	TODO: Change pinyin (wordList.pronunciation) to use tone marks instead of tone numbers
 					*/
-					simpHashtable.put(wordList[i].simplified, wordList[i]);
+					if(simpHashtable.containsKey(wordList[i].simplified) == false) {
+						var addWord = [];
+						addWord.push(wordList[i]);
+						simpHashtable.put(wordList[i].simplified, addWord);
+					}
+					else {
+						var addWord = simpHashtable.get(wordList[i].simplified);
+						addWord.push(wordList[i]);
+						simpHashtable.put(wordList[i], addWord);
+					}
 				}
 				if(pinyinIsEmpty == true) {
 					/*
 					*	TODO: Make the pinyin that gets put into the hashtable searchable by removing '[', ']', and tone numbers
 					*/
-					pinyinHashtable.put(wordList[i].pronunciation, wordList[i]);
+					if(pinyinHashtable.containsKey(wordList[i].pronunciation) == false) {
+						var addWord = [];
+						addWord.push(wordList[i]);
+						pinyinHashtable.put(wordList[i].pronunciation, addWord);
+					}
+					else {
+						var addWord = pinyinHashtable.get(wordList[i].pronunciation);
+						addWord.push(wordList[i]);
+						pinyinHashtable.put(wordList[i].pronunciation, addWord);
+					}
 				}
 			}
 

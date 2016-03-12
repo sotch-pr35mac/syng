@@ -29,9 +29,11 @@ function displayNone() {
 
 function displayResults(trans) {
 	var resultHtml = "<ul class='collection'><li class='collection-item'><div>Search Results</div><a href='#' ids='close-search-results' class='secondary-content modal-action modal-close' onclick='unDisplay()'><i class='material-icons'>close</i></a></li>";
-	_.each(trans, function(word) {
-		var itemListing = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br> "+word.definitions+"<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
-		resultHtml += itemListing;
+	_.each(trans, function(wordList) {
+		_.each(wordList, function(word) {
+			var itemListing = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br> "+word.definitions+"<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
+			resultHtml += itemListing;
+		});
 	});
 	resultHtml += "</ul>";
 

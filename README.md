@@ -47,6 +47,12 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
 
+## __Contribute__
+1. Fork it!
+2. Create a branch `git checkout my-feature`
+3. Commit your changes
+4. Submit a pull request
+
 ## __Getting Started__
 1. First go to the project directory
     `cd /path/to/project`
