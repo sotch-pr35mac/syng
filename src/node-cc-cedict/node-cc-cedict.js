@@ -11,12 +11,6 @@ var cedict = db.collection('words');
 
 // Create global hashtables that are going to serve as the lookup method for search
 // Using the hashtables over just a database query will dramatically incrase the speed
-/*
-*	TODO: Consolidate definitions and pinyin for words that share the same character
-*	DESC: We want to do this because the hashtable is using the character as the key, so if the character is the same then there is only 1 entry, and because
-*			of the way characters are being added to the hashtable, the last definition for that character found in the database query during initialization is
-*			going to be the one that is used.
-*/
 window.simpHashtable = new SimpleHashTable();	// Hashtable containing all simplified characters as key and their "word object" as the value
 window.tradHashtable = new SimpleHashTable();	// Hashtable containing all traditional characters as key and their "word object" as the value
 window.pinyinHashtable = new SimpleHashTable();	// Hashtable containing all pinyin that could be input as key, and their "word object" as the value
@@ -68,6 +62,8 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 				if(pinyinIsEmpty == true) {
 					function runPinyin() {
 						'use strict'
+
+						// "Copy" the object, so that changes made won't reflect globally on the wordList array
 						let word = {
 							simplified: wordList[i].simplified,
 							traditional: wordList[i].traditional,
@@ -99,6 +95,8 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 				if(tradIsEmpty == true) {
 					function runTraditional() {
 						'use strict'
+
+						// "Copy" the object, so that changes made won't reflect globally on the wordList array
 						let word = {
 							simplified: wordList[i].simplified,
 							traditional: wordList[i].traditional,
@@ -127,6 +125,8 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 				if(simpIsEmpty == true) {
 					function runSimplified() {
 						'use strict'
+
+						// "Copy" the object, so that changes made won't reflect globally on the wordList array
 						let word = {
 							simplified: wordList[i].simplified,
 							traditional: wordList[i].traditional,
