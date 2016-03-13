@@ -2,7 +2,7 @@
 // var cedict = require("../src/node-cc-cedict/index.js");
 
 // Comment out the line below to unload the mongodb version of the dictionary search engine
-var cedict = require("../src/node-cc-cedict/node-cc-cedict.js");
+var cedict = require("../src/engine.js");
 var franc = require("franc");
 var _ = require("underscore");
 
