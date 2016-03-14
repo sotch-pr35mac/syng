@@ -1,7 +1,10 @@
-// Uncomment the line below to load the sqlite version of the dictionary search engine
-// var cedict = require("../src/node-cc-cedict/index.js");
+/*
+*	@File				:: search.js
+*	@Author 			:: Preston Stosur-Bassett [preston@stosur.info](http://stosur.info)
+*	@Description	:: This file handles getting the search query from the user, displaying the loading dialog, and formatting and displaying search results.
+*	@Created			:: Jan 27, 2016
+*/
 
-// Comment out the line below to unload the mongodb version of the dictionary search engine
 var cedict = require("../src/engine.js");
 var franc = require("franc");
 var _ = require("underscore");
@@ -31,7 +34,15 @@ function displayResults(trans) {
 	var resultHtml = "<ul class='collection'><li class='collection-item'><div>Search Results</div><a href='#' ids='close-search-results' class='secondary-content modal-action modal-close' onclick='unDisplay()'><i class='material-icons'>close</i></a></li>";
 	_.each(trans, function(wordList) {
 		_.each(wordList, function(word) {
-			var itemListing = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br> "+word.definitions+"<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
+			var itemListingSectionOne = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br>";
+			var definitionsHtml = "<ol>";
+			for(var i = 0; i < word.definitions.length; i++) {
+				var definitionListing = "<li>"+word.definitions[i]+"</li>";
+				definitionsHtml += definitionListing;
+			}
+			definitionsHtml += "</ol>";
+			var itemListingSectionTwo = "<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
+			var itemListing = itemListingSectionOne+definitionsHtml+itemListingSectionTwo;
 			resultHtml += itemListing;
 		});
 	});
@@ -60,9 +71,9 @@ function initializeSearch() {
 		else if(lang == 'eng') {
 			if(latinLang == "EN") {
 				console.log("Search Language is English");
-				/* cedict.searchByEnglish(text, function(results) {
-					console.log(results);
-				}); */
+				cedict.searchByEnglish(text, function(results) {
+					displayResults(results);
+				});
 			}
 			else if(latinLang == "PY") {
 				cedict.searchByPinyin(text, function(results) {
