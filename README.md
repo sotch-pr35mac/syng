@@ -1,5 +1,5 @@
 # __词应__ (Syng)
-#### 词典应用 (Dictionary App)
+#### 词典应用 (Dictionary App) v0.0.2
 
 ---
 
