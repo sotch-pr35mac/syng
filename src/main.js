@@ -21,7 +21,7 @@ app.on('window-all-closed', function() {
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
 	// Create the browser window.
-	mainWindow = new BrowserWindow({width: 1400, height: 600, frame: false});
+	mainWindow = new BrowserWindow({width: 1200, height: 500});
 
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');

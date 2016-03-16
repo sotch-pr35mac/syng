@@ -1,174 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
-  <title>Syng | 词应</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
 
-  <!-- CSS  -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="../style/css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-  <link href="../style/css/starter.css" type="text/css" rel="stylesheet" media="screen,projection"/>
-  <link href="../style/css/sys.css" type="text/css" rel="stylesheet">
+  <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
+
+  <link rel="stylesheet" href="../style/css/bootstrap.css">
+
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+  <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+  <link rel="stylesheet" href="../style/css/layout.css" />
+  <link rel="stylesheet" href="../style/css/style.css" />
+  <link rel="stylehseet" href="../style/css/sweetalert.css" />
+
+  <!-- Menu -->
+  <script src="../src/menu/dict_menu.js"></script>
 </head>
+
 <body>
-   <!-- <div class="titlebar-buttons">
-      <a href="#!" class="titlebar-app-close wave-effect wave-light red-text text-darken-1" id="XOUT">
-         <i class="material-icons" style="-webkit-app-region: no-drag;">close</i>
-      </a>
-      <a href="#!" class="titlebar-app-min wave-effect wave-light red-text text-darken-1" id="WMIN">
-         <i class="material-icons">system_update_alt</i>
-      </a>
-      <a href="#!" class="titlebar-app-max wave-effect wave-light red-text text-darken-1" id="WMAX">
-         <i class="material-icons">aspect_ratio</i>
-      </a>
-   </div> -->
-   <!-- File Menu DropDown -->
-   <ul id="file-menu" class="dropdown-content">
-      <li><a href="#about-dialog" class="modal-trigger">About</a></li>
-      <li><a href="#!" class="unsupported-feature">Bookmarks</a></li>
-      <li><a href="#!" class="unsupported-feature">Study</a></li>
-   </ul>
-  <nav class="blue non-system-titlebar" role="navigation">
-    <div class="nav-wrapper"><a id="logo-container" href="#" class="brand-logo center">Syng | 词应</a>
-      <ul class="left hide-on-med-and-down titlebar-buttons">
-         <li>
-            <a class="dropdown-button" href="#!" data-activates="file-menu">File</a>
-         </li>
-         <li>
-            <a href="#!" id="latin-language" class="tooltipped" data-position="bottom" data-delay="600" data-tooltip="The intended language of latin input. English or Pinyin. Use Pinyin tone numbers." >EN</a>
-         </li>
-      </ul>
-      <ul class="right titlebar-buttons">
-         <!-- <li>
-            <a href="#!" id="WMAX">
-               <i class="material-icons">aspect_ratio</i>
-            </a>
-         </li> -->
-         <li>
-            <a href="#!" id="WMIN">
-               _
-               <!--<i class="material-icons"></i>-->
-            </a>
-         </li>
-         <li>
-            <a href="#!" id="XOUT">
-               <i class="material-icons">close</i>
-            </a>
-         </li>
-        <!-- <li>
-			  <form>
-				  <div class="input-field">
-					  <input id="main-search" type="search" required>
-					  <label for="main-search"><i class="material-icons">search</i></label>
-					  <i class="material-icons">close</i>
-				  </div>
-			  </form>
-		  </li> -->
-        </li>
-      </ul>
+
+  <nav class="navbar navbar-default navbar-fixed-top" id="header_outer">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <div style="margin-top: 10px" class="form-group">
+          <div class="input-group">
+            <input type="search" class="form-control input-text" placeholder="Search in English/Chinese Characters/Pinyin" id="default-search">
+            <div class="input-group-btn">
+               <a class="btn btn-default btn-custom btn-search" id="language-selector">EN</a>
+              <a class="btn btn-default btn-custom btn-search" id="default-search-btn">Search</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.navbar-collapse -->
     </div>
+    <!-- /.container-fluid -->
   </nav>
-  <div class="section no-pad-bot" id="index-banner">
-    <div class="container">
-      <br><br>
-      <h1 class="header center orange-text">词应欢迎你</h1>
-      <div class="row center">
-        <h5 class="header col s12 light">Welcome to Syng: Search, Save, Study</h5>
-      </div>
-		<div class="row center">
-			<nav>
-				<div class="nav-wrapper">
-					<form>
-						<div class="input-field">
-							<input id="search-bar" type="search" required>
-							<label for="search-bar"><i class="material-icons">search</i></label>
-							<i class="material-icons" id="clear-search">close</i>
-						</div>
-					</form>
-				</div>
-			</nav>
-			<br>
-			<br>
-			<a class="waves-effect waves-light btn-large blue modal-trigger" id="search-button" href="#search-results">Search</a>
-		</div>
+
+  <div class="col-lg-3 sidebar" id="top_content">
+     <br>
+    <ul class="list-group" id="search-results">
+    </ul>
+  </div>
+  <br>
+  <br>
+  <div class="col-md-offset-3 col-lg-9 main-content">
+    <div id="expanded-dict-content">
     </div>
   </div>
 
-  <!-- Search Results Dialog -->
-  <div id="search-results" class="modal bottom-sheet">
-     <div class="modal-content">
-      <div id="results-container">
-      </div>
-      <div id="loading-dialog">
-         <center>
-           <div class="preloader-wrapper active">
-             <div class="spinner-layer spinner-blue-only">
-                 <div class="circle-clipper left">
-                    <div class="circle">
-                   </div>
-                </div>
-                <div class="gap-patch">
-                   <div class="circle">
-                   </div>
-                </div>
-                <div class="circle-clipper right">
-                   <div class="circle">
-                   </div>
-                </div>
-             </div>
-          </center>
-       </div>
-    </div>
-   </div>
-   </div>
-
-  <!-- About Dialog (Modal) -->
-  <div id="about-dialog" class="modal">
-     <div class="model-content container">
-        <br>
-        <br>
-        <center>
-           <h4>Syng | 词应</h4>
-           <h6>Dictionary App | 词典应用</h6>
-           <p>v0.0.2 (alpha)</p>
-        </center>
-        <p>
-           Syng is a free, open source, Chinese-To-English and English-To-Chinese dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.
-           To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng .
-           Syng is a stylized spelling of CiYing, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
-           Syng relies on many libraries and projects. Currently, Syng would not work if not for:
-           <ul>
-             <li><b>Electron:</b> Framework for Native Cross-Platform Support</li>
-             <li><b>CC-CEDICT:</b> Chinese Dictionary Database</li>
-             <li><b>Materialize:</b> A Material Design User Interface</li>
-             <li><b>node-cc-cedict</b>: Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>
-             <li><b>Franc</b>: Language Detection for Search</li>
-          </ul>
-        </p>
-        <br>
-        <br>
-        <br>
-     </div>
-     <div class="modal-footer">
-        <a href="#!" class="modal-action modal-close waves-effect btn-flat waves-blue">Close</a>
-     </div>
-  </div>
-
-  <!--  Scripts-->
-  <!-- <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> -->
-  <script>window.$ = window.jQuery = require("../src/jquery.js");</script>
-  <script>window.Hammer = require("../src/hammer.min.js");</script>
-  <script src="../src/materialize.js"></script>
-  <script src="../src/sys.js"></script>
+  <!-- Other Scripts -->
+  <script src="../src/bootstrap.js"></script>
+  <script src="../src/sweetalert.min.js"></script>
   <script src="../src/search.js"></script>
+</body>
 
-  <script type="text/javascript">
-      $(document).ready(function() {
-         $(".unsupported-feature").click(function() {
-            alert("This is currently an unsupported feature. Sorry for the inconvience.");
-         });
-      });
-  </script>
-  </body>
 </html>
