@@ -32,7 +32,12 @@ $(document).ready(function() {
 							"Batteries not included.",
 							"Level up!",
 							"Unjamming RAM",
-							"Softening hard disk..."
+							"Softening hard disk...",
+							"Notifying relevant government authorities...",
+							"Have a good day.",
+							"Uploading photos...",
+							"Preparing DOS run-time environment",
+							"Bitmapping..."
 						];
 
 	setInterval(function() {
