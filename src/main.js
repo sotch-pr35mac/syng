@@ -1,6 +1,7 @@
 'use strict';
 
 const electron = require('electron');
+const ipc = require('electron').ipcMain;
 const app = electron.app; //Module to control application life.
 const BrowserWindow = electron.BrowserWindow; //Module to create native browser window.
 
@@ -21,7 +22,13 @@ app.on('window-all-closed', function() {
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
 	// Create the browser window.
-	mainWindow = new BrowserWindow({width: 1200, height: 500});
+	mainWindow = new BrowserWindow({
+		width: 1200,
+		height: 500,
+		type: 'desktop',
+		title: 'Syng',
+		show: true
+	});
 
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
@@ -33,5 +40,18 @@ app.on('ready', function() {
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
 		mainWindow = null;
+	});
+
+	// About Dialog Window
+	var aboutWindow = new BrowserWindow({
+		width: 400,
+		height: 400,
+		show: false
+	});
+
+	aboutWindow.loadURL('file://'+__dirname+'/../views/about.html');
+
+	ipc.on('open-about-window', function(event, args) {
+		aboutWindow.show();
 	});
 });

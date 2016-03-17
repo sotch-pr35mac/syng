@@ -1,4 +1,5 @@
 const remote = require('electron').remote;
+const ipc = require('electron').ipcRenderer;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 
@@ -19,7 +20,10 @@ var template = [
 		{
 		  label: 'About',
 		  //accelerator: 'CmdOrCtrl+B',
-		  role: 'about'
+		  role: 'about',
+        click: function() {
+           ipc.send("open-about-window", "test");
+         }
 		},
 	 ]
   },
