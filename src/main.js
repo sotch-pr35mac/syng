@@ -25,10 +25,7 @@ app.on('ready', function() {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 1200,
-		height: 500,
-		type: 'desktop',
-		title: 'Syng',
-		show: true
+		height: 500
 	});
 
 	// and load the index.html of the app.
@@ -41,18 +38,35 @@ app.on('ready', function() {
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
 		mainWindow = null;
+		aboutWindow.close();
 	});
 
 	// About Dialog Window
 	var aboutWindow = new BrowserWindow({
-		width: 400,
-		height: 400,
+		width: 500,
+		height: 500,
 		show: false
 	});
 
+	aboutWindow.setMenu(null);
+
 	aboutWindow.loadURL('file://'+__dirname+'/../views/about.html');
 
+	aboutWindow.on('close', function(event) {
+		if(mainWindow != null) {
+			aboutWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	aboutWindow.on('closed', function() {
+		aboutWindow = null;
+	});
+
 	ipc.on('open-about-window', function(event, args) {
-		aboutWindow.show();
+		if(!aboutWindow.isVisible()) {
+			aboutWindow.show();
+		}
 	});
 });
