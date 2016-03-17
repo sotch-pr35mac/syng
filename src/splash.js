@@ -1,5 +1,5 @@
 $(document).ready(function() {
-	setInterval(function() {
+	/*setInterval(function() {
 		var text = $("#loading-text").html();
 		if(text == "Loading...") {
 			text = "Loading";
@@ -9,5 +9,5 @@ $(document).ready(function() {
 		}
 
 		$("#loading-text").html(text);
-	}, 1000);
+	}, 1000);*/
 });
