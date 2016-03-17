@@ -90,6 +90,6 @@ app.on('ready', function() {
 	ipc.on('finished-loading-dictinoary', function(event, args) {
 		splashWindow.close();
 
-		mainWindow.open();
+		mainWindow.show();
 	});
 });

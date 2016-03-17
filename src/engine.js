@@ -14,213 +14,164 @@ var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter 
 var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their "word object"
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
 
-// Initialize the TingoDB that is storing the dictionary information
-var db = new Engine.Db("./src/db/cc-cedict-tingodb", {});
-var cedict = db.collection('words');
-
 // Create global hashtables that are going to serve as the lookup method for search
 // Using the hashtables over just a database query will dramatically incrase the speed
 window.simpHashtable = new SimpleHashTable();	// Global hashtable containing all simplified characters as key and their "word object" as the value
 window.tradHashtable = new SimpleHashTable();	// Global hashtable containing all traditional characters as key and their "word object" as the value
 window.pinyinHashtable = new SimpleHashTable();	// Global hashtable containing all pinyin that could be input as key, and their "word object" as the value
-window.englishHashtable = new SimpleHashTable(); // Global hashtable containing all the english definitions that oculd be input as key, and their "word object" as the value
+windnow.englishHashtable = new SimpleHashTable(); // Global hashtable containing all the english definitions that oculd be input as key, and their "word object" as the value
 
-// Ensure that the database has been setup on this build
-cedict.count(function(err, count) {
-	if(err || count == undefined || count == null) {
-		console.log("There was an error while getting the count of the database.");
-		console.log(err);
-		// TODO: Report the error to the user.
-	}
-	if(count == 0) {
-		// Open Loading Dialog so that the user can not search until the dictionary has been initialized
-		/*
-		*	TODO: Figure out loading dialog situation
-		*/
-		//$("#search-results").openModal();
+var tradIsEmpty = tradHashtable.isEmpty();
+var simpIsEmpty = simpHashtable.isEmpty();
+var pinyinIsEmpty = pinyinHashtable.isEmpty();
+var englishIsEmpty = englishHashtable.isEmpty();
+
+if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
+	console.log("Reading from file....");
+	$.getJSON("../src/db/cc-cedict.json", function(wordList) {
 		console.log("Loading...");
 
-		// Load the CC-CEDICT file into the database from a JSON BLOB that was converted from a CSV, which was convereted from a .u8 (CC-CEDICT file)
-		$.getJSON("../src/db/cc-cedict.json", function(data) {
-			cedict.insert(data, {w:1}, function(err, result) {
-				if(err || result == undefined || result == null) {
-					console.log("There was an error while updating the database with the dictionary.");
-					console.log(err);
-					// TODO: Report the error to the user.
-				}
-				else {
-					/*
-					*	TODO: Figure out loading dialog situation
-					*/
-					//$("#search-results").closeModal();
-					console.log("Finished Loading!");
-				}
-			});
-		});
-	}
-});
-
-// Check to see if the hashtables have been created and populated yet.
-if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
-	// Open the loading dialog so the user can't search until the dictionary is initalized
-	/*
-	*	TODO: Figure out loading dialog situation
-	*/
-	//$("#search-results").openModal();
-	console.log("Loading...");
-
-	cedict.find().toArray(function(err, wordList) {
-		if(err || wordList == undefined || wordList == null) {
-			console.log("There was an error getting all the database entires.");
-			console.log(err);
-			// TODO: Report this issue to the user.
-		}
-		else {
-			var tradIsEmpty = tradHashtable.isEmpty();
-			var simpIsEmpty = simpHashtable.isEmpty();
-			var pinyinIsEmpty = pinyinHashtable.isEmpty();
-			var englishIsEmpty = englishHashtable.isEmpty();
-
-			for(var i = 0; i < wordList.length; i++) {
-				// Separate definitions from "word object" into an array
-				if(wordList[i].definitions) {
-					wordList[i].definitions = wordList[i].definitions.split("; ");
-				}
-
-				if(pinyinIsEmpty == true && wordList[i] != undefined) {
-					function runPinyin() {
-						'use strict'
-
-						// "Copy" the object, so that changes made won't reflect globally on the wordList array
-						let word = {
-							simplified: wordList[i].simplified,
-							traditional: wordList[i].traditional,
-							pronunciation: wordList[i].pronunciation,
-							definitions: wordList[i].definitions
-						};
-
-						// Searchable pinyin without tone numbers
-						let searchablePinyin = word.pronunciation.substring(1, word.pronunciation.length - 1).replace(/[0-9]/g, '').replace(/\s+/g, '');
-
-						// Prettify the pinyin to use tone marks instead of tone numbers
-						word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-						// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-						if(pinyinHashtable.containsKey(searchablePinyin) == false) {
-							let addWord = [];
-							addWord.push(word);
-							pinyinHashtable.put(searchablePinyin, addWord);
-						}
-						else {
-							let addWord = pinyinHashtable.get(searchablePinyin);
-							addWord.push(word);
-							pinyinHashtable.put(searchablePinyin, addWord);
-						}
-					}
-
-					runPinyin();
-				}
-				if(englishIsEmpty == true && wordList[i] != undefined) {
-					function runEnglish(wordList, i) {
-						'use strict'
-
-						// "Copy" the object, so that changes made won't reflect globally on the wordList array
-						let word = {
-							simplified: wordList[i].simplified,
-							traditional: wordList[i].traditional,
-							pronunciation: wordList[i].pronunciation,
-							definitions: wordList[i].definitions
-						};
-
-						// Cycle through each definition of a character and add it to the hashtable
-						for(var i = 0; i < word.definitions.length; i++) {
-							// Remove punctuation, extra spaces, and convert to lower case
-							var searchableTerm = word.definitions[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-							searchableTerm = searchableTerm.replace(/\s{2,}/g," ");
-							searchableTerm =  searchableTerm.toLowerCase();
-
-							// Add the word to the hashtable, if the definition already exists in the hashtable as a key, add the second "word object" to the same key
-							if(englishHashtable.containsKey(searchableTerm) == false) {
-								let addWord = [];
-								addWord.push(word);
-								englishHashtable.put(searchableTerm, addWord);
-							}
-							else {
-								let addWord = englishHashtable.get(searchableTerm);
-								addWord.push(word);
-								englishHashtable.put(searchableTerm, addWord);
-							}
-						}
-					}
-
-					runEnglish(wordList, i);
-				}
-				if(tradIsEmpty == true && wordList[i] != undefined) {
-					function runTraditional() {
-						'use strict'
-
-						// "Copy" the object, so that changes made won't reflect globally on the wordList array
-						let word = {
-							simplified: wordList[i].simplified,
-							traditional: wordList[i].traditional,
-							pronunciation: wordList[i].pronunciation,
-							definitions: wordList[i].definitions
-						};
-
-						// Prettify the pinyin to use tone marks instead of tone numbers
-						word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-						// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-						if(tradHashtable.containsKey(word.traditional) == false) {
-							let addWord = [];
-							addWord.push(word);
-							tradHashtable.put(word.traditional, addWord);
-						}
-						else {
-							let addWord = tradHashtable.get(word.traditional);
-							addWord.push(word);
-							tradHashtable.put(word.traditional, addWord);
-						}
-					}
-
-					runTraditional();
-				}
-				if(simpIsEmpty == true && wordList[i] != undefined) {
-					function runSimplified() {
-						'use strict'
-
-						// "Copy" the object, so that changes made won't reflect globally on the wordList array
-						let word = {
-							simplified: wordList[i].simplified,
-							traditional: wordList[i].traditional,
-							pronunciation: wordList[i].pronunciation,
-							definitions: wordList[i].definitions
-						};
-
-						// Prettify the pinyin to use tone marks instead of tone numbers
-						word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-						// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-						if(simpHashtable.containsKey(word.simplified) == false) {
-							var addWord = [];
-							addWord.push(word);
-							simpHashtable.put(word.simplified, addWord);
-						}
-						else {
-							var addWord = simpHashtable.get(word.simplified);
-							addWord.push(word);
-							simpHashtable.put(word.simplified, addWord);
-						}
-					}
-
-					runSimplified();
-				}
+		for(var i = 0; i < wordList.length - 1; i++) {
+			// Separate definitions from "word object" into an array
+			if(wordList[i].definitions) {
+				wordList[i].definitions = wordList[i].definitions.split("; ");
 			}
 
-			// Close the splash page so that the user can now search
-			ipc.sendSync('finished-loading-dictionary');
-			console.log("Finished Loading!");
+			if(pinyinIsEmpty == true && wordList[i] != undefined) {
+				function runPinyin() {
+					'use strict'
+
+					// "Copy" the object, so that changes made won't reflect globally on the wordList array
+					let word = {
+						simplified: wordList[i].simplified,
+						traditional: wordList[i].traditional,
+						pronunciation: wordList[i].pronunciation,
+						definitions: wordList[i].definitions
+					};
+
+					// Searchable pinyin without tone numbers
+					let searchablePinyin = word.pronunciation.substring(1, word.pronunciation.length - 1).replace(/[0-9]/g, '').replace(/\s+/g, '');
+
+					// Prettify the pinyin to use tone marks instead of tone numbers
+					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
+
+					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
+					if(pinyinHashtable.containsKey(searchablePinyin) == false) {
+						let addWord = [];
+						addWord.push(word);
+						pinyinHashtable.put(searchablePinyin, addWord);
+					}
+					else {
+						let addWord = pinyinHashtable.get(searchablePinyin);
+						addWord.push(word);
+						pinyinHashtable.put(searchablePinyin, addWord);
+					}
+				}
+
+				runPinyin();
+			}
+			if(englishIsEmpty == true && wordList[i] != undefined) {
+				function runEnglish(wordList, i) {
+					'use strict'
+
+					// "Copy" the object, so that changes made won't reflect globally on the wordList array
+					let word = {
+						simplified: wordList[i].simplified,
+						traditional: wordList[i].traditional,
+						pronunciation: wordList[i].pronunciation,
+						definitions: wordList[i].definitions
+					};
+
+					// Cycle through each definition of a character and add it to the hashtable
+					for(var i = 0; i < word.definitions.length; i++) {
+						// Remove punctuation, extra spaces, and convert to lower case
+						var searchableTerm = word.definitions[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+						searchableTerm = searchableTerm.replace(/\s{2,}/g," ");
+						searchableTerm =  searchableTerm.toLowerCase();
+
+						// Add the word to the hashtable, if the definition already exists in the hashtable as a key, add the second "word object" to the same key
+						if(englishHashtable.containsKey(searchableTerm) == false) {
+							let addWord = [];
+							addWord.push(word);
+							englishHashtable.put(searchableTerm, addWord);
+						}
+						else {
+							let addWord = englishHashtable.get(searchableTerm);
+							addWord.push(word);
+							englishHashtable.put(searchableTerm, addWord);
+						}
+					}
+				}
+
+				runEnglish(wordList, i);
+			}
+			if(tradIsEmpty == true && wordList[i] != undefined) {
+				function runTraditional() {
+					'use strict'
+
+					// "Copy" the object, so that changes made won't reflect globally on the wordList array
+					let word = {
+						simplified: wordList[i].simplified,
+						traditional: wordList[i].traditional,
+						pronunciation: wordList[i].pronunciation,
+						definitions: wordList[i].definitions
+					};
+
+					// Prettify the pinyin to use tone marks instead of tone numbers
+					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
+
+					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
+					if(tradHashtable.containsKey(word.traditional) == false) {
+						let addWord = [];
+						addWord.push(word);
+						tradHashtable.put(word.traditional, addWord);
+					}
+					else {
+						let addWord = tradHashtable.get(word.traditional);
+						addWord.push(word);
+						tradHashtable.put(word.traditional, addWord);
+					}
+				}
+
+				runTraditional();
+			}
+			if(simpIsEmpty == true && wordList[i] != undefined) {
+				function runSimplified() {
+					'use strict'
+
+					// "Copy" the object, so that changes made won't reflect globally on the wordList array
+					let word = {
+						simplified: wordList[i].simplified,
+						traditional: wordList[i].traditional,
+						pronunciation: wordList[i].pronunciation,
+						definitions: wordList[i].definitions
+					};
+
+					// Prettify the pinyin to use tone marks instead of tone numbers
+					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
+
+					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
+					if(simpHashtable.containsKey(word.simplified) == false) {
+						var addWord = [];
+						addWord.push(word);
+						simpHashtable.put(word.simplified, addWord);
+					}
+					else {
+						var addWord = simpHashtable.get(word.simplified);
+						addWord.push(word);
+						simpHashtable.put(word.simplified, addWord);
+					}
+				}
+
+				runSimplified();
+			}
+			console.log(i);
 		}
+
+		console.log("Finished Loading!");
+
+		// Close the splash page so that the user can now search
+		ipc.send('finished-loading-dictinoary');
 	});
 }
 
