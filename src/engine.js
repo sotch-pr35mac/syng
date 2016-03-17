@@ -19,7 +19,7 @@ var ipc = require('electron').ipcRenderer; // For communication with the Main Pr
 window.simpHashtable = new SimpleHashTable();	// Global hashtable containing all simplified characters as key and their "word object" as the value
 window.tradHashtable = new SimpleHashTable();	// Global hashtable containing all traditional characters as key and their "word object" as the value
 window.pinyinHashtable = new SimpleHashTable();	// Global hashtable containing all pinyin that could be input as key, and their "word object" as the value
-windnow.englishHashtable = new SimpleHashTable(); // Global hashtable containing all the english definitions that oculd be input as key, and their "word object" as the value
+window.englishHashtable = new SimpleHashTable(); // Global hashtable containing all the english definitions that oculd be input as key, and their "word object" as the value
 
 var tradIsEmpty = tradHashtable.isEmpty();
 var simpIsEmpty = simpHashtable.isEmpty();
@@ -39,7 +39,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 			if(pinyinIsEmpty == true && wordList[i] != undefined) {
 				function runPinyin() {
-					'use strict'
+					'use strict';
 
 					// "Copy" the object, so that changes made won't reflect globally on the wordList array
 					let word = {
@@ -72,7 +72,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 			if(englishIsEmpty == true && wordList[i] != undefined) {
 				function runEnglish(wordList, i) {
-					'use strict'
+					'use strict';
 
 					// "Copy" the object, so that changes made won't reflect globally on the wordList array
 					let word = {
@@ -107,7 +107,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 			if(tradIsEmpty == true && wordList[i] != undefined) {
 				function runTraditional() {
-					'use strict'
+					'use strict';
 
 					// "Copy" the object, so that changes made won't reflect globally on the wordList array
 					let word = {
@@ -137,7 +137,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 			if(simpIsEmpty == true && wordList[i] != undefined) {
 				function runSimplified() {
-					'use strict'
+					'use strict';
 
 					// "Copy" the object, so that changes made won't reflect globally on the wordList array
 					let word = {
@@ -165,7 +165,6 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 				runSimplified();
 			}
-			console.log(i);
 		}
 
 		console.log("Finished Loading!");
