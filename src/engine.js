@@ -12,6 +12,7 @@ var Engine = require("tingodb")(); // Mongo-Style Database
 var cnchars = require('cn-chars'); // Convert between tradtitional and simplified
 var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
 var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their "word object"
+var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
 
 // Initialize the TingoDB that is storing the dictionary information
 var db = new Engine.Db("./src/db/cc-cedict-tingodb", {});
@@ -216,11 +217,8 @@ if(tradHashtable.isEmpty() || simpHashtable.isEmpty()) {
 				}
 			}
 
-			// Close the loading dialog so that the user can now search
-			/*
-			*	TODO: Figure out loading dialog situation
-			*/
-			//$("#search-results").closeModal();
+			// Close the splash page so that the user can now search
+			ipc.sendSync('finished-loading-dictionary');
 			console.log("Finished Loading!");
 		}
 	});

@@ -9,6 +9,7 @@ const BrowserWindow = electron.BrowserWindow; //Module to create native browser 
 // be closed automatically when the JavaScript object is garbage collected.
 var mainWindow = null;
 var aboutWindow = null;
+var splashWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -25,7 +26,8 @@ app.on('ready', function() {
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 1200,
-		height: 500
+		height: 500,
+		show: false
 	});
 
 	// and load the index.html of the app.
@@ -45,7 +47,8 @@ app.on('ready', function() {
 	var aboutWindow = new BrowserWindow({
 		width: 500,
 		height: 500,
-		show: false
+		show: false,
+		resizable: false
 	});
 
 	aboutWindow.setMenu(null);
@@ -68,5 +71,25 @@ app.on('ready', function() {
 		if(!aboutWindow.isVisible()) {
 			aboutWindow.show();
 		}
+	});
+
+	var splashWindow = new BrowserWindow({
+		width: 900,
+		height: 600,
+		show: true,
+		frame: false,
+		resizable: false
+	});
+
+	splashWindow.loadURL('file://'+__dirname+'/../views/splash.html');
+
+	splashWindow.on('closed', function() {
+		splashWindow = null;
+	});
+
+	ipc.on('finished-loading-dictinoary', function(event, args) {
+		splashWindow.close();
+
+		mainWindow.open();
 	});
 });
