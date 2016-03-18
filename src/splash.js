@@ -11,7 +11,7 @@ $(document).ready(function() {
 							"Determining length for offline cable...",
 							"Reading sectors from file...",
 							"Erasing ~/ ...",
-							"Trying commong passwords...",
+							"Trying common passwords...",
 							"Covering up security breach...",
 							"Don't panic.",
 							"Obfuscating error messages...",
@@ -37,7 +37,9 @@ $(document).ready(function() {
 							"Have a good day.",
 							"Uploading photos...",
 							"Preparing DOS run-time environment",
-							"Bitmapping..."
+							"Bitmapping...",
+							"Downloading more RAM...",
+							"Removing win32..."
 						];
 
 	setInterval(function() {

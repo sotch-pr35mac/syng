@@ -49,6 +49,21 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 						definitions: wordList[i].definitions
 					};
 
+					let individualWords = word.pronunciation.split(" ");
+
+					var toneMarks = [];
+					for(var e = 0; e < individualWords.length; e++) {
+						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
+						if(tone == "") {
+							tone = "0";
+						}
+						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
+							toneMarks.push(tone);
+						}
+					}
+
+					word.toneMarks = toneMarks;
+
 					// Searchable pinyin without tone numbers
 					let searchablePinyin = word.pronunciation.substring(1, word.pronunciation.length - 1).replace(/[0-9]/g, '').replace(/\s+/g, '');
 
@@ -81,6 +96,24 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 						pronunciation: wordList[i].pronunciation,
 						definitions: wordList[i].definitions
 					};
+
+					let individualWords = word.pronunciation.split(" ");
+
+					var toneMarks = [];
+					for(var e = 0; e < individualWords.length; e++) {
+						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
+						if(tone == "") {
+							tone = "0";
+						}
+						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
+							toneMarks.push(tone);
+						}
+					}
+
+					word.toneMarks = toneMarks;
+
+					// Prettify the pinyin to use tone marks instead of tone numbers
+					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
 					// Cycle through each definition of a character and add it to the hashtable
 					for(var i = 0; i < word.definitions.length; i++) {
@@ -117,6 +150,21 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 						definitions: wordList[i].definitions
 					};
 
+					let individualWords = word.pronunciation.split(" ");
+
+					var toneMarks = [];
+					for(var e = 0; e < individualWords.length; e++) {
+						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
+						if(tone == "") {
+							tone = "0";
+						}
+						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
+							toneMarks.push(tone);
+						}
+					}
+
+					word.toneMarks = toneMarks;
+
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
@@ -146,6 +194,21 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 						pronunciation: wordList[i].pronunciation,
 						definitions: wordList[i].definitions
 					};
+
+					let individualWords = word.pronunciation.split(" ");
+
+					var toneMarks = [];
+					for(var e = 0; e < individualWords.length; e++) {
+						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
+						if(tone == "") {
+							tone = "0";
+						}
+						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
+							toneMarks.push(tone);
+						}
+					}
+
+					word.toneMarks = toneMarks;
 
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));

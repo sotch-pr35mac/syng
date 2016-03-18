@@ -15,6 +15,10 @@
 
   <link rel="stylehseet" href="../style/css/sweetalert.css" />
 
+  <link rel="stylesheet" href="../style/css/hint.min.css" />
+
+  <link rel="stylesheet" href="../style/css/dict.css" />
+
   <!-- Menu -->
   <script src="../src/menu/dict_menu.js"></script>
 </head>
@@ -24,26 +28,20 @@
       <header class="toolbar toolbar-header">
          <h1 class="title"></h1>
          <div class="toolbar-actions">
-            <a class="btn btn-large btn-default" id="language-selector">EN</a>
-            <input class="form-control" type="text" placeholder="Search in English/Chinese/Pinyin" style="width: 85%; margin-top: 6px;">
-            <a class="btn btn-large btn-default" style="width: 8%">Search</a>
+            <a class="btn btn-large btn-default hint--right" data-hint="The intended language of latin input. English or Pinyin. Don't use tone numbers. Put space between intended words." id="language-selector">EN</a>
+            <input class="form-control" type="text" placeholder="Search in English/Chinese/Pinyin" style="width: 85%; margin-top: 6px;" id="default-search">
+            <a class="btn btn-large btn-default" style="width: 8%" id="default-search-btn">Search</a>
          </div>
       </header>
 
       <!-- Main Content -->
       <div class="window-content">
          <div class="pane-group">
-            <div class="pane-sm sidebar">
-               <ul class="list-group">
-                  <li class="list-group-item">
-                     <div class="media-body">
-                        <strong>你好</strong>
-                        <p>Hello, Hi, How are you?</p>
-                     </div>
-                  </li>
+            <div class="pane-sm sidebar search-listing">
+               <ul class="list-group" id="search-results">
                </ul>
             </div>
-            <div class="pane">
+            <div class="pane expanded-content-container" id="expanded-dict-content">
             </div>
          </div>
       </div>
