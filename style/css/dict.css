@@ -21,3 +21,11 @@ a:visited {
 a:hover {
 	text-decoration: none;
 }
+
+.list-group-item {
+	cursor: pointer;
+}
+
+h1 {
+	cursor: pointer;
+}
