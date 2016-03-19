@@ -14,10 +14,22 @@ var template = [
 	 submenu: [
 		{
 		  label: 'About',
-		  //accelerator: 'CmdOrCtrl+B',
 		  role: 'about',
         click: function() {
-           ipc.send("open-about-window", "test");
+           ipc.send("open-about-window");
+         }
+		},
+	 ]
+  },
+  {
+	 label: 'View',
+	 submenu: [
+		{
+		  label: 'Bookmarks',
+        accelerator: 'CmdOrCtrl+B',
+		  role: 'bookmarks',
+        click: function() {
+           ipc.send("open-bookmarks-window");
          }
 		},
 	 ]

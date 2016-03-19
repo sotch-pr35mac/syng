@@ -1,6 +1,6 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v0.0.3 (alpha)
+##### v0.1.0 (beta)
 
 ---
 
@@ -31,7 +31,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - Search (for Characters, Pinyin, and English)
 
 #### __What's Not__
-   - Saving searches and bookmarks hasn't been built yet
+   - Saving searches and bookmarks isn't fully functional yet.
    - Studying flashcards and other study features haven't been built yet
 
 ## __Built On__

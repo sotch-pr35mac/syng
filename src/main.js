@@ -10,6 +10,7 @@ const BrowserWindow = electron.BrowserWindow; //Module to create native browser 
 var mainWindow = null;
 var aboutWindow = null;
 var splashWindow = null;
+var bookmarksWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -32,7 +33,6 @@ app.on('ready', function() {
 
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
-	mainWindow.openDevTools();
 
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
@@ -41,6 +41,7 @@ app.on('ready', function() {
 		// when you should delete the corresponding element.
 		mainWindow = null;
 		aboutWindow.close();
+		bookmarksWindow.close();
 	});
 
 	// About Dialog Window
@@ -73,6 +74,7 @@ app.on('ready', function() {
 		}
 	});
 
+	// Splash Screen Window
 	var splashWindow = new BrowserWindow({
 		width: 900,
 		height: 600,
@@ -91,5 +93,32 @@ app.on('ready', function() {
 		splashWindow.close();
 
 		mainWindow.show();
+	});
+
+	// Bookmarks Window Settings
+	var bookmarksWindow = new BrowserWindow({
+		width: 950,
+		height: 420,
+		show: false
+	});
+
+	bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
+
+	ipc.on('open-bookmarks-window', function(event, args) {
+		if(!bookmarksWindow.isVisible()) {
+			bookmarksWindow.show();
+		}
+	});
+
+	bookmarksWindow.on('close', function(event) {
+		if(mainWindow != null) {
+			bookmarksWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	bookmarksWindow.on('closed', function(event) {
+		bookmarksWindow = null;
 	});
 });
