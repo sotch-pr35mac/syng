@@ -45,7 +45,7 @@ function displayResults(trans) {
 		var listing = "<li class='list-group-item'><div class='media-body'>"+charDisplay+pinyinDisplay+defDisplay+"</div></li>";
 		return listing;
 	}
-	
+
 	// Generate Expanded Search Result Content HTML
 	function genContent(simplified, traditional, pinyin, definitions, toneMarks, id) {
 		// Handle definitions content
@@ -198,4 +198,11 @@ function switchWord(id) {
 
 $(document).ready(function() {
 	initializeSearch();
+
+	// Enter key performs search
+	$("#default-search").keyup(function(event) {
+		if(event.keyCode == 13) {
+			$("#default-search-btn").click()
+		}
+	});
 });
