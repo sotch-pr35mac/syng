@@ -10,10 +10,6 @@ var franc = require("franc");
 var _ = require("underscore");
 
 function display(search_results, expanded_content) {
-	/*
-	*	TODO: Figure out loading dialog situation
-	*/
-	//$("#loading-dialog").hide();
 	$("#search-results").html(search_results);
 	$("#expanded-dict-content").html(expanded_content);
 }
@@ -23,52 +19,106 @@ function displayNone() {
 	display("", resultHtml);
 }
 
-/*
-*	TODO: Fix the display settings
-*	DESC: Add some colors, fix formatting
-*/
 function displayResults(trans) {
+	// Generate unique random ID's for the search result expanded content to be linked with the search results listing
+	function generateUUID(){
+	    var d = new Date().getTime();
+	    if(window.performance && typeof window.performance.now === "function"){
+	        d += performance.now(); //use high-precision timer if available
+	    }
+	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+	        var r = (d + Math.random()*16)%16 | 0;
+	        d = Math.floor(d/16);
+	        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+	    });
+	    return uuid;
+	}
+
+	// Generate Search Result Listing HTML
+	function genListing(simplified, traditional, pinyin, definitions, id) {
+		var defString = definitions.join(" ");
+		var defToDisplay = defString.substring(0, 9);
+		var idString = '"'+id+'"';
+		var charDisplay = "<h4 onclick='switchWord("+idString+")'><strong>"+simplified+"</strong> ("+traditional+")</h4>"
+		var pinyinDisplay = "<p>"+pinyin+"</p>";
+		var defDisplay = "<p>"+defToDisplay+"</p>";
+		var listing = "<li class='list-group-item'><div class='media-body'>"+charDisplay+pinyinDisplay+defDisplay+"</div></li>";
+		return listing;
+	}
+	
+	// Generate Expanded Search Result Content HTML
+	function genContent(simplified, traditional, pinyin, definitions, toneMarks, id) {
+		// Handle definitions content
+		var definitionsHtml = "<h3><strong>Definition:</strong></h3><ol>";
+		for(var i = 0; i < definitions.length; i++) {
+			definitionsHtml += "<li>"+definitions[i]+"</li>";
+		}
+		definitionsHtml += "</ol>";
+
+		// Handle pinyin content
+		var pinyinHtml = "<h3><strong>Pinyin:</strong></h3>"+pinyin;
+
+		// Handle character display
+		var characters = "";
+
+		// Handle color-coded Characters
+		if(simplified.length == traditional.length && traditional.length == toneMarks.length) {
+			characters += "<h1>";
+			var simpArr = simplified.split("");
+			var tradArr = traditional.split("");
+			var colorCodeArr = [];
+			for(var i = 0; i < toneMarks.length; i++) {
+				var colorCode;
+				if(toneMarks[i] == "0") {
+					colorCode = "black";
+				}
+				else if(toneMarks[i] == "1") {
+					colorCode = "blue";
+				}
+				else if(toneMarks[i] == "2") {
+					colorCode = "orange";
+				}
+				else if(toneMarks[i] == "3") {
+					colorCode = "red";
+				}
+				else if(toneMarks[i] == "4") {
+					colorCode = "green";
+				}
+				else {
+					colorCode = "black";
+				}
+
+				characters += "<a style='color: "+colorCode+"'>"+simpArr[i]+"</a>";
+				colorCodeArr.push(colorCode);
+			}
+
+			characters += " (";
+			for(var i = 0; i < tradArr.length; i++) {
+				characters += "<a style='color: "+colorCodeArr[i]+"'>"+tradArr[i]+"</a>";
+			}
+
+			characters += ")</h1>";
+		}
+		else {
+			// Handle colorless Characters
+			characters = "<h1>"+simplified+" ("+traditional+")</h1>";
+		}
+
+		var expandedContent = "<div style='display: none;' id='"+id+"'>"+characters+pinyinHtml+definitionsHtml+"</div>";
+		return expandedContent;
+	}
+
 	var resultHtml = "";
-	var expandedHtml = "";
-	var i = 0;
-	_.each(trans, function(wordList) {
-		resultHtml += "<a href='#single-word-expanded-"+i+"'><li class='single-word-listing list-group-item' data-translationID='"+i+"'><b>"+wordList[0].simplified+"</b> &nbsp; (<em>"+wordList[0].traditional+"</em>)</li></a><hr>";
-		expandedHtml += "<div class='single-word-expanded' data-translationID='"+i+"' id='single-word-expanded-"+i+"'><h4><b>"+wordList[0].simplified+"</b> &nbsp; <em>("+wordList[0].traditional+")</em></h4><br>";
-		_.each(wordList, function(word) {
-			expandedHtml += "<b>Pinyin:</b><br><p>"+word.pronunciation+"</p>";
-			expandedHtml += "<b>Definitions:</b><br><ol>";
-			for(var v = 0; v < word.definitions.length; v++) {
-				var definitionsListing = "<li>"+word.definitions[v]+"</li>";
-				expandedHtml += definitionsListing;
-			}
-			expandedHtml += "<br>";
-		});
-		expandedHtml += "<hr></div>";
-		i++;
-	});
-
-	display(resultHtml, expandedHtml);
-}
-
-function displayResultsOld(trans) {
-	var resultHtml = "<ul class='collection'><li class='collection-item'><div>Search Results</div><a href='#' ids='close-search-results' class='secondary-content modal-action modal-close' onclick='unDisplay()'><i class='material-icons'>close</i></a></li>";
+	var expandedContent = "";
 	_.each(trans, function(wordList) {
 		_.each(wordList, function(word) {
-			var itemListingSectionOne = "<li class='collection-item'><span class='title'>"+word.simplified+" ("+word.traditional+") </span><p>"+word.pronunciation+" <br>";
-			var definitionsHtml = "<ol>";
-			for(var i = 0; i < word.definitions.length; i++) {
-				var definitionListing = "<li>"+word.definitions[i]+"</li>";
-				definitionsHtml += definitionListing;
-			}
-			definitionsHtml += "</ol>";
-			var itemListingSectionTwo = "<a href='#' class='secondary-content unsupported-feature'><i class='material-icons'>grade</i></a></li>";
-			var itemListing = itemListingSectionOne+definitionsHtml+itemListingSectionTwo;
-			resultHtml += itemListing;
+			var id = generateUUID();
+			resultHtml += genListing(word.simplified, word.traditional, word.pronunciation, word.definitions, id);
+			expandedContent += genContent(word.simplified, word.traditional, word.pronunciation, word.definitions, word.toneMarks, id);
 		});
 	});
-	resultHtml += "</ul>";
 
-	display(resultHtml);
+	display(resultHtml, expandedContent);
 }
 
 function initializeSearch() {
@@ -131,6 +181,19 @@ function initializeSearch() {
 	/*$("#clear-search").click(function() {
 		$("#search-bar").val("");
 	});*/
+}
+
+function switchWord(id) {
+	if(window.currentWord == undefined || window.currentWord == null) {
+		window.currentWord = id;
+		$("#"+id).show();
+	}
+	else {
+		$("#"+window.currentWord).hide();
+		window.currentWord = id;
+		$("#"+id).show();
+	}
+	console.log(id);
 }
 
 $(document).ready(function() {

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en" ngapp="Syng">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
+
+  <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
+
+  <link rel="stylesheet" href="../style/css/photon.min.css">
+
+  <style>
+  		body {
+			background: #EF1D41;
+			background: -webkit-linear-gradient(#EF2B1E, #EF1063);
+			background:         linear-gradient(#EF2B1E, #EF1063);
+		}
+
+		#giant-logo {
+			margin-top: 75px;
+			font-style: oblique;
+			font-weight: bold;
+			font-family: 'Arial', sans-serif;
+			background: -webkit-linear-gradient(#F8F7F7, #D0CFCF);
+ 				-webkit-background-clip: text;
+ 				-webkit-text-fill-color: transparent;
+			font-size: 48pt;
+		}
+  </style>
+</head>
+
+<body>
+	<center>
+		<h1 id="giant-logo">Syng | 词应</h1>
+		<br>
+		<br>
+		<style type='text/css'> width: 100%;
+		@-webkit-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-webkit-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-moz-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-ms-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-moz-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-webkit-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@-o-keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		@keyframes uil-ripple {
+		  0% {
+		    width: 0;
+		    height: 0;
+		    opacity: 0;
+		    margin: 0 0 0 0;
+		  }
+		  33% {
+		    width: 44%;
+		    height: 44%;
+		    margin: -22% 0 0 -22%;
+		    opacity: 1;
+		  }
+		  100% {
+		    width: 88%;
+		    height: 88%;
+		    margin: -44% 0 0 -44%;
+		    opacity: 0;
+		  }
+		}
+		.uil-ripple-css {
+		  background: none;
+		  position: relative;
+		  width: 200px;
+		  height: 200px;
+		}
+		.uil-ripple-css div {
+		  position: absolute;
+		  top: 50%;
+		  left: 50%;
+		  margin: 0;
+		  width: 0;
+		  height: 0;
+		  opacity: 0;
+		  border-radius: 50%;
+		  border-width: 6px;
+		  border-style: solid;
+		  -ms-animation: uil-ripple 3s ease-out infinite;
+		  -moz-animation: uil-ripple 3s ease-out infinite;
+		  -webkit-animation: uil-ripple 3s ease-out infinite;
+		  -o-animation: uil-ripple 3s ease-out infinite;
+		  animation: uil-ripple 3s ease-out infinite;
+		}
+		.uil-ripple-css div:nth-of-type(1) {
+		  border-color: #cec9c9;
+		}
+		.uil-ripple-css div:nth-of-type(2) {
+		  border-color: #cec9c9;
+		  -ms-animation-delay: 1.5s;
+		  -moz-animation-delay: 1.5s;
+		  -webkit-animation-delay: 1.5s;
+		  -o-animation-delay: 1.5s;
+		  animation-delay: 1.5s;
+		}
+		 </style> <div class='uil-ripple-css' style='transform:scale(0.6);'><div></div><div></div></div>
+		 <h2 style="color: #F8F7F7" id="loading-text">Loading...</h2>
+       <h5 style="margin-top: -5px; color: #F8F7F7" id="loading-messages"></h5>
+		 <h5 style="margin-top: -5px; color: #F8F7F7">(This may take a while)</h5>
+	</center>
+
+	<!-- Load Scripts -->
+	<script src="../src/splash.js" type="text/javascript"></script>
+</body>
+
+</html>

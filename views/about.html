@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" ngapp="Syng">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
+
+  <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
+
+  <link rel="stylesheet" href="../style/css/photon.min.css">
+</head>
+
+<body style="padding-right: 15px; padding-left: 15px; margin-right: auto; margin-left: auto; background: #F5F5F4; overflow-y: scroll;">
+	<br>
+	<center>
+		<img src="../style/img/syng-logo-round.png" height="100px" width="100px">
+		<h3 style="margin-top: -5px;">Syng | 词应</h3>
+		<h6 style="margin-top: -5px">Dictionary App | 词典应用</h6>
+		<p style="margin-top: -5px">v0.0.3 (alpha)</p>
+	</center>
+	<br>
+	<p>
+		Syng is a free, open source, Chinese-to-English dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.
+		To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng.
+		Syng is a stylized spelling of CiYing, the pinyin for 词应, 词应 has been shortened from 词典应用, literally translating to "Dictionary App".
+		Syng relies on many libraries and projects. Currently, Syng would not work if not for:
+		<ul>
+			<li><b>Electron:</b> Framework for Native Cross-Platform Support</li>
+			<li><b>CC-CEDICT:</b> Chinese Dictionary Database</li>
+			<li><b>Photon:</b> User Interface</li>
+			<li><b>node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>
+			<li><b>Franc:</b> Language Detection for Search</li>
+		</ul>
+	</p>
+</body>
+
+</html>

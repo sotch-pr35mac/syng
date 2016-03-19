@@ -1,5 +1,6 @@
-# __词应__ (Syng)
-#### 词典应用 (Dictionary App) v0.0.2
+# __Syng | 词应__
+##### Dictionary App | 词典应用
+##### v0.0.3 (alpha)
 
 ---
 
@@ -27,7 +28,7 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 #### __What's Working__
    - Electron App Runs
    - User Interface
-   - Basic Search Functionality (for Characters, Pinyin, and English)
+   - Search (for Characters, Pinyin, and English)
 
 #### __What's Not__
    - Saving searches and bookmarks hasn't been built yet
@@ -39,11 +40,11 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - [CC-CEDICT](http://www.mdbg.net/chindict/chindict.php?page=cedict)
       - Chinese Dictionary Database
       - The file has been modified to JSON
-   - [Materialize](http://materializecss.com/)
-      - A Material Design for the User Interface
-   - Modified Version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
+   - [Photon](http://photonkit.com/)
+      - User Interface
+   - Heavily modified version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
       - Node.js framework for CC-CEDICT Dictionary
-      - Modified to work with `tingoDb` instead of `sqlite`, support English search functionality, and use of hashtables to perform search
+      - Modified to work using hashtables and support English search functionality.
    - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
 
