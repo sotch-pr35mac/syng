@@ -54,7 +54,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					var toneMarks = [];
 					for(var e = 0; e < individualWords.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "") {
+						if(tone == NaN) {
 							tone = "0";
 						}
 						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
@@ -102,7 +102,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					var toneMarks = [];
 					for(var e = 0; e < individualWords.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "") {
+						if(tone == NaN) {
 							tone = "0";
 						}
 						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
@@ -155,7 +155,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					var toneMarks = [];
 					for(var e = 0; e < individualWords.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "") {
+						if(tone == NaN) {
 							tone = "0";
 						}
 						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
@@ -200,7 +200,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					var toneMarks = [];
 					for(var e = 0; e < individualWords.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "") {
+						if(tone == NaN) {
 							tone = "0";
 						}
 						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {

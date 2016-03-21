@@ -8,6 +8,17 @@
 var cedict = require("../src/engine.js");
 var franc = require("franc");
 var _ = require("underscore");
+var tingo = require('tingodb')();
+
+var db = new tingo.Db('./src/db/syng', {});
+var bookmarksDb = db.collection('bookmarks');
+
+/*
+*	TODO: Finish this function
+*/
+function addToBookmarks(traditional, simplified, pronunciation, english, toneMarks) {
+
+}
 
 function display(search_results, expanded_content) {
 	$("#search-results").html(search_results);
