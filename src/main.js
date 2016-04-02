@@ -33,7 +33,6 @@ app.on('ready', function() {
 
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
-	mainWindow.openDevTools();
 
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
@@ -43,6 +42,7 @@ app.on('ready', function() {
 		mainWindow = null;
 		aboutWindow.close();
 		bookmarksWindow.close();
+		lgChars.close();
 	});
 
 	// About Dialog Window
@@ -122,4 +122,36 @@ app.on('ready', function() {
 	bookmarksWindow.on('closed', function(event) {
 		bookmarksWindow = null;
 	});
+
+	// Large Characters Window
+	var lgChars = new BrowserWindow({
+		width: 500,
+		height: 500,
+		show: false,
+		resizable: false
+	});
+
+	lgChars.loadURL('file://'+__dirname+'/../views/lgChar.html');
+
+	ipc.on('show-large-characters', function(event, args) {
+		lgChars.send('load-new-characters', args);
+
+		if(!lgChars.isVisible()) {
+			lgChars.show();
+		}
+	});
+
+	lgChars.on('close', function(event) {
+		if(mainWindow != null) {
+			lgChars.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	lgChars.on('closed', function(event) {
+		lgChars = null;
+	});
+
+	lgChars.openDevTools();
 });

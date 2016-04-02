@@ -9,6 +9,7 @@ var cedict = require("../src/engine.js");
 var franc = require("franc");
 var _ = require("underscore");
 var tingo = require('tingodb')();
+var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 
 var db = new tingo.Db('./src/db/syng', {});
 var bookmarksDb = db.collection('bookmarks');
@@ -16,8 +17,17 @@ var bookmarksDb = db.collection('bookmarks');
 /*
 *	TODO: Finish this function
 */
-function addToBookmarks(traditional, simplified, pronunciation, english, toneMarks) {
+function addToBookmarks(traditional, simplified, pinyin, definitions, toneMarks) {
 
+}
+
+function viewLargeChars(simplified, traditional) {
+	var lgObj = {
+		traditional: traditional,
+		simplified: simplified
+	};
+
+	ipc.send('show-large-characters', lgObj);
 }
 
 function display(search_results, expanded_content) {
@@ -115,7 +125,15 @@ function displayResults(trans) {
 			characters = "<h1>"+simplified+" ("+traditional+")</h1>";
 		}
 
-		var expandedContent = "<div style='display: none;' id='"+id+"'>"+characters+pinyinHtml+definitionsHtml+"</div>";
+		// Create the action buttons
+		var simp = '"'+simplified+'"';
+		var trad = '"'+traditional+'"';
+		var pin = '"'+pinyin+'"';
+		var def = '"'+definitions+'"';
+		var tnm = '"'+toneMarks+'"';
+		var actionsButton = "<div class='btn-group pull-right'><button onclick='addToBookmarks("+simp+", "+trad+", "+pin+", "+def+", "+tnm+")' class='btn btn-default btn-large hint--bottom' data-hint='Add to Bookmarks'><span class='icon icon-plus-circled'></span></button><button onclick='viewLargeChars("+simp+", "+trad+")' class='btn btn-default btn-large hint--left' data-hint='View Large Characters'><span class='icon icon-popup'></span></button></div>";
+
+		var expandedContent = "<div style='display: none;' id='"+id+"'>"+actionsButton+characters+pinyinHtml+definitionsHtml+"</div>";
 		return expandedContent;
 	}
 

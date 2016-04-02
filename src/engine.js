@@ -395,9 +395,9 @@ module.exports.searchByEnglish = function(str, cb) {
 	var searchableTerms = str.split(" "); // An array of the terms to search for
 	var infiniteCheck = 0; // Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 	console.log(searchableTerms);
-	while(str.length > 0 && infiniteCheck < 4000)  {
+	while(searchableTerms.length > 0 && infiniteCheck < 4000)  {
 		// Check for 4, 3, and 2 word phrases or definitions
-		if(searchableTerms.length >= 4 && englishHashtable.containsKey(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchabeTerms[3])) {
+		if(searchableTerms.length >= 4 && englishHashtable.containsKey(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3])) {
 			var compoundWord = englishHashtable.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 4);
