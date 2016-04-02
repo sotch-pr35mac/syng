@@ -1,0 +1,9 @@
+{"k":"0000000078","o":"0000000160","v":"001"}
+{"_id":2,"_uid":2,"_dt":1459627437891,"_s":"192de068da2bf1a6414a95b0bb67fa02"}
+{"traditional":"你好","simplified":"你好","pronunciation":"nǐ hǎo","definitions":"Hello!,Hi!,How are you?","toneMarks":"3,3","_id":{"$wrap":"$oid","v":2}}
+{"k":"0000000078","o":"0000000160","v":"001"}
+{"_id":3,"_uid":3,"_dt":1459627807390,"_s":"19553f47762f4e9486d29f6fbee2e88a"}
+{"traditional":"你好","simplified":"你好","pronunciation":"nǐ hǎo","definitions":"Hello!,Hi!,How are you?","toneMarks":"3,3","_id":{"$wrap":"$oid","v":3}}
+{"k":"0000000078","o":"0000000160","v":"001"}
+{"_id":4,"_uid":4,"_dt":1459629108760,"_s":"0b7fa59f6f351e6b470370f97793b6d9"}
+{"traditional":"你好","simplified":"你好","pronunciation":"nǐ hǎo","definitions":"Hello!,Hi!,How are you?","toneMarks":"3,3","_id":{"$wrap":"$oid","v":4}}

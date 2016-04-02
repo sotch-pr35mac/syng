@@ -152,6 +152,4 @@ app.on('ready', function() {
 	lgChars.on('closed', function(event) {
 		lgChars = null;
 	});
-
-	lgChars.openDevTools();
 });

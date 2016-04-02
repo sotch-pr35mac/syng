@@ -10,6 +10,7 @@ var franc = require("franc");
 var _ = require("underscore");
 var tingo = require('tingodb')();
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
+const dialog = require('electron').remote.dialog;
 
 var db = new tingo.Db('./src/db/syng', {});
 var bookmarksDb = db.collection('bookmarks');
@@ -17,8 +18,25 @@ var bookmarksDb = db.collection('bookmarks');
 /*
 *	TODO: Finish this function
 */
-function addToBookmarks(traditional, simplified, pinyin, definitions, toneMarks) {
-
+function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
+	var dbObj = {
+		traditional: traditional,
+		simplified: simplified,
+		pronunciation: pinyin,
+		definitions: definitions,
+		toneMarks: toneMarks
+	};
+	console.log("This function gets called");
+	bookmarksDb.insert(dbObj, function(err, res) {
+		if(err) {
+			if(confirm("There was an error saving the word to your bookmarks. Would you like to report this error? Error = "+err)) {
+				require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/issues');
+			}
+		}
+		else {
+			alert("The word was successfully saved to your bookmarks!");
+		}
+	});
 }
 
 function viewLargeChars(simplified, traditional) {
