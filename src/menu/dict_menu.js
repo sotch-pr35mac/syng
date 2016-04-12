@@ -35,6 +35,27 @@ var template = [
 	 ]
   },
   {
+    label: 'Bookmarks',
+    submenu: [
+      {
+         label: 'Refresh',
+         //accelerator: 'CmdOrCtrl+Shift+R',
+         role: 'reload',
+         click: function() {
+            ipc.send('refresh-bookmarks-window');
+         }
+      },
+      {
+         label: 'Show',
+         accelerator: 'CmdOrCtrl+B',
+         role: 'bookmarks',
+         click: function() {
+            ipc.send("open-bookmarks-window");
+         }
+      }
+   ]
+  },
+  {
 	 label: 'Help',
 	 role: 'help',
 	 submenu: [

@@ -7,3 +7,12 @@
 {"k":"0000000078","o":"0000000160","v":"001"}
 {"_id":4,"_uid":4,"_dt":1459629108760,"_s":"0b7fa59f6f351e6b470370f97793b6d9"}
 {"traditional":"你好","simplified":"你好","pronunciation":"nǐ hǎo","definitions":"Hello!,Hi!,How are you?","toneMarks":"3,3","_id":{"$wrap":"$oid","v":4}}
+{"k":"0000000078","o":"0000000166","v":"001"}
+{"_id":5,"_uid":5,"_dt":1459629258243,"_s":"290ff02eb7804c7f02d1b793fddb186c"}
+{"traditional":"歷時","simplified":"历时","pronunciation":"lì shí","definitions":"to last,to take (time),period","toneMarks":"4,2","_id":{"$wrap":"$oid","v":5}}
+{"k":"0000000078","o":"0000000151","v":"001"}
+{"_id":6,"_uid":6,"_dt":1459629334474,"_s":"cd499a2ecf4a478ad85609f0b7a5baf8"}
+{"traditional":"礫石","simplified":"砾石","pronunciation":"lì shí","definitions":"gravel,pebbles","toneMarks":"4,2","_id":{"$wrap":"$oid","v":6}}
+{"k":"0000000078","o":"0000000214","v":"001"}
+{"_id":7,"_uid":7,"_dt":1460250962194,"_s":"1e92727ceb504671916a9ce8893949ca"}
+{"traditional":"中樞","simplified":"中枢","pronunciation":"zhōng shū","definitions":"center,backbone,hub (e.g. of transport network),the central administration","toneMarks":"1,1","_id":{"$wrap":"$oid","v":7}}

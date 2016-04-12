@@ -35,6 +35,7 @@ function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks)
 		}
 		else {
 			alert("The word was successfully saved to your bookmarks!");
+			ipc.send('refresh-bookmarks-window');
 		}
 	});
 }
@@ -78,7 +79,7 @@ function displayResults(trans) {
 		var defString = definitions.join(" ");
 		var defToDisplay = defString.substring(0, 9);
 		var idString = '"'+id+'"';
-		var charDisplay = "<h4 onclick='switchWord("+idString+")'><strong>"+simplified+"</strong> ("+traditional+")</h4>"
+		var charDisplay = "<h4 onclick='switchWord("+idString+")'><strong>"+simplified+"</strong> ("+traditional+")</h4>";
 		var pinyinDisplay = "<p>"+pinyin+"</p>";
 		var defDisplay = "<p>"+defToDisplay+"</p>";
 		var listing = "<li class='list-group-item'><div class='media-body'>"+charDisplay+pinyinDisplay+defDisplay+"</div></li>";

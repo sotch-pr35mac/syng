@@ -104,11 +104,16 @@ app.on('ready', function() {
 	});
 
 	bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
+	bookmarksWindow.openDevTools();
 
 	ipc.on('open-bookmarks-window', function(event, args) {
 		if(!bookmarksWindow.isVisible()) {
 			bookmarksWindow.show();
 		}
+	});
+
+	ipc.on('refresh-bookmarks-window', function(event, args) {
+		bookmarksWindow.send('refresh-page', args);
 	});
 
 	bookmarksWindow.on('close', function(event) {
