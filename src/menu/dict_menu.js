@@ -29,6 +29,7 @@ var template = [
         accelerator: 'CmdOrCtrl+B',
 		  role: 'bookmarks',
         click: function() {
+           ipc.send("refresh-bookmarks-window");
            ipc.send("open-bookmarks-window");
          }
 		},
@@ -50,6 +51,7 @@ var template = [
          accelerator: 'CmdOrCtrl+B',
          role: 'bookmarks',
          click: function() {
+            ipc.send("refresh-bookmarks-window");
             ipc.send("open-bookmarks-window");
          }
       }

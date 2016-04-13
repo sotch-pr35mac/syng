@@ -26,7 +26,6 @@ function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks)
 		definitions: definitions,
 		toneMarks: toneMarks
 	};
-	console.log("This function gets called");
 	bookmarksDb.insert(dbObj, function(err, res) {
 		if(err) {
 			if(confirm("There was an error saving the word to your bookmarks. Would you like to report this error? Error = "+err)) {
