@@ -14,7 +14,6 @@ var template = [
 	 submenu: [
 		{
 		  label: 'About',
-		  role: 'about',
         click: function() {
            ipc.send("open-about-window");
          }
@@ -27,7 +26,6 @@ var template = [
 		{
 		  label: 'Bookmarks',
         accelerator: 'CmdOrCtrl+B',
-		  role: 'bookmarks',
         click: function() {
            ipc.send("refresh-bookmarks-window");
            ipc.send("open-bookmarks-window");
@@ -35,8 +33,7 @@ var template = [
 		},
       {
          label: 'Study',
-         accelerator: 'CmdOrCtrl+N',
-         role: 'study',
+         accelerator: 'CmdOrCtrl+L',
          click: function() {
             ipc.send("open-study-window");
          }
@@ -49,7 +46,6 @@ var template = [
       {
          label: 'Refresh',
          //accelerator: 'CmdOrCtrl+Shift+R',
-         role: 'reload',
          click: function() {
             ipc.send('refresh-bookmarks-window');
          }
@@ -57,7 +53,6 @@ var template = [
       {
          label: 'Show',
          accelerator: 'CmdOrCtrl+B',
-         role: 'bookmarks',
          click: function() {
             ipc.send("refresh-bookmarks-window");
             ipc.send("open-bookmarks-window");
@@ -70,8 +65,7 @@ var template = [
     submenu: [
       {
          label: 'Show',
-         accelerator: 'CmdOrCtrl+N',
-         role: 'study',
+         accelerator: 'CmdOrCtrl+L',
          click: function() {
             ipc.send("open-study-window");
          }
@@ -87,6 +81,21 @@ var template = [
 		  //accelerator: 'CmdOrCtrl+R',
 		  click: function() { require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/issues') }
 		},
+      {
+         type: 'separator'
+      },
+      {
+         label: 'View Syng License',
+         click: function() { require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/blob/master/LICENSE.md') }
+      },
+      {
+         label: 'View CC-CEDICT License',
+         click: function() { require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/blob/master/License-CC-CEDICT.md') }
+      },
+      {
+         label: 'View Node-CC-CEDICT License',
+         click: function() { require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/blob/master/License-Node-CC-CEDICT.md') }
+      }
 	 ]
   },
 ];
