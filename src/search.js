@@ -15,9 +15,6 @@ const dialog = require('electron').remote.dialog;
 var db = new tingo.Db('./src/db/syng', {});
 var bookmarksDb = db.collection('bookmarks');
 
-/*
-*	TODO: Finish this function
-*/
 function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
 	var dbObj = {
 		traditional: traditional,

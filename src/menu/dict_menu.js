@@ -33,6 +33,14 @@ var template = [
            ipc.send("open-bookmarks-window");
          }
 		},
+      {
+         label: 'Study',
+         accelerator: 'CmdOrCtrl+N',
+         role: 'study',
+         click: function() {
+            ipc.send("open-study-window");
+         }
+      }
 	 ]
   },
   {
@@ -53,6 +61,19 @@ var template = [
          click: function() {
             ipc.send("refresh-bookmarks-window");
             ipc.send("open-bookmarks-window");
+         }
+      }
+   ]
+  },
+  {
+    label: 'Study',
+    submenu: [
+      {
+         label: 'Show',
+         accelerator: 'CmdOrCtrl+N',
+         role: 'study',
+         click: function() {
+            ipc.send("open-study-window");
          }
       }
    ]

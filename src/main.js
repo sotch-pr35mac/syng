@@ -43,6 +43,7 @@ app.on('ready', function() {
 		aboutWindow.close();
 		bookmarksWindow.close();
 		lgChars.close();
+		studyWindow.close();
 	});
 
 	// About Dialog Window
@@ -104,7 +105,6 @@ app.on('ready', function() {
 	});
 
 	bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
-	bookmarksWindow.openDevTools();
 
 	ipc.on('open-bookmarks-window', function(event, args) {
 		if(!bookmarksWindow.isVisible()) {
@@ -156,5 +156,32 @@ app.on('ready', function() {
 
 	lgChars.on('closed', function(event) {
 		lgChars = null;
+	});
+
+	// Handle Study Window Here
+	var studyWindow = new BrowserWindow({
+		width: 600,
+		height: 350,
+		show: false
+	});
+
+	studyWindow.loadURL('file://'+__dirname+'/../views/study.html');
+
+	ipc.on("open-study-window", function(event, args) {
+		if(!studyWindow.isVisible()) {
+			studyWindow.show();
+		}
+	});
+
+	studyWindow.on('close', function(event) {
+		if(mainWindow != null) {
+			studyWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	studyWindow.on('closed', function(event) {
+		studyWindow = null;
 	});
 });
