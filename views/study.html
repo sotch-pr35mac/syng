@@ -4,25 +4,41 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-   <meta name="viewport" content="width=device-width, initial-scale=1">
-   <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-   <title>Syng</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<title>Syng</title>
 
-   <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
+	<script>
+		window.$ = window.jQuery = require("../src/jquery.min.js");
+	</script>
 
-   <!-- Photon Files -->
-   <link rel="stylesheet" href="../style/css/photon.css">
+	<!-- Photon Files -->
+	<link rel="stylesheet" href="../style/css/photon.css">
 
 	<link rel="stylesheet" href="../style/css/study.css">
+
+	<link rel="stylesheet" href="../style/css/buttons.css">
 </head>
 
-<body>
-	<div class="window">
-		<!-- Main Content -->
-		<div class="window-content">
-			
-		</div>
-	</div>
+<body style="padding-right: 15px; padding-left: 15px; margin-right: auto; margin-left: auto; background: #F5F5F4; overflow-y: scroll;">
+	<br>
+	<br>
+	<br>
+	<center>
+		<button class="button button-glow button-rounded button-raised button-primary button-giant" id="generateFlashcardsButton">
+			<span class="icon icon-docs"></span>
+			&nbsp;
+			Generate Flashcards
+		</button>
+		<br>
+		<br>
+		<br>
+		<button class="button button-glow button-rounded button-raised button-caution button-giant" id="generateTestButton">
+			<span class="icon icon-gauge"></span>
+			&nbsp;
+			Generate Test
+		</button>
+	</center>
 
 	<!-- Load Javascript Here -->
 	<script src="../src/study.js"></script>

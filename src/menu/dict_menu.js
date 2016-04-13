@@ -33,7 +33,6 @@ var template = [
 		},
       {
          label: 'Study',
-         accelerator: 'CmdOrCtrl+L',
          click: function() {
             ipc.send("open-study-window");
          }
@@ -64,8 +63,21 @@ var template = [
     label: 'Study',
     submenu: [
       {
+         label: "Generate Flashcards",
+         accelerator: "CmdOrCtrl+L",
+         click: function() {
+            ipc.send("generate-flashcards");
+         }
+      },
+      {
+         label: "Generate Test",
+         accelerator: "CmdOrCtrl+T",
+         click: function() {
+            ipc.send("generate-test");
+         }
+      },
+      {
          label: 'Show',
-         accelerator: 'CmdOrCtrl+L',
          click: function() {
             ipc.send("open-study-window");
          }

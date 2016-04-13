@@ -11,6 +11,10 @@ var mainWindow = null;
 var aboutWindow = null;
 var splashWindow = null;
 var bookmarksWindow = null;
+var studyWindow = null;
+var flashcardsWindow = null;
+var testWindow = null;
+var lgChars = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -44,10 +48,12 @@ app.on('ready', function() {
 		bookmarksWindow.close();
 		lgChars.close();
 		studyWindow.close();
+		flashcardsWindow.close();
+		testWindow.close();
 	});
 
 	// About Dialog Window
-	var aboutWindow = new BrowserWindow({
+	aboutWindow = new BrowserWindow({
 		width: 500,
 		height: 500,
 		show: false,
@@ -77,7 +83,7 @@ app.on('ready', function() {
 	});
 
 	// Splash Screen Window
-	var splashWindow = new BrowserWindow({
+	splashWindow = new BrowserWindow({
 		width: 900,
 		height: 600,
 		show: true,
@@ -98,7 +104,7 @@ app.on('ready', function() {
 	});
 
 	// Bookmarks Window Settings
-	var bookmarksWindow = new BrowserWindow({
+	bookmarksWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
 		show: false
@@ -129,7 +135,7 @@ app.on('ready', function() {
 	});
 
 	// Large Characters Window
-	var lgChars = new BrowserWindow({
+	lgChars = new BrowserWindow({
 		width: 500,
 		height: 500,
 		show: false,
@@ -159,7 +165,7 @@ app.on('ready', function() {
 	});
 
 	// Handle Study Window Here
-	var studyWindow = new BrowserWindow({
+	studyWindow = new BrowserWindow({
 		width: 600,
 		height: 350,
 		show: false
@@ -173,6 +179,12 @@ app.on('ready', function() {
 		}
 	});
 
+	ipc.on("close-study-window", function(event, args){
+		if(studyWindow.isVisible()) {
+			studyWindow.hide();
+		}
+	});
+
 	studyWindow.on('close', function(event) {
 		if(mainWindow != null) {
 			studyWindow.hide();
@@ -183,5 +195,64 @@ app.on('ready', function() {
 
 	studyWindow.on('closed', function(event) {
 		studyWindow = null;
+	});
+
+	// Flashcards Window
+	flashcardsWindow = new BrowserWindow({
+		width: 950,
+		height: 420,
+		show: false
+	});
+
+	flashcardsWindow.loadURL('file://'+__dirname+"/../views/flashcards.html");
+	flashcardsWindow.openDevTools();
+
+	flashcardsWindow.on('close', function(event) {
+		if(mainWindow != null) {
+			flashcardsWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	flashcardsWindow.on('closed', function(event) {
+		flashcardsWindow = null;
+	});
+
+	ipc.on('generate-flashcards', function(event, args) {
+		if(!flashcardsWindow.isVisible()) {
+			flashcardsWindow.show();
+		}
+
+		flashcardsWindow.send('generate-new-set');
+	});
+
+	// Testing Window
+	testWindow = new BrowserWindow({
+		width: 950,
+		height: 420,
+		show: false
+	});
+
+	testWindow.loadURL('file://'+__dirname+"/../views/test.html");
+
+	testWindow.on('close', function(event, args) {
+		if(mainWindow != null) {
+			testWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	testWindow.on('closed', function(event) {
+		testWindow = null;
+	});
+
+	ipc.on('generate-test', function(event, args) {
+		if(!testWindow.isVisible()) {
+			testWindow.show();
+		}
+
+		testWindow.send('generate-new-test');
 	});
 });
