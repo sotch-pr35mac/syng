@@ -69,13 +69,13 @@ var template = [
             ipc.send("generate-flashcards");
          }
       },
-      {
+      /*{
          label: "Generate Test",
          accelerator: "CmdOrCtrl+T",
          click: function() {
             ipc.send("generate-test");
          }
-      },
+      },*/
       {
          label: 'Show',
          click: function() {
