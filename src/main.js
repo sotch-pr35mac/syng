@@ -199,13 +199,12 @@ app.on('ready', function() {
 
 	// Flashcards Window
 	flashcardsWindow = new BrowserWindow({
-		width: 950,
-		height: 420,
+		width: 600,
+		height: 400,
 		show: false
 	});
 
 	flashcardsWindow.loadURL('file://'+__dirname+"/../views/flashcards.html");
-	flashcardsWindow.openDevTools();
 
 	flashcardsWindow.on('close', function(event) {
 		if(mainWindow != null) {

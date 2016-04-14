@@ -13,8 +13,6 @@
    <!-- Photon Files -->
    <link rel="stylesheet" href="../style/css/photon.css">
 
-   <link rel="stylesheet" href="../style/css/hint.min.css">
-
    <link rel="stylesheet" href="../style/css/flashcards.css" />
 
    <!-- Menu -->
@@ -24,8 +22,41 @@
 <body>
 	<div class="window">
 		<!-- Main Content -->
+		<div>
+			<center>
+				<br>
+				<br>
+				<h1 id="character-card" style="font-size: 48pt"></h1>
+				<h1 id="pinyin-card" style="font-size: 48pt; display: none;"></h1>
+			</center>
+			<p id="definitions-card" style="display: none;"></p>
+		</div>
+
+		<!-- We have window content for formatting reasons -->
+		<!-- but because of weird photonkit styling it won't let us center -->
+		<!-- so we aren't going to put any content inside of it -->
 		<div class="window-content">
 		</div>
+
+		<footer class="toolbar tollbar-footer">
+			<div class="toolbar-actions">
+				<button class="btn btn-default btn-large pull-left" id="back-btn">
+					<!-- <span class="icon icon-left-open"></span> -->
+					Previous
+				</button>
+
+				<div class="btn-group pull-right">
+					<button class="btn btn-default btn-large" id="flip-card-btn">
+						<span class="icon icon-arrows-ccw"></span>
+						&nbsp;
+						Flip Card
+					</button>
+					<button class="btn btn-default btn-large" id="next-btn">
+						Next
+					</button>
+				</div>
+			</div>
+		</footer>
 	</div>
 
 	<script type="text/javascript" src="../src/flashcards.js"></script>
