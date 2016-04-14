@@ -28,9 +28,10 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 #### __What's Working__
    - Search (for Characters, Pinyin, and English)
    - Saving searches to Bookmarks
+   - Studying Flashcards
 
 #### __What's Not__
-   - Studying flashcards and other study features haven't been built yet
+   - Generating tests have not been built yet
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
