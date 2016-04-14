@@ -1,9 +1,0 @@
-{"k":"0000000078","o":"0000000185","v":"001"}
-{"_id":2,"_uid":2,"_dt":1460672505101,"_s":"92acc24a13734122253d74dad2c061c3"}
-{"traditional":"人山人海","simplified":"人山人海","pronunciation":"rén shān rén hǎi","definitions":"multitude,vast crowd","toneMarks":"2,1,2,3","_id":{"$wrap":"$oid","v":2}}
-{"k":"0000000078","o":"0000000160","v":"001"}
-{"_id":3,"_uid":3,"_dt":1460673505286,"_s":"19553f47762f4e9486d29f6fbee2e88a"}
-{"traditional":"你好","simplified":"你好","pronunciation":"nǐ hǎo","definitions":"Hello!,Hi!,How are you?","toneMarks":"3,3","_id":{"$wrap":"$oid","v":3}}
-{"k":"0000000078","o":"0000000170","v":"001"}
-{"_id":4,"_uid":4,"_dt":1460673989752,"_s":"9c09ac2afcb090ffef664f81ba588e7b"}
-{"traditional":"考試","simplified":"考试","pronunciation":"kǎo shì","definitions":"to take an exam,exam,CL:次[ci4]","toneMarks":"3,4","_id":{"$wrap":"$oid","v":4}}
