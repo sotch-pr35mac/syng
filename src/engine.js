@@ -28,7 +28,7 @@ var englishIsEmpty = englishHashtable.isEmpty();
 
 if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
-	$.getJSON("../src/db/cc-cedict.json", function(wordList) {
+	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
 		console.log("Loading...");
 
 		for(var i = 0; i < wordList.length - 1; i++) {

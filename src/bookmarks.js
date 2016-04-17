@@ -15,7 +15,7 @@ ipc.on("refresh-page", function(event, args) {
 });
 
 function initializeBookmarks() {
-   var db = new tingo.Db("./src/db/syng", {});
+   var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
    var bookmarksDb = db.collection("bookmarks");
 
     var displayBookmarks = false;
@@ -137,7 +137,7 @@ function switchWord(id) {
 }
 
 function removeFromBookmarks(id) {
-   var db = new tingo.Db("./src/db/syng", {});
+   var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
    var bookmarksDb = db.collection("bookmarks");
 
 	bookmarksDb.remove({_id: id});

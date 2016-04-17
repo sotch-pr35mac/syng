@@ -5,14 +5,15 @@
 *	@Created			:: Jan 27, 2016
 */
 
-var cedict = require("../src/engine.js");
+var path = require('path');
+var cedict = require(path.join(__dirname, "../src/engine.js"));
 var franc = require("franc");
 var _ = require("underscore");
 var tingo = require('tingodb')();
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 const dialog = require('electron').remote.dialog;
 
-var db = new tingo.Db('./src/db/syng', {});
+var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
 var bookmarksDb = db.collection('bookmarks');
 
 function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {

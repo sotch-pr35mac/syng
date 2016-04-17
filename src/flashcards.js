@@ -7,6 +7,7 @@
 
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 var tingo = require("tingodb")(); // Mongo-style database
+var path = require('path');
 
 var cardSet = new Array();
 var iterator = 0;
@@ -30,7 +31,7 @@ function displayCard(traditional, simplified, pinyin, definitions) {
 }
 
 function initializeCards() {
-	var db = new tingo.Db("./src/db/syng", {});
+	var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
    var bookmarksDb = db.collection("bookmarks");
 
 	bookmarksDb.find().toArray(function(err, bookmarksArr) {
