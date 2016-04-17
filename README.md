@@ -1,6 +1,6 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v0.1.0 (beta)
+##### v0.1.1 (beta)
 
 ---
 

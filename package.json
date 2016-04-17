@@ -1,6 +1,6 @@
 {
   "name": "Syng",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "repository": "http://github.com/sotch-pr35mac/syng",
   "license": "Creative Commons Attribution-ShareAlike 3.0 Unported License",
   "main": "src/main.js",
