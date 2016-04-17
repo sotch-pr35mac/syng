@@ -1,5 +1,5 @@
 const remote = require('electron').remote;
-const ipc = require('electron').ipcRenderer;
+var ipc = require('electron').ipcRenderer;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 
