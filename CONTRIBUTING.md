@@ -5,7 +5,7 @@
 4. Submit a pull request
 
 ## Reporting an Issue or Enhancement
-Please be as detailed as possible. Provide errors and/or logs where possible. For including enhancements, please describe them as clearly as possible and provide links to similair features elsewhere (if possible). 
+Please be as detailed as possible. Provide errors and/or logs where possible. For including enhancements, please describe them as clearly as possible and provide links to similar features elsewhere (if possible). 
 Be sure to include the version of Syng you are using, your operating system and architecture, and any other information about your system that may be relevant.
 
 ## Documentation / Code Clarity
