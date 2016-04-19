@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.1.2] - 2016-04-18
+### Fixed
+- Fixed Issue #21 学 simplified character not searchable
+
 ## [0.1.1] - 2016-04-17
 ### Fixed
 - Fixed Issue #28 Path error when adding words to bookmarks.
