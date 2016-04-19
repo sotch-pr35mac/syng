@@ -320,8 +320,13 @@ module.exports.searchByChinese = function(str, cb) {
 	var traditional = str.slice().split("");
 
 	for(var i = 0; i < str.length; i++) {
-		simplified[i] = cnchars.toSimplifiedChar(str[i]);
-		traditional[i] = cnchars.toTraditionalChar(str[i]);
+		if(traditional[i] == "学") {
+			traditional[i] = "學";
+		}
+		else {
+			simplified[i] = cnchars.toSimplifiedChar(simplified[i]);
+			traditional[i] = cnchars.toTraditionalChar(traditional[i]);
+		}
 	}
 
 	simplified = simplified.join('');
