@@ -10,51 +10,21 @@ window.addEventListener('contextmenu', function (e) {
 
 var template = [
   {
-	 label: 'File',
-	 submenu: [
-		{
-		  label: 'About',
-        click: function() {
-           ipc.send("open-about-window");
-         }
-		},
-	 ]
-  },
-  {
-	 label: 'View',
-	 submenu: [
-		{
-		  label: 'Bookmarks',
-        accelerator: 'CmdOrCtrl+B',
-        click: function() {
-           ipc.send("refresh-bookmarks-window");
-           ipc.send("open-bookmarks-window");
-         }
-		},
-      {
-         label: 'Study',
-         click: function() {
-            ipc.send("open-study-window");
-         }
-      }
-	 ]
-  },
-  {
     label: 'Bookmarks',
     submenu: [
       {
-         label: 'Refresh',
-         //accelerator: 'CmdOrCtrl+Shift+R',
-         click: function() {
-            ipc.send('refresh-bookmarks-window');
-         }
-      },
-      {
-         label: 'Show',
+         label: 'Show Bookmarks',
          accelerator: 'CmdOrCtrl+B',
          click: function() {
             ipc.send("refresh-bookmarks-window");
             ipc.send("open-bookmarks-window");
+         }
+      },
+      {
+         label: 'Refresh Listing',
+         //accelerator: 'CmdOrCtrl+Shift+R',
+         click: function() {
+            ipc.send('refresh-bookmarks-window');
          }
       }
    ]
@@ -69,25 +39,47 @@ var template = [
             ipc.send("generate-flashcards");
          }
       },
-      /*{
+      {
          label: "Generate Test",
          accelerator: "CmdOrCtrl+T",
          click: function() {
             ipc.send("generate-test");
-         }
-      },*/
-      {
-         label: 'Show',
-         click: function() {
-            ipc.send("open-study-window");
+            alert("This feature is not yet supported.");
          }
       }
    ]
   },
   {
+    label: 'Tools',
+    submenu: [
+      {
+        label: 'Convert Simplified and Traditional',
+        click: function() {
+          // TODO: Add this feature
+          alert("This feature is not yet supported.");
+        }
+      },
+      {
+        label: 'Prettify Pinyin',
+        click: function() {
+          // TODO: Add this feature
+          alert("This feature is not yet supported.");
+        }
+      }
+    ]
+  },
+  {
 	 label: 'Help',
-	 role: 'help',
 	 submenu: [
+     {
+       label: 'About Syng',
+       click: function() {
+          ipc.send("open-about-window");
+        }
+     },
+     {
+       type: 'separator'
+     },
 		{
 		  label: 'Report Bug',
 		  //accelerator: 'CmdOrCtrl+R',
@@ -109,7 +101,7 @@ var template = [
          click: function() { require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/blob/master/License-Node-CC-CEDICT.md') }
       }
 	 ]
-  },
+  }
 ];
 
 if (process.platform == 'darwin') {

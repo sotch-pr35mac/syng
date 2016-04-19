@@ -11,7 +11,6 @@ var mainWindow = null;
 var aboutWindow = null;
 var splashWindow = null;
 var bookmarksWindow = null;
-var studyWindow = null;
 var flashcardsWindow = null;
 var testWindow = null;
 var lgChars = null;
@@ -47,7 +46,6 @@ app.on('ready', function() {
 		aboutWindow.close();
 		bookmarksWindow.close();
 		lgChars.close();
-		studyWindow.close();
 		flashcardsWindow.close();
 		testWindow.close();
 	});
@@ -162,39 +160,6 @@ app.on('ready', function() {
 
 	lgChars.on('closed', function(event) {
 		lgChars = null;
-	});
-
-	// Handle Study Window Here
-	studyWindow = new BrowserWindow({
-		width: 600,
-		height: 350,
-		show: false
-	});
-
-	studyWindow.loadURL('file://'+__dirname+'/../views/study.html');
-
-	ipc.on("open-study-window", function(event, args) {
-		if(!studyWindow.isVisible()) {
-			studyWindow.show();
-		}
-	});
-
-	ipc.on("close-study-window", function(event, args){
-		if(studyWindow.isVisible()) {
-			studyWindow.hide();
-		}
-	});
-
-	studyWindow.on('close', function(event) {
-		if(mainWindow != null) {
-			studyWindow.hide();
-			event.preventDefault();
-			event.returnValue = false;
-		}
-	});
-
-	studyWindow.on('closed', function(event) {
-		studyWindow = null;
 	});
 
 	// Flashcards Window
