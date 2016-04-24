@@ -14,10 +14,10 @@ ipc.on("refresh-page", function(event, args) {
     refreshPage();
 });
 
-function initializeBookmarks() {
-   var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
-   var bookmarksDb = db.collection("bookmarks");
+var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
+var bookmarksDb = db.collection("bookmarks");
 
+function initializeBookmarks() {
     var displayBookmarks = false;
 
     function genBookListHtml(traditional, simplified, pinyin, english, id) {
@@ -137,9 +137,6 @@ function switchWord(id) {
 }
 
 function removeFromBookmarks(id) {
-   var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
-   var bookmarksDb = db.collection("bookmarks");
-
 	bookmarksDb.remove({_id: id});
 	refreshPage();
 }
@@ -156,6 +153,15 @@ function viewLargeChars(simplified, traditional) {
 function refreshPage() {
     location.reload();
 }
+
+ipc.on('successfully-imported-bookmarks', function(event, args) {
+  alert("Successfully Imported Bookmarks!");
+  refreshPage();
+});
+
+ipc.on('successully-exported-bookmarks', function(event, args) {
+  alert("Successfully Exported Bookmarks");
+});
 
 $(document).ready(function() {
     initializeBookmarks();

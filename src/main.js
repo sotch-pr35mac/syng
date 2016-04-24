@@ -4,6 +4,9 @@ const electron = require('electron');
 const ipc = require('electron').ipcMain;
 const app = electron.app; //Module to control application life.
 const BrowserWindow = electron.BrowserWindow; //Module to create native browser window.
+const dialog = require('electron').dialog;
+var fs =  require('fs');
+var path = require('path');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -130,6 +133,81 @@ app.on('ready', function() {
 
 	bookmarksWindow.on('closed', function(event) {
 		bookmarksWindow = null;
+	});
+
+	// Import and Export bookmarks
+	ipc.on('start-bookmarks-import', function(event, args) {
+		dialog.showOpenDialog({ title: "Import Bookmarks", properties: ['openFile'], filters: [{name: 'JSON', extensions: ['json']}]}, function(file) {
+			if(file == undefined || file == null) {
+				console.log("There was an error opening the file.");
+				console.log(file);
+				/*
+				*	TODO: Report this error to the user
+				*/
+			}
+			else {
+				fs.readFile(file[0], 'utf-8', function(err, data) {
+					if(err) {
+						console.log("There was an error reading in the file.");
+						console.log(err);
+						/*
+						*	TODO: Report this error to the user.
+						*/
+					}
+					else {
+						fs.appendFile(path.join(__dirname, "db/syng/bookmarks"), data, function(err) {
+							if(err) {
+								console.log("There was an error appending the database file.");
+								console.log(err);
+								/*
+								*	TODO: Report the error to the user.
+								*/
+							}
+							else {
+								bookmarksWindow.send('successfully-imported-bookmarks');
+							}
+						});
+					}
+				});
+			}
+		});
+	});
+
+	ipc.on('bookmarks-export-data', function(event, args) {
+		dialog.showSaveDialog({ title: 'Export Bookmarks' }, function(file) {
+			if(file == undefined || file == null) {
+				console.log("There was an error with the chosen file.");
+				console.log(file);
+				/*
+				*	TODO: Report this error to the user.
+				*/
+			}
+			else {
+				fs.readFile(path.join(__dirname, "db/syng/bookmarks"), "utf-8", function(err, data) {
+					if(err) {
+						console.log("There was an error reading the bookmarks file that syng is stored.");
+						console.log(err);
+						/*
+						*	TODO: Report this error to the user.
+						*/
+					}
+					else {
+						fs.writeFile(file, data, function(err) {
+							if(err) {
+								console.log("There was an error writing the exported bookmarks to a file.");
+								console.log(err);
+								/*
+								*	TODO: Report this error to a user.
+								*/
+							}
+							else {
+								bookmarksWindow.send('successully-exported-bookmarks');
+							}
+						});
+					}
+				});
+			}
+		});
 	});
 
 	// Large Characters Window

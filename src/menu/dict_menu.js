@@ -21,6 +21,18 @@ var template = [
          }
       },
       {
+        label: 'Import',
+        click: function() {
+          ipc.send('start-bookmarks-import');
+        }
+      },
+      {
+        label: 'Export',
+        click: function() {
+          ipc.send('bookmarks-export-data');
+        }
+      },
+      {
          label: 'Refresh Listing',
          //accelerator: 'CmdOrCtrl+Shift+R',
          click: function() {
