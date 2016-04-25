@@ -141,27 +141,21 @@ app.on('ready', function() {
 			if(file == undefined || file == null) {
 				console.log("There was an error opening the file.");
 				console.log(file);
-				/*
-				*	TODO: Report this error to the user
-				*/
+				dialog.showErrorBox("Open File Error", "There was an error opening the file.");
 			}
 			else {
 				fs.readFile(file[0], 'utf-8', function(err, data) {
 					if(err) {
 						console.log("There was an error reading in the file.");
 						console.log(err);
-						/*
-						*	TODO: Report this error to the user.
-						*/
+						dialog.showErrorBox("File Read Error", "There was an error reading the selected file. Error: "+err);
 					}
 					else {
 						fs.appendFile(path.join(__dirname, "db/syng/bookmarks"), data, function(err) {
 							if(err) {
 								console.log("There was an error appending the database file.");
 								console.log(err);
-								/*
-								*	TODO: Report the error to the user.
-								*/
+								dialog.showErrorBox("File Write Error", "There was an error appending the database. Error: "+err);
 							}
 							else {
 								bookmarksWindow.send('successfully-imported-bookmarks');
@@ -174,31 +168,25 @@ app.on('ready', function() {
 	});
 
 	ipc.on('bookmarks-export-data', function(event, args) {
-		dialog.showSaveDialog({ title: 'Export Bookmarks' }, function(file) {
+		dialog.showSaveDialog({ title: 'Export Bookmarks', filters: [ {name: 'JSON', extensions: ['json']}] }, function(file) {
 			if(file == undefined || file == null) {
 				console.log("There was an error with the chosen file.");
 				console.log(file);
-				/*
-				*	TODO: Report this error to the user.
-				*/
+				dialog.showErrorBox("File Selection Error", "There was an error with the chosen file.");
 			}
 			else {
 				fs.readFile(path.join(__dirname, "db/syng/bookmarks"), "utf-8", function(err, data) {
 					if(err) {
 						console.log("There was an error reading the bookmarks file that syng is stored.");
 						console.log(err);
-						/*
-						*	TODO: Report this error to the user.
-						*/
+						dialog.showErrorBox("File Read Error", "There was an error reading the bookmarks database file. Error: "+err);
 					}
 					else {
 						fs.writeFile(file, data, function(err) {
 							if(err) {
 								console.log("There was an error writing the exported bookmarks to a file.");
 								console.log(err);
-								/*
-								*	TODO: Report this error to a user.
-								*/
+								dialog.showErrorBox("File Write Error", "There waas an error writing the exported bookmarks to a file. Error: "+err);
 							}
 							else {
 								bookmarksWindow.send('successully-exported-bookmarks');
