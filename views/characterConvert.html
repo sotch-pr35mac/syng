@@ -28,30 +28,35 @@
            <div class="pane">
              <br>
              <div class="form-group">
-               <label>Pinyin with Tone Numbers</label>
-               <textarea class="form-control" id="ugly-pinyin" rows=13></textarea>
+               <label>Enter either traditional or simplified characters.</label>
+               <textarea class="form-control" id="input-chars" rows=13></textarea>
              </div>
            </div>
            <div class="pane">
              <br>
              <div class="form-group">
-               <label>Pinyin with Tone Marks</label>
-               <textarea readonly id="pretty-pinyin" class="form-control" rows=13s></textarea>
+               <label>Resulting characters</label>
+               <textarea readonly id="res-chars" class="form-control" rows=13></textarea>
              </div>
            </div>
          </div>
       </div>
       <footer class="toolbar tollbar-footer">
         <div class="toolbar-actions">
-          <button class="btn btn-default btn-large pull-right" id="convert-pinyin">
-            Convert
-          </button>
+          <div class="btn-group pull-right">
+  					<button class="btn btn-default btn-large" id="t2s">
+  						Traditional &#10143; Simplified
+  					</button>
+  					<button class="btn btn-default btn-large" id="s2t">
+  						Simplified &#10143; Traditional
+  					</button>
+  				</div>
         </div>
       </footer>
    </div>
 
    <!-- Load JavaScript Libraries Here -->
-  <script src="../src/convertPinyin.js"></script>
+  <script src="../src/characterConvert.js"></script>
 </body>
 
 </html>

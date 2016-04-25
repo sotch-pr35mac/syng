@@ -67,8 +67,7 @@ var template = [
       {
         label: 'Convert Simplified and Traditional',
         click: function() {
-          // TODO: Add this feature
-          alert("This feature is not yet supported.");
+          ipc.send('open-character-convert-window');
         }
       },
       {

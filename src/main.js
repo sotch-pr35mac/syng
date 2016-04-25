@@ -18,6 +18,7 @@ var flashcardsWindow = null;
 var testWindow = null;
 var lgChars = null;
 var pinyinConvertWindow = null;
+var characterConvertWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -53,6 +54,7 @@ app.on('ready', function() {
 		flashcardsWindow.close();
 		testWindow.close();
 		pinyinConvertWindow.close();
+		characterConvertWindow.close();
 	});
 
 	// About Dialog Window
@@ -296,7 +298,6 @@ app.on('ready', function() {
 	});
 
 	pinyinConvertWindow.loadURL('file://'+__dirname+"/../views/pinyinConvert.html");
-	pinyinConvertWindow.openDevTools();
 
 	pinyinConvertWindow.on('close', function(event, args) {
 		if(mainWindow != null) {
@@ -313,6 +314,33 @@ app.on('ready', function() {
 	ipc.on('open-pinyin-convert-window', function(event, args) {
 		if(!(pinyinConvertWindow.isVisible())) {
 			pinyinConvertWindow.show();
+		}
+	});
+
+	// Hanlde Character Converter Window
+	characterConvertWindow = new BrowserWindow({
+		width: 950,
+		height: 420,
+		show: false
+	});
+
+	characterConvertWindow.loadURL('file://'+__dirname+"/../views/characterConvert.html");
+
+	characterConvertWindow.on('close', function(event, args) {
+		if(mainWindow != null) {
+			characterConvertWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	characterConvertWindow.on('closed', function(event) {
+		characterConvertWindow = null;
+	});
+
+	ipc.on('open-character-convert-window', function(event, args) {
+		if(!(characterConvertWindow.isVisible())) {
+			characterConvertWindow.show();
 		}
 	});
 });
