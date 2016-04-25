@@ -17,6 +17,7 @@ var bookmarksWindow = null;
 var flashcardsWindow = null;
 var testWindow = null;
 var lgChars = null;
+var pinyinConvertWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -51,6 +52,7 @@ app.on('ready', function() {
 		lgChars.close();
 		flashcardsWindow.close();
 		testWindow.close();
+		pinyinConvertWindow.close();
 	});
 
 	// About Dialog Window
@@ -284,5 +286,32 @@ app.on('ready', function() {
 		}
 
 		testWindow.send('generate-new-test');
+	});
+
+	// Hanle the Pinyin Convsersion Window
+	pinyinConvertWindow = new BrowserWindow({
+		width: 950,
+		height: 420,
+		show: false
+	});
+
+	pinyinConvertWindow.loadURL('file://'+__dirname+"/../views/pinyinConvert.html");
+
+	pinyinConvertWindow.on('close', function(event, args) {
+		if(mainWindow != null) {
+			pinyinConvertWindow.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	pinyinConvertWindow.on('closed', function(event) {
+		pinyinConvertWindow = null;
+	});
+
+	ipc.on('open-pinyin-convert-window', function(event, args) {
+		if(!(pinyinConvertWindow.isVisible())) {
+			pinyinConvertWindow.show();
+		}
 	});
 });

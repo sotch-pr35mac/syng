@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file. This projec
 ## [0.2.0]
 ### Added
 - Added Import and Export of bookmarks as described in Issue #36
+- Added Error Reports as described in Issue #37
 
 ## [0.1.2] - 2016-04-18
 ### Fixed

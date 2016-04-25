@@ -74,8 +74,7 @@ var template = [
       {
         label: 'Prettify Pinyin',
         click: function() {
-          // TODO: Add this feature
-          alert("This feature is not yet supported.");
+          ipc.send('open-pinyin-convert-window');
         }
       }
     ]

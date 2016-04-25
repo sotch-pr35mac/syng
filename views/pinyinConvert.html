@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" ngapp="Syng">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
+
+  <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
+
+  <!-- Photon Files -->
+  <link rel="stylesheet" href="../style/css/photon.css">
+
+  <!-- Menu -->
+  <script src="../src/menu/dict_menu.js"></script>
+</head>
+
+<body>
+   <div class="window">
+
+     <header class="toolbar toolbar-header">
+       <br>
+       <h1 class="title">Prettify pinyin with tone numbers attached (ni3 hao3) to pinyin that uses tone marks (nǐ hǎo)</h1>
+       <div class="toolbar-actions">
+         <center>
+           <button class="btn btn-large btn-default" id="convert-pinyin">Convert</button>
+         </center>
+     </header>
+
+      <!-- Main Content -->
+      <div class="window-content">
+         <div class="pane-group">
+           <div class="pane">
+           </div>
+           <div class="pane">
+           </div>
+         </div>
+      </div>
+   </div>
+
+   <!-- Load JavaScript Libraries Here -->
+  <script src="../src/convertPinyin.js"></script>
+</body>
+
+</html>
