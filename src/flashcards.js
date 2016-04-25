@@ -8,6 +8,7 @@
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 var tingo = require("tingodb")(); // Mongo-style database
 var path = require('path');
+var dialog = require('electron').remote.dialog;
 
 var cardSet = new Array();
 var iterator = 0;
@@ -38,9 +39,7 @@ function initializeCards() {
 		if(err || bookmarksArr == undefined || bookmarksArr == null) {
 			console.log("There was an error retreiving the bookmarks");
 			console.log(err);
-			/*
-			*	TODO: Display this error properly to the user
-			*/
+			dialog.showErrorBox("Error Getting Bookmarks", err);
 		}
 		else {
 			if(bookmarksArr.length == 0) {

@@ -9,6 +9,7 @@ var _ = require("underscore");
 var path = require('path');
 var tingo = require('tingodb')(); // Mongo-Style Database
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process.
+var dialog = require('electron').remote.dialog;
 
 ipc.on("refresh-page", function(event, args) {
     refreshPage();
@@ -100,9 +101,7 @@ function initializeBookmarks() {
         if (err || bookmarks == undefined || bookmarks == null) {
             console.log("There was an error getting all the saved bookmarks.");
             console.log(err);
-            /*
-             *	TODO: Report this error to the user.
-             */
+            dialog.showErrorBox('Error Getting Bookmarks', "There was an error getting the saved bookmarks. Error: "+err);
         }
 		  else {
             // DEBUG

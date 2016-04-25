@@ -374,9 +374,6 @@ module.exports.searchByPinyin = function(str, cb) {
 		}
 		else {
 			console.log("Error: Could not find "+pinyin[i]+" in the database.");
-			/*
-			* TODO: Report this error to the user.
-			*/
 		}
 
 		infiniteCheck++;
