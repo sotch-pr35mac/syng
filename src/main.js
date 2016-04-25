@@ -296,6 +296,7 @@ app.on('ready', function() {
 	});
 
 	pinyinConvertWindow.loadURL('file://'+__dirname+"/../views/pinyinConvert.html");
+	pinyinConvertWindow.openDevTools();
 
 	pinyinConvertWindow.on('close', function(event, args) {
 		if(mainWindow != null) {

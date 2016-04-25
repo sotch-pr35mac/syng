@@ -13,31 +13,41 @@
   <!-- Photon Files -->
   <link rel="stylesheet" href="../style/css/photon.css">
 
+  <!-- Style Text boxes -->
+  <link rel="stylesheet" href="../style/css/textboxes.css">
+
   <!-- Menu -->
   <script src="../src/menu/dict_menu.js"></script>
 </head>
 
 <body>
    <div class="window">
-
-     <header class="toolbar toolbar-header">
-       <br>
-       <h1 class="title">Prettify pinyin with tone numbers attached (ni3 hao3) to pinyin that uses tone marks (nǐ hǎo)</h1>
-       <div class="toolbar-actions">
-         <center>
-           <button class="btn btn-large btn-default" id="convert-pinyin">Convert</button>
-         </center>
-     </header>
-
       <!-- Main Content -->
       <div class="window-content">
          <div class="pane-group">
            <div class="pane">
+             <br>
+             <div class="form-group">
+               <label>Pinyin with Tone Numbers</label>
+               <textarea class="form-control" id="ugly-pinyin" rows=20></textarea>
+             </div>
            </div>
            <div class="pane">
+             <br>
+             <div class="form-group">
+               <label>Pinyin with Tone Marks</label>
+               <textarea readonly id="pretty-pinyin" class="form-control" rows=20></textarea>
+             </div>
            </div>
          </div>
       </div>
+      <footer class="toolbar tollbar-footer">
+        <div class="toolbar-actions">
+          <button class="btn btn-default btn-large pull-right" id="convert-pinyin">
+            Convert
+          </button>
+        </div>
+      </footer>
    </div>
 
    <!-- Load JavaScript Libraries Here -->
