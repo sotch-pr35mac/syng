@@ -9,6 +9,11 @@ var prettifier = require('prettify-pinyin'); // Prettify the pinyin default (let
 $(document).ready(function() {
   $("#convert-pinyin").click(function() {
     var uglyPinyin = $("#ugly-pinyin").val();
+
+    // Take out puncuation
+    uglyPinyin = uglyPinyin.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+    uglyPinyin = uglyPinyin.replace(/\s{2,}/g," ");
+
     var prettyPinyin = prettifier.prettify(uglyPinyin);
     $("#pretty-pinyin").val(prettyPinyin);
   });
