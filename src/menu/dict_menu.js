@@ -88,6 +88,12 @@ var template = [
         }
      },
      {
+       label: 'View Changelog',
+       click: function() {
+         require('electron').shell.openExternal('https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md');
+       }
+     },
+     {
        type: 'separator'
      },
 		{
@@ -121,15 +127,8 @@ if (process.platform == 'darwin') {
 	 submenu: [
 		{
 		  label: 'About ' + name,
-		  role: 'about'
-		},
-		{
-		  type: 'separator'
-		},
-		{
-		  label: 'Services',
-		  role: 'services',
-		  submenu: []
+		  role: 'about',
+      click: function() { ipc.send("open-about-window"); }
 		},
 		{
 		  type: 'separator'
@@ -137,7 +136,8 @@ if (process.platform == 'darwin') {
 		{
 		  label: 'Hide ' + name,
 		  accelerator: 'Command+H',
-		  role: 'hide'
+		  role: 'hide',
+      click: function() { ipc.send("hide-syng"); }
 		},
 		{
 		  label: 'Hide Others',
@@ -145,8 +145,10 @@ if (process.platform == 'darwin') {
 		  role: 'hideothers'
 		},
 		{
-		  label: 'Show All',
-		  role: 'unhide'
+		  label: 'Show',
+		  role: 'unhide',
+      accelerator: 'Command+S'
+      click: function() { ipc.send("show-syng"); }
 		},
 		{
 		  type: 'separator'

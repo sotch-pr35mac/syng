@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added Error Reports as described in Issue #37
 - Added Pinyin Converter as described in Issue #23
 - Added Character Converter as described in Issue #22
+- Added View Changelog to Help Menu
 
 ## [0.1.2] - 2016-04-18
 ### Fixed

@@ -10,15 +10,15 @@ var path = require('path');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-var mainWindow = null;
-var aboutWindow = null;
-var splashWindow = null;
-var bookmarksWindow = null;
-var flashcardsWindow = null;
-var testWindow = null;
-var lgChars = null;
-var pinyinConvertWindow = null;
-var characterConvertWindow = null;
+var mainWindow = null; 	// The main "search/dictionary" window. Has no parent.
+var aboutWindow = null; // The about window with program information. Has no parent.
+var splashWindow = null; // The splash page to display while Syng is loading. Has no parent.
+var bookmarksWindow = null; // The bookmarks window with all the saved searches. Has no parent.
+var flashcardsWindow = null; // The window to display study flash cards (not testing feature). Has `bookmarksWindow` as parent.
+var testWindow = null; // The test window (to test the learner on their ability). Has `bookmarksWindow` as parent.
+var lgChars = null; // The window for displaying large characters for better visibility. Has `mainWindow` as parent.
+var pinyinConvertWindow = null; // The Pinyin Converter Window. Has no parent.
+var characterConvertWindow = null; // The Traditional to Simplified and vice versa character converter window. Has no parent.
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -36,7 +36,8 @@ app.on('ready', function() {
 	mainWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
-		show: false
+		show: false,
+		title: 'Syng | Chinese to English Dictionary'
 	});
 
 	// and load the index.html of the app.
@@ -57,12 +58,25 @@ app.on('ready', function() {
 		characterConvertWindow.close();
 	});
 
+	ipc.on('hide-syng', function(event, args) {
+		if(mainWindow.isVisible()) {
+			mainWindow.hide();
+		}
+	});
+
+	ipc.on('show-syng', function(event, args) {
+		if(!mainWindow.isVisible()) {
+			mainWindow.show();
+		}
+	});
+
 	// About Dialog Window
 	aboutWindow = new BrowserWindow({
 		width: 500,
 		height: 500,
 		show: false,
-		resizable: false
+		resizable: false,
+		title: 'About Syng'
 	});
 
 	aboutWindow.setMenu(null);
@@ -112,7 +126,8 @@ app.on('ready', function() {
 	bookmarksWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
-		show: false
+		show: false,
+		title: 'Syng Bookmarks'
 	});
 
 	bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
@@ -207,7 +222,9 @@ app.on('ready', function() {
 		width: 500,
 		height: 500,
 		show: false,
-		resizable: false
+		resizable: false,
+		parent: mainWindow,
+		title: 'Syng | View Large Characters'
 	});
 
 	lgChars.loadURL('file://'+__dirname+'/../views/lgChar.html');
@@ -236,7 +253,9 @@ app.on('ready', function() {
 	flashcardsWindow = new BrowserWindow({
 		width: 600,
 		height: 400,
-		show: false
+		show: false,
+		parent: bookmarksWindow,
+		title: 'Syng | Flashcards'
 	});
 
 	flashcardsWindow.loadURL('file://'+__dirname+"/../views/flashcards.html");
@@ -265,7 +284,9 @@ app.on('ready', function() {
 	testWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
-		show: false
+		show: false,
+		parent: bookmarksWindow,
+		title: 'Syng | Test Progress'
 	});
 
 	testWindow.loadURL('file://'+__dirname+"/../views/test.html");
@@ -294,7 +315,8 @@ app.on('ready', function() {
 	pinyinConvertWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
-		show: false
+		show: false,
+		title: 'Syng | Convert Pinyin'
 	});
 
 	pinyinConvertWindow.loadURL('file://'+__dirname+"/../views/pinyinConvert.html");
@@ -321,7 +343,8 @@ app.on('ready', function() {
 	characterConvertWindow = new BrowserWindow({
 		width: 950,
 		height: 420,
-		show: false
+		show: false,
+		title: 'Syng | Convert Characters'
 	});
 
 	characterConvertWindow.loadURL('file://'+__dirname+"/../views/characterConvert.html");
