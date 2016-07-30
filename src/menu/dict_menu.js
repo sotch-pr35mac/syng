@@ -147,7 +147,7 @@ if (process.platform == 'darwin') {
 		{
 		  label: 'Show',
 		  role: 'unhide',
-      accelerator: 'Command+S'
+      accelerator: 'Command+S',
       click: function() { ipc.send("show-syng"); }
 		},
 		{
