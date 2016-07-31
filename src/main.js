@@ -32,10 +32,17 @@ app.on('window-all-closed', function() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
+	// Main Window Size will be different on Windows because of button rendering differences
+	// Determine the size of the window here
+	var mainWindowWidth = 420;
+	if(process.platform == "win32") {
+		mainWindowWidth = 450;
+	}
+
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
 		width: 950,
-		height: 420,
+		height: mainWindowWidth,
 		show: false,
 		title: 'Syng | Chinese to English Dictionary'
 	});
