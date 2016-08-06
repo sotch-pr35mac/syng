@@ -1,16 +1,13 @@
 /*
-*	@File				:: test.js
+*	@File				:: test-random.js
 *	@Author			:: Preston Stosur-Bassett [preston@stosur.info](http://stosur.info)
 *	@Description	::	This file handles all the logic for creating and displaying generated tests
-*	@Created			:: April 13th, 2016
+*	@Created			:: July 31st, 2016
 */
 
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 
-ipc.on('generate-new-test', function(event, args) {
-	// TODO: Write this
-});
-
+// Handle what happens once the page has loaded but before a test has been generated here
 $(document).ready(function() {
 	// TODO: Write this.
 });

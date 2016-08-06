@@ -289,14 +289,15 @@ app.on('ready', function() {
 
 	// Testing Window
 	testWindow = new BrowserWindow({
-		width: 950,
-		height: 420,
+		width: 520,
+		height: 700,
 		show: false,
 		parent: bookmarksWindow,
 		title: 'Syng | Test Progress'
 	});
 
-	testWindow.loadURL('file://'+__dirname+"/../views/test.html");
+	// DEBUG:
+	testWindow.openDevTools();
 
 	testWindow.on('close', function(event, args) {
 		if(mainWindow != null) {
@@ -310,12 +311,32 @@ app.on('ready', function() {
 		testWindow = null;
 	});
 
-	ipc.on('generate-test', function(event, args) {
+	// Open Testing Window and Generate a New Test
+	// Generate New Test Based on Bookmarks
+	ipc.on('test-bookmarks', function(event, args) {
+		// Load the correct version of the testing "game"
+		testWindow.loadURL('file://'+__dirname+"/../views/test-bookmarks.html");
+
+		// Show the window if it isn't already visible
 		if(!testWindow.isVisible()) {
 			testWindow.show();
 		}
+	});
 
-		testWindow.send('generate-new-test');
+	// Generate New Test Based on Random Words From Dictionary
+	ipc.on('test-dictionary', function(event, args) {
+		// Load the correct version of the testing "game"
+		testWindow.loadURL('file://'+__dirname+"/../views/test-random.html");
+
+		// Show the test window if it isn't already visible
+		if(!testWindow.isVisible()) {
+			testWindow.show();
+		}
+	});
+
+	// Close the window as requested by the page
+	ipc.on('close-test-window', function(event, args) {
+		testWindow.hide();
 	});
 
 	// Hanle the Pinyin Convsersion Window

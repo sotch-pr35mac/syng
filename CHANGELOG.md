@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file. This projec
 - Added Character Converter as described in Issue #22
 - Added View Changelog to Help Menu
 
+### Fixed
+- Fixed Issue #31, Search Button on New Line on Windows
+- Fixed Issue #43, Improper Behavior after Closing Main Window on Mac
+
 ## [0.1.2] - 2016-04-18
 ### Fixed
 - Fixed Issue #21 学 simplified character not searchable

@@ -104,9 +104,6 @@ function initializeBookmarks() {
             dialog.showErrorBox('Error Getting Bookmarks', "There was an error getting the saved bookmarks. Error: "+err);
         }
 		  else {
-            // DEBUG
-            console.log(bookmarks);
-
             // Handle displaying the bookmarks on the page here
             var listingHtml = "";
             var expandedHtml = "";

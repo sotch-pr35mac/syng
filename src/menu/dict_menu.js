@@ -45,7 +45,7 @@ var template = [
     label: 'Study',
     submenu: [
       {
-         label: "Generate Flashcards",
+         label: "Study Flashcards",
          accelerator: "CmdOrCtrl+L",
          click: function() {
             ipc.send("generate-flashcards");
@@ -53,11 +53,22 @@ var template = [
       },
       {
          label: "Generate Test",
-         accelerator: "CmdOrCtrl+T",
-         click: function() {
-            ipc.send("generate-test");
-            alert("This feature is not yet supported.");
-         }
+         submenu: [
+           {
+             label: "From Bookmarks",
+             accelerator: 'CmdOrCtrl+T',
+             click: function() {
+               ipc.send("test-bookmarks");
+             }
+           },
+           {
+             label: "From Dictionary",
+             accelerator: 'CmdOrCtrl+D',
+             click: function() {
+               ipc.send("test-dictionary");
+             }
+           }
+         ]
       }
    ]
   },

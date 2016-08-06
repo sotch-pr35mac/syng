@@ -52,7 +52,7 @@ function initializeCards() {
 				displayCard(cardSet[0].traditional, cardSet[0].simplified, cardSet[0].pronunciation, cardSet[0].definitions);
 			}
 		}
-	})
+	});
 }
 
 function initializeButtons() {
