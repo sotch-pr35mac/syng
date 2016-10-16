@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - Fixed Issue #31, Search Button on New Line on Windows
 - Fixed Issue #43, Improper Behavior after Closing Main Window on Mac
+- Fixed Issue #47, Pinyin Font too Small to Read
 
 ## [0.1.2] - 2016-04-18
 ### Fixed

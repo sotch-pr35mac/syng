@@ -93,14 +93,14 @@ function displayResults(trans) {
 		definitionsHtml += "</ol>";
 
 		// Handle pinyin content
-		var pinyinHtml = "<h3><strong>Pinyin:</strong></h3>"+pinyin;
+		var pinyinHtml = "<h3 style='margin-top: 0px; padding-left: 3px;'>"+pinyin+"</h3>";
 
 		// Handle character display
 		var characters = "";
 
 		// Handle color-coded Characters
 		if(simplified.length == traditional.length && traditional.length == toneMarks.length) {
-			characters += "<h1>";
+			characters += "<h1 style='margin-bottom: 0;'>";
 			var simpArr = simplified.split("");
 			var tradArr = traditional.split("");
 			var colorCodeArr = [];
