@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added Pinyin Converter as described in Issue #23
 - Added Character Converter as described in Issue #22
 - Added View Changelog to Help Menu
+- Added Logging Platform for Debugging
 
 ### Fixed
 - Fixed Issue #31, Search Button on New Line on Windows

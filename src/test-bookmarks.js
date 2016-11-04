@@ -5,12 +5,21 @@
 *	@Created			:: July 31st, 2016
 */
 
+/*
+*	SOMETHING HERE WENT VERY WRONG: THIS CODE IS HALF-ASSED AT BEST.
+* CONSIDER ENTIRE REWRITE BEFORE PUSHING TO PRODUCTION
+*/
+
 // Required Dependencies
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process
 var tingo = require("tingodb")(); // Mongo-style database
 var path = require('path');
 var dialog = require('electron').remote.dialog;
 var _ = require('underscore');
+var logger = require("../src/log/debug.js");
+
+// Turn Debugging On
+logger.turnDebugOn();
 
 // Global Variables
 const FIRST_TIME_SCORE = 5;
@@ -78,6 +87,20 @@ function randomInt(min, max) {
 	return num = Math.floor(Math.random() * (max - min + 1) + min);
 }
 
+// Shuffle the contents of an array
+// Alernative to `_.shuffle` that was giving bugs
+function shuffler(a) {
+	var j, x, i;
+	for(i = a.length; i; i--) {
+		j = Math.floor(Math.random() * i);
+		x = a[i - 1];
+		a[i - 1] = a[j];
+		a[j] = x;
+	}
+
+	return a;
+}
+
 // Handle what happens once the page has loaded here
 $(document).ready(function() {
 	// Grab all the words in bookmarks
@@ -119,7 +142,8 @@ $(document).ready(function() {
 
 						// Shuffle the list of answers
 						var correctAns = word.pronunciation;
-						var shuffledAnswers = _.shuffle(characterAnswers);
+						//var shuffledAnswers = _.shuffle(characterAnswers);
+						var shuffledAnswers = shuffler(characterAnswers);
 
 						// Determine the index of the correct answer
 						var correctIndex;
@@ -160,7 +184,8 @@ $(document).ready(function() {
 
 						// Shuffle the list of answers
 						var correctAns = word.definitions[defIndex];
-						var shuffledAnswers = _.shuffle(characterAnswers);
+						//var shuffledAnswers = _.shuffle(characterAnswers);
+						var shuffledAnswers = shuffler(characterAnswers);
 
 						// Determine the index of the correct answer
 						var correctIndex;
@@ -209,7 +234,8 @@ $(document).ready(function() {
 
 						// Shuffle the list of answers
 						var correctAns = word.simplified+" ("+word.traditional+")";
-						var shuffledAnswers = _.shuffle(pinyinAnswers);
+						//var shuffledAnswers = _.shuffle(pinyinAnswers);
+						var shuffledAnswers = shuffler(pinyinAnswers);
 
 						// Determine the index of the correct answer
 						var correctIndex;
@@ -231,6 +257,8 @@ $(document).ready(function() {
 							quesetionType: "pinyin"
 						};
 
+						logger.debug(questionObj.question);
+
 						numOfPinyinQuestions++;
 
 						return questionObj;
@@ -250,7 +278,8 @@ $(document).ready(function() {
 
 						// Shuffle the list of answers
 						var correctAns = word.definitions[defIndex];
-						var shuffledAnswers = _.shuffle(pinyinAnswers);
+						//var shuffledAnswers = _.shuffle(pinyinAnswers);
+						var shuffledAnswers = shuffler(pinyinAnswers);
 
 						// Determine the index of the correct answer
 						var correctIndex;
@@ -301,7 +330,8 @@ $(document).ready(function() {
 
 							// Shuffle the list of answers
 							var correctAns = word.pronunciation;
-							var shuffledAnswers = _.shuffle(defAnswers);
+							//var shuffledAnswers = _.shuffle(defAnswers);
+							var shuffledAnswers = shuffler(defAnswers);
 
 							// Determine the index of the correct answer
 							var correctIndex;
@@ -340,7 +370,8 @@ $(document).ready(function() {
 
 							// Shuffle the list of answers
 							var correctAns = word.simplified+" ("+word.traditional+")";
-							var shuffledAnswers = _.shuffle(defAnswers);
+							//var shuffledAnswers = _.shuffle(defAnswers);
+							var shuffledAnswers = shuffler(defAnswers);
 
 							// Determine the index of the correct answer
 							var correctIndex;
@@ -378,7 +409,16 @@ $(document).ready(function() {
 						questions.push(defQuestions[x]);
 					}
 
-					shuffledQuestions = _.shuffle(questions);
+					logger.debug("!!! BEGIN QUESTIONS !!!");
+					logger.debug(questions);
+					logger.debug("!!! END QUESTIONS !!!");
+
+					//shuffledQuestions = _.shuffle(questions);
+					shuffledQuestions = shuffler(questions);
+
+					logger.debug("!!! BEGIN SHUFFLEDQUESTIONS !!!");
+					logger.debug(shuffledQuestions);
+					logger.debug("!!! END SHUFFLEDQUESTIONS !!!");
 				}
 
 				processNext();
@@ -516,6 +556,7 @@ $("#continueButton").click(function() {
 
 // Display the question using html
 function displayQuestion(question) {
+	logger.debug(question);
 	var questionHtml = "";
 	for(var i = 0; i < question.answers.length; i++) {
 		if(i == question.correctAnswer) {
