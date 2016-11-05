@@ -1,55 +1,49 @@
 /*
-*	@File				:: test-bookmarks.js
-*	@Author			:: Preston Stosur-Bassett [preston@stosur.info](http://stosur.info)
-*	@Description	::	This file handles all the logic for creating and displaying generated tests
-*	@Created			:: July 31st, 2016
-*/
-
-/*
-*	SOMETHING HERE WENT VERY WRONG: THIS CODE IS HALF-ASSED AT BEST.
-* CONSIDER ENTIRE REWRITE BEFORE PUSHING TO PRODUCTION
+* @File		:: test-bookmarks-rewrite.js
+* @Author	:: Preston Stosur-Bassett
+* @Description	:: This file handles all the logic for creating and displaying generated tests
+* @Created	:: Nov 5, 2016
 */
 
 // Required Dependencies
-var ipc = require('electron').ipcRenderer; // For communication with the Main Process
-var tingo = require("tingodb")(); // Mongo-style database
+var ipc = require('electron').ipcRenderer; // For communication with the main process
+var tingo = require('tingodb')(); // Mong-style database
 var path = require('path');
 var dialog = require('electron').remote.dialog;
-var _ = require('underscore');
-var logger = require("../src/log/debug.js");
+var logger = require('../src/log/debug.js');
 
 // Turn Debugging On
 logger.turnDebugOn();
 
 // Global Variables
-const FIRST_TIME_SCORE = 5;
-const SECOND_TIME_SCORE = 3;
-const THIRD_TIME_SCORE = 1;
-const CORRECT_ANS_SCORE = 10;
-var questions = [];
-var shuffledQuestions = [];
-var numOfPinyinQuestions = 0;
-var numOfDefQuestions = 0;
-var numOfCharQuestions = 0;
-var numOfPinyinQuestionsCorrect = 0;
-var numOfDefQuestionsCorrect = 0;
-var numOfCharQuestionsCorrect = 0;
-var iterator = 0;
-var testProgress = 0;
-var currentTimerWidth = 100;
-var numOfCorrectAns = 0;
-var numOfIncorrectAns = 0;
-var numOfIDunnos = 0;
-var answerTimes = [];
-var pinyinTimes = [];
-var defTimes = [];
-var charTimes = [];
+const FIRST_TIME_SCORE = 5; // The score for answer in the first time slot
+const SECOND_TIME_SCORE = 3; // The score for answering in the second time slot
+const THIRD_TIME_SCORE = 1; // The score for answering just before time runs out (the thrid time slot)
+const CORRECT_ANS_SCORE = 10; // The score to award for getting the correct answer
+var questions = []; // An array of all the questions generated in order
+var shuffledQuestions = []; // An array of all the questions generated in random order
+var numOfPinyinQ = 0; // The number of pinyin questions
+var numOfDefQ = 0; // The number of definition questions
+var numOfCharQ = 0; // The number of character questions
+var numOfPinyinQC = 0; // The number of pinyin questions answered correctly
+var numOfDefQC = 0; // The number of definition questions answered correctly
+var numOfCharQC = 0; // The number of character questions answered correctly
+var iterator = 0; // The iterator for the questions being displayed
+var testProgress = 0; // The value of the progress bar for the progression through the question
+var currentTimerWidth = 100; // The width of the timer bar
+var numOfAnsC = 0; // Number of total anwers correct
+var numOfAnsI = 0; // Number of total answers answered incorrectly
+var numOfAnsU = 0; // Number of total answers answered with 'I dont know'
+var answerTimes = []; // A set of the times it took to answer the questions
+var pinyinTimes = []; // A set of time it took to answer pinyin questions
+var defTimes = []; // A set of times it took to answer definition questions
+var charTimes = []; // A set of times it took to answer character questions
 var timerInterval;
 var timerTimeout;
 
-// Generate the score for the test session
+// Generate score for the test session
 function generateScore(ans, time) {
-	let score = 0;
+	var score = 0;
 	if(ans == "correct") {
 		score += CORRECT_ANS_SCORE;
 
@@ -67,12 +61,13 @@ function generateScore(ans, time) {
 	return score;
 }
 
-// Determine random intenger from an interval and exclude a given index
-function randomInt(min, max, exception) {
+// Determine random integer from an interval and exclude a given index
+function randomIntWException(min, max, exception) {
 	var b = 0;
 	var num;
 	while(b == 0) {
-		num = Math.floor(Math.random() *  (max - min + 1) + min);
+		num = Math.floor(Math.random() * (max - min) + min);
+		logger.debug("num: "+num+"... exception: "+exception);
 		if(num != exception) {
 			b = 1;
 			break;
@@ -87,23 +82,22 @@ function randomInt(min, max) {
 	return num = Math.floor(Math.random() * (max - min + 1) + min);
 }
 
-// Shuffle the contents of an array
-// Alernative to `_.shuffle` that was giving bugs
-function shuffler(a) {
+// Shuffle the contetns of an array
+function shuffler(array) {
 	var j, x, i;
-	for(i = a.length; i; i--) {
+	for(i = array.length; i; i--) {
 		j = Math.floor(Math.random() * i);
-		x = a[i - 1];
-		a[i - 1] = a[j];
-		a[j] = x;
+		x = array[i - 1];
+		array[i - 1] = array[j];
+		array[j] = x;
 	}
 
-	return a;
+	return array;
 }
 
 // Handle what happens once the page has loaded here
 $(document).ready(function() {
-	// Grab all the words in bookmarks
+	// Grab all the words in the bookmarks
 	var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
 	var bookmarksDb = db.collection("bookmarks");
 
@@ -115,135 +109,180 @@ $(document).ready(function() {
 		}
 		else {
 			// If there are less than 4 bookmarks the program will be unable to generate a test
-			// Alert the user that they will need more than 4 bookmarks
 			if(bookmarks.length < 4) {
 				dialog.showErrorBox("Too Few Bookmarks", "There must be at least 4 words saved to your bookmarks to generate a test.");
 				ipc.send("close-test-window");
 			}
 			else {
-				// Function to handle generattng questions based on the character of a word
-				function generateCharacterQuestion(word, currentLocation) {
-					var characterAnswers = []; // List of answers that will be displayed with the question
+				// The object with all the generator functions to generate answers
+				var generateAnswers = {
+					pinyin: function(word, currentLocation) {
+						var ansList = []; // The list of answers
 
-					// Give it a 50 / 50 chance on whether or not asking what it sounds like (pinyin) or what it means (definition)
-					// 0 for pinyin and 1 for definition
-					var ansType = Math.floor(Math.random() * 2);
+						// Add the correct answers
+						ansList.push(word.pronunciation);
 
-					// The answer type will be pinyin
-					if(ansType == 0) {
-						// Add the correct pinyin to the list of answers
-						characterAnswers.push(word.pronunciation);
-
-						// Add the other three incorrect answers from the bookmarks dataset
+						// Add the other three incorrect answer from the bookmarks
 						for(var i = 0; i < 3; i++) {
-							var num = randomInt(0, bookmarks.length - 1, currentLocation);
-							characterAnswers.push(bookmarks[num].pronunciation);
+							var num = randomIntWException(0, bookmarks.length - 1, currentLocation);
+							if(bookmarks[num].pronunciation == word.pronuciation) {
+								logger.debug("There is going to be a duplicate in the answers...");
+								logger.debug("Bookmark index: "+num+"... Current location: "+currentLocation);
+							}
+							ansList.push(bookmarks[num].pronunciation);
 						}
 
 						// Shuffle the list of answers
 						var correctAns = word.pronunciation;
-						//var shuffledAnswers = _.shuffle(characterAnswers);
-						var shuffledAnswers = shuffler(characterAnswers);
+						var shuffledAnsList = shuffler(ansList);
 
 						// Determine the index of the correct answer
 						var correctIndex;
-						for(var i = 0; i < shuffledAnswers.length; i++) {
-							if(shuffledAnswers[i] == correctAns) {
+						for(var i = 0; i < shuffledAnsList.length; i++) {
+							if(shuffledAnsList[i] == correctAns) {
 								correctIndex = i;
 								break;
 							}
 						}
 
-						// Generate the question itself
-						let question = word.simplified+" ("+word.traditional+")";
-
-						// Generate the question object and return it to the calling function
-						let questionObj = {
-							answers: shuffledAnswers,
-							correctAnswer: correctIndex,
-							question: question,
-							questionType: "character"
+						// Return the shuffled list of answers and the correct answer index
+						let ansObj =  {
+							list: shuffledAnsList,
+							correctIndex: correctIndex
 						};
 
-						numOfCharQuestions++;
+						return ansObj;
+ 					},
+					definition: function(word, currentLocation) {
+						var ansList = []; // The list of answers
+						word.defArray = word.definitions.split(",");
 
-						return questionObj;
-					}
-					else {
-						// The anwer type will be a definition
-						// Determine random index from the definitions of this word to pose as an answer
-						var defIndex = randomInt(0, word.definitions.length - 1);
-						characterAnswers.push(word.definitions[defIndex]);
+						// Determine random index from the defintions of this word to pose as an answer
+						var defIndex = randomInt(0, word.defArray.length - 1);
+						ansList.push(word.defArray[defIndex]);
 
 						// Add the other three incorrect answers from the bookmarks dataset
 						for(var i = 0; i < 3; i++) {
-							let num = randomInt(0, bookmarks.length - 1, currentLocation);
-							let incorrectDefIndex = randomInt(0, bookmarks[num].definitions.length - 1);
-							characterAnswers.push(bookmarks[num].definitions[incorrectDefIndex]);
+							let num = randomIntWException(0, bookmarks.length - 1, currentLocation);
+							bookmarks[num].defArray = bookmarks[num].definitions.split(",");
+							if(bookmarks[num].defArray[defIndex] == word.defArray[defIndex]) {
+								logger.debug("There is going to be a duplicate in the answers...");
+								logger.debug("Bookmark index: "+num+".... Current Location: "+currentLocation);
+							}
+							let incorrectDefIndex = randomInt(0, bookmarks[num].defArray.length - 1);
+							ansList.push(bookmarks[num].defArray[incorrectDefIndex]);
 						}
 
 						// Shuffle the list of answers
-						var correctAns = word.definitions[defIndex];
-						//var shuffledAnswers = _.shuffle(characterAnswers);
-						var shuffledAnswers = shuffler(characterAnswers);
+						var correctAns = word.defArray[defIndex];
+						var shuffledAnsList = shuffler(ansList);
 
 						// Determine the index of the correct answer
 						var correctIndex;
-						for(var i = 0; i < shuffledAnswers.length; i++) {
-							if(shuffledAnswers[i] == correctAns) {
+						for(var i = 0; i < shuffledAnsList.length; i++) {
+							if(shuffledAnsList[i] == correctAns) {
 								correctIndex = i;
 								break;
 							}
 						}
 
-						// Generate the question itself
-						let question = word.simplified+" ("+word.traditional+")";
-
-						// Generate the question object and return it to the calling function
-						let questionObj = {
-							answers: shuffledAnswers,
-							correctAnswer: correctIndex,
-							question: question,
-							questionType: "character"
+						// Return the shuffled list of answers and the correct answer index
+						let ansObj = {
+							list: shuffledAnsList,
+							correctIndex: correctIndex
 						};
 
-						numOfCharQuestions++;
+						return ansObj;
+					},
+					character: function(word, currentLocation) {
+						var ansList = []; // The list of answers
 
-						return questionObj;
-					}
-				}
-
-				// Function to handle generating questions based on the pinyin of a word
-				function generatePinyinQuestion(word, currentLocation) {
-					var pinyinAnswers = []; // List of ansswers that will be displayed with the question
-
-					// Give it a 50 / 50 chance on whether or not asking what it means or asking what the character is
-					// 0 for character, 1 for deinition
-					var ansType = Math.floor(Math.random() * 2);
-
-					if(ansType == 0) {
-						// The answer will be character
 						// Add the correct character to the list of answers
-						pinyinAnswers.push(word.simplified+" ("+word.traditional+")");
+						ansList.push(word.simplified+" ("+word.traditional+")");
 
 						// Add the other three incorrect answers from the bookmarks dataset
 						for(var i = 0; i < 3; i++) {
-							var num = randomInt(0, bookmarks.length - 1, currentLocation);
-							pinyinAnswers.push(bookmarks[num].simplified+" ("+bookmarks[num].traditional+")");
+							var num = randomIntWException(0, bookmarks.length, currentLocation);
+							if(bookmarks[num].traditional == word.traditional) {
+								logger.debug("There is going to be a duplicate in the answers...");
+								logger.debug("Bookmarks index: "+num+"... Current location: "+currentLocation);
+							}
+							ansList.push(bookmarks[num].simplified+" ("+bookmarks[num].traditional+")");
 						}
 
 						// Shuffle the list of answers
 						var correctAns = word.simplified+" ("+word.traditional+")";
-						//var shuffledAnswers = _.shuffle(pinyinAnswers);
-						var shuffledAnswers = shuffler(pinyinAnswers);
+						var shuffledAnsList = shuffler(ansList);
 
 						// Determine the index of the correct answer
 						var correctIndex;
-						for(var i = 0; i < shuffledAnswers.length; i++) {
-							if(shuffledAnswers[i] == correctAns) {
+						for(var i = 0; i < shuffledAnsList.length; i++) {
+							if(shuffledAnsList[i] == correctAns) {
 								correctIndex = i;
 								break;
 							}
+						}
+
+						// Return the shuffled list of answers and the correct answer index
+						let ansObj = {
+							list: shuffledAnsList,
+							correctIndex: correctIndex
+						};
+
+						return ansObj;
+					}
+				};
+
+				// The object with all the generator functions to generate questions
+				var generateQuestion = {
+					character: function(word, currentLocation) {
+						var ansObj; // The object that will hold information returned from the generation of answers functions
+
+						// Give it a 50 / 50 chance on whether or not asking what it sounds like (pinyin) or what it mean (definition)
+						// 0 for pinyin and 1 for definition
+						var ansType = Math.floor(Math.random() * 2);
+
+						if(ansType == 0) {
+							// The answer type will be pinyin
+							ansObj = generateAnswers.pinyin(word, currentLocation);
+						}
+						else if(ansType == 1) {
+							// The answer type will be definition
+							ansObj = generateAnswers.definition(word, currentLocation);
+						}
+
+						// Generate the question itself
+						let question = word.simplified+" ("+word.traditional+")";
+
+						// Generate the question object and return it to the calling function
+						let questionObj = {
+							answers: ansObj.list,
+							correctAnswer: ansObj.correctIndex,
+							question: question,
+							questionType: "character"
+						};
+
+						numOfCharQ++;
+
+						logger.debug("Here comes the question object");
+						logger.debug(questionObj);
+
+						return questionObj;
+					},
+					pinyin: function(word, currentLocation) {
+						var ansObj; // The object that will hold inforation returned from the generated answers
+
+						// Give it a 50 / 50 chance on whether or not asking what it means or what the character is
+						// 0 for character, 1 for definition
+						var ansType = Math.floor(Math.random() * 2);
+
+						if(ansType == 0) {
+							// The answer type will be characters
+							ansObj = generateAnswers.character(word, currentLocation);
+						}
+						else if(ansType == 1){
+							// The answer type will be definitions
+							ansObj = generateAnswers.definition(word, currentLocation);
 						}
 
 						// Generate the question itself
@@ -251,160 +290,61 @@ $(document).ready(function() {
 
 						// Generate the question object and return it to the calling function
 						let questionObj = {
-							answers: shuffledAnswers,
-							correctAnswer: correctIndex,
-							question: question,
-							quesetionType: "pinyin"
-						};
-
-						logger.debug(questionObj.question);
-
-						numOfPinyinQuestions++;
-
-						return questionObj;
-					}
-					else {
-						// The answer will be definitions
-						// Determine random index from the definitions of this word to pose as an answer
-						var defIndex = randomInt(0, word.definitions.length - 1);
-						pinyinAnswers.push(word.definitions[defIndex]);
-
-						// Add the other three incorrect answers from the bookmarks dataset
-						for(var i = 0; i < 3; i++) {
-							let num = randomInt(0, bookmarks.length - 1, currentLocation);
-							let incorrectDefIndex = randomInt(0, bookmarks[num].definitions.length - 1);
-							pinyinAnswers.push(bookmarks[num].definitions[incorrectDefIndex]);
-						}
-
-						// Shuffle the list of answers
-						var correctAns = word.definitions[defIndex];
-						//var shuffledAnswers = _.shuffle(pinyinAnswers);
-						var shuffledAnswers = shuffler(pinyinAnswers);
-
-						// Determine the index of the correct answer
-						var correctIndex;
-						for(var i = 0; i < shuffledAnswers.length; i++) {
-							if(shuffledAnswers[i] == correctAns) {
-								correctIndex = i;
-								break;
-							}
-						}
-
-						// Generate the question itself
-						let question = word.simplified+" ("+word.traditional+")";
-
-						// Generate the question object and return it to the calling function
-						let questionObj = {
-							answers: shuffledAnswers,
-							correctAnswer: correctIndex,
+							answers: ansObj.list,
+							correctAnswer: ansObj.correctIndex,
 							question: question,
 							questionType: "pinyin"
 						};
 
-						numOfPinyinQuestions++;
+						numOfPinyinQ++;
+
+						logger.debug("Here comes the question object");
+						logger.debug(questionObj);
 
 						return questionObj;
-					}
-				}
+					},
+					definition: function(word, currentLocation) {
+						var allDefQs = []; // An array containing all the definition question objects created from one word
+						word.defArray = word.definitions.split(",");
+						for(var h = 0; h < word.defArray.length; h++) {
+							var ansObj; // The object that will hold information returned from the generated answers
 
-				// Function to handle generating questions based on the definitions of a word
-				function generateDefQuestions(word, currentLocation) {
-					var totalQuestionObj = [];
-					for(var h = 0; h < word.definitions.length; h++) {
-						var defAnswers = []; // List of answers that will be displayed to the user with the question
+							// Give it a 50 / 50 chance on whether or not asking what it means or what the character is
+							// 0 for character, 1 for pinyin
+							var ansType = Math.floor(Math.random() * 2);
 
-						// Give it a 50 / 50 chance on whether or not asking what it sounds like (pinyin) or what it looks like (character)
-						// 0 for pinyin and 1 for character
-						var ansType = Math.floor(Math.random() * 2);
-
-						// The answerr type will be pinyin
-						if(ansType == 0) {
-							// Add the correct pinyin to the list of answers
-							defAnswers.push(word.pronunciation);
-
-							// Add the other three incorrect answers from the bookmarks dataset
-							for(var i = 0; i < 3; i++) {
-								var num = randomInt(0, bookmarks.length - 1, currentLocation);
-								defAnswers.push(bookmarks[num].pronunciation);
+							if(ansType == 0) {
+								// The answer type will be characters
+								ansObj = generateAnswers.character(word, currentLocation);
 							}
-
-							// Shuffle the list of answers
-							var correctAns = word.pronunciation;
-							//var shuffledAnswers = _.shuffle(defAnswers);
-							var shuffledAnswers = shuffler(defAnswers);
-
-							// Determine the index of the correct answer
-							var correctIndex;
-							for(var i = 0; i < shuffledAnswers.length; i++) {
-								if(shuffledAnswers[i] == correctAns) {
-									correctIndex = i;
-									break;
-								}
+							else if(ansType == 1) {
+								// The answer type will be pinyin
+								ansObj = generateAnswers.pinyin(word, currentLocation);
 							}
 
 							// Generate the question itself
-							let question = word.definitions[h];
+							let question = word.defArray[h];
 
-							// Generate the question object
 							let questionObj = {
-								answers: shuffledAnswers,
-								correctAnswer: correctIndex,
+								answers: ansObj.list,
+								correctAnswer: ansObj.correctIndex,
 								question: question,
 								questionType: "definition"
 							};
 
-							numOfDefQuestions++;
+							numOfDefQ++;
 
-							totalQuestionObj.push(questionObj);
+							allDefQs.push(questionObj);
 						}
-						else {
-							// The answers given will be character
-							// Add the correct character to the list of answers
-							defAnswers.push(word.simplified+" ("+word.traditional+")");
 
-							/// Add the other three incorrect answers from the bookmarks dataset
-							for(var i = 0; i < 3; i++) {
-								var num = randomInt(0, bookmarks.length - 1, currentLocation);
-								defAnswers.push(bookmarks[num].simplified+" ("+bookmarks[num].traditional+")");
-							}
-
-							// Shuffle the list of answers
-							var correctAns = word.simplified+" ("+word.traditional+")";
-							//var shuffledAnswers = _.shuffle(defAnswers);
-							var shuffledAnswers = shuffler(defAnswers);
-
-							// Determine the index of the correct answer
-							var correctIndex;
-							for(var i = 0; i < shuffledAnswers.length; i++) {
-								if(shuffledAnswers[i] == correctAns) {
-									correctIndex = i;
-									break;
-								}
-							}
-
-							// Generate the question itself
-							let question = word.definitions[h];
-
-							// Generate the question object
-							let questionObj = {
-								answers: shuffledAnswers,
-								correctAnswer: correctIndex,
-								question: question,
-								questionType: "definition"
-							};
-
-							numOfDefQuestions++;
-
-							totalQuestionObj.push(questionObj);
-						}
+						return allDefQs;
 					}
+				};
 
-					return totalQuestionObj;
-				}
 				for(var i = 0; i < bookmarks.length; i++) {
-					questions.push(generateCharacterQuestion(bookmarks[i], i));
-					questions.push(generatePinyinQuestion(bookmarks[i], i));
-					var defQuestions = generateDefQuestions(bookmarks[i], i);
+					questions.push(generateQuestion.character(bookmarks[i], i));
+					questions.push(generateQuestion.pinyin(bookmarks[i], i));
+					var defQuestions = generateQuestion.definition(bookmarks[i], i);
 					for(var x = 0; x < defQuestions.length; x++) {
 						questions.push(defQuestions[x]);
 					}
@@ -413,12 +353,11 @@ $(document).ready(function() {
 					logger.debug(questions);
 					logger.debug("!!! END QUESTIONS !!!");
 
-					//shuffledQuestions = _.shuffle(questions);
 					shuffledQuestions = shuffler(questions);
 
 					logger.debug("!!! BEGIN SHUFFLEDQUESTIONS !!!");
 					logger.debug(shuffledQuestions);
-					logger.debug("!!! END SHUFFLEDQUESTIONS !!!");
+					logger.debug("!!! END SHUFFLEDQUESTION !!!");
 				}
 
 				processNext();
@@ -432,23 +371,23 @@ function correctAnswer() {
 	// Cancel Timer
 	cancelTimer();
 
-	// Collect Data About answer
+	// Collect Data About Answer
 	var currentTime = parseInt($("#timer-progress").width());
 	answerTimes.push(currentTime);
 
-	numOfCorrectAns++;
+	numOfAnsC++;
 
 	var questionType = $("#questionType").html();
 	if(questionType == "definition") {
-		numOfDefQuestionsCorrect++;
+		numOfDefQC++;
 		defTimes.push(currentTime);
 	}
 	else if(questionType == "pinyin") {
-		numOfPinyinQuestionsCorrect++;
+		numOfPinyinQC++;
 		pinyinTimes.push(currentTime);
 	}
 	else if(questionType == "character") {
-		numOfCharQuestionsCorrect++;
+		numOfCharQC++;
 		charTimes.push(currentTime);
 	}
 
@@ -459,10 +398,7 @@ function correctAnswer() {
 
 	$("#correctCard").show();
 
-	// Display Answer
-	displayAnswer();
-
-	// Show Answer
+	// Show Answers
 	setTimeout(function() {
 		$("#correctCard").hide();
 		$("#answerCard").show();
@@ -470,7 +406,7 @@ function correctAnswer() {
 	}, 500);
 }
 
-// Function to handle what happens when the incorrect answerr is clicked
+// Function to handle what happens when the incorrect answer is clicked
 function incorrectAnswer() {
 	// Cancel Timer
 	cancelTimer();
@@ -483,7 +419,7 @@ function incorrectAnswer() {
 	$("#incorrectCard").show();
 
 	//Display Answer
-	displayAnswer();
+	display.answer();
 
 	// Show Answer
 	setTimeout(function() {
@@ -526,10 +462,47 @@ function setProgressValue(progress) {
 	$("#test-progress").attr("value", progress);
 }
 
+// Handle the display of questions and answers to the DOM
+var display = {
+	questions: function(question) {
+		logger.debug(question);
+		var questionHtml = "";
+		for(var i = 0; i < question.answers.length; i++) {
+			if(i == question.correctAnswer) {
+				questionHtml += "<a href='#' class='ans-btn' onclick='correctAnswer()' id='correctAnswer'>"+question.answers[i]+"</a>";
+			}
+			else {
+				questionHtml += "<a href'#' class='ans-btn' onclick='incorrectAnswer()'>"+question.answers[i]+"</a>";
+			}
+		}
+
+		$("#questionsList").html(questionHtml);
+		$("#questionSec").html(question.question);
+		$("#questionType").html(question.questionType);
+	},
+	answer: function() {
+		let q = $("#questionSec").html();
+		let a =  $("#correctAnswer").html();
+
+		$("#ansQuestionSec").html(q);
+		$("#answerSec").html(a);
+	}
+};
+
+
+// The Toolbar button actions
+$("#iDunnoButton").click(function() {
+	// TODO: Write this
+});
+$("#continueButton").click(function() {
+	$("#answerCard").hide();
+	processNext();
+});
+
 // Process the next question
 function processNext() {
 	// Display the questions
-	displayQuestion(shuffledQuestions[iterator]);
+	display.questions(shuffledQuestions[iterator]);
 	$("#continueButton").hide();
 	$("#iDunnoButton").show();
 	$("#questionCard").show();
@@ -543,39 +516,4 @@ function processNext() {
 
 	$("#timer-progress").show();
 	setTimer();
-}
-
-// The Toolbar button actions
-$("#iDunnoButton").click(function() {
-	// TODO: Write this
-});
-$("#continueButton").click(function() {
-	$("#answerCard").hide();
-	processNext();
-});
-
-// Display the question using html
-function displayQuestion(question) {
-	logger.debug(question);
-	var questionHtml = "";
-	for(var i = 0; i < question.answers.length; i++) {
-		if(i == question.correctAnswer) {
-			questionHtml += "<a href='#' class='ans-btn' onclick='correctAnswer()' id='correctAnswer'>"+question.answers[i]+"</a>";
-		}
-		else {
-			questionHtml += "<a href='#' class='ans-btn' onclick='incorrectAnswer()'>"+question.answers[i]+"</a>";
-		}
-	}
-
-	$("#questionsList").html(questionHtml);
-	$("#questionSec").html(question.question);
-	$("#questionType").html(question.questionType);
-}
-
-function displayAnswer() {
-	let q = $("#questionSec").html();
-	let a = $("#correctAnswer").html();
-
-	$("#ansQuestionSec").html(q);
-	$("#answerSec").html(a);
 }
