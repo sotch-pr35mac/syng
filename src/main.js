@@ -5,7 +5,7 @@ const ipc = require('electron').ipcMain;
 const app = electron.app; //Module to control application life.
 const BrowserWindow = electron.BrowserWindow; //Module to create native browser window.
 const dialog = require('electron').dialog;
-var fs =  require('fs');
+var fs = require('fs');
 var path = require('path');
 
 // Keep a global reference of the window object, if you don't, the window will
