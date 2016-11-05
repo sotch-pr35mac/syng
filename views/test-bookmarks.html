@@ -53,6 +53,25 @@
 			</center>
 		</div>
 
+		<!-- The Score Card, to display the score after the test -->
+		<div id="scoreCard" style="display: none;">
+		  <center>
+		    <br>
+		    <br>
+		    <br>
+		    <h1 id="scoreInfo" style="font-size: 50pt;"></h1>
+		    <h1 id="scorePercent" style="font-size: 50pt;"></h1>
+		    <br>
+		    <p style="padding-left: 10px; padding-right: 10px;">
+		      <b>Scoring Details: </b> The Syng Score is comprised of 10 points for every correct answer. An additional 5 points is awarded
+		      for the getting the correct answer within 5 seconds, 3 points awarded for getting the correct answer within 10 seconds, and 1 point
+		      awarded for getting the correct answer within 20 seconds.
+		    </p>
+		  </center>
+		</div>
+
+		<!-- TODO: Write an analytics card with graphs -->
+
 		<!-- The Incorrect Card, displayed when the question was incorrect before moving to the answer card -->
 		<div id="incorrectCard" style="display: none;">
 			<center>
@@ -86,6 +105,10 @@
 				<button class="btn btn-default btn-large pull-right" id="continueButton" style="display: none;">
 					Continue
 				</button>
+
+			  	<button class="btn btn-default btn-large pull-right" id="exitButton" style="display: none;">
+			  	  	Exit
+			  	</button>
 			</div>
 		</footer>
 	</div>

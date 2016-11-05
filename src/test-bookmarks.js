@@ -13,7 +13,7 @@ var dialog = require('electron').remote.dialog;
 var logger = require('../src/log/debug.js');
 
 // Turn Debugging On
-logger.turnDebugOn();
+logger.turnDebugOff();
 
 // Global Variables
 const FIRST_TIME_SCORE = 5; // The score for answer in the first time slot
@@ -40,25 +40,21 @@ var defTimes = []; // A set of times it took to answer definition questions
 var charTimes = []; // A set of times it took to answer character questions
 var timerInterval;
 var timerTimeout;
+var grandScore = 0;
 
 // Generate score for the test session
-function generateScore(ans, time) {
-	var score = 0;
-	if(ans == "correct") {
-		score += CORRECT_ANS_SCORE;
+function tallyScore(time) {
+	grandScore += CORRECT_ANS_SCORE;
 
-		if(time >= 25) {
-			score += FIRST_TIME_SCORE;
-		}
-		else if(time < 25 && time >= 20) {
-			score += SECOND_TIME_SCORE;
-		}
-		else if(time < 20 && time >= 10) {
-			score += THIRD_TIME_SCORE;
-		}
+	if(time >= 25) {
+		grandScore += FIRST_TIME_SCORE;
 	}
-
-	return score;
+	else if(time < 25 && time >= 20) {
+		grandScore += SECOND_TIME_SCORE;
+	}
+	else if(time < 20 && time >= 10) {
+		grandScore += THIRD_TIME_SCORE;
+	}
 }
 
 // Determine random integer from an interval and exclude a given index
@@ -377,6 +373,8 @@ function correctAnswer() {
 
 	numOfAnsC++;
 
+	tallyScore(currentTime);
+
 	var questionType = $("#questionType").html();
 	if(questionType == "definition") {
 		numOfDefQC++;
@@ -398,6 +396,9 @@ function correctAnswer() {
 
 	$("#correctCard").show();
 
+	// Display answer
+	display.answer();
+
 	// Show Answers
 	setTimeout(function() {
 		$("#correctCard").hide();
@@ -410,6 +411,8 @@ function correctAnswer() {
 function incorrectAnswer() {
 	// Cancel Timer
 	cancelTimer();
+
+	numOfAnsI++;
 
 	// Hide Questions
 	$("#questionCard").hide();
@@ -486,34 +489,74 @@ var display = {
 
 		$("#ansQuestionSec").html(q);
 		$("#answerSec").html(a);
+	},
+	score: function() {
+		$("#continueButton").hide();
+		$("#answerCard").hide();
+		$("#scoreInfo").html("Syng Score: "+grandScore);
+		var scorePercent = Math.round(((numOfAnsC / questions.length) * 100) * 100) / 100;
+		$("#scorePercent").html("Percent: "+scorePercent+"%");
+		$("#scoreCard").show();
+		$("#exitButton").show();
 	}
 };
 
 
 // The Toolbar button actions
 $("#iDunnoButton").click(function() {
-	// TODO: Write this
+	// Cancel Timer
+	cancelTimer();
+
+	numOfAnsU++;
+
+	// Hide Questions
+	$("#questionCard").hide();
+	$("#timer-progress").hide();
+	$("#iDunnoButton").hide();
+
+	$("#iDunnoCard").show();
+
+	//Display Answer
+	display.answer();
+
+	// Show Answer
+	setTimeout(function() {
+		$("#iDunnoCard").hide();
+		$("#answerCard").show();
+		$("#continueButton").show();
+	}, 500);
 });
 $("#continueButton").click(function() {
 	$("#answerCard").hide();
 	processNext();
 });
+$("#exitButton").click(function() {
+	ipc.send("close-test-window");
+});
 
 // Process the next question
 function processNext() {
-	// Display the questions
-	display.questions(shuffledQuestions[iterator]);
-	$("#continueButton").hide();
-	$("#iDunnoButton").show();
-	$("#questionCard").show();
+	// Check to see if the test is over
+	if($("#test-progress").val() < 100) {
+		// Display the questions
+		display.questions(shuffledQuestions[iterator]);
+		$("#continueButton").hide();
+		$("#iDunnoButton").show();
+		$("#questionCard").show();
 
-	//Increment iterator
-	iterator++;
+		//Increment iterator
+		iterator++;
 
-	// Increment the progressbar
-	testProgress = (iterator / shuffledQuestions.length) * 100;
-	setProgressValue(testProgress);
+		// Increment the progressbar
+		testProgress = (iterator / shuffledQuestions.length) * 100;
+		setProgressValue(testProgress);
 
-	$("#timer-progress").show();
-	setTimer();
+		$("#timer-progress").show();
+		setTimer();
+	}
+	else {
+		// The test is over, display the score
+		// TODO: Display analytics
+		display.score();
+	}
 }

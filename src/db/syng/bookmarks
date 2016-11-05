@@ -10,3 +10,12 @@
 {"k":"0000000078","o":"0000000174","v":"001"}
 {"_id":5,"_uid":5,"_dt":1470467718976,"_s":"77bd405a8a3ae975c3badc7c018c396f"}
 {"traditional":"特別","simplified":"特别","pronunciation":"tè bié","definitions":"especially,special,particular,unusual","toneMarks":"4,2","_id":{"$wrap":"$oid","v":5}}
+{"k":"0000000049","o":"0000000000","v":"001"}
+{"_id":2,"_uid":5,"_dt":1478321847383,"_a":"del"}
+
+{"k":"0000000078","o":"0000000176","v":"001"}
+{"_id":6,"_uid":6,"_dt":1478321859650,"_s":"da4ed4c4d0195dec6da846e71300dfcc"}
+{"traditional":"婚姻","simplified":"婚姻","pronunciation":"hūn yīn","definitions":"matrimony,wedding,marriage,CL:次[ci4]","toneMarks":"1,1","_id":{"$wrap":"$oid","v":6}}
+{"k":"0000000078","o":"0000000183","v":"001"}
+{"_id":7,"_uid":7,"_dt":1478321871198,"_s":"10b3eb58acf91ed72dd37d08f0186146"}
+{"traditional":"王","simplified":"王","pronunciation":"wáng","definitions":"king or monarch,best or strongest of its type,grand,great","toneMarks":"2","_id":{"$wrap":"$oid","v":7}}
