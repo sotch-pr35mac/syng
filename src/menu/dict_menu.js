@@ -51,7 +51,7 @@ var template = [
             ipc.send("generate-flashcards");
          }
       },
-      {
+      /*{
          label: "Generate Test",
          submenu: [
            {
@@ -69,6 +69,13 @@ var template = [
              }
            }
          ]
+      }*/
+      {
+      	label: "Generate Test",
+      	accelerator: 'CmdOrCtrl+T',
+      	click: function() {
+      		ipc.send("test-bookmarks");
+      	}
       }
    ]
   },

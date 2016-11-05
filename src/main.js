@@ -296,9 +296,6 @@ app.on('ready', function() {
 		title: 'Syng | Test Progress'
 	});
 
-	// DEBUG:
-	testWindow.openDevTools();
-
 	testWindow.on('close', function(event, args) {
 		if(mainWindow != null) {
 			testWindow.hide();
