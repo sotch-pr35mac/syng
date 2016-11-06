@@ -29,3 +29,23 @@ a:hover {
 h1 {
 	/* cursor: pointer; */
 }
+
+.section-heading {
+	cursor: pointer;
+}
+
+.section-content {
+	display: none;
+}
+
+.section-content.default {
+	display: block;
+}
+
+.sub-section-header {
+	cursor: pointer;
+}
+
+.sub-section-content {
+	display: none;
+}

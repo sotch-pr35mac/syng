@@ -19,3 +19,6 @@
 {"k":"0000000078","o":"0000000183","v":"001"}
 {"_id":7,"_uid":7,"_dt":1478321871198,"_s":"10b3eb58acf91ed72dd37d08f0186146"}
 {"traditional":"王","simplified":"王","pronunciation":"wáng","definitions":"king or monarch,best or strongest of its type,grand,great","toneMarks":"2","_id":{"$wrap":"$oid","v":7}}
+{"k":"0000000078","o":"0000000173","v":"001"}
+{"_id":8,"_uid":8,"_dt":1478354434307,"_s":"fb7bb4e135d51416fe15a466bc278f7b"}
+{"traditional":"蘋果","simplified":"苹果","pronunciation":"píng guǒ","definitions":"apple,CL:個|个[ge4],顆|颗[ke1]","toneMarks":"2,3","_id":{"$wrap":"$oid","v":8}}

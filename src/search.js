@@ -49,6 +49,7 @@ function viewLargeChars(simplified, traditional) {
 function display(search_results, expanded_content) {
 	$("#search-results").html(search_results);
 	$("#expanded-dict-content").html(expanded_content);
+	initializeSectionHeaders();
 }
 
 function displayNone() {
@@ -83,14 +84,52 @@ function displayResults(trans) {
 		return listing;
 	}
 
+	// Generate Characters Section Content
+	function genCharCont(tradWord) {
+		var wordList = [];
+		for(var x = 0; x < tradWord.length; x++) {
+			cedict.searchByChinese(tradWord[x], function(result) {
+				wordList.push(result);
+			});
+		}
+
+		var componentHtml = "<h3 class='section-header'><strong>Characters:</strong></h3><div class='section-content'><ol>";
+		/*for(var x = 0; x < wordList.length; x++) {
+			componentHtml += "<li><h4>"+wordList[x][0][0].simplified+" ("+wordList[x][0][0].traditional+") - "+wordList[x][0][0].pronunciation+"</h4><ul>";
+			for(var y = 0; y < wordList[x][0][0].definitions.length; y++) {
+				componentHtml += "<li>"+wordList[x][0][0].definitions[y]+"</li>";
+			}
+			componentHtml += "</ul>";
+		}*/
+
+		for(var x = 0; x < wordList.length; x++) {
+			for(var y = 0; y < wordList[x].length; y++) {
+				for(var n = 0; n < wordList[x][y].length; n++) {
+					componentHtml += "<li><h4 class='sub-section-header'>"+wordList[x][y][n].simplified+" ("+wordList[x][y][n].traditional+") - "+wordList[x][y][n].pronunciation+"</h4><div class='sub-section-content'><ul>";
+					for(var z = 0; z < wordList[x][y][n].definitions.length; z++) {
+						componentHtml += "<li>"+wordList[x][y][n].definitions[z]+"</li>";
+					}
+					componentHtml += "</ul></div>";
+				}
+			}
+		}
+
+		componentHtml += "</ol></div>";
+
+		return componentHtml;
+	}
+
 	// Generate Expanded Search Result Content HTML
 	function genContent(simplified, traditional, pinyin, definitions, toneMarks, id) {
 		// Handle definitions content
-		var definitionsHtml = "<h3><strong>Definition:</strong></h3><ol>";
+		var definitionsHtml = "<h3 class='section-header'><strong>Definition:</strong></h3><div class='section-content default'><ol>";
 		for(var i = 0; i < definitions.length; i++) {
 			definitionsHtml += "<li>"+definitions[i]+"</li>";
 		}
-		definitionsHtml += "</ol>";
+		definitionsHtml += "</ol></div>";
+
+		// Get character breakdown html
+		var componentCharacterHtml = genCharCont(traditional);
 
 		// Handle pinyin content
 		var pinyinHtml = "<h3 style='margin-top: 0px; padding-left: 3px;'>"+pinyin+"</h3>";
@@ -149,7 +188,7 @@ function displayResults(trans) {
 		var tnm = '"'+toneMarks+'"';
 		var actionsButton = "<div class='btn-group pull-right'><button onclick='addToBookmarks("+simp+", "+trad+", "+pin+", "+def+", "+tnm+")' class='btn btn-default btn-large hint--bottom' data-hint='Add to Bookmarks'><span class='icon icon-plus-circled'></span></button><button onclick='viewLargeChars("+simp+", "+trad+")' class='btn btn-default btn-large hint--left' data-hint='View Large Characters'><span class='icon icon-popup'></span></button></div>";
 
-		var expandedContent = "<div style='display: none;' id='"+id+"'>"+actionsButton+characters+pinyinHtml+definitionsHtml+"</div>";
+		var expandedContent = "<div style='display: none;' id='"+id+"'>"+actionsButton+characters+pinyinHtml+definitionsHtml+componentCharacterHtml+"</div>";
 		return expandedContent;
 	}
 
@@ -239,6 +278,21 @@ function switchWord(id) {
 		$("#"+id).show();
 	}
 	console.log(id);
+}
+
+function initializeSectionHeaders() {
+	$(".window").find(".section-header").click(function() {
+		//Expand or collapse this panel
+		$(this).next().slideToggle('fast');
+
+		//Hide the other panels
+		$(".section-content").not($(this).next()).slideUp("fast");
+	});
+
+	$(".window").find(".sub-section-header").click(function() {
+		// Expand or collapse this panel
+		$(this).next().slideToggle('fast');
+	});
 }
 
 $(document).ready(function() {

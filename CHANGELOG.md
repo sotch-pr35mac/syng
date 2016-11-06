@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 - Added View Changelog to Help Menu
 - Added Logging Platform for Debugging
 - Added Automatically Generated Tests Based on Bookmarks as described in Issue #27
+- Added Component Characters Section to Search Results as described in Issue #34
 
 ### Fixed
 - Fixed Issue #31, Search Button on New Line on Windows
