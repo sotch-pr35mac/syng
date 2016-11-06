@@ -282,11 +282,11 @@ function switchWord(id) {
 
 function initializeSectionHeaders() {
 	$(".window").find(".section-header").click(function() {
-		//Expand or collapse this panel
+		// Expand or collapse this panel
 		$(this).next().slideToggle('fast');
 
-		//Hide the other panels
-		$(".section-content").not($(this).next()).slideUp("fast");
+		// Hide the other panels
+		// $(".section-content").not($(this).next()).slideUp("fast");
 	});
 
 	$(".window").find(".sub-section-header").click(function() {
