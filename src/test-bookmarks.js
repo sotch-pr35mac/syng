@@ -5,6 +5,8 @@
 * @Created	:: Nov 5, 2016
 */
 
+'use strict';
+
 // Required Dependencies
 var ipc = require('electron').ipcRenderer; // For communication with the main process
 var tingo = require('tingodb')(); // Mong-style database
@@ -75,7 +77,7 @@ function randomIntWException(min, max, exception) {
 
 // Determine random integer from an interval
 function randomInt(min, max) {
-	return num = Math.floor(Math.random() * (max - min + 1) + min);
+	return Math.floor(Math.random() * (max - min + 1) + min);
 }
 
 // Shuffle the contetns of an array
@@ -159,7 +161,7 @@ $(document).ready(function() {
 
 						// Add the other three incorrect answers from the bookmarks dataset
 						for(var i = 0; i < 3; i++) {
-							let num = randomIntWException(0, bookmarks.length - 1, currentLocation);
+							var num = randomIntWException(0, bookmarks.length - 1, currentLocation);
 							bookmarks[num].defArray = bookmarks[num].definitions.split(",");
 							if(bookmarks[num].defArray[defIndex] == word.defArray[defIndex]) {
 								logger.debug("There is going to be a duplicate in the answers...");
