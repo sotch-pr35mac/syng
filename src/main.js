@@ -163,7 +163,7 @@ app.on('ready', function() {
 
 	// Import and Export bookmarks
 	ipc.on('start-bookmarks-import', function(event, args) {
-		dialog.showOpenDialog({ title: "Import Bookmarks", properties: ['openFile'], filters: [{name: 'JSON', extensions: ['json']}]}, function(file) {
+		dialog.showOpenDialog({ title: "Import Bookmarks", properties: ['openFile'], filters: [{name: 'Syng Dictionary Bookmarks Backup', extensions: ['sdb']}]}, function(file) {
 			if(file == undefined || file == null) {
 				console.log("There was an error opening the file.");
 				console.log(file);
@@ -194,7 +194,7 @@ app.on('ready', function() {
 	});
 
 	ipc.on('bookmarks-export-data', function(event, args) {
-		dialog.showSaveDialog({ title: 'Export Bookmarks', filters: [ {name: 'JSON', extensions: ['json']}] }, function(file) {
+		dialog.showSaveDialog({ title: 'Export Bookmarks', filters: [ {name: 'Syng Dictionary Bookmarks Backup', extensions: ['sdb']}] }, function(file) {
 			if(file == undefined || file == null) {
 				console.log("There was an error with the chosen file.");
 				console.log(file);

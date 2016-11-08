@@ -5,7 +5,6 @@
   "description": "Syng is a free, open-source, cross-platform, Chinese-to-English dictionary app.",
   "repository": "http://github.com/sotch-pr35mac/syng",
   "homepage": "http://syngdict.com/",
-  "productName": "Syng | 词应",
   "license": "Creative Commons Attribution-ShareAlike 3.0 Unported License",
   "main": "src/main.js",
   "dependencies": {
@@ -23,8 +22,7 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
+    "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.1.2"
-  },
-  "build": {
   }
 }
