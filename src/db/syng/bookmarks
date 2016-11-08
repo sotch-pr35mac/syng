@@ -22,3 +22,6 @@
 {"k":"0000000078","o":"0000000173","v":"001"}
 {"_id":8,"_uid":8,"_dt":1478354434307,"_s":"fb7bb4e135d51416fe15a466bc278f7b"}
 {"traditional":"蘋果","simplified":"苹果","pronunciation":"píng guǒ","definitions":"apple,CL:個|个[ge4],顆|颗[ke1]","toneMarks":"2,3","_id":{"$wrap":"$oid","v":8}}
+{"k":"0000000078","o":"0000000181","v":"001"}
+{"_id":9,"_uid":9,"_dt":1478431797956,"_s":"82209f9d95022f5341d9778a14443800"}
+{"traditional":"充滿","simplified":"充满","pronunciation":"chōng mǎn","definitions":"full of,brimming with,very full,permeated","toneMarks":"1,3","_id":{"$wrap":"$oid","v":9}}
