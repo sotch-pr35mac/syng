@@ -1,6 +1,6 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v0.1.2 (beta)
+##### v0.2.0 (beta 2)
 
 ---
 
@@ -12,26 +12,17 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
 
 ## __Features__
 - ___Search___
-    - Syng will allow you to search by PinYin, English, and Chinese characters (both traditional and simplified)
+    - Syng allows you to search by PinYin, English, and Chinese characters (both traditional and simplified)
 - ___Save___
-    - Syng will allow you to save words and searches to your _"Bookmarks"_, so that you can reference them later.
+    - Syng allows you to save words and searches to your _"Bookmarks"_, so that you can reference them later.
 - ___Study___
-    - Syng will let you study Chinese by creating flash cards out of your saved words and searches.
-    - Syng will also test you on your knowledge and progress of your Chinese to measure your language development.
+    - Syng lets you study Chinese by creating flash cards out of your saved words and searches.
+    - Syng also tests you on your knowledge and progress of your Chinese to measure your language development.
 - Offline Support
 - Cross-Platform
    - Mac OS X
    - Windows
    - Linux
-
-## __Development Status__
-#### __What's Working__
-   - Search (for Characters, Pinyin, and English)
-   - Saving searches to Bookmarks
-   - Studying Flashcards
-
-#### __What's Not__
-   - Generating tests have not been built yet
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
