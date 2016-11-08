@@ -8,11 +8,11 @@
 Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. This service will be made for desktop operating systems, and there are no plans to build something for mobile platforms. _For a good mobile platform alternative the app [Pleco](https://www.pleco.com/) is an excellent option._
 
 ### Name
-Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
+Syng is a stylized spelling of Ciying, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
 
 ## __Features__
 - ___Search___
-    - Syng allows you to search by PinYin, English, and Chinese characters (both traditional and simplified)
+    - Syng allows you to search by Pinyin, English, and Chinese characters (both traditional and simplified)
 - ___Save___
     - Syng allows you to save words and searches to your _"Bookmarks"_, so that you can reference them later.
 - ___Study___
@@ -23,6 +23,8 @@ Syng is a stylized spelling of CiYing, the PinYin for 词应. 词应 has been sh
    - Mac OS X
    - Windows
    - Linux
+ - Prettify Pinyin: Convert pinyin with tone numbers with tone marks
+ - Convert Characters: Convert between traditional and simplified characters
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
