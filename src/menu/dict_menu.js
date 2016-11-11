@@ -3,6 +3,11 @@ var ipc = require('electron').ipcRenderer;
 const Menu = remote.Menu;
 const MenuItem = remote.MenuItem;
 
+// Add insert function into Array prototype
+Array.prototype.insert = function (index, item) {
+	this.splice(index, 0, item);
+};
+
 window.addEventListener('contextmenu', function (e) {
   e.preventDefault();
   menu.popup(remote.getCurrentWindow());
@@ -140,6 +145,46 @@ var template = [
 
 if (process.platform == 'darwin') {
   var name = require('electron').remote.app.getName();
+
+  template.insert(0, {
+  	label: 'Edit',
+  	submenu: [
+  		{
+  			label: "Undo",
+  			accelerator: "CmdOrCtrl+Z",
+  			selector: "undo:"
+  		},
+  		{
+  			label: "Redo",
+  			accelerator: "Shift+CmdOrCtrl+Z",
+  			selector: "redo:"
+  		},
+  		{
+  			type: "separator"
+  		},
+  		{
+  			label: "Cut",
+  			accelerator: "CmdOrCtrl+X",
+  			selector: "cut:"
+  		},
+  		{
+  			label: "Copy",
+  			accelerator: "CmdOrCtrl+C",
+  			selector: "copy:"
+  		},
+  		{
+  			label: "Paste",
+  			accelerator: "CmdOrCtrl+V",
+  			selector: "paste:"
+  		},
+  		{
+  			label: "Select All",
+  			accelerator: "CmdOrCtrl+A",
+  			selector: "selectAll:"
+  		}
+  	]
+  });
+
   template.unshift({
 	 label: name,
 	 submenu: [
