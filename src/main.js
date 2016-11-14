@@ -24,9 +24,12 @@ var characterConvertWindow = null; // The Traditional to Simplified and vice ver
 app.on('window-all-closed', function() {
 	// On OS X it is common for applications and their menu bar
 	// to stay active until the user quits explicity with CMD + Q
-	if(process.platform != "darwin") {
+	/*if(process.platform != "darwin") {
 		app.quit();
-	}
+	}*/
+
+	// Fixed startup and shut down behavior on macOS
+	app.quit();
 });
 
 // This method will be called when Electron has finished
@@ -56,13 +59,27 @@ app.on('ready', function() {
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
 		mainWindow = null;
-		aboutWindow.close();
-		bookmarksWindow.close();
-		lgChars.close();
-		flashcardsWindow.close();
-		testWindow.close();
-		pinyinConvertWindow.close();
-		characterConvertWindow.close();
+		if(aboutWindow != null) {
+			aboutWindow.close();
+		}
+		if(bookmarksWindow != null) {
+			bookmarksWindow.close();
+		}
+		if(lgChars != null) {
+			lgChars.close();
+		}
+		if(flashcardsWindow != null) {
+			flashcardsWindow.close();
+		}
+		if(testWindow != null) {
+			testWindow.close();
+		}
+		if(pinyinConvertWindow != null) {
+			pinyinConvertWindow.close();
+		}
+		if(characterConvertWindow != null) {
+			characterConvertWindow.close();
+		}
 	});
 
 	ipc.on('hide-syng', function(event, args) {
