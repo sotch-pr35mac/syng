@@ -39,7 +39,7 @@ app.on('ready', function() {
 	// Determine the size of the window here
 	var mainWindowWidth = 950;
 	if(process.platform == "win32") {
-		mainWindowWidth = 960;
+		mainWindowWidth = 990;
 	}
 
 	// Create the browser window.
@@ -353,10 +353,16 @@ app.on('ready', function() {
 		testWindow.hide();
 	});
 
+	// Make the window large enough on Windows computers
+	var pinyinConvertWindowHeight = 420;
+	if(process.platform == "win32") {
+		pinyinConvertWindowHeight = 450;
+	}
+
 	// Hanle the Pinyin Convsersion Window
 	pinyinConvertWindow = new BrowserWindow({
 		width: 950,
-		height: 420,
+		height: pinyinConvertWindowHeight,
 		show: false,
 		title: 'Syng | Convert Pinyin'
 	});
@@ -381,10 +387,16 @@ app.on('ready', function() {
 		}
 	});
 
+	// Make the window large enough on windows machines
+	var characterConvertWindowHeight = 420;
+	if(process.platform == "win32") {
+		characterConvertWindowHeight = 450;
+	}
+
 	// Hanlde Character Converter Window
 	characterConvertWindow = new BrowserWindow({
 		width: 950,
-		height: 420,
+		height: characterConvertWindowHeight,
 		show: false,
 		title: 'Syng | Convert Characters'
 	});
