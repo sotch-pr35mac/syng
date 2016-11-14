@@ -34,15 +34,15 @@ app.on('window-all-closed', function() {
 app.on('ready', function() {
 	// Main Window Size will be different on Windows because of button rendering differences
 	// Determine the size of the window here
-	var mainWindowWidth = 420;
+	var mainWindowWidth = 950;
 	if(process.platform == "win32") {
-		mainWindowWidth = 450;
+		mainWindowWidth = 960;
 	}
 
 	// Create the browser window.
 	mainWindow = new BrowserWindow({
-		width: 950,
-		height: mainWindowWidth,
+		width: mainWindowWidth,
+		height: 420,
 		show: false,
 		title: 'Syng | Chinese to English Dictionary'
 	});
