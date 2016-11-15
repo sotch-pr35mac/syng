@@ -53,6 +53,9 @@ app.on('ready', function() {
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
 
+	// DEBUG
+	mainWindow.openDevTools();
+
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
 		// Derefernce the window object, usually you would store windows

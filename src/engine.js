@@ -242,9 +242,29 @@ module.exports.searchByChinese = function(str, cb) {
 	function searchByTraditional(trad, callback) {
 		var compounds = [];	// Put all the compound words into this array so they can be searched as compound words
 		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
-		while(trad.length > 0 && infiniteCheck < 4000) {
+		while(trad.length > 0 && infiniteCheck < 8000) {
 			// Check for 4, 3, and 2 character compound words
-			if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(0, 4))) {
+			if(trad.length >= 8 && tradHashtable.containsKey(trad.substring(0, 8))) {
+				var compoundWord = tradHashtable.get(trad.substring(0, 8));
+				compounds.push(compoundWord);
+				trad = trad.substring(8);
+			}
+			else if(trad.length >= 7 && tradHashtable.containsKey(trad.substring(0, 7))) {
+				var compoundWord = tradHashtable.get(trad.substring(0, 7));
+				compounds.push(compoundWord);
+				trad = trad.substring(7);
+			}
+			else if(trad.length >= 6 && tradHashtable.containsKey(trad.substring(0, 6))) {
+				var compoundWord = tradHashtable.get(trad.substring(0, 6));
+				compounds.push(compoundWord);
+				trad = trad.substring(6);
+			}
+			else if(trad.length >= 5 && tradHashtable.containsKey(trad.substring(0, 5))) {
+				var compoundWord = tradHashtable.get(trad.substring(0, 5));
+				compounds.push(compoundWord);
+				trad = trad.substring(5);
+			}
+			else if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(0, 4))) {
 				var compoundWord = tradHashtable.get(trad.substring(0, 4));
 				compounds.push(compoundWord);
 				trad = trad.substring(4);
@@ -278,9 +298,29 @@ module.exports.searchByChinese = function(str, cb) {
 	function searchBySimplified(simp, callback) {
 		var compounds = [];	// Put all the compound words into this array so they can be searched as compound words
 		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
-		while(simp.length > 0 && infiniteCheck < 4000) {
+		while(simp.length > 0 && infiniteCheck < 8000) {
 			// Check for 4, 3, and 2 character compound words
-			if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(0, 4))) {
+			if(simp.length >= 8 && simpHashtable.containsKey(simp.substring(0, 8))) {
+				var compoundWord = simpHashtable.get(simp.substring(0, 8));
+				compounds.push(compoundWord);
+				simp = simp.substring(8);
+			}
+			else if(simp.length >= 7 && simpHashtable.containsKey(simp.substring(0, 7))) {
+				var compoundWord = simpHashtable.get(simp.substring(0, 7));
+				compounds.push(compoundWord);
+				simp = simp.substring(7);
+			}
+			else if(simp.length >= 6 && simpHashtable.containsKey(simp.substring(0, 6))) {
+				var compoundWord = simpHashtable.get(simp.substring(0, 6));
+				compounds.push(compoundWord);
+				simp = simp.substring(6);
+			}
+			else if(simp.length >= 5 && simpHashtable.containsKey(simp.substring(0, 5))) {
+				var compoundWord = simpHashtable.get(simp.substring(0, 5));
+				compounds.push(compoundWord);
+				simp = simp.substring(5);
+			}
+			else if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(0, 4))) {
 				var compoundWord = simpHashtable.get(simp.substring(0, 4));
 				compounds.push(compoundWord);
 				simp = simp.substring(4);
@@ -303,7 +343,7 @@ module.exports.searchByChinese = function(str, cb) {
 			else {
 				// The character wasn't recognized
 				console.log("The character wasn't recognized");
-				console.log(trad.substring(0, 1));
+				console.log(simp.substring(0, 1));
 			}
 
 			infiniteCheck++;
