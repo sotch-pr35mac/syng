@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [0.3.0]
+### Added
+- Added a menu item and keyboard shortcut for switching input, as described in Issue #64
+
 ### Fixed
 - Fixed Issue #57, Added Support for 8 Character Chinese Idioms
 

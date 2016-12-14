@@ -85,6 +85,10 @@ app.on('ready', function() {
 		}
 	});
 
+	ipc.on("switch-input", function(event, args) {
+		mainWindow.send("toggle-search-input", args);
+	});
+
 	ipc.on('hide-syng', function(event, args) {
 		if(mainWindow.isVisible()) {
 			mainWindow.hide();

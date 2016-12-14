@@ -16,6 +16,19 @@ const dialog = require('electron').remote.dialog;
 var db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
 var bookmarksDb = db.collection('bookmarks');
 
+function toggleLanguageSelector() {
+	const en = "EN";
+	const cn = "PY";
+	var currentLang = $("#language-selector").html();
+
+	if(currentLang == en) {
+		$("#language-selector").html(cn);
+	}
+	else {
+		$("#language-selector").html(en);
+	}
+}
+
 function addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
 	var dbObj = {
 		traditional: traditional,
@@ -82,6 +95,15 @@ function displayResults(trans) {
 		var defDisplay = "<p>"+defToDisplay+"</p>";
 		var listing = "<li class='list-group-item'><div class='media-body'>"+charDisplay+pinyinDisplay+defDisplay+"</div></li>";
 		return listing;
+	}
+
+	// Color Code Characters
+	function applyColorCode(toneMarks, chars) {
+		var colorCodeArr = [];
+		for(var i = 0; i < chars.length; i++) {
+			var colorCode;
+			//if() {}
+		}
 	}
 
 	// Generate Characters Section Content
@@ -250,21 +272,12 @@ function initializeSearch() {
 	});
 
 	$("#language-selector").click(function() {
-		var en = "EN";
-		var cn = "PY";
-		var currentLang = $("#language-selector").html();
-
-		if(currentLang == en) {
-			$("#language-selector").html(cn);
-		}
-		else {
-			$("#language-selector").html(en);
-		}
-	});
+		toggleLanguageSelector();
 
 	/*$("#clear-search").click(function() {
 		$("#search-bar").val("");
 	});*/
+});
 }
 
 function switchWord(id) {
@@ -304,4 +317,8 @@ $(document).ready(function() {
 			$("#default-search-btn").click()
 		}
 	});
+});
+
+ipc.on("toggle-search-input", function(event, args) {
+	toggleLanguageSelector();
 });
