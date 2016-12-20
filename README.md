@@ -48,11 +48,12 @@ Syng is a stylized spelling of Ciying, the Pinyin for 词应. 词应 has been sh
 
 ## __Getting Started__
 1. First go to the project directory
-    `cd /path/to/project`
+    `cd /path/to/project/app`
+     __Note:__ Within the project directory you have to go into the `/app` subdirectory before running `npm install`.
 2. Install the dependencies
     `npm install`
 3. Run Syng
-    `electron .`
+    `npm start`
 
 ## __Contributors__
 - [Preston Stosur-Bassett](http://www.stosur.info)
