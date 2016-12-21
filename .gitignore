@@ -1,3 +1,4 @@
 app/node_modules/
 release/
 app/src/db/syng/
+npm-debug.log
