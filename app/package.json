@@ -26,6 +26,6 @@
     "electron-rebuild": "^1.1.2"
   },
   "scripts": {
-     "start": "electron ."
-   }
+    "start": "electron ."
+  }
 }
