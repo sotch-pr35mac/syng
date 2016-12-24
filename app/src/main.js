@@ -110,6 +110,8 @@ app.on('ready', function() {
 		title: 'About Syng'
 	});
 
+	aboutWindow.openDevTools();
+
 	aboutWindow.setMenu(null);
 
 	aboutWindow.loadURL('file://'+__dirname+'/../views/about.html');
