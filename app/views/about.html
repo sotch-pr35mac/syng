@@ -8,32 +8,12 @@
   <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
   <title>Syng</title>
 
-  <script>window.$ = window.jQuery = require("../src/jquery.min.js");</script>
-
-  <link rel="stylesheet" href="../style/css/vue-beauty.css">
-
-  <script>
-    var Vue = require('../src/lib/vue.js');
-    var vue_beauty = require('../src/lib/vue-beauty.js');
-    Vue.use(vue_beauty);
-
-    $(document).ready(function() {
-      var testVue = new Vue({
-        el: "#testVue",
-        data: {
-          message: "testing vue"
-        }
-      });
-    });
-  </script>
+  <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
 
   <link rel="stylesheet" href="../style/css/photon.css">
 </head>
 
 <body style="padding-right: 15px; padding-left: 15px; margin-right: auto; margin-left: auto; background: #F5F5F4; overflow-y: scroll;">
-  <div id="testVue">
-    <v-button>{{message}}</v-button>
-  </div>
 	<br>
 	<center>
 		<img src="../style/img/syng-logo.png" height="100px" width="100px">
