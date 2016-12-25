@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
+
+  <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
+
+  <script>window.Vue = require("vue");</script>
+  <script>window.IView = require("iview");</script>
+
+  <link rel="stylesheet" href="../style/css/iview.css" />
+
+  <script>
+    $(document).ready(function() {
+      var testVue = new Vue({
+        el: "#test",
+        data: {}
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <div id="test">
+    <Menu theme="dark" width="150px">
+      <Menu-item key="1">Syng</Menu-item>
+      <Menu-item key="2">Search</Menu-item>
+      <Menu-item key="3">Read</Menu-item>
+      <Menu-item key="4">Bookmarks</Menu-item>
+      <Menu-item key="5">Study</Menu-item>
+      <Menu-item key="6">Tools</Menu-item>
+    </Menu>
+  </div>
+</body>
+
+</html>

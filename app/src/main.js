@@ -19,6 +19,7 @@ var testWindow = null; // The test window (to test the learner on their ability)
 var lgChars = null; // The window for displaying large characters for better visibility. Has `mainWindow` as parent.
 var pinyinConvertWindow = null; // The Pinyin Converter Window. Has no parent.
 var characterConvertWindow = null; // The Traditional to Simplified and vice versa character converter window. Has no parent.
+var oneWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -53,9 +54,6 @@ app.on('ready', function() {
 	// and load the index.html of the app.
 	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
 
-	// DEBUG
-	mainWindow.openDevTools();
-
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
 		// Derefernce the window object, usually you would store windows
@@ -83,7 +81,20 @@ app.on('ready', function() {
 		if(characterConvertWindow != null) {
 			characterConvertWindow.close();
 		}
+		if(oneWindow != null) {
+			oneWindow.close();
+		}
 	});
+
+	oneWindow = new BrowserWindow({
+		width: 1000,
+		height: 900,
+		show: true,
+		title: "Syng"
+	});
+
+	oneWindow.loadURL("file://"+__dirname+"/../views/onePage.html");
+	oneWindow.openDevTools();
 
 	ipc.on("switch-input", function(event, args) {
 		mainWindow.send("toggle-search-input", args);
@@ -109,8 +120,6 @@ app.on('ready', function() {
 		resizable: false,
 		title: 'About Syng'
 	});
-
-	aboutWindow.openDevTools();
 
 	aboutWindow.setMenu(null);
 
