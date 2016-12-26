@@ -87,8 +87,8 @@ app.on('ready', function() {
 	});
 
 	oneWindow = new BrowserWindow({
-		width: 1278,
-		height: 798,
+		width: 1100,
+		height: 651,
 		show: true,
 		title: "Syng"
 	});
