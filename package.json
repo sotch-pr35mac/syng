@@ -33,7 +33,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "browserify -t vueify -e src/onePage.js -o src/build.js"
+    "build": "browserify -t vueify -e src/app.js -o src/syng.js"
   },
   "config": {
     "commitizen": {

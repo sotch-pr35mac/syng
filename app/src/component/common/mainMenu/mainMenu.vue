@@ -49,5 +49,5 @@
     data: function() {
       return {}
     }
-  }
+  };
 </script>
