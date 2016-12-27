@@ -21,11 +21,11 @@ Syng is a stylized spelling of Ciying, the Pinyin for 词应. 词应 has been sh
     - Syng also tests you on your knowledge and progress of your Chinese to measure your language development.
 - Offline Support
 - Cross-Platform
-   - Mac OS X
-   - Windows
-   - Linux
- - Prettify Pinyin: Convert pinyin with tone numbers with tone marks
- - Convert Characters: Convert between traditional and simplified characters
+    - Mac OS X
+    - Windows
+    - Linux
+- Prettify Pinyin: Convert pinyin with tone numbers with tone marks
+- Convert Characters: Convert between traditional and simplified characters
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
