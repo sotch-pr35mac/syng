@@ -39,24 +39,6 @@
       font-size: 10pt;
     }
   </style>
-
-  <script>
-    var AboutSyng = require('../src/component/aboutSyng/aboutSyng.vue');
-    var MainMenu = require('../src/component/common/mainMenu/mainMenu.vue');
-    var SyngMenu = require('../src/component/syngMenu/syngMenu.vue');
-
-    $(document).ready(function() {
-      var testVue = new Vue({
-        el: "#test",
-        components: {
-          aboutSyng: AboutSyng,
-          mainMenu: MainMenu,
-          syngMenu: SyngMenu
-        },
-        data: {}
-      });
-    });
-  </script>
 </head>
 
 <body>
@@ -73,6 +55,7 @@
       </i-col>
     </Row>
   </div>
+  <script src="../src/build.js"></script>
 </body>
 
 </html>
