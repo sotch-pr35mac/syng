@@ -1,7 +1,7 @@
 var AboutSyng = require('./component/aboutSyng/aboutSyng.vue');
 var MainMenu = require('./component/common/mainMenu/mainMenu.vue');
 var SyngMenu = require('./component/syngMenu/syngMenu.vue');
-var ReportBug = require('./component/reportBut/reportBug.vue');
+var ReportBug = require('./component/reportBug/reportBug.vue');
 var Settings = require('./component/settings/settings.vue');
 var ViewLicense = require('./component/viewLicense/viewLicense.vue');
 

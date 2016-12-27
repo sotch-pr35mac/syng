@@ -33,7 +33,7 @@
   },
   "scripts": {
     "start": "electron .",
-    "build": "browserify -t vueify -e src/app.js -o src/syng.js"
+    "build": "browserify -t vueify -e app/src/app.js -o app/src/syng.js"
   },
   "config": {
     "commitizen": {
