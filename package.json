@@ -24,8 +24,10 @@
     "vue": "^1.0.17"
   },
   "devDependencies": {
+    "browserify": "^13.1.1",
     "electron-packager": "^8.2.0",
-    "electron-rebuild": "^1.1.2"
+    "electron-rebuild": "^1.1.2",
+    "vueify": "^9.4.0"
   },
   "scripts": {
     "start": "electron ."
