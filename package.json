@@ -29,10 +29,11 @@
     "cz-conventional-changelog": "^1.2.0",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.1.2",
-    "vueify": "^9.4.0"
+    "vueify": "^8.7.0"
   },
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "browserify -t vueify -e src/onePage.js -o src/build.js"
   },
   "config": {
     "commitizen": {

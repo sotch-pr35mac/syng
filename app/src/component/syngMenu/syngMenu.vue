@@ -27,7 +27,7 @@
 </style>
 
 <script>
-var IView = require('ivue');
+var IView = require('iview');
 
 module.exports = {
   data: function() {
