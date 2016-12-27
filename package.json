@@ -25,11 +25,18 @@
   },
   "devDependencies": {
     "browserify": "^13.1.1",
+    "commitizen": "^2.9.2",
+    "cz-conventional-changelog": "^1.2.0",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.1.2",
     "vueify": "^9.4.0"
   },
   "scripts": {
     "start": "electron ."
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
   }
 }
