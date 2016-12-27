@@ -1,6 +1,7 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
 ##### v0.3.0 (Beta 3)
+[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---
 
@@ -41,15 +42,19 @@ Syng is a stylized spelling of Ciying, the Pinyin for 词应. 词应 has been sh
       - Language Detection for Search
 
 ## __Contribute__
+This is a [Commitizen Friendly](https://github.com/commitizen/cz-cli) Repository. When contributing please use commitizen when committing changes.
+You can install commitizen using npm:
+```
+npm install -g commitizen
+```
 1. Fork it!
-2. Create a branch `git checkout my-feature`
-3. Commit your changes
+2. Create a branch `git checkout -b my-feature`
+3. Commit your changes `git cz`
 4. Submit a pull request
 
 ## __Getting Started__
 1. First go to the project directory
-    `cd /path/to/project/app`
-     __Note:__ Within the project directory you have to go into the `/app` subdirectory before running `npm install`.
+    `cd /path/to/project/`
 2. Install the dependencies
     `npm install`
 3. Run Syng
