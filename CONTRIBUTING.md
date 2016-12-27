@@ -2,7 +2,7 @@
 Syng is a [Commitizen Friendly](https://github.com/commitizen/cz-cli) Repository.
 
 > **When you commit with Commitizen, you'll be prompted to fill out any required commit fields at commit time.**
-> - [Commitizen README.md](https://github.com/commitizen/cz-cli/blob/master/README.md)
+> _ [Commitizen README.md](https://github.com/commitizen/cz-cli/blob/master/README.md)
 
 
 ### Installing Commitizen
