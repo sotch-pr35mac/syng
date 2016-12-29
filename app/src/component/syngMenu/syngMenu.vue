@@ -29,6 +29,16 @@
 </template>
 
 <style>
+.ivu-col-span-4 {
+  background-color: #fff;
+  border-right: 2px solid #d7dde4;
+}
+.ivu-col-span-4:after {
+  background: #d7dde4;
+  position: absolute;
+  bottom: 0;
+  display: block;
+}
 </style>
 
 <script>

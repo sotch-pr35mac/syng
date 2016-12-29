@@ -20,7 +20,7 @@ var syng = new Vue({
     tools: Tools
   },
   data: {
-    currentView: 'syngMenu'
+    currentView: 'search'
   },
   methods: {
     loadView: function(viewName) {

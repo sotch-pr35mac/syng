@@ -39,4 +39,7 @@
     margin-right: auto;
     margin-left: auto;
   }
+  p {
+    font-size: 10pt;
+  }
 </style>

@@ -21,7 +21,7 @@ var syng = new Vue({
     tools: Tools
   },
   data: {
-    currentView: 'syngMenu'
+    currentView: 'search'
   },
   methods: {
     loadView: function(viewName) {
@@ -30,7 +30,7 @@ var syng = new Vue({
   }
 });
 
-},{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":3,"./component/study/study.vue":4,"./component/syngMenu/syngMenu.vue":8,"./component/tools/tools.vue":10,"./component/yuedu/yuedu.vue":11,"iview":12}],2:[function(require,module,exports){
+},{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":3,"./component/study/study.vue":4,"./component/syngMenu/syngMenu.vue":8,"./component/tools/tools.vue":13,"./component/yuedu/yuedu.vue":14,"iview":15}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -65,7 +65,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-5db28960", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],3:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -100,7 +100,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-1943d6b8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],4:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],4:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -135,9 +135,9 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-0d3d9ff8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],5:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],5:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-2aefd5b3] {\n  font-size: 10pt;\n}\n")
 
 
 
@@ -178,7 +178,7 @@ if (module.hot) {(function () {  module.hot.accept()
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n"] = false
+    __vueify_insert__.cache["\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-2aefd5b3] {\n  font-size: 10pt;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -187,9 +187,9 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-2aefd5b3", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],6:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],6:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#issue-reporter {\n  margin-left: 30px;\n  margin-right: 30px;\n}\n")
 
 
 
@@ -200,20 +200,41 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var shell = window.require('electron').shell;
 module.exports = {
   data: function() {
     return {}
+  },
+  methods: {
+    reportIssue: function() {
+      shell.openExternal('https://gitreports.com/issue/sotch-pr35mac/syng');
+    }
   }
 };
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>REPORT BUG</h1>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div id=\"issue-reporter\">\n  <center>\n    <br>\n    <h2>Report Bug</h2>\n    <br>\n    <p><b>Note:</b> Submitting a bug report requires a network connection</p>\n    <p>\n      If you find a bug, please report it so that it can be corrected. You can report the bug to the developer using the button below. Thank you for helping make Syng\n      better for everyone!\n    </p>\n    <br>\n    <i-button type=\"primary\" size=\"large\" v-on:click=\"reportIssue\">Report Bug</i-button>\n  </center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n#issue-reporter {\n  margin-left: 30px;\n  margin-right: 30px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -222,7 +243,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-e1012b4a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],7:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],7:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -257,9 +278,19 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-6028ca79", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],8:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],8:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.ivu-col-span-4 {\n  background-color: #fff;\n  border-right: 2px solid #d7dde4;\n}\n.ivu-col-span-4:after {\n  background: #d7dde4;\n  position: absolute;\n  bottom: 0;\n  display: block;\n}\n")
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -325,7 +356,7 @@ if (module.hot) {(function () {  module.hot.accept()
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n.ivu-col-span-4 {\n  background-color: #fff;\n  border-right: 2px solid #d7dde4;\n}\n.ivu-col-span-4:after {\n  background: #d7dde4;\n  position: absolute;\n  bottom: 0;\n  display: block;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -334,9 +365,40 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-4aa505b8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"./aboutSyng/aboutSyng.vue":5,"./reportBug/reportBug.vue":6,"./settings/settings.vue":7,"./viewLicense/viewLicense.vue":9,"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],9:[function(require,module,exports){
+},{"./aboutSyng/aboutSyng.vue":5,"./reportBug/reportBug.vue":6,"./settings/settings.vue":7,"./viewLicense/viewLicense.vue":12,"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],9:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#cc-cedict-license {\n  margin-left: 15px;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -351,16 +413,530 @@ module.exports = {
   data: function() {
     return {}
   }
-};
+}
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>VIEW LICENSES</h1>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div id=\"cc-cedict-license\">\n  <table>\n  <tbody>\n  <tr class=\"odd\">\n  <td align=\"left\">License for CC-CEDICT</td>\n  </tr>\n  </tbody>\n  </table>\n  <p>THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE COMMONS PUBLIC LICENSE (\"CCPL\" OR \"LICENSE\"). THE WORK IS PROTECTED BY COPYRIGHT AND/OR OTHER APPLICABLE LAW. ANY USE OF THE WORK OTHER THAN AS AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.</p>\n  <p>BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU ACCEPT AND AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE. TO THE EXTENT THIS LICENSE MAY BE CONSIDERED TO BE A CONTRACT, THE LICENSOR GRANTS YOU THE RIGHTS CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND CONDITIONS.</p>\n  <ol style=\"list-style-type: decimal\">\n  <li>Definitions</li>\n  </ol>\n  <p>\"Adaptation\" means a work based upon the Work, or upon the Work and other pre-existing works, such as a translation, adaptation, derivative work, arrangement of music or other alterations of a literary or artistic work, or phonogram or performance and includes cinematographic adaptations or any other form in which the Work may be recast, transformed, or adapted including in any form recognizably derived from the original, except that a work that constitutes a Collection will not be considered an Adaptation for the purpose of this License. For the avoidance of doubt, where the Work is a musical work, performance or phonogram, the synchronization of the Work in timed-relation with a moving image (\"synching\") will be considered an Adaptation for the purpose of this License. \"Collection\" means a collection of literary or artistic works, such as encyclopedias and anthologies, or performances, phonograms or broadcasts, or other works or subject matter other than works listed in Section 1(f) below, which, by reason of the selection and arrangement of their contents, constitute intellectual creations, in which the Work is included in its entirety in unmodified form along with one or more other contributions, each constituting separate and independent works in themselves, which together are assembled into a collective whole. A work that constitutes a Collection will not be considered an Adaptation (as defined below) for the purposes of this License. \"Creative Commons Compatible License\" means a license that is listed at https://creativecommons.org/compatiblelicenses that has been approved by Creative Commons as being essentially equivalent to this License, including, at a minimum, because that license: (i) contains terms that have the same purpose, meaning and effect as the License Elements of this License; and, (ii) explicitly permits the relicensing of adaptations of works made available under that license under this License or a Creative Commons jurisdiction license with the same License Elements as this License. \"Distribute\" means to make available to the public the original and copies of the Work or Adaptation, as appropriate, through sale or other transfer of ownership. \"License Elements\" means the following high-level license attributes as selected by Licensor and indicated in the title of this License: Attribution, ShareAlike. \"Licensor\" means the individual, individuals, entity or entities that offer(s) the Work under the terms of this License. \"Original Author\" means, in the case of a literary or artistic work, the individual, individuals, entity or entities who created the Work or if no individual or entity can be identified, the publisher; and in addition (i) in the case of a performance the actors, singers, musicians, dancers, and other persons who act, sing, deliver, declaim, play in, interpret or otherwise perform literary or artistic works or expressions of folklore; (ii) in the case of a phonogram the producer being the person or legal entity who first fixes the sounds of a performance or other sounds; and, (iii) in the case of broadcasts, the organization that transmits the broadcast. \"Work\" means the literary and/or artistic work offered under the terms of this License including without limitation any production in the literary, scientific and artistic domain, whatever may be the mode or form of its expression including digital form, such as a book, pamphlet and other writing; a lecture, address, sermon or other work of the same nature; a dramatic or dramatico-musical work; a choreographic work or entertainment in dumb show; a musical composition with or without words; a cinematographic work to which are assimilated works expressed by a process analogous to cinematography; a work of drawing, painting, architecture, sculpture, engraving or lithography; a photographic work to which are assimilated works expressed by a process analogous to photography; a work of applied art; an illustration, map, plan, sketch or three-dimensional work relative to geography, topography, architecture or science; a performance; a broadcast; a phonogram; a compilation of data to the extent it is protected as a copyrightable work; or a work performed by a variety or circus performer to the extent it is not otherwise considered a literary or artistic work. \"You\" means an individual or entity exercising rights under this License who has not previously violated the terms of this License with respect to the Work, or who has received express permission from the Licensor to exercise rights under this License despite a previous violation. \"Publicly Perform\" means to perform public recitations of the Work and to communicate to the public those public recitations, by any means or process, including by wire or wireless means or public digital performances; to make available to the public Works in such a way that members of the public may access these Works from a place and at a place individually chosen by them; to perform the Work to the public by any means or process and the communication to the public of the performances of the Work, including by public digital performance; to broadcast and rebroadcast the Work by any means including signs, sounds or images. \"Reproduce\" means to make copies of the Work by any means including without limitation by sound or visual recordings and the right of fixation and reproducing fixations of the Work, including storage of a protected performance or phonogram in digital form or other electronic medium. 2. Fair Dealing Rights. Nothing in this License is intended to reduce, limit, or restrict any uses free from copyright or rights arising from limitations or exceptions that are provided for in connection with the copyright protection under copyright law or other applicable laws.</p>\n  <ol start=\"3\" style=\"list-style-type: decimal\">\n  <li>License Grant. Subject to the terms and conditions of this License, Licensor hereby grants You a worldwide, royalty-free, non-exclusive, perpetual (for the duration of the applicable copyright) license to exercise the rights in the Work as stated below:</li>\n  </ol>\n  <p>to Reproduce the Work, to incorporate the Work into one or more Collections, and to Reproduce the Work as incorporated in the Collections; to create and Reproduce Adaptations provided that any such Adaptation, including any translation in any medium, takes reasonable steps to clearly label, demarcate or otherwise identify that changes were made to the original Work. For example, a translation could be marked \"The original work was translated from English to Spanish,\" or a modification could indicate \"The original work has been modified.\"; to Distribute and Publicly Perform the Work including as incorporated in Collections; and, to Distribute and Publicly Perform Adaptations. For the avoidance of doubt:</p>\n  <p>Non-waivable Compulsory License Schemes. In those jurisdictions in which the right to collect royalties through any statutory or compulsory licensing scheme cannot be waived, the Licensor reserves the exclusive right to collect such royalties for any exercise by You of the rights granted under this License; Waivable Compulsory License Schemes. In those jurisdictions in which the right to collect royalties through any statutory or compulsory licensing scheme can be waived, the Licensor waives the exclusive right to collect such royalties for any exercise by You of the rights granted under this License; and, Voluntary License Schemes. The Licensor waives the right to collect royalties, whether individually or, in the event that the Licensor is a member of a collecting society that administers voluntary licensing schemes, via that society, from any exercise by You of the rights granted under this License. The above rights may be exercised in all media and formats whether now known or hereafter devised. The above rights include the right to make such modifications as are technically necessary to exercise the rights in other media and formats. Subject to Section 8(f), all rights not expressly granted by Licensor are hereby reserved.</p>\n  <ol start=\"4\" style=\"list-style-type: decimal\">\n  <li>Restrictions. The license granted in Section 3 above is expressly made subject to and limited by the following restrictions:</li>\n  </ol>\n  <p>You may Distribute or Publicly Perform the Work only under the terms of this License. You must include a copy of, or the Uniform Resource Identifier (URI) for, this License with every copy of the Work You Distribute or Publicly Perform. You may not offer or impose any terms on the Work that restrict the terms of this License or the ability of the recipient of the Work to exercise the rights granted to that recipient under the terms of the License. You may not sublicense the Work. You must keep intact all notices that refer to this License and to the disclaimer of warranties with every copy of the Work You Distribute or Publicly Perform. When You Distribute or Publicly Perform the Work, You may not impose any effective technological measures on the Work that restrict the ability of a recipient of the Work from You to exercise the rights granted to that recipient under the terms of the License. This Section 4(a) applies to the Work as incorporated in a Collection, but this does not require the Collection apart from the Work itself to be made subject to the terms of this License. If You create a Collection, upon notice from any Licensor You must, to the extent practicable, remove from the Collection any credit as required by Section 4(c), as requested. If You create an Adaptation, upon notice from any Licensor You must, to the extent practicable, remove from the Adaptation any credit as required by Section 4(c), as requested. You may Distribute or Publicly Perform an Adaptation only under the terms of: (i) this License; (ii) a later version of this License with the same License Elements as this License; (iii) a Creative Commons jurisdiction license (either this or a later license version) that contains the same License Elements as this License (e.g., Attribution-ShareAlike 3.0 US)); (iv) a Creative Commons Compatible License. If you license the Adaptation under one of the licenses mentioned in (iv), you must comply with the terms of that license. If you license the Adaptation under the terms of any of the licenses mentioned in (i), (ii) or (iii) (the \"Applicable License\"), you must comply with the terms of the Applicable License generally and the following provisions: (I) You must include a copy of, or the URI for, the Applicable License with every copy of each Adaptation You Distribute or Publicly Perform; (II) You may not offer or impose any terms on the Adaptation that restrict the terms of the Applicable License or the ability of the recipient of the Adaptation to exercise the rights granted to that recipient under the terms of the Applicable License; (III) You must keep intact all notices that refer to the Applicable License and to the disclaimer of warranties with every copy of the Work as included in the Adaptation You Distribute or Publicly Perform; (IV) when You Distribute or Publicly Perform the Adaptation, You may not impose any effective technological measures on the Adaptation that restrict the ability of a recipient of the Adaptation from You to exercise the rights granted to that recipient under the terms of the Applicable License. This Section 4(b) applies to the Adaptation as incorporated in a Collection, but this does not require the Collection apart from the Adaptation itself to be made subject to the terms of the Applicable License. If You Distribute, or Publicly Perform the Work or any Adaptations or Collections, You must, unless a request has been made pursuant to Section 4(a), keep intact all copyright notices for the Work and provide, reasonable to the medium or means You are utilizing: (i) the name of the Original Author (or pseudonym, if applicable) if supplied, and/or if the Original Author and/or Licensor designate another party or parties (e.g., a sponsor institute, publishing entity, journal) for attribution (\"Attribution Parties\") in Licensor's copyright notice, terms of service or by other reasonable means, the name of such party or parties; (ii) the title of the Work if supplied; (iii) to the extent reasonably practicable, the URI, if any, that Licensor specifies to be associated with the Work, unless such URI does not refer to the copyright notice or licensing information for the Work; and (iv) , consistent with Ssection 3(b), in the case of an Adaptation, a credit identifying the use of the Work in the Adaptation (e.g., \"French translation of the Work by Original Author,\" or \"Screenplay based on original Work by Original Author\"). The credit required by this Section 4(c) may be implemented in any reasonable manner; provided, however, that in the case of a Adaptation or Collection, at a minimum such credit will appear, if a credit for all contributing authors of the Adaptation or Collection appears, then as part of these credits and in a manner at least as prominent as the credits for the other contributing authors. For the avoidance of doubt, You may only use the credit required by this Section for the purpose of attribution in the manner set out above and, by exercising Your rights under this License, You may not implicitly or explicitly assert or imply any connection with, sponsorship or endorsement by the Original Author, Licensor and/or Attribution Parties, as appropriate, of You or Your use of the Work, without the separate, express prior written permission of the Original Author, Licensor and/or Attribution Parties. Except as otherwise agreed in writing by the Licensor or as may be otherwise permitted by applicable law, if You Reproduce, Distribute or Publicly Perform the Work either by itself or as part of any Adaptations or Collections, You must not distort, mutilate, modify or take other derogatory action in relation to the Work which would be prejudicial to the Original Author's honor or reputation. Licensor agrees that in those jurisdictions (e.g. Japan), in which any exercise of the right granted in Section 3(b) of this License (the right to make Adaptations) would be deemed to be a distortion, mutilation, modification or other derogatory action prejudicial to the Original Author's honor and reputation, the Licensor will waive or not assert, as appropriate, this Section, to the fullest extent permitted by the applicable national law, to enable You to reasonably exercise Your right under Section 3(b) of this License (right to make Adaptations) but not otherwise. 5. Representations, Warranties and Disclaimer</p>\n  <p>UNLESS OTHERWISE MUTUALLY AGREED TO BY THE PARTIES IN WRITING, LICENSOR OFFERS THE WORK AS-IS AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE WORK, EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTIBILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, OR THE ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OF ABSENCE OF ERRORS, WHETHER OR NOT DISCOVERABLE. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO SUCH EXCLUSION MAY NOT APPLY TO YOU.</p>\n  <ol start=\"6\" style=\"list-style-type: decimal\">\n  <li><p>Limitation on Liability. EXCEPT TO THE EXTENT REQUIRED BY APPLICABLE LAW, IN NO EVENT WILL LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY FOR ANY SPECIAL, INCIDENTAL, CONSEQUENTIAL, PUNITIVE OR EXEMPLARY DAMAGES ARISING OUT OF THIS LICENSE OR THE USE OF THE WORK, EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.</p></li>\n  <li><p>Termination</p></li>\n  </ol>\n  <p>This License and the rights granted hereunder will terminate automatically upon any breach by You of the terms of this License. Individuals or entities who have received Adaptations or Collections from You under this License, however, will not have their licenses terminated provided such individuals or entities remain in full compliance with those licenses. Sections 1, 2, 5, 6, 7, and 8 will survive any termination of this License. Subject to the above terms and conditions, the license granted here is perpetual (for the duration of the applicable copyright in the Work). Notwithstanding the above, Licensor reserves the right to release the Work under different license terms or to stop distributing the Work at any time; provided, however that any such election will not serve to withdraw this License (or any other license that has been, or is required to be, granted under the terms of this License), and this License will continue in full force and effect unless terminated as stated above. 8. Miscellaneous</p>\n  <p>Each time You Distribute or Publicly Perform the Work or a Collection, the Licensor offers to the recipient a license to the Work on the same terms and conditions as the license granted to You under this License. Each time You Distribute or Publicly Perform an Adaptation, Licensor offers to the recipient a license to the original Work on the same terms and conditions as the license granted to You under this License. If any provision of this License is invalid or unenforceable under applicable law, it shall not affect the validity or enforceability of the remainder of the terms of this License, and without further action by the parties to this agreement, such provision shall be reformed to the minimum extent necessary to make such provision valid and enforceable. No term or provision of this License shall be deemed waived and no breach consented to unless such waiver or consent shall be in writing and signed by the party to be charged with such waiver or consent. This License constitutes the entire agreement between the parties with respect to the Work licensed here. There are no understandings, agreements or representations with respect to the Work not specified here. Licensor shall not be bound by any additional provisions that may appear in any communication from You. This License may not be modified without the mutual written agreement of the Licensor and You. The rights granted under, and the subject matter referenced, in this License were drafted utilizing the terminology of the Berne Convention for the Protection of Literary and Artistic Works (as amended on September 28, 1979), the Rome Convention of 1961, the WIPO Copyright Treaty of 1996, the WIPO Performances and Phonograms Treaty of 1996 and the Universal Copyright Convention (as revised on July 24, 1971). These rights and subject matter take effect in the relevant jurisdiction in which the License terms are sought to be enforced according to the corresponding provisions of the implementation of those treaty provisions in the applicable national law. If the standard suite of rights granted under applicable copyright law includes additional rights not granted under this License, such additional rights are deemed to be included in the License; this License is not intended to restrict the license of any rights under applicable law.</p>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n#cc-cedict-license {\n  margin-left: 15px;\n}\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-4e634360", module.exports)
+  } else {
+    hotAPI.update("_v-4e634360", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],10:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n#node-cc-cedict-license {\n  margin-left: 15px;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div id=\"node-cc-cedict-license\">\n  <table>\n  <tbody>\n  <tr class=\"odd\">\n  <td align=\"left\">License for node-cc-cedict</td>\n  </tr>\n  </tbody>\n  </table>\n  <p>Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:</p>\n  <p>The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.</p>\n  <p>THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.</p>\n</div>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n#node-cc-cedict-license {\n  margin-left: 15px;\n}\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-4503aa9e", module.exports)
+  } else {
+    hotAPI.update("_v-4503aa9e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],11:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n#syngLicenseContent {\n  margin-left: 15px;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div id=\"syngLicenseContent\">\n  <h3><em>License</em></h3>\n  <p>THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS\n  OF THIS CREATIVE COMMONS PUBLIC LICENSE (\"CCPL\" OR\n  \"LICENSE\"). THE WORK IS PROTECTED BY COPYRIGHT AND/OR OTHER\n  APPLICABLE LAW. ANY USE OF THE WORK OTHER THAN AS\n  AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS\n  PROHIBITED.</p>\n  <p>BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU\n  ACCEPT AND AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE.\n  TO THE EXTENT THIS LICENSE MAY BE CONSIDERED TO BE A\n  CONTRACT, THE LICENSOR GRANTS YOU THE RIGHTS CONTAINED HERE\n  IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND\n  CONDITIONS.</p>\n  <p><strong>1. Definitions</strong></p>\n  <ol type=\"a\">\n  <li><strong>\"Adaptation\"</strong> means a work based upon\n  the Work, or upon the Work and other pre-existing works,\n  such as a translation, adaptation, derivative work,\n  arrangement of music or other alterations of a literary\n  or artistic work, or phonogram or performance and\n  includes cinematographic adaptations or any other form in\n  which the Work may be recast, transformed, or adapted\n  including in any form recognizably derived from the\n  original, except that a work that constitutes a\n  Collection will not be considered an Adaptation for the\n  purpose of this License. For the avoidance of doubt,\n  where the Work is a musical work, performance or\n  phonogram, the synchronization of the Work in\n  timed-relation with a moving image (\"synching\") will be\n  considered an Adaptation for the purpose of this\n  License.</li>\n  <li><strong>\"Collection\"</strong> means a collection of\n  literary or artistic works, such as encyclopedias and\n  anthologies, or performances, phonograms or broadcasts,\n  or other works or subject matter other than works listed\n  in Section 1(f) below, which, by reason of the selection\n  and arrangement of their contents, constitute\n  intellectual creations, in which the Work is included in\n  its entirety in unmodified form along with one or more\n  other contributions, each constituting separate and\n  independent works in themselves, which together are\n  assembled into a collective whole. A work that\n  constitutes a Collection will not be considered an\n  Adaptation (as defined above) for the purposes of this\n  License.</li>\n  <li><strong>\"Distribute\"</strong> means to make available\n  to the public the original and copies of the Work or\n  Adaptation, as appropriate, through sale or other\n  transfer of ownership.</li>\n  <li><strong>\"Licensor\"</strong> means the individual,\n  individuals, entity or entities that offer(s) the Work\n  under the terms of this License.</li>\n  <li><strong>\"Original Author\"</strong> means, in the case\n  of a literary or artistic work, the individual,\n  individuals, entity or entities who created the Work or\n  if no individual or entity can be identified, the\n  publisher; and in addition (i) in the case of a\n  performance the actors, singers, musicians, dancers, and\n  other persons who act, sing, deliver, declaim, play in,\n  interpret or otherwise perform literary or artistic works\n  or expressions of folklore; (ii) in the case of a\n  phonogram the producer being the person or legal entity\n  who first fixes the sounds of a performance or other\n  sounds; and, (iii) in the case of broadcasts, the\n  organization that transmits the broadcast.</li>\n  <li><strong>\"Work\"</strong> means the literary and/or\n  artistic work offered under the terms of this License\n  including without limitation any production in the\n  literary, scientific and artistic domain, whatever may be\n  the mode or form of its expression including digital\n  form, such as a book, pamphlet and other writing; a\n  lecture, address, sermon or other work of the same\n  nature; a dramatic or dramatico-musical work; a\n  choreographic work or entertainment in dumb show; a\n  musical composition with or without words; a\n  cinematographic work to which are assimilated works\n  expressed by a process analogous to cinematography; a\n  work of drawing, painting, architecture, sculpture,\n  engraving or lithography; a photographic work to which\n  are assimilated works expressed by a process analogous to\n  photography; a work of applied art; an illustration, map,\n  plan, sketch or three-dimensional work relative to\n  geography, topography, architecture or science; a\n  performance; a broadcast; a phonogram; a compilation of\n  data to the extent it is protected as a copyrightable\n  work; or a work performed by a variety or circus\n  performer to the extent it is not otherwise considered a\n  literary or artistic work.</li>\n  <li><strong>\"You\"</strong> means an individual or entity\n  exercising rights under this License who has not\n  previously violated the terms of this License with\n  respect to the Work, or who has received express\n  permission from the Licensor to exercise rights under\n  this License despite a previous violation.</li>\n  <li><strong>\"Publicly Perform\"</strong> means to perform\n  public recitations of the Work and to communicate to the\n  public those public recitations, by any means or process,\n  including by wire or wireless means or public digital\n  performances; to make available to the public Works in\n  such a way that members of the public may access these\n  Works from a place and at a place individually chosen by\n  them; to perform the Work to the public by any means or\n  process and the communication to the public of the\n  performances of the Work, including by public digital\n  performance; to broadcast and rebroadcast the Work by any\n  means including signs, sounds or images.</li>\n  <li><strong>\"Reproduce\"</strong> means to make copies of\n  the Work by any means including without limitation by\n  sound or visual recordings and the right of fixation and\n  reproducing fixations of the Work, including storage of a\n  protected performance or phonogram in digital form or\n  other electronic medium.</li>\n  </ol>\n  <p><strong>2. Fair Dealing Rights.</strong> Nothing in this\n  License is intended to reduce, limit, or restrict any uses\n  free from copyright or rights arising from limitations or\n  exceptions that are provided for in connection with the\n  copyright protection under copyright law or other\n  applicable laws.</p>\n  <p><strong>3. License Grant.</strong> Subject to the terms\n  and conditions of this License, Licensor hereby grants You\n  a worldwide, royalty-free, non-exclusive, perpetual (for\n  the duration of the applicable copyright) license to\n  exercise the rights in the Work as stated below:</p>\n  <ol type=\"a\">\n  <li>to Reproduce the Work, to incorporate the Work into\n  one or more Collections, and to Reproduce the Work as\n  incorporated in the Collections;</li>\n  <li>to create and Reproduce Adaptations provided that any\n  such Adaptation, including any translation in any medium,\n  takes reasonable steps to clearly label, demarcate or\n  otherwise identify that changes were made to the original\n  Work. For example, a translation could be marked \"The\n  original work was translated from English to Spanish,\" or\n  a modification could indicate \"The original work has been\n  modified.\";</li>\n  <li>to Distribute and Publicly Perform the Work including\n  as incorporated in Collections; and,</li>\n  <li>to Distribute and Publicly Perform Adaptations.</li>\n  <li>\n  <p>For the avoidance of doubt:</p>\n  <ol type=\"i\">\n  <li><strong>Non-waivable Compulsory License\n  Schemes</strong>. In those jurisdictions in which the\n  right to collect royalties through any statutory or\n  compulsory licensing scheme cannot be waived, the\n  Licensor reserves the exclusive right to collect such\n  royalties for any exercise by You of the rights\n  granted under this License;</li>\n  <li><strong>Waivable Compulsory License\n  Schemes</strong>. In those jurisdictions in which the\n  right to collect royalties through any statutory or\n  compulsory licensing scheme can be waived, the\n  Licensor waives the exclusive right to collect such\n  royalties for any exercise by You of the rights\n  granted under this License; and,</li>\n  <li><strong>Voluntary License Schemes</strong>. The\n  Licensor waives the right to collect royalties,\n  whether individually or, in the event that the\n  Licensor is a member of a collecting society that\n  administers voluntary licensing schemes, via that\n  society, from any exercise by You of the rights\n  granted under this License.</li>\n  </ol>\n  </li>\n  </ol>\n  <p>The above rights may be exercised in all media and\n  formats whether now known or hereafter devised. The above\n  rights include the right to make such modifications as are\n  technically necessary to exercise the rights in other media\n  and formats. Subject to Section 8(f), all rights not\n  expressly granted by Licensor are hereby reserved.</p>\n  <p><strong>4. Restrictions.</strong> The license granted in\n  Section 3 above is expressly made subject to and limited by\n  the following restrictions:</p>\n  <ol type=\"a\">\n  <li>You may Distribute or Publicly Perform the Work only\n  under the terms of this License. You must include a copy\n  of, or the Uniform Resource Identifier (URI) for, this\n  License with every copy of the Work You Distribute or\n  Publicly Perform. You may not offer or impose any terms\n  on the Work that restrict the terms of this License or\n  the ability of the recipient of the Work to exercise the\n  rights granted to that recipient under the terms of the\n  License. You may not sublicense the Work. You must keep\n  intact all notices that refer to this License and to the\n  disclaimer of warranties with every copy of the Work You\n  Distribute or Publicly Perform. When You Distribute or\n  Publicly Perform the Work, You may not impose any\n  effective technological measures on the Work that\n  restrict the ability of a recipient of the Work from You\n  to exercise the rights granted to that recipient under\n  the terms of the License. This Section 4(a) applies to\n  the Work as incorporated in a Collection, but this does\n  not require the Collection apart from the Work itself to\n  be made subject to the terms of this License. If You\n  create a Collection, upon notice from any Licensor You\n  must, to the extent practicable, remove from the\n  Collection any credit as required by Section 4(b), as\n  requested. If You create an Adaptation, upon notice from\n  any Licensor You must, to the extent practicable, remove\n  from the Adaptation any credit as required by Section\n  4(b), as requested.</li>\n  <li>If You Distribute, or Publicly Perform the Work or\n  any Adaptations or Collections, You must, unless a\n  request has been made pursuant to Section 4(a), keep\n  intact all copyright notices for the Work and provide,\n  reasonable to the medium or means You are utilizing: (i)\n  the name of the Original Author (or pseudonym, if\n  applicable) if supplied, and/or if the Original Author\n  and/or Licensor designate another party or parties (e.g.,\n  a sponsor institute, publishing entity, journal) for\n  attribution (\"Attribution Parties\") in Licensor's\n  copyright notice, terms of service or by other reasonable\n  means, the name of such party or parties; (ii) the title\n  of the Work if supplied; (iii) to the extent reasonably\n  practicable, the URI, if any, that Licensor specifies to\n  be associated with the Work, unless such URI does not\n  refer to the copyright notice or licensing information\n  for the Work; and (iv) , consistent with Section 3(b), in\n  the case of an Adaptation, a credit identifying the use\n  of the Work in the Adaptation (e.g., \"French translation\n  of the Work by Original Author,\" or \"Screenplay based on\n  original Work by Original Author\"). The credit required\n  by this Section 4 (b) may be implemented in any\n  reasonable manner; provided, however, that in the case of\n  a Adaptation or Collection, at a minimum such credit will\n  appear, if a credit for all contributing authors of the\n  Adaptation or Collection appears, then as part of these\n  credits and in a manner at least as prominent as the\n  credits for the other contributing authors. For the\n  avoidance of doubt, You may only use the credit required\n  by this Section for the purpose of attribution in the\n  manner set out above and, by exercising Your rights under\n  this License, You may not implicitly or explicitly assert\n  or imply any connection with, sponsorship or endorsement\n  by the Original Author, Licensor and/or Attribution\n  Parties, as appropriate, of You or Your use of the Work,\n  without the separate, express prior written permission of\n  the Original Author, Licensor and/or Attribution\n  Parties.</li>\n  <li>Except as otherwise agreed in writing by the Licensor\n  or as may be otherwise permitted by applicable law, if\n  You Reproduce, Distribute or Publicly Perform the Work\n  either by itself or as part of any Adaptations or\n  Collections, You must not distort, mutilate, modify or\n  take other derogatory action in relation to the Work\n  which would be prejudicial to the Original Author's honor\n  or reputation. Licensor agrees that in those\n  jurisdictions (e.g. Japan), in which any exercise of the\n  right granted in Section 3(b) of this License (the right\n  to make Adaptations) would be deemed to be a distortion,\n  mutilation, modification or other derogatory action\n  prejudicial to the Original Author's honor and\n  reputation, the Licensor will waive or not assert, as\n  appropriate, this Section, to the fullest extent\n  permitted by the applicable national law, to enable You\n  to reasonably exercise Your right under Section 3(b) of\n  this License (right to make Adaptations) but not\n  otherwise.</li>\n  </ol>\n  <p><strong>5. Representations, Warranties and\n  Disclaimer</strong></p>\n  <p>UNLESS OTHERWISE MUTUALLY AGREED TO BY THE PARTIES IN\n  WRITING, LICENSOR OFFERS THE WORK AS-IS AND MAKES NO\n  REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE\n  WORK, EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING,\n  WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTIBILITY,\n  FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, OR THE\n  ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE\n  PRESENCE OF ABSENCE OF ERRORS, WHETHER OR NOT DISCOVERABLE.\n  SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED\n  WARRANTIES, SO SUCH EXCLUSION MAY NOT APPLY TO YOU.</p>\n  <p><strong>6. Limitation on Liability.</strong> EXCEPT TO\n  THE EXTENT REQUIRED BY APPLICABLE LAW, IN NO EVENT WILL\n  LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY FOR ANY\n  SPECIAL, INCIDENTAL, CONSEQUENTIAL, PUNITIVE OR EXEMPLARY\n  DAMAGES ARISING OUT OF THIS LICENSE OR THE USE OF THE WORK,\n  EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF\n  SUCH DAMAGES.</p>\n  <p><strong>7. Termination</strong></p>\n  <ol type=\"a\">\n  <li>This License and the rights granted hereunder will\n  terminate automatically upon any breach by You of the\n  terms of this License. Individuals or entities who have\n  received Adaptations or Collections from You under this\n  License, however, will not have their licenses terminated\n  provided such individuals or entities remain in full\n  compliance with those licenses. Sections 1, 2, 5, 6, 7,\n  and 8 will survive any termination of this License.</li>\n  <li>Subject to the above terms and conditions, the\n  license granted here is perpetual (for the duration of\n  the applicable copyright in the Work). Notwithstanding\n  the above, Licensor reserves the right to release the\n  Work under different license terms or to stop\n  distributing the Work at any time; provided, however that\n  any such election will not serve to withdraw this License\n  (or any other license that has been, or is required to\n  be, granted under the terms of this License), and this\n  License will continue in full force and effect unless\n  terminated as stated above.</li>\n  </ol>\n  <p><strong>8. Miscellaneous</strong></p>\n  <ol type=\"a\">\n  <li>Each time You Distribute or Publicly Perform the Work\n  or a Collection, the Licensor offers to the recipient a\n  license to the Work on the same terms and conditions as\n  the license granted to You under this License.</li>\n  <li>Each time You Distribute or Publicly Perform an\n  Adaptation, Licensor offers to the recipient a license to\n  the original Work on the same terms and conditions as the\n  license granted to You under this License.</li>\n  <li>If any provision of this License is invalid or\n  unenforceable under applicable law, it shall not affect\n  the validity or enforceability of the remainder of the\n  terms of this License, and without further action by the\n  parties to this agreement, such provision shall be\n  reformed to the minimum extent necessary to make such\n  provision valid and enforceable.</li>\n  <li>No term or provision of this License shall be deemed\n  waived and no breach consented to unless such waiver or\n  consent shall be in writing and signed by the party to be\n  charged with such waiver or consent.</li>\n  <li>This License constitutes the entire agreement between\n  the parties with respect to the Work licensed here. There\n  are no understandings, agreements or representations with\n  respect to the Work not specified here. Licensor shall\n  not be bound by any additional provisions that may appear\n  in any communication from You. This License may not be\n  modified without the mutual written agreement of the\n  Licensor and You.</li>\n  <li>The rights granted under, and the subject matter\n  referenced, in this License were drafted utilizing the\n  terminology of the Berne Convention for the Protection of\n  Literary and Artistic Works (as amended on September 28,\n  1979), the Rome Convention of 1961, the WIPO Copyright\n  Treaty of 1996, the WIPO Performances and Phonograms\n  Treaty of 1996 and the Universal Copyright Convention (as\n  revised on July 24, 1971). These rights and subject\n  matter take effect in the relevant jurisdiction in which\n  the License terms are sought to be enforced according to\n  the corresponding provisions of the implementation of\n  those treaty provisions in the applicable national law.\n  If the standard suite of rights granted under applicable\n  copyright law includes additional rights not granted\n  under this License, such additional rights are deemed to\n  be included in the License; this License is not intended\n  to restrict the license of any rights under applicable\n  law.</li>\n  </ol>\n</div>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n#syngLicenseContent {\n  margin-left: 15px;\n}\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-ab58054e", module.exports)
+  } else {
+    hotAPI.update("_v-ab58054e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],12:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n.ivu-col-span-4 {\n  background-color: #fff;\n  border-right: 2px solid #d7dde4;\n}\n.ivu-col-span-4:after {\n  background: #d7dde4;\n  position: absolute;\n  bottom: 0;\n  display: block;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var SyngLicense = require('./syngLicense.vue');
+var CCCEDICTLicense = require('./cccedictLicense.vue');
+var NodeCCCEDICTLicense = require('./nodeCCCEDICTLicense.vue');
+
+module.exports = {
+  data: function() {
+    return {
+      currentView: 'syngLicense'
+    }
+  },
+  components: {
+    'syngLicense': SyngLicense,
+    'cccedictLicense': CCCEDICTLicense,
+    'nodecccedictLicense': NodeCCCEDICTLicense
+  },
+  methods: {
+    loadView: function(viewName) {
+      this.currentView = viewName;
+    }
+  }
+};
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;syngLicense&quot;)\">\n      <center>\n        <h3>Syng License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;cccedictLicense&quot;)\">\n      <center>\n        <h3>CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;nodecccedictLicense&quot;)\">\n      <center>\n        <h3>Node-CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n.ivu-col-span-4 {\n  background-color: #fff;\n  border-right: 2px solid #d7dde4;\n}\n.ivu-col-span-4:after {\n  background: #d7dde4;\n  position: absolute;\n  bottom: 0;\n  display: block;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -369,7 +945,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-9aee84da", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],10:[function(require,module,exports){
+},{"./cccedictLicense.vue":9,"./nodeCCCEDICTLicense.vue":10,"./syngLicense.vue":11,"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],13:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -404,7 +980,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-f8a35ec8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],11:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],14:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -439,7 +1015,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-615c68da", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],12:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],15:[function(require,module,exports){
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("vue"));
@@ -17416,7 +17992,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ ])
 });
 ;
-},{"vue":15,"vue-hot-reload-api":14}],13:[function(require,module,exports){
+},{"vue":18,"vue-hot-reload-api":17}],16:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -17598,7 +18174,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],14:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var Vue // late bind
 var map = Object.create(null)
 var shimmed = false
@@ -17899,7 +18475,7 @@ function format (id) {
   return match ? match[0] : id
 }
 
-},{}],15:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 (function (process){
 /*!
  * Vue.js v1.0.28
@@ -28140,7 +28716,7 @@ setTimeout(function () {
 
 module.exports = Vue;
 }).call(this,require('_process'))
-},{"_process":13}],16:[function(require,module,exports){
+},{"_process":16}],19:[function(require,module,exports){
 var inserted = exports.cache = {}
 
 exports.insert = function (css) {

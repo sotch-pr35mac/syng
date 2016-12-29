@@ -25,19 +25,6 @@
     .ivu-col-span-3 {
     	background-color: #464c5b;
     }
-    .ivu-col-span-4 {
-    	background-color: #fff;
-    	border-right: 2px solid #d7dde4;
-    }
-    .ivu-col-span-4:after {
-	    background: #d7dde4;
-    	position: absolute;
-    	bottom: 0;
-    	display: block;
-    }
-    p {
-      font-size: 10pt;
-    }
   </style>
 </head>
 
@@ -45,7 +32,7 @@
   <div id="app">
     <Row>
       <i-col span="3">
-        <Menu theme="dark" width="100%">
+        <Menu theme="dark" width="100%" active-key='2'>
           <Menu-item key="1" v-on:click='loadView("syngMenu")'>
             <center>
               <h1><b>词应</b></h1>
