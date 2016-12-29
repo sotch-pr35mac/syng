@@ -1,19 +1,30 @@
-var AboutSyng = require('./component/aboutSyng/aboutSyng.vue');
-var MainMenu = require('./component/common/mainMenu/mainMenu.vue');
-var SyngMenu = require('./component/syngMenu/syngMenu.vue');
-var ReportBug = require('./component/reportBug/reportBug.vue');
-var Settings = require('./component/settings/settings.vue');
-var ViewLicense = require('./component/viewLicense/viewLicense.vue');
+var IView = require('iview');
 
-var testVue = new Vue({
-  el: "#test",
+Vue.use(IView);
+
+var SyngMenu = require('./component/syngMenu/syngMenu.vue');
+var Search = require('./component/search/search.vue');
+var Yuedu = require('./component/yuedu/yuedu.vue');
+var Bookmarks = require('./component/bookmarks/bookmarks.vue');
+var Study = require('./component/study/study.vue');
+var Tools = require('./component/tools/tools.vue');
+
+var syng = new Vue({
+  el: "#app",
   components: {
-    aboutSyng: AboutSyng,
-    mainMenu: MainMenu,
     syngMenu: SyngMenu,
-    reportBug: ReportBug,
-    settings: Settings,
-    viewLicense: ViewLicense
+    search: Search,
+    yuedu: Yuedu,
+    bookmarks: Bookmarks,
+    study: Study,
+    tools: Tools
   },
-  data: {}
+  data: {
+    currentView: 'syngMenu'
+  },
+  methods: {
+    loadView: function(viewName) {
+      this.currentView = viewName;
+    }
+  }
 });

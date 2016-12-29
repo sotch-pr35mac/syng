@@ -1,37 +1,58 @@
 <template>
-  <Menu theme="light" width="100%">
-    <Menu-item key="1">
-      <center>
-        <h2>About</h2>
-      </center>
-    </Menu-item>
-    <Menu-item key="2">
-      <center>
-        <h2>Settings</h2>
-      </center>
-    </Menu-item>
-    <Menu-item key="3">
-      <center>
-        <h2>View Licenses</h2>
-      </center>
-    </Menu-item>
-    <Menu-item key="4">
-      <center>
-        <h2>Report Bug</h2>
-      </center>
-    </Menu-item>
-  </Menu>
+  <i-col span="4">
+    <Menu theme="light" width="100%" active-key='1'>
+      <Menu-item key="1" v-on:click='loadView("aboutSyng")'>
+        <center>
+          <h2>About</h2>
+        </center>
+      </Menu-item>
+      <Menu-item key="2" v-on:click='loadView("settings")'>
+        <center>
+          <h2>Settings</h2>
+        </center>
+      </Menu-item>
+      <Menu-item key="3" v-on:click='loadView("viewLicense")'>
+        <center>
+          <h2>View Licenses</h2>
+        </center>
+      </Menu-item>
+      <Menu-item key="4" v-on:click='loadView("reportBug")'>
+        <center>
+          <h2>Report Bug</h2>
+        </center>
+      </Menu-item>
+    </Menu>
+  </i-col>
+  <i-col span="17">
+    <component :is='currentView'></component>
+  </i-col>
 </template>
 
 <style>
 </style>
 
 <script>
-var IView = require('iview');
+var AboutSyng = require('./aboutSyng/aboutSyng.vue');
+var ReportBug = require('./reportBug/reportBug.vue');
+var Settings = require('./settings/settings.vue');
+var ViewLicense = require('./viewLicense/viewLicense.vue');
 
 module.exports = {
   data: function() {
-    return {}
+    return {
+      currentView: 'aboutSyng'
+    }
+  },
+  components: {
+    'aboutSyng': AboutSyng,
+    'reportBug': ReportBug,
+    'settings': Settings,
+    'viewLicense': ViewLicense
+  },
+  methods: {
+    loadView: function(viewName) {
+      this.currentView = viewName;
+    }
   }
 }
 </script>

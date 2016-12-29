@@ -1,27 +1,143 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var AboutSyng = require('./component/aboutSyng/aboutSyng.vue');
-var MainMenu = require('./component/common/mainMenu/mainMenu.vue');
-var SyngMenu = require('./component/syngMenu/syngMenu.vue');
-var ReportBug = require('./component/reportBug/reportBug.vue');
-var Settings = require('./component/settings/settings.vue');
-var ViewLicense = require('./component/viewLicense/viewLicense.vue');
+var IView = require('iview');
 
-var testVue = new Vue({
-  el: "#test",
+Vue.use(IView);
+
+var SyngMenu = require('./component/syngMenu/syngMenu.vue');
+var Search = require('./component/search/search.vue');
+var Yuedu = require('./component/yuedu/yuedu.vue');
+var Bookmarks = require('./component/bookmarks/bookmarks.vue');
+var Study = require('./component/study/study.vue');
+var Tools = require('./component/tools/tools.vue');
+
+var syng = new Vue({
+  el: "#app",
   components: {
-    aboutSyng: AboutSyng,
-    mainMenu: MainMenu,
     syngMenu: SyngMenu,
-    reportBug: ReportBug,
-    settings: Settings,
-    viewLicense: ViewLicense
+    search: Search,
+    yuedu: Yuedu,
+    bookmarks: Bookmarks,
+    study: Study,
+    tools: Tools
   },
-  data: {}
+  data: {
+    currentView: 'syngMenu'
+  },
+  methods: {
+    loadView: function(viewName) {
+      this.currentView = viewName;
+    }
+  }
 });
 
-},{"./component/aboutSyng/aboutSyng.vue":2,"./component/common/mainMenu/mainMenu.vue":3,"./component/reportBug/reportBug.vue":4,"./component/settings/settings.vue":5,"./component/syngMenu/syngMenu.vue":6,"./component/viewLicense/viewLicense.vue":7}],2:[function(require,module,exports){
+},{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":3,"./component/study/study.vue":4,"./component/syngMenu/syngMenu.vue":8,"./component/tools/tools.vue":10,"./component/yuedu/yuedu.vue":11,"iview":12}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\ndiv[_v-47231184] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>BOOKMARKS</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-5db28960", module.exports)
+  } else {
+    hotAPI.update("_v-5db28960", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],3:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>SEARCH</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-1943d6b8", module.exports)
+  } else {
+    hotAPI.update("_v-1943d6b8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],4:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>STUDY</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-0d3d9ff8", module.exports)
+  } else {
+    hotAPI.update("_v-0d3d9ff8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],5:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n")
 
 
 
@@ -56,94 +172,22 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-47231184=\"\">\n  <br _v-47231184=\"\">\n  <center _v-47231184=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"115px\" width=\"115px\" _v-47231184=\"\">\n    <h2 _v-47231184=\"\">Syng | 词应</h2>\n    <h3 _v-47231184=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-47231184=\"\">v0.3.0 (Beta 3)</h4>\n  </center>\n  <br _v-47231184=\"\">\n  <p _v-47231184=\"\">\n    Syng is a free, open source, Chinese-to-English dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.\n    To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng.\n    Syng is a stylized spelling of Ciying, the pinyin for 词应, 词应 has been shortened from 词典应用, literally translating to \"Dictionary App\".\n    Syng relies on many libraries and projects. Currently, Syng would not work if not for:\n    </p><ul _v-47231184=\"\">\n      <li _v-47231184=\"\"><b _v-47231184=\"\">Electron:</b> Framework for Native Cross-Platform Support</li>\n      <li _v-47231184=\"\"><b _v-47231184=\"\">CC-CEDICT:</b> Chinese Dictionary Database</li>\n      <li _v-47231184=\"\"><b _v-47231184=\"\">Photon:</b> User Interface</li>\n      <li _v-47231184=\"\"><b _v-47231184=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>\n      <li _v-47231184=\"\"><b _v-47231184=\"\">Franc:</b> Language Detection for Search</li>\n    </ul>\n  <p _v-47231184=\"\"></p>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-2aefd5b3=\"\">\n  <br _v-2aefd5b3=\"\">\n  <center _v-2aefd5b3=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"115px\" width=\"115px\" _v-2aefd5b3=\"\">\n    <h2 _v-2aefd5b3=\"\">Syng | 词应</h2>\n    <h3 _v-2aefd5b3=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-2aefd5b3=\"\">v0.3.0 (Beta 3)</h4>\n  </center>\n  <br _v-2aefd5b3=\"\">\n  <p _v-2aefd5b3=\"\">\n    Syng is a free, open source, Chinese-to-English dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.\n    To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng.\n    Syng is a stylized spelling of Ciying, the pinyin for 词应, 词应 has been shortened from 词典应用, literally translating to \"Dictionary App\".\n    Syng relies on many libraries and projects. Currently, Syng would not work if not for:\n    </p><ul _v-2aefd5b3=\"\">\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Electron:</b> Framework for Native Cross-Platform Support</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">CC-CEDICT:</b> Chinese Dictionary Database</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Photon:</b> User Interface</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Franc:</b> Language Detection for Search</li>\n    </ul>\n  <p _v-2aefd5b3=\"\"></p>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\ndiv[_v-47231184] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n"] = false
+    __vueify_insert__.cache["\ndiv[_v-2aefd5b3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-47231184", module.exports)
+    hotAPI.createRecord("_v-2aefd5b3", module.exports)
   } else {
-    hotAPI.update("_v-47231184", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-2aefd5b3", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],3:[function(require,module,exports){
-var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-var IView = require('iview');
-
-module.exports = {
-  data: function() {
-    return {}
-  }
-};
-
-if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<menu theme=\"dark\" width=\"100%\">\n  <menu-item key=\"1\">\n    <center>\n      <h1><b>词应</b></h1>\n      <!-- <h3>Syng</h3> -->\n    </center>\n  </menu-item>\n  <menu-item key=\"2\">\n    <center>\n      <h1><icon type=\"search\"></icon></h1>\n      <!-- <h3>Search</h3> -->\n    </center>\n  </menu-item>\n  <menu-item key=\"3\">\n    <center>\n      <h1><icon type=\"ios-book\"></icon></h1>\n      <!-- <h3>Document Reader</h3> -->\n    </center>\n  </menu-item>\n  <menu-item key=\"4\">\n    <center>\n      <h1><icon type=\"bookmark\"></icon></h1>\n      <!-- <h3>Bookmarks</h3> -->\n    </center>\n  </menu-item>\n  <menu-item key=\"5\">\n    <center>\n      <h1><icon type=\"ios-keypad\"></icon></h1>\n      <!-- <h3>Study</h3> -->\n    </center>\n  </menu-item>\n  <menu-item key=\"6\">\n    <center>\n      <h1><icon type=\"wrench\"></icon></h1>\n      <!-- <h3>Tools</h3> -->\n    </center>\n  </menu-item>\n</menu>\n"
-if (module.hot) {(function () {  module.hot.accept()
-  var hotAPI = require("vue-hot-reload-api")
-  hotAPI.install(require("vue"), true)
-  if (!hotAPI.compatible) return
-  module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
-    document.head.removeChild(__vueify_style__)
-  })
-  if (!module.hot.data) {
-    hotAPI.createRecord("_v-c4fd4734", module.exports)
-  } else {
-    hotAPI.update("_v-c4fd4734", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
-  }
-})()}
-},{"iview":8,"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],4:[function(require,module,exports){
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],6:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -173,12 +217,12 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-40fe0be6", module.exports)
+    hotAPI.createRecord("_v-e1012b4a", module.exports)
   } else {
-    hotAPI.update("_v-40fe0be6", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-e1012b4a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],5:[function(require,module,exports){
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],7:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -208,12 +252,12 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-392f5a78", module.exports)
+    hotAPI.createRecord("_v-6028ca79", module.exports)
   } else {
-    hotAPI.update("_v-392f5a78", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-6028ca79", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],6:[function(require,module,exports){
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],8:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -245,16 +289,37 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
-var IView = require('iview');
+
+
+
+
+
+var AboutSyng = require('./aboutSyng/aboutSyng.vue');
+var ReportBug = require('./reportBug/reportBug.vue');
+var Settings = require('./settings/settings.vue');
+var ViewLicense = require('./viewLicense/viewLicense.vue');
 
 module.exports = {
   data: function() {
-    return {}
+    return {
+      currentView: 'aboutSyng'
+    }
+  },
+  components: {
+    'aboutSyng': AboutSyng,
+    'reportBug': ReportBug,
+    'settings': Settings,
+    'viewLicense': ViewLicense
+  },
+  methods: {
+    loadView: function(viewName) {
+      this.currentView = viewName;
+    }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<menu theme=\"light\" width=\"100%\">\n  <menu-item key=\"1\">\n    <center>\n      <h2>About</h2>\n    </center>\n  </menu-item>\n  <menu-item key=\"2\">\n    <center>\n      <h2>Settings</h2>\n    </center>\n  </menu-item>\n  <menu-item key=\"3\">\n    <center>\n      <h2>View Licenses</h2>\n    </center>\n  </menu-item>\n  <menu-item key=\"4\">\n    <center>\n      <h2>Report Bug</h2>\n    </center>\n  </menu-item>\n</menu>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;aboutSyng&quot;)\">\n      <center>\n        <h2>About</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;settings&quot;)\">\n      <center>\n        <h2>Settings</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;viewLicense&quot;)\">\n      <center>\n        <h2>View Licenses</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"4\" v-on:click=\"loadView(&quot;reportBug&quot;)\">\n      <center>\n        <h2>Report Bug</h2>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -269,7 +334,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-4aa505b8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"iview":8,"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],7:[function(require,module,exports){
+},{"./aboutSyng/aboutSyng.vue":5,"./reportBug/reportBug.vue":6,"./settings/settings.vue":7,"./viewLicense/viewLicense.vue":9,"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],9:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -299,12 +364,82 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-5975a19e", module.exports)
+    hotAPI.createRecord("_v-9aee84da", module.exports)
   } else {
-    hotAPI.update("_v-5975a19e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-9aee84da", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":10,"vue-hot-reload-api":9,"vueify/lib/insert-css":11}],8:[function(require,module,exports){
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],10:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>TOOLS</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-f8a35ec8", module.exports)
+  } else {
+    hotAPI.update("_v-f8a35ec8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],11:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+module.exports = {
+  data: function() {
+    return {}
+  }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>READER</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-615c68da", module.exports)
+  } else {
+    hotAPI.update("_v-615c68da", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":15,"vue-hot-reload-api":14,"vueify/lib/insert-css":16}],12:[function(require,module,exports){
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
 		module.exports = factory(require("vue"));
@@ -17281,7 +17416,189 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ ])
 });
 ;
-},{"vue":10,"vue-hot-reload-api":9}],9:[function(require,module,exports){
+},{"vue":15,"vue-hot-reload-api":14}],13:[function(require,module,exports){
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+},{}],14:[function(require,module,exports){
 var Vue // late bind
 var map = Object.create(null)
 var shimmed = false
@@ -17582,7 +17899,7 @@ function format (id) {
   return match ? match[0] : id
 }
 
-},{}],10:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (process){
 /*!
  * Vue.js v1.0.28
@@ -27823,7 +28140,7 @@ setTimeout(function () {
 
 module.exports = Vue;
 }).call(this,require('_process'))
-},{"_process":12}],11:[function(require,module,exports){
+},{"_process":13}],16:[function(require,module,exports){
 var inserted = exports.cache = {}
 
 exports.insert = function (css) {
@@ -27842,187 +28159,5 @@ exports.insert = function (css) {
   document.getElementsByTagName('head')[0].appendChild(elem)
   return elem
 }
-
-},{}],12:[function(require,module,exports){
-// shim for using process in browser
-var process = module.exports = {};
-
-// cached from whatever global is present so that test runners that stub it
-// don't break things.  But we need to wrap it in a try catch in case it is
-// wrapped in strict mode code which doesn't define any globals.  It's inside a
-// function because try/catches deoptimize in certain engines.
-
-var cachedSetTimeout;
-var cachedClearTimeout;
-
-function defaultSetTimout() {
-    throw new Error('setTimeout has not been defined');
-}
-function defaultClearTimeout () {
-    throw new Error('clearTimeout has not been defined');
-}
-(function () {
-    try {
-        if (typeof setTimeout === 'function') {
-            cachedSetTimeout = setTimeout;
-        } else {
-            cachedSetTimeout = defaultSetTimout;
-        }
-    } catch (e) {
-        cachedSetTimeout = defaultSetTimout;
-    }
-    try {
-        if (typeof clearTimeout === 'function') {
-            cachedClearTimeout = clearTimeout;
-        } else {
-            cachedClearTimeout = defaultClearTimeout;
-        }
-    } catch (e) {
-        cachedClearTimeout = defaultClearTimeout;
-    }
-} ())
-function runTimeout(fun) {
-    if (cachedSetTimeout === setTimeout) {
-        //normal enviroments in sane situations
-        return setTimeout(fun, 0);
-    }
-    // if setTimeout wasn't available but was latter defined
-    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
-        cachedSetTimeout = setTimeout;
-        return setTimeout(fun, 0);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedSetTimeout(fun, 0);
-    } catch(e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
-            return cachedSetTimeout.call(null, fun, 0);
-        } catch(e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
-            return cachedSetTimeout.call(this, fun, 0);
-        }
-    }
-
-
-}
-function runClearTimeout(marker) {
-    if (cachedClearTimeout === clearTimeout) {
-        //normal enviroments in sane situations
-        return clearTimeout(marker);
-    }
-    // if clearTimeout wasn't available but was latter defined
-    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
-        cachedClearTimeout = clearTimeout;
-        return clearTimeout(marker);
-    }
-    try {
-        // when when somebody has screwed with setTimeout but no I.E. maddness
-        return cachedClearTimeout(marker);
-    } catch (e){
-        try {
-            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
-            return cachedClearTimeout.call(null, marker);
-        } catch (e){
-            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
-            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
-            return cachedClearTimeout.call(this, marker);
-        }
-    }
-
-
-
-}
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    if (!draining || !currentQueue) {
-        return;
-    }
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = runTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    runClearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        runTimeout(drainQueue);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
 
 },{}]},{},[1]);
