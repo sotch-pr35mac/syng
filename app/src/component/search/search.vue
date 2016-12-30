@@ -11,9 +11,9 @@
         <i-button>Search</i-button>
       </Row>
     </div>
-    <Row id='search-result-and-content'>
+    <Row>
       <i-col span="5">
-        <!-- <div class="search-listing"></div> -->
+        <div class="search-listing"></div>
       </i-col>
       <i-col span="19">
       </i-col>
@@ -22,18 +22,16 @@
 </template>
 
 <style>
-  #search-result-and-content {
-    height: calc(100vh - 40px);
-  }
   #search-frame {
     padding-left: 10px;
     padding-right: 10px;
     padding-top: 10px;
     padding-bottom: 10px;
     background-color: #9ea7b4;
+    height: 8vh;
   }
   .search-listing {
-    height: calc(100vh - 40px);
+    height: 92vh;
     overflow-y: scroll;
     background-color: #f5f5f4;
   }

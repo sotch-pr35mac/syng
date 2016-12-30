@@ -67,9 +67,7 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#search-result-and-content {\n  height: calc(100vh - 40px);\n}\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n}\n.search-listing {\n  height: calc(100vh - 40px);\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n")
-
-
+var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n")
 
 
 
@@ -119,13 +117,13 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button>EN</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\"></i-input>\n      &nbsp;\n      <i-button>Search</i-button>\n    </row>\n  </div>\n  <row id=\"search-result-and-content\">\n    <i-col span=\"5\">\n      <!-- <div class=\"search-listing\"></div> -->\n    </i-col>\n    <i-col span=\"19\">\n    </i-col>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button>EN</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\"></i-input>\n      &nbsp;\n      <i-button>Search</i-button>\n    </row>\n  </div>\n  <row>\n    <i-col span=\"5\">\n      <div class=\"search-listing\"></div>\n    </i-col>\n    <i-col span=\"19\">\n    </i-col>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#search-result-and-content {\n  height: calc(100vh - 40px);\n}\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n}\n.search-listing {\n  height: calc(100vh - 40px);\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n"] = false
+    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -389,7 +387,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;aboutSyng&quot;)\">\n      <center>\n        <h2>About</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;settings&quot;)\">\n      <center>\n        <h2>Settings</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;viewLicense&quot;)\">\n      <center>\n        <h2>View Licenses</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"4\" v-on:click=\"loadView(&quot;reportBug&quot;)\">\n      <center>\n        <h2>Report Bug</h2>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\" class=\"main-column\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;aboutSyng&quot;)\">\n      <center>\n        <h2>About</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;settings&quot;)\">\n      <center>\n        <h2>Settings</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;viewLicense&quot;)\">\n      <center>\n        <h2>View Licenses</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"4\" v-on:click=\"loadView(&quot;reportBug&quot;)\">\n      <center>\n        <h2>Report Bug</h2>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\" class=\"main-column\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -977,7 +975,7 @@ module.exports = {
 };
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;syngLicense&quot;)\">\n      <center>\n        <h3>Syng License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;cccedictLicense&quot;)\">\n      <center>\n        <h3>CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;nodecccedictLicense&quot;)\">\n      <center>\n        <h3>Node-CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\">\n  <div id=\"license-content\">\n      <br>\n      <component :is=\"currentView\"></component>\n  </div>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\" class=\"main-column\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;syngLicense&quot;)\">\n      <center>\n        <h3>Syng License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;cccedictLicense&quot;)\">\n      <center>\n        <h3>CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;nodecccedictLicense&quot;)\">\n      <center>\n        <h3>Node-CC-CEDICT License</h3>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\" class=\"main-column\">\n  <div id=\"license-content\">\n      <br>\n      <component :is=\"currentView\"></component>\n  </div>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

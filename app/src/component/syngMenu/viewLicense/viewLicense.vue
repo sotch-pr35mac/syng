@@ -1,5 +1,5 @@
 <template>
-  <i-col span="4">
+  <i-col span="4" class='main-column'>
     <Menu theme="light" width='100%' active-key='1'>
       <Menu-item key='1' v-on:click='loadView("syngLicense")'>
         <center>
@@ -18,7 +18,7 @@
       </Menu-item>
     </Menu>
   </i-col>
-  <i-col span="17">
+  <i-col span="17" class='main-column'>
     <div id="license-content">
         <br>
         <component :is='currentView'></component>

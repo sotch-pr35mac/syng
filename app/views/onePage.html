@@ -19,10 +19,10 @@
     #mainWindowRow {
     	height:100vh;
     }
-    .ivu-col {
+    .main-column {
     	height: 100vh;
     }
-    .ivu-col-span-3 {
+    .main-nav-column {
     	background-color: #464c5b;
     }
   </style>
@@ -31,7 +31,7 @@
 <body>
   <div id="app">
     <Row id="mainWindowRow">
-      <i-col span="3">
+      <i-col span="3" class='main-column main-nav-column'>
         <Menu theme="dark" width="100%" active-key='2'>
           <Menu-item key="1" v-on:click='loadView("syngMenu")'>
             <center>
