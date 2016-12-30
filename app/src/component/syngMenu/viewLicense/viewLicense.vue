@@ -19,7 +19,10 @@
     </Menu>
   </i-col>
   <i-col span="17">
-    <component :is='currentView'></component>
+    <div id="license-content">
+        <br>
+        <component :is='currentView'></component>
+    </div>
   </i-col>
 </template>
 
@@ -33,6 +36,11 @@
   position: absolute;
   bottom: 0;
   display: block;
+}
+#license-content {
+  height: 100vh;
+  width: 100vh;
+  overflow-y: scroll;
 }
 </style>
 

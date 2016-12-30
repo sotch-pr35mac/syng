@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="../style/lib/iview/iview.css" />
 
   <style>
-    .ivu-row {
+    #mainWindowRow {
     	height:100vh;
     }
     .ivu-col {
@@ -30,42 +30,54 @@
 
 <body>
   <div id="app">
-    <Row>
+    <Row id="mainWindowRow">
       <i-col span="3">
         <Menu theme="dark" width="100%" active-key='2'>
           <Menu-item key="1" v-on:click='loadView("syngMenu")'>
             <center>
-              <h1><b>词应</b></h1>
+              <Tooltip placement='right' content='Syng'>
+                <h1><b>词应</b></h1>
+              </Tooltip>
               <!-- <h3>Syng</h3> -->
             </center>
           </Menu-item>
           <Menu-item key="2" v-on:click='loadView("search")'>
             <center>
-              <h1><Icon type="search"></Icon></h1>
+              <Tooltip placement='right' content='Search'>
+                <h1><Icon type="search"></Icon></h1>
+              </Tooltip>
               <!-- <h3>Search</h3> -->
             </center>
           </Menu-item>
           <Menu-item key="3" v-on:click='loadView("yuedu")'>
             <center>
-              <h1><Icon type="ios-book"></Icon></h1>
+              <Tooltip placement='right' content='Document Reader'>
+                <h1><Icon type="ios-book"></Icon></h1>
+              </Tooltip>
               <!-- <h3>Document Reader</h3> -->
             </center>
           </Menu-item>
           <Menu-item key="4" v-on:click='loadView("bookmarks")'>
             <center>
-              <h1><Icon type="bookmark"></Icon></h1>
+              <Tooltip placement='right' content='Bookmarks'>
+                <h1><Icon type="bookmark"></Icon></h1>
+              </Tooltip>
               <!-- <h3>Bookmarks</h3> -->
             </center>
           </Menu-item>
           <Menu-item key="5" v-on:click='loadView("study")'>
             <center>
-              <h1><Icon type="ios-keypad"></Icon></h1>
+              <Tooltip placement='right' content='Study'>
+                <h1><Icon type="ios-keypad"></Icon></h1>
+              </Tooltip>
               <!-- <h3>Study</h3> -->
             </center>
           </Menu-item>
           <Menu-item key="6" v-on:click='loadView("tools")'>
             <center>
-              <h1><Icon type="wrench"></Icon></h1>
+              <Tooltip placement='right' content='Tools'>
+                <h1><Icon type="wrench"></Icon></h1>
+              </Tooltip>
               <!-- <h3>Tools</h3> -->
             </center>
           </Menu-item>

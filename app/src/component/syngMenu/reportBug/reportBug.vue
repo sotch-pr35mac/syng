@@ -11,7 +11,12 @@
       <br>
       <h2>Report Bug</h2>
       <br>
-      <p><b>Note:</b> Submitting a bug report requires a network connection</p>
+    </center>
+    <Alert show-icon>
+      Network Connection Required
+      <span slot="desc">A network connection is required to submit a bug report.</span>
+    </Alert>
+    <center>
       <p>
         If you find a bug, please report it so that it can be corrected. You can report the bug to the developer using the button below. Thank you for helping make Syng
         better for everyone!
