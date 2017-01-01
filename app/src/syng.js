@@ -67,7 +67,7 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n}\n")
 
 
 
@@ -107,23 +107,68 @@ var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-le
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ENGLISH_INPUT = "EN";
+const PINYIN_INPUT = "PY";
+var searchResults = [];
 
 module.exports = {
   data: function() {
     return {
-      value: ''
+      inputMethod: ENGLISH_INPUT,
+      searchResults: searchResults
+    }
+  },
+  methods: {
+    switchInputMethod: function() {
+      if(this.inputMethod == ENGLISH_INPUT) {
+        this.inputMethod = PINYIN_INPUT;
+      }
+      else if(this.inputMethod == PINYIN_INPUT) {
+        this.inputMethod = ENGLISH_INPUT;
+      }
+    },
+    performSearch: function() {
+      // Get the input method to determine search method
+      var inputMethod = this.inputMethod;
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button>EN</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\"></i-input>\n      &nbsp;\n      <i-button>Search</i-button>\n    </row>\n  </div>\n  <row>\n    <i-col span=\"5\">\n      <div class=\"search-listing\"></div>\n    </i-col>\n    <i-col span=\"19\">\n    </i-col>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <i-col span=\"5\">\n      <div class=\"search-listing\">\n        <li class=\"search-listing-item\" v-for=\"wordItem in searchResults\">\n          <div class=\"search-listing-content\">\n            <h4><strong>{{ wordItem.simplified }} ({{ wordItem.traditional }})</strong></h4>\n            <p>{{ wordItem.pinyin }}</p>\n            <p>{{ wordItem.definitions.join(\" \"); }}</p>\n          </div>\n        </li>\n      </div>\n    </i-col>\n    <i-col span=\"19\">\n    </i-col>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n}\n"] = false
+    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
