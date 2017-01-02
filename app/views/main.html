@@ -11,7 +11,21 @@
   <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
 
   <script>window.Vue = require("vue");</script>
-  <!-- <script>window.IView = require("iview");</script> -->
+
+  <script>
+    function initializeSearch() {
+      var path = require('path');
+      window.engine = require(path.join(__dirname, "../src/engine.js"));
+      var tingo = require('tingodb')();
+      window.ipc = require('electron').ipcRenderer; // For communication with the Main Process
+      window.dialog = require('electron').remote.dialog;
+
+      window.db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
+      window.bookmarksDb = db.collection("bookmarks");
+    }
+
+    initializeSearch();
+  </script>
 
   <link rel="stylesheet" href="../style/lib/iview/iview.css" />
 
@@ -68,7 +82,7 @@
           <Menu-item key="5" v-on:click='loadView("study")'>
             <center>
               <Tooltip placement='right' content='Study'>
-                <h1><Icon type="ios-keypad"></Icon></h1>
+                <h1><Icon type="university"></Icon></h1>
               </Tooltip>
               <!-- <h3>Study</h3> -->
             </center>
@@ -76,7 +90,7 @@
           <Menu-item key="6" v-on:click='loadView("tools")'>
             <center>
               <Tooltip placement='right' content='Tools'>
-                <h1><Icon type="wrench"></Icon></h1>
+                <h1><Icon type="settings"></Icon></h1>
               </Tooltip>
               <!-- <h3>Tools</h3> -->
             </center>

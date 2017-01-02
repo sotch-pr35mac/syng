@@ -19,7 +19,6 @@ var testWindow = null; // The test window (to test the learner on their ability)
 var lgChars = null; // The window for displaying large characters for better visibility. Has `mainWindow` as parent.
 var pinyinConvertWindow = null; // The Pinyin Converter Window. Has no parent.
 var characterConvertWindow = null; // The Traditional to Simplified and vice versa character converter window. Has no parent.
-var oneWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -36,23 +35,17 @@ app.on('window-all-closed', function() {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 app.on('ready', function() {
-	// Main Window Size will be different on Windows because of button rendering differences
-	// Determine the size of the window here
-	var mainWindowWidth = 950;
-	if(process.platform == "win32") {
-		mainWindowWidth = 990;
-	}
-
-	// Create the browser window.
+	// Load the main window
 	mainWindow = new BrowserWindow({
-		width: mainWindowWidth,
-		height: 420,
+		width: 1110,
+		height: 655,
 		show: false,
-		title: 'Syng | Chinese to English Dictionary'
+		title: "Syng",
+		'auto-hide-menu-bar': true
 	});
 
-	// and load the index.html of the app.
-	mainWindow.loadURL('file://'+ __dirname + '/../views/index.html');
+	mainWindow.loadURL("file://"+__dirname+"/../views/main.html");
+	mainWindow.openDevTools();
 
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
@@ -81,20 +74,7 @@ app.on('ready', function() {
 		if(characterConvertWindow != null) {
 			characterConvertWindow.close();
 		}
-		if(oneWindow != null) {
-			oneWindow.close();
-		}
 	});
-
-	oneWindow = new BrowserWindow({
-		width: 1100,
-		height: 651,
-		show: true,
-		title: "Syng"
-	});
-
-	oneWindow.loadURL("file://"+__dirname+"/../views/onePage.html");
-	oneWindow.openDevTools();
 
 	ipc.on("switch-input", function(event, args) {
 		mainWindow.send("toggle-search-input", args);
@@ -278,6 +258,9 @@ app.on('ready', function() {
 			lgChars.show();
 		}
 	});
+
+	// DEBUG
+	lgChars.openDevTools();
 
 	lgChars.on('close', function(event) {
 		if(mainWindow != null) {

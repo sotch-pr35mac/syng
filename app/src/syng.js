@@ -67,7 +67,153 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":18,"vue-hot-reload-api":17,"vueify/lib/insert-css":19}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1 {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2 {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3 {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4 {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5 {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6 {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right {\n  float: right;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -137,13 +283,29 @@ var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-le
 const ENGLISH_INPUT = "EN";
 const PINYIN_INPUT = "PY";
 var searchResults = [];
+var franc = window.require('franc');
+var _ = window.require('underscore');
 
 module.exports = {
   data: function() {
     return {
       inputMethod: ENGLISH_INPUT,
-      searchResults: searchResults
+      searchResults: searchResults,
+      noSearchResults: false,
+      searchText: "",
+      currentWord: {},
+      displayWord: false,
+      componentCharacters: []
     }
+  },
+  attached: function() {
+    $(document).ready(function() {
+      $(".ivu-input").keyup(function(event) {
+    		if(event.keyCode == 13) {
+    			$("#search-button").click();
+    		}
+    	});
+    });
   },
   methods: {
     switchInputMethod: function() {
@@ -154,21 +316,131 @@ module.exports = {
         this.inputMethod = ENGLISH_INPUT;
       }
     },
+    openLargeChars: function() {
+      var lgObj = {
+        traditional: this.currentWord.traditional,
+        simplified: this.currentWord.simplified
+      };
+
+      window.ipc.send('show-large-characters', lgObj);
+    },
+    switchWord: function(id) {
+      function getCharacterComponents(tradWord) {
+        var wordList = [];
+        for(var x = 0; x < tradWord.length; x++) {
+          window.engine.searchByChinese(tradWord[x], function(result) {
+            wordList.push(result);
+          });
+        }
+
+        console.log("wordlist");
+        console.log(wordList);
+
+        return wordList;
+      }
+      this.currentWord = $.grep(this.searchResults, function(e) { return e.id == id })[0];
+      this.componentCharacters = getCharacterComponents(this.currentWord.traditional);
+      console.log("componentcharacters");
+      console.log(this.componentCharacters);
+      this.displayWord = true;
+    },
     performSearch: function() {
-      // Get the input method to determine search method
-      var inputMethod = this.inputMethod;
+      this.displayWord = false;
+      this.noSearchResults = false;
+      this.searchResults = [];
+      this.currentWord = {};
+
+      var self = this;
+      var inputMethod = self.inputMethod;
+      var text = self.searchText;
+      var lang = franc(text, {'minLength': 1, 'whitelist': ['eng', 'cmn', 'und']});
+
+      // Generate unique random ID's for the search result expanded content to be linked with the search results listing
+    	function generateUIID(){
+    	    var d = new Date().getTime();
+    	    if(window.performance && typeof window.performance.now === "function"){
+    	        d += performance.now(); //use high-precision timer if available
+    	    }
+    	    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    	        var r = (d + Math.random()*16)%16 | 0;
+    	        d = Math.floor(d/16);
+    	        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    	    });
+    	    return uuid;
+    	}
+
+      function compileResults(originalResults) {
+        var compiledResults = [];
+
+        _.each(originalResults, function(wordList) {
+          _.each(wordList, function(word) {
+            var uiid = generateUIID();
+            var newWord = {
+              traditional: word.traditional,
+              simplified: word.simplified,
+              pinyin: word.pronunciation,
+              toneMarks: word.toneMarks,
+              definitions: word.definitions,
+              id: uiid
+            };
+
+            compiledResults.push(newWord);
+          });
+        });
+
+        return compiledResults;
+      }
+
+      if(lang == 'cmn') {
+        console.log("Search Language is Chinese");
+        window.engine.searchByChinese(text, function(results) {
+          console.log(results);
+          if(results.length < 1) {
+            self.noSearchResults = true;
+          }
+          else {
+            self.searchResults = compileResults(results);
+          }
+        });
+      }
+      else if(lang == "eng") {
+        if(inputMethod == ENGLISH_INPUT) {
+          console.log("Search Language is English");
+          window.engine.searchByEnglish(text, function(results) {
+            console.log(results);
+            if(results.length < 1) {
+              self.noSearchResults = true;
+            }
+            else {
+              self.searchResults = compileResults(results);
+            }
+          });
+        }
+        else if(inputMethod == PINYIN_INPUT) {
+          console.log("Search Language is Pinyin without Tone Numbers");
+          window.engine.searchByPinyin(text, function(results) {
+            console.log(results);
+            if(results.length < 1) {
+              self.noSearchResults = true;
+            }
+            else {
+              self.searchResults = compileResults(results);
+            }
+          });
+        }
+      }
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <i-col span=\"5\">\n      <div class=\"search-listing\">\n        <li class=\"search-listing-item\" v-for=\"wordItem in searchResults\">\n          <div class=\"search-listing-content\">\n            <h4><strong>{{ wordItem.simplified }} ({{ wordItem.traditional }})</strong></h4>\n            <p>{{ wordItem.pinyin }}</p>\n            <p>{{ wordItem.definitions.join(\" \"); }}</p>\n          </div>\n        </li>\n      </div>\n    </i-col>\n    <i-col span=\"19\">\n    </i-col>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item>Test</dropdown-item>\n                  <dropdown-item>Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button>\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">{{ currentWord.simplified }} ({{ currentWord.traditional }})</h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"char in componentCharacters\">\n                      {{ char[0][0].simplified }} ({{ char[0][0].traditional }}) - {{ char[0][0].pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in char[0][0].definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n}\n"] = false
+    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1 {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2 {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3 {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4 {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5 {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6 {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right {\n  float: right;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
