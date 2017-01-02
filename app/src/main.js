@@ -241,12 +241,13 @@ app.on('ready', function() {
 
 	// Large Characters Window
 	lgChars = new BrowserWindow({
-		width: 500,
-		height: 500,
+		width: 886,
+		height: 497,
 		show: false,
-		resizable: false,
+		resizable: true,
 		parent: mainWindow,
-		title: 'Syng | View Large Characters'
+		title: 'Syng | View Large Characters',
+		'auto-hide-menu-bar': true
 	});
 
 	lgChars.loadURL('file://'+__dirname+'/../views/lgChar.html');

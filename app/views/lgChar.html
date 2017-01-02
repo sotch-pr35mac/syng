@@ -10,30 +10,112 @@
 
   <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
 
-  <link rel="stylesheet" href="../style/css/photon.css">
+  <script>window.Vue = require("vue");</script>
 
-  <script src="../src/pages/lgChar.js" type="text/JavaScript"></script>
+  <link rel="stylesheet" href="../style/lib/iview/iview.css" />
+
+  <script>
+    var ipc = require('electron').ipcRenderer; // For communication with the main process
+    var IView = require('iview');
+    Vue.use(IView);
+
+    $(document).ready(function() {
+       window.lgChars = new Vue({
+         el: "#lgChars",
+         data: {
+           simplified: '',
+           traditional: '',
+           test: "test"
+         }
+       });
+    });
+
+    ipc.on('load-new-characters', function(event, args) {
+      window.lgChars.$data.simplified = args.simplified;
+      window.lgChars.$data.traditional = args.traditional;
+
+      console.log(window.lgChars.$data.test);
+    });
+  </script>
+
+  <style>
+    h1 {
+      font-size: 176px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    h2 {
+      font-size: 36px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    h3 {
+      font-size: 30px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    h4 {
+      font-size: 24px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    h5 {
+      font-size: 18px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    h6 {
+      font-size: 12px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    #lgChars {
+      font-family: system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-y: auto;
+      color: black;
+    }
+  </style>
 </head>
 
 <body>
-	<div class="window">
-		<div class="tab-group">
-			<div class="tab-item active" id="simplified-tab">
-				Simplified
-			</div>
-			<div class="tab-item" id="traditional-tab">
-				Traditional
-			</div>
-		</div>
-		<div class="window-content">
-			<div id="simplified-pane">
-				<a style="font-size: 150pt; justify-content: center;" id="simplified-container"></a>
-			</div>
-			<div id="traditional-pane" style="display: none;">
-				<a style="font-size: 150pt; justify-content: center;" id="traditional-container"></a>
-			</div>
-		</div>
-	</div>
+  <div id="lgChars">
+    <Tabs active-key="1">
+      <Tab-pane label="Simplified" key="1">
+        <div>
+          <center>
+            &nbsp;<h1>{{ simplified }}</h1>&nbsp;
+          </center>
+        </div>
+      </Tab-pane>
+      <Tab-pane label="Traditional" key="2">
+        <div>
+          <center>
+            &nbsp;<h1>{{ traditional }}</h1>&nbsp;
+          </center>
+        </div>
+      </Tab-pane>
+    </Tabs>
+  </div>
 </body>
 
 </html>

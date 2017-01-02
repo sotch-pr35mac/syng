@@ -79,10 +79,10 @@
                   <div slot="content">
                     <br>
                     <Collapse accordion>
-                      <Panel v-for="char in componentCharacters">
-                        {{ char[0][0].simplified }} ({{ char[0][0].traditional }}) - {{ char[0][0].pronunciation }}
+                      <Panel v-for="word in componentCharacters">
+                        {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}
                         <div slot="content">
-                          <li v-for="def in char[0][0].definitions" class="definitions-list">{{ def }}</li>
+                          <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
                         </div>
                       </Panel>
                     </Collapse>
@@ -263,15 +263,13 @@ module.exports = {
           });
         }
 
-        console.log("wordlist");
-        console.log(wordList);
+        mergedList = [].concat.apply([], wordList);
+        flatList = [].concat.apply([], mergedList);
 
-        return wordList;
+        return flatList;
       }
       this.currentWord = $.grep(this.searchResults, function(e) { return e.id == id })[0];
       this.componentCharacters = getCharacterComponents(this.currentWord.traditional);
-      console.log("componentcharacters");
-      console.log(this.componentCharacters);
       this.displayWord = true;
     },
     performSearch: function() {
