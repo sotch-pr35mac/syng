@@ -51,14 +51,11 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 					let individualWords = word.pronunciation.split(" ");
 
-					var toneMarks = [];
-					for(var e = 0; e < individualWords.length; e++) {
+					var toneMarks = new Array(individualWords.length);
+					for(var e = 0; e < toneMarks.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == NaN) {
-							tone = "0";
-						}
-						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
-							toneMarks.push(tone);
+						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
+							toneMarks[e] = tone;
 						}
 					}
 
@@ -99,14 +96,11 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 					let individualWords = word.pronunciation.split(" ");
 
-					var toneMarks = [];
-					for(var e = 0; e < individualWords.length; e++) {
+					var toneMarks = new Array(individualWords.length);
+					for(var e = 0; e < toneMarks.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == NaN) {
-							tone = "0";
-						}
-						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
-							toneMarks.push(tone);
+						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
+							toneMarks[e] = tone;
 						}
 					}
 
@@ -152,14 +146,11 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 					let individualWords = word.pronunciation.split(" ");
 
-					var toneMarks = [];
-					for(var e = 0; e < individualWords.length; e++) {
+					var toneMarks = new Array(individualWords.length);
+					for(var e = 0; e < toneMarks.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == NaN) {
-							tone = "0";
-						}
-						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
-							toneMarks.push(tone);
+						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
+							toneMarks[e] = tone;
 						}
 					}
 
@@ -197,14 +188,11 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 					let individualWords = word.pronunciation.split(" ");
 
-					var toneMarks = [];
-					for(var e = 0; e < individualWords.length; e++) {
+					var toneMarks = new Array(individualWords.length);
+					for(var e = 0; e < toneMarks.length; e++) {
 						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == NaN) {
-							tone = "0";
-						}
-						if(tone == "4" || tone == "3" || tone == "2" || tone == "1" || tone == "0")  {
-							toneMarks.push(tone);
+						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
+							toneMarks[e] = tone;
 						}
 					}
 

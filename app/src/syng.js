@@ -280,6 +280,9 @@ var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-le
 
 
 
+
+
+
 const ENGLISH_INPUT = "EN";
 const PINYIN_INPUT = "PY";
 var searchResults = [];
@@ -314,6 +317,14 @@ module.exports = {
       }
       else if(this.inputMethod == PINYIN_INPUT) {
         this.inputMethod = ENGLISH_INPUT;
+      }
+    },
+    addToList: function(listName) {
+      if(listName == "bookmarks") {
+        // Do bookmarks here
+      }
+      else {
+        // Do other lists here
       }
     },
     openLargeChars: function() {
@@ -369,17 +380,46 @@ module.exports = {
 
       function compileResults(originalResults) {
         var compiledResults = [];
+        const BLACK_TONE = "black";
+        const BLUE_TONE = "blue";
+        const ORANGE_TONE = "orange";
+        const RED_TONE = "red";
+        const GREEN_TONE = "green";
 
         _.each(originalResults, function(wordList) {
           _.each(wordList, function(word) {
             var uiid = generateUIID();
+            var colors = [];
+
+            _.each(word.toneMarks, function(tone) {
+              if(tone == "1") {
+                colors.push(BLUE_TONE);
+              }
+              else if(tone == "2") {
+                colors.push(ORANGE_TONE);
+              }
+              else if(tone == "3") {
+                colors.push(RED_TONE);
+              }
+              else if(tone == "4") {
+                colors.push(GREEN_TONE);
+              }
+              else if(tone == "5") {
+                colors.push(BLACK_TONE);
+              }
+              else if(tone == "0") {
+                colors.push(BLACK_TONE);
+              }
+            });
+
             var newWord = {
               traditional: word.traditional,
               simplified: word.simplified,
               pinyin: word.pronunciation,
               toneMarks: word.toneMarks,
               definitions: word.definitions,
-              id: uiid
+              id: uiid,
+              color: colors
             };
 
             compiledResults.push(newWord);
@@ -432,7 +472,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item>Test</dropdown-item>\n                  <dropdown-item>Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button>\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">{{ currentWord.simplified }} ({{ currentWord.traditional }})</h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"word in componentCharacters\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item>Test</dropdown-item>\n                  <dropdown-item>Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button>\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"word in componentCharacters\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

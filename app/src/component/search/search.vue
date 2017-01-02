@@ -15,7 +15,7 @@
       <div class="clear-characters">
         <i-col span="5">
           <div class="search-listing">
-            <li class='search-listing-item' v-for='word in searchResults'>
+            <li class='search-listing-item' v-for='word in searchResults' track-by="$index">
               <div class='search-listing-content' v-on:click="switchWord(word.id)">
                 <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>
                 <p>{{ word.pinyin }}</p>
@@ -64,7 +64,10 @@
                   </i-button>
                 </Button-group>
               </div>
-              <h1 style="margin-bottom: 0px;">{{ currentWord.simplified }} ({{ currentWord.traditional }})</h1>
+              <h1 style="margin-bottom: 0px;">
+                <a v-for="char in currentWord.simplified" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>
+                (<a v-for="char in currentWord.traditional" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>)
+              </h1>
               <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
               <br>
               <Collapse active-key="1">
@@ -246,6 +249,14 @@ module.exports = {
         this.inputMethod = ENGLISH_INPUT;
       }
     },
+    addToList: function(listName) {
+      if(listName == "bookmarks") {
+        // Do bookmarks here
+      }
+      else {
+        // Do other lists here
+      }
+    },
     openLargeChars: function() {
       var lgObj = {
         traditional: this.currentWord.traditional,
@@ -299,17 +310,46 @@ module.exports = {
 
       function compileResults(originalResults) {
         var compiledResults = [];
+        const BLACK_TONE = "black";
+        const BLUE_TONE = "blue";
+        const ORANGE_TONE = "orange";
+        const RED_TONE = "red";
+        const GREEN_TONE = "green";
 
         _.each(originalResults, function(wordList) {
           _.each(wordList, function(word) {
             var uiid = generateUIID();
+            var colors = [];
+
+            _.each(word.toneMarks, function(tone) {
+              if(tone == "1") {
+                colors.push(BLUE_TONE);
+              }
+              else if(tone == "2") {
+                colors.push(ORANGE_TONE);
+              }
+              else if(tone == "3") {
+                colors.push(RED_TONE);
+              }
+              else if(tone == "4") {
+                colors.push(GREEN_TONE);
+              }
+              else if(tone == "5") {
+                colors.push(BLACK_TONE);
+              }
+              else if(tone == "0") {
+                colors.push(BLACK_TONE);
+              }
+            });
+
             var newWord = {
               traditional: word.traditional,
               simplified: word.simplified,
               pinyin: word.pronunciation,
               toneMarks: word.toneMarks,
               definitions: word.definitions,
-              id: uiid
+              id: uiid,
+              color: colors
             };
 
             compiledResults.push(newWord);

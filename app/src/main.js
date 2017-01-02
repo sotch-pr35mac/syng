@@ -260,9 +260,6 @@ app.on('ready', function() {
 		}
 	});
 
-	// DEBUG
-	lgChars.openDevTools();
-
 	lgChars.on('close', function(event) {
 		if(mainWindow != null) {
 			lgChars.hide();
