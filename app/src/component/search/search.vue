@@ -52,7 +52,7 @@
                   </Dropdown-menu>
                 </Dropdown>
                 <Button-group>
-                  <i-button>
+                  <i-button v-on:click="addToList('bookmarks')">
                     <Tooltip placement="bottom" content="Add to Bookmarks">
                       <Icon type="plus-round" size="large"></Icon>
                     </Tooltip>
@@ -251,7 +251,26 @@ module.exports = {
     },
     addToList: function(listName) {
       if(listName == "bookmarks") {
-        // Do bookmarks here
+        var dbObj = {
+          traditional: this.currentWord.traditional,
+          simplified: this.currentWord.simplified,
+          pinyin: this.currentWord.pinyin,
+          definitions: this.currentWord.definitions,
+          toneMarks: this.currentWord.toneMarks,
+          notes: ""
+        };
+
+        window.bookmarksDb.insert(dbObj, function(err, res) {
+          if(err) {
+            if(confirm("There was an error saving the word to your bookmarks. Would you like to report this error? Error = "+err)) {
+              window.require('electron').shell.openExternal('https://gitreports.com/issue/sotch-pr35mac/syng');
+            }
+          }
+          else {
+            alert("The word was successfully saved to your bookmarks!");
+            // TODO: Figure out a way to reload the bookmarks on the bookmarks page
+          }
+        });
       }
       else {
         // Do other lists here
