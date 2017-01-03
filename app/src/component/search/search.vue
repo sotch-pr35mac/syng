@@ -1,4 +1,12 @@
 <template>
+  <Modal
+    title="Manage Lists"
+    :visible.sync="createNewListDialog"
+    :closable="false"
+    ok-text="Okay"
+    cancel-text="Cancel">
+    <h1>test</h1>
+  </Modal>
   <i-col span="21">
     <div id="search-frame">
       <Row>
@@ -46,9 +54,9 @@
                     </Tooltip>
                   </i-button>
                   <Dropdown-menu slot="list">
-                    <Dropdown-item>Test</Dropdown-item>
-                    <Dropdown-item>Bookmarks</Dropdown-item>
-                    <Dropdown-item divided>Create New List</Dropdown-item>
+                    <Dropdown-item v-for="collection in wordListings" v-on:click="addToList(collection.collectionName)" v-if="collection.collectionName != 'bookmarks'">{{ collection.collectionName }}</Dropdown-item>
+                    <Dropdown-item v-on:click="addToList('bookmarks')">Bookmarks</Dropdown-item>
+                    <Dropdown-item divided v-on:click="showCreateNewList()">Create New List</Dropdown-item>
                   </Dropdown-menu>
                 </Dropdown>
                 <Button-group>
@@ -82,7 +90,7 @@
                   <div slot="content">
                     <br>
                     <Collapse accordion>
-                      <Panel v-for="word in componentCharacters">
+                      <Panel v-for="word in componentCharacters" track-by="$index">
                         {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}
                         <div slot="content">
                           <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
@@ -228,7 +236,9 @@ module.exports = {
       searchText: "",
       currentWord: {},
       displayWord: false,
-      componentCharacters: []
+      componentCharacters: [],
+      wordListings: window.db._cols,
+      createNewListDialog: false
     }
   },
   attached: function() {
@@ -250,6 +260,8 @@ module.exports = {
       }
     },
     addToList: function(listName) {
+      var self = this;
+
       if(listName == "bookmarks") {
         var dbObj = {
           traditional: this.currentWord.traditional,
@@ -267,7 +279,7 @@ module.exports = {
             }
           }
           else {
-            alert("The word was successfully saved to your bookmarks!");
+            self.$Message.success('Successfully saved '+self.currentWord.simplified+" ("+self.currentWord.traditional+") to bookmarks!");
             // TODO: Figure out a way to reload the bookmarks on the bookmarks page
           }
         });
@@ -275,6 +287,9 @@ module.exports = {
       else {
         // Do other lists here
       }
+    },
+    showCreateNewList: function() {
+      this.createNewListDialog = true;
     },
     openLargeChars: function() {
       var lgObj = {
