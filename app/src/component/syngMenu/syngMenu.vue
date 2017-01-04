@@ -21,6 +21,16 @@
           <h2>Report Bug</h2>
         </center>
       </Menu-item>
+      <Menu-item key="5" v-on:click="loadView('help')">
+        <center>
+          <h2>Help</h2>
+        </center>
+      </Menu-item>
+      <Menu-item key="6" v-on:click="loadView('donate')">
+        <center>
+          <h2>Donate</h2>
+        </center>
+      </Menu-item>
     </Menu>
   </i-col>
   <i-col span="17" class='main-column'>
@@ -46,6 +56,8 @@ var AboutSyng = require('./aboutSyng/aboutSyng.vue');
 var ReportBug = require('./reportBug/reportBug.vue');
 var Settings = require('./settings/settings.vue');
 var ViewLicense = require('./viewLicense/viewLicense.vue');
+var Help = require('./help/help.vue');
+var Donate = require('./donate/donate.vue');
 
 module.exports = {
   data: function() {
@@ -57,7 +69,9 @@ module.exports = {
     'aboutSyng': AboutSyng,
     'reportBug': ReportBug,
     'settings': Settings,
-    'viewLicense': ViewLicense
+    'viewLicense': ViewLicense,
+    'help': Help,
+    'donate': Donate
   },
   methods: {
     loadView: function(viewName) {

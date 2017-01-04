@@ -22,7 +22,7 @@
         better for everyone!
       </p>
       <br>
-      <i-button type='primary' size='large' v-on:click='reportIssue'>Report Bug</i-button>
+      <i-button type='primary' size='large' v-on:click='reportIssue()'>Report Bug</i-button>
     </center>
   </div>
 </template>
