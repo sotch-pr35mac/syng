@@ -1,12 +1,4 @@
 <template>
-  <Modal
-    title="Manage Lists"
-    :visible.sync="createNewListDialog"
-    :closable="false"
-    ok-text="Okay"
-    cancel-text="Cancel">
-    <h1>test</h1>
-  </Modal>
   <i-col span="21">
     <div id="search-frame">
       <Row>
@@ -56,7 +48,7 @@
                   <Dropdown-menu slot="list">
                     <Dropdown-item v-for="collection in wordListings" v-on:click="addToList(collection.collectionName)" v-if="collection.collectionName != 'bookmarks'">{{ collection.collectionName }}</Dropdown-item>
                     <Dropdown-item v-on:click="addToList('bookmarks')">Bookmarks</Dropdown-item>
-                    <Dropdown-item divided v-on:click="showCreateNewList()">Create New List</Dropdown-item>
+                    <Dropdown-item divided v-on:click="">Create New List</Dropdown-item>
                   </Dropdown-menu>
                 </Dropdown>
                 <Button-group>
@@ -237,8 +229,7 @@ module.exports = {
       currentWord: {},
       displayWord: false,
       componentCharacters: [],
-      wordListings: window.db._cols,
-      createNewListDialog: false
+      wordListings: window.db._cols
     }
   },
   attached: function() {
@@ -287,9 +278,6 @@ module.exports = {
       else {
         // Do other lists here
       }
-    },
-    showCreateNewList: function() {
-      this.createNewListDialog = true;
     },
     openLargeChars: function() {
       var lgObj = {
