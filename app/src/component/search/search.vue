@@ -48,7 +48,7 @@
                   <Dropdown-menu slot="list">
                     <Dropdown-item v-for="collection in wordListings" v-on:click="addToList(collection.collectionName)" v-if="collection.collectionName != 'bookmarks'">{{ collection.collectionName }}</Dropdown-item>
                     <Dropdown-item v-on:click="addToList('bookmarks')">Bookmarks</Dropdown-item>
-                    <Dropdown-item divided v-on:click="">Create New List</Dropdown-item>
+                    <Dropdown-item divided v-on:click="createNewList()">Create New List</Dropdown-item>
                   </Dropdown-menu>
                 </Dropdown>
                 <Button-group>
@@ -249,6 +249,21 @@ module.exports = {
       else if(this.inputMethod == PINYIN_INPUT) {
         this.inputMethod = ENGLISH_INPUT;
       }
+    },
+    createNewList: function() {
+      var self = this;
+
+      // NOTE: This object may not be needed, because the word will not be added
+      //        right away when the list is created, firs the list is created
+      //        then if the list updates reactively like it should, the user will
+      //        be able to add the word from that without having to leave or reload
+      //        the search page.
+      var wordToAdd = self.currentWord;
+      wordToAdd.notes = "";
+
+      console.log("this works!!!");
+
+      window.ipc.send('show-manage-lists', wordToAdd);
     },
     addToList: function(listName) {
       var self = this;

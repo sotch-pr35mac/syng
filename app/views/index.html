@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ngapp="Syng">
+<html lang="en">
 
 <head>
   <meta charset="UTF-8">
@@ -10,43 +10,97 @@
 
   <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
 
-  <!-- Photon Files -->
-  <link rel="stylesheet" href="../style/css/photon.css">
+  <script>window.Vue = require("vue");</script>
 
-  <link rel="stylesheet" href="../style/css/hint.min.css" />
+  <script>
+    function initializeSearch() {
+      var path = require('path');
+      window.engine = require(path.join(__dirname, "../src/engine.js"));
+      var tingo = require('tingodb')();
+      window.ipc = require('electron').ipcRenderer; // For communication with the Main Process
+      window.dialog = require('electron').remote.dialog;
 
-  <link rel="stylesheet" href="../style/css/dict.css" />
+      window.db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
+      window.bookmarksDb = db.collection("bookmarks");
+    }
 
-  <!-- Menu -->
-  <script src="../src/menu.js"></script>
+    initializeSearch();
+  </script>
+
+  <link rel="stylesheet" href="../style/lib/iview/iview.css" />
+
+  <style>
+    #mainWindowRow {
+    	height:100vh;
+    }
+    .main-column {
+    	height: 100vh;
+    }
+    .main-nav-column {
+    	background-color: #464c5b;
+    }
+  </style>
 </head>
 
 <body>
-   <div class="window">
-      <header class="toolbar toolbar-header">
-         <h1 class="title"></h1>
-         <div class="toolbar-actions">
-            <a class="btn btn-large btn-default hint--right" data-hint="The intended language of latin input. English or Pinyin. Don't use tone numbers. Put space between intended words." id="language-selector">EN</a>
-            <input class="form-control" type="text" placeholder="Search in English/Chinese/Pinyin" style="width: 85%; margin-top: 6px;" id="default-search">
-            <a class="btn btn-large btn-default" style="width: 8%" id="default-search-btn">Search</a>
-         </div>
-      </header>
-
-      <!-- Main Content -->
-      <div class="window-content">
-         <div class="pane-group">
-            <div class="pane-sm sidebar search-listing">
-               <ul class="list-group" id="search-results">
-               </ul>
-            </div>
-            <div class="pane expanded-content-container" id="expanded-dict-content">
-            </div>
-         </div>
-      </div>
-   </div>
-
-   <!-- Load JavaScript Libraries Here -->
-  <script src="../src/pages/search.js"></script>
+  <div id="app">
+    <Row id="mainWindowRow">
+      <i-col span="3" class='main-column main-nav-column'>
+        <Menu theme="dark" width="100%" active-key='2'>
+          <Menu-item key="1" v-on:click='loadView("syngMenu")'>
+            <center>
+              <Tooltip placement='right' content='Syng'>
+                <h1><b>词应</b></h1>
+              </Tooltip>
+              <!-- <h3>Syng</h3> -->
+            </center>
+          </Menu-item>
+          <Menu-item key="2" v-on:click='loadView("search")'>
+            <center>
+              <Tooltip placement='right' content='Search'>
+                <h1><Icon type="search"></Icon></h1>
+              </Tooltip>
+              <!-- <h3>Search</h3> -->
+            </center>
+          </Menu-item>
+          <Menu-item key="3" v-on:click='loadView("yuedu")'>
+            <center>
+              <Tooltip placement='right' content='Document Reader'>
+                <h1><Icon type="ios-book"></Icon></h1>
+              </Tooltip>
+              <!-- <h3>Document Reader</h3> -->
+            </center>
+          </Menu-item>
+          <Menu-item key="4" v-on:click='loadView("bookmarks")'>
+            <center>
+              <Tooltip placement='right' content='Bookmarks'>
+                <h1><Icon type="bookmark"></Icon></h1>
+              </Tooltip>
+              <!-- <h3>Bookmarks</h3> -->
+            </center>
+          </Menu-item>
+          <Menu-item key="5" v-on:click='loadView("study")'>
+            <center>
+              <Tooltip placement='right' content='Study'>
+                <h1><Icon type="university"></Icon></h1>
+              </Tooltip>
+              <!-- <h3>Study</h3> -->
+            </center>
+          </Menu-item>
+          <Menu-item key="6" v-on:click='loadView("tools")'>
+            <center>
+              <Tooltip placement='right' content='Tools'>
+                <h1><Icon type="settings"></Icon></h1>
+              </Tooltip>
+              <!-- <h3>Tools</h3> -->
+            </center>
+          </Menu-item>
+        </Menu>
+      </i-col>
+      <component :is='currentView'></component>
+    </Row>
+  </div>
+  <script src="../src/syng.js"></script>
 </body>
 
 </html>

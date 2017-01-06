@@ -10,15 +10,15 @@ var path = require('path');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-var mainWindow = null; 	// The main "search/dictionary" window. Has no parent.
-var aboutWindow = null; // The about window with program information. Has no parent.
-var splashWindow = null; // The splash page to display while Syng is loading. Has no parent.
-var bookmarksWindow = null; // The bookmarks window with all the saved searches. Has no parent.
+var mainWindow = null; 	// The main "search/dictionary" window.
+var splashWindow = null; // The splash page to display while Syng is loading.
+var lgChars = null; // The window for displaying large characters for better visibility.
+var manageLists = null; // The window to manage vocabulary lists.
 var flashcardsWindow = null; // The window to display study flash cards (not testing feature). Has `bookmarksWindow` as parent.
 var testWindow = null; // The test window (to test the learner on their ability). Has `bookmarksWindow` as parent.
-var lgChars = null; // The window for displaying large characters for better visibility. Has `mainWindow` as parent.
 var pinyinConvertWindow = null; // The Pinyin Converter Window. Has no parent.
 var characterConvertWindow = null; // The Traditional to Simplified and vice versa character converter window. Has no parent.
+var bookmarksWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -44,7 +44,7 @@ app.on('ready', function() {
 		'auto-hide-menu-bar': true
 	});
 
-	mainWindow.loadURL("file://"+__dirname+"/../views/main.html");
+	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");
 	mainWindow.openDevTools();
 
 	// Emitted when the window is closed.
@@ -53,14 +53,11 @@ app.on('ready', function() {
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
 		mainWindow = null;
-		if(aboutWindow != null) {
-			aboutWindow.close();
-		}
-		if(bookmarksWindow != null) {
-			bookmarksWindow.close();
-		}
 		if(lgChars != null) {
 			lgChars.close();
+		}
+		if(manageLists != null) {
+			manageLists.close();
 		}
 		if(flashcardsWindow != null) {
 			flashcardsWindow.close();
@@ -77,6 +74,7 @@ app.on('ready', function() {
 	});
 
 	ipc.on("switch-input", function(event, args) {
+		// TODO: Make sure this works after the redesign
 		mainWindow.send("toggle-search-input", args);
 	});
 
@@ -89,37 +87,6 @@ app.on('ready', function() {
 	ipc.on('show-syng', function(event, args) {
 		if(!mainWindow.isVisible()) {
 			mainWindow.show();
-		}
-	});
-
-	// About Dialog Window
-	aboutWindow = new BrowserWindow({
-		width: 500,
-		height: 500,
-		show: false,
-		resizable: false,
-		title: 'About Syng'
-	});
-
-	aboutWindow.setMenu(null);
-
-	aboutWindow.loadURL('file://'+__dirname+'/../views/about.html');
-
-	aboutWindow.on('close', function(event) {
-		if(mainWindow != null) {
-			aboutWindow.hide();
-			event.preventDefault();
-			event.returnValue = false;
-		}
-	});
-
-	aboutWindow.on('closed', function() {
-		aboutWindow = null;
-	});
-
-	ipc.on('open-about-window', function(event, args) {
-		if(!aboutWindow.isVisible()) {
-			aboutWindow.show();
 		}
 	});
 
@@ -152,7 +119,7 @@ app.on('ready', function() {
 		title: 'Syng Bookmarks'
 	});
 
-	bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
+	// bookmarksWindow.loadURL('file://'+__dirname+'/../views/bookmarks.html');
 
 	ipc.on('open-bookmarks-window', function(event, args) {
 		if(!bookmarksWindow.isVisible()) {
@@ -270,6 +237,39 @@ app.on('ready', function() {
 
 	lgChars.on('closed', function(event) {
 		lgChars = null;
+	});
+
+	// Manage Vocab Lists Window
+	manageLists = new BrowserWindow({
+		width: 600,
+		height: 500,
+		parent: mainWindow,
+		title: 'Syng | Manage Lists',
+		'auto-hide-menu-bar': true,
+		show: false
+	});
+
+	manageLists.loadURL('file://'+__dirname+'/../views/manageLists.html');
+	manageLists.openDevtools();
+
+	ipc.on('show-manage-lists', function(event, args) {
+		manageLists.send('open-lists', args);
+
+		if(!manageLists.isVisible()) {
+			manageLists.show();
+		}
+	});
+
+	manageLists.on('close', function(event) {
+		if(mainWindow != null) {
+			manageLists.hide();
+			event.preventDefault();
+			event.returnValue = false;
+		}
+	});
+
+	manageLists.on('closed', function(event) {
+		manageLists = null;
 	});
 
 	// Flashcards Window
