@@ -250,7 +250,7 @@ app.on('ready', function() {
 	});
 
 	manageLists.loadURL('file://'+__dirname+'/../views/manageLists.html');
-	manageLists.openDevtools();
+	manageLists.openDevTools();
 
 	ipc.on('show-manage-lists', function(event, args) {
 		manageLists.send('open-lists', args);
