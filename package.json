@@ -29,12 +29,15 @@
     "cz-conventional-changelog": "^1.2.0",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.1.2",
+    "eslint": "^3.13.1",
+    "pre-commit": "^1.2.2",
     "vueify": "^8.7.0"
   },
   "scripts": {
     "start": "npm-run-all build open",
     "build": "browserify -t vueify -e app/src/app.js -o app/src/syng.js",
-    "open": "electron ."
+    "open": "electron .",
+    "lint": "eslint ./app/src/**/*.js"
   },
   "config": {
     "commitizen": {
