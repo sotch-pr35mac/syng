@@ -229,10 +229,11 @@ module.exports = {
       currentWord: {},
       displayWord: false,
       componentCharacters: [],
-      wordListings: window.db._cols
+      wordListings: {}
     }
   },
   attached: function() {
+    var self = this;
     $(document).ready(function() {
       $(".ivu-input").keyup(function(event) {
     		if(event.keyCode == 13) {
@@ -242,6 +243,9 @@ module.exports = {
     });
   },
   methods: {
+    updateCollections: function() {
+      this.wordListings = getWordListings();
+    },
     switchInputMethod: function() {
       if(this.inputMethod == ENGLISH_INPUT) {
         this.inputMethod = PINYIN_INPUT;
@@ -261,7 +265,8 @@ module.exports = {
       var wordToAdd = self.currentWord;
       wordToAdd.notes = "";
 
-      console.log("this works!!!");
+      console.log("After instantiation");
+      console.log(window.db._cols);
 
       window.ipc.send('show-manage-lists', wordToAdd);
     },
