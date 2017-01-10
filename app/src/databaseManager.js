@@ -3,15 +3,6 @@
 const dialog = window.require('electron').remote.dialog;
 var _ = window.require('underscore');
 
-// Make sure localStorage can handle objects and arrays
-Storage.prototype.setObj = function(key, obj) {
-  return this.setObj(key, JSON.stringify(obj));
-}
-
-Storage.prototype.getObj = function(key) {
-  return JSON.parse(this.getObj(key));
-}
-
 module.exports = class databaseManager {
   constructor() {
   	// Load database
@@ -27,26 +18,23 @@ module.exports = class databaseManager {
   	if(!self.userLists) {
   		self.userLists = {};
   	}
-  	if(!window.localStorage.getObj('userLists')) {
-  		window.localStorage.setObj('userLists', new Array(0));
+  	if(!window.localStorage.getItem('userLists')) {
+  		window.localStorage.setItem('userLists', JSON.stringify(new Array(0)));
   	}
   	else {
-  		var userListNames = window.localStorage.getObj('userLists');
+  		var userListNames = JSON.parse(window.localStorage.getItem('userLists'));
 
   		for(var i = 0; i < userListNames.length; i++) {
   			// Check to make sure the file exists before loading the database
   			var fileToCheck = self.path.join(__dirname, 'db/syng/'+userListNames[i]);
-  			self.fs.exists(fileToCheck, function(err) {
-  				if(err) {
-  					console.log('There was an error loading the user data lists.');
-  					console.log(err);
-  				}
-  				else {
-            console.log('this runs');
-  					// self.userLists[userListNames[i]] = self.db.collection(userListNames[i]);
-            self.loadUserList(userListNames[i]);
-  				}
-  			});
+  			var exists = self.fs.existsSync(fileToCheck);
+				if(exists) {
+          self.loadUserList(userListNames[i]);
+				}
+				else {
+          console.log('There was an error loading the user data lists.');
+					console.log(err);
+				}
   		}
   	}
   }
@@ -56,7 +44,7 @@ module.exports = class databaseManager {
   }
 
   get userListNames() {
-	   return window.localStorage.getObj('userLists');
+	   return JSON.parse(window.localStorage.getItem('userLists'));
   }
 
   get loadedCollections() {
@@ -72,7 +60,7 @@ module.exports = class databaseManager {
   		if(exists) {
         console.log('The file already exists. Cannot create user list.');
         dialog.showErrorBox('Cannot Create List', 'Cannot create user list because the database file with that name already exists. Please choose a different name.');
-        return -1;
+        return false;
       }
       else {
         // The file does not already exist, go ahead and create it
@@ -81,34 +69,37 @@ module.exports = class databaseManager {
             console.log('There was an error writing the new user list to a file.');
             console.log(err);
             dialog.showErrorBox('Cannot Create List', 'There was an error while creating the new list. Error = '+err);
-            return -1;
+            return false;
           }
           else {
             // The list was successfully created, go ahead and add the list name to the list of lists in localStorage
-            var userListNames = window.localStorage.getObj('userLists');
+            var userListNames = JSON.parse(window.localStorage.getItem('userLists'));
             userListNames.push(listName);
-            window.localStorage.setObj('userLists', userListNames);
+            window.localStorage.setItem('userLists', JSON.stringify(userListNames));
 
             // Load the user list into the open collections
             self.loadUserList(listName);
 
-            return 1;
+            return true;
           }
         });
       }
   	});
   }
 
+  // FIXME: There is an async issue here, consider using promises as a fix
+  //        The listContent gets returned before the callback in toArray() returns
+  //         the list contents from the database
   getUserListContent(listName) {
     var self = this;
 
-    if(self.userLists[listName] == undefined || self.userLists[listName] == null) {
-      self.userLists[listName].find().toArray(function(err, list) {
+    if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
+      var listContent = self.userLists[listName].find().toArray(function(err, list) {
         if(err || list == undefined || list == null) {
           console.log('There was an error getting the custom user list.');
           console.log(err);
           dialog.showErrorBox('Error Getting Custom Vocab List', 'There was an error while getting the custom vocab list. Error = '+err);
-          return -1;
+          return false;
         }
         else {
           return list;
@@ -116,8 +107,10 @@ module.exports = class databaseManager {
       });
     }
     else {
-      return -1;
+      return false;
     }
+
+    return listContent;
   }
 
   addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
@@ -137,12 +130,12 @@ module.exports = class databaseManager {
         console.log('There was an error while adding the word to bookmarks.');
         console.log(err);
         dialog.showErrorBox('Cannot Add Word to Bookmarks', 'There was an error while adding that word to bookmarks. Error = '+err);
-        return -1;
+        return false;
       }
       else {
         // Successfully added word to bookmarks
         console.log('Successfully added word to bookmarks.');
-        return 1;
+        return true;
       }
     });
   }
@@ -151,7 +144,7 @@ module.exports = class databaseManager {
     var self = this;
 
     self.bookmarksDb.remove({ _id: id });
-    return 1;
+    return true;
   }
 
   get bookmarks() {
@@ -160,7 +153,7 @@ module.exports = class databaseManager {
         console.log('There was an error getting bookmarks.');
         console.log(err);
         dialog.showErrorBox('Cannot Load Bookmarks', 'There was an error while loading the bookmarks. Error = '+err);
-        return -1;
+        return false;
       }
       else {
         return bookmarks;
@@ -186,15 +179,15 @@ module.exports = class databaseManager {
           console.log('There was an error adding word to user list.');
           console.log(err);
           dialog.showErrorBox('Error Adding Word to Vocab List', 'There was an error adding the word to the custom vocab list. Error = '+err);
-          return -1;
+          return false;
         }
         else {
-          return 1;
+          return true;
         }
       })
     }
     else {
-      return -1;
+      return false;
     }
   }
 
@@ -203,10 +196,10 @@ module.exports = class databaseManager {
 
     if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
       self.userLists[listName].remove({ _id: id });
-      return 1;
+      return true;
     }
     else {
-      return -1;
+      return false;
     }
   }
 
@@ -221,22 +214,23 @@ module.exports = class databaseManager {
           console.log('There was an error removing the user list database file.');
           console.log(err);
           dialog.showErrorBox('Error Removing Vocab List', 'There was an error removing the custom vocab list. Error = '+err);
-          return -1;
+          return false;
         }
         else {
-          var userLists = window.localStorage.getObj('userLists');
+          var userLists = JSON.parse(window.localStorage.getItem('userLists'));
 
           var unwantedIndex = userLists.indexOf(listName);
-          userLists = userLists.splice(unwantedIndex, 1);
+          userLists.splice(unwantedIndex, 1);
 
-          window.localStorage.setObj('userLists', userLists);
+          window.localStorage.setItem('userLists', JSON.stringify(userLists));
+          self.userLists[listName] = null;
 
-          return 1;
+          return true;
         }
       });
     }
     else {
-      return -1;
+      return false;
     }
   }
 
