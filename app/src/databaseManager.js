@@ -1,7 +1,3 @@
-/*
-  TODO: This entire page needs to be refactored to include more comments, and arrow functions if needed
-*/
-
 'use strict';
 
 module.exports = class databaseManager {
@@ -58,20 +54,18 @@ module.exports = class databaseManager {
   }
 
   createUserList(listName) {
-  	var self = this;
-
   	// Check to make sure the file doesn't already exist
-  	var fileToCheck = self.path.join(__dirname, 'db/syng/'+listName);
+  	var fileToCheck = this.path.join(__dirname, 'db/syng/'+listName);
 
-    var status = new Promise(function(resolve, reject) {
-      self.fs.exists(fileToCheck, function(exists) {
+    var status = new Promise((resolve, reject) => {
+      this.fs.exists(fileToCheck, exists => {
     		if(exists) {
           console.log('The file already exists. Cannot create user list.');
           reject(new Error('Cannot create user list because the database file with that name already exists. Please choose a different name.'));
         }
         else {
           // The file does not already exist, go ahead and create it
-          self.fs.writeFile(fileToCheck, '', function(err) {
+          this.fs.writeFile(fileToCheck, '', err => {
             if(err) {
               console.log('There was an error writing the new user list to a file.');
               console.log(err);
@@ -84,7 +78,7 @@ module.exports = class databaseManager {
               window.localStorage.setItem('userLists', JSON.stringify(userListNames));
 
               // Load the user list into the open collections
-              self.loadUserList(listName);
+              this.loadUserList(listName);
 
               resolve(true);
             }
@@ -97,13 +91,11 @@ module.exports = class databaseManager {
   }
 
   removeUserList(listName) {
-    var self = this;
+    var status = new Promise((resolve, reject) => {
+      if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
+        var listPath = this.path.join(__dirname, 'db/syng/'+listName);
 
-    var status = new Promise(function(resolve, reject) {
-      if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
-        var listPath = self.path.join(__dirname, 'db/syng/'+listName);
-
-        self.fs.unlink(listPath, function(err) {
+        this.fs.unlink(listPath, err => {
           if(err) {
             console.log('There was an error removing the user list database file.');
             console.log(err);
@@ -116,7 +108,7 @@ module.exports = class databaseManager {
             userLists.splice(unwantedIndex, 1);
 
             window.localStorage.setItem('userLists', JSON.stringify(userLists));
-            self.userLists[listName] = null;
+            this.userLists[listName] = null;
 
             resolve(true);
           }
@@ -131,10 +123,8 @@ module.exports = class databaseManager {
   }
 
   addToUserList(listName, simplified, traditional, pinyin, definitions, toneMarks) {
-    var self = this;
-
-    var status = new Promise(function(resolve, reject) {
-      if(self.userLists[listName] != undefined || self.userLIsts[listName] != null) {
+    var status = new Promise((resolve, reject) => {
+      if(this.userLists[listName] != undefined || this.userLIsts[listName] != null) {
         var ulObj = {
           simplified: simplified,
           traditional: traditional,
@@ -144,7 +134,7 @@ module.exports = class databaseManager {
           notes: ''
         };
 
-        self.userLists[listName].insert(ulObj, function(err, res) {
+        this.userLists[listName].insert(ulObj, (err, res) => {
           if(err || res == undefined || res == null) {
             console.log('There was an error adding word to user list.');
             console.log(err);
@@ -164,11 +154,9 @@ module.exports = class databaseManager {
   }
 
   removeFromUserList(listName, id) {
-    var self = this;
-
-    var status = new Promise(function(resolve, reject) {
-      if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
-        self.userLists[listName].remove({ _id: id });
+    var status = new Promise((resolve, reject) => {
+      if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
+        this.userLists[listName].remove({ _id: id });
         resolve(true);
       }
       else {
@@ -180,11 +168,9 @@ module.exports = class databaseManager {
   }
 
   getUserListContent(listName) {
-    var self = this;
-
-    var listContent = new Promise(function(resolve, reject) {
-      if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
-        self.userLists[listName].find().toArray(function(err, list) {
+    var listContent = new Promise((resolve, reject) => {
+      if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
+        this.userLists[listName].find().toArray((err, list) => {
           if(err || list == undefined || list == null) {
             console.log('There was an error getting the custom user list.');
             console.log(err);
@@ -204,8 +190,6 @@ module.exports = class databaseManager {
   }
 
   addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
-    var self = this;
-
     var dbObj = {
       traditional: traditional,
       simplified: simplified,
@@ -215,8 +199,8 @@ module.exports = class databaseManager {
       notes: ''
     };
 
-    var status = new Promise(function(resolve, reject) {
-      self.bookmarksDb.insert(dbObj, function(err, res) {
+    var status = new Promise((resolve, reject) => {
+      this.bookmarksDb.insert(dbObj, (err, res) => {
         if(err || res == undefined || res == null) {
           console.log('There was an error while adding the word to bookmarks.');
           console.log(err);
@@ -234,16 +218,12 @@ module.exports = class databaseManager {
   }
 
   removeFromBookmarks(id) {
-    var self = this;
-
-    self.bookmarksDb.remove({ _id: id });
+    this.bookmarksDb.remove({ _id: id });
   }
 
   get bookmarks() {
-    var self = this;
-
-    var bookmarksContent = new Promise(function(resolve, reject) {
-      self.bookmarksDb.find().toArray(function(err, bookmarks) {
+    var bookmarksContent = new Promise((resolve, reject) => {
+      this.bookmarksDb.find().toArray((err, bookmarks) => {
         if(err || bookmarks == undefined || bookmarks == null) {
           console.log('There was an error getting bookmarks.');
           console.log(err);
