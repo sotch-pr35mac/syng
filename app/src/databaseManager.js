@@ -1,7 +1,10 @@
+/*
+  TODO: This entire page needs to be refactored to be in a better order, include more comments, and use Promises were necessary
+*/
+
 'use strict';
 
 const dialog = window.require('electron').remote.dialog;
-var _ = window.require('underscore');
 
 module.exports = class databaseManager {
   constructor() {
@@ -87,28 +90,26 @@ module.exports = class databaseManager {
   	});
   }
 
-  // FIXME: There is an async issue here, consider using promises as a fix
-  //        The listContent gets returned before the callback in toArray() returns
-  //         the list contents from the database
   getUserListContent(listName) {
     var self = this;
 
-    if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
-      var listContent = self.userLists[listName].find().toArray(function(err, list) {
-        if(err || list == undefined || list == null) {
-          console.log('There was an error getting the custom user list.');
-          console.log(err);
-          dialog.showErrorBox('Error Getting Custom Vocab List', 'There was an error while getting the custom vocab list. Error = '+err);
-          return false;
-        }
-        else {
-          return list;
-        }
-      });
-    }
-    else {
-      return false;
-    }
+    var listContent = new Promise(function(resolve, reject) {
+      if(self.userLists[listName] != undefined || self.userLists[listName] != null) {
+        self.userLists[listName].find().toArray(function(err, list) {
+          if(err || list == undefined || list == null) {
+            console.log('There was an error getting the custom user list.');
+            console.log(err);
+            reject(new Error(err));
+          }
+          else {
+            resolve(list);
+          }
+        });
+      }
+      else {
+        reject(new Error('There was an unexpected error while getting the custom vocab list.'));
+      }
+    });
 
     return listContent;
   }
@@ -148,17 +149,22 @@ module.exports = class databaseManager {
   }
 
   get bookmarks() {
-    bookmarksDb.find().toArray(function(err, bookmarks) {
-      if(err || bookmarks == undefined || bookmarks == null) {
-        console.log('There was an error getting bookmarks.');
-        console.log(err);
-        dialog.showErrorBox('Cannot Load Bookmarks', 'There was an error while loading the bookmarks. Error = '+err);
-        return false;
-      }
-      else {
-        return bookmarks;
-      }
+    var self = this;
+
+    var bookmarksContent = new Promise(function(resolve, reject) {
+      self.bookmarksDb.find().toArray(function(err, bookmarks) {
+        if(err || bookmarks == undefined || bookmarks == null) {
+          console.log('There was an error getting bookmarks.');
+          console.log(err);
+          reject(new Error(err));
+        }
+        else {
+          resolve(bookmarks);
+        }
+      });
     });
+
+    return bookmarksContent;
   }
 
   addToUserList(listName, simplified, traditional, pinyin, definitions, toneMarks) {
