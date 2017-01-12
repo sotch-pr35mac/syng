@@ -30,7 +30,6 @@ module.exports = class databaseManager {
 				}
 				else {
           console.log('There was an error loading the user data lists.');
-					console.log(err);
 				}
   		}
   	}
@@ -41,8 +40,29 @@ module.exports = class databaseManager {
   }
 
   updateListing() {
-    // TODO: Write this
-    console.log('updateListing runs!');
+    var self = this;
+
+    if(!self.userLists) {
+      self.userLists = {};
+    }
+    if(!window.localStorage.getItem('userLists')) {
+      window.localStorage.setItem('userLists', JSON.stringify(new Array(0)));
+    }
+    else {
+      var userListNames = JSON.parse(window.localStorage.getItem('userLists'));
+
+      for(var i = 0; i < userListNames.length; i++) {
+        // Check ot make sure the file exists before loading the database
+        var fileToCheck = self.path.join(__dirname, 'db/syng/' + userListNames[i]);
+        var exists = self.fs.existsSync(fileToCheck);
+        if(exists) {
+          self.loadUserList(userListNames[i]);
+        }
+        else {
+          console.log('There was an error loading the user data list.');
+        }
+      }
+    }
   }
 
   get userListNames() {
@@ -57,7 +77,7 @@ module.exports = class databaseManager {
   	// Check to make sure the file doesn't already exist
   	var fileToCheck = this.path.join(__dirname, 'db/syng/'+listName);
 
-    var status = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.fs.exists(fileToCheck, exists => {
     		if(exists) {
           console.log('The file already exists. Cannot create user list.');
@@ -86,12 +106,10 @@ module.exports = class databaseManager {
         }
     	});
     });
-
-    return status;
   }
 
   removeUserList(listName) {
-    var status = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         var listPath = this.path.join(__dirname, 'db/syng/'+listName);
 
@@ -118,13 +136,11 @@ module.exports = class databaseManager {
         reject(new Error('The user list was not defined in the database manager.'));
       }
     });
-
-    return status;
   }
 
   addToUserList(listName, simplified, traditional, pinyin, definitions, toneMarks) {
-    var status = new Promise((resolve, reject) => {
-      if(this.userLists[listName] != undefined || this.userLIsts[listName] != null) {
+    return new Promise((resolve, reject) => {
+      if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         var ulObj = {
           simplified: simplified,
           traditional: traditional,
@@ -149,12 +165,10 @@ module.exports = class databaseManager {
         reject(new Error('The user list is not defined in the database manager.'));
       }
     });
-
-    return status;
   }
 
   removeFromUserList(listName, id) {
-    var status = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         this.userLists[listName].remove({ _id: id });
         resolve(true);
@@ -163,12 +177,10 @@ module.exports = class databaseManager {
         reject(new Error('The user list was not defined in the database manager.'));
       }
     });
-
-    return status;
   }
 
   getUserListContent(listName) {
-    var listContent = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         this.userLists[listName].find().toArray((err, list) => {
           if(err || list == undefined || list == null) {
@@ -185,8 +197,6 @@ module.exports = class databaseManager {
         reject(new Error('There was an unexpected error while getting the custom vocab list.'));
       }
     });
-
-    return listContent;
   }
 
   addToBookmarks(simplified, traditional, pinyin, definitions, toneMarks) {
@@ -199,7 +209,7 @@ module.exports = class databaseManager {
       notes: ''
     };
 
-    var status = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.bookmarksDb.insert(dbObj, (err, res) => {
         if(err || res == undefined || res == null) {
           console.log('There was an error while adding the word to bookmarks.');
@@ -213,8 +223,6 @@ module.exports = class databaseManager {
         }
       });
     });
-
-    return status;
   }
 
   removeFromBookmarks(id) {
@@ -222,7 +230,7 @@ module.exports = class databaseManager {
   }
 
   get bookmarks() {
-    var bookmarksContent = new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {
       this.bookmarksDb.find().toArray((err, bookmarks) => {
         if(err || bookmarks == undefined || bookmarks == null) {
           console.log('There was an error getting bookmarks.');
@@ -234,7 +242,5 @@ module.exports = class databaseManager {
         }
       });
     });
-
-    return bookmarksContent;
   }
 }

@@ -289,6 +289,8 @@ var searchResults = [];
 var franc = window.require('franc');
 var _ = window.require('underscore');
 
+var databaseManager = new window.DatMan();
+
 module.exports = {
   data: function() {
     return {
@@ -299,11 +301,12 @@ module.exports = {
       currentWord: {},
       displayWord: false,
       componentCharacters: [],
-      wordListings: {}
+      wordListings: databaseManager.userListNames
     }
   },
   attached: function() {
     var self = this;
+
     $(document).ready(function() {
       $(".ivu-input").keyup(function(event) {
     		if(event.keyCode == 13) {
@@ -311,11 +314,12 @@ module.exports = {
     		}
     	});
     });
+
+    ipc.on('receive-database-update', function(event, args) {
+      self.wordListings = databaseManager.userListNames;
+    });
   },
   methods: {
-    updateCollections: function() {
-      this.wordListings = getWordListings();
-    },
     switchInputMethod: function() {
       if(this.inputMethod == ENGLISH_INPUT) {
         this.inputMethod = PINYIN_INPUT;
@@ -325,48 +329,42 @@ module.exports = {
       }
     },
     createNewList: function() {
-      var self = this;
-
-      // NOTE: This object may not be needed, because the word will not be added
-      //        right away when the list is created, firs the list is created
-      //        then if the list updates reactively like it should, the user will
-      //        be able to add the word from that without having to leave or reload
-      //        the search page.
-      var wordToAdd = self.currentWord;
-      wordToAdd.notes = "";
-
-      console.log("After instantiation");
-      console.log(window.db._cols);
-
-      window.ipc.send('show-manage-lists', wordToAdd);
+      window.ipc.send('show-manage-lists');
     },
     addToList: function(listName) {
       var self = this;
 
-      if(listName == "bookmarks") {
-        var dbObj = {
-          traditional: this.currentWord.traditional,
-          simplified: this.currentWord.simplified,
-          pinyin: this.currentWord.pinyin,
-          definitions: this.currentWord.definitions,
-          toneMarks: this.currentWord.toneMarks,
-          notes: ""
-        };
+      function displaySuccess(listName, traditional, simplified) {
+        self.$Message.success(simplified + ' (' + traditional + ') successfully added to ' + listName + '.');
+      }
 
-        window.bookmarksDb.insert(dbObj, function(err, res) {
-          if(err) {
-            if(confirm("There was an error saving the word to your bookmarks. Would you like to report this error? Error = "+err)) {
-              window.require('electron').shell.openExternal('https://gitreports.com/issue/sotch-pr35mac/syng');
-            }
+      if(listName == "bookmarks") {
+        databaseManager.addToBookmarks(self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+          if(success == true) {
+            displaySuccess('Bookmarks', self.currentWord.traditional, self.currentWord.simplified);
           }
           else {
-            self.$Message.success('Successfully saved '+self.currentWord.simplified+" ("+self.currentWord.traditional+") to bookmarks!");
-            // TODO: Figure out a way to reload the bookmarks on the bookmarks page
+            // TODO: Handle error
+            console.log(success);
           }
+        }, function(err) {
+          // TODO: Handle error
+          console.log(err);
         });
       }
       else {
-        // Do other lists here
+        databaseManager.addToUserList(listName, self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+          if(success == true) {
+            displaySuccess(listName, self.currentWord.traditional, self.currentWord.simplified);
+          }
+          else {
+            // TODO: Handle error
+            console.log(success);
+          }
+        }, function(err) {
+          // TODO: Handle error
+          console.log(err);
+        });
       }
     },
     openLargeChars: function() {
@@ -514,7 +512,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection.collectionName)\" v-if=\"collection.collectionName != 'bookmarks'\">{{ collection.collectionName }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button v-on:click=\"addToList('bookmarks')\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\">{{ collection }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button v-on:click=\"addToList('bookmarks')\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

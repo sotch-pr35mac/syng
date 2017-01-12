@@ -16,16 +16,9 @@
     function initializeSearch() {
       var path = require('path');
       window.engine = require(path.join(__dirname, "../src/engine.js"));
-      var tingo = require('tingodb')();
       window.ipc = require('electron').ipcRenderer; // For communication with the Main Process
       window.dialog = require('electron').remote.dialog;
-
-      // window.db = new tingo.Db(path.join(__dirname, "../src/db/syng"), {});
-      // window.bookmarksDb = db.collection("bookmarks");
-
-      // DEBUG
-      var dbMan = require(path.join(__dirname, '../src/databaseManager.js'));
-      window.databaseManager = new dbMan();
+      window.DatMan = require(path.join(__dirname, '../src/databaseManager.js'));
     }
 
     initializeSearch();

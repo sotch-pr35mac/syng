@@ -272,6 +272,10 @@ app.on('ready', function() {
 		manageLists = null;
 	});
 
+	ipc.on('send-database-update', function(event, args) {
+		mainWindow.send('receive-database-update');
+	});
+
 	// Flashcards Window
 	flashcardsWindow = new BrowserWindow({
 		width: 600,

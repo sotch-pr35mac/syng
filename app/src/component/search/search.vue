@@ -46,7 +46,7 @@
                     </Tooltip>
                   </i-button>
                   <Dropdown-menu slot="list">
-                    <Dropdown-item v-for="collection in wordListings" v-on:click="addToList(collection.collectionName)" v-if="collection.collectionName != 'bookmarks'">{{ collection.collectionName }}</Dropdown-item>
+                    <Dropdown-item v-for="collection in wordListings" v-on:click="addToList(collection)">{{ collection }}</Dropdown-item>
                     <Dropdown-item v-on:click="addToList('bookmarks')">Bookmarks</Dropdown-item>
                     <Dropdown-item divided v-on:click="createNewList()">Create New List</Dropdown-item>
                   </Dropdown-menu>
@@ -219,6 +219,8 @@ var searchResults = [];
 var franc = window.require('franc');
 var _ = window.require('underscore');
 
+var databaseManager = new window.DatMan();
+
 module.exports = {
   data: function() {
     return {
@@ -229,11 +231,12 @@ module.exports = {
       currentWord: {},
       displayWord: false,
       componentCharacters: [],
-      wordListings: {}
+      wordListings: databaseManager.userListNames
     }
   },
   attached: function() {
     var self = this;
+
     $(document).ready(function() {
       $(".ivu-input").keyup(function(event) {
     		if(event.keyCode == 13) {
@@ -241,11 +244,12 @@ module.exports = {
     		}
     	});
     });
+
+    ipc.on('receive-database-update', function(event, args) {
+      self.wordListings = databaseManager.userListNames;
+    });
   },
   methods: {
-    updateCollections: function() {
-      this.wordListings = getWordListings();
-    },
     switchInputMethod: function() {
       if(this.inputMethod == ENGLISH_INPUT) {
         this.inputMethod = PINYIN_INPUT;
@@ -255,48 +259,42 @@ module.exports = {
       }
     },
     createNewList: function() {
-      var self = this;
-
-      // NOTE: This object may not be needed, because the word will not be added
-      //        right away when the list is created, firs the list is created
-      //        then if the list updates reactively like it should, the user will
-      //        be able to add the word from that without having to leave or reload
-      //        the search page.
-      var wordToAdd = self.currentWord;
-      wordToAdd.notes = "";
-
-      console.log("After instantiation");
-      console.log(window.db._cols);
-
-      window.ipc.send('show-manage-lists', wordToAdd);
+      window.ipc.send('show-manage-lists');
     },
     addToList: function(listName) {
       var self = this;
 
-      if(listName == "bookmarks") {
-        var dbObj = {
-          traditional: this.currentWord.traditional,
-          simplified: this.currentWord.simplified,
-          pinyin: this.currentWord.pinyin,
-          definitions: this.currentWord.definitions,
-          toneMarks: this.currentWord.toneMarks,
-          notes: ""
-        };
+      function displaySuccess(listName, traditional, simplified) {
+        self.$Message.success(simplified + ' (' + traditional + ') successfully added to ' + listName + '.');
+      }
 
-        window.bookmarksDb.insert(dbObj, function(err, res) {
-          if(err) {
-            if(confirm("There was an error saving the word to your bookmarks. Would you like to report this error? Error = "+err)) {
-              window.require('electron').shell.openExternal('https://gitreports.com/issue/sotch-pr35mac/syng');
-            }
+      if(listName == "bookmarks") {
+        databaseManager.addToBookmarks(self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+          if(success == true) {
+            displaySuccess('Bookmarks', self.currentWord.traditional, self.currentWord.simplified);
           }
           else {
-            self.$Message.success('Successfully saved '+self.currentWord.simplified+" ("+self.currentWord.traditional+") to bookmarks!");
-            // TODO: Figure out a way to reload the bookmarks on the bookmarks page
+            // TODO: Handle error
+            console.log(success);
           }
+        }, function(err) {
+          // TODO: Handle error
+          console.log(err);
         });
       }
       else {
-        // Do other lists here
+        databaseManager.addToUserList(listName, self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+          if(success == true) {
+            displaySuccess(listName, self.currentWord.traditional, self.currentWord.simplified);
+          }
+          else {
+            // TODO: Handle error
+            console.log(success);
+          }
+        }, function(err) {
+          // TODO: Handle error
+          console.log(err);
+        });
       }
     },
     openLargeChars: function() {
