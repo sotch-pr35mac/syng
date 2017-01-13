@@ -38,7 +38,7 @@
     },
     methods: {
       makeDonation: function() {
-        shell.openExternal('https://baidu.com');
+        shell.openExternal('http://ko-fi.com/A501IQQ');
       },
       openGithub: function() {
         shell.openExternal('https://github.com/sotch-pr35mac/syng');
