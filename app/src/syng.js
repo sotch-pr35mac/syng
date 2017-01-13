@@ -32,7 +32,7 @@ var syng = new Vue({
 
 },{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":3,"./component/study/study.vue":4,"./component/syngMenu/syngMenu.vue":10,"./component/tools/tools.vue":15,"./component/yuedu/yuedu.vue":16,"iview":17}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.listing-item.active .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n")
 
 
 
@@ -42,21 +42,183 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var databaseManager = new window.DatMan();
 
 module.exports = {
   data: function() {
-    return {}
+    return {
+      currentList: 'bookmarks',
+      wordList: databaseManager.bookmarks,
+      displayWord: false,
+      currentWord: {}
+    };
+  },
+  methods: {
+    removeFromList: function() {
+      // TODO: write this
+    },
+    openLargeChars: function() {
+      // TODO: Write this
+    }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center>\n  <h1>BOOKMARKS</h1>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-5db28960=\"\">\n  <i-col span=\"21\" _v-5db28960=\"\">\n    <div id=\"actions-frame\" _v-5db28960=\"\">\n      <row _v-5db28960=\"\">\n        <!-- TODO: Write this -->\n      </row>\n    </div>\n    <row _v-5db28960=\"\">\n      <div class=\"clear-characters\" _v-5db28960=\"\">\n        <i-col span=\"5\" _v-5db28960=\"\">\n          <div class=\"listing\" _v-5db28960=\"\">\n            <li class=\"listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n              <div class=\"listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n                <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }}))</h2>\n                <p _v-5db28960=\"\">{{ word.pinyin }}</p>\n                <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n              </div>\n            </li>\n          </div>\n        </i-col>\n        <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n          <div v-if=\"displayWord\" _v-5db28960=\"\">\n            <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n              <div class=\"pull-right\" _v-5db28960=\"\">\n                <button-group _v-5db28960=\"\">\n                  <i-button v-on:click=\"removeFromList(currentList)\" _v-5db28960=\"\">\n                    <tooltip placement=\"bottom\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                      <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                  <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                    <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                      <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                </button-group>\n              </div>\n            </div>\n          </div>\n        </i-col>\n      </div>\n    </row>\n  </i-col>\n</center>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.listing-item.active .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -67,7 +229,7 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":20,"vue-hot-reload-api":19,"vueify/lib/insert-css":21}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1 {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2 {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3 {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4 {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5 {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6 {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right {\n  float: right;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#search-frame[_v-1943d6b8] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-1943d6b8] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-1943d6b8] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-1943d6b8] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-1943d6b8]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-1943d6b8], .list-group-item.selected[_v-1943d6b8] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-1943d6b8] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-1943d6b8] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-1943d6b8] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-1943d6b8] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-1943d6b8] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-1943d6b8] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-1943d6b8] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-1943d6b8] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-1943d6b8] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-1943d6b8] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-1943d6b8] {\n  float: right;\n}\n")
 
 
 
@@ -512,13 +674,13 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\">\n  <div id=\"search-frame\">\n    <row>\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\">Search</i-button>\n    </row>\n  </div>\n  <row>\n    <div class=\"clear-characters\">\n      <i-col span=\"5\">\n        <div class=\"search-listing\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\">\n              <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p>{{ word.pinyin }}</p>\n              <p>{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\">\n          <center>\n            <br>\n            <br>\n            <br>\n            <br>\n            <h1>No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\">\n            <div class=\"pull-right\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\">\n                <i-button>\n                  <icon type=\"arrow-down-b\" size=\"large\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\">\n                    <icon type=\"navicon-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\">{{ collection }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group>\n                <i-button v-on:click=\"addToList('bookmarks')\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\">\n                    <icon type=\"plus-round\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\">\n                    <icon type=\"arrow-expand\" size=\"large\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\">{{ currentWord.pinyin }}</h3>\n            <br>\n            <collapse active-key=\"1\">\n              <panel key=\"1\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\">\n                  <li v-for=\"def in currentWord.definitions\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\">\n                Characters\n                <div slot=\"content\">\n                  <br>\n                  <collapse accordion=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-1943d6b8=\"\">\n  <div id=\"search-frame\" _v-1943d6b8=\"\">\n    <row _v-1943d6b8=\"\">\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\" _v-1943d6b8=\"\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\" _v-1943d6b8=\"\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\" _v-1943d6b8=\"\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\" _v-1943d6b8=\"\">Search</i-button>\n    </row>\n  </div>\n  <row _v-1943d6b8=\"\">\n    <div class=\"clear-characters\" _v-1943d6b8=\"\">\n      <i-col span=\"5\" _v-1943d6b8=\"\">\n        <div class=\"search-listing\" _v-1943d6b8=\"\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\" _v-1943d6b8=\"\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\" _v-1943d6b8=\"\">\n              <h2 _v-1943d6b8=\"\"><strong _v-1943d6b8=\"\">{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p _v-1943d6b8=\"\">{{ word.pinyin }}</p>\n              <p _v-1943d6b8=\"\">{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\" _v-1943d6b8=\"\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\" _v-1943d6b8=\"\">\n          <center _v-1943d6b8=\"\">\n            <br _v-1943d6b8=\"\">\n            <br _v-1943d6b8=\"\">\n            <br _v-1943d6b8=\"\">\n            <br _v-1943d6b8=\"\">\n            <h1 _v-1943d6b8=\"\">No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\" _v-1943d6b8=\"\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\" _v-1943d6b8=\"\">\n            <div class=\"pull-right\" _v-1943d6b8=\"\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\" _v-1943d6b8=\"\">\n                <i-button _v-1943d6b8=\"\">\n                  <icon type=\"arrow-down-b\" size=\"large\" _v-1943d6b8=\"\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\" _v-1943d6b8=\"\">\n                    <icon type=\"navicon-round\" size=\"large\" _v-1943d6b8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\" _v-1943d6b8=\"\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\" _v-1943d6b8=\"\">{{ collection }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\" _v-1943d6b8=\"\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-1943d6b8=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group _v-1943d6b8=\"\">\n                <i-button v-on:click=\"addToList('bookmarks')\" _v-1943d6b8=\"\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\" _v-1943d6b8=\"\">\n                    <icon type=\"plus-round\" size=\"large\" _v-1943d6b8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-1943d6b8=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-1943d6b8=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-1943d6b8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-1943d6b8=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-1943d6b8=\"\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-1943d6b8=\"\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-1943d6b8=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-1943d6b8=\"\">\n            <collapse active-key=\"1\" _v-1943d6b8=\"\">\n              <panel key=\"1\" _v-1943d6b8=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-1943d6b8=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-1943d6b8=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-1943d6b8=\"\">\n                Characters\n                <div slot=\"content\" _v-1943d6b8=\"\">\n                  <br _v-1943d6b8=\"\">\n                  <collapse accordion=\"\" _v-1943d6b8=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-1943d6b8=\"\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-1943d6b8=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-1943d6b8=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br _v-1943d6b8=\"\">\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#search-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item:first-child {\n  border-top: 0;\n}\n.search-listing-item.active, .list-group-item.selected {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1 {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2 {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3 {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4 {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5 {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6 {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right {\n  float: right;\n}\n"] = false
+    __vueify_insert__.cache["\n#search-frame[_v-1943d6b8] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-1943d6b8] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-1943d6b8] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-1943d6b8] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-1943d6b8]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-1943d6b8], .list-group-item.selected[_v-1943d6b8] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-1943d6b8] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-1943d6b8] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-1943d6b8] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-1943d6b8] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-1943d6b8] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-1943d6b8] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-1943d6b8] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-1943d6b8] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-1943d6b8] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-1943d6b8] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-1943d6b8] {\n  float: right;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {

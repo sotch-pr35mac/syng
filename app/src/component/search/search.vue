@@ -101,7 +101,7 @@
   </i-col>
 </template>
 
-<style>
+<style scoped>
   #search-frame {
     padding-left: 10px;
     padding-right: 10px;
