@@ -1,6 +1,6 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v0.3.0 (Beta 3)
+##### v1.0.0
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---

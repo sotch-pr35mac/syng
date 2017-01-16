@@ -5,7 +5,7 @@
       <img src="../style/img/syng-logo.png" height="115px" width="115px">
       <h2>Syng | 词应</h2>
       <h3>Dictionary App | 词典应用</h3>
-      <h4>v0.3.0 (Beta 3)</h4>
+      <h4>v1.0.0)</h4>
     </center>
     <br>
     <p>
