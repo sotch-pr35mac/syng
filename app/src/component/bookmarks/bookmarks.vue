@@ -196,7 +196,7 @@ module.exports = {
   },
   attached: function() {
     // TODO: Add the words to the page here
-  }
+  },
   methods: {
     removeFromList: function() {
       // TODO: write this

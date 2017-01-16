@@ -190,6 +190,34 @@ var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 var databaseManager = new window.DatMan();
 
 module.exports = {
@@ -201,18 +229,24 @@ module.exports = {
       currentWord: {}
     };
   },
+  attached: function() {
+    // TODO: Add the words to the page here
+  },
   methods: {
     removeFromList: function() {
       // TODO: write this
     },
     openLargeChars: function() {
       // TODO: Write this
+    },
+    switchWord: function() {
+      // TODO: Write this
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-5db28960=\"\">\n  <i-col span=\"21\" _v-5db28960=\"\">\n    <div id=\"actions-frame\" _v-5db28960=\"\">\n      <row _v-5db28960=\"\">\n        <!-- TODO: Write this -->\n      </row>\n    </div>\n    <row _v-5db28960=\"\">\n      <div class=\"clear-characters\" _v-5db28960=\"\">\n        <i-col span=\"5\" _v-5db28960=\"\">\n          <div class=\"listing\" _v-5db28960=\"\">\n            <li class=\"listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n              <div class=\"listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n                <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }}))</h2>\n                <p _v-5db28960=\"\">{{ word.pinyin }}</p>\n                <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n              </div>\n            </li>\n          </div>\n        </i-col>\n        <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n          <div v-if=\"displayWord\" _v-5db28960=\"\">\n            <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n              <div class=\"pull-right\" _v-5db28960=\"\">\n                <button-group _v-5db28960=\"\">\n                  <i-button v-on:click=\"removeFromList(currentList)\" _v-5db28960=\"\">\n                    <tooltip placement=\"bottom\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                      <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                  <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                    <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                      <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                </button-group>\n              </div>\n            </div>\n          </div>\n        </i-col>\n      </div>\n    </row>\n  </i-col>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-5db28960=\"\">\n  <i-col span=\"21\" _v-5db28960=\"\">\n    <div id=\"actions-frame\" _v-5db28960=\"\">\n      <row _v-5db28960=\"\">\n        <!-- TODO: Write this -->\n      </row>\n    </div>\n    <row _v-5db28960=\"\">\n      <div class=\"clear-characters\" _v-5db28960=\"\">\n        <i-col span=\"5\" _v-5db28960=\"\">\n          <div class=\"listing\" _v-5db28960=\"\">\n            <li class=\"listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n              <div class=\"listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n                <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }}))</h2>\n                <p _v-5db28960=\"\">{{ word.pinyin }}</p>\n                <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n              </div>\n            </li>\n          </div>\n        </i-col>\n        <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n          <div v-if=\"displayWord\" _v-5db28960=\"\">\n            <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n              <div class=\"pull-right\" _v-5db28960=\"\">\n                <button-group _v-5db28960=\"\">\n                  <i-button v-on:click=\"removeFromList(currentList)\" _v-5db28960=\"\">\n                    <tooltip placement=\"bottom\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                      <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                  <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                    <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                      <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                </button-group>\n              </div>\n              <h1 style=\"margin-bottom: 0px;\" _v-5db28960=\"\">\n                <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ currentWord.color[$index] }\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>)\n              </h1>\n              <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-5db28960=\"\">{{ currentWord.pinyin }}</h3>\n              <br _v-5db28960=\"\">\n              <collapse active-key=\"1\" _v-5db28960=\"\">\n                <panel key=\"1\" _v-5db28960=\"\">\n                  Definitions\n                  <div slot=\"content\" class=\"definitions-list\" _v-5db28960=\"\">\n                    <li v-for=\"def in currentWord.definitions\" _v-5db28960=\"\">{{ def }}</li>\n                  </div>\n                </panel>\n                <panel key=\"2\" _v-5db28960=\"\">\n                  Characters\n                  <div slot=\"content\" _v-5db28960=\"\">\n                    <br _v-5db28960=\"\">\n                    <collapse accordion=\"\" _v-5db28960=\"\">\n                      <panel v-for=\"word in ComponentCharacters\" track-by=\"$index\" _v-5db28960=\"\">\n                        {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                        <div slot=\"content\" _v-5db28960=\"\">\n                          <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-5db28960=\"\">{{ def }}</li>\n                        </div>\n                      </panel>\n                    </collapse>\n                  </div>\n                </panel>\n              </collapse>\n            </div>\n          </div>\n        </i-col>\n      </div>\n    </row>\n  </i-col>\n</center>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -761,7 +795,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-2aefd5b3=\"\">\n  <br _v-2aefd5b3=\"\">\n  <center _v-2aefd5b3=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"115px\" width=\"115px\" _v-2aefd5b3=\"\">\n    <h2 _v-2aefd5b3=\"\">Syng | 词应</h2>\n    <h3 _v-2aefd5b3=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-2aefd5b3=\"\">v0.3.0 (Beta 3)</h4>\n  </center>\n  <br _v-2aefd5b3=\"\">\n  <p _v-2aefd5b3=\"\">\n    Syng is a free, open source, Chinese-to-English dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.\n    To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng.\n    Syng is a stylized spelling of Ciying, the pinyin for 词应, 词应 has been shortened from 词典应用, literally translating to \"Dictionary App\".\n    Syng relies on many libraries and projects. Currently, Syng would not work if not for:\n    </p><ul _v-2aefd5b3=\"\">\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Electron:</b> Framework for Native Cross-Platform Support</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">CC-CEDICT:</b> Chinese Dictionary Database</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Photon:</b> User Interface</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Franc:</b> Language Detection for Search</li>\n    </ul>\n  <p _v-2aefd5b3=\"\"></p>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-2aefd5b3=\"\">\n  <br _v-2aefd5b3=\"\">\n  <center _v-2aefd5b3=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"115px\" width=\"115px\" _v-2aefd5b3=\"\">\n    <h2 _v-2aefd5b3=\"\">Syng | 词应</h2>\n    <h3 _v-2aefd5b3=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-2aefd5b3=\"\">v0.2.1 (Beta 2)</h4>\n  </center>\n  <br _v-2aefd5b3=\"\">\n  <p _v-2aefd5b3=\"\">\n    Syng is a free, open source, Chinese-to-English dictionary app that makes it easy to lookup words and phrases quickly, built by Preston Stosur-Bassett.\n    To contribute to Syng or submit a bug, the project is hosted publically @ https://github.com/sotch-pr35mac/syng.\n    Syng is a stylized spelling of Ciying, the pinyin for 词应, 词应 has been shortened from 词典应用, literally translating to \"Dictionary App\".\n    Syng relies on many libraries and projects. Currently, Syng would not work if not for:\n    </p><ul _v-2aefd5b3=\"\">\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Electron:</b> Framework for Native Cross-Platform Support</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">CC-CEDICT:</b> Chinese Dictionary Database</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Photon:</b> User Interface</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>\n      <li _v-2aefd5b3=\"\"><b _v-2aefd5b3=\"\">Franc:</b> Language Detection for Search</li>\n    </ul>\n  <p _v-2aefd5b3=\"\"></p>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
