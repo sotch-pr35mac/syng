@@ -36,6 +36,34 @@
                     </i-button>
                   </Button-group>
                 </div>
+                <h1 style="margin-bottom: 0px;">
+                  <a v-for="char in currentWord.simplified" :style="{ color: currentWord.color[$index]}" track-by="$index">{{ char }}</a>
+                  (<a v-for="char in currentWord.traditional" :style="{ currentWord.color[$index] }" track-by="$index">{{ char }}</a>)
+                </h1>
+                <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
+                <br>
+                <Collapse active-key="1">
+                  <Panel key="1">
+                    Definitions
+                    <div slot="content" class="definitions-list">
+                      <li v-for="def in currentWord.definitions">{{ def }}</li>
+                    </div>
+                  </Panel>
+                  <Panel key="2">
+                    Characters
+                    <div slot="content">
+                      <br>
+                      <Collapse accordion>
+                        <Panel v-for="word in ComponentCharacters" track-by="$index">
+                          {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}
+                          <div slot="content">
+                            <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
+                          </div>
+                        </Panel>
+                      </Collapse>
+                    </div>
+                  </Panel>
+                </Collapse>
               </div>
             </div>
           </i-col>
@@ -166,11 +194,17 @@ module.exports = {
       currentWord: {}
     };
   },
+  attached: function() {
+    // TODO: Add the words to the page here
+  }
   methods: {
     removeFromList: function() {
       // TODO: write this
     },
     openLargeChars: function() {
+      // TODO: Write this
+    },
+    switchWord: function() {
       // TODO: Write this
     }
   }
