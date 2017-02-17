@@ -36,7 +36,7 @@
             <div id="expanded-content" class="expanded-content">
               <div class="pull-right">
                 <Button-group>
-                  <i-button v-on:click="removeFromList()">
+                  <i-button v-on:click="removeFromList(currentList)">
                     <Tooltip placement="left" content="Remove From Bookmarks">
                       <Icon type="minus-round" size="large"></Icon>
                     </Tooltip>
@@ -290,25 +290,29 @@ module.exports = {
     removeFromList: function(listName) {
       var self = this;
 
-	if(listName == 'bookmarks') {
-		// TODO: Figure out how to display a success or failure message to the user.
-		databaseManager.removeFromBookmarks(self.currentWord._id);
-	}
-	else {
-		databaseManager.removeFromUserList(listName, self.currentWord._id).then(function(result) {
-			if(result == true) {
-				// TODO: Display the success message to the user
-			}
-			else {
-				// TODO: Display the error message to the user
-			}
-		}, function(err) {
-			// TODO: Display the error message to the user
-			console.log('There was an error removing the word from the list.');
-			console.log(err);
-		});
+    	if(listName == 'bookmarks') {
+    		// TODO: Figure out how to display a success or failure message to the user.
+    		databaseManager.removeFromBookmarks(self.currentWord._id);
+        self.switchList('bookmarks');
+        self.displayWord = false;
+    	}
+    	else {
+    		databaseManager.removeFromUserList(listName, self.currentWord._id).then(function(result) {
+    			if(result == true) {
+    				// TODO: Display the success message to the user
+            self.switchList(listName);
+            self.displayword = false;
+    			}
+    			else {
+    				// TODO: Display the error message to the user
+    			}
+    		}, function(err) {
+    			// TODO: Display the error message to the user
+    			console.log('There was an error removing the word from the list.');
+    			console.log(err);
+    		});
 
-	}
+    	}
     },
     openLargeChars: function() {
       var lgObj = {

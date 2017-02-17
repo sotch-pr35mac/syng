@@ -325,25 +325,29 @@ module.exports = {
     removeFromList: function(listName) {
       var self = this;
 
-	if(listName == 'bookmarks') {
-		// TODO: Figure out how to display a success or failure message to the user.
-		databaseManager.removeFromBookmarks(self.currentWord._id);
-	}
-	else {
-		databaseManager.removeFromUserList(listName, self.currentWord._id).then(function(result) {
-			if(result == true) {
-				// TODO: Display the success message to the user
-			}
-			else {
-				// TODO: Display the error message to the user
-			}
-		}, function(err) {
-			// TODO: Display the error message to the user
-			console.log('There was an error removing the word from the list.');
-			console.log(err);
-		});
+    	if(listName == 'bookmarks') {
+    		// TODO: Figure out how to display a success or failure message to the user.
+    		databaseManager.removeFromBookmarks(self.currentWord._id);
+        self.switchList('bookmarks');
+        self.displayWord = false;
+    	}
+    	else {
+    		databaseManager.removeFromUserList(listName, self.currentWord._id).then(function(result) {
+    			if(result == true) {
+    				// TODO: Display the success message to the user
+            self.switchList(listName);
+            self.displayword = false;
+    			}
+    			else {
+    				// TODO: Display the error message to the user
+    			}
+    		}, function(err) {
+    			// TODO: Display the error message to the user
+    			console.log('There was an error removing the word from the list.');
+    			console.log(err);
+    		});
 
-	}
+    	}
     },
     openLargeChars: function() {
       var lgObj = {
@@ -403,7 +407,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-5db28960=\"\">\n  <div id=\"actions-frame\" _v-5db28960=\"\">\n    <row _v-5db28960=\"\">\n      <!-- TODO: Write this -->\n      <dropdown trigger=\"click\" placement=\"bottom-start\" _v-5db28960=\"\">\n        <i-button _v-5db28960=\"\">\n           <a v-if=\"currentList == 'bookmarks'\" style=\"color: #657180;\" _v-5db28960=\"\">Bookmarks</a>\n           <a v-if=\"!(currentList == 'bookmarks')\" style=\"color: #657180;\" _v-5db28960=\"\">{{ currentList }}</a>\n           &nbsp;\n           <icon type=\"arrow-down-b\" size=\"large\" _v-5db28960=\"\"></icon>\n        </i-button>\n        <dropdown-menu slot=\"list\" _v-5db28960=\"\">\n          <dropdown-item v-on:click=\"switchList('bookmarks')\" _v-5db28960=\"\">Bookmarks</dropdown-item>\n          <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"switchList(collection)\" _v-5db28960=\"\">{{ collection }}</dropdown-item>\n          <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-5db28960=\"\">Create New List</dropdown-item>\n        \n      </dropdown-menu></dropdown>\n    </row>\n  </div>\n  <row _v-5db28960=\"\">\n    <div class=\"clear-characters\" _v-5db28960=\"\">\n      <i-col span=\"5\" _v-5db28960=\"\">\n        <div class=\"word-listing\" _v-5db28960=\"\">\n          <li class=\"word-listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n            <div class=\"word-listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n              <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p _v-5db28960=\"\">{{ word.pronunciation }}</p>\n              <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n        <div v-if=\"displayWord\" _v-5db28960=\"\">\n          <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n            <div class=\"pull-right\" _v-5db28960=\"\">\n              <button-group _v-5db28960=\"\">\n                <i-button v-on:click=\"removeFromList()\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                    <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-5db28960=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-5db28960=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-5db28960=\"\">\n            <collapse active-key=\"1\" _v-5db28960=\"\">\n              <panel key=\"1\" _v-5db28960=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-5db28960=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-5db28960=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-5db28960=\"\">\n                Characters\n                <div slot=\"content\" _v-5db28960=\"\">\n                  <br _v-5db28960=\"\">\n                  <collapse accordion=\"\" _v-5db28960=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-5db28960=\"\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-5db28960=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-5db28960=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-5db28960=\"\">\n  <div id=\"actions-frame\" _v-5db28960=\"\">\n    <row _v-5db28960=\"\">\n      <!-- TODO: Write this -->\n      <dropdown trigger=\"click\" placement=\"bottom-start\" _v-5db28960=\"\">\n        <i-button _v-5db28960=\"\">\n           <a v-if=\"currentList == 'bookmarks'\" style=\"color: #657180;\" _v-5db28960=\"\">Bookmarks</a>\n           <a v-if=\"!(currentList == 'bookmarks')\" style=\"color: #657180;\" _v-5db28960=\"\">{{ currentList }}</a>\n           &nbsp;\n           <icon type=\"arrow-down-b\" size=\"large\" _v-5db28960=\"\"></icon>\n        </i-button>\n        <dropdown-menu slot=\"list\" _v-5db28960=\"\">\n          <dropdown-item v-on:click=\"switchList('bookmarks')\" _v-5db28960=\"\">Bookmarks</dropdown-item>\n          <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"switchList(collection)\" _v-5db28960=\"\">{{ collection }}</dropdown-item>\n          <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-5db28960=\"\">Create New List</dropdown-item>\n        \n      </dropdown-menu></dropdown>\n    </row>\n  </div>\n  <row _v-5db28960=\"\">\n    <div class=\"clear-characters\" _v-5db28960=\"\">\n      <i-col span=\"5\" _v-5db28960=\"\">\n        <div class=\"word-listing\" _v-5db28960=\"\">\n          <li class=\"word-listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n            <div class=\"word-listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n              <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p _v-5db28960=\"\">{{ word.pronunciation }}</p>\n              <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n        <div v-if=\"displayWord\" _v-5db28960=\"\">\n          <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n            <div class=\"pull-right\" _v-5db28960=\"\">\n              <button-group _v-5db28960=\"\">\n                <i-button v-on:click=\"removeFromList(currentList)\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                    <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-5db28960=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-5db28960=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-5db28960=\"\">\n            <collapse active-key=\"1\" _v-5db28960=\"\">\n              <panel key=\"1\" _v-5db28960=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-5db28960=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-5db28960=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-5db28960=\"\">\n                Characters\n                <div slot=\"content\" _v-5db28960=\"\">\n                  <br _v-5db28960=\"\">\n                  <collapse accordion=\"\" _v-5db28960=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-5db28960=\"\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-5db28960=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-5db28960=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
