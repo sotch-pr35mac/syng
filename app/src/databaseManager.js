@@ -140,6 +140,7 @@ module.exports = class databaseManager {
 
   addToUserList(listName, simplified, traditional, pinyin, definitions, toneMarks) {
     return new Promise((resolve, reject) => {
+      this.updateListing();
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         var ulObj = {
           simplified: simplified,

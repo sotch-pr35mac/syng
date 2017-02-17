@@ -306,6 +306,8 @@ module.exports = {
       window.ipc.send('show-large-characters', lgObj);
     },
     switchWord: function(id) {
+      var self = this;
+
       function getCharacterComponents(tradWord) {
         var wordList = [];
         for(var x = 0; x < tradWord.length; x++) {
@@ -314,14 +316,15 @@ module.exports = {
           });
         }
 
-        mergedList = [].concat.apply([], wordList);
-        flatList = [].concat.apply([], mergedList);
+        var mergedList = [].concat.apply([], wordList);
+        var flatList = [].concat.apply([], mergedList);
 
         return flatList;
       }
-      this.currentWord = $.grep(this.searchResults, function(e) { return e.id == id })[0];
-      this.componentCharacters = getCharacterComponents(this.currentWord.traditional);
-      this.displayWord = true;
+
+      self.currentWord = $.grep(self.searchResults, function(e) { return e.id == id })[0];
+      self.componentCharacters = getCharacterComponents(self.currentWord.traditional);
+      self.displayWord = true;
     },
     performSearch: function() {
       this.displayWord = false;

@@ -32,7 +32,18 @@ var syng = new Vue({
 
 },{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":3,"./component/study/study.vue":4,"./component/syngMenu/syngMenu.vue":10,"./component/tools/tools.vue":15,"./component/yuedu/yuedu.vue":16,"iview":17}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.listing-item.active .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-5db28960], .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -220,39 +231,180 @@ var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {
 
 var databaseManager = new window.DatMan();
 
+// Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
+function generateUIID() {
+  var d = new Date().getTime();
+  if(window.performance && typeof window.performance.now === 'function') {
+    d += performance.now();
+  }
+  var uiid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = (d + Math.random()*16)%16 | 0;
+    d = Math.floor(d/16);
+    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+  });
+
+  return uiid;
+}
+
+function colorTones(originalListing) {
+  var compiledListing = [];
+  const BLACK_TONE = 'black';
+  const BLUE_TONE = 'blue';
+  const ORANGE_TONE = 'orange';
+  const RED_TONE = 'red';
+  const GREEN_TONE = 'green';
+
+  console.log(originalListing);
+
+  _.each(originalListing, function(word) {
+    var uiid = generateUIID();
+    var colors = [];
+
+    _.each(word.toneMarks, function(tone) {
+      if(tone == '1') {
+        colors.push(BLUE_TONE);
+      }
+      else if(tone == '2') {
+        colors.push(ORANGE_TONE);
+      }
+      else if(tone == '3') {
+        colors.push(RED_TONE);
+      }
+      else if(tone == '4') {
+        colors.push(GREEN_TONE);
+      }
+      else if(tone == '5') {
+        colors.push(BLACK_TONE);
+      }
+      else if(tone == '0') {
+        colors.push(BLACK_TONE);
+      }
+    });
+
+    var formattedWord = {
+      traditional: word.traditional,
+      simplified: word.simplified,
+      pronunciation: word.pronunciation,
+      toneMarks: word.toneMarks,
+      definitions: word.definitions,
+      id: uiid,
+      _id: word._id,
+      color: colors
+    };
+
+    compiledListing.push(formattedWord);
+  });
+
+  return compiledListing;
+}
+
 module.exports = {
   data: function() {
     return {
       currentList: 'bookmarks',
-      wordList: databaseManager.bookmarks,
+      wordList: [],
       displayWord: false,
-      currentWord: {}
+      currentWord: {},
+      componentCharacters: [],
+      wordListings: databaseManager.userListNames
     };
   },
   attached: function() {
-    // TODO: Add the words to the page here
+    var self = this;
+
+    self.switchList('bookmarks');
+
+    ipc.on('receive-database-update', function(event, args) {
+      self.wordListings = databaseManager.userListNames;
+    });
   },
   methods: {
-    removeFromList: function() {
-      // TODO: write this
+    removeFromList: function(listName) {
+      var self = this;
+
+	if(listName == 'bookmarks') {
+		// TODO: Figure out how to display a success or failure message to the user.
+		databaseManager.removeFromBookmarks(self.currentWord._id);
+	}
+	else {
+		databaseManager.removeFromUserList(listName, self.currentWord._id).then(function(result) {
+			if(result == true) {
+				// TODO: Display the success message to the user
+			}
+			else {
+				// TODO: Display the error message to the user
+			}
+		}, function(err) {
+			// TODO: Display the error message to the user
+			console.log('There was an error removing the word from the list.');
+			console.log(err);
+		});
+
+	}
     },
     openLargeChars: function() {
-      // TODO: Write this
+      var lgObj = {
+        traditional: this.currentWord.traditional,
+        simplified: this.currentWord.simplified
+      };
+
+      window.ipc.send('show-large-characters', lgObj);
     },
-    switchWord: function() {
-      // TODO: Write this
+    switchWord: function(id) {
+      var self = this;
+
+      function getCharacterComponents(tradWord) {
+        var componentCharacters = [];
+        for(var x = 0; x < tradWord.length; x++) {
+          window.engine.searchByChinese(tradWord[x], function(result) {
+            componentCharacters.push(result);
+          });
+        }
+
+        var mergedList = [].concat.apply([], componentCharacters);
+        var flatList = [].concat.apply([], mergedList);
+
+        return flatList;
+      }
+
+      self.currentWord = $.grep(self.wordList, function(e) { return e.id == id})[0];
+      self.componentCharacters = getCharacterComponents(self.currentWord.traditional);
+      self.displayWord = true;
+    },
+    switchList: function(list) {
+      var self = this;
+
+      if(list == 'bookmarks') {
+        databaseManager.bookmarks.then(function(bookmarksList) {
+          self.wordList = colorTones(bookmarksList);
+        }, function(err) {
+          // TODO: Handle the error
+          console.log(err);
+        });
+      }
+      else {
+        databaseManager.getUserListContent(list).then(function(listContent) {
+          self.wordList = colorTones(listContent);
+        }, function(err) {
+          // TODO: Handle the error
+          console.log(err);
+        });
+      }
+    },
+    createNewList: function() {
+      window.ipc.send('show-manage-lists');
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-5db28960=\"\">\n  <i-col span=\"21\" _v-5db28960=\"\">\n    <div id=\"actions-frame\" _v-5db28960=\"\">\n      <row _v-5db28960=\"\">\n        <!-- TODO: Write this -->\n      </row>\n    </div>\n    <row _v-5db28960=\"\">\n      <div class=\"clear-characters\" _v-5db28960=\"\">\n        <i-col span=\"5\" _v-5db28960=\"\">\n          <div class=\"listing\" _v-5db28960=\"\">\n            <li class=\"listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n              <div class=\"listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n                <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }}))</h2>\n                <p _v-5db28960=\"\">{{ word.pinyin }}</p>\n                <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n              </div>\n            </li>\n          </div>\n        </i-col>\n        <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n          <div v-if=\"displayWord\" _v-5db28960=\"\">\n            <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n              <div class=\"pull-right\" _v-5db28960=\"\">\n                <button-group _v-5db28960=\"\">\n                  <i-button v-on:click=\"removeFromList(currentList)\" _v-5db28960=\"\">\n                    <tooltip placement=\"bottom\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                      <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                  <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                    <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                      <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                    </tooltip>\n                  </i-button>\n                </button-group>\n              </div>\n              <h1 style=\"margin-bottom: 0px;\" _v-5db28960=\"\">\n                <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ currentWord.color[$index] }\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>)\n              </h1>\n              <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-5db28960=\"\">{{ currentWord.pinyin }}</h3>\n              <br _v-5db28960=\"\">\n              <collapse active-key=\"1\" _v-5db28960=\"\">\n                <panel key=\"1\" _v-5db28960=\"\">\n                  Definitions\n                  <div slot=\"content\" class=\"definitions-list\" _v-5db28960=\"\">\n                    <li v-for=\"def in currentWord.definitions\" _v-5db28960=\"\">{{ def }}</li>\n                  </div>\n                </panel>\n                <panel key=\"2\" _v-5db28960=\"\">\n                  Characters\n                  <div slot=\"content\" _v-5db28960=\"\">\n                    <br _v-5db28960=\"\">\n                    <collapse accordion=\"\" _v-5db28960=\"\">\n                      <panel v-for=\"word in ComponentCharacters\" track-by=\"$index\" _v-5db28960=\"\">\n                        {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                        <div slot=\"content\" _v-5db28960=\"\">\n                          <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-5db28960=\"\">{{ def }}</li>\n                        </div>\n                      </panel>\n                    </collapse>\n                  </div>\n                </panel>\n              </collapse>\n            </div>\n          </div>\n        </i-col>\n      </div>\n    </row>\n  </i-col>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-5db28960=\"\">\n  <div id=\"actions-frame\" _v-5db28960=\"\">\n    <row _v-5db28960=\"\">\n      <!-- TODO: Write this -->\n      <dropdown trigger=\"click\" placement=\"bottom-start\" _v-5db28960=\"\">\n        <i-button _v-5db28960=\"\">\n           <a v-if=\"currentList == 'bookmarks'\" style=\"color: #657180;\" _v-5db28960=\"\">Bookmarks</a>\n           <a v-if=\"!(currentList == 'bookmarks')\" style=\"color: #657180;\" _v-5db28960=\"\">{{ currentList }}</a>\n           &nbsp;\n           <icon type=\"arrow-down-b\" size=\"large\" _v-5db28960=\"\"></icon>\n        </i-button>\n        <dropdown-menu slot=\"list\" _v-5db28960=\"\">\n          <dropdown-item v-on:click=\"switchList('bookmarks')\" _v-5db28960=\"\">Bookmarks</dropdown-item>\n          <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"switchList(collection)\" _v-5db28960=\"\">{{ collection }}</dropdown-item>\n          <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-5db28960=\"\">Create New List</dropdown-item>\n        \n      </dropdown-menu></dropdown>\n    </row>\n  </div>\n  <row _v-5db28960=\"\">\n    <div class=\"clear-characters\" _v-5db28960=\"\">\n      <i-col span=\"5\" _v-5db28960=\"\">\n        <div class=\"word-listing\" _v-5db28960=\"\">\n          <li class=\"word-listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-5db28960=\"\">\n            <div class=\"word-listing-content\" v-on:click=\"switchWord(word.id)\" _v-5db28960=\"\">\n              <h2 _v-5db28960=\"\"><strong _v-5db28960=\"\">{{ word.simplified }}</strong> ({{ word.traditional }})</h2>\n              <p _v-5db28960=\"\">{{ word.pronunciation }}</p>\n              <p _v-5db28960=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"word-content\" _v-5db28960=\"\">\n        <div v-if=\"displayWord\" _v-5db28960=\"\">\n          <div id=\"expanded-content\" class=\"expanded-content\" _v-5db28960=\"\">\n            <div class=\"pull-right\" _v-5db28960=\"\">\n              <button-group _v-5db28960=\"\">\n                <i-button v-on:click=\"removeFromList()\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"Remove From Bookmarks\" _v-5db28960=\"\">\n                    <icon type=\"minus-round\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-5db28960=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-5db28960=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-5db28960=\"\"></icon>\n                  </tooltip>\n                </i-button>\n              </button-group>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-5db28960=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>\n              (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-5db28960=\"\">{{ char }}</a>)\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-5db28960=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-5db28960=\"\">\n            <collapse active-key=\"1\" _v-5db28960=\"\">\n              <panel key=\"1\" _v-5db28960=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-5db28960=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-5db28960=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-5db28960=\"\">\n                Characters\n                <div slot=\"content\" _v-5db28960=\"\">\n                  <br _v-5db28960=\"\">\n                  <collapse accordion=\"\" _v-5db28960=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-5db28960=\"\">\n                      {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-5db28960=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-5db28960=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.listing-item.active .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n"] = false
+    __vueify_insert__.cache["\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-5db28960], .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -572,6 +724,8 @@ module.exports = {
       window.ipc.send('show-large-characters', lgObj);
     },
     switchWord: function(id) {
+      var self = this;
+
       function getCharacterComponents(tradWord) {
         var wordList = [];
         for(var x = 0; x < tradWord.length; x++) {
@@ -580,14 +734,15 @@ module.exports = {
           });
         }
 
-        mergedList = [].concat.apply([], wordList);
-        flatList = [].concat.apply([], mergedList);
+        var mergedList = [].concat.apply([], wordList);
+        var flatList = [].concat.apply([], mergedList);
 
         return flatList;
       }
-      this.currentWord = $.grep(this.searchResults, function(e) { return e.id == id })[0];
-      this.componentCharacters = getCharacterComponents(this.currentWord.traditional);
-      this.displayWord = true;
+
+      self.currentWord = $.grep(self.searchResults, function(e) { return e.id == id })[0];
+      self.componentCharacters = getCharacterComponents(self.currentWord.traditional);
+      self.displayWord = true;
     },
     performSearch: function() {
       this.displayWord = false;
