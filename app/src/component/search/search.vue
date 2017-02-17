@@ -245,8 +245,11 @@ module.exports = {
     	});
     });
 
+    databaseManager.updateListing();
+
     ipc.on('receive-database-update', function(event, args) {
       self.wordListings = databaseManager.userListNames;
+      databaseManager.updateListing();
     });
   },
   methods: {

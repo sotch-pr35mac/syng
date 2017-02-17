@@ -314,8 +314,11 @@ module.exports = {
 
     self.switchList('bookmarks');
 
+    databaseManager.updateListing();
+
     ipc.on('receive-database-update', function(event, args) {
       self.wordListings = databaseManager.userListNames;
+      databaseManager.updateListing();
     });
   },
   methods: {
@@ -377,6 +380,7 @@ module.exports = {
       if(list == 'bookmarks') {
         databaseManager.bookmarks.then(function(bookmarksList) {
           self.wordList = colorTones(bookmarksList);
+          self.currentList = "bookmarks";
         }, function(err) {
           // TODO: Handle the error
           console.log(err);
@@ -385,6 +389,7 @@ module.exports = {
       else {
         databaseManager.getUserListContent(list).then(function(listContent) {
           self.wordList = colorTones(listContent);
+          self.currentList = list;
         }, function(err) {
           // TODO: Handle the error
           console.log(err);
@@ -663,8 +668,11 @@ module.exports = {
     	});
     });
 
+    databaseManager.updateListing();
+
     ipc.on('receive-database-update', function(event, args) {
       self.wordListings = databaseManager.userListNames;
+      databaseManager.updateListing();
     });
   },
   methods: {
