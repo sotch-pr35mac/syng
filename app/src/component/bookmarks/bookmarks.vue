@@ -249,7 +249,7 @@ function colorTones(originalListing) {
     var formattedWord = {
       traditional: word.traditional,
       simplified: word.simplified,
-      pronunciation: word.pronunciation,
+      pinyin: word.pronunciation,
       toneMarks: word.toneMarks,
       definitions: word.definitions,
       id: uiid,
@@ -350,6 +350,7 @@ module.exports = {
         databaseManager.bookmarks.then(function(bookmarksList) {
           self.wordList = colorTones(bookmarksList);
           self.currentList = "bookmarks";
+          self.displayWord = false;
         }, function(err) {
           // TODO: Handle the error
           console.log(err);
@@ -359,6 +360,7 @@ module.exports = {
         databaseManager.getUserListContent(list).then(function(listContent) {
           self.wordList = colorTones(listContent);
           self.currentList = list;
+          self.displayWord = false;
         }, function(err) {
           // TODO: Handle the error
           console.log(err);

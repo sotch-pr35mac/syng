@@ -35,6 +35,12 @@ module.exports = class databaseManager {
   	}
   }
 
+  reloadDatabase() {
+    var tingo = window.require('tingodb')();
+  	this.db = new tingo.Db(this.path.join(__dirname, 'db/syng'), {});
+  	this.bookmarksDb = this.db.collection('bookmarks');
+  }
+
   loadUserList(listName) {
     this.userLists[listName] = this.db.collection(listName);
   }
@@ -181,6 +187,8 @@ module.exports = class databaseManager {
   }
 
   getUserListContent(listName) {
+    this.reloadDatabase();
+    
     return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         this.userLists[listName].find().toArray((err, list) => {
@@ -231,8 +239,12 @@ module.exports = class databaseManager {
   }
 
   get bookmarks() {
+    this.reloadDatabase();
+
     return new Promise((resolve, reject) => {
       this.bookmarksDb.find().toArray((err, bookmarks) => {
+        console.log("Logging the bookmarks found by the database manager");
+        console.log(bookmarks);
         if(err || bookmarks == undefined || bookmarks == null) {
           console.log('There was an error getting bookmarks.');
           console.log(err);
