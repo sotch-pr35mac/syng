@@ -2,7 +2,6 @@
   <i-col span="21">
     <div id="actions-frame">
       <Row>
-        <!-- TODO: Write this -->
         <Dropdown trigger="click" placement="bottom-start">
           <i-button>
              <a v-if="currentList == 'bookmarks'" style="color: #657180;">Bookmarks</a>
@@ -16,6 +15,17 @@
             <Dropdown-item divided v-on:click="createNewList()">Create New List</Dropdown-item>
           </Dropwdown-menu>
         </Dropdown>
+        <div class="pull-right">
+          <i-button>
+            Import
+          </i-button>
+          <i-button>
+            Export
+          </i-button>
+          <i-button>
+            Clear Bookmarks
+          </i-button>
+        </div>
       </Row>
     </div>
     <Row>
@@ -284,6 +294,7 @@ module.exports = {
     ipc.on('receive-database-update', function(event, args) {
       self.wordListings = databaseManager.userListNames;
       databaseManager.updateListing();
+      self.switchList('bookmarks');
     });
   },
   methods: {

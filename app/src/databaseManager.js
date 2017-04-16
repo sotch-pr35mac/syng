@@ -188,7 +188,7 @@ module.exports = class databaseManager {
 
   getUserListContent(listName) {
     this.reloadDatabase();
-    
+
     return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
         this.userLists[listName].find().toArray((err, list) => {
@@ -243,8 +243,6 @@ module.exports = class databaseManager {
 
     return new Promise((resolve, reject) => {
       this.bookmarksDb.find().toArray((err, bookmarks) => {
-        console.log("Logging the bookmarks found by the database manager");
-        console.log(bookmarks);
         if(err || bookmarks == undefined || bookmarks == null) {
           console.log('There was an error getting bookmarks.');
           console.log(err);
