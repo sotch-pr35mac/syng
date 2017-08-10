@@ -238,6 +238,10 @@ module.exports = class databaseManager {
     this.bookmarksDb.remove({ _id: id });
   }
 
+  clearBookmarks() {
+    this.bookmarksDb.remove();
+  }
+
   get bookmarks() {
     this.reloadDatabase();
 

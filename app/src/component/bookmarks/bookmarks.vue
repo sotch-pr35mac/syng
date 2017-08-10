@@ -16,13 +16,13 @@
           </Dropwdown-menu>
         </Dropdown>
         <div class="pull-right">
-          <i-button>
+          <i-button v-on:click="importList()">
             Import
           </i-button>
-          <i-button>
+          <i-button v-on:click="exportList()">
             Export
           </i-button>
-          <i-button>
+          <i-button v-on:click="clearBookmarks()" v-if="currentList == 'bookmarks'">
             Clear Bookmarks
           </i-button>
         </div>
@@ -296,6 +296,17 @@ module.exports = {
       databaseManager.updateListing();
       self.switchList('bookmarks');
     });
+
+    ipc.on('successfully-exported-list', function(event, args) {
+      self.$Message.success('Successfully exported list!');
+    });
+
+    ipc.on('successfully-imported-list', function(event, args) {
+      self.$Message.success('Successfully imported list!');
+      databaseManager.updateListing();
+      self.displayWord = false;
+      self.switchList(args.list);
+    });
   },
   methods: {
     removeFromList: function(listName) {
@@ -380,6 +391,27 @@ module.exports = {
     },
     createNewList: function() {
       window.ipc.send('show-manage-lists');
+    },
+    clearBookmarks() {
+      var self = this;
+
+      // Ask the user and make sure that they are okay with remvoing all the bookmarks
+      window.dialog.showMessageBox({ type: 'warning', buttons: ['Cancel', 'Confirm'], defaultId: 1, title: 'Clear All Bookmarks?', message: 'Are you sure you want to delete all the bookmarks? This action cannot be undone.', cancelId: 0}, function(response) {
+        if(response == 1) {
+          // The user decided to delete all the bookmarks, go ahead and remove them
+          databaseManager.clearBookmarks();
+          self.switchList('bookmarks');
+          self.displayWord = false;
+        }
+      });
+    },
+    exportList() {
+      var self = this;
+      window.ipc.send('export-wordlist', { list: self.currentList });
+    },
+    importList() {
+      var self = this;
+      window.ipc.send('import-wordlist', { list: self.currentList });
     }
   }
 }

@@ -424,64 +424,31 @@ app.on('ready', function() {
 	});
 
 	// Import / Export Bookmarks and WorldLists
-	ipc.on('export-bookmarks', function(event, args) {
-		dialog.showSaeDialog({ title: "Export Bookmarks", filters: [ {name: 'Syng Dictionary Bookmarks Backup', extensions: ['sdb']}]}, function(file) {
-			if(file == undefined || file == null) {
-				console.log("There was an error with the chosen file.");
-				console.log(file);
-				dialog.showErrorBox("File Selection Error", "There was an error with the chosen file.");
+	ipc.on('export-wordlist', function(event, args) {
+		var pathName = "db/syng/" + args.list;
+		fs.readFile(path.join(__dirname, pathName), "utf-8", function(err, data) {
+			if(err) {
+				console.log("There was an error reading the database file. File = " + pathName);
+				console.log(err);
+				dialog.showErrorBox("File Read Error", "There was an error reading the list's database file. Error = " + err);
 			}
 			else {
-				fs.readFile(path.join(__dirname, "db/syng/bookmarks"), "utf-8", function(err, data) {
-					if(err) {
-						console.log("There was an error reading the bookmarks file that syng stored.");
-						console.log(err);
-						dialog.showErrorBox("File Read Error", "There was an error reading the bookmarks database file. Error: "+err);
+				dialog.showSaveDialog({ title: 'Export List', filters: [{ name: 'Syng List Data', extensions: ['sld'] }] }, function(file) {
+					if(file == undefined || file == null) {
+						console.log("There was an error with the chosen file.");
+						console.log(file);
+						dialog.showErrorBox("File Selection Error", "There was an error with the chosen file.");
 					}
 					else {
+						file = file + '.sld';
 						fs.writeFile(file, data, function(err) {
 							if(err) {
-								console.log("There was an error writing the exported bookmarks to a file.");
+								console.log("There was an error writing the exported list data to a file.");
 								console.log(err);
-								dialog.showErrorBox("File Write Error", "There was an error writing the exported bookmarks to a file. Error: "+err);
+								dialog.showErrorBox("File Write Error", "There was an error writing the exported list data to a file. Error: " + err);
 							}
 							else {
-								// TODO: Send success to the main window
-							}
-						});
-					}
-				});
-			}
-		});
-	});
-
-	ipc.on('export-wordlist', function(event, args) {
-		// TODO: Write this
-	});
-
-	ipc.on('import-bookmarks', function(event, args) {
-		dialog.showOpenDialog({ title: "Import Bookmarks", properties: ['openFile'], filters: [{name: 'Syng Dictionary Bookmarks Backup', extensions: ['sdb']}]}, function(file) {
-			if(file == undefined || file == null) {
-				console.log("There was an error opening the file.");
-				console.log(file);
-				dialog.showErrorBox("Open File Error", "There was an error opening the file.");
-			}
-			else {
-				fs.readFile(file[0], 'utf-8', function(err, data) {
-					if(err) {
-						console.log("There was an error reading in the file.");
-						console.log(err);
-						dialog.showErrorBox("File Read Error", "There was an error reading the seelcted file. Error: "+err);
-					}
-					else {
-						fs.appendFile(path.join(__dirname, "db/syng/bookmarks"), data, function(err) {
-							if(err) {
-								console.log("There was an error appending the database file.");
-								console.log(err);
-								dialog.showErrorBox("File Write Error", "There was an error appending the database. Error: "+err);
-							}
-							else {
-								// TODO: Send success to the main window
+								mainWindow.send('successfully-exported-list');
 							}
 						});
 					}
@@ -491,6 +458,35 @@ app.on('ready', function() {
 	});
 
 	ipc.on('import-wordlist', function(event, args) {
-		// TODO: Write this
+		var pathName = 'db/syng/' + args.list;
+
+		dialog.showOpenDialog({ title: 'Import List', properties: ['openFile'], filters: [{ name: 'Syng List Data', extensions: ['sld', 'sdb'] }] }, function(file) {
+			if(file == undefined || file == null) {
+				console.log('There was an error opening the file.');
+				console.log(file);
+				dialog.showErrorBox('Open File Error', 'There was an error opening the file.');
+			}
+			else {
+				fs.readFile(file[0], 'utf-8', function(err, data) {
+					if(err) {
+						console.log('There was an error reading in the file.');
+						console.log(err);
+						dialog.showErrorBox('File Read Error', 'There was an error reading the selected file. Error: ' + err);
+					}
+					else {
+						fs.appendFile(path.join(__dirname, pathName), data, function(err) {
+							if(err) {
+								console.log('There was an error appending the database file.');
+								console.log(err);
+								dialog.showErrorBox('File Write Error', 'There was an error appending the database. Error = ' + err);
+							}
+							else {
+								mainWindow.send('successfully-imported-list', args);
+							}
+						});
+					}
+				});
+			}
+		});
 	});
 });
