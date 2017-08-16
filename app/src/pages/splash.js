@@ -39,7 +39,8 @@ $(document).ready(function() {
 							"Preparing DOS run-time environment",
 							"Bitmapping...",
 							"Downloading more RAM...",
-							"Removing win32..."
+							"Removing win32...",
+							"Making bacon pancakes..."
 						];
 
 	setInterval(function() {
