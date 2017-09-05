@@ -6,7 +6,7 @@
 ---
 
 ## __About__
-Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. This service will be made for desktop operating systems, and there are no plans to build something for mobile platforms. _For a good mobile platform alternative the app [Pleco](https://www.pleco.com/) is an excellent option._
+Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems. 
 
 ### Name
 Syng is a stylized spelling of Ciying, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
