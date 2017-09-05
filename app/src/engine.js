@@ -9,7 +9,7 @@
 var _ = require("underscore");
 var path = require("path");
 var Engine = require("tingodb")(); // Mongo-Style Database
-var cnchars = require('cn-chars'); // Convert between tradtitional and simplified
+var cnchars = require('chinese-conv'); // Convert between tradtitional and simplified
 var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
 var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their "word object"
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
@@ -308,13 +308,8 @@ module.exports.searchByChinese = function(str, cb) {
 	var traditional = str.slice().split("");
 
 	for(var i = 0; i < str.length; i++) {
-		if(traditional[i] == "学") {
-			traditional[i] = "學";
-		}
-		else {
-			simplified[i] = cnchars.toSimplifiedChar(simplified[i]);
-			traditional[i] = cnchars.toTraditionalChar(traditional[i]);
-		}
+		simplified[i] = cnchars.sify(simplified[i]);
+		traditional[i] = cnchars.tify(traditional[i]);
 	}
 
 	simplified = simplified.join('');
