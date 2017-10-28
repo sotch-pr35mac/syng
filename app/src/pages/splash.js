@@ -40,7 +40,8 @@ $(document).ready(function() {
 							"Bitmapping...",
 							"Downloading more RAM...",
 							"Removing win32...",
-							"Making bacon pancakes..."
+							"Making bacon pancakes...",
+              "Finding unpaid intern...."
 						];
 
 	setInterval(function() {

@@ -3,9 +3,10 @@
     <i-col span="26">
       <div id="actions-frame">
         <Row>
-          <i-button v-on:click="convert()">
+          <i-button v-on:click="convert()" class='pull-right'>
             Prettify
           </i-button>
+          <h1 class="title">Prettify Pinyin</h1>
         </Row>
       </div>
       <Row>
@@ -20,6 +21,13 @@
 </template>
 
 <style scoped>
+  .title {
+    text-align: center;
+    color: #fff;
+  }
+  .pull-right {
+    float: right;
+  }
   #actions-frame {
     padding-left: 10px;
     padding-right: 10px;
@@ -34,7 +42,7 @@
     height: 57.5vh;
   }
   #output_text {
-    font-size: 2.5em;
+    font-size: 1.5em;
   }
   textarea {
     resize: none;

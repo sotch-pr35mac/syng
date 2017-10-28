@@ -15,7 +15,7 @@
               <Dropdown-item v-on:click="convertFrom = 'simpToTrad'">Simplified <b>&rarr;</b> Traditional</Dropdown-item>
             </Dropdown-menu>
           </Dropdown>
-          <i-button v-on:click="convert()">
+          <i-button v-on:click="convert()" class="pull-right">
             Convert
           </i-button>
         </Row>
@@ -32,6 +32,9 @@
 </template>
 
 <style scoped>
+  .pull-right {
+    float: right;
+  }
   #actions-frame {
     padding-left: 10px;
     padding-right: 10px;
@@ -46,7 +49,7 @@
     height: 57.5vh;
   }
   #output_text {
-    font-size: 2.5em;
+    font-size: 1.5em;
   }
   textarea {
     resize: none;
