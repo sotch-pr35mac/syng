@@ -6,11 +6,14 @@
           <h2>About</h2>
         </center>
       </Menu-item>
+      <!-- Settings Menu not implimented in this version -->
+      <!--
       <Menu-item key="2" v-on:click='loadView("settings")'>
         <center>
           <h2>Settings</h2>
         </center>
       </Menu-item>
+      -->
       <Menu-item key="3" v-on:click='loadView("viewLicense")'>
         <center>
           <h2>View Licenses</h2>
@@ -21,11 +24,14 @@
           <h2>Report Bug</h2>
         </center>
       </Menu-item>
+      <!-- Help Menu not implemented in this version -->
+      <!--
       <Menu-item key="5" v-on:click="loadView('help')">
         <center>
           <h2>Help</h2>
         </center>
       </Menu-item>
+      -->
       <Menu-item key="6" v-on:click="loadView('donate')">
         <center>
           <h2>Donate</h2>
