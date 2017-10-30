@@ -17,7 +17,7 @@
           <div class="search-listing">
             <li class='search-listing-item' v-for='word in searchResults' track-by="$index">
               <div class='search-listing-content' v-on:click="switchWord(word.id)">
-                <h2><strong>{{ word.simplified }}</strong> ({{ word.traditional }})</h2>
+                <h2>{{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span></h2>
                 <p>{{ word.pinyin }}</p>
                 <p>{{ word.definitions.join(" ").substring(0, 27); }}</p>
               </div>
@@ -66,7 +66,9 @@
               </div>
               <h1 style="margin-bottom: 0px;">
                 <a v-for="char in currentWord.simplified" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>
-                (<a v-for="char in currentWord.traditional" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>)
+                <span v-if="currentWord.simplified != currentWord.traditional">
+                  (<a v-for="char in currentWord.traditional" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>)
+                </span>
               </h1>
               <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
               <br>
@@ -83,7 +85,7 @@
                     <br>
                     <Collapse accordion>
                       <Panel v-for="word in componentCharacters" track-by="$index">
-                        {{ word.simplified }} ({{ word.traditional }}) - {{ word.pronunciation }}
+                        {{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span> - {{ word.pronunciation }}
                         <div slot="content">
                           <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
                         </div>
