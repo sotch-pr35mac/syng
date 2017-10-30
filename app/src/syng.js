@@ -1186,6 +1186,9 @@ module.exports = {
       list: databaseManager.userListNames
     }
   },
+  attached: function() {
+    databaseManager.updateListing();
+  },
   components: {
     'selector': Selector,
     'card': Card
