@@ -48,28 +48,26 @@ module.exports = {
             self.list = bookmarksList;
             self.currentView = 'card';
           } else {
-            alert("you have too little bookmarks");
+            alert('You must have words saved in bookmarks to study flashcards.');
           }
         }, function(err) {
-          // TODO: Handle this error
+          alert('An unexpected error has occurred. Error = ' + err);
           console.log(err);
         });
       } else {
-        console.log('attempting to get user list: ' + cardList);
         databaseManager.getUserListContent(cardList).then(function(listContent) {
           if(listContent.length > 0) {
             self.list = listContent;
             self.currentView = 'card';
           } else {
-            alert('this list has too little elements');
+            alert('Your list ' + cardList + ' must have words in it to study flashcards.');
           }
         }, function(err) {
-          // TODO: Handle this error
+          alert('An unexpected error has occurred. Error = ' + err);
           console.log(err);
         });
       }
     }
-  },
-  methods: {}
+  }
 }
 </script>
