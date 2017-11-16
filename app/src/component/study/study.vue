@@ -9,7 +9,7 @@
         </Menu-item>
         <Menu-item key="2" v-on:click="loadView('test')">
           <center>
-            <h2>Test</h2>
+            <h2>Quiz</h2>
           </center>
         </Menu-item>
       </Menu>

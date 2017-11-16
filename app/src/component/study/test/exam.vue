@@ -8,14 +8,14 @@
             <i-button id="pauseButton" v-if="paused == false" v-on:click="pause()">Pause</i-button>
             <i-button id="resumeButton" v-if="paused == true" v-on:click="resume()">Resume</i-button>
           </Button-group>
-          <i-button id="continue" v-if="viewingAnswer == true" v-on:click="continueTest()">Continue</i-button>
+          <i-button id="continue" v-if="viewingAnswer == true && !viewScorecard" v-on:click="continueTest()">Continue</i-button>
         </Row>
       </div>
       <div id="timer" class="progress"></div>
       <div id="progress" class="progress"></div>
-      <answer v-if="viewingAnswer && display == true" v-bind:question="shuffledQuestions[iterator]"></answer>
+      <answer v-if="viewingAnswer && display == true && !viewScorecard" v-bind:question="shuffledQuestions[iterator]"></answer>
       <question v-if="!viewingAnswer && display == true" v-bind:question="shuffledQuestions[iterator]"></question>
-      <scorecard v-if="viewScorecard && display == true"></scorecard>
+      <scorecard v-if="viewScorecard && display == true" v-bind:score="grandScore"></scorecard>
     </i-col>
   </div>
 </template>
@@ -41,6 +41,7 @@
 var ProgressBar = require('progressbar.js');
 var Answer = require('./answer.vue');
 var Question = require('./question.vue');
+var Scorecard = require('./scorecard.vue');
 
 module.exports = {
   props: [ 'list' ],
@@ -68,7 +69,8 @@ module.exports = {
   },
   components: {
     'answer': Answer,
-    'question': Question
+    'question': Question,
+    'scorecard': Scorecard
   },
   attached: function() {
     var self = this;
@@ -153,7 +155,7 @@ module.exports = {
 
         // Determine the index of the correct answers
         var correctIndex;
-        for(var i = 0; i < shuffledAnswers.length - 1; i++) {
+        for(var i = 0; i < shuffledAnswers.length; i++) {
           if(shuffledAnswers[i] == correctAnswer) {
             correctIndex = i;
             break;
@@ -400,17 +402,21 @@ module.exports = {
     processNext() {
       var self = this;
 
-      if(self.iterator <= self.questionCounter) {
+      if(self.iterator < self.questionCounter - 1) {
         self.paused = false;
         self.viewingAnswer = false;
 
         self.iterator++;
 
-        self.testProgress = (self.iterator / self.shuffledQuestions.length);
+        self.testProgress = (self.iterator / (self.shuffledQuestions.length - 1));
         self.test.animate(self.testProgress);
 
         self.display = true;
         self.setTimer();
+      } else {
+        var totalQuestions = self.correct + self.incorrect + self.skipped;
+        self.grandScore = Math.floor((self.correct / totalQuestions) * 100);
+        self.viewScorecard = true;
       }
     },
     setTimer() {
