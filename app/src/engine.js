@@ -254,8 +254,9 @@ module.exports.searchByChinese = function(str, cb) {
 			}
 			else {
 				// The character wasn't recognized at all
-				console.log("The character wasn't recognized");
+				console.log("The character wasn't recognized. Skipping...");
 				console.log(trad.substring(0, 1));
+        trad = trad.substring(1);
 			}
 
 			infiniteCheck++;
@@ -290,8 +291,9 @@ module.exports.searchByChinese = function(str, cb) {
 			}
 			else {
 				// The character wasn't recognized
-				console.log("The character wasn't recognized");
+				console.log("The character wasn't recognized. Skipping...");
 				console.log(simp.substring(0, 1));
+        simp = simp.substring(1);
 			}
 
 			infiniteCheck++;
