@@ -1388,7 +1388,20 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"./flashcards/flashcards.vue":7,"./test/test.vue":14,"vue":47,"vue-hot-reload-api":46,"vueify/lib/insert-css":48}],10:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-0269006c] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-0269006c] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n")
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1402,7 +1415,7 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 module.exports = {
-  props: [],
+  props: [ 'question' ],
   data: function() {
     return {}
   },
@@ -1410,13 +1423,13 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0269006c=\"\">\n  <center _v-0269006c=\"\">\n    <h1 _v-0269006c=\"\">ANSWER</h1>\n  </center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0269006c=\"\">\n  <center _v-0269006c=\"\">\n    <br _v-0269006c=\"\">&nbsp;<br _v-0269006c=\"\">\n    <br _v-0269006c=\"\">&nbsp;<br _v-0269006c=\"\">\n    <h1 class=\"question\" _v-0269006c=\"\">{{ question.question }}</h1>\n    <br _v-0269006c=\"\">&nbsp;<br _v-0269006c=\"\">\n    <h2 class=\"answer\" _v-0269006c=\"\">{{ question.answers[question.correctAnswer] }}\n  </h2></center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n.question[_v-0269006c] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-0269006c] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -1502,6 +1515,11 @@ module.exports = {
   },
   attached: function() {
     var self = this;
+
+    self.$Notice.config({
+      duration: 3,
+      top: $('#progress').position().top + 30
+    });
 
     function randomIntWithException(min, max, exception) {
       var b = 0;
@@ -1825,7 +1843,8 @@ module.exports = {
     processNext() {
       var self = this;
 
-      if(self.testProgress < 1) {
+      if(self.iterator <= self.questionCounter) {
+        self.paused = false;
         self.viewingAnswer = false;
 
         self.iterator++;
@@ -1843,18 +1862,19 @@ module.exports = {
       self.timerProgress = 1;
       self.timer.animate(self.timerProgress);
 
-      self.timerInterval = setInterval(function() {
+      window.timerInterval = setInterval(function() {
         self.timerProgress = self.timerProgress - .03825;
 
         self.timer.animate(self.timerProgress);
       }, 1000);
 
-      self.timerTimeout = setTimeout(function() {
+      window.timerTimeout = setTimeout(function() {
         self.incorrectAnswer();
         clearInterval(self.timerInterval);
       }, 27000);
     },
     cancelTimer() {
+      self.timerProgress = 0;
       clearTimeout(self.timerTimeout);
       clearInterval(self.timerInterval);
     },
@@ -1863,35 +1883,65 @@ module.exports = {
 
       console.log('incorrect answer!');
       self.cancelTimer();
-      self.processNext();
+
+      // TODO: Display that they got the question incorrect
+      self.timer.animate(0);
+      self.viewingAnswer = true;
+      self.incorrect = self.incorrect + 1;
+      self.$Notice.error({
+        title: 'Incorrect'
+      });
     },
     correctAnswer() {
       var self = this;
 
       console.log('correct answer!');
       self.cancelTimer();
+
+      // TODO: Display that they got the question correct
+      self.timer.animate(0);
+      self.viewingAnswer = true;
+      self.correct = self.correct + 1;
+      self.$Notice.success({
+        title: 'Correct!'
+      });
     },
     skip() {
       var self = this;
 
-      self.timer.animate(.5);
-      self.test.animate(.5);
+      console.log('skipped question');
+      self.cancelTimer();
 
+      // TODO: Display that they skipped the question
+      self.timer.animate(0);
       self.viewingAnswer = true;
+      self.skipped = self.skipped + 1;
+      self.$Notice.error({
+        title: 'Skipped'
+      });
     },
     continueTest() {
       var self = this;
 
-      self.timer.animate(.1);
-      self.test.animate(.9);
+      self.processNext();
+    },
+    pause() {
+      var self = this;
 
-      self.viewingAnswer = false;
+      self.paused = true;
+      self.cancelTimer();
+    },
+    resume() {
+      var self = this;
+
+      self.paused = false;
+      self.setTimer();
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <i-col span=\"26\">\n    <div id=\"actions-frame\">\n      <row>\n        <button-group v-if=\"viewingAnswer == false\">\n          <i-button id=\"skipButton\" v-on:click=\"skip()\">Skip</i-button>\n          <i-button id=\"pauseButton\" v-if=\"paused == false\">Pause</i-button>\n          <i-button id=\"resumeButton\" v-if=\"paused == true\">Resume</i-button>\n        </button-group>\n        <i-button id=\"continue\" v-if=\"viewingAnswer == true\" v-on:click=\"continueTest()\">Continue</i-button>\n      </row>\n    </div>\n    <div id=\"timer\" class=\"progress\"></div>\n    <div id=\"progress\" class=\"progress\"></div>\n    <answer v-if=\"viewingAnswer &amp;&amp; display == true\"></answer>\n    <question v-if=\"!viewingAnswer &amp;&amp; display == true\" v-bind:question=\"shuffledQuestions[iterator]\"></question>\n    <scorecard v-if=\"viewScorecard &amp;&amp; display == true\"></scorecard>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <i-col span=\"26\">\n    <div id=\"actions-frame\">\n      <row>\n        <button-group v-if=\"viewingAnswer == false\">\n          <i-button id=\"skipButton\" v-on:click=\"skip()\">Skip</i-button>\n          <i-button id=\"pauseButton\" v-if=\"paused == false\" v-on:click=\"pause()\">Pause</i-button>\n          <i-button id=\"resumeButton\" v-if=\"paused == true\" v-on:click=\"resume()\">Resume</i-button>\n        </button-group>\n        <i-button id=\"continue\" v-if=\"viewingAnswer == true\" v-on:click=\"continueTest()\">Continue</i-button>\n      </row>\n    </div>\n    <div id=\"timer\" class=\"progress\"></div>\n    <div id=\"progress\" class=\"progress\"></div>\n    <answer v-if=\"viewingAnswer &amp;&amp; display == true\" v-bind:question=\"shuffledQuestions[iterator]\"></answer>\n    <question v-if=\"!viewingAnswer &amp;&amp; display == true\" v-bind:question=\"shuffledQuestions[iterator]\"></question>\n    <scorecard v-if=\"viewScorecard &amp;&amp; display == true\"></scorecard>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -1908,7 +1958,9 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"./answer.vue":10,"./question.vue":12,"progressbar.js":40,"vue":47,"vue-hot-reload-api":46,"vueify/lib/insert-css":48}],12:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-02a3daf2] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-02a3daf2] {\n  font-size: 4vh;\n}\n.ivu-btn-long[_v-02a3daf2] {\n  width: 90%;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-02a3daf2] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-02a3daf2] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-02a3daf2] {\n  width: 90%;\n}\n")
+
+
 
 
 
@@ -1957,22 +2009,22 @@ module.exports = {
       console.log(self.question);
 
       if(index == self.question.correctAnswer) {
-        console.log('Correct Answer!');
+        self.$dispatch('correctAnswer');
       } else {
-        console.log('Wrong answer....');
+        self.$dispatch('incorrectAnswer');
       }
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-02a3daf2=\"\">\n  <center _v-02a3daf2=\"\">\n    <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n    <h1 class=\"question\" _v-02a3daf2=\"\">{{ question.question }}</h1>\n    <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n    <row _v-02a3daf2=\"\">\n      <i-col span=\"12\" _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(0)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[0] }}</span></i-button>\n        <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(1)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[1] }}</span></i-button>\n      </i-col>\n      <i-col span=\"12\" _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(2)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[2] }}</span></i-button>\n        <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(3)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[3] }}</span></i-button>\n      </i-col>\n    </row>\n  </center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-02a3daf2=\"\">\n  <center _v-02a3daf2=\"\">\n    <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n    <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n    <h1 class=\"question\" _v-02a3daf2=\"\">{{ question.question }}</h1>\n    <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n    <row _v-02a3daf2=\"\">\n      <i-col span=\"12\" _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(0)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[0] }}</span></i-button>\n        <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(1)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[1] }}</span></i-button>\n      </i-col>\n      <i-col span=\"12\" _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(2)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[2] }}</span></i-button>\n        <br _v-02a3daf2=\"\">&nbsp;<br _v-02a3daf2=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(3)\" _v-02a3daf2=\"\"><span class=\"answer\" _v-02a3daf2=\"\">{{ question.answers[3] }}</span></i-button>\n      </i-col>\n    </row>\n  </center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.question[_v-02a3daf2] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-02a3daf2] {\n  font-size: 4vh;\n}\n.ivu-btn-long[_v-02a3daf2] {\n  width: 90%;\n}\n"] = false
+    __vueify_insert__.cache["\n.question[_v-02a3daf2] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-02a3daf2] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-02a3daf2] {\n  width: 90%;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {

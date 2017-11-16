@@ -5,15 +5,15 @@
         <Row>
           <Button-group v-if="viewingAnswer == false">
             <i-button id="skipButton" v-on:click="skip()">Skip</i-button>
-            <i-button id="pauseButton" v-if="paused == false">Pause</i-button>
-            <i-button id="resumeButton" v-if="paused == true">Resume</i-button>
+            <i-button id="pauseButton" v-if="paused == false" v-on:click="pause()">Pause</i-button>
+            <i-button id="resumeButton" v-if="paused == true" v-on:click="resume()">Resume</i-button>
           </Button-group>
           <i-button id="continue" v-if="viewingAnswer == true" v-on:click="continueTest()">Continue</i-button>
         </Row>
       </div>
       <div id="timer" class="progress"></div>
       <div id="progress" class="progress"></div>
-      <answer v-if="viewingAnswer && display == true"></answer>
+      <answer v-if="viewingAnswer && display == true" v-bind:question="shuffledQuestions[iterator]"></answer>
       <question v-if="!viewingAnswer && display == true" v-bind:question="shuffledQuestions[iterator]"></question>
       <scorecard v-if="viewScorecard && display == true"></scorecard>
     </i-col>
@@ -72,6 +72,11 @@ module.exports = {
   },
   attached: function() {
     var self = this;
+
+    self.$Notice.config({
+      duration: 3,
+      top: $('#progress').position().top + 30
+    });
 
     function randomIntWithException(min, max, exception) {
       var b = 0;
@@ -395,7 +400,8 @@ module.exports = {
     processNext() {
       var self = this;
 
-      if(self.testProgress < 1) {
+      if(self.iterator <= self.questionCounter) {
+        self.paused = false;
         self.viewingAnswer = false;
 
         self.iterator++;
@@ -413,18 +419,19 @@ module.exports = {
       self.timerProgress = 1;
       self.timer.animate(self.timerProgress);
 
-      self.timerInterval = setInterval(function() {
+      window.timerInterval = setInterval(function() {
         self.timerProgress = self.timerProgress - .03825;
 
         self.timer.animate(self.timerProgress);
       }, 1000);
 
-      self.timerTimeout = setTimeout(function() {
+      window.timerTimeout = setTimeout(function() {
         self.incorrectAnswer();
         clearInterval(self.timerInterval);
       }, 27000);
     },
     cancelTimer() {
+      self.timerProgress = 0;
       clearTimeout(self.timerTimeout);
       clearInterval(self.timerInterval);
     },
@@ -433,29 +440,59 @@ module.exports = {
 
       console.log('incorrect answer!');
       self.cancelTimer();
-      self.processNext();
+
+      // TODO: Display that they got the question incorrect
+      self.timer.animate(0);
+      self.viewingAnswer = true;
+      self.incorrect = self.incorrect + 1;
+      self.$Notice.error({
+        title: 'Incorrect'
+      });
     },
     correctAnswer() {
       var self = this;
 
       console.log('correct answer!');
       self.cancelTimer();
+
+      // TODO: Display that they got the question correct
+      self.timer.animate(0);
+      self.viewingAnswer = true;
+      self.correct = self.correct + 1;
+      self.$Notice.success({
+        title: 'Correct!'
+      });
     },
     skip() {
       var self = this;
 
-      self.timer.animate(.5);
-      self.test.animate(.5);
+      console.log('skipped question');
+      self.cancelTimer();
 
+      // TODO: Display that they skipped the question
+      self.timer.animate(0);
       self.viewingAnswer = true;
+      self.skipped = self.skipped + 1;
+      self.$Notice.error({
+        title: 'Skipped'
+      });
     },
     continueTest() {
       var self = this;
 
-      self.timer.animate(.1);
-      self.test.animate(.9);
+      self.processNext();
+    },
+    pause() {
+      var self = this;
 
-      self.viewingAnswer = false;
+      self.paused = true;
+      self.cancelTimer();
+    },
+    resume() {
+      var self = this;
+
+      self.paused = false;
+      self.setTimer();
     }
   }
 }

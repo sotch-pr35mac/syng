@@ -2,6 +2,7 @@
   <div>
     <center>
       <br>&nbsp;<br>
+      <br>&nbsp;<br>
       <h1 class="question">{{ question.question }}</h1>
       <br>&nbsp;<br>
       <Row>
@@ -27,6 +28,7 @@
   }
   .answer {
     font-size: 4vh;
+    overflow: auto;
   }
   .ivu-btn-long {
     width: 90%;
@@ -46,9 +48,9 @@ module.exports = {
       console.log(self.question);
 
       if(index == self.question.correctAnswer) {
-        console.log('Correct Answer!');
+        self.$dispatch('correctAnswer');
       } else {
-        console.log('Wrong answer....');
+        self.$dispatch('incorrectAnswer');
       }
     }
   }
