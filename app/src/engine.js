@@ -1,6 +1,6 @@
 /*
 *	@File				:: engine.js
-* 	@Description	:: This file converts the CC-CEDICT JSON file to a hashtable and searches it based on Chinese, Pinyin, or English input.
+* 	@Description	:: This file converts the CC-CEDICT JSON file to a Hashmap and searches it based on Chinese, Pinyin, or English input.
 *	@Author 			:: Preston Stosur-Bassett [preston@stosur.info](http://stosur.info)
 * 	@Based On		:: node-cc-cedict by [John Heroy](http://johnheroy.com/)
 *	@Created			:: Jan 28, 2016
@@ -11,20 +11,20 @@ var path = require("path");
 var Engine = require("tingodb")(); // Mongo-Style Database
 var cnchars = require('chinese-conv'); // Convert between tradtitional and simplified
 var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
-var SimpleHashTable = require('simple-hashtable'); // Hash table to store values of chinese charactesr and their "word object"
+var Hashmap = require('hashmap'); // Hashmap to store values of chinese characters and their "word object"
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
 
-// Create global hashtables that are going to serve as the lookup method for search
-// Using the hashtables over just a database query will dramatically incrase the speed
-window.simpHashtable = new SimpleHashTable();	// Global hashtable containing all simplified characters as key and their "word object" as the value
-window.tradHashtable = new SimpleHashTable();	// Global hashtable containing all traditional characters as key and their "word object" as the value
-window.pinyinHashtable = new SimpleHashTable();	// Global hashtable containing all pinyin that could be input as key, and their "word object" as the value
-window.englishHashtable = new SimpleHashTable(); // Global hashtable containing all the english definitions that oculd be input as key, and their "word object" as the value
+// Create global Hashmaps that are going to serve as the lookup method for search
+// Using the Hashmaps over just a database query will dramatically incrase the speed
+window.simpHashmap = new Hashmap();	// Global Hashmap containing all simplified characters as key and their "word object" as the value
+window.tradHashmap = new Hashmap();	// Global Hashmap containing all traditional characters as key and their "word object" as the value
+window.pinyinHashmap = new Hashmap();	// Global Hashmap containing all pinyin that could be input as key, and their "word object" as the value
+window.englishHashmap = new Hashmap(); // Global Hashmap containing all the english definitions that oculd be input as key, and their "word object" as the value
 
-var tradIsEmpty = tradHashtable.isEmpty();
-var simpIsEmpty = simpHashtable.isEmpty();
-var pinyinIsEmpty = pinyinHashtable.isEmpty();
-var englishIsEmpty = englishHashtable.isEmpty();
+var tradIsEmpty = tradHashmap.size == 0 ? true : false;
+var simpIsEmpty = simpHashmap.size == 0 ? true : false;
+var pinyinIsEmpty = pinyinHashmap.size == 0 ? true : false;
+var englishIsEmpty = englishHashmap.size == 0 ? true : false;
 
 if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
@@ -67,16 +67,16 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
-					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-					if(pinyinHashtable.containsKey(searchablePinyin) == false) {
+					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+					if(pinyinHashmap.has(searchablePinyin) == false) {
 						let addWord = [];
 						addWord.push(word);
-						pinyinHashtable.put(searchablePinyin, addWord);
+						pinyinHashmap.set(searchablePinyin, addWord);
 					}
 					else {
-						let addWord = pinyinHashtable.get(searchablePinyin);
+						let addWord = pinyinHashmap.get(searchablePinyin);
 						addWord.push(word);
-						pinyinHashtable.put(searchablePinyin, addWord);
+						pinyinHashmap.set(searchablePinyin, addWord);
 					}
 				}
 
@@ -109,23 +109,23 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
-					// Cycle through each definition of a character and add it to the hashtable
+					// Cycle through each definition of a character and add it to the Hashmap
 					for(var i = 0; i < word.definitions.length; i++) {
 						// Remove punctuation, extra spaces, and convert to lower case
 						var searchableTerm = word.definitions[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
 						searchableTerm = searchableTerm.replace(/\s{2,}/g," ");
 						searchableTerm =  searchableTerm.toLowerCase();
 
-						// Add the word to the hashtable, if the definition already exists in the hashtable as a key, add the second "word object" to the same key
-						if(englishHashtable.containsKey(searchableTerm) == false) {
+						// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
+						if(englishHashmap.has(searchableTerm) == false) {
 							let addWord = [];
 							addWord.push(word);
-							englishHashtable.put(searchableTerm, addWord);
+							englishHashmap.set(searchableTerm, addWord);
 						}
 						else {
-							let addWord = englishHashtable.get(searchableTerm);
+							let addWord = englishHashmap.get(searchableTerm);
 							addWord.push(word);
-							englishHashtable.put(searchableTerm, addWord);
+							englishHashmap.set(searchableTerm, addWord);
 						}
 					}
 				}
@@ -159,16 +159,16 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
-					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-					if(tradHashtable.containsKey(word.traditional) == false) {
+					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+					if(tradHashmap.has(word.traditional) == false) {
 						let addWord = [];
 						addWord.push(word);
-						tradHashtable.put(word.traditional, addWord);
+						tradHashmap.set(word.traditional, addWord);
 					}
 					else {
-						let addWord = tradHashtable.get(word.traditional);
+						let addWord = tradHashmap.get(word.traditional);
 						addWord.push(word);
-						tradHashtable.put(word.traditional, addWord);
+						tradHashmap.set(word.traditional, addWord);
 					}
 				}
 
@@ -201,16 +201,16 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 					// Prettify the pinyin to use tone marks instead of tone numbers
 					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
 
-					// Add the word to the hashtable, if the character already exists in the hashtable as a key, add the second definition to the same key
-					if(simpHashtable.containsKey(word.simplified) == false) {
+					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+					if(simpHashmap.has(word.simplified) == false) {
 						var addWord = [];
 						addWord.push(word);
-						simpHashtable.put(word.simplified, addWord);
+						simpHashmap.set(word.simplified, addWord);
 					}
 					else {
-						var addWord = simpHashtable.get(word.simplified);
+						var addWord = simpHashmap.get(word.simplified);
 						addWord.push(word);
-						simpHashtable.put(word.simplified, addWord);
+						simpHashmap.set(word.simplified, addWord);
 					}
 				}
 
@@ -232,23 +232,23 @@ module.exports.searchByChinese = function(str, cb) {
 		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 		while(trad.length > 0 && infiniteCheck < 8000) {
 			// Check for 4, 3, and 2 character compound words
-			if(trad.length >= 4 && tradHashtable.containsKey(trad.substring(0, 4))) {
-				var compoundWord = tradHashtable.get(trad.substring(0, 4));
+			if(trad.length >= 4 && tradHashmap.has(trad.substring(0, 4))) {
+				var compoundWord = tradHashmap.get(trad.substring(0, 4));
 				compounds.push(compoundWord);
 				trad = trad.substring(4);
 			}
-			else if(trad.length >= 3 && tradHashtable.containsKey(trad.substring(0, 3))) {
-				var compoundWord = tradHashtable.get(trad.substring(0, 3));
+			else if(trad.length >= 3 && tradHashmap.has(trad.substring(0, 3))) {
+				var compoundWord = tradHashmap.get(trad.substring(0, 3));
 				compounds.push(compoundWord);
 				trad = trad.substring(3);
 			}
-			else if(trad.length >= 2 && tradHashtable.containsKey(trad.substring(0, 2))) {
-				var compoundWord = tradHashtable.get(trad.substring(0, 2));
+			else if(trad.length >= 2 && tradHashmap.has(trad.substring(0, 2))) {
+				var compoundWord = tradHashmap.get(trad.substring(0, 2));
 				compounds.push(compoundWord);
 				trad = trad.substring(2);
 			}
-			else if(trad.length >= 1 && tradHashtable.containsKey(trad.substring(0, 1))) {
-				var compoundWord = tradHashtable.get(trad.substring(0, 1));
+			else if(trad.length >= 1 && tradHashmap.has(trad.substring(0, 1))) {
+				var compoundWord = tradHashmap.get(trad.substring(0, 1));
 				compounds.push(compoundWord);
 				trad = trad.substring(1);
 			}
@@ -269,23 +269,23 @@ module.exports.searchByChinese = function(str, cb) {
 		var infiniteCheck = 0;	// Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 		while(simp.length > 0 && infiniteCheck < 8000) {
 			// Check for 4, 3, and 2 character compound words
-			if(simp.length >= 4 && simpHashtable.containsKey(simp.substring(0, 4))) {
-				var compoundWord = simpHashtable.get(simp.substring(0, 4));
+			if(simp.length >= 4 && simpHashmap.has(simp.substring(0, 4))) {
+				var compoundWord = simpHashmap.get(simp.substring(0, 4));
 				compounds.push(compoundWord);
 				simp = simp.substring(4);
 			}
-			else if(simp.length >= 3 && simpHashtable.containsKey(simp.substring(0, 3))) {
-				var compoundWord = simpHashtable.get(simp.substring(0, 3));
+			else if(simp.length >= 3 && simpHashmap.has(simp.substring(0, 3))) {
+				var compoundWord = simpHashmap.get(simp.substring(0, 3));
 				compounds.push(compoundWord);
 				simp = simp.substring(3);
 			}
-			else if(simp.length >= 2 && simpHashtable.containsKey(simp.substring(0, 2))) {
-				var compoundWord = simpHashtable.get(simp.substring(0, 2));
+			else if(simp.length >= 2 && simpHashmap.has(simp.substring(0, 2))) {
+				var compoundWord = simpHashmap.get(simp.substring(0, 2));
 				compounds.push(compoundWord);
 				simp = simp.substring(2);
 			}
-			else if(simp.length >= 1 && simpHashtable.containsKey(simp.substring(0, 1))) {
-				var compoundWord = simpHashtable.get(simp.substring(0, 1));
+			else if(simp.length >= 1 && simpHashmap.has(simp.substring(0, 1))) {
+				var compoundWord = simpHashmap.get(simp.substring(0, 1));
 				compounds.push(compoundWord);
 				simp = simp.substring(1);
 			}
@@ -317,7 +317,7 @@ module.exports.searchByChinese = function(str, cb) {
 	simplified = simplified.join('');
 	traditional = traditional.join('');
 
-	// Search the traditional hashtable if the input was explicitly in tradtitional, otherwise search simplified
+	// Search the traditional Hashmap if the input was explicitly in tradtitional, otherwise search simplified
 	if(traditional === str) {
 		// Remove punctuation and whitespaces
 		traditional = traditional.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
@@ -354,8 +354,8 @@ module.exports.searchByPinyin = function(str, cb) {
 	var i = 0; // An interator for the pinyin array
 	var infiniteCheck = 0; // Max the search out at 4000 loops, so that in case none of the characters in the input are found we don't run into an infinite loop
 	while(i < pinyin.length && infiniteCheck < 4000) {
-		if(pinyinHashtable.containsKey(pinyin[i])) {
-			results.push(pinyinHashtable.get(pinyin[i]));
+		if(pinyinHashmap.has(pinyin[i])) {
+			results.push(pinyinHashmap.get(pinyin[i]));
 		}
 		else {
 			console.log("Error: Could not find "+pinyin[i]+" in the database.");
@@ -384,28 +384,28 @@ module.exports.searchByEnglish = function(str, cb) {
 	console.log(searchableTerms);
 	while(searchableTerms.length > 0 && infiniteCheck < 4000)  {
 		// Check for 4, 3, and 2 word phrases or definitions
-		if(searchableTerms.length >= 4 && englishHashtable.containsKey(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3])) {
-			var compoundWord = englishHashtable.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3]);
+		if(searchableTerms.length >= 4 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 4);
 		}
-		else if(searchableTerms.length >= 3 && englishHashtable.containsKey(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2])) {
-			var compoundWord = englishHashtable.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]);
+		else if(searchableTerms.length >= 3 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 3);
 		}
-		else if(searchableTerms.length >= 2 && englishHashtable.containsKey(searchableTerms[0]+" "+searchableTerms[1])) {
-			var compoundWord = englishHashtable.get(searchableTerms[0]+" "+searchableTerms[1]);
+		else if(searchableTerms.length >= 2 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 2);
 		}
-		else if(searchableTerms.length >= 1 && englishHashtable.containsKey(searchableTerms[0])) {
-			var compoundWord = englishHashtable.get(searchableTerms[0]);
+		else if(searchableTerms.length >= 1 && englishHashmap.has(searchableTerms[0])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 1);
 		}
 		else {
-			// The word or phrase was not found in the english hashtable
+			// The word or phrase was not found in the english Hashmap
 			console.log("The word or phrase was not found.");
 			console.log(searchableTerms[0]);
 		}
