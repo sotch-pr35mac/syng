@@ -87,7 +87,14 @@
                     </Collapse>
                   </div>
                 </Panel>
+                <Panel key="3">
+                  Notes
+                  <div slot="content">
+                    <notes v-bind:notes="currentWord.notes"></notes>
+                  </div>
+                </Panel>
               </Collapse>
+              <br>
             </div>
           </div>
         </i-col>
@@ -207,6 +214,7 @@
 
 <script>
 var databaseManager = new window.DatMan();
+var Notes = require('./notes.vue');
 
 // Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
 function generateUIID() {
@@ -264,6 +272,7 @@ function colorTones(originalListing) {
       pinyin: word.pronunciation,
       toneMarks: word.toneMarks,
       definitions: word.definitions,
+      notes: word.notes,
       id: uiid,
       _id: word._id,
       color: colors
@@ -285,6 +294,25 @@ module.exports = {
       componentCharacters: [],
       wordListings: databaseManager.userListNames
     };
+  },
+  components: {
+    'notes': Notes
+  },
+  events: {
+    'saveNotes': function(notes) {
+      var self = this;
+
+      databaseManager.updateNotes(self.currentList, self.currentWord._id, notes).then(function(result) {
+        for(var i = 0; i < self.wordList.length; i++) {
+          if(self.wordList[i]._id == self.currentWord._id) {
+            self.wordList[i].notes = notes;
+          }
+        }
+        self.$Message.success('Saved notes!');
+      }, function(err) {
+        self.$Message.error('There was an error saving notes. Please try again.');
+      });
+    }
   },
   attached: function() {
     var self = this;

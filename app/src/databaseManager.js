@@ -258,4 +258,48 @@ module.exports = class databaseManager {
       });
     });
   }
+
+  updateNotes(list, id, notes) {
+    return new Promise((resolve, reject) => {
+      if(list == 'bookmarks') {
+        this.bookmarksDb.findOne({ _id: id }, (err, item) => {
+          if(err || item == undefined) {
+            console.log('There was a problem updating the notes.');
+            console.log(err);
+            reject(new Error(err));
+          } else {
+            item.notes = notes;
+            this.bookmarksDb.update({ _id: id }, item, function(err, updated) {
+              if(err || updated == undefined) {
+                console.log('There was a probelm updating the notes.');
+                console.log(err);
+                reject(new Error(err));
+              } else {
+                resolve(updated);
+              }
+            });
+          }
+        });
+      } else {
+        this.userLists[list].findOne({ _id: id }, (err, item) => {
+          if(err || item == undefined) {
+            console.log('There was a problem updating the notes.');
+            console.log(err);
+            reject(new Error(err));
+          } else {
+            item.notes = notes;
+            this.userLists[list].update({ _id: id }, item, (err, updated) => {
+              if(err || updated == undefined) {
+                console.log('There was a problem updating the notes.');
+                console.log(err);
+                reject(new Error(err));
+              } else {
+                resolve(updated);
+              }
+            });
+          }
+        });
+      }
+    });
+  }
 }
