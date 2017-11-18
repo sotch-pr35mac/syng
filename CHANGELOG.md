@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x]
+## [1.0.0]
 ### Added
 - Added a menu item and keyboard shortcut for switching input, as described in Issue #64
 
