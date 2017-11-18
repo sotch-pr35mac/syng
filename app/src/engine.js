@@ -32,189 +32,63 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 		console.log("Loading...");
 
 		for(var i = 0; i < wordList.length - 1; i++) {
-			// Separate definitions from "word object" into an array
-			if(wordList[i].definitions) {
-				wordList[i].definitions = wordList[i].definitions.split("; ");
+			var word = {
+				traditional: wordList[i].traditional,
+				simplified: wordList[i].simplified,
+				pronunciation: wordList[i].pronunciation,
+				toneMarks: wordList[i].toneMarks,
+				definitions: wordList[i].definitions
+			};
+
+			// Prettify the pinyin to use tone marks instead of tone numbers
+			word.pronunciation = pinyin.prettify(word.pronunciation);
+
+			// Add the word to the Simplified Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+			if (simpHashmap.has(word.simplified) == false) {
+				var addWord = [];
+				addWord.push(word);
+				simpHashmap.set(word.simplified, addWord);
+			} else {
+				var addWord = simpHashmap.get(word.simplified);
+				addWord.push(word);
+				simpHashmap.set(word.simplified, addWord);
 			}
 
-			if(pinyinIsEmpty == true && wordList[i] != undefined) {
-				function runPinyin() {
-					'use strict';
-
-					// "Copy" the object, so that changes made won't reflect globally on the wordList array
-					let word = {
-						simplified: wordList[i].simplified,
-						traditional: wordList[i].traditional,
-						pronunciation: wordList[i].pronunciation,
-						definitions: wordList[i].definitions
-					};
-
-					let individualWords = word.pronunciation.split(" ");
-
-					var toneMarks = new Array(individualWords.length);
-					for(var e = 0; e < toneMarks.length; e++) {
-						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
-							toneMarks[e] = tone;
-						}
-					}
-
-					word.toneMarks = toneMarks;
-
-					// Searchable pinyin without tone numbers
-					let searchablePinyin = word.pronunciation.substring(1, word.pronunciation.length - 1).replace(/[0-9]/g, '').replace(/\s+/g, '');
-
-					// Prettify the pinyin to use tone marks instead of tone numbers
-					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-					if(pinyinHashmap.has(searchablePinyin) == false) {
-						let addWord = [];
-						addWord.push(word);
-						pinyinHashmap.set(searchablePinyin, addWord);
-					}
-					else {
-						let addWord = pinyinHashmap.get(searchablePinyin);
-						addWord.push(word);
-						pinyinHashmap.set(searchablePinyin, addWord);
-					}
-				}
-
-				runPinyin();
+			// Add the word to the Traditional Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+			if(tradHashmap.has(word.traditional) == false) {
+				var addWord = [];
+				addWord.push(word);
+				tradHashmap.set(word.traditional, addWord);
+			} else {
+				var addWord = tradHashmap.get(word.traditional);
+				addWord.push(word);
+				tradHashmap.set(word.traditional, addWord);
 			}
-			if(englishIsEmpty == true && wordList[i] != undefined) {
-				function runEnglish(wordList, i) {
-					'use strict';
 
-					// "Copy" the object, so that changes made won't reflect globally on the wordList array
-					let word = {
-						simplified: wordList[i].simplified,
-						traditional: wordList[i].traditional,
-						pronunciation: wordList[i].pronunciation,
-						definitions: wordList[i].definitions
-					};
-
-					let individualWords = word.pronunciation.split(" ");
-
-					var toneMarks = new Array(individualWords.length);
-					for(var e = 0; e < toneMarks.length; e++) {
-						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
-							toneMarks[e] = tone;
-						}
-					}
-
-					word.toneMarks = toneMarks;
-
-					// Prettify the pinyin to use tone marks instead of tone numbers
-					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-					// Cycle through each definition of a character and add it to the Hashmap
-					for(var i = 0; i < word.definitions.length; i++) {
-						// Remove punctuation, extra spaces, and convert to lower case
-						var searchableTerm = word.definitions[i].replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
-						searchableTerm = searchableTerm.replace(/\s{2,}/g," ");
-						searchableTerm =  searchableTerm.toLowerCase();
-
-						// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
-						if(englishHashmap.has(searchableTerm) == false) {
-							let addWord = [];
-							addWord.push(word);
-							englishHashmap.set(searchableTerm, addWord);
-						}
-						else {
-							let addWord = englishHashmap.get(searchableTerm);
-							addWord.push(word);
-							englishHashmap.set(searchableTerm, addWord);
-						}
-					}
-				}
-
-				runEnglish(wordList, i);
+			// Add the word to the Pinyin Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
+			if(pinyinHashmap.has(wordList[i].searchablePinyin) == false) {
+				var addWord = [];
+				addWord.push(word);
+				pinyinHashmap.set(wordList[i].searchablePinyin, addWord);
+			} else {
+				var addWord = pinyinHashmap.get(wordList[i].searchablePinyin);
+				addWord.push(word);
+				pinyinHashmap.set(wordList[i].searchablePinyin, addWord);
 			}
-			if(tradIsEmpty == true && wordList[i] != undefined) {
-				function runTraditional() {
-					'use strict';
 
-					// "Copy" the object, so that changes made won't reflect globally on the wordList array
-					let word = {
-						simplified: wordList[i].simplified,
-						traditional: wordList[i].traditional,
-						pronunciation: wordList[i].pronunciation,
-						definitions: wordList[i].definitions
-					};
-
-					let individualWords = word.pronunciation.split(" ");
-
-					var toneMarks = new Array(individualWords.length);
-					for(var e = 0; e < toneMarks.length; e++) {
-						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
-							toneMarks[e] = tone;
-						}
-					}
-
-					word.toneMarks = toneMarks;
-
-					// Prettify the pinyin to use tone marks instead of tone numbers
-					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-					if(tradHashmap.has(word.traditional) == false) {
-						let addWord = [];
-						addWord.push(word);
-						tradHashmap.set(word.traditional, addWord);
-					}
-					else {
-						let addWord = tradHashmap.get(word.traditional);
-						addWord.push(word);
-						tradHashmap.set(word.traditional, addWord);
-					}
+			// Cycle through each definition of a character and add it to the Hashmap
+			for (var t = 0; t < wordList[i].searchableEnglish.length; t++) {
+				var searchableTerm = wordList[i].searchableEnglish[t];
+				// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
+				if (englishHashmap.has(searchableTerm) == false) {
+					var addWord = [];
+					addWord.push(word);
+					englishHashmap.set(searchableTerm, addWord);
+				} else {
+					var addWord = englishHashmap.get(searchableTerm);
+					addWord.push(word);
+					englishHashmap.set(searchableTerm, addWord);
 				}
-
-				runTraditional();
-			}
-			if(simpIsEmpty == true && wordList[i] != undefined) {
-				function runSimplified() {
-					'use strict';
-
-					// "Copy" the object, so that changes made won't reflect globally on the wordList array
-					let word = {
-						simplified: wordList[i].simplified,
-						traditional: wordList[i].traditional,
-						pronunciation: wordList[i].pronunciation,
-						definitions: wordList[i].definitions
-					};
-
-					let individualWords = word.pronunciation.split(" ");
-
-					var toneMarks = new Array(individualWords.length);
-					for(var e = 0; e < toneMarks.length; e++) {
-						let tone = parseInt(individualWords[e].replace(/[^0-9\.]/g, ''), 10);
-						if(tone == "5" || tone == "4" || tone == "3" || tone == "2" || tone == "1")  {
-							toneMarks[e] = tone;
-						}
-					}
-
-					word.toneMarks = toneMarks;
-
-					// Prettify the pinyin to use tone marks instead of tone numbers
-					word.pronunciation = pinyin.prettify(word.pronunciation.substring(1, word.pronunciation.length - 1));
-
-					// Add the word to the Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-					if(simpHashmap.has(word.simplified) == false) {
-						var addWord = [];
-						addWord.push(word);
-						simpHashmap.set(word.simplified, addWord);
-					}
-					else {
-						var addWord = simpHashmap.get(word.simplified);
-						addWord.push(word);
-						simpHashmap.set(word.simplified, addWord);
-					}
-				}
-
-				runSimplified();
 			}
 		}
 
