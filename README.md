@@ -32,6 +32,14 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
 - __Pinyinify__
     - Convert 汉字 into hànzì. Turn characters into pinyin
 
+## __What's new?__
+Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Brand new user interface
+2. 70% faster load time
+3. Custom vocabulary lists
+3. Pinyinify characters
+4. General stability and performance updates
+
 ## __Built On__
    - [Electron](http://electron.atom.io)
       - Framework for Native Cross-Platform Support

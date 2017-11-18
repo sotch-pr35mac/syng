@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file. This projec
 - User interface for Large Character View
 - Development flow and build process
 - Library for pinyinization
+- Icon
 
 ## [0.2.1]
 ### Fixed
