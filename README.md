@@ -37,8 +37,10 @@ Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a ful
 1. Brand new user interface
 2. 70% faster load time
 3. Custom vocabulary lists
-3. Pinyinify characters
-4. General stability and performance updates
+4. Notes
+5. New Icon
+6. Pinyinify characters
+7. General stability and performance updates
 
 ## __Built On__
    - [Electron](http://electron.atom.io)
