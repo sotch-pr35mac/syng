@@ -1,2 +1,2 @@
 # __License__
-This software is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).
+This software is licensed under the [GNU Public License 3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).

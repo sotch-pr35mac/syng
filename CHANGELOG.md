@@ -1,9 +1,30 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [1.0.0]
+## [1.0.0] - 2017-11-18
 ### Added
-- Added a menu item and keyboard shortcut for switching input, as described in Issue #64
+- A menu item and keyboard shortcut for switching input, as described in Issue #64
+- Pinyinify Characters (汉字 --> 拼音) as described in Issue #59
+- Pinyin Searchable with Tones Marks as described in Issue #56
+- Component Characters in Bookmarks Section as described in Issue #50
+- Support for custom word lists as described in Issue #49
+- Support for notes on words in bookmarks section as described in Issue #38
+- Donate button as described in Issue #73
+- Support for user error submitting
+- One window user interface as described in #66
+
+### Fixed
+- 羡 Character Unsearchable #63
+- Character Coloring for Words Containing No Tone Characters #52
+- Pinyin search with capital letters #76
+- Punctuation in search results in error
+
+### Changed
+- Search Engine's hashmap library
+- Search Engine loading method (now complies with syng-dictionary-creator)
+- User interface for Large Character View
+- Development flow and build process
+- Library for pinyinization
 
 ## [0.2.1]
 ### Fixed
