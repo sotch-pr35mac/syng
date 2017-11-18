@@ -215,6 +215,7 @@
 <script>
 var databaseManager = new window.DatMan();
 var Notes = require('./notes.vue');
+var _ = require('underscore');
 
 // Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
 function generateUIID() {
