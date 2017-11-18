@@ -76,6 +76,17 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 				pinyinHashmap.set(wordList[i].searchablePinyin, addWord);
 			}
 
+			// Add the word with tones to the pinyin hashmap, if the character already exists in the hashmap as a key, add the second definition to the same key
+			if (pinyinHashmap.has(wordList[i].searchablePinyinTones) == false) {
+				var addWord = [];
+				addWord.push(word);
+				pinyinHashmap.set(wordList[i].searchablePinyinTones, addWord);
+			} else {
+				var addWord = pinyinHashmap.get(wordList[i].searchablePinyinTones);
+				addWord.push(word);
+				pinyinHashmap.set(wordList[i].searchablePinyinTones, addWord);
+			}
+
 			// Cycle through each definition of a character and add it to the Hashmap
 			for (var t = 0; t < wordList[i].searchableEnglish.length; t++) {
 				var searchableTerm = wordList[i].searchableEnglish[t];
