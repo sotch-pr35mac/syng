@@ -253,6 +253,10 @@ module.exports = {
       self.wordListings = databaseManager.userListNames;
       databaseManager.updateListing();
     });
+
+    ipc.on('toggle-search-input', function(event, args) {
+      self.switchInputMethod();
+    });
   },
   methods: {
     switchInputMethod: function() {

@@ -63,101 +63,8 @@ var template = [
   	]
 	},
   {
-    label: 'Bookmarks',
-    submenu: [
-      {
-         label: 'Show Bookmarks',
-         accelerator: 'CmdOrCtrl+B',
-         click: function() {
-            ipc.send("refresh-bookmarks-window");
-            ipc.send("open-bookmarks-window");
-         }
-      },
-      {
-        label: 'Import',
-        click: function() {
-          ipc.send('start-bookmarks-import');
-        }
-      },
-      {
-        label: 'Export',
-        click: function() {
-          ipc.send('bookmarks-export-data');
-        }
-      },
-      {
-         label: 'Refresh Listing',
-         //accelerator: 'CmdOrCtrl+Shift+R',
-         click: function() {
-            ipc.send('refresh-bookmarks-window');
-         }
-      }
-   ]
-  },
-  {
-    label: 'Study',
-    submenu: [
-      {
-         label: "Study Flashcards",
-         accelerator: "CmdOrCtrl+L",
-         click: function() {
-            ipc.send("generate-flashcards");
-         }
-      },
-      /*{
-         label: "Generate Test",
-         submenu: [
-           {
-             label: "From Bookmarks",
-             accelerator: 'CmdOrCtrl+T',
-             click: function() {
-               ipc.send("test-bookmarks");
-             }
-           },
-           {
-             label: "From Dictionary",
-             accelerator: 'CmdOrCtrl+D',
-             click: function() {
-               ipc.send("test-dictionary");
-             }
-           }
-         ]
-      }*/
-      {
-      	label: "Generate Test",
-      	accelerator: 'CmdOrCtrl+T',
-      	click: function() {
-      		ipc.send("test-bookmarks");
-      	}
-      }
-   ]
-  },
-  {
-    label: 'Tools',
-    submenu: [
-      {
-        label: 'Convert Simplified and Traditional',
-        click: function() {
-          ipc.send('open-character-convert-window');
-        }
-      },
-      {
-        label: 'Prettify Pinyin',
-        click: function() {
-          ipc.send('open-pinyin-convert-window');
-        }
-      }
-    ]
-  },
-  {
 	 label: 'Help',
 	 submenu: [
-     {
-       label: 'About Syng',
-       click: function() {
-          ipc.send("open-about-window");
-        }
-     },
      {
        label: 'View Changelog',
        click: function() {
@@ -198,18 +105,10 @@ if (process.platform == 'darwin') {
 	 label: name,
 	 submenu: [
 		{
-		  label: 'About ' + name,
-		  role: 'about',
-      click: function() { ipc.send("open-about-window"); }
-		},
-		{
-		  type: 'separator'
-		},
-		{
 		  label: 'Hide ' + name,
 		  accelerator: 'Command+H',
 		  role: 'hide',
-      click: function() { ipc.send("hide-syng"); }
+      click: function() { app.hide(); }
 		},
 		{
 		  label: 'Hide Others',
@@ -220,7 +119,7 @@ if (process.platform == 'darwin') {
 		  label: 'Show',
 		  role: 'unhide',
       accelerator: 'Command+S',
-      click: function() { ipc.send("show-syng"); }
+      click: function() { app.show(); }
 		},
 		{
 		  type: 'separator'
