@@ -17,12 +17,13 @@ var manageLists = null; // The window to manage vocabulary lists.
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
-	// On OS X it is common for applications and their menu bar
-	// to stay active until the user quits explicity with CMD + Q
-	if(process.platform != "darwin") {
-		app.quit();
-	} else {
-		app.hide();
+	app.quit();
+});
+
+// What happens when the app icon is clicked
+app.on('activate-with-no-open-windows', function(e) {
+	if(process.platform == "darwin") {
+		mainWindow.show();
 	}
 });
 
@@ -39,10 +40,17 @@ app.on('ready', function() {
 	});
 
 	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");
-	mainWindow.openDevTools();
+
+	mainWindow.on('close', function(e) {
+		// On macOS, don't close the window, just hide it
+		if(process.platform == "darwin") {
+			e.preventDefault();
+			mainWindow.hide();
+		}
+	});
 
 	// Emitted when the window is closed.
-	mainWindow.on('closed', function() {
+	mainWindow.on('closed', function(e) {
 		// Derefernce the window object, usually you would store windows
 		// in an array if your app supports multi windows, this is the time
 		// when you should delete the corresponding element.
@@ -53,6 +61,10 @@ app.on('ready', function() {
 		if(manageLists != null) {
 			manageLists.close();
 		}
+	});
+
+	ipc.on("quit-app-mac", function(event, args) {
+		app.exit(0);
 	});
 
 	ipc.on("switch-input", function(event, args) {

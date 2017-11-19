@@ -127,8 +127,9 @@ if (process.platform == 'darwin') {
 		{
 		  label: 'Quit',
 		  accelerator: 'Command+Q',
-		  click: function() { app.quit(); }
-		},
+			//selector: 'terminate:'
+		  click: function() { ipc.send("quit-app-mac") }
+		}
 	 ]
   });
   // Window menu.
