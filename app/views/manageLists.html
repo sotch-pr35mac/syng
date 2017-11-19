@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" ngapp="Syng">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <title>Syng</title>
+
+  <script>window.$ = window.jQuery = require("../src/lib/jquery/jquery.min.js");</script>
+
+  <script>window.Vue = require("vue");</script>
+
+  <link rel="stylesheet" href="../style/lib/iview/iview.css" />
+
+  <script>
+    var ipc = require('electron').ipcRenderer; // For communication with the main process
+    var IView = require('iview');
+    Vue.use(IView);
+
+    // Initialize the database
+    var path = require('path');
+    window.dialog = require('electron').remote.dialog;
+    window.ipc = require('electron').ipcRenderer; // For communication with the main process
+    window.DatMan = require('../src/databaseManager.js');
+    var databaseManager = new window.DatMan();
+
+    $(document).ready(function() {
+       window.manageLists = new Vue({
+         el: "#manageLists",
+         data: {
+           wordListings: databaseManager.userListNames,
+           newListName: ''
+         },
+         methods: {
+            handleAdd () {
+              var self = this;
+              var newListName = self.newListName;
+
+              if(newListName == '' || newListName == ' ' || newListName == null || newListName == undefined) {
+                window.dialog.showMessageBox({ type: 'error', buttons: ['OK'], title: 'List Name Cannot Be Blank' , message: 'Please enter a name for the new vocab list.' });
+              }
+              else {
+                function displaySuccess(listName) {
+                  self.$Message.success('Successfully created new list: '+listName);
+                }
+
+                function displayError(listName, err) {
+                  self.$Message.error('Cannot add list ' + listName + '. Error = ' + err);
+                }
+
+                databaseManager.createUserList(newListName).then(function(success) {
+                  if(success == true) {
+                    // Let the user know that the list was created successfully
+                    displaySuccess(newListName);
+
+                    // Update with new database information so the display remains current
+                    self.wordListings = databaseManager.userListNames;
+                    self.newListName = '';
+
+                    // Send the signal to update the other views on different pages
+                    ipc.send('send-database-update');
+                  }
+                  else {
+                    displayError(newListName, 'Success response was false.');
+                    console.log(success);
+                  }
+                }, function(err) {
+                  displayError(newListName, err);
+                  console.log(err);
+                });
+              }
+            },
+            handleRemove (listToRemove) {
+              var self = this;
+
+              function displaySuccess(listName) {
+                self.$Message.success('Successfully removed list: ' + listToRemove + '.');
+              }
+
+              function displayError(listName, err) {
+                self.$Message.error('Cannot remove list ' + listToRemove + '. Error = ' + err);
+              }
+
+              window.dialog.showMessageBox({ type: 'warning', buttons: ['Cancel', 'Confirm'], defaultId: 1, title: 'Delete list ' + listToRemove + '?', message: 'Are you sure you want to delete the list ' + listToRemove + '? This action cannot be undone.', cancelId: 0 }, function(response) {
+                if(response == 1) {
+                  // The user decided to delete the list, go ahead and remove it.
+                  databaseManager.removeUserList(listToRemove).then(function(success) {
+                    if(success == true) {
+                      // Let the user know that the list was removed successfully
+                      displaySuccess(listToRemove);
+
+                      // Update with new database information so the display remains current
+                      self.wordListings = databaseManager.userListNames;
+
+                      // Send the signal to update the views on other pages
+                      ipc.send('send-database-update');
+                    }
+                    else {
+                      displayError(listToRemove, 'Success response was false.');
+                      console.log(success);
+                    }
+                  }, function(err) {
+                    displayError(listToRemove, err);
+                    console.log(err);
+                  });
+                }
+              });
+            }
+        }
+       });
+    });
+
+    ipc.on('open-lists', function(event, args) {
+      console.log(args);
+    });
+  </script>
+
+  <style>
+    #manageLists {
+      margin-left: 30px;
+      margin-right: 30px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="manageLists">
+    <center>
+      <br>
+      <h1>Manage Lists</h1>
+      <br>
+    </center>
+    <Alert show-icon>
+      Add and Remove Lists
+      <Icon type="ios-lightbulb-outline" slot="icon"></Icon>
+      <div slot="desc">
+        With Syng, you can create custom vocabulary lists to help
+        you study and organize what you want to learn. You can create
+        new lists, and remove lists here. <b>Please be aware: once you create
+        a list you will be unable to change the list name.</b>
+      </div>
+    </Alert>
+    <br>
+    <center>
+      <i-form v-ref:form-dynamic :model="wordListings" :label-width="80">
+          <Form-item
+              v-for="collection in wordListings"
+              :prop="collection"
+              :rules="{required: true, message: '项目' + ($index + 1) +'不能为空', trigger: 'blur'}">
+              <Row>
+                  <i-col span="15">
+                      <i-input readonly type="text" :value.sync="collection" placeholder="New List..."></i-input>
+                  </i-col>
+                  <i-col span="8" offset="1">
+                      <i-button type="ghost" long @click="handleRemove(collection)">Delete</i-button>
+                  </i-col>
+              </Row>
+              <br>
+          </Form-item>
+          <Form-item>
+              <Row>
+                <i-col span="15">
+                    <i-input type="text" :value.sync="newListName" placeholder="New List..."></i-input>
+                </i-col>
+                  <i-col span="8" offset="1">
+                      <i-button type="dashed" long @click="handleAdd" icon="plus-round">Create New List</i-button>
+                  </i-col>
+              </Row>
+          </Form-i0tem>
+          <br>
+      </i-form>
+    </center>
+  </div>
+  <BR>
+</body>
+
+</html>

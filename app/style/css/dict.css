@@ -1,0 +1,51 @@
+.expanded-content-container {
+	padding-right: 15px;
+	padding-left: 15px;
+	margin-right: auto;
+	margin-left: auto;
+	/*overflow-y: scroll;*/
+}
+
+.search-listing {
+	overflow-y: scroll;
+}
+
+a:link {
+	text-decoration: none;
+}
+
+a:visited {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: none;
+}
+
+.list-group-item {
+	cursor: pointer;
+}
+
+h1 {
+	/* cursor: pointer; */
+}
+
+.section-heading {
+	cursor: pointer;
+}
+
+.section-content {
+	display: none;
+}
+
+.section-content.default {
+	display: block;
+}
+
+.sub-section-header {
+	cursor: pointer;
+}
+
+.sub-section-content {
+	display: none;
+}
