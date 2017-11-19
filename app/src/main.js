@@ -39,6 +39,7 @@ app.on('ready', function() {
 	});
 
 	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");
+	mainWindow.openDevTools();
 
 	// Emitted when the window is closed.
 	mainWindow.on('closed', function() {
