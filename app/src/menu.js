@@ -132,7 +132,7 @@ if (process.platform == 'darwin') {
 	 ]
   });
   // Window menu.
-  template[3].submenu.push(
+  template[1].submenu.push(
 	 {
 		type: 'separator'
 	 },
