@@ -1,4 +1,5 @@
 node_modules/
 release/
+releases/
 app/src/db/syng/
 npm-debug.log
