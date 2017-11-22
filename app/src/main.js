@@ -14,6 +14,7 @@ var mainWindow = null; 	// The main "search/dictionary" window.
 var splashWindow = null; // The splash page to display while Syng is loading.
 var lgChars = null; // The window for displaying large characters for better visibility.
 var manageLists = null; // The window to manage vocabulary lists.
+var dataPath = path.join(app.getPath('appData'), 'Syng');
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
@@ -40,7 +41,8 @@ app.on('ready', function() {
 	});
 
 	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");
-
+	mainWindow.openDevTools();
+	
 	mainWindow.on('close', function(e) {
 		// On macOS, don't close the window, just hide it
 		if(process.platform == "darwin") {
@@ -176,7 +178,7 @@ app.on('ready', function() {
 	// Import / Export Bookmarks and WorldLists
 	ipc.on('export-wordlist', function(event, args) {
 		var pathName = "db/syng/" + args.list;
-		fs.readFile(path.join(__dirname, pathName), "utf-8", function(err, data) {
+		fs.readFile(path.join(dataPath, pathName), "utf-8", function(err, data) {
 			if(err) {
 				console.log("There was an error reading the database file. File = " + pathName);
 				console.log(err);
@@ -224,7 +226,7 @@ app.on('ready', function() {
 						dialog.showErrorBox('File Read Error', 'There was an error reading the selected file. Error: ' + err);
 					}
 					else {
-						fs.appendFile(path.join(__dirname, pathName), data, function(err) {
+						fs.appendFile(path.join(dataPath, pathName), data, function(err) {
 							if(err) {
 								console.log('There was an error appending the database file.');
 								console.log(err);
@@ -261,7 +263,7 @@ app.on('ready', function() {
 						console.log(err);
 						dialog.showErrorBox("File Read Error", "There was an error reading the selected file. Error: " + err);
 					} else {
-						fs.appendFile(path.join(__dirname, "db/syng/bookmarks"), data, function (err) {
+						fs.appendFile(path.join(dataPath, "db/syng/bookmarks"), data, function (err) {
 							if (err) {
 								console.log("There was an error appending the database file.");
 								console.log(err);
@@ -289,7 +291,7 @@ app.on('ready', function() {
 				console.log(file);
 				dialog.showErrorBox("File Selection Error", "There was an error with the chosen file.");
 			} else {
-				fs.readFile(path.join(__dirname, "db/syng/bookmarks"), "utf-8", function (err, data) {
+				fs.readFile(path.join(dataPath, "db/syng/bookmarks"), "utf-8", function (err, data) {
 					if (err) {
 						console.log("There was an error reading the bookmarks file that syng is stored.");
 						console.log(err);

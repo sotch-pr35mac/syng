@@ -26,6 +26,7 @@ All notable changes to this project will be documented in this file. This projec
 - Development flow and build process
 - Library for pinyinization
 - Icon
+- Location for syng persistant data (ie bookmarks)
 
 ## [0.2.1]
 ### Fixed

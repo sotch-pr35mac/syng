@@ -5,9 +5,27 @@ module.exports = class databaseManager {
   	// Load database
   	var self = this;
 
-  	self.path = window.require('path');
+    // Create the path to the local data folder on the system
+    self.path = window.require('path');
+    const electron = require('electron');
+    const app = electron.remote.app;
+    self.appData = self.path.join(app.getPath('appData'), 'Syng');
+
+    // Ensure the database exists
+    const fs = require('fs');
+    if(!fs.exists(self.path.join(self.appData, 'db/syng'))) {
+      // The database directory doesn't exist, create it
+      const mkdirp = require('mkdirp');
+      mkdirp(self.path.join(self.appData, 'db/syng'), function(err) {
+        if(err) {
+          alert("There was an unexpected error while creating the database directory. Error = " + err);
+          console.log("There was an unexpected error while creating the database directory. Error = " + err);
+        }
+      });
+    }
+
   	var tingo = window.require('tingodb')();
-  	self.db = new tingo.Db(self.path.join(__dirname, 'db/syng'), {});
+  	self.db = new tingo.Db(self.path.join(self.appData, 'db/syng'), {});
   	self.bookmarksDb = self.db.collection('bookmarks');
   	self.fs = window.require('fs');
 
@@ -23,7 +41,7 @@ module.exports = class databaseManager {
 
   		for(var i = 0; i < userListNames.length; i++) {
   			// Check to make sure the file exists before loading the database
-  			var fileToCheck = self.path.join(__dirname, 'db/syng/'+userListNames[i]);
+  			var fileToCheck = self.path.join(self.appData, 'db/syng/'+userListNames[i]);
   			var exists = self.fs.existsSync(fileToCheck);
 				if(exists) {
           self.loadUserList(userListNames[i]);
@@ -37,7 +55,7 @@ module.exports = class databaseManager {
 
   reloadDatabase() {
     var tingo = window.require('tingodb')();
-  	this.db = new tingo.Db(this.path.join(__dirname, 'db/syng'), {});
+  	this.db = new tingo.Db(this.path.join(this.appData, 'db/syng'), {});
   	this.bookmarksDb = this.db.collection('bookmarks');
   }
 
@@ -59,7 +77,7 @@ module.exports = class databaseManager {
 
       for(var i = 0; i < userListNames.length; i++) {
         // Check ot make sure the file exists before loading the database
-        var fileToCheck = self.path.join(__dirname, 'db/syng/' + userListNames[i]);
+        var fileToCheck = self.path.join(self.appData, 'db/syng/' + userListNames[i]);
         var exists = self.fs.existsSync(fileToCheck);
         if(exists) {
           self.loadUserList(userListNames[i]);
@@ -81,7 +99,7 @@ module.exports = class databaseManager {
 
   createUserList(listName) {
   	// Check to make sure the file doesn't already exist
-  	var fileToCheck = this.path.join(__dirname, 'db/syng/'+listName);
+  	var fileToCheck = this.path.join(this.appData, 'db/syng/'+listName);
 
     return new Promise((resolve, reject) => {
       this.fs.exists(fileToCheck, exists => {
@@ -117,7 +135,7 @@ module.exports = class databaseManager {
   removeUserList(listName) {
     return new Promise((resolve, reject) => {
       if(this.userLists[listName] != undefined || this.userLists[listName] != null) {
-        var listPath = this.path.join(__dirname, 'db/syng/'+listName);
+        var listPath = this.path.join(this.appData, 'db/syng/'+listName);
 
         this.fs.unlink(listPath, err => {
           if(err) {
