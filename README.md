@@ -58,6 +58,9 @@ Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a ful
    - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
 
+## __Developers Welcome__
+If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/blob/master/ROADMAP.md), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together. 
+
 ## __Contribute__
 This is a [Commitizen Friendly](https://github.com/commitizen/cz-cli) Repository. When contributing please use commitizen when committing changes.
 You can install commitizen using npm:
