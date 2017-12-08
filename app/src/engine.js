@@ -33,15 +33,12 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 		for(var i = 0; i < wordList.length - 1; i++) {
 			var word = {
-				traditional: wordList[i].traditional,
-				simplified: wordList[i].simplified,
-				pronunciation: wordList[i].pronunciation,
-				toneMarks: wordList[i].toneMarks,
-				definitions: wordList[i].definitions
+				traditional: wordList[i].t,
+				simplified: wordList[i].s,
+				pronunciation: wordList[i].p,
+				toneMarks: wordList[i].to,
+				definitions: wordList[i].d
 			};
-
-			// Prettify the pinyin to use tone marks instead of tone numbers
-			word.pronunciation = pinyin.prettify(word.pronunciation);
 
 			// Add the word to the Simplified Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
 			if (simpHashmap.has(word.simplified) == false) {
@@ -66,30 +63,30 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 
 			// Add the word to the Pinyin Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-			if(pinyinHashmap.has(wordList[i].searchablePinyin) == false) {
+			if(pinyinHashmap.has(wordList[i].sP) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].searchablePinyin, addWord);
+				pinyinHashmap.set(wordList[i].sP, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].searchablePinyin);
+				var addWord = pinyinHashmap.get(wordList[i].sP);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].searchablePinyin, addWord);
+				pinyinHashmap.set(wordList[i].sP, addWord);
 			}
 
 			// Add the word with tones to the pinyin hashmap, if the character already exists in the hashmap as a key, add the second definition to the same key
-			if (pinyinHashmap.has(wordList[i].searchablePinyinTones) == false) {
+			if (pinyinHashmap.has(wordList[i].sPTone) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].searchablePinyinTones, addWord);
+				pinyinHashmap.set(wordList[i].sPTone, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].searchablePinyinTones);
+				var addWord = pinyinHashmap.get(wordList[i].sPTone);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].searchablePinyinTones, addWord);
+				pinyinHashmap.set(wordList[i].sPTone, addWord);
 			}
 
 			// Cycle through each definition of a character and add it to the Hashmap
-			for (var t = 0; t < wordList[i].searchableEnglish.length; t++) {
-				var searchableTerm = wordList[i].searchableEnglish[t];
+			for (var t = 0; t < wordList[i].sE.length; t++) {
+				var searchableTerm = wordList[i].sE[t];
 				// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
 				if (englishHashmap.has(searchableTerm) == false) {
 					var addWord = [];
