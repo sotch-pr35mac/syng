@@ -269,18 +269,18 @@ module.exports.searchByEnglish = function(str, cb) {
 	console.log(searchableTerms);
 	while(searchableTerms.length > 0 && infiniteCheck < 4000)  {
 		// Check for 4, 3, and 2 word phrases or definitions
-		if(searchableTerms.length >= 4 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3])) {
-			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]+" "+searchableTerms[3]);
+		if(searchableTerms.length >= 4 && englishHashmap.has(searchableTerms[0]+"%20"+searchableTerms[1]+"%20"+searchableTerms[2]+"%20"+searchableTerms[3])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+"%20"+searchableTerms[1]+"%20"+searchableTerms[2]+"%20"+searchableTerms[3]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 4);
 		}
-		else if(searchableTerms.length >= 3 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2])) {
-			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]+" "+searchableTerms[2]);
+		else if(searchableTerms.length >= 3 && englishHashmap.has(searchableTerms[0]+"%20"+searchableTerms[1]+"%20"+searchableTerms[2])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+"%20"+searchableTerms[1]+"%20"+searchableTerms[2]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 3);
 		}
-		else if(searchableTerms.length >= 2 && englishHashmap.has(searchableTerms[0]+" "+searchableTerms[1])) {
-			var compoundWord = englishHashmap.get(searchableTerms[0]+" "+searchableTerms[1]);
+		else if(searchableTerms.length >= 2 && englishHashmap.has(searchableTerms[0]+"%20"+searchableTerms[1])) {
+			var compoundWord = englishHashmap.get(searchableTerms[0]+"%20"+searchableTerms[1]);
 			searchResults.push(compoundWord);
 			searchableTerms.splice(0, 2);
 		}
@@ -293,6 +293,7 @@ module.exports.searchByEnglish = function(str, cb) {
 			// The word or phrase was not found in the english Hashmap
 			console.log("The word or phrase was not found.");
 			console.log(searchableTerms[0]);
+			searchableTerms.splice(0, 1);
 		}
 
 		infiniteCheck++;
