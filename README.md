@@ -42,6 +42,10 @@ Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a ful
 6. Pinyinify characters
 7. General stability and performance updates
 
+## __Screenshots__
+More screenshots available on [the Syng website](http://syngdict.com).
+![image](./assets/homescreen.png)
+
 ## __Installing__
 #### __Linux__
 To install Syng on Linux, you can you use the pre-built installation script by copy and pasting the code below into terminal. __It's good to be cautious about what you are putting in your terminal, you can read the 64-bit install script [here](https://gist.github.com/sotch-pr35mac/3120195991d8879ef82569720371f18d) and the 32-bit install script [here](https://gist.github.com/sotch-pr35mac/24f6dd51f405ccbb84a8be578bf70437).__
