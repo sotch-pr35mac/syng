@@ -1,6 +1,6 @@
 {
   "name": "Syng",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Preston Wang-Stosur-Bassett",
   "description": "Syng is a free, open-source, cross-platform, Chinese-to-English dictionary app.",
   "repository": "http://github.com/sotch-pr35mac/syng",
@@ -8,6 +8,7 @@
   "license": "GPL-3.0",
   "main": "app/src/main.js",
   "dependencies": {
+    "babel-polyfill": "^6.26.0",
     "chinese-conv": "^1.0.1",
     "electron-prebuilt": "^0.36.5",
     "franc": "^1.1.2",
@@ -17,7 +18,7 @@
     "npm-run-all": "^4.0.0",
     "path": "^0.12.7",
     "pinyin.js": "^2.0.0",
-    "prettify-pinyin": "^0.1.5",
+    "prettify-pinyin": "https://github.com/sotch-pr35mac/prettify-pinyin/tarball/master",
     "progressbar.js": "^1.0.1",
     "remote": "^0.2.6",
     "tingodb": "^0.4.2",

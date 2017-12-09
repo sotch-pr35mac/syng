@@ -1,6 +1,16 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.1] - 2017-12-08
+### Changed
+- Moved prettify-pinyin to Rust (in syng-dictionary-creator)
+- Increase startup load times by more than 30% by decreasing syng dictionary file size
+
+### Fixed
+- Improved searchable terms as described in Issue #40
+- Fixed problem with text overflow with notes in bookmarks as described in Issue #81
+- Fixed issue prettifying no-tone syllables in prettify pinyin tool as described in Issue #80
+
 ## [1.0.0] - 2017-11-18
 ### Added
 - A menu item and keyboard shortcut for switching input, as described in Issue #64
