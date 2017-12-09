@@ -10,7 +10,6 @@ var _ = require("underscore");
 var path = require("path");
 var Engine = require("tingodb")(); // Mongo-Style Database
 var cnchars = require('chinese-conv'); // Convert between tradtitional and simplified
-var pinyin = require('prettify-pinyin'); // Prettify the pinyin default (letter + numbers) in CC-CEDICT
 var Hashmap = require('hashmap'); // Hashmap to store values of chinese characters and their "word object"
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
 

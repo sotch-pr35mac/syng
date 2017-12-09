@@ -18,7 +18,7 @@
     "npm-run-all": "^4.0.0",
     "path": "^0.12.7",
     "pinyin.js": "^2.0.0",
-    "prettify-pinyin": "^0.1.5",
+    "prettify-pinyin": "https://github.com/sotch-pr35mac/prettify-pinyin/tarball/master",
     "progressbar.js": "^1.0.1",
     "remote": "^0.2.6",
     "tingodb": "^0.4.2",

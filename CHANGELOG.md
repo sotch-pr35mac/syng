@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 - Improved searchable terms as described in Issue #40
+- Fixed problem with text overflow with notes in bookmarks as described in Issue #81
+- Fixed issue prettifying no-tone syllables in prettify pinyin tool as described in Issue #80
 
 ## [1.0.0] - 2017-11-18
 ### Added
