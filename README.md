@@ -42,6 +42,25 @@ Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a ful
 6. Pinyinify characters
 7. General stability and performance updates
 
+## __Installing__
+#### __Linux__
+To install Syng on Linux, you can you use the pre-built installation script by copy and pasting the code below into terminal. __It's good to be cautious about what you are putting in your terminal, you can read the 64-bit install script [here](https://gist.github.com/sotch-pr35mac/3120195991d8879ef82569720371f18d) and the 32-bit install script [here](http://www.syngdict.com/).__
+
+For 64-bit systems:
+```
+wget -O- https://goo.gl/1WdZyN | bash 
+```
+For 32-bit systems: 
+```
+wget -O- https://goo.gl/h42ejc | bash 
+```
+
+Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.0/Syng-linux-x64.tar.gz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.0/Syng-linux-ia32.tar.gz) and then following the installation instructions provided.
+#### __macOS__
+To install Syng on macOS, simply download the `.dmg` file from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.0/Syng-macOS.dmg) and then drag and drop the Syng app into your Applications folder.
+#### __Windows__
+To install Syng on Windows, you can download the 64-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.0/Syng-Windows-setup-x64.exe) and the 32-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.0/Syng-Windows-setup-ia32.exe) and use it to install Syng.
+
 ## __Built On__
    - [Electron](http://electron.atom.io)
       - Framework for Native Cross-Platform Support
