@@ -35,6 +35,7 @@
         font-size: 3vh;
         line-height: 1.6;
         font-family: system, -apple-system, ".SFNSDisplay-Regular", "Helvetica Neue", Helvetica, "Segoe UI", sans-serif;
+        overflow-wrap: break-word;
     }
 </style>
 

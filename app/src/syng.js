@@ -500,7 +500,8 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"./notes.vue":3,"underscore":48,"vue":50,"vue-hot-reload-api":49,"vueify/lib/insert-css":51}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-301b31a4] {\n    float: right;\n}\np[_v-301b31a4] {\n    font-size: 3vh;\n}\npre[_v-301b31a4] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-301b31a4] {\n    float: right;\n}\np[_v-301b31a4] {\n    font-size: 3vh;\n}\npre[_v-301b31a4] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n")
+
 
 
 
@@ -571,7 +572,7 @@ if (module.hot) {(function () {  module.hot.accept()
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.pull-right[_v-301b31a4] {\n    float: right;\n}\np[_v-301b31a4] {\n    font-size: 3vh;\n}\npre[_v-301b31a4] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n}\n"] = false
+    __vueify_insert__.cache["\n.pull-right[_v-301b31a4] {\n    float: right;\n}\np[_v-301b31a4] {\n    font-size: 3vh;\n}\npre[_v-301b31a4] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
