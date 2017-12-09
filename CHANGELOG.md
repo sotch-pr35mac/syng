@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file. This projec
 ## [1.0.1] - 2017-12-08
 ### Changed
 - Moved prettify-pinyin to Rust (in syng-dictionary-creator)
-- Increase startup load times by more than 30% by decreasing syng dictionary file size
+- Improved startup load times by more than 30% by decreasing syng dictionary file size
 
 ### Fixed
 - Improved searchable terms as described in Issue #40
