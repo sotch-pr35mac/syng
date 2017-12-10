@@ -107,4 +107,4 @@ npm install -g commitizen
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
 
 ## __License__
-This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html).
+This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).
