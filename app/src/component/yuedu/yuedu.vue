@@ -1,16 +1,23 @@
 <template>
-  <center>
-    <h1>READER</h1>
-  </center>
+  <div>
+    <component :is="currentView"></component>
+  </div>
 </template>
 
 <style>
 </style>
 
 <script>
+var Selector = require('./selector.vue');
+
 module.exports = {
   data: function() {
-    return {}
+    return {
+      currentView: 'selector'
+    }
+  },
+  components: {
+    'selector': Selector
   }
 }
 </script>
