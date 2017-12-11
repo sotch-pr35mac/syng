@@ -1,7 +1,7 @@
 <template>
-    <div>
-        
-    </div>
+    <center>
+        <h1>READER</h1>
+    </center>
 </template>
 
 <style scoped>
@@ -9,6 +9,7 @@
 
 <script>
 module.exports = {
+    props: [],
     data: function() {
         return {}
     }

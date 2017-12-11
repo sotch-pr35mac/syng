@@ -8,16 +8,17 @@
 </style>
 
 <script>
-var Selector = require('./selector.vue');
+var Library = require('./library.vue');
+var Reader = require('./reader.vue');
 
 module.exports = {
   data: function() {
     return {
-      currentView: 'selector'
+      currentView: 'library'
     }
   },
   components: {
-    'selector': Selector
+    'library': Library
   }
 }
 </script>

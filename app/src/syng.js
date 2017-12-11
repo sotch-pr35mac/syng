@@ -30,7 +30,7 @@ var syng = new Vue({
   }
 });
 
-},{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":4,"./component/study/study.vue":10,"./component/syngMenu/syngMenu.vue":22,"./component/tools/tools.vue":30,"./component/yuedu/yuedu.vue":32,"iview":37}],2:[function(require,module,exports){
+},{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":4,"./component/study/study.vue":10,"./component/syngMenu/syngMenu.vue":22,"./component/tools/tools.vue":30,"./component/yuedu/yuedu.vue":33,"iview":37}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-5db28960] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-5db28960] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-5db28960] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-5db28960] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-5db28960]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-5db28960], .list-group-item.selected[_v-5db28960] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-5db28960] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-5db28960] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-5db28960] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-5db28960] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-5db28960] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-5db28960] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-5db28960] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-5db28960] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-5db28960] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-5db28960] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-5db28960] {\n  float: right;\n}\n")
 
@@ -4044,7 +4044,7 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"./characterConvert/characterConvert.vue":27,"./pinyinify/pinyinify.vue":28,"./prettifyPinyin/prettifyPinyin.vue":29,"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],31:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.selector-menu[_v-38ea6462] {\n    position: absolute;\n    top: 40vh;\n    left: 60vh;\n}\n.select-button[_v-38ea6462] {\n    margin-top: 20px;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.pull-right {\n  float: right;\n}\n.notice {\n    top: 20vh;\n    left: 60vh;\n    position: absolute;\n}\n")
 
 
 
@@ -4069,41 +4069,48 @@ var __vueify_style__ = __vueify_insert__.insert("\n.selector-menu[_v-38ea6462] {
 
 
 
-var fs = require('fs');
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
-    props: [],
-    data: function() {
-        return {
-            documentPath: ''
-        }
-    },
-    methods: {
-        select() {
-            var self = this;
-
-            alert('open a file');
-        }
+  props: [],
+  data: function() {
+    return {
+        libraryItems: 0
     }
+  },
+  components: {
+  },
+  methods: {
+    
+  }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-38ea6462=\"\">\n    <div class=\"selector-menu\" _v-38ea6462=\"\">\n        <h2 _v-38ea6462=\"\">Enter the path to a Syng Document Reader File (<code _v-38ea6462=\"\">.sdrf</code>).</h2>\n        <br _v-38ea6462=\"\">\n        <i-input id=\"document-path\" :value.sync=\"documentPath\" _v-38ea6462=\"\"></i-input>\n        <br _v-38ea6462=\"\">\n        <i-button type=\"primary\" shape=\"circle\" v-on:click=\"select()\" class=\"select-button\" _v-38ea6462=\"\">Select</i-button>\n    </div>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <i-col span=\"21\">\n    <div id=\"actions-frame\">\n      <row>\n        <i-button v-on:click=\"addToLibrary()\" id=\"addToLibraryButton\" class=\"pull-right\">Add to Library</i-button>\n      </row>\n    </div>\n      <div v-if=\"libraryItems < 1\" class=\"notice\">\n          <h1>No Items in Library</h1>\n      </div>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.selector-menu[_v-38ea6462] {\n    position: absolute;\n    top: 40vh;\n    left: 60vh;\n}\n.select-button[_v-38ea6462] {\n    margin-top: 20px;\n}\n"] = false
+    __vueify_insert__.cache["\n#actions-frame {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.pull-right {\n  float: right;\n}\n.notice {\n    top: 20vh;\n    left: 60vh;\n    position: absolute;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-38ea6462", module.exports)
+    hotAPI.createRecord("_v-871cd00a", module.exports)
   } else {
-    hotAPI.update("_v-38ea6462", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-871cd00a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"fs":33,"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],32:[function(require,module,exports){
+},{"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],32:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
@@ -4116,16 +4123,53 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
-var Selector = require('./selector.vue');
+module.exports = {
+    props: [],
+    data: function() {
+        return {}
+    }
+}
+
+if (module.exports.__esModule) module.exports = module.exports.default
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-20b2f6b3=\"\">\n    <h1 _v-20b2f6b3=\"\">READER</h1>\n</center>\n"
+if (module.hot) {(function () {  module.hot.accept()
+  var hotAPI = require("vue-hot-reload-api")
+  hotAPI.install(require("vue"), true)
+  if (!hotAPI.compatible) return
+  module.hot.dispose(function () {
+    __vueify_insert__.cache["\n"] = false
+    document.head.removeChild(__vueify_style__)
+  })
+  if (!module.hot.data) {
+    hotAPI.createRecord("_v-20b2f6b3", module.exports)
+  } else {
+    hotAPI.update("_v-20b2f6b3", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+  }
+})()}
+},{"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],33:[function(require,module,exports){
+var __vueify_insert__ = require("vueify/lib/insert-css")
+var __vueify_style__ = __vueify_insert__.insert("\n")
+
+
+
+
+
+
+
+
+
+
+var Library = require('./library.vue');
+var Reader = require('./reader.vue');
 
 module.exports = {
   data: function() {
     return {
-      currentView: 'selector'
+      currentView: 'library'
     }
   },
   components: {
-    'selector': Selector
+    'library': Library
   }
 }
 
@@ -4145,9 +4189,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-615c68da", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"./selector.vue":31,"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],33:[function(require,module,exports){
-
-},{}],34:[function(require,module,exports){
+},{"./library.vue":31,"./reader.vue":32,"vue":52,"vue-hot-reload-api":51,"vueify/lib/insert-css":53}],34:[function(require,module,exports){
 (function (global, factory) {
   if (typeof define === 'function' && define.amd) {
     define(['exports', 'module', '../tongwen/tongwen-st.js', '../tongwen/tongwen-ts.js'], factory);
