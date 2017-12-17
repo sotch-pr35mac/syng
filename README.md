@@ -82,26 +82,10 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
       - Language Detection for Search
 
 ## __Developers Welcome__
-If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/blob/master/ROADMAP.md), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together. 
+If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together. 
 
-## __Contribute__
-This is a [Commitizen Friendly](https://github.com/commitizen/cz-cli) Repository. When contributing please use commitizen when committing changes.
-You can install commitizen using npm:
-```
-npm install -g commitizen
-```
-1. Fork it!
-2. Create a branch `git checkout -b my-feature`
-3. Commit your changes `git cz`
-4. Submit a pull request
-
-## __Getting Started__
-1. First go to the project directory
-    `cd /path/to/project/`
-2. Install the dependencies
-    `npm install`
-3. Run Syng
-    `npm start`
+## __Contributing / Getting Started__
+If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch. 
 
 ## __Contributors__
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
