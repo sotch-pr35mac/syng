@@ -62,6 +62,7 @@
                       <Icon type="arrow-expand" size="large"></Icon>
                     </Tooltip>
                   </i-button>
+                  <tts v-bind:chars="currentWord.traditional"></tts>
                 </Button-group>
               </div>
               <h1 style="margin-bottom: 0px;">
@@ -223,6 +224,8 @@ var _ = window.require('underscore');
 
 var databaseManager = new window.DatMan();
 
+var Tts = require('../common/tts/tts.vue');
+
 module.exports = {
   data: function() {
     return {
@@ -257,6 +260,9 @@ module.exports = {
     ipc.on('toggle-search-input', function(event, args) {
       self.switchInputMethod();
     });
+  },
+  components: {
+    'tts': Tts
   },
   methods: {
     switchInputMethod: function() {
