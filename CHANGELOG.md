@@ -3,7 +3,10 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [x.x.x] - xxxx-xx-xx
 ### Added
-- Text to Speech support as described in Issue #
+- Text to Speech support as described in Issue #67
+
+### Fixed
+- Duplicates in search results as described in Issue #85
 
 ## [1.0.1] - 2017-12-08
 ### Changed
