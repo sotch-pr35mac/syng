@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Fixed
 - Duplicates in search results as described in Issue #85
+- Issue with searching for pinyin with tone numbers
+
+### Changed
+- Updated to a newer version of CC-CEDICT (Released 2017-12-17)
+- Changed fields in dictionary database (app/src/db/cc-cedict.json)
 
 ## [1.0.1] - 2017-12-08
 ### Changed

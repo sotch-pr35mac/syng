@@ -35,7 +35,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 				traditional: wordList[i].t,
 				simplified: wordList[i].s,
 				pronunciation: wordList[i].p,
-				toneMarks: wordList[i].to,
+				toneMarks: wordList[i].u,
 				definitions: wordList[i].d
 			};
 
@@ -62,30 +62,30 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 
 			// Add the word to the Pinyin Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-			if(pinyinHashmap.has(wordList[i].sP) == false) {
+			if(pinyinHashmap.has(wordList[i].v) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].sP, addWord);
+				pinyinHashmap.set(wordList[i].v, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].sP);
+				var addWord = pinyinHashmap.get(wordList[i].v);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].sP, addWord);
+				pinyinHashmap.set(wordList[i].v, addWord);
 			}
 
 			// Add the word with tones to the pinyin hashmap, if the character already exists in the hashmap as a key, add the second definition to the same key
-			if (pinyinHashmap.has(wordList[i].sPTone) == false) {
+			if (pinyinHashmap.has(wordList[i].w) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].sPTone, addWord);
+				pinyinHashmap.set(wordList[i].w, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].sPTone);
+				var addWord = pinyinHashmap.get(wordList[i].w);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].sPTone, addWord);
+				pinyinHashmap.set(wordList[i].w, addWord);
 			}
 
 			// Cycle through each definition of a character and add it to the Hashmap
-			for (var t = 0; t < wordList[i].sE.length; t++) {
-				var searchableTerm = wordList[i].sE[t];
+			for (var t = 0; t < wordList[i].x.length; t++) {
+				var searchableTerm = wordList[i].x[t];
 				// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
 				if (englishHashmap.has(searchableTerm) == false) {
 					var addWord = [];
