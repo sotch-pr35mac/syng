@@ -87,7 +87,7 @@ If you're interested in contributing to Syng, you can checkout [the Roadmap](htt
 ## __Contributing / Getting Started__
 If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch. 
 
-## __Contributors__
+## __Maintainers__
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
 
 ## __License__
