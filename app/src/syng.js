@@ -1057,6 +1057,13 @@ module.exports = {
           });
         });
 
+        // Remove duplicates from the search results
+        compiledResults = compiledResults.filter((compiledResult, index, self) =>
+          index === self.findIndex((w) => (
+            w.traditional === compiledResult.traditional && w.pinyin === compiledResult.pinyin
+          ))
+        );
+
         return compiledResults;
       }
 
