@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [x.x.x] - xxxx-xx-xx
+### Added
+- Text to Speech support as described in Issue #
+
 ## [1.0.1] - 2017-12-08
 ### Changed
 - Moved prettify-pinyin to Rust (in syng-dictionary-creator)
