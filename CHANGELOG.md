@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - Duplicates in search results as described in Issue #85
 - Issue with searching for pinyin with tone numbers
+- Missing capital letter pinyin as described in Issue #86
 
 ### Changed
 - Updated to a newer version of CC-CEDICT (Released 2017-12-17)
