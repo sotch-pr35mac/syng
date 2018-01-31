@@ -19,12 +19,37 @@
     var IView = require('iview');
     Vue.use(IView);
 
+    var HanziWriter = require('hanzi-writer');
+
     $(document).ready(function() {
        window.lgChars = new Vue({
          el: "#lgChars",
          data: {
            simplified: '',
-           traditional: ''
+           traditional: '',
+           simplifiedCharacters: []
+         },
+         methods: {
+           animateSimplified: function() {
+             var self = this;
+
+             for(var s = 0; s < self.simplifiedCharacters.length; s++) {
+               self.simplifiedCharacters[s].hideCharacter();
+             }
+
+             function animate(animatedCounter) {
+               self.simplifiedCharacters[animatedCounter].animateCharacter({
+                 onComplete: function() {
+                   animatedCounter++;
+                   if(animatedCounter < self.simplifiedCharacters.length) {
+                     animate(animatedCounter);
+                   }
+                 }
+               });
+             }
+
+             animate(0);
+           }
          }
        });
     });
@@ -33,7 +58,27 @@
       window.lgChars.$data.simplified = args.simplified;
       window.lgChars.$data.traditional = args.traditional;
 
-      console.log(window.lgChars.$data.test);
+      $("#simplifiedAnimated").html("");
+      window.lgChars.$data.simplifiedCharacters = [];
+      for(var c = 0; c < window.lgChars.$data.simplified.length; c++) {
+        var animatedSimplifiedCharacter = new HanziWriter('simplifiedAnimated', window.lgChars.$data.simplified[c], {
+          charDataLoader: function(char, onComplete) {
+            $.getJSON("../src/lib/hanzi-writer/data/"+window.lgChars.$data.simplified[c]+".json", function(charData) {
+              onComplete(charData);
+            });
+          },
+          height: 240,
+          width: 240
+        });
+
+        window.lgChars.$data.simplifiedCharacters.push(animatedSimplifiedCharacter);
+      }
+
+      var animatedElems = $("svg");
+      for(var t = 0; t < animatedElems.length; t++) {
+        $(animatedElems[t]).removeAttr("height");
+        $(animatedElems[t]).removeAttr("width");
+      }
     });
   </script>
 
@@ -93,6 +138,18 @@
       overflow-y: auto;
       color: black;
     }
+    svg {
+      height: 57vh;
+      width: 25%;
+      padding-top: 7.5%;
+    }
+    .pull-right {
+      float: right;
+    }
+    .action-button {
+      right: 15px;
+      position: absolute;
+    }
   </style>
 </head>
 
@@ -101,8 +158,15 @@
     <Tabs active-key="1">
       <Tab-pane label="Simplified" key="1">
         <div>
+          <div class="pull-right action-button">
+            <i-button v-on:click="animateSimplified()">
+              <Tooltip placement="left" content="Animate Stroke Order">
+                <Icon type="play" size="large"></Icon>
+              </Tooltip>
+            </i-button>
+          </div>
           <center>
-            &nbsp;<h1>{{ simplified }}</h1>&nbsp;
+            <div id="simplifiedAnimated"></div>
           </center>
         </div>
       </Tab-pane>
