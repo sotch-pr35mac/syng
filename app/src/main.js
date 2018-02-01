@@ -118,7 +118,6 @@ app.on('ready', function() {
 	});
 
 	lgChars.loadURL('file://'+__dirname+'/../views/lgChar.html');
-  lgChars.openDevTools();
 
 	ipc.on('show-large-characters', function(event, args) {
 		lgChars.send('load-new-characters', args);

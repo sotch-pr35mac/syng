@@ -28,7 +28,9 @@
            simplified: '',
            traditional: '',
            simplifiedCharacters: [],
-           traditionalCharacters: []
+           traditionalCharacters: [],
+           simplifiedFallback: false,
+           traditionalFallback: false
          },
          methods: {
            animateSimplified: function() {
@@ -86,6 +88,8 @@
           charDataLoader: function(char, onComplete) {
             $.getJSON("../src/lib/hanzi-writer/data/"+window.lgChars.$data.simplified[c]+".json", function(charData) {
               onComplete(charData);
+            }).fail(function() {
+              window.lgChars.$data.simplifiedFallback = true;
             });
           },
           height: 240,
@@ -102,6 +106,8 @@
           charDataLoader: function(char, onComplete) {
             $.getJSON("../src/lib/hanzi-writer/data/"+window.lgChars.$data.traditional[c]+".json", function(charData) {
               onComplete(charData);
+            }).fail(function() {
+              window.lgChars.$data.traditionalFallback = true;
             });
           },
           height: 240,
@@ -186,6 +192,9 @@
     .action-button {
       padding-right: 15px;
     }
+    .static-character {
+
+    }
   </style>
 </head>
 
@@ -195,28 +204,34 @@
       <Tab-pane label="Simplified" key="1">
         <div>
           <div class="pull-right action-button">
-            <i-button v-on:click="animateSimplified()">
+            <i-button v-on:click="animateSimplified()" v-if="simplifiedFallback != true">
               <Tooltip placement="left" content="Animate Stroke Order">
                 <Icon type="play" size="large"></Icon>
               </Tooltip>
             </i-button>
           </div>
           <center>
-            <div id="simplifiedAnimated"></div>
+            <div id="simplifiedAnimated" v-if="simplifiedFallback != true"></div>
+            <div id="simplifiedStatic" v-if="simplifiedFallback == true">
+              &nbsp;<h1 class="static-character">{{ simplified }}</h1>&nbsp;
+            </div>
           </center>
         </div>
       </Tab-pane>
       <Tab-pane label="Traditional" key="2">
         <div>
-          <div class="pull-right test-button">
-            <i-button v-on:click="animateTraditional()">
+          <div class="pull-right action-button">
+            <i-button v-on:click="animateTraditional()" v-if="traditionalFallback != true">
               <Tooltip placement="left" content="Animate Stroke Order">
                 <Icon type="play" size="large"></Icon>
               </Tooltip>
             </i-button>
           </div>
           <center>
-            <div id="traditionalAnimated"></div>
+            <div id="traditionalAnimated" v-if="traditionalFallback != true"></div>
+            <div id="traditionalStatic" v-if="traditionalFallback == true">
+              &nbsp;<h1 class="static-character">{{ traditional }}</h1>&nbsp;
+            </div>
           </center>
         </div>
       </Tab-pane>
