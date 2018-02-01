@@ -27,7 +27,8 @@
          data: {
            simplified: '',
            traditional: '',
-           simplifiedCharacters: []
+           simplifiedCharacters: [],
+           traditionalCharacters: []
          },
          methods: {
            animateSimplified: function() {
@@ -42,6 +43,26 @@
                  onComplete: function() {
                    animatedCounter++;
                    if(animatedCounter < self.simplifiedCharacters.length) {
+                     animate(animatedCounter);
+                   }
+                 }
+               });
+             }
+
+             animate(0);
+           },
+           animateTraditional: function() {
+             var self = this;
+
+             for(var t = 0; t < self.traditionalCharacters.length; t++) {
+               self.traditionalCharacters[t].hideCharacter();
+             }
+
+             function animate(animatedCounter) {
+               self.traditionalCharacters[animatedCounter].animateCharacter({
+                 onComplete: function() {
+                   animatedCounter++;
+                   if(animatedCounter < self.traditionalCharacters.length) {
                      animate(animatedCounter);
                    }
                  }
@@ -72,6 +93,22 @@
         });
 
         window.lgChars.$data.simplifiedCharacters.push(animatedSimplifiedCharacter);
+      }
+
+      $("traditionalAnimated").html("");
+      window.lgChars.$data.traditionalCharacters = [];
+      for(var c = 0; c < window.lgChars.$data.traditional.length; c++) {
+        var animatedTraditionalCharacter = new HanziWriter('traditionalAnimated', window.lgChars.$data.traditional[c], {
+          charDataLoader: function(char, onComplete) {
+            $.getJSON("../src/lib/hanzi-writer/data/"+window.lgChars.$data.traditional[c]+".json", function(charData) {
+              onComplete(charData);
+            });
+          },
+          height: 240,
+          width: 240
+        });
+
+        window.lgChars.$data.traditionalCharacters.push(animatedTraditionalCharacter);
       }
 
       var animatedElems = $("svg");
@@ -147,8 +184,7 @@
       float: right;
     }
     .action-button {
-      right: 15px;
-      position: absolute;
+      padding-right: 15px;
     }
   </style>
 </head>
@@ -172,8 +208,15 @@
       </Tab-pane>
       <Tab-pane label="Traditional" key="2">
         <div>
+          <div class="pull-right test-button">
+            <i-button v-on:click="animateTraditional()">
+              <Tooltip placement="left" content="Animate Stroke Order">
+                <Icon type="play" size="large"></Icon>
+              </Tooltip>
+            </i-button>
+          </div>
           <center>
-            &nbsp;<h1>{{ traditional }}</h1>&nbsp;
+            <div id="traditionalAnimated"></div>
           </center>
         </div>
       </Tab-pane>
