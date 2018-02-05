@@ -5,9 +5,9 @@
         <h2 class="item-label">Interface Language</h2>
       </i-col>
       <i-col span="8">
-        <i-select :model.sync="language" placeholder="Language Preference">
+        <i-select :model.sync="language" placeholder="Language Preference" :on-change="">
           <i-option value="en">English</i-option>
-          <i-option value="cn">中文</i-option>
+          <i-option value="cn" :on-click="changeLanguage()">中文</i-option>
         </i-select>
       </i-col>
     </Row>
@@ -25,7 +25,13 @@
 module.exports = {
   data: function() {
     return {
-      language: 'en'
+      language: ''
+    }
+  },
+  attached: function() {
+  },
+  methods: {
+    changeLanguage: function() {
     }
   }
 }

@@ -2698,13 +2698,19 @@ var __vueify_style__ = __vueify_insert__.insert("\n.item-label {\n  font-size: 1
 module.exports = {
   data: function() {
     return {
-      language: 'en'
+      language: ''
+    }
+  },
+  attached: function() {
+  },
+  methods: {
+    changeLanguage: function() {
     }
   }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <row>\n    <i-col span=\"16\">\n      <h2 class=\"item-label\">Interface Language</h2>\n    </i-col>\n    <i-col span=\"8\">\n      <i-select :model.sync=\"language\" placeholder=\"Language Preference\">\n        <i-option value=\"en\">English</i-option>\n        <i-option value=\"cn\">中文</i-option>\n      </i-select>\n    </i-col>\n  </row>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <row>\n    <i-col span=\"16\">\n      <h2 class=\"item-label\">Interface Language</h2>\n    </i-col>\n    <i-col span=\"8\">\n      <i-select :model.sync=\"language\" placeholder=\"Language Preference\" :on-change=\"\">\n        <i-option value=\"en\">English</i-option>\n        <i-option value=\"cn\" :on-click=\"changeLanguage()\">中文</i-option>\n      </i-select>\n    </i-col>\n  </row>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -2826,6 +2832,9 @@ var __vueify_style__ = __vueify_insert__.insert("\n.ivu-col-span-4 {\n  backgrou
 
 
 
+
+
+
 var AboutSyng = require('./aboutSyng/aboutSyng.vue');
 var ReportBug = require('./reportBug/reportBug.vue');
 var Settings = require('./settings/settings.vue');
@@ -2855,7 +2864,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\" class=\"main-column\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;aboutSyng&quot;)\">\n      <center>\n        <h2>About</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"2\" v-on:click=\"loadView(&quot;settings&quot;)\">\n      <center>\n        <h2>Settings</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;viewLicense&quot;)\">\n      <center>\n        <h2>View Licenses</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"4\" v-on:click=\"loadView(&quot;reportBug&quot;)\">\n      <center>\n        <h2>Report Bug</h2>\n      </center>\n    </menu-item>\n    <!-- Help Menu not implemented in this version -->\n    <!--\n    <Menu-item key=\"5\" v-on:click=\"loadView('help')\">\n      <center>\n        <h2>Help</h2>\n      </center>\n    </Menu-item>\n    -->\n    <menu-item key=\"6\" v-on:click=\"loadView('donate')\">\n      <center>\n        <h2>Donate</h2>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\" class=\"main-column\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"4\" class=\"main-column\">\n  <menu theme=\"light\" width=\"100%\" active-key=\"1\">\n    <menu-item key=\"1\" v-on:click=\"loadView(&quot;aboutSyng&quot;)\">\n      <center>\n        <h2>About</h2>\n      </center>\n    </menu-item>\n    <!-- Settings menu not implmented in this version -->\n    <!--\n    <Menu-item key=\"2\" v-on:click='loadView(\"settings\")'>\n      <center>\n        <h2>Settings</h2>\n      </center>\n    </Menu-item>\n  -->\n    <menu-item key=\"3\" v-on:click=\"loadView(&quot;viewLicense&quot;)\">\n      <center>\n        <h2>View Licenses</h2>\n      </center>\n    </menu-item>\n    <menu-item key=\"4\" v-on:click=\"loadView(&quot;reportBug&quot;)\">\n      <center>\n        <h2>Report Bug</h2>\n      </center>\n    </menu-item>\n    <!-- Help Menu not implemented in this version -->\n    <!--\n    <Menu-item key=\"5\" v-on:click=\"loadView('help')\">\n      <center>\n        <h2>Help</h2>\n      </center>\n    </Menu-item>\n    -->\n    <menu-item key=\"6\" v-on:click=\"loadView('donate')\">\n      <center>\n        <h2>Donate</h2>\n      </center>\n    </menu-item>\n  </menu>\n</i-col>\n<i-col span=\"17\" class=\"main-column\">\n  <component :is=\"currentView\"></component>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
