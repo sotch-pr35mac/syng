@@ -1,12 +1,12 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v1.0.1
+##### v1.1.0
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---
 
 ## __About__
-Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems. 
+Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems.
 
 ### Name
 Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
@@ -20,7 +20,7 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
 - ___Bookmarks___
     - Syng allows you to save words and searches to your bookmarks, so that you can reference them later, and even create custom vocab lists.
 - __Offline Support__
-    - No internet connection required! 
+    - No internet connection required for most features
 - __Cross-Platform__
     - Mac OS X
     - Windows
@@ -31,19 +31,17 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - Convert between traditional and simplified characters
 - __Pinyinify__
     - Convert 汉字 into hànzì. Turn characters into pinyin
+- __Character Stroke Animations__
+    - View character stroke order animations to study writing characters
 
 ## __What's new?__
-Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
-1. Brand new user interface
-2. 70% faster load time
-3. Custom vocabulary lists
-4. Notes
-5. New Icon
-6. Pinyinify characters
-7. General stability and performance updates
+Syng v1.1.0 includes a few new features and several bug fixes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Audio Pronunciation
+2. Character Stroke Animations
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).
+
 ![image](./assets/homescreen.png)
 
 ## __Installing__
@@ -52,11 +50,11 @@ To install Syng on Linux, you can you use the pre-built installation script by c
 
 For 64-bit systems:
 ```
-wget -O- https://goo.gl/ybn3yz | bash 
+wget -O- https://goo.gl/ybn3yz | bash
 ```
-For 32-bit systems: 
+For 32-bit systems:
 ```
-wget -O- https://goo.gl/bjguUb | bash 
+wget -O- https://goo.gl/bjguUb | bash
 ```
 
 Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-x64.tar.gz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-ia32.tar.gz) and then following the installation instructions provided.
@@ -80,31 +78,17 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
       - Modified to work using hashmaps and support English, and pinyin search functionality.
    - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
+   - [hanzi-writer](https://github.com/chanind/hanzi-writer) by [chanind](https://github.com/chanind)
+      - Character Stroke Animations
 
 ## __Developers Welcome__
-If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/blob/master/ROADMAP.md), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together. 
+If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together.
 
-## __Contribute__
-This is a [Commitizen Friendly](https://github.com/commitizen/cz-cli) Repository. When contributing please use commitizen when committing changes.
-You can install commitizen using npm:
-```
-npm install -g commitizen
-```
-1. Fork it!
-2. Create a branch `git checkout -b my-feature`
-3. Commit your changes `git cz`
-4. Submit a pull request
+## __Contributing / Getting Started__
+If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch.
 
-## __Getting Started__
-1. First go to the project directory
-    `cd /path/to/project/`
-2. Install the dependencies
-    `npm install`
-3. Run Syng
-    `npm start`
-
-## __Contributors__
+## __Maintainers__
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
 
 ## __License__
-This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html).
+This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).

@@ -13,18 +13,26 @@
   <link rel="stylesheet" href="../style/css/photon.min.css">
 
   <style>
+		@font-face {
+			font-family: "Lato Regular";
+			src: url(../style/fonts/lato-regular.ttf) format("truetype");
+		}
+
   		body {
 			background: #EF1D41;
 			background: -webkit-linear-gradient(#EF2B1E, #EF1063);
 			background:         linear-gradient(#EF2B1E, #EF1063);
+ 			font-family: "Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","微软雅黑","Lato Regular",Arial,sans-serif;
+			font-weight: lighter;
+			font-style: normal;
 		}
 
 		#giant-logo {
 			margin-top: 75px;
-			/*font-style: oblique;*/
+			/*font-style: oblique;
       font-style: normal;
 			font-weight: 400;
-			font-family: Helvetica, Arial, sans-serif;
+			font-family: Helvetica, Arial, sans-serif;*/
 			background: -webkit-linear-gradient(#F8F7F7, #D0CFCF);
  				-webkit-background-clip: text;
  				-webkit-text-fill-color: transparent;
@@ -32,9 +40,9 @@
 		}
 
     #version-text {
-      font-style: normal;
+      /*font-style: normal;
       font-weight: 400;
-      font-family: Helvetica, Arial, sans-serif;
+      font-family: Helvetica, Arial, sans-serif;*/
       background: -webkit-linear-gradient(#F8F7F7, #D0CFCF);
  				-webkit-background-clip: text;
  				-webkit-text-fill-color: transparent;
@@ -45,7 +53,7 @@
 <body>
 	<center>
 		<h1 id="giant-logo">Syng | 词应</h1>
-    <h3 id="version-text">v1.0.1</h3>
+    <h3 id="version-text">v1.1.0</h3>
 		<style type='text/css'> width: 100%;
 		@-webkit-keyframes uil-ripple {
 		  0% {

@@ -6,14 +6,14 @@
           <h2>About</h2>
         </center>
       </Menu-item>
-      <!-- Settings Menu not implimented in this version -->
+      <!-- Settings menu not implmented in this version -->
       <!--
       <Menu-item key="2" v-on:click='loadView("settings")'>
         <center>
           <h2>Settings</h2>
         </center>
       </Menu-item>
-      -->
+    -->
       <Menu-item key="3" v-on:click='loadView("viewLicense")'>
         <center>
           <h2>View Licenses</h2>

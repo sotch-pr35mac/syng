@@ -5,7 +5,7 @@
       <img src="../style/img/syng-logo.png" height="120px" width="120px">
       <h2>Syng | 词应</h2>
       <h3>Dictionary App | 词典应用</h3>
-      <h4>v1.0.1</h4>
+      <h4>v1.1.0</h4>
     </center>
     <br>
     <br>
@@ -24,6 +24,7 @@
         <li><b>IView UI:</b> User Interface Framework</li>
         <li><b>node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</li>
         <li><b>Franc:</b> Language Detection for Search</li>
+        <li><b>hanzi-writer:</b> Stroke Order Animations</li>
       </ul>
     </p>
     <br>

@@ -1,6 +1,6 @@
 {
   "name": "Syng",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Preston Wang-Stosur-Bassett",
   "description": "Syng is a free, open-source, cross-platform, Chinese-to-English dictionary app.",
   "repository": "http://github.com/sotch-pr35mac/syng",
@@ -12,6 +12,7 @@
     "chinese-conv": "^1.0.1",
     "electron-prebuilt": "^0.36.5",
     "franc": "^1.1.2",
+    "hanzi-writer": "^0.3.3",
     "hashmap": "^2.3.0",
     "iview": "^0.9.11",
     "mkdirp": "^0.5.1",

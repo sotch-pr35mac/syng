@@ -56,6 +56,7 @@
                       <Icon type="arrow-expand" size="large"></Icon>
                     </Tooltip>
                   </i-button>
+                  <tts v-bind:chars="currentWord.traditional"></tts>
                 </Button-group>
               </div>
               <h1 style="margin-bottom: 0px;">
@@ -215,6 +216,7 @@
 <script>
 var databaseManager = new window.DatMan();
 var Notes = require('./notes.vue');
+var Tts = require('../common/tts/tts.vue');
 var _ = require('underscore');
 
 // Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
@@ -297,7 +299,8 @@ module.exports = {
     };
   },
   components: {
-    'notes': Notes
+    'notes': Notes,
+    'tts': Tts
   },
   events: {
     'saveNotes': function(notes) {

@@ -17,7 +17,7 @@
 
 <style>
   .selector-menu {
-    position: absolute;;
+    position: absolute;
     top: 40vh;
     left: 40vh;
   }
