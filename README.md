@@ -1,12 +1,12 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v1.0.1
+##### v1.1.0
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---
 
 ## __About__
-Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems. 
+Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems.
 
 ### Name
 Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been shorted from 词典应用, literally translating to Dictionary App.
@@ -20,7 +20,7 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
 - ___Bookmarks___
     - Syng allows you to save words and searches to your bookmarks, so that you can reference them later, and even create custom vocab lists.
 - __Offline Support__
-    - No internet connection required! 
+    - No internet connection required!
 - __Cross-Platform__
     - Mac OS X
     - Windows
@@ -44,6 +44,7 @@ Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a ful
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).
+
 ![image](./assets/homescreen.png)
 
 ## __Installing__
@@ -52,11 +53,11 @@ To install Syng on Linux, you can you use the pre-built installation script by c
 
 For 64-bit systems:
 ```
-wget -O- https://goo.gl/ybn3yz | bash 
+wget -O- https://goo.gl/ybn3yz | bash
 ```
-For 32-bit systems: 
+For 32-bit systems:
 ```
-wget -O- https://goo.gl/bjguUb | bash 
+wget -O- https://goo.gl/bjguUb | bash
 ```
 
 Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-x64.tar.gz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-ia32.tar.gz) and then following the installation instructions provided.
@@ -80,12 +81,14 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
       - Modified to work using hashmaps and support English, and pinyin search functionality.
    - [Franc](https://github.com/wooorm/franc)
       - Language Detection for Search
+   - [hanzi-writer](https://github.com/chanind/hanzi-writer) by [chanind](https://github.com/chanind)
+      - Character Stroke Animations
 
 ## __Developers Welcome__
-If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together. 
+If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together.
 
 ## __Contributing / Getting Started__
-If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch. 
+If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch.
 
 ## __Maintainers__
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
