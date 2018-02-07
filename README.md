@@ -20,7 +20,7 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
 - ___Bookmarks___
     - Syng allows you to save words and searches to your bookmarks, so that you can reference them later, and even create custom vocab lists.
 - __Offline Support__
-    - No internet connection required!
+    - No internet connection required for most features
 - __Cross-Platform__
     - Mac OS X
     - Windows
@@ -31,16 +31,13 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - Convert between traditional and simplified characters
 - __Pinyinify__
     - Convert 汉字 into hànzì. Turn characters into pinyin
+- __Character Stroke Animations__
+    - View character stroke order animations to study writing characters
 
 ## __What's new?__
-Syng v1.0.0 is the biggest release yet, with some welcome new changes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
-1. Brand new user interface
-2. 70% faster load time
-3. Custom vocabulary lists
-4. Notes
-5. New Icon
-6. Pinyinify characters
-7. General stability and performance updates
+Syng v1.1.0 includes a few new features and several bug fixes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Audio Pronunciation
+2. Character Stroke Animations
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).
