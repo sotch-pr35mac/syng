@@ -1,9 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x] - xxxx-xx-xx
+## [1.1.0] - 2018-02-07
 ### Added
 - Text to Speech support as described in Issue #67
+- Character Stroke Animations as described in Issue #90
 
 ### Fixed
 - Duplicates in search results as described in Issue #85
@@ -11,7 +12,7 @@ All notable changes to this project will be documented in this file. This projec
 - Missing capital letter pinyin as described in Issue #86
 
 ### Changed
-- Updated to a newer version of CC-CEDICT (Released 2017-12-17)
+- Updated to a newer version of CC-CEDICT (Released 2018-02-07)
 - Changed fields in dictionary database (app/src/db/cc-cedict.json)
 
 ## [1.0.1] - 2017-12-08
