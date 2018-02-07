@@ -50,14 +50,14 @@ To install Syng on Linux, you can you use the pre-built installation script by c
 
 For 64-bit systems:
 ```
-wget -O- https://goo.gl/ybn3yz | bash
+wget -O- https://goo.gl/1WJues | bash
 ```
 For 32-bit systems:
 ```
-wget -O- https://goo.gl/bjguUb | bash
+wget -O- https://goo.gl/zWXMgZ | bash
 ```
 
-Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-x64.tar.gz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-linux-ia32.tar.gz) and then following the installation instructions provided.
+Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.1.0/Syng-linux-x64.tar.gz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.1.0/Syng-linux-ia32.tar.gz) and then following the installation instructions provided.
 #### __macOS__
 To install Syng on macOS, simply download the `.dmg` file from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.0.1/Syng-macOS.dmg) and then drag and drop the Syng app into your Applications folder.
 #### __Windows__
