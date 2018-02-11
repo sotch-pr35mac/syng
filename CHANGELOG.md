@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.1.1] - 2018-02-10
+### Fixed
+- Fixed traditional character stroke order error as described in Issue #95
+
 ## [1.1.0] - 2018-02-07
 ### Added
 - Text to Speech support as described in Issue #67

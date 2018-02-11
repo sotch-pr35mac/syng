@@ -99,7 +99,7 @@
         window.lgChars.$data.simplifiedCharacters.push(animatedSimplifiedCharacter);
       }
 
-      $("traditionalAnimated").html("");
+      $("#traditionalAnimated").html("");
       window.lgChars.$data.traditionalCharacters = [];
       for(var c = 0; c < window.lgChars.$data.traditional.length; c++) {
         var animatedTraditionalCharacter = new HanziWriter('traditionalAnimated', window.lgChars.$data.traditional[c], {
