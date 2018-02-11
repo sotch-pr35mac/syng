@@ -1,3 +1,7 @@
+<p align="center">
+    <img src="https://github.com/sotch-pr35mac/syng/raw/master/assets/syng-logo.png" alt="Syng Icon" height="20%" width="20%"></img>
+</p>
+
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
 ##### v1.1.1
