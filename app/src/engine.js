@@ -27,6 +27,20 @@ var englishIsEmpty = englishHashmap.size == 0 ? true : false;
 
 if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
+
+  /*
+    Use the method below when loading in multiple JSON files. 
+  */
+  /*
+    var A = $.getJSON(url1);
+    var B = $.getJSON(url2);
+    var C = $.getJSON(url3);
+
+    $.when(A,B,C).done(function(aResult, bResult, cResult){//when all request are successful
+      console.log([aResult[0],bResult[0],cResult[0]]);
+    });
+  */
+
 	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
 		console.log("Loading...");
 
