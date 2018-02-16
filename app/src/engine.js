@@ -29,7 +29,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
 
   /*
-    Use the method below when loading in multiple JSON files. 
+    Use the method below when loading in multiple JSON files.
   */
   /*
     var A = $.getJSON(url1);
@@ -44,7 +44,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
 		console.log("Loading...");
 
-		for(var i = 0; i < wordList.length - 1; i++) {
+		for(var i = 0; i < wordList.length; i++) {
 			var word = {
 				traditional: wordList[i].t,
 				simplified: wordList[i].s,
@@ -54,52 +54,57 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			};
 
 			// Add the word to the Simplified Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-			if (simpHashmap.has(word.simplified) == false) {
+      var simplified = word.simplified;
+			if (simpHashmap.has(simplified) == false) {
 				var addWord = [];
 				addWord.push(word);
-				simpHashmap.set(word.simplified, addWord);
+				simpHashmap.set(simplified, addWord);
 			} else {
-				var addWord = simpHashmap.get(word.simplified);
+				var addWord = simpHashmap.get(simplified);
 				addWord.push(word);
-				simpHashmap.set(word.simplified, addWord);
+				simpHashmap.set(simplified, addWord);
 			}
 
 			// Add the word to the Traditional Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-			if(tradHashmap.has(word.traditional) == false) {
+      var traditional = word.traditional;
+			if(tradHashmap.has(traditional) == false) {
 				var addWord = [];
 				addWord.push(word);
-				tradHashmap.set(word.traditional, addWord);
+				tradHashmap.set(traditional, addWord);
 			} else {
-				var addWord = tradHashmap.get(word.traditional);
+				var addWord = tradHashmap.get(traditional);
 				addWord.push(word);
-				tradHashmap.set(word.traditional, addWord);
+				tradHashmap.set(traditional, addWord);
 			}
 
 			// Add the word to the Pinyin Hashmap, if the character already exists in the Hashmap as a key, add the second definition to the same key
-			if(pinyinHashmap.has(wordList[i].v) == false) {
+      var pinyinA = wordList[i].v;
+			if(pinyinHashmap.has(pinyinA) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].v, addWord);
+				pinyinHashmap.set(pinyinA, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].v);
+				var addWord = pinyinHashmap.get(pinyinA);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].v, addWord);
+				pinyinHashmap.set(pinyinA, addWord);
 			}
 
 			// Add the word with tones to the pinyin hashmap, if the character already exists in the hashmap as a key, add the second definition to the same key
-			if (pinyinHashmap.has(wordList[i].w) == false) {
+      var pinyinB = wordList[i].w;
+			if (pinyinHashmap.has(pinyinB) == false) {
 				var addWord = [];
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].w, addWord);
+				pinyinHashmap.set(pinyinB, addWord);
 			} else {
-				var addWord = pinyinHashmap.get(wordList[i].w);
+				var addWord = pinyinHashmap.get(pinyinB);
 				addWord.push(word);
-				pinyinHashmap.set(wordList[i].w, addWord);
+				pinyinHashmap.set(pinyinB, addWord);
 			}
 
 			// Cycle through each definition of a character and add it to the Hashmap
-			for (var t = 0; t < wordList[i].x.length; t++) {
-				var searchableTerm = wordList[i].x[t];
+      var defList = wordList[i].x;
+			for (var t = 0; t < defList.length; t++) {
+				var searchableTerm = defList[t];
 				// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
 				if (englishHashmap.has(searchableTerm) == false) {
 					var addWord = [];
