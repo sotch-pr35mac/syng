@@ -27,6 +27,7 @@ var englishIsEmpty = englishHashmap.size == 0 ? true : false;
 
 if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
+  var startReading = new Date();
 
   /*
     Use the method below when loading in multiple JSON files.
@@ -42,7 +43,12 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
   */
 
 	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
+    var endReading = new Date();
+    var readingTime = (endReading.getTime() - startReading.getTime()) / 1000;
+    console.log("Finished reading from file in " + readingTime + "s");
+
 		console.log("Loading...");
+    var startTime = new Date();
 
 		for(var i = 0, wordListLength = wordList.length; i < wordListLength; i++) {
 			var word = {
@@ -117,6 +123,10 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 				}
 			}
 		}
+
+    var endTime = new Date();
+    var seconds = (endTime.getTime() - startTime.getTime()) / 1000;
+    console.log("Finished building dictionary in " + seconds + "s");
 
 		console.log("Finished Loading!");
 
