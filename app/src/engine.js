@@ -44,7 +44,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
 		console.log("Loading...");
 
-		for(var i = 0; i < wordList.length; i++) {
+		for(var i = 0, wordListLength = wordList.length; i < wordListLength; i++) {
 			var word = {
 				traditional: wordList[i].t,
 				simplified: wordList[i].s,
@@ -103,7 +103,7 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 
 			// Cycle through each definition of a character and add it to the Hashmap
       var defList = wordList[i].x;
-			for (var t = 0; t < defList.length; t++) {
+			for (var t = 0, defListLength = defList.length; t < defListLength; t++) {
 				var searchableTerm = defList[t];
 				// Add the word to the Hashmap, if the definition already exists in the Hashmap as a key, add the second "word object" to the same key
 				if (englishHashmap.has(searchableTerm) == false) {
