@@ -3,3 +3,4 @@ release/
 releases/
 app/src/db/syng/
 npm-debug.log
+.buildconfig
