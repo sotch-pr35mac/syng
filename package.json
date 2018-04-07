@@ -22,6 +22,7 @@
     "prettify-pinyin": "https://github.com/sotch-pr35mac/prettify-pinyin/tarball/master",
     "progressbar.js": "^1.0.1",
     "remote": "^0.2.6",
+    "stream-json": "^0.5.2",
     "tingodb": "^0.4.2",
     "underscore": "^1.8.3",
     "vue": "^1.0.17",
@@ -38,9 +39,9 @@
     "vueify": "^8.7.0"
   },
   "scripts": {
-    "start": "npm-run-all build open",
+    "dev": "npm-run-all build start",
     "build": "browserify -t vueify -e app/src/app.js -o app/src/syng.js",
-    "open": "electron .",
+    "start": "electron .",
     "lint": "eslint ./app/src/**/*.js"
   },
   "config": {

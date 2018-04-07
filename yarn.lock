@@ -3111,6 +3111,10 @@ parse5@^2.1.0:
   version "2.2.3"
   resolved "https://registry.yarnpkg.com/parse5/-/parse5-2.2.3.tgz#0c4fc41c1000c5e6b93d48b03f8083837834e9f6"
 
+parser-toolkit@>=0.0.3:
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/parser-toolkit/-/parser-toolkit-0.0.5.tgz#ec4b61729c86318b56ea971bfba6b3c672d62c01"
+
 pascal-case@^1.1.0:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/pascal-case/-/pascal-case-1.1.2.tgz#3e5d64a20043830a7c49344c2d74b41be0c9c99b"
@@ -4158,6 +4162,12 @@ stream-http@^2.0.0:
     readable-stream "^2.3.3"
     to-arraybuffer "^1.0.0"
     xtend "^4.0.0"
+
+stream-json@^0.5.2:
+  version "0.5.2"
+  resolved "https://registry.yarnpkg.com/stream-json/-/stream-json-0.5.2.tgz#f4256c0ef1a905f2ef2d473706b4b3ff827653cf"
+  dependencies:
+    parser-toolkit ">=0.0.3"
 
 stream-splicer@^2.0.0:
   version "2.0.0"

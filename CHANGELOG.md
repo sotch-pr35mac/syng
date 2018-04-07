@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [x.x.x] - xxxx-xx-xx
+### Changed
+- Decreased load time to bottleneck as described in Issue #99
+
 ## [1.1.1] - 2018-02-10
 ### Fixed
 - Fixed traditional character stroke order error as described in Issue #95
