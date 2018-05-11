@@ -3,6 +3,7 @@
     <br>
     <center>
       <img src="../style/img/syng-logo.png" height="120px" width="120px">
+      <br>
       <h2>Syng | 词应</h2>
       <h3>Dictionary App | 词典应用</h3>
       <h4>v1.1.1</h4>
@@ -94,11 +95,14 @@
   }
   h2 {
     font-size: 3.5vh;
+    font-weight: 200;
   }
   h3 {
     font-size: 2.5vh;
+    font-weight: 200;
   }
   h4 {
     font-size: 2.1vh;
+    font-weight: 200;
   }
 </style>
