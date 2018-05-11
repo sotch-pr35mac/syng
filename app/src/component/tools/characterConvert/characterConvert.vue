@@ -3,7 +3,10 @@
     <i-col span="26">
       <div id="actions-frame">
         <Row>
-          <Dropdown trigger="click" placement="bottom-start">
+          <i-button v-on:click="convert()" class="pull-right" id="main-action-button">
+            Convert
+          </i-button>
+          <Dropdown trigger="click" placement="bottom-start" class="pull-right">
             <i-button>
               <a style="color: #657180;" v-if="(convertFrom == 'tradToSimp')">Traditional <b>&rarr;</b> Simplified</a>
               <a style="color: #657180;" v-if="(convertFrom == 'simpToTrad')">Simplified <b>&rarr;</b> Traditional</a>
@@ -15,9 +18,7 @@
               <Dropdown-item v-on:click="convertFrom = 'simpToTrad'">Simplified <b>&rarr;</b> Traditional</Dropdown-item>
             </Dropdown-menu>
           </Dropdown>
-          <i-button v-on:click="convert()" class="pull-right">
-            Convert
-          </i-button>
+          <h1 class="title">Convert Characters</h1>
         </Row>
       </div>
       <Row>
@@ -32,6 +33,14 @@
 </template>
 
 <style scoped>
+  #main-action-button {
+    margin-left: 10px;
+  }
+  .title {
+    text-align: center;
+    margin-left: 25%;
+    color: #fff;
+  }
   .pull-right {
     float: right;
   }

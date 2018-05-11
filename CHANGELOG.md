@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file. This projec
 ## [x.x.x] - xxxx-xx-xx
 ### Changed
 - Decreased load time to bottleneck as described in Issue #99
+- Visual enhancements including Issue #100
 
 ## [1.1.1] - 2018-02-10
 ### Fixed

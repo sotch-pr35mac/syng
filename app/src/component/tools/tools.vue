@@ -17,6 +17,14 @@
             <h2>语言&nbsp;&#8644;&nbsp;語言</h2>
           </center>
         </Menu-item>
+        <!-- Putting this feature on hold until user accounts are implemented -->
+        <!--
+        <Menu-item key="4" v-on:click="loadView('translate')" v-if="networkStatus">
+          <center>
+            <h2>Translate</h2>
+          </center>
+        </Menu-item>
+        -->
       </Menu>
     </i-col>
     <i-col span="17" class="main-column">
@@ -42,17 +50,20 @@
 var PrettifyPinyin = require('./prettifyPinyin/prettifyPinyin.vue');
 var Pinyinify = require('./pinyinify/pinyinify.vue');
 var CharacterConvert = require('./characterConvert/characterConvert.vue');
+var Translate = require('./translate/translate.vue');
 
 module.exports = {
   data: function() {
     return {
-      currentView: 'prettifyPinyin'
+      currentView: 'prettifyPinyin',
+      networkStatus: navigator.onLine
     }
   },
   components: {
     'prettifyPinyin': PrettifyPinyin,
     'pinyinify': Pinyinify,
-    'characterConvert': CharacterConvert
+    'characterConvert': CharacterConvert,
+    'translate': Translate
   },
   methods: {
     loadView: function(viewName) {

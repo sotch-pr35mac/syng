@@ -16,7 +16,7 @@
     -->
       <Menu-item key="3" v-on:click='loadView("viewLicense")'>
         <center>
-          <h2>View Licenses</h2>
+          <h2>Licenses</h2>
         </center>
       </Menu-item>
       <Menu-item key="4" v-on:click='loadView("reportBug")'>
