@@ -887,6 +887,7 @@ module.exports = {
 
     $(document).ready(function() {
       $(".ivu-input").keyup(function(event) {
+        self.detectPinyin();
     		if(event.keyCode == 13) {
     			$("#search-button").click();
     		}
@@ -908,6 +909,25 @@ module.exports = {
     'tts': Tts
   },
   methods: {
+    detectPinyin: function() {
+      var self = this;
+
+      function containsNumber(text) {
+        return /\d/.test(text);
+      }
+
+      function containsUniqueFeatures(text) {
+        if(text.includes('zh') || text.includes('iang') || containsNumber(text)) {
+          return true;
+        } else {
+          return false;
+        }
+      }
+
+      if(containsUniqueFeatures(self.searchText)) {
+        self.inputMethod = PINYIN_INPUT;
+      }
+    },
     switchInputMethod: function() {
       if(this.inputMethod == ENGLISH_INPUT) {
         this.inputMethod = PINYIN_INPUT;
@@ -915,6 +935,8 @@ module.exports = {
       else if(this.inputMethod == PINYIN_INPUT) {
         this.inputMethod = ENGLISH_INPUT;
       }
+
+      this.performSearch();
     },
     createNewList: function() {
       window.ipc.send('show-manage-lists');
