@@ -39,9 +39,11 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - View character stroke order animations to study writing characters
 
 ## __What's new?__
-Syng v1.1.0 includes a few new features and several bug fixes. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
-1. Audio Pronunciation
-2. Character Stroke Animations
+Syng v1.2.0 includes a few new features and visual enhancements. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Added Bookmarks Filtering
+2. Added HSK Label
+3. Decrease Startup Time
+4. Visual Enhacenments
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).

@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x] - xxxx-xx-xx
+## [1.2.0] - 2018-05-12
 ### Added
 - Added very basic pinyin detection for search as described in #26
 - Added HSK Labels as described in Issue #98
