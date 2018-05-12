@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Changed
 - Decreased load time to bottleneck as described in Issue #99
 - Visual enhancements including Issue #100
+- Updated CC-CEDICT database to most recent release (May 11 2018)
 
 ## [1.1.1] - 2018-02-10
 ### Fixed
