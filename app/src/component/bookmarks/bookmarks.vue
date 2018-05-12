@@ -32,6 +32,9 @@
       <div class="clear-characters">
         <i-col span="5">
           <div class="word-listing">
+            <li class="word-listing-item">
+              <i-input placeholder="Filter List" :value.sync="filterTerm"></i-input>
+            </li>
             <li class="word-listing-item" v-for="word in wordList" track-by="$index">
               <div class="word-listing-content" v-on:click="switchWord(word.id)">
                 <h2>{{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span></h2>
@@ -58,6 +61,11 @@
                   </i-button>
                   <tts v-bind:chars="currentWord.traditional"></tts>
                 </Button-group>
+                <Row>
+                  <div class="pull-right word-tags">
+                    <Tag v-if="currentWord.hsk" color="yellow">HSK: {{currentWord.hsk}}</Tag>
+                  </div>
+                </Row>
               </div>
               <h1 style="margin-bottom: 0px;">
                 <a v-for="char in currentWord.simplified" :style="{ color: currentWord.color[$index]}" track-by="$index">{{ char }}</a>
@@ -211,6 +219,9 @@
   .pull-right {
     float: right;
   }
+  .word-tags {
+    margin-top: 10px;
+  }
 </style>
 
 <script>
@@ -218,6 +229,7 @@ var databaseManager = new window.DatMan();
 var Notes = require('./notes.vue');
 var Tts = require('../common/tts/tts.vue');
 var _ = require('underscore');
+var hsk = require('hsk-list');
 
 // Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
 function generateUIID() {
@@ -281,6 +293,11 @@ function colorTones(originalListing) {
       color: colors
     };
 
+    var hskLevel = hsk(word.simplified);
+    if(hskLevel > 0) {
+      formattedWord.hsk = hskLevel;
+    }
+
     compiledListing.push(formattedWord);
   });
 
@@ -295,7 +312,9 @@ module.exports = {
       displayWord: false,
       currentWord: {},
       componentCharacters: [],
-      wordListings: databaseManager.userListNames
+      wordListings: databaseManager.userListNames,
+      originalWordList: [],
+      filterTerm: ''
     };
   },
   components: {
@@ -325,6 +344,12 @@ module.exports = {
 
     databaseManager.updateListing();
 
+    $(document).ready(function() {
+      $(".ivu-input").keyup(function(event) {
+        self.filterList();
+      });
+    });
+
     ipc.on('receive-database-update', function(event, args) {
       self.wordListings = databaseManager.userListNames;
       databaseManager.updateListing();
@@ -343,6 +368,22 @@ module.exports = {
     });
   },
   methods: {
+    filterList: function() {
+      var self = this;
+
+      console.log("This runs");
+
+      if(self.filterTerm == '') {
+        console.log("its the same list");
+        self.wordList = self.originalWordList;
+      } else {
+        self.wordList = self.originalWordList.filter((word) => {
+          if(word.definitions.join().includes(self.filterTerm) || word.pinyin.includes(self.filterTerm) || word.simplified.includes(self.filterTerm) || word.traditional.includes(self.filterTerm)) {
+            return word;
+          }
+        });
+      }
+    },
     removeFromList: function(listName) {
       var self = this;
 
@@ -405,6 +446,7 @@ module.exports = {
       if(list == 'bookmarks') {
         databaseManager.bookmarks.then(function(bookmarksList) {
           self.wordList = colorTones(bookmarksList);
+          self.originalWordList = self.wordList;
           self.currentList = "bookmarks";
           self.displayWord = false;
         }, function(err) {
@@ -415,6 +457,7 @@ module.exports = {
       else {
         databaseManager.getUserListContent(list).then(function(listContent) {
           self.wordList = colorTones(listContent);
+          self.originalWordList = self.wordList;
           self.currentList = list;
           self.displayWord = false;
         }, function(err) {
