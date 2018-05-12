@@ -14,6 +14,7 @@
     "franc": "^1.1.2",
     "hanzi-writer": "^0.3.3",
     "hashmap": "^2.3.0",
+    "hsk-list": "https://github.com/sotch-pr35mac/hsk-list#0.1.1",
     "iview": "^0.9.11",
     "mkdirp": "^0.5.1",
     "npm-run-all": "^4.0.0",

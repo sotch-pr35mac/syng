@@ -64,6 +64,11 @@
                   </i-button>
                   <tts v-bind:chars="currentWord.traditional"></tts>
                 </Button-group>
+                <Row>
+                  <div class="pull-right word-tags">
+                    <Tag v-if="currentWord.hsk" color="yellow">HSK: {{currentWord.hsk}}</Tag>
+                  </div>
+                </Row>
               </div>
               <h1 style="margin-bottom: 0px;">
                 <a v-for="char in currentWord.simplified" :style="{ color: currentWord.color[$index] }" track-by="$index">{{ char }}</a>
@@ -213,6 +218,9 @@
   .pull-right {
     float: right;
   }
+  .word-tags {
+    margin-top: 10px;
+  }
 </style>
 
 <script>
@@ -221,6 +229,7 @@ const PINYIN_INPUT = "PY";
 var searchResults = [];
 var franc = window.require('franc');
 var _ = window.require('underscore');
+var hsk = window.require('hsk-list');
 
 var databaseManager = new window.DatMan();
 
@@ -431,6 +440,11 @@ module.exports = {
               id: uiid,
               color: colors
             };
+
+            var hskLevel = hsk(word.simplified);
+            if(hskLevel > 0) {
+              newWord.hsk = hskLevel;
+            }
 
             compiledResults.push(newWord);
           });
