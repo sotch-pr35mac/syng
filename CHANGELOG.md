@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Added
 - Added very basic pinyin detection for search as described in #26
 - Added HSK Labels as described in Issue #98
+- Added List Filtering in Bookmarks Section as described in Issue #30
 
 ### Changed
 - Decreased load time to bottleneck as described in Issue #99
