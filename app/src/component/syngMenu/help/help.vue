@@ -1,7 +1,9 @@
 <template>
-  <center>
-    <h1>HELP</h1>
-  </center>
+	<div>
+  		<center>
+  			<h1>HELP</h1>
+  		</center>
+  	</div>
 </template>
 
 <style>
