@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [x.x.x] - xxxx-xx-xx
+### Fixed
+- Fixed loading animation in all text fields as described in Issue #103
+
 ## [1.2.0] - 2018-05-12
 ### Added
 - Added very basic pinyin detection for search as described in #26
