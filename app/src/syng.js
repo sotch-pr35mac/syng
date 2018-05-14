@@ -416,7 +416,8 @@ module.exports = {
         self.wordList = self.originalWordList;
       } else {
         self.wordList = self.originalWordList.filter((word) => {
-          if(word.definitions.join().includes(self.filterTerm) || word.pinyin.includes(self.filterTerm) || word.simplified.includes(self.filterTerm) || word.traditional.includes(self.filterTerm)) {
+          const term = self.filterTerm.toLowerCase();
+          if(word.definitions.join().toLowerCase().includes(term) || word.pinyin.toLowerCase().includes(term) || word.simplified.includes(term) || word.traditional.includes(term)) {
             return word;
           }
         });
