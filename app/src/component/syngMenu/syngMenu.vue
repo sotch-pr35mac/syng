@@ -24,14 +24,11 @@
           <h2>Report Bug</h2>
         </center>
       </Menu-item>
-      <!-- Help Menu not implemented in this version -->
-      <!--
       <Menu-item key="5" v-on:click="loadView('help')">
         <center>
           <h2>Help</h2>
         </center>
       </Menu-item>
-      -->
       <Menu-item key="6" v-on:click="loadView('donate')">
         <center>
           <h2>Donate</h2>
