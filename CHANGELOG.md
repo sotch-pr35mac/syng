@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file. This projec
 ### Fixed
 - Fixed loading animation in all text fields as described in Issue #103
 
+### Added
+- Added help menu as described in Issue #72
+
 ## [1.2.0] - 2018-05-12
 ### Added
 - Added very basic pinyin detection for search as described in #26
