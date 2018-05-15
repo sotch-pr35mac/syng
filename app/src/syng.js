@@ -4446,16 +4446,30 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
+
+
+
 module.exports = {
 	data: function() {
 		return {
-
+			contentText: ''
+		}
+	},
+	methods: {
+		initializeReader: function() {
+			var self = this;
+			window.engine.segment(self.contentText).then(function(result) {
+				console.log(result);
+			}).catch(function(err) {
+				console.log("ERROR");
+				console.log(err);
+			});
 		}
 	}
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-669b8136=\"\">\n\t<center _v-669b8136=\"\">\n\t\t<h1 _v-669b8136=\"\">CLIPBOARD</h1>\n\t</center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-669b8136=\"\">\n\t<center _v-669b8136=\"\">\n\t\t<!-- <textarea></textarea> -->\n\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" _v-669b8136=\"\"></i-input>\n\t\t<br _v-669b8136=\"\">\n\t\t<i-button type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read</i-button>\n\t</center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

@@ -1,7 +1,10 @@
 <template>
 	<div>
 		<center>
-			<h1>CLIPBOARD</h1>
+			<!-- <textarea></textarea> -->
+			<i-input :value.sync="contentText" style="width: 85%"></i-input>
+			<br>
+			<i-button type="primary" shape="circle" v-on:click="initializeReader()">Read</i-button>
 		</center>
 	</div>
 </template>
@@ -13,7 +16,18 @@
 module.exports = {
 	data: function() {
 		return {
-
+			contentText: ''
+		}
+	},
+	methods: {
+		initializeReader: function() {
+			var self = this;
+			window.engine.segment(self.contentText).then(function(result) {
+				console.log(result);
+			}).catch(function(err) {
+				console.log("ERROR");
+				console.log(err);
+			});
 		}
 	}
 }
