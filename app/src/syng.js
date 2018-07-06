@@ -4556,14 +4556,14 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 module.exports = {
-    props: [],
+    props: [ 'segmentedWords' ],
     data: function() {
         return {}
     }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-ce35fa5a=\"\">\n    <h1 _v-ce35fa5a=\"\">READER</h1>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n\t{{ segmentedWords }}\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

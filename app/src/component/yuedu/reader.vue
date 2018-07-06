@@ -1,7 +1,7 @@
 <template>
-    <center>
-        <h1>READER</h1>
-    </center>
+    <div class="reader">
+    	{{ segmentedWords }}
+    </div>
 </template>
 
 <style scoped>
@@ -9,7 +9,7 @@
 
 <script>
 module.exports = {
-    props: [],
+    props: [ 'segmentedWords' ],
     data: function() {
         return {}
     }
