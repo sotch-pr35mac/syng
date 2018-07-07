@@ -24,6 +24,7 @@ module.exports = {
 			var self = this;
 			window.engine.segment(self.contentText).then(function(result) {
 				console.log(result);
+				self.$dispatch('readText', result);
 			}).catch(function(err) {
 				console.log("ERROR");
 				console.log(err);

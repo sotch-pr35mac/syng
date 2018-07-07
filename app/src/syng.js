@@ -32,7 +32,7 @@ var syng = new Vue({
 
 },{"./component/bookmarks/bookmarks.vue":2,"./component/search/search.vue":5,"./component/study/study.vue":11,"./component/syngMenu/syngMenu.vue":24,"./component/tools/tools.vue":32,"./component/yuedu/yuedu.vue":38,"iview":45}],2:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-33809940] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-33809940] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-33809940] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-33809940] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-33809940]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-33809940], .list-group-item.selected[_v-33809940] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-33809940] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-33809940] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-33809940] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-33809940] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-33809940] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-33809940] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-33809940] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-33809940] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-33809940] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-33809940] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-33809940] {\n  float: right;\n}\n.word-tags[_v-33809940] {\n  margin-top: 10px;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame[_v-d5ca9192] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-d5ca9192] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-d5ca9192] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-d5ca9192] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-d5ca9192]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-d5ca9192], .list-group-item.selected[_v-d5ca9192] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-d5ca9192] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-d5ca9192] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-d5ca9192] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-d5ca9192] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-d5ca9192] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-d5ca9192] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-d5ca9192] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-d5ca9192] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-d5ca9192] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-d5ca9192] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-d5ca9192] {\n  float: right;\n}\n.word-tags[_v-d5ca9192] {\n  margin-top: 10px;\n}\n")
 
 
 
@@ -532,24 +532,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-33809940=\"\">\n  <div id=\"actions-frame\" _v-33809940=\"\">\n    <row _v-33809940=\"\">\n      <dropdown trigger=\"click\" placement=\"bottom-start\" _v-33809940=\"\">\n        <i-button _v-33809940=\"\">\n           <a v-if=\"currentList == 'bookmarks'\" style=\"color: #657180;\" _v-33809940=\"\">Bookmarks</a>\n           <a v-if=\"!(currentList == 'bookmarks')\" style=\"color: #657180;\" _v-33809940=\"\">{{ currentList }}</a>\n           &nbsp;\n           <icon type=\"arrow-down-b\" size=\"large\" _v-33809940=\"\"></icon>\n        </i-button>\n        <dropdown-menu slot=\"list\" _v-33809940=\"\">\n          <dropdown-item v-on:click=\"switchList('bookmarks')\" _v-33809940=\"\">Bookmarks</dropdown-item>\n          <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"switchList(collection)\" _v-33809940=\"\">{{ collection }}</dropdown-item>\n          <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-33809940=\"\">Create New List</dropdown-item>\n        \n      </dropdown-menu></dropdown>\n      <div class=\"pull-right\" _v-33809940=\"\">\n        <i-button v-on:click=\"importList()\" _v-33809940=\"\">\n          Import\n        </i-button>\n        <i-button v-on:click=\"exportList()\" _v-33809940=\"\">\n          Export\n        </i-button>\n        <i-button v-on:click=\"clearBookmarks()\" v-if=\"currentList == 'bookmarks'\" _v-33809940=\"\">\n          Clear Bookmarks\n        </i-button>\n      </div>\n    </row>\n  </div>\n  <row _v-33809940=\"\">\n    <div class=\"clear-characters\" _v-33809940=\"\">\n      <i-col span=\"5\" _v-33809940=\"\">\n        <div class=\"word-listing\" _v-33809940=\"\">\n          <li class=\"word-listing-item\" _v-33809940=\"\">\n            <i-input placeholder=\"Filter List\" :value.sync=\"filterTerm\" _v-33809940=\"\"></i-input>\n          </li>\n          <li class=\"word-listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-33809940=\"\">\n            <div class=\"word-listing-content\" v-on:click=\"switchWord(word.id)\" _v-33809940=\"\">\n              <h2 _v-33809940=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-33809940=\"\">({{ word.traditional }})</span></h2>\n              <p _v-33809940=\"\">{{ word.pronunciation }}</p>\n              <p _v-33809940=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"word-content\" _v-33809940=\"\">\n        <div v-if=\"displayWord\" _v-33809940=\"\">\n          <div id=\"expanded-content\" class=\"expanded-content\" _v-33809940=\"\">\n            <div class=\"pull-right\" _v-33809940=\"\">\n              <button-group _v-33809940=\"\">\n                <i-button v-on:click=\"removeFromList(currentList)\" _v-33809940=\"\">\n                  <tooltip placement=\"left\" content=\"Remove From Bookmarks\" _v-33809940=\"\">\n                    <icon type=\"minus-round\" size=\"large\" _v-33809940=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-33809940=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-33809940=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-33809940=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <tts v-bind:chars=\"currentWord.traditional\" _v-33809940=\"\"></tts>\n              </button-group>\n              <row _v-33809940=\"\">\n                <div class=\"pull-right word-tags\" _v-33809940=\"\">\n                  <tag v-if=\"currentWord.hsk\" color=\"yellow\" _v-33809940=\"\">HSK: {{currentWord.hsk}}</tag>\n                </div>\n              </row>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-33809940=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-33809940=\"\">{{ char }}</a>\n              <span v-if=\"currentWord.simplified != currentWord.traditional\" _v-33809940=\"\">\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-33809940=\"\">{{ char }}</a>)\n              </span>\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-33809940=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-33809940=\"\">\n            <collapse active-key=\"1\" _v-33809940=\"\">\n              <panel key=\"1\" _v-33809940=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-33809940=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-33809940=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-33809940=\"\">\n                Characters\n                <div slot=\"content\" _v-33809940=\"\">\n                  <br _v-33809940=\"\">\n                  <collapse accordion=\"\" _v-33809940=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-33809940=\"\">\n                      {{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-33809940=\"\">({{ word.traditional }})</span> - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-33809940=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-33809940=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n              <panel key=\"3\" _v-33809940=\"\">\n                Notes\n                <div slot=\"content\" _v-33809940=\"\">\n                  <notes v-bind:notes=\"currentWord.notes\" _v-33809940=\"\"></notes>\n                </div>\n              </panel>\n            </collapse>\n            <br _v-33809940=\"\">\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-d5ca9192=\"\">\n  <div id=\"actions-frame\" _v-d5ca9192=\"\">\n    <row _v-d5ca9192=\"\">\n      <dropdown trigger=\"click\" placement=\"bottom-start\" _v-d5ca9192=\"\">\n        <i-button _v-d5ca9192=\"\">\n           <a v-if=\"currentList == 'bookmarks'\" style=\"color: #657180;\" _v-d5ca9192=\"\">Bookmarks</a>\n           <a v-if=\"!(currentList == 'bookmarks')\" style=\"color: #657180;\" _v-d5ca9192=\"\">{{ currentList }}</a>\n           &nbsp;\n           <icon type=\"arrow-down-b\" size=\"large\" _v-d5ca9192=\"\"></icon>\n        </i-button>\n        <dropdown-menu slot=\"list\" _v-d5ca9192=\"\">\n          <dropdown-item v-on:click=\"switchList('bookmarks')\" _v-d5ca9192=\"\">Bookmarks</dropdown-item>\n          <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"switchList(collection)\" _v-d5ca9192=\"\">{{ collection }}</dropdown-item>\n          <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-d5ca9192=\"\">Create New List</dropdown-item>\n        \n      </dropdown-menu></dropdown>\n      <div class=\"pull-right\" _v-d5ca9192=\"\">\n        <i-button v-on:click=\"importList()\" _v-d5ca9192=\"\">\n          Import\n        </i-button>\n        <i-button v-on:click=\"exportList()\" _v-d5ca9192=\"\">\n          Export\n        </i-button>\n        <i-button v-on:click=\"clearBookmarks()\" v-if=\"currentList == 'bookmarks'\" _v-d5ca9192=\"\">\n          Clear Bookmarks\n        </i-button>\n      </div>\n    </row>\n  </div>\n  <row _v-d5ca9192=\"\">\n    <div class=\"clear-characters\" _v-d5ca9192=\"\">\n      <i-col span=\"5\" _v-d5ca9192=\"\">\n        <div class=\"word-listing\" _v-d5ca9192=\"\">\n          <li class=\"word-listing-item\" _v-d5ca9192=\"\">\n            <i-input placeholder=\"Filter List\" :value.sync=\"filterTerm\" _v-d5ca9192=\"\"></i-input>\n          </li>\n          <li class=\"word-listing-item\" v-for=\"word in wordList\" track-by=\"$index\" _v-d5ca9192=\"\">\n            <div class=\"word-listing-content\" v-on:click=\"switchWord(word.id)\" _v-d5ca9192=\"\">\n              <h2 _v-d5ca9192=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-d5ca9192=\"\">({{ word.traditional }})</span></h2>\n              <p _v-d5ca9192=\"\">{{ word.pronunciation }}</p>\n              <p _v-d5ca9192=\"\">{{ word.definitions.join(' ').substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"word-content\" _v-d5ca9192=\"\">\n        <div v-if=\"displayWord\" _v-d5ca9192=\"\">\n          <div id=\"expanded-content\" class=\"expanded-content\" _v-d5ca9192=\"\">\n            <div class=\"pull-right\" _v-d5ca9192=\"\">\n              <button-group _v-d5ca9192=\"\">\n                <i-button v-on:click=\"removeFromList(currentList)\" _v-d5ca9192=\"\">\n                  <tooltip placement=\"left\" content=\"Remove From Bookmarks\" _v-d5ca9192=\"\">\n                    <icon type=\"minus-round\" size=\"large\" _v-d5ca9192=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-d5ca9192=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-d5ca9192=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-d5ca9192=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <tts v-bind:chars=\"currentWord.traditional\" _v-d5ca9192=\"\"></tts>\n              </button-group>\n              <row _v-d5ca9192=\"\">\n                <div class=\"pull-right word-tags\" _v-d5ca9192=\"\">\n                  <tag v-if=\"currentWord.hsk\" color=\"yellow\" _v-d5ca9192=\"\">HSK: {{currentWord.hsk}}</tag>\n                </div>\n              </row>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-d5ca9192=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index]}\" track-by=\"$index\" _v-d5ca9192=\"\">{{ char }}</a>\n              <span v-if=\"currentWord.simplified != currentWord.traditional\" _v-d5ca9192=\"\">\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-d5ca9192=\"\">{{ char }}</a>)\n              </span>\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-d5ca9192=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-d5ca9192=\"\">\n            <collapse active-key=\"1\" _v-d5ca9192=\"\">\n              <panel key=\"1\" _v-d5ca9192=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-d5ca9192=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-d5ca9192=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-d5ca9192=\"\">\n                Characters\n                <div slot=\"content\" _v-d5ca9192=\"\">\n                  <br _v-d5ca9192=\"\">\n                  <collapse accordion=\"\" _v-d5ca9192=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-d5ca9192=\"\">\n                      {{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-d5ca9192=\"\">({{ word.traditional }})</span> - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-d5ca9192=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-d5ca9192=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n              <panel key=\"3\" _v-d5ca9192=\"\">\n                Notes\n                <div slot=\"content\" _v-d5ca9192=\"\">\n                  <notes v-bind:notes=\"currentWord.notes\" _v-d5ca9192=\"\"></notes>\n                </div>\n              </panel>\n            </collapse>\n            <br _v-d5ca9192=\"\">\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#actions-frame[_v-33809940] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-33809940] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-33809940] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-33809940] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-33809940]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-33809940], .list-group-item.selected[_v-33809940] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-33809940] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-33809940] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-33809940] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-33809940] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-33809940] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-33809940] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-33809940] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-33809940] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-33809940] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-33809940] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-33809940] {\n  float: right;\n}\n.word-tags[_v-33809940] {\n  margin-top: 10px;\n}\n"] = false
+    __vueify_insert__.cache["\n#actions-frame[_v-d5ca9192] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.word-content[_v-d5ca9192] {\n  height: 92vh;\n  overflow: auto;\n}\n.word-listing[_v-d5ca9192] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.word-listing-item[_v-d5ca9192] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-d5ca9192]:first-child {\n  border-top: 0px;\n}\n.word-listing-item.active[_v-d5ca9192], .list-group-item.selected[_v-d5ca9192] {\n  color: #fff;\n  background-color: #116cd6;\n}\n.word-listing-content[_v-d5ca9192] {\n  overflow: hidden;\n  cursor: pointer;\n  text-size: 14pt;\n}\n.expanded-content[_v-d5ca9192] {\n  padding-right: 15px;\n  padding-left: 25px;\n  margin-right: auto;\n  margin-left: auto;\n  color: black;\n}\n.expanded-content h1[_v-d5ca9192] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-d5ca9192] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-d5ca9192] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-d5ca9192] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-d5ca9192] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-d5ca9192] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-d5ca9192] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-d5ca9192] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-d5ca9192] {\n  float: right;\n}\n.word-tags[_v-d5ca9192] {\n  margin-top: 10px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-33809940", module.exports)
+    hotAPI.createRecord("_v-d5ca9192", module.exports)
   } else {
-    hotAPI.update("_v-33809940", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-d5ca9192", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"../common/tts/tts.vue":4,"./notes.vue":3,"hsk-list":44,"underscore":58,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],3:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-782c3184] {\n    float: right;\n}\np[_v-782c3184] {\n    font-size: 3vh;\n}\npre[_v-782c3184] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-f90c3a0a] {\n    float: right;\n}\np[_v-f90c3a0a] {\n    font-size: 3vh;\n}\npre[_v-f90c3a0a] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n")
 
 
 
@@ -615,19 +615,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-782c3184=\"\">\n    <div v-if=\"notes.length == 0 &amp;&amp; !editing\" _v-782c3184=\"\">\n        <center _v-782c3184=\"\">\n            <p _v-782c3184=\"\">No Notes</p>\n        </center>\n    </div>\n    <div v-if=\"notes.length > 0 &amp;&amp; !editing\" _v-782c3184=\"\">\n        <pre _v-782c3184=\"\">{{ notes }}</pre>\n    </div>\n    <div v-if=\"editing\" _v-782c3184=\"\">\n             <i-input :value.sync=\"notes\" type=\"textarea\" :autosize=\"true\" _v-782c3184=\"\"></i-input>\n        </div>\n    <br _v-782c3184=\"\">\n    <row _v-782c3184=\"\">\n        <div v-if=\"editing\" _v-782c3184=\"\">\n            <i-button v-on:click=\"save()\" class=\"pull-right\" _v-782c3184=\"\">Save</i-button>\n        </div>\n        <div v-if=\"!editing\" _v-782c3184=\"\">\n            <i-button v-on:click=\"edit()\" type=\"primary\" class=\"pull-right\" v-if=\"notes.length > 0\" _v-782c3184=\"\">Edit</i-button>\n            <i-button v-on:click=\"edit()\" type=\"primary\" class=\"pull-right\" v-if=\"notes.length == 0\" _v-782c3184=\"\">Add Notes</i-button>\n        </div>\n    </row>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-f90c3a0a=\"\">\n    <div v-if=\"notes.length == 0 &amp;&amp; !editing\" _v-f90c3a0a=\"\">\n        <center _v-f90c3a0a=\"\">\n            <p _v-f90c3a0a=\"\">No Notes</p>\n        </center>\n    </div>\n    <div v-if=\"notes.length > 0 &amp;&amp; !editing\" _v-f90c3a0a=\"\">\n        <pre _v-f90c3a0a=\"\">{{ notes }}</pre>\n    </div>\n    <div v-if=\"editing\" _v-f90c3a0a=\"\">\n             <i-input :value.sync=\"notes\" type=\"textarea\" :autosize=\"true\" _v-f90c3a0a=\"\"></i-input>\n        </div>\n    <br _v-f90c3a0a=\"\">\n    <row _v-f90c3a0a=\"\">\n        <div v-if=\"editing\" _v-f90c3a0a=\"\">\n            <i-button v-on:click=\"save()\" class=\"pull-right\" _v-f90c3a0a=\"\">Save</i-button>\n        </div>\n        <div v-if=\"!editing\" _v-f90c3a0a=\"\">\n            <i-button v-on:click=\"edit()\" type=\"primary\" class=\"pull-right\" v-if=\"notes.length > 0\" _v-f90c3a0a=\"\">Edit</i-button>\n            <i-button v-on:click=\"edit()\" type=\"primary\" class=\"pull-right\" v-if=\"notes.length == 0\" _v-f90c3a0a=\"\">Add Notes</i-button>\n        </div>\n    </row>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.pull-right[_v-782c3184] {\n    float: right;\n}\np[_v-782c3184] {\n    font-size: 3vh;\n}\npre[_v-782c3184] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n"] = false
+    __vueify_insert__.cache["\n.pull-right[_v-f90c3a0a] {\n    float: right;\n}\np[_v-f90c3a0a] {\n    font-size: 3vh;\n}\npre[_v-f90c3a0a] {\n    font-size: 3vh;\n    line-height: 1.6;\n    font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n    overflow-wrap: break-word;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-782c3184", module.exports)
+    hotAPI.createRecord("_v-f90c3a0a", module.exports)
   } else {
-    hotAPI.update("_v-782c3184", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-f90c3a0a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],4:[function(require,module,exports){
@@ -669,7 +669,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-button v-on:click=\"speak()\" v-if=\"networkStatus\" _v-465096ee=\"\">\n  <tooltip placement=\"left\" content=\"Say Word (Requires Network Connection)\" _v-465096ee=\"\">\n    <icon type=\"volume-high\" size=\"large\" _v-465096ee=\"\"></icon>\n  </tooltip>\n</i-button>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-button v-on:click=\"speak()\" v-if=\"networkStatus\" _v-07494ad2=\"\">\n  <tooltip placement=\"left\" content=\"Say Word (Requires Network Connection)\" _v-07494ad2=\"\">\n    <icon type=\"volume-high\" size=\"large\" _v-07494ad2=\"\"></icon>\n  </tooltip>\n</i-button>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -679,14 +679,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-465096ee", module.exports)
+    hotAPI.createRecord("_v-07494ad2", module.exports)
   } else {
-    hotAPI.update("_v-465096ee", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-07494ad2", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],5:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#search-frame[_v-fd24e6f8] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-fd24e6f8] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-fd24e6f8] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-fd24e6f8] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-fd24e6f8]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-fd24e6f8], .list-group-item.selected[_v-fd24e6f8] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-fd24e6f8] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-fd24e6f8] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-fd24e6f8] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-fd24e6f8] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-fd24e6f8] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-fd24e6f8] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-fd24e6f8] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-fd24e6f8] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-fd24e6f8] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-fd24e6f8] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-fd24e6f8] {\n  float: right;\n}\n.word-tags[_v-fd24e6f8] {\n  margin-top: 10px;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#search-frame[_v-9ed1a08a] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-9ed1a08a] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-9ed1a08a] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-9ed1a08a] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-9ed1a08a]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-9ed1a08a], .list-group-item.selected[_v-9ed1a08a] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-9ed1a08a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-9ed1a08a] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-9ed1a08a] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-9ed1a08a] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-9ed1a08a] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-9ed1a08a] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-9ed1a08a] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-9ed1a08a] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-9ed1a08a] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-9ed1a08a] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-9ed1a08a] {\n  float: right;\n}\n.word-tags[_v-9ed1a08a] {\n  margin-top: 10px;\n}\n")
 
 
 
@@ -1195,19 +1195,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-fd24e6f8=\"\">\n  <div id=\"search-frame\" _v-fd24e6f8=\"\">\n    <row _v-fd24e6f8=\"\">\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\" _v-fd24e6f8=\"\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\" _v-fd24e6f8=\"\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\" _v-fd24e6f8=\"\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\" _v-fd24e6f8=\"\">Search</i-button>\n    </row>\n  </div>\n  <row _v-fd24e6f8=\"\">\n    <div class=\"clear-characters\" _v-fd24e6f8=\"\">\n      <i-col span=\"5\" _v-fd24e6f8=\"\">\n        <div class=\"search-listing\" _v-fd24e6f8=\"\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\" _v-fd24e6f8=\"\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\" _v-fd24e6f8=\"\">\n              <h2 _v-fd24e6f8=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-fd24e6f8=\"\">({{ word.traditional }})</span></h2>\n              <p _v-fd24e6f8=\"\">{{ word.pinyin }}</p>\n              <p _v-fd24e6f8=\"\">{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\" _v-fd24e6f8=\"\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\" _v-fd24e6f8=\"\">\n          <center _v-fd24e6f8=\"\">\n            <br _v-fd24e6f8=\"\">\n            <br _v-fd24e6f8=\"\">\n            <br _v-fd24e6f8=\"\">\n            <br _v-fd24e6f8=\"\">\n            <h1 _v-fd24e6f8=\"\">No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\" _v-fd24e6f8=\"\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\" _v-fd24e6f8=\"\">\n            <div class=\"pull-right\" _v-fd24e6f8=\"\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\" _v-fd24e6f8=\"\">\n                <i-button _v-fd24e6f8=\"\">\n                  <icon type=\"arrow-down-b\" size=\"large\" _v-fd24e6f8=\"\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\" _v-fd24e6f8=\"\">\n                    <icon type=\"navicon-round\" size=\"large\" _v-fd24e6f8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\" _v-fd24e6f8=\"\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\" _v-fd24e6f8=\"\">{{ collection }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\" _v-fd24e6f8=\"\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-fd24e6f8=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group _v-fd24e6f8=\"\">\n                <i-button v-on:click=\"addToList('bookmarks')\" _v-fd24e6f8=\"\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\" _v-fd24e6f8=\"\">\n                    <icon type=\"plus-round\" size=\"large\" _v-fd24e6f8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-fd24e6f8=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-fd24e6f8=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-fd24e6f8=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <tts v-bind:chars=\"currentWord.traditional\" _v-fd24e6f8=\"\"></tts>\n              </button-group>\n              <row _v-fd24e6f8=\"\">\n                <div class=\"pull-right word-tags\" _v-fd24e6f8=\"\">\n                  <tag v-if=\"currentWord.hsk\" color=\"yellow\" _v-fd24e6f8=\"\">HSK: {{currentWord.hsk}}</tag>\n                </div>\n              </row>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-fd24e6f8=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-fd24e6f8=\"\">{{ char }}</a>\n              <span v-if=\"currentWord.simplified != currentWord.traditional\" _v-fd24e6f8=\"\">\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-fd24e6f8=\"\">{{ char }}</a>)\n              </span>\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-fd24e6f8=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-fd24e6f8=\"\">\n            <collapse active-key=\"1\" _v-fd24e6f8=\"\">\n              <panel key=\"1\" _v-fd24e6f8=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-fd24e6f8=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-fd24e6f8=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-fd24e6f8=\"\">\n                Characters\n                <div slot=\"content\" _v-fd24e6f8=\"\">\n                  <br _v-fd24e6f8=\"\">\n                  <collapse accordion=\"\" _v-fd24e6f8=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-fd24e6f8=\"\">\n                      {{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-fd24e6f8=\"\">({{ word.traditional }})</span> - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-fd24e6f8=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-fd24e6f8=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br _v-fd24e6f8=\"\">\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<i-col span=\"21\" _v-9ed1a08a=\"\">\n  <div id=\"search-frame\" _v-9ed1a08a=\"\">\n    <row _v-9ed1a08a=\"\">\n      <tooltip placement=\"right\" content=\"The intended language of latin input.\" _v-9ed1a08a=\"\">\n        <i-button id=\"input-method\" v-on:click=\"switchInputMethod()\" _v-9ed1a08a=\"\">{{ inputMethod }}</i-button>\n      </tooltip>\n      &nbsp;\n      <i-input placeholder=\"Search in Chinese/English/Pinyin\" style=\"width: 85%\" id=\"default-search\" :value.sync=\"searchText\" _v-9ed1a08a=\"\"></i-input>\n      &nbsp;\n      <i-button id=\"search-button\" v-on:click=\"performSearch()\" _v-9ed1a08a=\"\">Search</i-button>\n    </row>\n  </div>\n  <row _v-9ed1a08a=\"\">\n    <div class=\"clear-characters\" _v-9ed1a08a=\"\">\n      <i-col span=\"5\" _v-9ed1a08a=\"\">\n        <div class=\"search-listing\" _v-9ed1a08a=\"\">\n          <li class=\"search-listing-item\" v-for=\"word in searchResults\" track-by=\"$index\" _v-9ed1a08a=\"\">\n            <div class=\"search-listing-content\" v-on:click=\"switchWord(word.id)\" _v-9ed1a08a=\"\">\n              <h2 _v-9ed1a08a=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-9ed1a08a=\"\">({{ word.traditional }})</span></h2>\n              <p _v-9ed1a08a=\"\">{{ word.pinyin }}</p>\n              <p _v-9ed1a08a=\"\">{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n            </div>\n          </li>\n        </div>\n      </i-col>\n      <i-col span=\"19\" class=\"search-content\" _v-9ed1a08a=\"\">\n        <div id=\"noSearchResults\" v-if=\"noSearchResults\" _v-9ed1a08a=\"\">\n          <center _v-9ed1a08a=\"\">\n            <br _v-9ed1a08a=\"\">\n            <br _v-9ed1a08a=\"\">\n            <br _v-9ed1a08a=\"\">\n            <br _v-9ed1a08a=\"\">\n            <h1 _v-9ed1a08a=\"\">No Search Results</h1>\n          </center>\n        </div>\n        <div v-if=\"displayWord\" _v-9ed1a08a=\"\">\n          <div id=\"expandedContent\" v-if=\"!noSearchResults\" class=\"expanded-content\" _v-9ed1a08a=\"\">\n            <div class=\"pull-right\" _v-9ed1a08a=\"\">\n              <dropdown trigger=\"click\" placement=\"bottom-end\" _v-9ed1a08a=\"\">\n                <i-button _v-9ed1a08a=\"\">\n                  <icon type=\"arrow-down-b\" size=\"large\" _v-9ed1a08a=\"\"></icon>\n                  &nbsp;\n                  <tooltip placement=\"bottom\" content=\"Add to List\" _v-9ed1a08a=\"\">\n                    <icon type=\"navicon-round\" size=\"large\" _v-9ed1a08a=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <dropdown-menu slot=\"list\" _v-9ed1a08a=\"\">\n                  <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\" _v-9ed1a08a=\"\">{{ collection }}</dropdown-item>\n                  <dropdown-item v-on:click=\"addToList('bookmarks')\" _v-9ed1a08a=\"\">Bookmarks</dropdown-item>\n                  <dropdown-item divided=\"\" v-on:click=\"createNewList()\" _v-9ed1a08a=\"\">Create New List</dropdown-item>\n                </dropdown-menu>\n              </dropdown>\n              <button-group _v-9ed1a08a=\"\">\n                <i-button v-on:click=\"addToList('bookmarks')\" _v-9ed1a08a=\"\">\n                  <tooltip placement=\"bottom\" content=\"Add to Bookmarks\" _v-9ed1a08a=\"\">\n                    <icon type=\"plus-round\" size=\"large\" _v-9ed1a08a=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <i-button v-on:click=\"openLargeChars()\" _v-9ed1a08a=\"\">\n                  <tooltip placement=\"left\" content=\"View Large Characters\" _v-9ed1a08a=\"\">\n                    <icon type=\"arrow-expand\" size=\"large\" _v-9ed1a08a=\"\"></icon>\n                  </tooltip>\n                </i-button>\n                <tts v-bind:chars=\"currentWord.traditional\" _v-9ed1a08a=\"\"></tts>\n              </button-group>\n              <row _v-9ed1a08a=\"\">\n                <div class=\"pull-right word-tags\" _v-9ed1a08a=\"\">\n                  <tag v-if=\"currentWord.hsk\" color=\"yellow\" _v-9ed1a08a=\"\">HSK: {{currentWord.hsk}}</tag>\n                </div>\n              </row>\n            </div>\n            <h1 style=\"margin-bottom: 0px;\" _v-9ed1a08a=\"\">\n              <a v-for=\"char in currentWord.simplified\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-9ed1a08a=\"\">{{ char }}</a>\n              <span v-if=\"currentWord.simplified != currentWord.traditional\" _v-9ed1a08a=\"\">\n                (<a v-for=\"char in currentWord.traditional\" :style=\"{ color: currentWord.color[$index] }\" track-by=\"$index\" _v-9ed1a08a=\"\">{{ char }}</a>)\n              </span>\n            </h1>\n            <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-9ed1a08a=\"\">{{ currentWord.pinyin }}</h3>\n            <br _v-9ed1a08a=\"\">\n            <collapse active-key=\"1\" _v-9ed1a08a=\"\">\n              <panel key=\"1\" _v-9ed1a08a=\"\">\n                Definitions\n                <div slot=\"content\" class=\"definitions-list\" _v-9ed1a08a=\"\">\n                  <li v-for=\"def in currentWord.definitions\" _v-9ed1a08a=\"\">{{ def }}</li>\n                </div>\n              </panel>\n              <panel key=\"2\" _v-9ed1a08a=\"\">\n                Characters\n                <div slot=\"content\" _v-9ed1a08a=\"\">\n                  <br _v-9ed1a08a=\"\">\n                  <collapse accordion=\"\" _v-9ed1a08a=\"\">\n                    <panel v-for=\"word in componentCharacters\" track-by=\"$index\" _v-9ed1a08a=\"\">\n                      {{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-9ed1a08a=\"\">({{ word.traditional }})</span> - {{ word.pronunciation }}\n                      <div slot=\"content\" _v-9ed1a08a=\"\">\n                        <li v-for=\"def in word.definitions\" class=\"definitions-list\" _v-9ed1a08a=\"\">{{ def }}</li>\n                      </div>\n                    </panel>\n                  </collapse>\n                </div>\n              </panel>\n            </collapse>\n            <br _v-9ed1a08a=\"\">\n          </div>\n        </div>\n      </i-col>\n    </div>\n  </row>\n</i-col>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#search-frame[_v-fd24e6f8] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-fd24e6f8] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-fd24e6f8] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-fd24e6f8] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-fd24e6f8]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-fd24e6f8], .list-group-item.selected[_v-fd24e6f8] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-fd24e6f8] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-fd24e6f8] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-fd24e6f8] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-fd24e6f8] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-fd24e6f8] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-fd24e6f8] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-fd24e6f8] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-fd24e6f8] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-fd24e6f8] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-fd24e6f8] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-fd24e6f8] {\n  float: right;\n}\n.word-tags[_v-fd24e6f8] {\n  margin-top: 10px;\n}\n"] = false
+    __vueify_insert__.cache["\n#search-frame[_v-9ed1a08a] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n.search-content[_v-9ed1a08a] {\n  height: 92vh;\n  overflow: auto;\n}\n.search-listing[_v-9ed1a08a] {\n  height: 92vh;\n  overflow-y: scroll;\n  background-color: #f5f5f4;\n  text-overflow: ellipsis;\n  list-style: none;\n}\n.search-listing-item[_v-9ed1a08a] {\n  padding: 10px;\n  font-size: 12px;\n  color: #414142;\n  border-top: 1px solid #ddd;\n}\n.search-listing-item[_v-9ed1a08a]:first-child {\n  border-top: 0;\n}\n.search-listing-item.active[_v-9ed1a08a], .list-group-item.selected[_v-9ed1a08a] {\n  color: #fff;\n  background-color: #116cd6;\n}\n\n.search-listing-content[_v-9ed1a08a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.expanded-content[_v-9ed1a08a] {\n\tpadding-right: 15px;\n\tpadding-left: 25px;\n\tmargin-right: auto;\n\tmargin-left: auto;\n\t/*overflow-y: scroll;*/\n  color: black;\n}\n.expanded-content h1[_v-9ed1a08a] {\n  font-size: 42px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h2[_v-9ed1a08a] {\n  font-size: 36px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h3[_v-9ed1a08a] {\n  font-size: 30px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h4[_v-9ed1a08a] {\n  font-size: 24px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h5[_v-9ed1a08a] {\n  font-size: 18px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.expanded-content h6[_v-9ed1a08a] {\n  font-size: 12px;\n  margin-top: 20px;\n  margin-bottom: 10px;\n  font-weight: 500;\n  white-space: nowrap;\n  text-overflow: ellipsis;\n}\n.clear-characters[_v-9ed1a08a] {\n  font-family: system, -apple-system, \".SFNSDisplay-Regular\", \"Helvetica Neue\", Helvetica, \"Segoe UI\", sans-serif;\n  font-size: 13px;\n  line-height: 1.6;\n  overflow-y: auto;\n}\n.definitions-list[_v-9ed1a08a] {\n  list-style: circle;\n  font-size: 12pt;\n  color: black;\n}\n.pull-right[_v-9ed1a08a] {\n  float: right;\n}\n.word-tags[_v-9ed1a08a] {\n  margin-top: 10px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-fd24e6f8", module.exports)
+    hotAPI.createRecord("_v-9ed1a08a", module.exports)
   } else {
-    hotAPI.update("_v-fd24e6f8", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-9ed1a08a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"../common/tts/tts.vue":4,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],6:[function(require,module,exports){
@@ -1306,14 +1306,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-1fc91dfb", module.exports)
+    hotAPI.createRecord("_v-f958cb9c", module.exports)
   } else {
-    hotAPI.update("_v-1fc91dfb", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-f958cb9c", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./cardBack.vue":7,"./cardFront.vue":8,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],7:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.definitions[_v-622c5202] {\n  font-weight: lighter;\n  font-size: 3.5vh;\n  text-align: left;\n  padding-right: 10px;\n  padding-left: 10px;\n}\n.pinyin[_v-622c5202] {\n  text-align: center;\n  font-size: 10vh;\n  margin-top: 10px;\n  font-weight: lighter;\n}\n.card-container[_v-622c5202] {\n  height: 92%;\n  width: 71%;\n  overflow-y: scroll;\n  overflow-x: hidden;\n  position: fixed;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.definitions[_v-71c04a8e] {\n  font-weight: lighter;\n  font-size: 3.5vh;\n  text-align: left;\n  padding-right: 10px;\n  padding-left: 10px;\n}\n.pinyin[_v-71c04a8e] {\n  text-align: center;\n  font-size: 10vh;\n  margin-top: 10px;\n  font-weight: lighter;\n}\n.card-container[_v-71c04a8e] {\n  height: 92%;\n  width: 71%;\n  overflow-y: scroll;\n  overflow-x: hidden;\n  position: fixed;\n}\n")
 
 
 
@@ -1359,24 +1359,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-622c5202=\"\">\n  <div class=\"card-container\" _v-622c5202=\"\">\n    <h1 class=\"pinyin\" _v-622c5202=\"\">{{ word.pronunciation }}</h1>\n    <br _v-622c5202=\"\">\n    <ol _v-622c5202=\"\">\n      <li v-for=\"def in word.definitions\" class=\"definitions\" _v-622c5202=\"\">{{ def }}</li>\n    </ol>\n  </div>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-71c04a8e=\"\">\n  <div class=\"card-container\" _v-71c04a8e=\"\">\n    <h1 class=\"pinyin\" _v-71c04a8e=\"\">{{ word.pronunciation }}</h1>\n    <br _v-71c04a8e=\"\">\n    <ol _v-71c04a8e=\"\">\n      <li v-for=\"def in word.definitions\" class=\"definitions\" _v-71c04a8e=\"\">{{ def }}</li>\n    </ol>\n  </div>\n</center>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.definitions[_v-622c5202] {\n  font-weight: lighter;\n  font-size: 3.5vh;\n  text-align: left;\n  padding-right: 10px;\n  padding-left: 10px;\n}\n.pinyin[_v-622c5202] {\n  text-align: center;\n  font-size: 10vh;\n  margin-top: 10px;\n  font-weight: lighter;\n}\n.card-container[_v-622c5202] {\n  height: 92%;\n  width: 71%;\n  overflow-y: scroll;\n  overflow-x: hidden;\n  position: fixed;\n}\n"] = false
+    __vueify_insert__.cache["\n.definitions[_v-71c04a8e] {\n  font-weight: lighter;\n  font-size: 3.5vh;\n  text-align: left;\n  padding-right: 10px;\n  padding-left: 10px;\n}\n.pinyin[_v-71c04a8e] {\n  text-align: center;\n  font-size: 10vh;\n  margin-top: 10px;\n  font-weight: lighter;\n}\n.card-container[_v-71c04a8e] {\n  height: 92%;\n  width: 71%;\n  overflow-y: scroll;\n  overflow-x: hidden;\n  position: fixed;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-622c5202", module.exports)
+    hotAPI.createRecord("_v-71c04a8e", module.exports)
   } else {
-    hotAPI.update("_v-622c5202", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-71c04a8e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],8:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.big-word[_v-c3f2a2c4] {\n  text-align: center;\n  font-size: 15vh;\n  margin-top: 25%;\n  font-weight: lighter;\n}\n.card-container[_v-c3f2a2c4] {\n  height: 100%;\n  overflow-y: auto;\n  overflow-x: hidden;\n  position: relative;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.big-word[_v-50f78672] {\n  text-align: center;\n  font-size: 15vh;\n  margin-top: 25%;\n  font-weight: lighter;\n}\n.card-container[_v-50f78672] {\n  height: 100%;\n  overflow-y: auto;\n  overflow-x: hidden;\n  position: relative;\n}\n")
 
 
 
@@ -1410,24 +1410,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-c3f2a2c4=\"\">\n  <div class=\"card-container\" _v-c3f2a2c4=\"\">\n    <h1 class=\"big-word\" _v-c3f2a2c4=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-c3f2a2c4=\"\">({{ word.traditional }})</span></h1>\n  </div>\n</center>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<center _v-50f78672=\"\">\n  <div class=\"card-container\" _v-50f78672=\"\">\n    <h1 class=\"big-word\" _v-50f78672=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.traditional\" _v-50f78672=\"\">({{ word.traditional }})</span></h1>\n  </div>\n</center>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.big-word[_v-c3f2a2c4] {\n  text-align: center;\n  font-size: 15vh;\n  margin-top: 25%;\n  font-weight: lighter;\n}\n.card-container[_v-c3f2a2c4] {\n  height: 100%;\n  overflow-y: auto;\n  overflow-x: hidden;\n  position: relative;\n}\n"] = false
+    __vueify_insert__.cache["\n.big-word[_v-50f78672] {\n  text-align: center;\n  font-size: 15vh;\n  margin-top: 25%;\n  font-weight: lighter;\n}\n.card-container[_v-50f78672] {\n  height: 100%;\n  overflow-y: auto;\n  overflow-x: hidden;\n  position: relative;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-c3f2a2c4", module.exports)
+    hotAPI.createRecord("_v-50f78672", module.exports)
   } else {
-    hotAPI.update("_v-c3f2a2c4", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-50f78672", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],9:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-0e095c9e] {\n  float: right;\n}\n#actions-frame[_v-0e095c9e] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-043d9395] {\n  float: right;\n}\n#actions-frame[_v-043d9395] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n")
 
 
 
@@ -1502,19 +1502,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0e095c9e=\"\">\n  <component :is=\"currentView\" v-bind:list=\"list\" _v-0e095c9e=\"\"></component>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-043d9395=\"\">\n  <component :is=\"currentView\" v-bind:list=\"list\" _v-043d9395=\"\"></component>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.pull-right[_v-0e095c9e] {\n  float: right;\n}\n#actions-frame[_v-0e095c9e] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n"] = false
+    __vueify_insert__.cache["\n.pull-right[_v-043d9395] {\n  float: right;\n}\n#actions-frame[_v-043d9395] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-0e095c9e", module.exports)
+    hotAPI.createRecord("_v-043d9395", module.exports)
   } else {
-    hotAPI.update("_v-0e095c9e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-043d9395", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./card.vue":6,"./selector.vue":10,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],10:[function(require,module,exports){
@@ -1577,9 +1577,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-715f35ca", module.exports)
+    hotAPI.createRecord("_v-535a82fe", module.exports)
   } else {
-    hotAPI.update("_v-715f35ca", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-535a82fe", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],11:[function(require,module,exports){
@@ -1652,14 +1652,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-82ece050", module.exports)
+    hotAPI.createRecord("_v-713ed662", module.exports)
   } else {
-    hotAPI.update("_v-82ece050", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-713ed662", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./flashcards/flashcards.vue":9,"./test/test.vue":17,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],12:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-f2c7f0ac] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-f2c7f0ac] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-1579913e] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-1579913e] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n")
 
 
 
@@ -1694,19 +1694,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-f2c7f0ac=\"\">\n  <center _v-f2c7f0ac=\"\">\n    <br _v-f2c7f0ac=\"\">&nbsp;<br _v-f2c7f0ac=\"\">\n    <br _v-f2c7f0ac=\"\">&nbsp;<br _v-f2c7f0ac=\"\">\n    <h1 class=\"question\" _v-f2c7f0ac=\"\">{{ question.question }}</h1>\n    <br _v-f2c7f0ac=\"\">&nbsp;<br _v-f2c7f0ac=\"\">\n    <h2 class=\"answer\" _v-f2c7f0ac=\"\">{{ question.answers[question.correctAnswer] }}\n  </h2></center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-1579913e=\"\">\n  <center _v-1579913e=\"\">\n    <br _v-1579913e=\"\">&nbsp;<br _v-1579913e=\"\">\n    <br _v-1579913e=\"\">&nbsp;<br _v-1579913e=\"\">\n    <h1 class=\"question\" _v-1579913e=\"\">{{ question.question }}</h1>\n    <br _v-1579913e=\"\">&nbsp;<br _v-1579913e=\"\">\n    <h2 class=\"answer\" _v-1579913e=\"\">{{ question.answers[question.correctAnswer] }}\n  </h2></center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.question[_v-f2c7f0ac] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-f2c7f0ac] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n"] = false
+    __vueify_insert__.cache["\n.question[_v-1579913e] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-1579913e] {\n  font-size: 8vh;\n  overflow: auto;\n  font-weight: lighter;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-f2c7f0ac", module.exports)
+    hotAPI.createRecord("_v-1579913e", module.exports)
   } else {
-    hotAPI.update("_v-f2c7f0ac", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-1579913e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],13:[function(require,module,exports){
@@ -2228,14 +2228,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-de7d26ea", module.exports)
+    hotAPI.createRecord("_v-c7e1c3fc", module.exports)
   } else {
-    hotAPI.update("_v-de7d26ea", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-c7e1c3fc", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./answer.vue":12,"./question.vue":14,"./scorecard.vue":15,"progressbar.js":52,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],14:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-4f1c2a5c] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-4f1c2a5c] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-4f1c2a5c] {\n  width: 90%;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.question[_v-3a0c08c9] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-3a0c08c9] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-3a0c08c9] {\n  width: 90%;\n}\n")
 
 
 
@@ -2295,24 +2295,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-4f1c2a5c=\"\">\n  <center _v-4f1c2a5c=\"\">\n    <br _v-4f1c2a5c=\"\">&nbsp;<br _v-4f1c2a5c=\"\">\n    <br _v-4f1c2a5c=\"\">&nbsp;<br _v-4f1c2a5c=\"\">\n    <h1 class=\"question\" _v-4f1c2a5c=\"\">{{ question.question }}</h1>\n    <br _v-4f1c2a5c=\"\">&nbsp;<br _v-4f1c2a5c=\"\">\n    <row _v-4f1c2a5c=\"\">\n      <i-col span=\"12\" _v-4f1c2a5c=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(0)\" _v-4f1c2a5c=\"\"><span class=\"answer\" _v-4f1c2a5c=\"\">{{ question.answers[0] }}</span></i-button>\n        <br _v-4f1c2a5c=\"\">&nbsp;<br _v-4f1c2a5c=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(1)\" _v-4f1c2a5c=\"\"><span class=\"answer\" _v-4f1c2a5c=\"\">{{ question.answers[1] }}</span></i-button>\n      </i-col>\n      <i-col span=\"12\" _v-4f1c2a5c=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(2)\" _v-4f1c2a5c=\"\"><span class=\"answer\" _v-4f1c2a5c=\"\">{{ question.answers[2] }}</span></i-button>\n        <br _v-4f1c2a5c=\"\">&nbsp;<br _v-4f1c2a5c=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(3)\" _v-4f1c2a5c=\"\"><span class=\"answer\" _v-4f1c2a5c=\"\">{{ question.answers[3] }}</span></i-button>\n      </i-col>\n    </row>\n  </center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-3a0c08c9=\"\">\n  <center _v-3a0c08c9=\"\">\n    <br _v-3a0c08c9=\"\">&nbsp;<br _v-3a0c08c9=\"\">\n    <br _v-3a0c08c9=\"\">&nbsp;<br _v-3a0c08c9=\"\">\n    <h1 class=\"question\" _v-3a0c08c9=\"\">{{ question.question }}</h1>\n    <br _v-3a0c08c9=\"\">&nbsp;<br _v-3a0c08c9=\"\">\n    <row _v-3a0c08c9=\"\">\n      <i-col span=\"12\" _v-3a0c08c9=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(0)\" _v-3a0c08c9=\"\"><span class=\"answer\" _v-3a0c08c9=\"\">{{ question.answers[0] }}</span></i-button>\n        <br _v-3a0c08c9=\"\">&nbsp;<br _v-3a0c08c9=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(1)\" _v-3a0c08c9=\"\"><span class=\"answer\" _v-3a0c08c9=\"\">{{ question.answers[1] }}</span></i-button>\n      </i-col>\n      <i-col span=\"12\" _v-3a0c08c9=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(2)\" _v-3a0c08c9=\"\"><span class=\"answer\" _v-3a0c08c9=\"\">{{ question.answers[2] }}</span></i-button>\n        <br _v-3a0c08c9=\"\">&nbsp;<br _v-3a0c08c9=\"\">\n        <i-button type=\"primary\" size=\"large\" long=\"\" v-on:click=\"checkAnswer(3)\" _v-3a0c08c9=\"\"><span class=\"answer\" _v-3a0c08c9=\"\">{{ question.answers[3] }}</span></i-button>\n      </i-col>\n    </row>\n  </center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.question[_v-4f1c2a5c] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-4f1c2a5c] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-4f1c2a5c] {\n  width: 90%;\n}\n"] = false
+    __vueify_insert__.cache["\n.question[_v-3a0c08c9] {\n  font-size: 9vh;\n  font-weight: lighter;\n}\n.answer[_v-3a0c08c9] {\n  font-size: 4vh;\n  overflow: auto;\n}\n.ivu-btn-long[_v-3a0c08c9] {\n  width: 90%;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-4f1c2a5c", module.exports)
+    hotAPI.createRecord("_v-3a0c08c9", module.exports)
   } else {
-    hotAPI.update("_v-4f1c2a5c", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-3a0c08c9", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],15:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\nh1[_v-6ac43d66] {\n  font-size: 9vh;\n}\nh2[_v-6ac43d66] {\n  font-size: 4vh;\n}\np[_v-6ac43d66] {\n  font-size: 3vh;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\nh1[_v-3c6dde4f] {\n  font-size: 9vh;\n}\nh2[_v-3c6dde4f] {\n  font-size: 4vh;\n}\np[_v-3c6dde4f] {\n  font-size: 3vh;\n}\n")
 
 
 
@@ -2353,19 +2353,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-6ac43d66=\"\">\n  <br _v-6ac43d66=\"\">\n  <br _v-6ac43d66=\"\">\n  <br _v-6ac43d66=\"\">\n  <center _v-6ac43d66=\"\">\n    <h2 _v-6ac43d66=\"\">Your Score: </h2>\n    <br _v-6ac43d66=\"\">\n    <h1 _v-6ac43d66=\"\">{{score}}%</h1>\n    <br _v-6ac43d66=\"\">\n    <br _v-6ac43d66=\"\">\n    <p v-if=\"score >= 90\" _v-6ac43d66=\"\">Excellent!! Keep up the great work!</p>\n    <p v-if=\"score < 90\" _v-6ac43d66=\"\">Nice!</p>\n    <p v-if=\"score < 50\" _v-6ac43d66=\"\">Keep studying and you'll do better next time!</p>\n  </center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-3c6dde4f=\"\">\n  <br _v-3c6dde4f=\"\">\n  <br _v-3c6dde4f=\"\">\n  <br _v-3c6dde4f=\"\">\n  <center _v-3c6dde4f=\"\">\n    <h2 _v-3c6dde4f=\"\">Your Score: </h2>\n    <br _v-3c6dde4f=\"\">\n    <h1 _v-3c6dde4f=\"\">{{score}}%</h1>\n    <br _v-3c6dde4f=\"\">\n    <br _v-3c6dde4f=\"\">\n    <p v-if=\"score >= 90\" _v-3c6dde4f=\"\">Excellent!! Keep up the great work!</p>\n    <p v-if=\"score < 90\" _v-3c6dde4f=\"\">Nice!</p>\n    <p v-if=\"score < 50\" _v-3c6dde4f=\"\">Keep studying and you'll do better next time!</p>\n  </center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\nh1[_v-6ac43d66] {\n  font-size: 9vh;\n}\nh2[_v-6ac43d66] {\n  font-size: 4vh;\n}\np[_v-6ac43d66] {\n  font-size: 3vh;\n}\n"] = false
+    __vueify_insert__.cache["\nh1[_v-3c6dde4f] {\n  font-size: 9vh;\n}\nh2[_v-3c6dde4f] {\n  font-size: 4vh;\n}\np[_v-3c6dde4f] {\n  font-size: 3vh;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-6ac43d66", module.exports)
+    hotAPI.createRecord("_v-3c6dde4f", module.exports)
   } else {
-    hotAPI.update("_v-6ac43d66", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-3c6dde4f", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],16:[function(require,module,exports){
@@ -2428,14 +2428,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-e812036a", module.exports)
+    hotAPI.createRecord("_v-24ddc77c", module.exports)
   } else {
-    hotAPI.update("_v-e812036a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-24ddc77c", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],17:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-4e12f104] {\n  float: right;\n}\n#actions-frame[_v-4e12f104] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.pull-right[_v-37778e16] {\n  float: right;\n}\n#actions-frame[_v-37778e16] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n")
 
 
 
@@ -2512,24 +2512,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-4e12f104=\"\">\n  <component :is=\"currentView\" v-bind:list=\"list\" _v-4e12f104=\"\"></component>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-37778e16=\"\">\n  <component :is=\"currentView\" v-bind:list=\"list\" _v-37778e16=\"\"></component>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.pull-right[_v-4e12f104] {\n  float: right;\n}\n#actions-frame[_v-4e12f104] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n"] = false
+    __vueify_insert__.cache["\n.pull-right[_v-37778e16] {\n  float: right;\n}\n#actions-frame[_v-37778e16] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-4e12f104", module.exports)
+    hotAPI.createRecord("_v-37778e16", module.exports)
   } else {
-    hotAPI.update("_v-4e12f104", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-37778e16", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./exam.vue":13,"./selector.vue":16,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],18:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.about-dialog-content[_v-0ac5a1d3] {\n  margin-left: 50px;\n  margin-right: 50px;\n}\n.about-dialog[_v-0ac5a1d3] {\n  margin-top: 35px;\n}\n.container[_v-0ac5a1d3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-0ac5a1d3] {\n  font-size: 2.3vh;\n}\nli[_v-0ac5a1d3] {\n  font-size: 2.3vh\n}\nh2[_v-0ac5a1d3] {\n  font-size: 3.5vh;\n  font-weight: 200;\n}\nh3[_v-0ac5a1d3] {\n  font-size: 2.5vh;\n  font-weight: 200;\n}\nh4[_v-0ac5a1d3] {\n  font-size: 2.1vh;\n  font-weight: 200;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.about-dialog-content[_v-49cf6c88] {\n  margin-left: 50px;\n  margin-right: 50px;\n}\n.about-dialog[_v-49cf6c88] {\n  margin-top: 35px;\n}\n.container[_v-49cf6c88] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-49cf6c88] {\n  font-size: 2.3vh;\n}\nli[_v-49cf6c88] {\n  font-size: 2.3vh\n}\nh2[_v-49cf6c88] {\n  font-size: 3.5vh;\n  font-weight: 200;\n}\nh3[_v-49cf6c88] {\n  font-size: 2.5vh;\n  font-weight: 200;\n}\nh4[_v-49cf6c88] {\n  font-size: 2.1vh;\n  font-weight: 200;\n}\n")
 
 
 
@@ -2605,19 +2605,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"container\" _v-0ac5a1d3=\"\">\n  <br _v-0ac5a1d3=\"\">\n  <center _v-0ac5a1d3=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"120px\" width=\"120px\" _v-0ac5a1d3=\"\">\n    <br _v-0ac5a1d3=\"\">\n    <h2 _v-0ac5a1d3=\"\">Syng | 词应</h2>\n    <h3 _v-0ac5a1d3=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-0ac5a1d3=\"\">v1.2.0</h4>\n  </center>\n  <br _v-0ac5a1d3=\"\">\n  <br _v-0ac5a1d3=\"\">\n  <center _v-0ac5a1d3=\"\">\n    <button-group size=\"large\" _v-0ac5a1d3=\"\">\n      <i-button type=\"primary\" v-if=\"viewingAbout\" _v-0ac5a1d3=\"\">About</i-button>\n      <i-button v-on:click=\"switchView()\" v-if=\"!viewingAbout\" _v-0ac5a1d3=\"\">About</i-button>\n      <i-button v-on:click=\"switchView()\" v-if=\"viewingAbout\" _v-0ac5a1d3=\"\">Acknowledgments</i-button>\n      <i-button type=\"primary\" v-if=\"!viewingAbout\" _v-0ac5a1d3=\"\">Acknowledgments</i-button>\n    </button-group>\n  </center>\n  <div v-if=\"viewingAbout\" class=\"about-dialog\" _v-0ac5a1d3=\"\">\n    <div class=\"about-dialog-content\" _v-0ac5a1d3=\"\">\n      <p _v-0ac5a1d3=\"\">\n        Syng was created to be a simple, yet full featured Chinese language study tool. Syng is free, cross platform, and open source, so that no matter how much money you have, or what computer you use, you can enjoy all of its features.\n      </p>\n      <br _v-0ac5a1d3=\"\">\n      <p _v-0ac5a1d3=\"\">\n        The name Syng comes from the stylized spelling of cíyīng, the pinyin for 词应. 词应 is short for 词典应用, literally translating to Dictionary App.\n      </p>\n      <br _v-0ac5a1d3=\"\">\n      <p _v-0ac5a1d3=\"\">\n        Syng is actively being developed, and contributors are welcome. For more information visit syngdict.com.\n      </p>\n    </div>\n  </div>\n  <div v-if=\"!viewingAbout\" class=\"about-dialog\" _v-0ac5a1d3=\"\">\n    <div class=\"about-dialog-content\" _v-0ac5a1d3=\"\">\n      <center _v-0ac5a1d3=\"\">\n        <p _v-0ac5a1d3=\"\"><b _v-0ac5a1d3=\"\">Created by Preston Wang-Stosur-Bassett</b></p>\n      </center>\n      <br _v-0ac5a1d3=\"\">\n      <center _v-0ac5a1d3=\"\">\n        <p _v-0ac5a1d3=\"\">\n          Syng relies on many libraries and projects. Currently Syng would not exist without:\n        </p>\n      </center>\n      <br _v-0ac5a1d3=\"\">\n      <p _v-0ac5a1d3=\"\"><b _v-0ac5a1d3=\"\">CC-CEDICT:</b> Chinese Dictionary Database</p>\n      <p _v-0ac5a1d3=\"\"><b _v-0ac5a1d3=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</p>\n      <p _v-0ac5a1d3=\"\"><b _v-0ac5a1d3=\"\">Franc:</b> Language Detection for Search</p>\n      <p _v-0ac5a1d3=\"\"><b _v-0ac5a1d3=\"\">hanzi-writer:</b> Stroke Order Animations</p>\n    </div>\n  </div>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"container\" _v-49cf6c88=\"\">\n  <br _v-49cf6c88=\"\">\n  <center _v-49cf6c88=\"\">\n    <img src=\"../style/img/syng-logo.png\" height=\"120px\" width=\"120px\" _v-49cf6c88=\"\">\n    <br _v-49cf6c88=\"\">\n    <h2 _v-49cf6c88=\"\">Syng | 词应</h2>\n    <h3 _v-49cf6c88=\"\">Dictionary App | 词典应用</h3>\n    <h4 _v-49cf6c88=\"\">v1.2.0</h4>\n  </center>\n  <br _v-49cf6c88=\"\">\n  <br _v-49cf6c88=\"\">\n  <center _v-49cf6c88=\"\">\n    <button-group size=\"large\" _v-49cf6c88=\"\">\n      <i-button type=\"primary\" v-if=\"viewingAbout\" _v-49cf6c88=\"\">About</i-button>\n      <i-button v-on:click=\"switchView()\" v-if=\"!viewingAbout\" _v-49cf6c88=\"\">About</i-button>\n      <i-button v-on:click=\"switchView()\" v-if=\"viewingAbout\" _v-49cf6c88=\"\">Acknowledgments</i-button>\n      <i-button type=\"primary\" v-if=\"!viewingAbout\" _v-49cf6c88=\"\">Acknowledgments</i-button>\n    </button-group>\n  </center>\n  <div v-if=\"viewingAbout\" class=\"about-dialog\" _v-49cf6c88=\"\">\n    <div class=\"about-dialog-content\" _v-49cf6c88=\"\">\n      <p _v-49cf6c88=\"\">\n        Syng was created to be a simple, yet full featured Chinese language study tool. Syng is free, cross platform, and open source, so that no matter how much money you have, or what computer you use, you can enjoy all of its features.\n      </p>\n      <br _v-49cf6c88=\"\">\n      <p _v-49cf6c88=\"\">\n        The name Syng comes from the stylized spelling of cíyīng, the pinyin for 词应. 词应 is short for 词典应用, literally translating to Dictionary App.\n      </p>\n      <br _v-49cf6c88=\"\">\n      <p _v-49cf6c88=\"\">\n        Syng is actively being developed, and contributors are welcome. For more information visit syngdict.com.\n      </p>\n    </div>\n  </div>\n  <div v-if=\"!viewingAbout\" class=\"about-dialog\" _v-49cf6c88=\"\">\n    <div class=\"about-dialog-content\" _v-49cf6c88=\"\">\n      <center _v-49cf6c88=\"\">\n        <p _v-49cf6c88=\"\"><b _v-49cf6c88=\"\">Created by Preston Wang-Stosur-Bassett</b></p>\n      </center>\n      <br _v-49cf6c88=\"\">\n      <center _v-49cf6c88=\"\">\n        <p _v-49cf6c88=\"\">\n          Syng relies on many libraries and projects. Currently Syng would not exist without:\n        </p>\n      </center>\n      <br _v-49cf6c88=\"\">\n      <p _v-49cf6c88=\"\"><b _v-49cf6c88=\"\">CC-CEDICT:</b> Chinese Dictionary Database</p>\n      <p _v-49cf6c88=\"\"><b _v-49cf6c88=\"\">node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</p>\n      <p _v-49cf6c88=\"\"><b _v-49cf6c88=\"\">Franc:</b> Language Detection for Search</p>\n      <p _v-49cf6c88=\"\"><b _v-49cf6c88=\"\">hanzi-writer:</b> Stroke Order Animations</p>\n    </div>\n  </div>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.about-dialog-content[_v-0ac5a1d3] {\n  margin-left: 50px;\n  margin-right: 50px;\n}\n.about-dialog[_v-0ac5a1d3] {\n  margin-top: 35px;\n}\n.container[_v-0ac5a1d3] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-0ac5a1d3] {\n  font-size: 2.3vh;\n}\nli[_v-0ac5a1d3] {\n  font-size: 2.3vh\n}\nh2[_v-0ac5a1d3] {\n  font-size: 3.5vh;\n  font-weight: 200;\n}\nh3[_v-0ac5a1d3] {\n  font-size: 2.5vh;\n  font-weight: 200;\n}\nh4[_v-0ac5a1d3] {\n  font-size: 2.1vh;\n  font-weight: 200;\n}\n"] = false
+    __vueify_insert__.cache["\n.about-dialog-content[_v-49cf6c88] {\n  margin-left: 50px;\n  margin-right: 50px;\n}\n.about-dialog[_v-49cf6c88] {\n  margin-top: 35px;\n}\n.container[_v-49cf6c88] {\n  padding-right: 15px;\n  padding-left: 15px;\n  margin-right: auto;\n  margin-left: auto;\n}\np[_v-49cf6c88] {\n  font-size: 2.3vh;\n}\nli[_v-49cf6c88] {\n  font-size: 2.3vh\n}\nh2[_v-49cf6c88] {\n  font-size: 3.5vh;\n  font-weight: 200;\n}\nh3[_v-49cf6c88] {\n  font-size: 2.5vh;\n  font-weight: 200;\n}\nh4[_v-49cf6c88] {\n  font-size: 2.1vh;\n  font-weight: 200;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-0ac5a1d3", module.exports)
+    hotAPI.createRecord("_v-49cf6c88", module.exports)
   } else {
-    hotAPI.update("_v-0ac5a1d3", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-49cf6c88", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],19:[function(require,module,exports){
@@ -2682,9 +2682,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-12dd6519", module.exports)
+    hotAPI.createRecord("_v-20a26fc2", module.exports)
   } else {
-    hotAPI.update("_v-12dd6519", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-20a26fc2", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],20:[function(require,module,exports){
@@ -2717,9 +2717,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-70382959", module.exports)
+    hotAPI.createRecord("_v-53121efc", module.exports)
   } else {
-    hotAPI.update("_v-70382959", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-53121efc", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],21:[function(require,module,exports){
@@ -2778,9 +2778,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-6f55367b", module.exports)
+    hotAPI.createRecord("_v-3fa7de64", module.exports)
   } else {
-    hotAPI.update("_v-6f55367b", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-3fa7de64", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],22:[function(require,module,exports){
@@ -2835,9 +2835,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-fe8b5964", module.exports)
+    hotAPI.createRecord("_v-8b903d12", module.exports)
   } else {
-    hotAPI.update("_v-fe8b5964", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-8b903d12", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],23:[function(require,module,exports){
@@ -2882,9 +2882,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-1d431e99", module.exports)
+    hotAPI.createRecord("_v-56c0acc2", module.exports)
   } else {
-    hotAPI.update("_v-1d431e99", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-56c0acc2", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./language.vue":22,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],24:[function(require,module,exports){
@@ -2989,9 +2989,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-627e0504", module.exports)
+    hotAPI.createRecord("_v-5db5968a", module.exports)
   } else {
-    hotAPI.update("_v-627e0504", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-5db5968a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./aboutSyng/aboutSyng.vue":18,"./donate/donate.vue":19,"./help/help.vue":20,"./reportBug/reportBug.vue":21,"./settings/settings.vue":23,"./viewLicense/viewLicense.vue":28,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],25:[function(require,module,exports){
@@ -3055,9 +3055,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-cb8a2100", module.exports)
+    hotAPI.createRecord("_v-e180c32e", module.exports)
   } else {
-    hotAPI.update("_v-cb8a2100", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-e180c32e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],26:[function(require,module,exports){
@@ -3102,9 +3102,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-46e846be", module.exports)
+    hotAPI.createRecord("_v-8a8d4db2", module.exports)
   } else {
-    hotAPI.update("_v-46e846be", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-8a8d4db2", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],27:[function(require,module,exports){
@@ -3822,9 +3822,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-57b28d0e", module.exports)
+    hotAPI.createRecord("_v-69a144e2", module.exports)
   } else {
-    hotAPI.update("_v-57b28d0e", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-69a144e2", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],28:[function(require,module,exports){
@@ -3910,14 +3910,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-47490c9a", module.exports)
+    hotAPI.createRecord("_v-71d6051c", module.exports)
   } else {
-    hotAPI.update("_v-47490c9a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-71d6051c", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./cccedictLicense.vue":25,"./nodeCCCEDICTLicense.vue":26,"./syngLicense.vue":27,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],29:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n#main-action-button[_v-044e96e0] {\n  margin-left: 10px;\n}\n.title[_v-044e96e0] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n.pull-right[_v-044e96e0] {\n  float: right;\n}\n#actions-frame[_v-044e96e0] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-044e96e0] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-044e96e0] {\n  font-size: 1.5em;\n}\ntextarea[_v-044e96e0] {\n  resize: none;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n#main-action-button[_v-09d73107] {\n  margin-left: 10px;\n}\n.title[_v-09d73107] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n.pull-right[_v-09d73107] {\n  float: right;\n}\n#actions-frame[_v-09d73107] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-09d73107] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-09d73107] {\n  font-size: 1.5em;\n}\ntextarea[_v-09d73107] {\n  resize: none;\n}\n")
 
 
 
@@ -4024,24 +4024,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-044e96e0=\"\">\n  <i-col span=\"26\" _v-044e96e0=\"\">\n    <div id=\"actions-frame\" _v-044e96e0=\"\">\n      <row _v-044e96e0=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" id=\"main-action-button\" _v-044e96e0=\"\">\n          Convert\n        </i-button>\n        <dropdown trigger=\"click\" placement=\"bottom-start\" class=\"pull-right\" _v-044e96e0=\"\">\n          <i-button _v-044e96e0=\"\">\n            <a style=\"color: #657180;\" v-if=\"(convertFrom == 'tradToSimp')\" _v-044e96e0=\"\">Traditional <b _v-044e96e0=\"\">→</b> Simplified</a>\n            <a style=\"color: #657180;\" v-if=\"(convertFrom == 'simpToTrad')\" _v-044e96e0=\"\">Simplified <b _v-044e96e0=\"\">→</b> Traditional</a>\n            &nbsp;\n            <icon type=\"arrow-down-b\" size=\"large\" _v-044e96e0=\"\"></icon>\n          </i-button>\n          <dropdown-menu slot=\"list\" _v-044e96e0=\"\">\n            <dropdown-item v-on:click=\"convertFrom = 'tradToSimp'\" _v-044e96e0=\"\">Traditional <b _v-044e96e0=\"\">→</b> Simplified</dropdown-item>\n            <dropdown-item v-on:click=\"convertFrom = 'simpToTrad'\" _v-044e96e0=\"\">Simplified <b _v-044e96e0=\"\">→</b> Traditional</dropdown-item>\n          </dropdown-menu>\n        </dropdown>\n        <h1 class=\"title\" _v-044e96e0=\"\">Convert Characters</h1>\n      </row>\n    </div>\n    <row _v-044e96e0=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your Chinese characters here\" _v-044e96e0=\"\"></i-input>\n      <hr _v-044e96e0=\"\">\n      <div id=\"output_text_container\" _v-044e96e0=\"\">\n        <p id=\"output_text\" _v-044e96e0=\"\">Your converted Chinese characters will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-09d73107=\"\">\n  <i-col span=\"26\" _v-09d73107=\"\">\n    <div id=\"actions-frame\" _v-09d73107=\"\">\n      <row _v-09d73107=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" id=\"main-action-button\" _v-09d73107=\"\">\n          Convert\n        </i-button>\n        <dropdown trigger=\"click\" placement=\"bottom-start\" class=\"pull-right\" _v-09d73107=\"\">\n          <i-button _v-09d73107=\"\">\n            <a style=\"color: #657180;\" v-if=\"(convertFrom == 'tradToSimp')\" _v-09d73107=\"\">Traditional <b _v-09d73107=\"\">→</b> Simplified</a>\n            <a style=\"color: #657180;\" v-if=\"(convertFrom == 'simpToTrad')\" _v-09d73107=\"\">Simplified <b _v-09d73107=\"\">→</b> Traditional</a>\n            &nbsp;\n            <icon type=\"arrow-down-b\" size=\"large\" _v-09d73107=\"\"></icon>\n          </i-button>\n          <dropdown-menu slot=\"list\" _v-09d73107=\"\">\n            <dropdown-item v-on:click=\"convertFrom = 'tradToSimp'\" _v-09d73107=\"\">Traditional <b _v-09d73107=\"\">→</b> Simplified</dropdown-item>\n            <dropdown-item v-on:click=\"convertFrom = 'simpToTrad'\" _v-09d73107=\"\">Simplified <b _v-09d73107=\"\">→</b> Traditional</dropdown-item>\n          </dropdown-menu>\n        </dropdown>\n        <h1 class=\"title\" _v-09d73107=\"\">Convert Characters</h1>\n      </row>\n    </div>\n    <row _v-09d73107=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your Chinese characters here\" _v-09d73107=\"\"></i-input>\n      <hr _v-09d73107=\"\">\n      <div id=\"output_text_container\" _v-09d73107=\"\">\n        <p id=\"output_text\" _v-09d73107=\"\">Your converted Chinese characters will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n#main-action-button[_v-044e96e0] {\n  margin-left: 10px;\n}\n.title[_v-044e96e0] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n.pull-right[_v-044e96e0] {\n  float: right;\n}\n#actions-frame[_v-044e96e0] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-044e96e0] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-044e96e0] {\n  font-size: 1.5em;\n}\ntextarea[_v-044e96e0] {\n  resize: none;\n}\n"] = false
+    __vueify_insert__.cache["\n#main-action-button[_v-09d73107] {\n  margin-left: 10px;\n}\n.title[_v-09d73107] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n.pull-right[_v-09d73107] {\n  float: right;\n}\n#actions-frame[_v-09d73107] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-09d73107] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-09d73107] {\n  font-size: 1.5em;\n}\ntextarea[_v-09d73107] {\n  resize: none;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-044e96e0", module.exports)
+    hotAPI.createRecord("_v-09d73107", module.exports)
   } else {
-    hotAPI.update("_v-044e96e0", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-09d73107", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"chinese-conv":40,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],30:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-587a6190] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-587a6190] {\n  float: right;\n}\n#actions-frame[_v-587a6190] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-587a6190] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-587a6190] {\n  font-size: 1.5em;\n}\ntextarea[_v-587a6190] {\n  resize: none;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-38b657ef] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-38b657ef] {\n  float: right;\n}\n#actions-frame[_v-38b657ef] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-38b657ef] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-38b657ef] {\n  font-size: 1.5em;\n}\ntextarea[_v-38b657ef] {\n  resize: none;\n}\n")
 
 
 
@@ -4116,24 +4116,24 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-587a6190=\"\">\n  <i-col span=\"26\" _v-587a6190=\"\">\n    <div id=\"actions-frame\" _v-587a6190=\"\">\n      <row _v-587a6190=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" _v-587a6190=\"\">\n          Pinyinify\n        </i-button>\n        <h1 class=\"title\" _v-587a6190=\"\">Pinyinify</h1>\n      </row>\n    </div>\n    <row _v-587a6190=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your Chinese characters here\" _v-587a6190=\"\"></i-input>\n      <hr _v-587a6190=\"\">\n      <div id=\"output_text_container\" _v-587a6190=\"\">\n        <p id=\"output_text\" _v-587a6190=\"\">Your pinyin will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-38b657ef=\"\">\n  <i-col span=\"26\" _v-38b657ef=\"\">\n    <div id=\"actions-frame\" _v-38b657ef=\"\">\n      <row _v-38b657ef=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" _v-38b657ef=\"\">\n          Pinyinify\n        </i-button>\n        <h1 class=\"title\" _v-38b657ef=\"\">Pinyinify</h1>\n      </row>\n    </div>\n    <row _v-38b657ef=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your Chinese characters here\" _v-38b657ef=\"\"></i-input>\n      <hr _v-38b657ef=\"\">\n      <div id=\"output_text_container\" _v-38b657ef=\"\">\n        <p id=\"output_text\" _v-38b657ef=\"\">Your pinyin will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.title[_v-587a6190] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-587a6190] {\n  float: right;\n}\n#actions-frame[_v-587a6190] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-587a6190] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-587a6190] {\n  font-size: 1.5em;\n}\ntextarea[_v-587a6190] {\n  resize: none;\n}\n"] = false
+    __vueify_insert__.cache["\n.title[_v-38b657ef] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-38b657ef] {\n  float: right;\n}\n#actions-frame[_v-38b657ef] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-38b657ef] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-38b657ef] {\n  font-size: 1.5em;\n}\ntextarea[_v-38b657ef] {\n  resize: none;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-587a6190", module.exports)
+    hotAPI.createRecord("_v-38b657ef", module.exports)
   } else {
-    hotAPI.update("_v-587a6190", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-38b657ef", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"pinyin.js":47,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],31:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-b5aef160] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-b5aef160] {\n  float: right;\n}\n#actions-frame[_v-b5aef160] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-b5aef160] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-b5aef160] {\n  font-size: 1.5em;\n}\ntextarea[_v-b5aef160] {\n  resize: none;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-b6645172] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-b6645172] {\n  float: right;\n}\n#actions-frame[_v-b6645172] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-b6645172] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-b6645172] {\n  font-size: 1.5em;\n}\ntextarea[_v-b6645172] {\n  resize: none;\n}\n")
 
 
 
@@ -4208,19 +4208,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-b5aef160=\"\">\n  <i-col span=\"26\" _v-b5aef160=\"\">\n    <div id=\"actions-frame\" _v-b5aef160=\"\">\n      <row _v-b5aef160=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" _v-b5aef160=\"\">\n          Prettify\n        </i-button>\n        <h1 class=\"title\" _v-b5aef160=\"\">Prettify Pinyin</h1>\n      </row>\n    </div>\n    <row _v-b5aef160=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your pinyin with tone numbers here\" _v-b5aef160=\"\"></i-input>\n      <hr _v-b5aef160=\"\">\n      <div id=\"output_text_container\" _v-b5aef160=\"\">\n        <p id=\"output_text\" _v-b5aef160=\"\">Your pinyin with tone marks will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-b6645172=\"\">\n  <i-col span=\"26\" _v-b6645172=\"\">\n    <div id=\"actions-frame\" _v-b6645172=\"\">\n      <row _v-b6645172=\"\">\n        <i-button v-on:click=\"convert()\" class=\"pull-right\" _v-b6645172=\"\">\n          Prettify\n        </i-button>\n        <h1 class=\"title\" _v-b6645172=\"\">Prettify Pinyin</h1>\n      </row>\n    </div>\n    <row _v-b6645172=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter your pinyin with tone numbers here\" _v-b6645172=\"\"></i-input>\n      <hr _v-b6645172=\"\">\n      <div id=\"output_text_container\" _v-b6645172=\"\">\n        <p id=\"output_text\" _v-b6645172=\"\">Your pinyin with tone marks will appear here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.title[_v-b5aef160] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-b5aef160] {\n  float: right;\n}\n#actions-frame[_v-b5aef160] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-b5aef160] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-b5aef160] {\n  font-size: 1.5em;\n}\ntextarea[_v-b5aef160] {\n  resize: none;\n}\n"] = false
+    __vueify_insert__.cache["\n.title[_v-b6645172] {\n  text-align: center;\n  color: #fff;\n}\n.pull-right[_v-b6645172] {\n  float: right;\n}\n#actions-frame[_v-b6645172] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-b6645172] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-b6645172] {\n  font-size: 1.5em;\n}\ntextarea[_v-b6645172] {\n  resize: none;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-b5aef160", module.exports)
+    hotAPI.createRecord("_v-b6645172", module.exports)
   } else {
-    hotAPI.update("_v-b5aef160", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-b6645172", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"prettify-pinyin":48,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],32:[function(require,module,exports){
@@ -4311,14 +4311,14 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-34fa407c", module.exports)
+    hotAPI.createRecord("_v-3dd14573", module.exports)
   } else {
-    hotAPI.update("_v-34fa407c", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-3dd14573", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./characterConvert/characterConvert.vue":29,"./pinyinify/pinyinify.vue":30,"./prettifyPinyin/prettifyPinyin.vue":31,"./translate/translate.vue":33,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],33:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-74d1b0a4] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n#main-action-button[_v-74d1b0a4] {\n  margin-left: 10px;\n}\n.pull-right[_v-74d1b0a4] {\n  float: right;\n}\n#actions-frame[_v-74d1b0a4] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-74d1b0a4] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-74d1b0a4] {\n  font-size: 1.5em;\n}\ntextarea[_v-74d1b0a4] {\n  resize: none;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.title[_v-2a8ab065] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n#main-action-button[_v-2a8ab065] {\n  margin-left: 10px;\n}\n.pull-right[_v-2a8ab065] {\n  float: right;\n}\n#actions-frame[_v-2a8ab065] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-2a8ab065] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-2a8ab065] {\n  font-size: 1.5em;\n}\ntextarea[_v-2a8ab065] {\n  resize: none;\n}\n")
 
 
 
@@ -4416,19 +4416,19 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-74d1b0a4=\"\">\n  <i-col span=\"26\" _v-74d1b0a4=\"\">\n    <div id=\"actions-frame\" _v-74d1b0a4=\"\">\n      <row _v-74d1b0a4=\"\">\n        <i-button v-on:click=\"translate()\" class=\"pull-right\" id=\"main-action-button\" _v-74d1b0a4=\"\">\n          Translate\n        </i-button>\n        <dropdown trigger=\"click\" placement=\"bottom-start\" class=\"pull-right\" _v-74d1b0a4=\"\">\n          <i-button _v-74d1b0a4=\"\">\n            <a style=\"color: #657180;\" v-if=\"(translateFrom == 'chiToEng')\" _v-74d1b0a4=\"\">Chinese <b _v-74d1b0a4=\"\">→</b> English</a>\n            <a style=\"color: #657180;\" v-if=\"(translateFrom == 'engToChi')\" _v-74d1b0a4=\"\">English <b _v-74d1b0a4=\"\">→</b> Chinese</a>\n            &nbsp;\n            <icon type=\"arrow-down-b\" size=\"large\" _v-74d1b0a4=\"\"></icon>\n          </i-button>\n          <dropdown-menu slot=\"list\" _v-74d1b0a4=\"\">\n            <dropdown-item v-on:click=\"translateFrom = 'chiToEng'\" _v-74d1b0a4=\"\">Chinese <b _v-74d1b0a4=\"\">→</b> English</dropdown-item>\n            <dropdown-item v-on:click=\"translateFrom = 'engToChi'\" _v-74d1b0a4=\"\">English <b _v-74d1b0a4=\"\">→</b> Chinese</dropdown-item>\n          </dropdown-menu>\n        </dropdown>\n        <h1 class=\"title\" _v-74d1b0a4=\"\">Baidu Translate</h1>\n      </row>\n    </div>\n    <row _v-74d1b0a4=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter text to be translated here (requires network connection)\" _v-74d1b0a4=\"\"></i-input>\n      <hr _v-74d1b0a4=\"\">\n      <div id=\"output_text_container\" _v-74d1b0a4=\"\">\n        <p id=\"output_text\" _v-74d1b0a4=\"\">Translation appears here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-2a8ab065=\"\">\n  <i-col span=\"26\" _v-2a8ab065=\"\">\n    <div id=\"actions-frame\" _v-2a8ab065=\"\">\n      <row _v-2a8ab065=\"\">\n        <i-button v-on:click=\"translate()\" class=\"pull-right\" id=\"main-action-button\" _v-2a8ab065=\"\">\n          Translate\n        </i-button>\n        <dropdown trigger=\"click\" placement=\"bottom-start\" class=\"pull-right\" _v-2a8ab065=\"\">\n          <i-button _v-2a8ab065=\"\">\n            <a style=\"color: #657180;\" v-if=\"(translateFrom == 'chiToEng')\" _v-2a8ab065=\"\">Chinese <b _v-2a8ab065=\"\">→</b> English</a>\n            <a style=\"color: #657180;\" v-if=\"(translateFrom == 'engToChi')\" _v-2a8ab065=\"\">English <b _v-2a8ab065=\"\">→</b> Chinese</a>\n            &nbsp;\n            <icon type=\"arrow-down-b\" size=\"large\" _v-2a8ab065=\"\"></icon>\n          </i-button>\n          <dropdown-menu slot=\"list\" _v-2a8ab065=\"\">\n            <dropdown-item v-on:click=\"translateFrom = 'chiToEng'\" _v-2a8ab065=\"\">Chinese <b _v-2a8ab065=\"\">→</b> English</dropdown-item>\n            <dropdown-item v-on:click=\"translateFrom = 'engToChi'\" _v-2a8ab065=\"\">English <b _v-2a8ab065=\"\">→</b> Chinese</dropdown-item>\n          </dropdown-menu>\n        </dropdown>\n        <h1 class=\"title\" _v-2a8ab065=\"\">Baidu Translate</h1>\n      </row>\n    </div>\n    <row _v-2a8ab065=\"\">\n      <i-input :value.sync=\"input\" type=\"textarea\" :autosize=\"{minRows: 10, maxRows: 10}\" placeholder=\"Enter text to be translated here (requires network connection)\" _v-2a8ab065=\"\"></i-input>\n      <hr _v-2a8ab065=\"\">\n      <div id=\"output_text_container\" _v-2a8ab065=\"\">\n        <p id=\"output_text\" _v-2a8ab065=\"\">Translation appears here</p>\n      </div>\n    </row>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.title[_v-74d1b0a4] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n#main-action-button[_v-74d1b0a4] {\n  margin-left: 10px;\n}\n.pull-right[_v-74d1b0a4] {\n  float: right;\n}\n#actions-frame[_v-74d1b0a4] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-74d1b0a4] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-74d1b0a4] {\n  font-size: 1.5em;\n}\ntextarea[_v-74d1b0a4] {\n  resize: none;\n}\n"] = false
+    __vueify_insert__.cache["\n.title[_v-2a8ab065] {\n  text-align: center;\n  margin-left: 25%;\n  color: #fff;\n}\n#main-action-button[_v-2a8ab065] {\n  margin-left: 10px;\n}\n.pull-right[_v-2a8ab065] {\n  float: right;\n}\n#actions-frame[_v-2a8ab065] {\n  padding-left: 10px;\n  padding-right: 10px;\n  padding-top: 10px;\n  padding-bottom: 10px;\n  background-color: #9ea7b4;\n  height: 8vh;\n}\n#output_text_container[_v-2a8ab065] {\n  padding: 10px;\n  overflow-y: scroll;\n  height: 57.5vh;\n}\n#output_text[_v-2a8ab065] {\n  font-size: 1.5em;\n}\ntextarea[_v-2a8ab065] {\n  resize: none;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-74d1b0a4", module.exports)
+    hotAPI.createRecord("_v-2a8ab065", module.exports)
   } else {
-    hotAPI.update("_v-74d1b0a4", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-2a8ab065", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],34:[function(require,module,exports){
@@ -4460,6 +4460,7 @@ module.exports = {
 			var self = this;
 			window.engine.segment(self.contentText).then(function(result) {
 				console.log(result);
+				self.$dispatch('readText', result);
 			}).catch(function(err) {
 				console.log("ERROR");
 				console.log(err);
@@ -4469,7 +4470,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-669b8136=\"\">\n\t<center _v-669b8136=\"\">\n\t\t<!-- <textarea></textarea> -->\n\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" _v-669b8136=\"\"></i-input>\n\t\t<br _v-669b8136=\"\">\n\t\t<i-button type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read</i-button>\n\t</center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-71e932ad=\"\">\n\t<center _v-71e932ad=\"\">\n\t\t<!-- <textarea></textarea> -->\n\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" _v-71e932ad=\"\"></i-input>\n\t\t<br _v-71e932ad=\"\">\n\t\t<i-button type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-71e932ad=\"\">Read</i-button>\n\t</center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -4479,9 +4480,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-669b8136", module.exports)
+    hotAPI.createRecord("_v-71e932ad", module.exports)
   } else {
-    hotAPI.update("_v-669b8136", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-71e932ad", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],35:[function(require,module,exports){
@@ -4537,9 +4538,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-4a810fdb", module.exports)
+    hotAPI.createRecord("_v-79aab312", module.exports)
   } else {
-    hotAPI.update("_v-4a810fdb", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-79aab312", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],36:[function(require,module,exports){
@@ -4559,11 +4560,17 @@ module.exports = {
     props: [ 'segmentedWords' ],
     data: function() {
         return {}
+    },
+    methods: {
+    	inspectWord: function(wordIndex) {
+    		var self = this;
+    		console.log(self.segmentedWords[wordIndex].wordObject[0]);
+    	}
     }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n\t{{ segmentedWords }}\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-aa22c688=\"\">\n\t<span v-for=\"word in segmentedWords\" _v-aa22c688=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-on:click=\"inspectWord($index)\" _v-aa22c688=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-aa22c688=\"\">{{word.text}}</span></span>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -4573,9 +4580,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-ce35fa5a", module.exports)
+    hotAPI.createRecord("_v-aa22c688", module.exports)
   } else {
-    hotAPI.update("_v-ce35fa5a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-aa22c688", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],37:[function(require,module,exports){
@@ -4602,7 +4609,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-544c05f4=\"\">\n\t<center _v-544c05f4=\"\">\n\t\t<h1 _v-544c05f4=\"\">WEB</h1>\n\t</center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-123ddcab=\"\">\n\t<center _v-123ddcab=\"\">\n\t\t<h1 _v-123ddcab=\"\">WEB</h1>\n\t</center>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -4612,9 +4619,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-544c05f4", module.exports)
+    hotAPI.createRecord("_v-123ddcab", module.exports)
   } else {
-    hotAPI.update("_v-544c05f4", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-123ddcab", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],38:[function(require,module,exports){
@@ -4660,15 +4667,25 @@ var __vueify_style__ = __vueify_insert__.insert("\n#actions-frame {\n  padding-l
 
 
 
+
+
+
 var Library = require('./library.vue');
 var Clipboard = require('./clipboard.vue');
 var Web = require('./web.vue');
 var Reader = require('./reader.vue');
 
+function prepareText(text) {
+  return text.map(elem => {
+    return elem
+  });
+}
+
 module.exports = {
   data: function() {
     return {
-      currentView: 'library'
+      currentView: 'library',
+      segmentedText: ''
     }
   },
   components: {
@@ -4676,6 +4693,14 @@ module.exports = {
     'web': Web,
     'clipboard': Clipboard,
     'reader': Reader
+  },
+  events: {
+    readText: function(segmentedText) {
+      var self = this;
+
+      self.segmentedText = segmentedText;
+      self.switchMode('reader');
+    }
   },
   methods: {
     addToLibrary: function() {
@@ -4688,7 +4713,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <i-col span=\"21\">\n    <div id=\"actions-frame\">\n      <row>\n        <i-button v-on:click=\"addToLibrary()\" id=\"addToLibraryButton\" class=\"pull-right\">Add to Library</i-button>\n      </row>\n    </div>\n    <br>\n    <center>\n      <button-group>\n        <i-button v-if=\"currentView == 'library'\" size=\"large\" type=\"primary\">Library</i-button>\n        <i-button v-if=\"currentView != 'library'\" size=\"large\" v-on:click=\"switchMode('library')\">Library</i-button>\n        <i-button v-if=\"currentView == 'clipboard'\" size=\"large\" type=\"primary\">Clipboard</i-button>\n        <i-button v-if=\"currentView != 'clipboard'\" size=\"large\" v-on:click=\"switchMode('clipboard')\">Clipboard</i-button>\n        <i-button v-if=\"currentView == 'web'\" size=\"large\" type=\"primary\">Web</i-button>\n        <i-button v-if=\"currentView != 'web'\" size=\"large\" v-on:click=\"switchMode('web')\">Web</i-button>\n      </button-group>\n    </center>\n    <br>\n    <component :is=\"currentView\"></component>\n  </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div>\n  <i-col span=\"21\">\n    <div id=\"actions-frame\">\n      <row>\n        <i-button v-on:click=\"switchMode('library')\" v-if=\"currentView == 'reader'\" id=\"exitReaderModeButton\">Exit Reader</i-button>\n        <i-button v-on:click=\"addToLibrary()\" id=\"addToLibraryButton\" class=\"pull-right\">Add to Library</i-button>\n      </row>\n    </div>\n    <br>\n    <div v-if=\"currentView != 'reader'\">\n      <center>\n        <button-group>\n          <i-button v-if=\"currentView == 'library'\" size=\"large\" type=\"primary\">Library</i-button>\n          <i-button v-if=\"currentView != 'library'\" size=\"large\" v-on:click=\"switchMode('library')\">Library</i-button>\n          <i-button v-if=\"currentView == 'clipboard'\" size=\"large\" type=\"primary\">Clipboard</i-button>\n          <i-button v-if=\"currentView != 'clipboard'\" size=\"large\" v-on:click=\"switchMode('clipboard')\">Clipboard</i-button>\n          <i-button v-if=\"currentView == 'web'\" size=\"large\" type=\"primary\">Web</i-button>\n          <i-button v-if=\"currentView != 'web'\" size=\"large\" v-on:click=\"switchMode('web')\">Web</i-button>\n        </button-group>\n      </center>\n    </div>\n    <br>\n    <component :is=\"currentView\" v-bind:segmented-words=\"segmentedText\"></component>\n  </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -4698,9 +4723,9 @@ if (module.hot) {(function () {  module.hot.accept()
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
-    hotAPI.createRecord("_v-12a858ba", module.exports)
+    hotAPI.createRecord("_v-1b7f5db1", module.exports)
   } else {
-    hotAPI.update("_v-12a858ba", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
+    hotAPI.update("_v-1b7f5db1", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
 },{"./clipboard.vue":34,"./library.vue":35,"./reader.vue":36,"./web.vue":37,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],39:[function(require,module,exports){
