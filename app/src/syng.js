@@ -4556,21 +4556,29 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 
 
 
+
+
+
+
+
 module.exports = {
     props: [ 'segmentedWords' ],
     data: function() {
-        return {}
+        return {
+        	inspectionInformation: ''
+        }
     },
     methods: {
     	inspectWord: function(wordIndex) {
     		var self = this;
+    		self.inspectionInformation = JSON.stringify(self.segmentedWords[wordIndex].wordObject[0]);
     		console.log(self.segmentedWords[wordIndex].wordObject[0]);
     	}
     }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-aa22c688=\"\">\n\t<span v-for=\"word in segmentedWords\" _v-aa22c688=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-on:click=\"inspectWord($index)\" _v-aa22c688=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-aa22c688=\"\">{{word.text}}</span></span>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-aa22c688=\"\">\n\t<div class=\"text-section\" _v-aa22c688=\"\">\n\t\t<span v-for=\"word in segmentedWords\" _v-aa22c688=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-on:click=\"inspectWord($index)\" _v-aa22c688=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-aa22c688=\"\">{{word.text}}</span></span>\n\t</div>\n\t<div class=\"inspection-section\" _v-aa22c688=\"\">\n\t\t{{ inspectionInformation }}\n\t</div>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
