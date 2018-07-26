@@ -4545,7 +4545,16 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],36:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    background: red;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 30vh;\n    background: blue;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 32vh;\n    padding: 5px;\n}\n")
+
+
+
+
+
+
+
+
+
 
 
 
@@ -4579,26 +4588,27 @@ module.exports = {
     props: [ 'segmentedWords' ],
     data: function() {
         return {
-        	inspectionInformation: ''
+            inspectionInformation: {},
+            activeIndex: -1
         }
     },
     methods: {
     	inspectWord: function(wordIndex) {
     		var self = this;
-    		self.inspectionInformation = JSON.stringify(self.segmentedWords[wordIndex].wordObject[0]);
-    		console.log(self.segmentedWords[wordIndex].wordObject[0]);
+            self.inspectionInformation = self.segmentedWords[wordIndex].wordObject[0];
+            self.activeIndex = wordIndex;
     	}
     }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n    <i-col span=\"26\" _v-ce35fa5a=\"\">\n        <row _v-ce35fa5a=\"\">\n           <div class=\"text-section\" _v-ce35fa5a=\"\">\n                <span v-for=\"word in segmentedWords\" _v-ce35fa5a=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-on:click=\"inspectWord($index)\" _v-ce35fa5a=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-ce35fa5a=\"\">{{word.text}}</span></span>\n          </div>\n        </row>\n        <row _v-ce35fa5a=\"\">\n            <div class=\"inspection-section\" _v-ce35fa5a=\"\">\n                {{ inspectionInformation }}\n            </div>\n        </row>\n    </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n    <i-col span=\"26\" _v-ce35fa5a=\"\">\n        <row _v-ce35fa5a=\"\">\n           <div class=\"text-section\" _v-ce35fa5a=\"\">\n               <span v-for=\"word in segmentedWords\" _v-ce35fa5a=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-bind:class=\"{'word-clicked': activeIndex == $index}\" v-on:click=\"inspectWord($index)\" _v-ce35fa5a=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-ce35fa5a=\"\">{{word.text}}</span></span>\n          </div>\n        </row>\n        <row _v-ce35fa5a=\"\">\n            <div class=\"inspection-section\" _v-ce35fa5a=\"\">\n                <span _v-ce35fa5a=\"\">\n                    <h4 _v-ce35fa5a=\"\">Traditional: {{ inspectionInformation.traditional }}</h4>\n                    <h4 _v-ce35fa5a=\"\">Simplified: {{ inspectionInformation.simplified }}</h4>\n                    <h4 _v-ce35fa5a=\"\">Pinyin: {{ inspectionInformation.pronunciation }}</h4>\n                    <p _v-ce35fa5a=\"\">Definitions: {{ inspectionInformation.definitions }}</p>\n                </span>\n            </div>\n        </row>\n    </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    background: red;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 30vh;\n    background: blue;\n}\n"] = false
+    __vueify_insert__.cache["\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 32vh;\n    padding: 5px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
