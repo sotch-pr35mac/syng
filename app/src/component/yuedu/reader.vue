@@ -1,15 +1,29 @@
 <template>
     <div class="reader">
-    	<div class="text-section">
-    		<span v-for="word in segmentedWords"><span v-if="word.isWord" class="clickableWord" v-on:click="inspectWord($index)">{{word.text}}</span><span v-if="word.isWord == false">{{word.text}}</span></span>
-    	</div>
-    	<div class="inspection-section">
-    		{{ inspectionInformation }}
-    	</div>
+        <i-col span="26">
+            <Row>
+               <div class="text-section">
+                    <span v-for="word in segmentedWords"><span v-if="word.isWord" class="clickableWord" v-on:click="inspectWord($index)">{{word.text}}</span><span v-if="word.isWord == false">{{word.text}}</span></span>
+              </div>
+            </Row>
+            <Row>
+                <div class="inspection-section">
+                    {{ inspectionInformation }}
+                </div>
+            </Row>
+        </i-col>
     </div>
 </template>
 
 <style scoped>
+.text-section {
+    height: 60vh;
+    background: red;
+}
+.inspection-section {
+    height: 32vh;
+    background: blue;
+}
 </style>
 
 <script>

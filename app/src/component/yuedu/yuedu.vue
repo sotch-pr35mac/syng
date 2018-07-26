@@ -7,8 +7,8 @@
           <i-button v-on:click="addToLibrary()" id="addToLibraryButton" class="pull-right">Add to Library</i-button>
         </Row>
       </div>
-      <br>
       <div v-if="currentView != 'reader'">
+        <br>
         <center>
           <Button-group>
             <i-button v-if="currentView == 'library'" size="large" type="primary">Library</i-button>
@@ -19,8 +19,8 @@
             <i-button v-if="currentView != 'web'" size="large" v-on:click="switchMode('web')">Web</i-button>
           </Button-group>
         </center>
+        <br>
       </div>
-      <br>
       <component :is="currentView" v-bind:segmented-words='segmentedText'></component>
     </i-col>
   </div>
