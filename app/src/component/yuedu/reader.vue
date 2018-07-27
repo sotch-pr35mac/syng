@@ -10,6 +10,7 @@
                 <div class="inspection-section">
                     <div v-if="activeIndex == -1">
                         <center>
+                            <br>
                             <h3>No Word Selected</h3>
                             <h4>Click on a word to inspect it.</h4>
                         </center>
@@ -20,18 +21,23 @@
                                 <div class="word-listing">
                                     <li class="word-listing-item" v-for="word in inspectionInformation" track-by="$index">
                                         <div class="word-listing-content" v-on:click="switchWord($index)">
-                                            Stuff....
+                                            <h2>{{ word.simplified }} <span v-if="word.simplified != word.tranditional">({{ word.traditional }})</span></h2>
+                                            <p>{{ word.pinyin }}</p>
+                                            <p>{{ word.definitions.join(" ").substring(0, 27); }}</p>
                                         </div>
                                     </li>
                                 </div>
                             </i-col>
                             <i-col span="19">
-                                <span>
-                                    <h4>Traditional: {{ inspectionInformation[0].traditional }}</h4>
-                                    <h4>Simplified: {{ inspectionInformation[0].simplified }}</h4>
-                                    <h4>Pinyin: {{ inspectionInformation[0].pronunciation }}</h4>
-                                    <p>Definitions: {{ inspectionInformation[0].definitions }}</p>
-                                </span>
+                                <div id="inspection-content">
+                                        Traditional: {{ currentWord.traditional }}
+                                        <br>
+                                        Simplified: {{ currentWord.simplified }}
+                                        <br>
+                                        Pinyin: {{ currentWord.pronunciation }}
+                                        <br>
+                                        Definitions {{ currentWord.definitions }}
+                                </div>
                             </i-col>
                         </Row>
                     </div>
@@ -43,11 +49,11 @@
 
 <style scoped>
 .word-content {
-    height: 32vh;
+    height: 31.75vh;
     overflow: auto;
 }
 .word-listing {
-    height: 32vh;
+    height: 31.75vh;
     overflow-y: scroll;
     background-color: #f5f5f4;
     text-overflow: ellipsis;
@@ -80,7 +86,8 @@
     padding: 10px;
 }
 .inspection-section {
-    height: 32vh;
+    height: 31.75vh;
+    border-top: 0.25vh solid #657180;
 }
 </style>
 
@@ -90,18 +97,20 @@ module.exports = {
     data: function() {
         return {
             inspectionInformation: [],
-            activeIndex: -1
+            activeIndex: -1,
+            currentWord: {}
         }
     },
     methods: {
     	inspectWord: function(wordIndex) {
     		var self = this;
             self.inspectionInformation = self.segmentedWords[wordIndex].wordObject;
-            self.switchWord(1);
+            self.switchWord(0);
             self.activeIndex = wordIndex;
     	},
         switchWord: function(entryIndex) {
-            // TODO: Write this
+            var self = this;
+            self.currentWord = self.inspectionInformation[entryIndex];
         }
     }
 }
