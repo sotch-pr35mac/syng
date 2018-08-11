@@ -4545,7 +4545,7 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],36:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.word-content[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow: auto;\n}\n.word-listing[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow-y: scroll;\n    background-color: #f5f5f4;\n    text-overflow: ellipsis;\n    list-style: none;\n}\n.word-listing-item[_v-ce35fa5a] {\n    padding: 10px;\n    font-size: 12px;\n    color: #414142;\n    border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-ce35fa5a]:first-child {\n    border-top: 0px;\n}\n.word-listing-item.active[_v-ce35fa5a], .list-group-item.selected[_v-ce35fa5a] {\n    color: #fff;\n    background-color: #11cd6;\n}\n.word-listing-content[_v-ce35fa5a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 31.75vh;\n    border-top: 0.25vh solid #657180;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.word-content[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow: auto;\n}\n.word-listing[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow-y: scroll;\n    background-color: #f5f5f4;\n    text-overflow: ellipsis;\n    list-style: none;\n}\n.word-listing-item[_v-ce35fa5a] {\n    padding: 10px;\n    font-size: 12px;\n    color: #414142;\n    border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-ce35fa5a]:first-child {\n    border-top: 0px;\n}\n.word-listing-item.active[_v-ce35fa5a], .list-group-item.selected[_v-ce35fa5a] {\n    color: #fff;\n    background-color: #11cd6;\n}\n.word-listing-content[_v-ce35fa5a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 31.75vh;\n    border-top: 0.25vh solid #657180;\n}\n.word-tags[_v-ce35fa5a] {\n    margin-top: 10px;\n}\n.pull-right[_v-ce35fa5a] {\n    float: right;\n}\n.definitions-list[_v-ce35fa5a] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n#inspection-content[_v-ce35fa5a] {\n    overflow-x: none;\n    overflow-y: scroll;\n    padding: 10px;\n    height: 31vh;\n}\na[_v-ce35fa5a] {\n    color: black;\n}\n\n")
 
 
 
@@ -4639,6 +4639,75 @@ var __vueify_style__ = __vueify_insert__.insert("\n.word-content[_v-ce35fa5a] {\
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+var hsk = window.require('hsk-list');
+var _ = window.require('underscore');
+var Tts = require('../common/tts/tts.vue');
+var databaseManager = new window.DatMan();
 
 module.exports = {
     props: [ 'segmentedWords' ],
@@ -4646,8 +4715,22 @@ module.exports = {
         return {
             inspectionInformation: [],
             activeIndex: -1,
-            currentWord: {}
+            currentWord: {},
+            wordListings: databaseManager.userListNames
         }
+    },
+    attached: function() {
+        var self = this;
+
+        databaseManager.updateListing();
+
+        ipc.on('receive-database-update', function(event, args) {
+            self.wordListings = databaseManager.userListNames;
+            databaseManager.updateListing();
+        });
+    },
+    components: {
+        'tts': Tts
     },
     methods: {
     	inspectWord: function(wordIndex) {
@@ -4659,18 +4742,82 @@ module.exports = {
         switchWord: function(entryIndex) {
             var self = this;
             self.currentWord = self.inspectionInformation[entryIndex];
+            
+            var hskLevel = hsk(self.currentWord.simplified);
+            if(hskLevel > 0) {
+                self.currentWord.hsk = hskLevel;
+            }
+
+            var colors = [];
+            _.each(self.currentWord.toneMarks, function(tone) {
+                if(tone == "1") {
+                    colors.push("blue");
+                } else if(tone == "2") {
+                    colors.push("orange");
+                } else if(tone == "3") {
+                    colors.push("red");
+                } else if(tone == "4") {
+                    colors.push("green");
+                } else if(tone == "5") {
+                    colors.push("black");
+                } else if(tone == "0") {
+                    colors.push("black");
+                }
+            });
+
+            self.currentWord.color = colors;
+        },
+        createNewList: function() {
+            window.ipc.send('show-manage-lists');
+        },
+        addToList: function(listName) {
+            var self = this;
+
+            function displaySuccess(listName, traditional, simplified) {
+                self.$Message.success(simplified + ' (' + traditional + ') successfully added to ' + listName + '.');
+            }
+
+            if(listName == 'bookmarks') {
+                databaseManager.addToBookmarks(self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+                    if(success == true) {
+                        displaySuccess('Bookmarks', self.currentWord.traditional, self.currentWord.simplified);
+                    } else {
+                        console.log(success);
+                    }
+                }, function(err) {
+                    console.log(err);
+                });
+            } else {
+                databaseManager.addToUserList(listName, self.currentWord.simplified, self.currentWord.traditional, self.currentWord.pinyin, self.currentWord.definitions, self.currentWord.toneMarks).then(function(success) {
+                    if(success == true) {
+                        displaySuccess(listName, self.currentWord.traditional, self.currentWord.simplified);
+                    } else {
+                        console.log(success);
+                    }
+                }, function(err) {
+                    console.log(err);
+                });
+            }
+        },
+        openLargeChars: function() {
+            var lgObj = {
+                traditional: this.currentWord.traditional,
+                simplified: this.currentWord.simplified
+            };
+
+            window.ipc.send('show-large-characters', lgObj);
         }
     }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n    <i-col span=\"26\" _v-ce35fa5a=\"\">\n        <row _v-ce35fa5a=\"\">\n           <div class=\"text-section\" _v-ce35fa5a=\"\">\n               <span v-for=\"word in segmentedWords\" _v-ce35fa5a=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-bind:class=\"{'word-clicked': activeIndex == $index}\" v-on:click=\"inspectWord($index)\" _v-ce35fa5a=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-ce35fa5a=\"\">{{word.text}}</span></span>\n          </div>\n        </row>\n        <row _v-ce35fa5a=\"\">\n            <div class=\"inspection-section\" _v-ce35fa5a=\"\">\n                <div v-if=\"activeIndex == -1\" _v-ce35fa5a=\"\">\n                    <center _v-ce35fa5a=\"\">\n                        <br _v-ce35fa5a=\"\">\n                        <h3 _v-ce35fa5a=\"\">No Word Selected</h3>\n                        <h4 _v-ce35fa5a=\"\">Click on a word to inspect it.</h4>\n                    </center>\n                </div>\n                <div v-if=\"activeIndex != -1\" _v-ce35fa5a=\"\">\n                    <row _v-ce35fa5a=\"\">\n                        <i-col span=\"5\" _v-ce35fa5a=\"\">\n                            <div class=\"word-listing\" _v-ce35fa5a=\"\">\n                                <li class=\"word-listing-item\" v-for=\"word in inspectionInformation\" track-by=\"$index\" _v-ce35fa5a=\"\">\n                                    <div class=\"word-listing-content\" v-on:click=\"switchWord($index)\" _v-ce35fa5a=\"\">\n                                        <h2 _v-ce35fa5a=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.tranditional\" _v-ce35fa5a=\"\">({{ word.traditional }})</span></h2>\n                                        <p _v-ce35fa5a=\"\">{{ word.pinyin }}</p>\n                                        <p _v-ce35fa5a=\"\">{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n                                    </div>\n                                </li>\n                            </div>\n                        </i-col>\n                        <i-col span=\"19\" _v-ce35fa5a=\"\">\n                            <div id=\"inspection-content\" _v-ce35fa5a=\"\">\n                                    Traditional: {{ currentWord.traditional }}\n                                    <br _v-ce35fa5a=\"\">\n                                    Simplified: {{ currentWord.simplified }}\n                                    <br _v-ce35fa5a=\"\">\n                                    Pinyin: {{ currentWord.pronunciation }}\n                                    <br _v-ce35fa5a=\"\">\n                                    Definitions {{ currentWord.definitions }}\n                            </div>\n                        </i-col>\n                    </row>\n                </div>\n            </div>\n        </row>\n    </i-col>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div class=\"reader\" _v-ce35fa5a=\"\">\n    <i-col span=\"26\" _v-ce35fa5a=\"\">\n        <row _v-ce35fa5a=\"\">\n           <div class=\"text-section\" _v-ce35fa5a=\"\">\n               <span v-for=\"word in segmentedWords\" _v-ce35fa5a=\"\"><span v-if=\"word.isWord\" class=\"clickableWord\" v-bind:class=\"{'word-clicked': activeIndex == $index}\" v-on:click=\"inspectWord($index)\" _v-ce35fa5a=\"\">{{word.text}}</span><span v-if=\"word.isWord == false\" _v-ce35fa5a=\"\">{{word.text}}</span></span>\n          </div>\n        </row>\n        <row _v-ce35fa5a=\"\">\n            <div class=\"inspection-section\" _v-ce35fa5a=\"\">\n                <div v-if=\"activeIndex == -1\" _v-ce35fa5a=\"\">\n                    <center _v-ce35fa5a=\"\">\n                        <br _v-ce35fa5a=\"\">\n                        <h3 _v-ce35fa5a=\"\">No Word Selected</h3>\n                        <h4 _v-ce35fa5a=\"\">Click on a word to inspect it.</h4>\n                    </center>\n                </div>\n                <div v-if=\"activeIndex != -1\" _v-ce35fa5a=\"\">\n                    <row _v-ce35fa5a=\"\">\n                        <i-col span=\"5\" _v-ce35fa5a=\"\">\n                            <div class=\"word-listing\" _v-ce35fa5a=\"\">\n                                <li class=\"word-listing-item\" v-for=\"word in inspectionInformation\" track-by=\"$index\" _v-ce35fa5a=\"\">\n                                    <div class=\"word-listing-content\" v-on:click=\"switchWord($index)\" _v-ce35fa5a=\"\">\n                                        <h2 _v-ce35fa5a=\"\">{{ word.simplified }} <span v-if=\"word.simplified != word.tranditional\" _v-ce35fa5a=\"\">({{ word.traditional }})</span></h2>\n                                        <p _v-ce35fa5a=\"\">{{ word.pinyin }}</p>\n                                        <p _v-ce35fa5a=\"\">{{ word.definitions.join(\" \").substring(0, 27); }}</p>\n                                    </div>\n                                </li>\n                            </div>\n                        </i-col>\n                        <i-col span=\"19\" _v-ce35fa5a=\"\">\n                            <div id=\"inspection-content\" _v-ce35fa5a=\"\">\n                                <div class=\"pull-right\" _v-ce35fa5a=\"\">\n                                    <dropdown trigger=\"click\" placement=\"bottom-end\" _v-ce35fa5a=\"\">\n                                        <i-button _v-ce35fa5a=\"\">\n                                            <icon type=\"arrow-down-b\" size=\"large\" _v-ce35fa5a=\"\"></icon>\n                                            &nbsp;\n                                            <tooltip placement=\"bottom\" content=\"Add to List\" _v-ce35fa5a=\"\">\n                                                <icon type=\"navicon-round\" size=\"large\" _v-ce35fa5a=\"\"></icon>\n                                            </tooltip>\n                                        </i-button>\n                                        <dropdown-menu slot=\"list\" _v-ce35fa5a=\"\">\n                                            <dropdown-item v-for=\"collection in wordListings\" v-on:click=\"addToList(collection)\" _v-ce35fa5a=\"\">{{ collection }}</dropdown-item>\n                                            <dropdown-item v-on:click=\"addToList('bookmarks')\" _v-ce35fa5a=\"\">Bookmarks</dropdown-item>\n                                            <dropdown-item v-on:click=\"createNewList()\" _v-ce35fa5a=\"\">Create New List</dropdown-item>\n                                        </dropdown-menu>\n                                    </dropdown>\n                                    <button-group _v-ce35fa5a=\"\">\n                                        <i-button v-on:click=\"addToList('bookmarks')\" _v-ce35fa5a=\"\">\n                                            <tooltip placement=\"bottom\" content=\"Add to Bookmarks\" _v-ce35fa5a=\"\">\n                                                <icon type=\"plus-round\" size=\"large\" _v-ce35fa5a=\"\"></icon>\n                                            </tooltip>\n                                        </i-button>\n                                        <i-button v-on:click=\"openLargeChars()\" _v-ce35fa5a=\"\">\n                                            <tooltip placement=\"left\" content=\"View Large Characters\" _v-ce35fa5a=\"\">\n                                                <icon type=\"arrow-expand\" size=\"large\" _v-ce35fa5a=\"\"></icon>\n                                            </tooltip>\n                                        </i-button>\n                                        <tts v-bind:chars=\"currentWord.traditional\" _v-ce35fa5a=\"\"></tts>\n                                    </button-group>\n                                    <row _v-ce35fa5a=\"\">\n                                        <div class=\"pull-right word-tags\" _v-ce35fa5a=\"\">\n                                            <tag v-if=\"currentWord.hsk\" color=\"yellow\" _v-ce35fa5a=\"\">HSK: {{currentWord.hsk}}</tag>\n                                        </div>\n                                    </row>\n                                </div>\n                                <h1 style=\"margin-bottom: 0px;\" _v-ce35fa5a=\"\">\n                                    <a v-for=\"char in currentWord.simplified\" track-by=\"$index\" :style=\"{ color: currentWord.color[$index] }\" _v-ce35fa5a=\"\">{{ char }}</a>\n                                    <span v-if=\"currentWord.simplified != currentWord.traditional\" _v-ce35fa5a=\"\">\n                                        (<a v-for=\"char in currentWord.traditional\" track-by\"$index\"=\"\" :style=\"{ color: currentWord.color[$index] }\" _v-ce35fa5a=\"\">{{ char }}</a>)\n                                    </span>\n                                </h1>\n                                <h3 style=\"margin-top: 0px; padding-left: 3px;\" _v-ce35fa5a=\"\">{{ currentWord.pronunciation }}</h3>\n                                <br _v-ce35fa5a=\"\">\n                                <collapse active-key=\"1\" _v-ce35fa5a=\"\">\n                                    <panel key=\"1\" _v-ce35fa5a=\"\">\n                                        Definitions\n                                        <div slot=\"content\" class=\"definitions-list\" _v-ce35fa5a=\"\">\n                                            <li v-for=\"def in currentWord.definitions\" _v-ce35fa5a=\"\">{{ def }}</li>\n                                        </div>\n                                    </panel>\n                                </collapse>\n                            </div>\n                        </i-col>\n                    </row>\n                </div>\n            </div>\n        </row>\n    </i-col>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.word-content[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow: auto;\n}\n.word-listing[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow-y: scroll;\n    background-color: #f5f5f4;\n    text-overflow: ellipsis;\n    list-style: none;\n}\n.word-listing-item[_v-ce35fa5a] {\n    padding: 10px;\n    font-size: 12px;\n    color: #414142;\n    border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-ce35fa5a]:first-child {\n    border-top: 0px;\n}\n.word-listing-item.active[_v-ce35fa5a], .list-group-item.selected[_v-ce35fa5a] {\n    color: #fff;\n    background-color: #11cd6;\n}\n.word-listing-content[_v-ce35fa5a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 31.75vh;\n    border-top: 0.25vh solid #657180;\n}\n"] = false
+    __vueify_insert__.cache["\n.word-content[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow: auto;\n}\n.word-listing[_v-ce35fa5a] {\n    height: 31.75vh;\n    overflow-y: scroll;\n    background-color: #f5f5f4;\n    text-overflow: ellipsis;\n    list-style: none;\n}\n.word-listing-item[_v-ce35fa5a] {\n    padding: 10px;\n    font-size: 12px;\n    color: #414142;\n    border-top: 1px solid #ddd;\n}\n.word-listing-item[_v-ce35fa5a]:first-child {\n    border-top: 0px;\n}\n.word-listing-item.active[_v-ce35fa5a], .list-group-item.selected[_v-ce35fa5a] {\n    color: #fff;\n    background-color: #11cd6;\n}\n.word-listing-content[_v-ce35fa5a] {\n    overflow: hidden;\n    cursor: pointer;\n    text-size: 14pt;\n}\n.word-clicked[_v-ce35fa5a] {\n    background-color: blue;\n}\n.text-section[_v-ce35fa5a] {\n    height: 60vh;\n    font-size: 1.1em;\n    padding: 10px;\n}\n.inspection-section[_v-ce35fa5a] {\n    height: 31.75vh;\n    border-top: 0.25vh solid #657180;\n}\n.word-tags[_v-ce35fa5a] {\n    margin-top: 10px;\n}\n.pull-right[_v-ce35fa5a] {\n    float: right;\n}\n.definitions-list[_v-ce35fa5a] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n#inspection-content[_v-ce35fa5a] {\n    overflow-x: none;\n    overflow-y: scroll;\n    padding: 10px;\n    height: 31vh;\n}\na[_v-ce35fa5a] {\n    color: black;\n}\n\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
@@ -4679,7 +4826,7 @@ if (module.hot) {(function () {  module.hot.accept()
     hotAPI.update("_v-ce35fa5a", module.exports, (typeof module.exports === "function" ? module.exports.options : module.exports).template)
   }
 })()}
-},{"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],37:[function(require,module,exports){
+},{"../common/tts/tts.vue":4,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],37:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
 var __vueify_style__ = __vueify_insert__.insert("\n")
 
