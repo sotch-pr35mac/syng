@@ -21,6 +21,14 @@ module.exports = {
 			contentText: ''
 		}
 	},
+    attached: function() {
+        var self = this;
+
+        $(document).ready(function() {
+            // Hacky workaround to fix the loading animations inside the textbox
+            $('.ivu-icon-load-c').hide();
+        });
+    },
 	methods: {
 		initializeReader: function() {
             if(this.contentText.length < 1) {
