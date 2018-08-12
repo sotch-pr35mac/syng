@@ -1,16 +1,21 @@
 <template>
 	<div>
-		<center>
-            <i-input :value.sync="destinationSite" style="width: 85%" placeholder="Paste a URL here..."></i-input>
+        <center>
+            <div class="network-alert">
+                <Alert show-icon>Network Connection Required</Alert>
+            </div>
+            <i-input :value.sync="destinationSite" style="width: 85%; margin-bottom: 15px;" placeholder="Paste a URL here..."></i-input>
             <br>
-            <i-button class="web-actions" type="primary" shape="circle" v-on:click="parseSite()">Read from Web</i-button>
-		</center>
+            <i-button type="primary" shape="circle" v-on:click="parseSite()">Read from Web</i-button>
+        </center>
 	</div>
 </template>
 
 <style scoped>
-.web-actions {
-    margin-top: 25px;
+.network-alert {
+    width: 85%;
+    margin-top: 15px;
+    margin-bottom: 25px;
 }
 </style>
 

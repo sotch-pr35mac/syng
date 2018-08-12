@@ -4711,7 +4711,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-669b8136=\"\">\n\t\t<center _v-669b8136=\"\">\n\t\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" placeholder=\"Paste content here...\" _v-669b8136=\"\"></i-input>\n\t\t\t<br _v-669b8136=\"\">\n    \t\t<i-button class=\"clipboard-actions\" type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read from Clipboard</i-button>\n\t\t</center>\n\t</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-669b8136=\"\">\n\t\t<center _v-669b8136=\"\">\n\t\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" placeholder=\"Paste content here...\" _v-669b8136=\"\"></i-input>\n\t\t\t<br _v-669b8136=\"\">\n    \t\t<i-button class=\"clipboard-actions\" shape=\"circle\" type=\"primary\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read from Clipboard</i-button>\n\t\t</center>\n\t</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -5076,7 +5076,12 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"../common/tts/tts.vue":4,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],37:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.web-actions[_v-544c05f4] {\n    margin-top: 25px;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.network-alert[_v-544c05f4] {\n    width: 85%;\n    margin-top: 15px;\n    margin-bottom: 25px;\n}\n")
+
+
+
+
+
 
 
 
@@ -5141,13 +5146,13 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-544c05f4=\"\">\n\t\t<center _v-544c05f4=\"\">\n            <i-input :value.sync=\"destinationSite\" style=\"width: 85%\" placeholder=\"Paste a URL here...\" _v-544c05f4=\"\"></i-input>\n            <br _v-544c05f4=\"\">\n            <i-button class=\"web-actions\" type=\"primary\" shape=\"circle\" v-on:click=\"parseSite()\" _v-544c05f4=\"\">Read from Web</i-button>\n\t\t</center>\n\t</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-544c05f4=\"\">\n        <center _v-544c05f4=\"\">\n            <div class=\"network-alert\" _v-544c05f4=\"\">\n                <alert show-icon=\"\" _v-544c05f4=\"\">Network Connection Required</alert>\n            </div>\n            <i-input :value.sync=\"destinationSite\" style=\"width: 85%; margin-bottom: 15px;\" placeholder=\"Paste a URL here...\" _v-544c05f4=\"\"></i-input>\n            <br _v-544c05f4=\"\">\n            <i-button type=\"primary\" shape=\"circle\" v-on:click=\"parseSite()\" _v-544c05f4=\"\">Read from Web</i-button>\n        </center>\n\t</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.web-actions[_v-544c05f4] {\n    margin-top: 25px;\n}\n"] = false
+    __vueify_insert__.cache["\n.network-alert[_v-544c05f4] {\n    width: 85%;\n    margin-top: 15px;\n    margin-bottom: 25px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {

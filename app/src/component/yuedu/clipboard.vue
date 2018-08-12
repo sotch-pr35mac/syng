@@ -3,7 +3,7 @@
 		<center>
 			<i-input :value.sync="contentText" style="width: 85%" placeholder="Paste content here..."></i-input>
 			<br>
-    		<i-button class="clipboard-actions" type="primary" shape="circle" v-on:click="initializeReader()">Read from Clipboard</i-button>
+    		<i-button class="clipboard-actions" shape="circle" type="primary" v-on:click="initializeReader()">Read from Clipboard</i-button>
 		</center>
 	</div>
 </template>
