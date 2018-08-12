@@ -3,16 +3,16 @@
     <i-col span="21">
       <div id="actions-frame">
         <Row>
-          <i-button v-on:click="switchMode('library')" v-if="currentView == 'reader'" id="exitReaderModeButton">Exit Reader</i-button>
-          <i-button v-on:click="addToLibrary()" id="addToLibraryButton" class="pull-right">Add to Library</i-button>
+          <i-button v-on:click="switchMode('clipboard')" v-if="currentView == 'reader'" id="exitReaderModeButton">Exit Reader</i-button>
+          <!-- <i-button v-on:click="addToLibrary()" id="addToLibraryButton" class="pull-right">Add to Library</i-button> -->
         </Row>
       </div>
       <div v-if="currentView != 'reader'">
         <br>
         <center>
           <Button-group>
-            <i-button v-if="currentView == 'library'" size="large" type="primary">Library</i-button>
-            <i-button v-if="currentView != 'library'" size="large" v-on:click="switchMode('library')">Library</i-button>
+              <!-- <i-button v-if="currentView == 'library'" size="large" type="primary">Library</i-button> -->
+              <!-- <i-button v-if="currentView != 'library'" size="large" v-on:click="switchMode('library')">Library</i-button> -->
             <i-button v-if="currentView == 'clipboard'" size="large" type="primary">Clipboard</i-button>
             <i-button v-if="currentView != 'clipboard'" size="large" v-on:click="switchMode('clipboard')">Clipboard</i-button>
             <i-button v-if="currentView == 'web'" size="large" type="primary">Web</i-button>
@@ -55,7 +55,7 @@ function prepareText(text) {
 module.exports = {
   data: function() {
     return {
-      currentView: 'library',
+      currentView: 'clipboard',
       segmentedText: ''
     }
   },

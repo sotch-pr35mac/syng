@@ -3,7 +3,7 @@
         <i-col span="26">
             <Row>
                <div class="text-section">
-                   <span v-for="word in segmentedWords"><span v-if="word.isWord" class="clickableWord" v-bind:class="{'word-clicked': activeIndex == $index}" v-on:click="inspectWord($index)">{{word.text}}</span><span v-if="word.isWord == false">{{word.text}}</span></span>
+                   <span v-for="word in segmentedWords" track-by"$index"><span v-if="word.isWord" class="clickableWord" v-bind:class="{'word-clicked': activeIndex == $index}" v-on:click="inspectWord($index)">{{word.text}}</span><span v-if="word.isWord == false">{{word.text}}</span></span>
               </div>
             </Row>
             <Row>
@@ -121,12 +121,17 @@
     text-size: 14pt;
 }
 .word-clicked {
-    background-color: blue;
+    background-color: #39f;
+    border-radius: 5px;
+    color: #fff;
+    padding: 2px;
 }
 .text-section {
     height: 60vh;
-    font-size: 1.1em;
+    font-size: 1.6em;
     padding: 10px;
+    overflow-x: hidden;
+    overflow-y: scroll;
 }
 .inspection-section {
     height: 31.75vh;
@@ -168,7 +173,9 @@ module.exports = {
             inspectionInformation: [],
             activeIndex: -1,
             currentWord: {},
-            wordListings: databaseManager.userListNames
+            wordListings: databaseManager.userListNames,
+            pageContent: [],
+            currentPage: 0
         }
     },
     attached: function() {

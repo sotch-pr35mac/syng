@@ -2,14 +2,17 @@
 	<div>
 		<center>
 			<!-- <textarea></textarea> -->
-			<i-input :value.sync="contentText" style="width: 85%"></i-input>
+			<i-input :value.sync="contentText" style="width: 85%" placeholder="Paste content here..."></i-input>
 			<br>
-			<i-button type="primary" shape="circle" v-on:click="initializeReader()">Read</i-button>
+			<i-button class="read-from-clipboard" type="primary" shape="circle" v-on:click="initializeReader()">Read</i-button>
 		</center>
 	</div>
 </template>
 
 <style scoped>
+.read-from-clipboard {
+    margin-top: 25px;
+}
 </style>
 
 <script>
