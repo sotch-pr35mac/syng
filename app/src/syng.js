@@ -4451,9 +4451,6 @@ var __vueify_style__ = __vueify_insert__.insert("\n.clipboard-actions[_v-669b813
 
 
 
-
-
-
 module.exports = {
 	data: function() {
 		return {
@@ -4465,16 +4462,9 @@ module.exports = {
             if(this.contentText.length < 1) {
                 this.$Message.info('Please paste content into the paste bar before continuing.');
             } else {
-                console.log("here");
-                $('#clipboard-read-button').hide();
-                $('#loading-message').show();
                 window.engine.segment(this.contentText).then(result => {
-                    $('#loading-message').hide();
-                    $('#clipboard-read-button').show();
     		    	this.$dispatch('readText', result);
                 }).catch(err => {
-                    $('#loading-message').hide();
-                    $('#clipboard-read-button').show();
                     this.$Message.error('There was an error while trying to parse that text. Please try again later.');
                     console.error(err);
         		});
@@ -4484,7 +4474,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-669b8136=\"\">\n\t\t<center _v-669b8136=\"\">\n\t\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" placeholder=\"Paste content here...\" _v-669b8136=\"\"></i-input>\n\t\t\t<br _v-669b8136=\"\">\n    \t\t<i-button id=\"clipboard-read-button\" class=\"clipboard-actions\" type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read</i-button>\n            <div id=\"loading-message\" class=\"clipboard-actions\" style=\"display: none\" _v-669b8136=\"\">\n                Loading...\n            </div>\n\t\t</center>\n\t</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-669b8136=\"\">\n\t\t<center _v-669b8136=\"\">\n\t\t\t<i-input :value.sync=\"contentText\" style=\"width: 85%\" placeholder=\"Paste content here...\" _v-669b8136=\"\"></i-input>\n\t\t\t<br _v-669b8136=\"\">\n    \t\t<i-button class=\"clipboard-actions\" type=\"primary\" shape=\"circle\" v-on:click=\"initializeReader()\" _v-669b8136=\"\">Read from Clipboard</i-button>\n\t\t</center>\n\t</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
@@ -4849,7 +4839,12 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"../common/tts/tts.vue":4,"vue":60,"vue-hot-reload-api":59,"vueify/lib/insert-css":61}],37:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.web-actions[_v-544c05f4] {\n    margin-top: 25px;\n}\n")
+
+
+
+
+
 
 
 
@@ -4865,19 +4860,49 @@ var __vueify_style__ = __vueify_insert__.insert("\n")
 module.exports = {
 	data: function() {
 		return {
-
+            destinationSite: '',
+            contentText: ''
 		}
-	}
+	},
+    methods: {
+        parseSite: function() {
+            var self = this;
+            $.ajax({
+                type: 'GET',
+                url: this.destinationSite,
+                success: function(result) {
+                    self.contentText = $(result).text();
+                    self.initializeReader();
+                },
+                error: function(err) {
+                    self.$Message.error('There was an error trying to get that webpage.');
+                    console.error(err);
+                }
+            });
+        },
+        initializeReader: function() {
+            if(this.contentText.length < 1) {
+                this.$Message.warning('The page you entered does not have any readable text. Please try a different page');
+            } else {
+                window.engine.segment(this.contentText).then(result => {
+                    this.$dispatch('readText', result);
+                }).catch(err => {
+                    this.$Message.error('There was an error while trying to parse that text. Please try again later.');
+                    console.error(err);
+                });
+            }
+        }
+    }
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-544c05f4=\"\">\n\t<center _v-544c05f4=\"\">\n\t\t<h1 _v-544c05f4=\"\">WEB</h1>\n\t</center>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n\t<div _v-544c05f4=\"\">\n\t\t<center _v-544c05f4=\"\">\n            <i-input :value.sync=\"destinationSite\" style=\"width: 85%\" placeholder=\"Paste a URL here...\" _v-544c05f4=\"\"></i-input>\n            <br _v-544c05f4=\"\">\n            <i-button class=\"web-actions\" type=\"primary\" shape=\"circle\" v-on:click=\"parseSite()\" _v-544c05f4=\"\">Read from Web</i-button>\n\t\t</center>\n\t</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n"] = false
+    __vueify_insert__.cache["\n.web-actions[_v-544c05f4] {\n    margin-top: 25px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
