@@ -4,7 +4,7 @@
 
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v1.2.0
+##### v1.3.0
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---

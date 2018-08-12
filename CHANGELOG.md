@@ -1,12 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x] - xxxx-xx-xx
+## [1.3.0] - xxxx-xx-xx
 ### Fixed
 - Fixed loading animation in all text fields as described in Issue #103
 
 ### Added
 - Added help menu as described in Issue #72
+- Added clipboard and web reader as described in Issue #60
 
 ## [1.2.0] - 2018-05-12
 ### Added
