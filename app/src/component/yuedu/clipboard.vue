@@ -1,16 +1,15 @@
 <template>
 	<div>
 		<center>
-			<!-- <textarea></textarea> -->
 			<i-input :value.sync="contentText" style="width: 85%" placeholder="Paste content here..."></i-input>
 			<br>
-			<i-button class="read-from-clipboard" type="primary" shape="circle" v-on:click="initializeReader()">Read</i-button>
+    		<i-button class="clipboard-actions" type="primary" shape="circle" v-on:click="initializeReader()">Read</i-button>
 		</center>
 	</div>
 </template>
 
 <style scoped>
-.read-from-clipboard {
+.clipboard-actions {
     margin-top: 25px;
 }
 </style>
@@ -24,14 +23,16 @@ module.exports = {
 	},
 	methods: {
 		initializeReader: function() {
-			var self = this;
-			window.engine.segment(self.contentText).then(function(result) {
-				console.log(result);
-				self.$dispatch('readText', result);
-			}).catch(function(err) {
-				console.log("ERROR");
-				console.log(err);
-			});
+            if(this.contentText.length < 1) {
+                this.$Message.info('Please paste content into the paste bar before continuing.');
+            } else {
+                window.engine.segment(this.contentText).then(result => {
+    		    	this.$dispatch('readText', result);
+                }).catch(err => {
+                    this.$Message.error('There was an error while trying to parse that text. Please try again later.');
+                    console.error(err);
+        		});
+            }
 		}
 	}
 }
