@@ -1,30 +1,17 @@
 <template>
   <div>
-    <i-col span="21">
-      <div id="actions-frame">
-        <Row>
-          <i-button v-on:click="addToLibrary()" id="addToLibraryButton" class="pull-right">Add to Library</i-button>
-        </Row>
+    <center>
+      <div v-if="libraryItems < 1">
+        <h1>No Items in Library</h1>
       </div>
-        <div v-if="libraryItems < 1" class="notice">
-            <h1>No Items in Library</h1>
-        </div>
-        <div v-if="libraryItems > 0">
-            <!-- Put the list here -->
-        </div>
-    </i-col>
+    </center>
+    <div v-if="libraryItems > 0">
+      <!-- Put the list here -->
+    </div>
   </div>
 </template>
 
 <style>
-  #actions-frame {
-    padding-left: 10px;
-    padding-right: 10px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    background-color: #9ea7b4;
-    height: 8vh;
-  }
   .pull-right {
     float: right;
   }
@@ -46,7 +33,7 @@ module.exports = {
   components: {
   },
   methods: {
-    
+
   }
 }
 </script>

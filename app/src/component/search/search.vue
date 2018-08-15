@@ -252,6 +252,9 @@ module.exports = {
     var self = this;
 
     $(document).ready(function() {
+      // Hacky workaround to fix the loading animation inside the textbox
+      $(".ivu-icon-load-c").hide();
+
       $(".ivu-input").keyup(function(event) {
         self.detectPinyin();
     		if(event.keyCode == 13) {

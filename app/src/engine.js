@@ -319,3 +319,128 @@ module.exports.searchByEnglish = function(str, cb) {
 
 	cb(searchResults);
 };
+
+module.exports.segment = function(text) {
+	return new Promise(function(resolve, reject) {
+		function segmentSimplified(text) {
+			var segmentedText = [];
+			while(text.length > 0) {
+				if(text.length >= 4 && simpHashmap.has(text.substring(0, 4))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: simpHashmap.get(text.substring(0, 4)),
+						text: text.substring(0, 4)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(4);
+				} else if(text.length >= 3 && simpHashmap.has(text.substring(0, 3))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: simpHashmap.get(text.substring(0, 3)),
+						text: text.substring(0, 3)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(3);
+				} else if(text.length >= 2 && simpHashmap.has(text.substring(0, 2))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: simpHashmap.get(text.substring(0, 2)),
+						text: text.substring(0, 2)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(2);
+				} else if(text.length >= 1 && simpHashmap.has(text.substring(0, 1))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: simpHashmap.get(text.substring(0, 1)),
+						text: text.substring(0, 1)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(1);
+				} else {
+					// The character is not recognized. Skipping and moving on...
+					var nonWord = {
+						isWord: false,
+						text: text.substring(0, 1)
+					};
+					segmentedText.push(nonWord);
+					text = text.substring(1);
+				}
+			}
+
+			resolve(segmentedText);
+		}
+
+		function segmentTradtional(text) {
+			var segmentedText = [];
+			while(text.length > 0) {
+				if(text.length >= 4 && tradHashmap.has(text.substring(0, 4))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: tradHashmap.get(text.substring(0, 4)),
+						text: text.substring(0, 4)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(4);
+				} else if(text.length >= 3 && tradHashmap.has(text.substring(0, 3))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: tradHashmap.get(text.substring(0, 3)),
+						text: text.substring(0, 3)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(3);
+				} else if(text.length >= 2 && tradHashmap.has(text.substring(0, 2))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: tradHashmap.get(text.substring(0, 2)),
+						text: text.substring(0, 2)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(2);
+				} else if(text.length >= 1 && tradHashmap.has(text.substring(0, 1))) {
+					var segmentedWord = {
+						isWord: true,
+						wordObject: tradHashmap.get(text.substring(0, 1)),
+						text: text.substring(0, 1)
+					};
+					segmentedText.push(segmentedWord);
+					text = text.substring(1);
+				} else {
+					// The character is not recognized. Skippping.
+					var nonWord = {
+						isWord: false,
+						text: text.substring(0, 1)
+					};
+					segmentedText.push(nonWord);
+					text = text.substring(1);
+				}
+			}
+
+			resolve(segmentedText);
+		}
+
+		// Remove whitespace from front and end of string, remove newline breaks in string
+		str = text.trim();
+
+		// Convert characters to Simplified and Traditional in-case of input that contains both Traditional and Simplified
+		var simplified = str.slice().split("");
+		var traditional = str.slice().split("");
+
+		for(var i = 0; i < str.length; i++) {
+			simplified[i] = cnchars.sify(simplified[i]);
+			traditional[i] = cnchars.tify(traditional[i]);
+		}
+
+		simplified = simplified.join('');
+		traditional = traditional.join('');
+
+		// Search the traditional Hashmap if the input was explicitly in tradtitional, otherwise search simplified
+		if(traditional === str) {
+			segmentTradtional(traditional);
+		}
+		else {
+			segmentSimplified(simplified);
+		}
+	});
+};

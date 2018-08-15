@@ -33,6 +33,14 @@
            wordListings: databaseManager.userListNames,
            newListName: ''
          },
+        attached: function() {
+            var self = this;
+
+            $(document).ready(function() {
+                // Hacky workaround to fix the loading animation inside the textboxes
+                $('.ivu-icon-load-c').hide();
+            });
+        },
          methods: {
             handleAdd () {
               var self = this;
@@ -58,6 +66,8 @@
                     // Update with new database information so the display remains current
                     self.wordListings = databaseManager.userListNames;
                     self.newListName = '';
+
+                    $('.ivu-icon-load-c').hide();
 
                     // Send the signal to update the other views on different pages
                     ipc.send('send-database-update');
