@@ -1,8 +1,8 @@
 <template>
 	<div class="help-section">
   		<h1 id="syng-help-guide">Syng Help Guide</h1>
-<h5 id="for-desktop-version-1.2.0">For Desktop Version 1.2.0</h5>
-<h5 id="document-version-0.1.0">Document Version 0.1.0</h5>
+<h5 id="for-desktop-version-1.2.0">For Desktop Version 1.3.0</h5>
+<h5 id="document-version-0.1.0">Document Version 0.2.0</h5>
 <p>This guide outlines Syng's features and how to use them.</p>
 <hr />
 <h5><a href="#tutorial">Tutorial</a></h5>
@@ -10,6 +10,7 @@
 <li><a href="#navigation">Navigation</a></li>
 <li><a href="#syng-menu">Syng Menu</a></li>
 <li><a href="#search">Search</a></li>
+<li><a href="#yuedu">Reader</a></li>
 <li><a href="#bookmarks">Bookmarks</a></li>
 <li><a href="#study">Study</a></li>
 <li><a href="#tools">Tools</a></li>
@@ -28,6 +29,7 @@
 <li><a href="#character-converter">Convert between Simplified and Traditional characters</a></li>
 <li><a href="#pinyinify">Get the Pinyin for a group of Chinese characters</a></li>
 <li><a href="#prettify-pinyin">Turn Pinyin with tone numbers into Pinyin with tone marks</a></li>
+<li><a href="#yuedu">Read a block of Chinese text</a></li>
 </ul>
 <h5><a href="#known-issues">Known Issues</a></h5>
 <hr />
@@ -39,9 +41,10 @@
 <p>The main navigation of the app is on the left hand side. This tabbed navigation bar lets you switch between different “modes” of the app.</p>
 <p>The first navigation item in the list is the Syng Menu (词应). The Syng Menu contains information about Syng, and lets you access the Help Menu, view license information, report a bug, or donate to Syng.</p>
 <p>The second navigation item is Search. From the search screen you can query the dictionary in English, Chinese (both Traditional and Simplified), and Pinyin (both with and without tone marks). You can add words to bookmarks or other vocab lists, open the vocab list manager, or view stroke order animations from the search screen. For more information on the Search screen, you can go here to read more detailed documentation.</p>
-<p>The third navigation item is Bookmarks. From the Bookmarks screen, you can view your saved bookmarks, import or export bookmarks for backup. You can also view and manage your vocab lists, or import and export your lists for backup. You can save notes on the words you have added to your bookmarks or vocab lists here as well. For more information on the Bookmarks screen, you can go here to read more detailed documentation.</p>
-<p>The fourth view is the Study screen. From the Study screen you have two options, first to study flashcards from your bookmarks or lists, or to take a Quiz generated from your any one of your lists or bookmarks.</p>
-<p>The fifth item in the navigation is the Tools screen. The Tools screen gives you access to a series of small, but helpful quick tools that you may need if you are studying Chinese. The first tool you can access is the Prettify Pinyin tool, this tool takes pinyin with tone numbers (ie ni3 hao3) and turns it into pinyin with tone marks (ie nǐ hǎo). The second tool on the tools screen is the Pinyinify tool. This tool lets you enter Chinese characters (in either Traditional or Simplified) and turns it into Pinyin with tone marks for you. The third tool is the Character Convert Tool, which lets you convert between Traditional and Simplified Chinese scripts. For more detailed information on the Tools screen, you can go here to read more information.</p>
+<p>The third navigation item is Reader. From the reader screen you can paste text from your clipboard or enter in a websie URL to read the Chinse text and get a popup dictionary when you click on a word.</p>
+<p>The fourth navigation item is Bookmarks. From the Bookmarks screen, you can view your saved bookmarks, import or export bookmarks for backup. You can also view and manage your vocab lists, or import and export your lists for backup. You can save notes on the words you have added to your bookmarks or vocab lists here as well. For more information on the Bookmarks screen, you can go here to read more detailed documentation.</p>
+<p>The fifth view is the Study screen. From the Study screen you have two options, first to study flashcards from your bookmarks or lists, or to take a Quiz generated from your any one of your lists or bookmarks.</p>
+<p>The sixth item in the navigation is the Tools screen. The Tools screen gives you access to a series of small, but helpful quick tools that you may need if you are studying Chinese. The first tool you can access is the Prettify Pinyin tool, this tool takes pinyin with tone numbers (ie ni3 hao3) and turns it into pinyin with tone marks (ie nǐ hǎo). The second tool on the tools screen is the Pinyinify tool. This tool lets you enter Chinese characters (in either Traditional or Simplified) and turns it into Pinyin with tone marks for you. The third tool is the Character Convert Tool, which lets you convert between Traditional and Simplified Chinese scripts. For more detailed information on the Tools screen, you can go here to read more information.</p>
 <h3 id="syng-menu">Syng Menu</h3>
 <p>The Syng Menu (词应) lets you access several house-keeping parts of the app. - About - Read about Syng and view acknowledgements - Settings - <em>coming soon!</em> - Licenses - View the license information for Syng and other technologies used in Syng - Report a bug - Report a bug you have found to the maintainer of the app. <strong>This requires a network connection.</strong> - Help - Read a help guide that will help you navigate around and use Syng like a pro. - Donate - Donate to the developers through Ko-Fi. <strong>This feautre requires a network connection</strong>.</p>
 <h3 id="search">Search</h3>
@@ -99,6 +102,10 @@
 <p>This is where you can read the English definitions for the current Chinese word. If a definition contains “CL:”, this means there are the possible Measure Words for the character.</p>
 <h5 id="component-characters">Component Characters</h5>
 <p>This section allows you to breakdown and inspect what characters make-up the current word.</p>
+<h3 id="yuedu">Reader</h3>
+<p>The reader section allows you to read a block of text, either pasted in from your clipboard or from a URL, both with a popup dictioary. You can read text from your clipboard by pasting in text you have already copied into the input field on the "Clipboard" section of the reader screen. Then after clicking "Read from Clipboard" you will be taken to the reading mode. You can read more about reading mode <a href="#reading-mode">here</a>. To read text from a website, you can click on the "Web" tab and paste a URL into the input field, then click "Read from Web", and you will be taken to the reading mode with the text content of the website displayed. You can read more about the reading mode <a href="#reading-mode">here</a>. Note, reading text from a webpage requires a network connection. Also note, large bodies of text may take a while to load since word boundaries have to be determined. Please be patient.</p>
+<h4 id="reading-mode">Reading Mode</h4>
+<p>In reading mode you can click on any Chinese word, and the definition for this word will popup in the dictionary listing below. The clicked on word will be highlighted to let you know where the word starts and ends. From the dictionary listing at the bottom, you can inspect a word's definitions and pinyin, as well as add it to your bookmarks or a custom list, view larger version of the characters and see stroke order animations, or have the word spoken out-loud to you. To exit reading mode, click on "Exit Reader" in the action bar at the top.</p>
 <h3 id="bookmarks">Bookmarks</h3>
 <p>The bookmarks section lets you refer back to characters that you have saved. You can also change to view a custom list by click the dropdown and selecting the list you would like to view, or you can also open the List Manager from this menu and create or delete lists. The Bookmarks section contains several parts:</p>
 <ul>
@@ -179,6 +186,7 @@
 <h2 id="known-issues">Known Issues</h2>
 <ul>
 <li>Alert dialogs display squares instead of text on Fedora Linux.</li>
+<li>Sometimes reading from webpages in Reader include some of the document's HTML code.</li>
 </ul>
 
   	</div>
