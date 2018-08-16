@@ -23,6 +23,8 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - Syng also tests you on your knowledge and progress of your Chinese to measure your language development.
 - ___Bookmarks___
     - Syng allows you to save words and searches to your bookmarks, so that you can reference them later, and even create custom vocab lists.
+- ___Reader___
+    - Syng lets you read Chinese text from your clipboard or from the web with an easy to use popup dictionary.
 - __Offline Support__
     - No internet connection required for most features
 - __Cross-Platform__
