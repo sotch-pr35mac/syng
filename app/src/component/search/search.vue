@@ -86,18 +86,10 @@
                   </div>
                 </Panel>
                 <Panel key="2">
-                  Characters
-                  <div slot="content">
-                    <br>
-                    <Collapse accordion>
-                      <Panel v-for="word in componentCharacters" track-by="$index">
-                        {{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span> - {{ word.pronunciation }}
-                        <div slot="content">
-                          <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
-                        </div>
-                      </Panel>
-                    </Collapse>
-                  </div>
+                    Characters
+                    <div slot="content">
+                        <components :components="componentCharacters"></components>
+                    </div>
                 </Panel>
               </Collapse>
               <br>
@@ -234,6 +226,7 @@ var hsk = window.require('hsk-list');
 var databaseManager = new window.DatMan();
 
 var Tts = require('../common/tts/tts.vue');
+var Components = require('../common/component-characters/component-characters.vue');
 
 module.exports = {
   data: function() {
@@ -275,7 +268,8 @@ module.exports = {
     });
   },
   components: {
-    'tts': Tts
+    'tts': Tts,
+    'components': Components
   },
   methods: {
     detectPinyin: function() {
