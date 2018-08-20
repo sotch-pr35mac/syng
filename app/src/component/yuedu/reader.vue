@@ -72,14 +72,14 @@
                                     </h1>
                                     <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pronunciation }}</h3>
                                     <br>
-                                    <Collapse active-key="1">
-                                        <Panel key="1">
+                                    <Card class="card">
+                                        <p slot="title">
                                             Definitions
-                                            <div slot="content" class="definitions-list">
-                                                <li v-for="def in currentWord.definitions">{{ def }}</li>
-                                            </div>
-                                        </Panel>
-                                    </Collapse>
+                                        </p>
+                                        <div class="definitions-list">
+                                            <li v-for="def in currentWord.definitions">{{ def }}</li>
+                                        </div>
+                                    </Card>
                                 </div>
                             </i-col>
                         </Row>
@@ -91,6 +91,11 @@
 </template>
 
 <style scoped>
+.card {
+    margin-bottom: 20px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+    border-color: #eee;
+}
 .word-content {
     height: 31.75vh;
     overflow: auto;

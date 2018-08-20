@@ -75,7 +75,7 @@
               </h1>
               <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
               <br>
-              <Collapse active-key="1">
+              <!-- <Collapse active-key="1">
                 <Panel key="1">
                   Definitions
                   <div slot="content" class="definitions-list">
@@ -102,7 +102,36 @@
                     <notes v-bind:notes="currentWord.notes"></notes>
                   </div>
                 </Panel>
-              </Collapse>
+              </Collapse> -->
+              <Card class="card">
+                <p slot="title">
+                    Definitions
+                </p>
+                <div class="definitions-list">
+                    <li v-for="def in currentWord.definitions">{{ def }}</li>
+                </div>
+              </Card>
+              <Card class="card">
+                <p slot="title">
+                    Characters
+                </p>
+                <div>
+                    <Collapse accordion>
+                      <Panel v-for="word in componentCharacters" track-by="$index">
+                        {{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span> - {{ word.pronunciation }}
+                        <div slot="content">
+                          <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
+                        </div>
+                      </Panel>
+                    </Collapse>
+                </div>
+              </Card>
+              <Card>
+                <p slot="title">
+                    Notes
+                </p>
+                <notes v-bind:notes="currentWord.notes"></notes>
+              </Card>
               <br>
             </div>
           </div>
@@ -113,6 +142,11 @@
 </template>
 
 <style scoped>
+  .card {
+      margin-bottom: 20px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+      border-color: #eee;
+  }
   #actions-frame {
     padding-left: 10px;
     padding-right: 10px;

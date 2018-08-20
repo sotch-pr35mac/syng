@@ -78,20 +78,20 @@
               </h1>
               <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
               <br>
-              <Collapse active-key="1">
-                <Panel key="1">
-                  Definitions
-                  <div slot="content" class="definitions-list">
+              <Card class="card">
+                <p slot="title">
+                    Definitions
+                </p>
+                <div class="definitions-list">
                     <li v-for="def in currentWord.definitions">{{ def }}</li>
-                  </div>
-                </Panel>
-                <Panel key="2">
+                </div>
+              </Card>
+              <Card class="card">
+                <p slot="title">
                     Characters
-                    <div slot="content">
-                        <components :components="componentCharacters"></components>
-                    </div>
-                </Panel>
-              </Collapse>
+                </p>
+                <components :components="componentCharacters"></components>
+              </Card>
               <br>
             </div>
           </div>
@@ -102,6 +102,11 @@
 </template>
 
 <style scoped>
+  .card {
+      margin-bottom: 20px;
+      box-shadow: 0 1px 6px rgba(0, 0, 0, .2);
+      border-color: #eee;
+  }
   #search-frame {
     padding-left: 10px;
     padding-right: 10px;
