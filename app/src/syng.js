@@ -660,6 +660,9 @@ var __vueify_style__ = __vueify_insert__.insert("\n.definitions-list[_v-458a5374
 
 
 
+
+
+
 module.exports = {
     props: [ 'components' ],
     methods: {
@@ -677,7 +680,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-458a5374=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-458a5374=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-458a5374=\"\">\n            <h1 _v-458a5374=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-458a5374=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-458a5374=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-458a5374=\"\">\n                    <div class=\"definitions-list\" _v-458a5374=\"\">\n                        <li v-for=\"def in word.definitions\" _v-458a5374=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-458a5374=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-458a5374=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-458a5374=\"\">\n            <h1 _v-458a5374=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-458a5374=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-458a5374=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-458a5374=\"\">\n                    <div class=\"definitions-list\" _v-458a5374=\"\">\n                        <li v-for=\"def in word.definitions\" _v-458a5374=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n                <tab-pane label=\"Breakdown\" key=\"breakdown\" _v-458a5374=\"\">\n                    <center _v-458a5374=\"\"><h2 _v-458a5374=\"\">BREAKDOWN</h2></center>\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

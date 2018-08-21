@@ -10,6 +10,9 @@
                             <li v-for="def in word.definitions">{{ def }}</li>
                         </div>
                     </Tab-pane>
+                    <Tab-pane label="Breakdown" key="breakdown">
+                        <center><h2>BREAKDOWN</h2></center>
+                    </Tab-pane>
                 </Tabs>
             </Tab-pane>
         </Tabs>
