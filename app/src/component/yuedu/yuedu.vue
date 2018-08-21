@@ -5,6 +5,9 @@
         <Row>
           <i-button v-on:click="switchMode('clipboard')" v-if="currentView == 'reader'" id="exitReaderModeButton">Exit Reader</i-button>
           <!-- <i-button v-on:click="addToLibrary()" id="addToLibraryButton" class="pull-right">Add to Library</i-button> -->
+          <center>
+              <h1 class="heading" v-if="currentView != 'reader'">Text Reader</h1>
+          </center>
         </Row>
       </div>
       <div v-if="currentView != 'reader'">
@@ -37,6 +40,9 @@
   }
   .pull-right {
     float: right;
+  }
+  .heading {
+      color: white;
   }
 </style>
 

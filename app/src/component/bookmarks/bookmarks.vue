@@ -75,34 +75,6 @@
               </h1>
               <h3 style="margin-top: 0px; padding-left: 3px;">{{ currentWord.pinyin }}</h3>
               <br>
-              <!-- <Collapse active-key="1">
-                <Panel key="1">
-                  Definitions
-                  <div slot="content" class="definitions-list">
-                    <li v-for="def in currentWord.definitions">{{ def }}</li>
-                  </div>
-                </Panel>
-                <Panel key="2">
-                  Characters
-                  <div slot="content">
-                    <br>
-                    <Collapse accordion>
-                      <Panel v-for="word in componentCharacters" track-by="$index">
-                        {{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span> - {{ word.pronunciation }}
-                        <div slot="content">
-                          <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
-                        </div>
-                      </Panel>
-                    </Collapse>
-                  </div>
-                </Panel>
-                <Panel key="3">
-                  Notes
-                  <div slot="content">
-                    <notes v-bind:notes="currentWord.notes"></notes>
-                  </div>
-                </Panel>
-              </Collapse> -->
               <Card class="card">
                 <p slot="title">
                     Definitions
@@ -113,24 +85,15 @@
               </Card>
               <Card class="card">
                 <p slot="title">
-                    Characters
-                </p>
-                <div>
-                    <Collapse accordion>
-                      <Panel v-for="word in componentCharacters" track-by="$index">
-                        {{ word.simplified }} <span v-if="word.simplified != word.traditional">({{ word.traditional }})</span> - {{ word.pronunciation }}
-                        <div slot="content">
-                          <li v-for="def in word.definitions" class="definitions-list">{{ def }}</li>
-                        </div>
-                      </Panel>
-                    </Collapse>
-                </div>
-              </Card>
-              <Card>
-                <p slot="title">
                     Notes
                 </p>
                 <notes v-bind:notes="currentWord.notes"></notes>
+              </Card>
+              <Card>
+                <p slot="title">
+                    Characters
+                </p>
+                <components :components="componentCharacters"></components>
               </Card>
               <br>
             </div>
@@ -262,6 +225,7 @@
 var databaseManager = new window.DatMan();
 var Notes = require('./notes.vue');
 var Tts = require('../common/tts/tts.vue');
+var Components = require('../common/component-characters/component-characters.vue');
 var _ = require('underscore');
 var hsk = require('hsk-list');
 
@@ -353,7 +317,8 @@ module.exports = {
   },
   components: {
     'notes': Notes,
-    'tts': Tts
+    'tts': Tts,
+    'components': Components
   },
   events: {
     'saveNotes': function(notes) {
