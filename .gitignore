@@ -4,3 +4,4 @@ releases/
 app/src/db/syng/
 npm-debug.log
 .buildconfig
+.DS_Store
