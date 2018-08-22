@@ -16,6 +16,11 @@
           <h3>Node-CC-CEDICT License</h3>
         </center>
       </Menu-item>
+      <Menu-item key='4' v-on:click='loadView("jundaLicense")'>
+          <center>
+              <h3>Jun Da License</h3>
+          </center>
+      </Menu-item>
     </Menu>
   </i-col>
   <i-col span="17" class='main-column'>
@@ -48,6 +53,7 @@
   var SyngLicense = require('./syngLicense.vue');
   var CCCEDICTLicense = require('./cccedictLicense.vue');
   var NodeCCCEDICTLicense = require('./nodeCCCEDICTLicense.vue');
+  var JundaLicense = require('./jundaLicense.vue');
 
   module.exports = {
     data: function() {
@@ -58,7 +64,8 @@
     components: {
       'syngLicense': SyngLicense,
       'cccedictLicense': CCCEDICTLicense,
-      'nodecccedictLicense': NodeCCCEDICTLicense
+      'nodecccedictLicense': NodeCCCEDICTLicense,
+      'jundaLicense': JundaLicense
     },
     methods: {
       loadView: function(viewName) {

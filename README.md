@@ -88,6 +88,10 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
       - Language Detection for Search
    - [hanzi-writer](https://github.com/chanind/hanzi-writer) by [chanind](https://github.com/chanind)
       - Character Stroke Animations
+   - [Jun Da Frequency Data](http://lingua.mtsu.edu/chinese-computing/)
+      - Data for determining classical / modern characters.
+      - Data has been modified from original `.xlsx` format to JSON.
+      - Used with permission.
 
 ## __Developers Welcome__
 If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together.
@@ -99,4 +103,4 @@ If you're interested in contributing to Syng, you can find a guide to getting st
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
 
 ## __License__
-This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).
+This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/). The files located in the directory at `app/src/db/junda` are sole property of the author, more information can be found [here](http://lingua.mtsu.edu/chinese-computing/copyright.html). The Jun Da dataset is used with permission.

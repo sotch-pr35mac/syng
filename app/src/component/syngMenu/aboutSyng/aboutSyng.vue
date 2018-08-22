@@ -49,6 +49,7 @@
         <p><b>node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</p>
         <p><b>Franc:</b> Language Detection for Search</p>
         <p><b>hanzi-writer:</b> Stroke Order Animations</p>
+        <p><b>Jun Da Frequency Data: </b> Modern / Classical Character Flag</p>
       </div>
     </div>
   </div>
