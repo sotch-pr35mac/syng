@@ -19,28 +19,37 @@ window.simpHashmap = new Hashmap();	// Global Hashmap containing all simplified 
 window.tradHashmap = new Hashmap();	// Global Hashmap containing all traditional characters as key and their "word object" as the value
 window.pinyinHashmap = new Hashmap();	// Global Hashmap containing all pinyin that could be input as key, and their "word object" as the value
 window.englishHashmap = new Hashmap(); // Global Hashmap containing all the english definitions that oculd be input as key, and their "word object" as the value
+window.modernFreq = {};
+window.classicalFreq = {};
 
 var tradIsEmpty = tradHashmap.size == 0 ? true : false;
 var simpIsEmpty = simpHashmap.size == 0 ? true : false;
 var pinyinIsEmpty = pinyinHashmap.size == 0 ? true : false;
 var englishIsEmpty = englishHashmap.size == 0 ? true : false;
 
+function loadClassicalFrequencyData(cb) {
+    $.getJSON(path.join(__dirname, '../src/db/junda/classical.json'), function(classicalObj) {
+        window.classicalFreq = classicalObj;
+
+        cb();
+    });
+}
+
+function loadModernFrequencyData(cb) {
+    $.getJSON(path.join(__dirname, '../src/db/junda/modern.json'), function(modernObj) {
+        window.modernFreq = modernObj;
+
+        loadClassicalFrequencyData(cb);
+    });
+}
+
+function loadJundaData(cb) {
+    loadModernFrequencyData(cb);
+}
+
 if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 	console.log("Reading from file....");
   var startReading = new Date();
-
-  /*
-    Use the method below when loading in multiple JSON files.
-  */
-  /*
-    var A = $.getJSON(url1);
-    var B = $.getJSON(url2);
-    var C = $.getJSON(url3);
-
-    $.when(A,B,C).done(function(aResult, bResult, cResult){//when all request are successful
-      console.log([aResult[0],bResult[0],cResult[0]]);
-    });
-  */
 
 	$.getJSON(path.join(__dirname, "../src/db/cc-cedict.json"), function(wordList) {
     var endReading = new Date();
@@ -124,14 +133,21 @@ if(tradIsEmpty || simpIsEmpty || pinyinIsEmpty || englishIsEmpty) {
 			}
 		}
 
-    var endTime = new Date();
-    var seconds = (endTime.getTime() - startTime.getTime()) / 1000;
-    console.log("Finished building dictionary in " + seconds + "s");
+        loadJundaData(function() {
+            console.log("Finished Loading!");
 
-		console.log("Finished Loading!");
+            // Close the splash page so that the user can now search
+            ipc.send('finished-loading-dictinoary');
+        });
+
+    // var endTime = new Date();
+    // var seconds = (endTime.getTime() - startTime.getTime()) / 1000;
+    // console.log("Finished building dictionary in " + seconds + "s");
+
+		// console.log("Finished Loading!");
 
 		// Close the splash page so that the user can now search
-		ipc.send('finished-loading-dictinoary');
+		// ipc.send('finished-loading-dictinoary');
 	});
 }
 
@@ -444,3 +460,34 @@ module.exports.segment = function(text) {
 		}
 	});
 };
+
+module.exports.tagEra = function(simplified) {
+    var MODERN = 'Modern';
+    var CLASSICAL = 'Classical';
+    var NEUTRAL = 'Neutral';
+    var result;
+
+    var modernOccurances = window.modernFreq[simplified];
+    var classicalOccurances = window.classicalFreq[simplified];
+
+    if((modernOccurances == null || modernOccurances == undefined) && (classicalOccurances == null || classicalOccurances == undefined)) {
+        result = null;
+    } else {
+        if(modernOccurances == null || modernOccurances == undefined) {
+            modernOccurances = 0;
+        }
+        if(classicalOccurances == null || classicalOccurances == undefined) {
+            classicalOccurances = 0;
+        }
+
+        if(modernOccurances > classicalOccurances) {
+            result = MODERN;
+        } else if(classicalOccurances > modernOccurances) {
+            result = CLASSICAL;
+        } else {
+            result = NEUTRAL;
+        }
+    }
+
+    return result;
+}
