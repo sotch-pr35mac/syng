@@ -480,9 +480,9 @@ module.exports.tagEra = function(simplified) {
             classicalOccurances = 0;
         }
 
-        if(modernOccurances > classicalOccurances) {
+        if(modernOccurances < classicalOccurances) {
             result = MODERN;
-        } else if(classicalOccurances > modernOccurances) {
+        } else if(classicalOccurances < modernOccurances) {
             result = CLASSICAL;
         } else {
             result = NEUTRAL;
