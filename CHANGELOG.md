@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [x.x.x] - xxxx-xx-xx
+### Added
+- Added character frequency feature as described in Issue #102
+
+### Changed
+- Changed the dropdowns in search, bookmarks, and reader to cards
+
 ## [1.3.0] - 2018-08-12
 ### Fixed
 - Fixed loading animation in all text fields as described in Issue #103
