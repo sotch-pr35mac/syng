@@ -2,6 +2,9 @@
     <div>
         <Tabs type="card" active-key="1">
             <Tab-pane v-for="word in components" track-by="$index" :key="($index + 1) + ''" :label="getTitle(word.simplified, word.traditional)">
+                <div class="pull-right word-tags">
+                    <Tag v-if="(word.simplified.length == 1) && getEra(word.simplified)" color="green">Era: {{ getEra(word.simplified) }}</Tag>
+                </div>
                 <h1>{{ getTitle(word.simplified, word.traditional) }}</h2>
                 <h2>{{ word.pronunciation }}</h2>
                 <Tabs active-key="definitions">
@@ -25,12 +28,18 @@
     font-size: 12pt;
     color: black;
 }
+.word-tags {
+    margin-top: 10px;
+}
 </style>
 
 <script>
 module.exports = {
     props: [ 'components' ],
     methods: {
+        getEra: function(simplified) {
+            return window.engine.tagEra(simplified);
+        },
         getTitle: function(simplified, traditional) {
             var title;
             if(simplified == traditional) {

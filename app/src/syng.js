@@ -636,7 +636,13 @@ if (module.hot) {(function () {  module.hot.accept()
 })()}
 },{"vue":62,"vue-hot-reload-api":61,"vueify/lib/insert-css":63}],4:[function(require,module,exports){
 var __vueify_insert__ = require("vueify/lib/insert-css")
-var __vueify_style__ = __vueify_insert__.insert("\n.definitions-list[_v-0597d2d6] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n")
+var __vueify_style__ = __vueify_insert__.insert("\n.definitions-list[_v-0597d2d6] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n.word-tags[_v-0597d2d6] {\n    margin-top: 10px;\n}\n")
+
+
+
+
+
+
 
 
 
@@ -670,6 +676,9 @@ var __vueify_style__ = __vueify_insert__.insert("\n.definitions-list[_v-0597d2d6
 module.exports = {
     props: [ 'components' ],
     methods: {
+        getEra: function(simplified) {
+            return window.engine.tagEra(simplified);
+        },
         getTitle: function(simplified, traditional) {
             var title;
             if(simplified == traditional) {
@@ -684,13 +693,13 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0597d2d6=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-0597d2d6=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-0597d2d6=\"\">\n            <h1 _v-0597d2d6=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-0597d2d6=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-0597d2d6=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-0597d2d6=\"\">\n                    <div class=\"definitions-list\" _v-0597d2d6=\"\">\n                        <li v-for=\"def in word.definitions\" _v-0597d2d6=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n                <tab-pane label=\"Breakdown\" key=\"breakdown\" _v-0597d2d6=\"\">\n                    <center _v-0597d2d6=\"\"><h2 _v-0597d2d6=\"\">BREAKDOWN</h2></center>\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0597d2d6=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-0597d2d6=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-0597d2d6=\"\">\n            <div class=\"pull-right word-tags\" _v-0597d2d6=\"\">\n                <tag v-if=\"(word.simplified.length == 1) &amp;&amp; getEra(word.simplified)\" color=\"green\" _v-0597d2d6=\"\">Era: {{ getEra(word.simplified) }}</tag>\n            </div>\n            <h1 _v-0597d2d6=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-0597d2d6=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-0597d2d6=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-0597d2d6=\"\">\n                    <div class=\"definitions-list\" _v-0597d2d6=\"\">\n                        <li v-for=\"def in word.definitions\" _v-0597d2d6=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n                <tab-pane label=\"Breakdown\" key=\"breakdown\" _v-0597d2d6=\"\">\n                    <center _v-0597d2d6=\"\"><h2 _v-0597d2d6=\"\">BREAKDOWN</h2></center>\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)
   if (!hotAPI.compatible) return
   module.hot.dispose(function () {
-    __vueify_insert__.cache["\n.definitions-list[_v-0597d2d6] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n"] = false
+    __vueify_insert__.cache["\n.definitions-list[_v-0597d2d6] {\n    list-style: circle;\n    font-size: 12pt;\n    color: black;\n}\n.word-tags[_v-0597d2d6] {\n    margin-top: 10px;\n}\n"] = false
     document.head.removeChild(__vueify_style__)
   })
   if (!module.hot.data) {
