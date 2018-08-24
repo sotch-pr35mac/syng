@@ -670,9 +670,24 @@ var __vueify_style__ = __vueify_insert__.insert("\n.definitions-list[_v-0597d2d6
 
 
 
+
+
+
+
+
+
+
+
+
 module.exports = {
     props: [ 'components' ],
     methods: {
+        getRadicalMeaning: function(radical) {
+            return window.engine.radicalDefinition(radical);
+        },
+        getDecomposition: function(character) {
+            return window.engine.decompose(character);
+        },
         getEra: function(simplified) {
             return window.engine.tagEra(simplified);
         },
@@ -690,7 +705,7 @@ module.exports = {
 }
 
 if (module.exports.__esModule) module.exports = module.exports.default
-;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0597d2d6=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-0597d2d6=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-0597d2d6=\"\">\n            <div class=\"pull-right word-tags\" _v-0597d2d6=\"\">\n                <tag v-if=\"(word.simplified.length == 1) &amp;&amp; getEra(word.simplified)\" color=\"green\" _v-0597d2d6=\"\">Era: {{ getEra(word.simplified) }}</tag>\n            </div>\n            <h1 _v-0597d2d6=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-0597d2d6=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-0597d2d6=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-0597d2d6=\"\">\n                    <div class=\"definitions-list\" _v-0597d2d6=\"\">\n                        <li v-for=\"def in word.definitions\" _v-0597d2d6=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n                <tab-pane label=\"Breakdown\" key=\"breakdown\" _v-0597d2d6=\"\">\n                    <center _v-0597d2d6=\"\"><h2 _v-0597d2d6=\"\">BREAKDOWN</h2></center>\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
+;(typeof module.exports === "function"? module.exports.options: module.exports).template = "\n<div _v-0597d2d6=\"\">\n    <tabs type=\"card\" active-key=\"1\" _v-0597d2d6=\"\">\n        <tab-pane v-for=\"word in components\" track-by=\"$index\" :key=\"($index + 1) + ''\" :label=\"getTitle(word.simplified, word.traditional)\" _v-0597d2d6=\"\">\n            <div class=\"pull-right word-tags\" _v-0597d2d6=\"\">\n                <tag v-if=\"(word.simplified.length == 1) &amp;&amp; getEra(word.simplified)\" color=\"green\" _v-0597d2d6=\"\">Era: {{ getEra(word.simplified) }}</tag>\n            </div>\n            <h1 _v-0597d2d6=\"\">{{ getTitle(word.simplified, word.traditional) }}</h1>\n            <h2 _v-0597d2d6=\"\">{{ word.pronunciation }}</h2>\n            <tabs active-key=\"definitions\" _v-0597d2d6=\"\">\n                <tab-pane label=\"Definitions\" key=\"definitions\" _v-0597d2d6=\"\">\n                    <div class=\"definitions-list\" _v-0597d2d6=\"\">\n                        <li v-for=\"def in word.definitions\" _v-0597d2d6=\"\">{{ def }}</li>\n                    </div>\n                </tab-pane>\n                <tab-pane label=\"Breakdown\" key=\"breakdown\" _v-0597d2d6=\"\">\n                    <p v-for=\"radical in getDecomposition(word.simplified)\" _v-0597d2d6=\"\">\n                        {{ radical }} - {{ getRadicalMeaning(radical) }}\n                    </p>\n                    <!-- \n                    <center>\n                        <h2>\n                            {{ getDecomposition(word.simplified) }}\n                        </h2>\n                    </center>\n                    -->\n                </tab-pane>\n            </tabs>\n        </tab-pane>\n    </tabs>\n</div>\n"
 if (module.hot) {(function () {  module.hot.accept()
   var hotAPI = require("vue-hot-reload-api")
   hotAPI.install(require("vue"), true)

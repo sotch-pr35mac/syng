@@ -14,7 +14,16 @@
                         </div>
                     </Tab-pane>
                     <Tab-pane label="Breakdown" key="breakdown">
-                        <center><h2>BREAKDOWN</h2></center>
+                        <p v-for="radical in getDecomposition(word.simplified)">
+                            {{ radical }} - {{ getRadicalMeaning(radical) }}
+                        </p>
+                        <!-- 
+                        <center>
+                            <h2>
+                                {{ getDecomposition(word.simplified) }}
+                            </h2>
+                        </center>
+                        -->
                     </Tab-pane>
                 </Tabs>
             </Tab-pane>
@@ -34,6 +43,12 @@
 module.exports = {
     props: [ 'components' ],
     methods: {
+        getRadicalMeaning: function(radical) {
+            return window.engine.radicalDefinition(radical);
+        },
+        getDecomposition: function(character) {
+            return window.engine.decompose(character);
+        },
         getEra: function(simplified) {
             return window.engine.tagEra(simplified);
         },

@@ -12,6 +12,7 @@ var Engine = require("tingodb")(); // Mongo-Style Database
 var cnchars = require('chinese-conv'); // Convert between tradtitional and simplified
 var Hashmap = require('hashmap'); // Hashmap to store values of chinese characters and their "word object"
 var ipc = require('electron').ipcRenderer; // For communication with the Main Process to close the splash page when loading is complete
+var hanzi = require('hanzi'); // Load the hanzi.js module
 
 // Create global Hashmaps that are going to serve as the lookup method for search
 // Using the Hashmaps over just a database query will dramatically incrase the speed
@@ -21,6 +22,8 @@ window.pinyinHashmap = new Hashmap();	// Global Hashmap containing all pinyin th
 window.englishHashmap = new Hashmap(); // Global Hashmap containing all the english definitions that oculd be input as key, and their "word object" as the value
 window.modernFreq = {};
 window.classicalFreq = {};
+
+hanzi.start();
 
 var tradIsEmpty = tradHashmap.size == 0 ? true : false;
 var simpIsEmpty = simpHashmap.size == 0 ? true : false;
@@ -490,4 +493,12 @@ module.exports.tagEra = function(simplified) {
     }
 
     return result;
+}
+
+module.exports.decompose = function(char) {
+    return hanzi.decompose(char, 1).components;
+}
+
+module.exports.radicalDefinition = function(radical) {
+    return hanzi.getRadicalMeaning(radical);
 }
