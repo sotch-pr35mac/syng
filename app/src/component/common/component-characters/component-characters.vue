@@ -28,9 +28,6 @@
     font-size: 12pt;
     color: black;
 }
-.word-tags {
-    margin-top: 10px;
-}
 </style>
 
 <script>
