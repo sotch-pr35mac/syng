@@ -12,6 +12,7 @@
     "chinese-conv": "^1.0.1",
     "electron-prebuilt": "^0.36.5",
     "franc": "^1.1.2",
+    "hanzi": "^2.1.0",
     "hanzi-writer": "^0.3.3",
     "hashmap": "^2.3.0",
     "hsk-list": "https://github.com/sotch-pr35mac/hsk-list/tarball/master",
