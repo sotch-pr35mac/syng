@@ -41,7 +41,6 @@ app.on('ready', function() {
 	});
 
 	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");
-	mainWindow.openDevTools();
 
 	mainWindow.on('close', function(e) {
 		// On macOS, don't close the window, just hide it
