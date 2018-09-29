@@ -4,7 +4,7 @@
 
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
-##### v1.3.0
+##### v1.4.0
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
 ---
@@ -41,11 +41,9 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - View character stroke order animations to study writing characters
 
 ## __What's new?__
-These are some of the enchancements included in Syng v1.3.0. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
-1. Clipboard and Web Reader
-2. Help Menu
-3. Updated Dictionary Database
-4. Minor Bug Fixes
+These are few feature additions and visual changes in v1.4.0. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Character Breakdown
+2. Visual Enhancements
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).
