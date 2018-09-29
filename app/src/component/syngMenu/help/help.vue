@@ -1,8 +1,8 @@
 <template>
 	<div class="help-section">
   		<h1 id="syng-help-guide">Syng Help Guide</h1>
-<h5 id="for-desktop-version-1.2.0">For Desktop Version 1.3.0</h5>
-<h5 id="document-version-0.1.0">Document Version 0.2.0</h5>
+<h5 id="for-desktop-version-1.2.0">For Desktop Version 1.4.0</h5>
+<h5 id="document-version-0.1.0">Document Version 0.3.0</h5>
 <p>This guide outlines Syng's features and how to use them.</p>
 <hr />
 <h5><a href="#tutorial">Tutorial</a></h5>
