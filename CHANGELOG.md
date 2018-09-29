@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [x.x.x] - xxxx-xx-xx
+## [1.4.0] - 2018-09-29
 ### Added
 - Added character frequency feature as described in Issue #102
 
