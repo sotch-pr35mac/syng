@@ -15,6 +15,8 @@ This project is no longer maintained, and will remain so for the forseeable futu
 ### Message from the Author
 It has been increasingly difficult to find good chunks of time to maintan this project, so I will no loner be maintaining it for the forseeable future. This will also allow me time to work on other projects I've been interested in. There is still a lot that I want to do with this project, and I hope to revive it at some point in the future. 
 
+---
+
 ## __About__
 Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems.
 
