@@ -1,54 +1,34 @@
 {
-  "name": "Syng",
-  "version": "1.3.0",
-  "author": "Preston Wang-Stosur-Bassett",
-  "description": "Syng is a free, open-source, cross-platform, Chinese-to-English dictionary app.",
-  "repository": "http://github.com/sotch-pr35mac/syng",
-  "homepage": "http://syngdict.com/",
-  "license": "GPL-3.0",
+  "name": "syng",
+  "version": "2.0.0",
+  "description": "An open source, cross platform, Chinese study app.",
   "main": "app/src/main.js",
-  "dependencies": {
-    "babel-polyfill": "^6.26.0",
-    "chinese-conv": "^1.0.1",
-    "electron-prebuilt": "^0.36.5",
-    "franc": "^1.1.2",
-    "hanzi": "^2.1.0",
-    "hanzi-writer": "^0.3.3",
-    "hashmap": "^2.3.0",
-    "hsk-list": "https://github.com/sotch-pr35mac/hsk-list/tarball/master",
-    "iview": "^0.9.11",
-    "mkdirp": "^0.5.1",
-    "npm-run-all": "^4.0.0",
-    "path": "^0.12.7",
-    "pinyin.js": "^2.0.0",
-    "prettify-pinyin": "https://github.com/sotch-pr35mac/prettify-pinyin/tarball/master",
-    "progressbar.js": "^1.0.1",
-    "remote": "^0.2.6",
-    "stream-json": "^0.5.2",
-    "tingodb": "^0.4.2",
-    "underscore": "^1.8.3",
-    "vue": "^1.0.17",
-    "vue-hot-reload-api": "^2.3.0"
-  },
-  "devDependencies": {
-    "browserify": "^13.1.1",
-    "commitizen": "^2.9.2",
-    "cz-conventional-changelog": "^1.2.0",
-    "electron-packager": "^8.2.0",
-    "electron-rebuild": "^1.1.2",
-    "eslint": "^3.13.1",
-    "pre-commit": "^1.2.2",
-    "vueify": "^8.7.0"
-  },
   "scripts": {
-    "dev": "npm-run-all build start",
-    "build": "browserify -t vueify -e app/src/app.js -o app/src/syng.js",
-    "start": "electron .",
-    "lint": "eslint ./app/src/**/*.js"
+    "start": "npm run svelte-build && electron .",
+    "svelte-build": "rollup -c",
+    "svelte-dev": "rollup -c -w",
+    "svelte-start": "sirv app/src"
   },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sotch-pr35mac/syng"
+  },
+  "author": "Preston Wang-Stosur-Bassett",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "electron": "^8.1.0",
+    "electron-reload": "^1.5.0",
+    "rollup": "^2.0.2",
+    "rollup-plugin-livereload": "^1.0.4",
+    "rollup-plugin-svelte": "^5.1.1",
+    "rollup-plugin-terser": "^5.2.0",
+    "svelte": "^3.19.2",
+    "svelte-spa-router": "^2.0.1"
+  },
+  "dependencies": {
+    "concurrently": "^5.1.0",
+    "sirv-cli": "^0.4.5"
   }
 }
