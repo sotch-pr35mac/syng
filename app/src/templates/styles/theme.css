@@ -1,0 +1,11 @@
+:root {
+	/* Theme Colors */
+	--sy-color--black: #474C5A;
+	--sy-color--white: #FFFFFF;
+	--sy-color--grey-1: #F5F5F5;
+	--sy-color--grey-2: #9F9FA0;
+
+	/* Text Colors */
+	--sy-text--dark: var(--sy-color--black);
+	--sy-text--light: var(--sy-color--grey-2);
+}

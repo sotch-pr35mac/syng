@@ -25,6 +25,7 @@
     "rollup-plugin-svelte": "^5.1.1",
     "rollup-plugin-terser": "^5.2.0",
     "svelte": "^3.19.2",
+    "svelte-feather-icons": "^3.2.2",
     "svelte-spa-router": "^2.0.1"
   },
   "dependencies": {

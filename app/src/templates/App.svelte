@@ -13,7 +13,6 @@
 	
 	const routes = {
 		'/': Search,
-		'/search': Search,
 		'/read': Reader,
 		'/bookmarks': Bookmarks,
 		'/study': Study,
@@ -25,8 +24,26 @@
 	};
 </script>
 
-<div>
-	<Navigation/>
+<style>
+.app-container {
+	display: flex;
+	height: 100vh;
+}
+.navigation-container {
+	display: flex;
+	flex: 1;
+}
+.content-container {
+	display: flex;
+	flex: 11;
+}
+</style>
 
-	<Router {routes}/>
+<div class="app-container">
+	<div class="navigation-container">
+		<Navigation/>
+	</div>
+	<div class="content-container">
+		<Router {routes}/>
+	</div>
 </div>
