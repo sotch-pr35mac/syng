@@ -1,18 +1,42 @@
+/* SYUI Theme Definition */
+
+@import url("../fonts/montserrat/Montserrat.css");
+
 :root {
 	/* Theme Colors */
 	--sy-color--black: #474C5A;
 	--sy-color--white: #FFFFFF;
 	--sy-color--grey-1: #F5F5F5;
 	--sy-color--grey-2: #9F9FA0;
-
-	/* Text Fonts */
-	--sy-text--font: 'Montserrat', Arial, sans-serif;
+	--sy-color--blue-1: #76AFF9;
+	--sy-color--blue: var(--sy-color--blue-1);
 
 	/* Text Colors */
 	--sy-text--dark: var(--sy-color--black);
 	--sy-text--light: var(--sy-color--grey-2);
+
+	/* Text Fonts */
+	--sy-font-family: 'Montserrat', 'Helvetica Neue', 'Arial', sans-serif;
+
+	/* Proximity */
+	--sy-space: 5px;
+	--sy-space--small: calc(var(--sy-space) / 2);
+	--sy-space--medium: var(--sy-space);
+	--sy-space--large: calc(var(--sy-space) * 2);
+	--sy-space--extra-large: calc(var(--sy-space) * 4);
+
+	/* Shadows */
+	--sy-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+	--sy-shadow--active: 0px 0px 10px rgba(0, 0, 0, 0.10);
+
+	/* Borders */
+	--sy-border-radius: 5px;
+
+	/* Transitions & Animations */
+	--sy-transition-duration: 0.25s;
 }
 
 body {
-	font-family: var(--sy-text--font);
+	font-family: var(--sy-font-family);
+	color: var(--sy-color--black);
 }

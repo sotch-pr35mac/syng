@@ -11,20 +11,20 @@
     min-width: 50px;
     width: max-content;
     transform: translate(0, -50%);
-    padding: 5px;
-    color: #9F9FA0;
-    background-color: #FFFFFF;
+    padding: var(--sy-space);
+    color: var(--sy-color--grey-2);
+    background-color: var(--sy-color--white);
     font-size: 11px;
     line-height: 1px;
     text-align: center;
-    border-radius: 5px;
+    border-radius: var(--sy-border-radius);
     position: absolute;
     z-index: 99999999;
     box-sizing: border-box;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.10);
+    box-shadow: var(--sy-shadow--active);
     visibility: hidden; 
     opacity: 0; 
-    transition: opacity 0.25s;
+    transition: opacity var(--sy-transition-duraction);
 }
 
 .sy-tooltip--container:hover .sy-tooltip--body {
@@ -35,23 +35,24 @@
 .sy-tooltip--body-right {
 	top: 50%;
 	left: 100%;
-	margin-left: 5px;
+	margin-left: var(--sy-space);
 }
 
 .sy-tooltip--body-left {
 	top: 50%;
 	right: 100%;
-	margin-right: 5px;
+	margin-right: var(--sy-space);
 }
 
 .sy-tooltip--body-top {
 	top: -20px;
 	left: 10%;
-	margin-bottom: 5px;
+	margin-bottom: var(--sy-space);
 }
 
 .sy-tooltip--body-bottom {
 	top: 60px;
 	left: 10%;
-	margin-top: 5px;
+	margin-top: var(--sy-space);
+
 }
