@@ -14,39 +14,47 @@
 	const primaryNavigation = [
 		{
 			link: '',
-			icon: SearchIcon
+			icon: SearchIcon,
+			title: 'Search'
 		},
 		{
 			link: 'read',
-			icon: BookOpenIcon
+			icon: BookOpenIcon,
+			title: 'Read'
 		},
 		{
 			link: 'bookmarks',
-			icon: BookmarkIcon
+			icon: BookmarkIcon,
+			title: 'Bookmarks'
 		},
 		{
 			link: 'study',
-			icon: TrendingUpIcon
+			icon: TrendingUpIcon,
+			title: 'Study'
 		},
 		{
 			link: 'chat',
-			icon: MessageCircleIcon
+			icon: MessageCircleIcon,
+			title: 'Chat'
 		},
 		{
 			link: 'tools',
-			icon: MoreVerticalIcon
+			icon: MoreVerticalIcon,
+			title: 'Extras'
 		}
 	];
 	const secondaryNavigation = [
 		{
 			link: 'help',
 			icon: HelpCircleIcon,
-			size: '18'
+			size: '18',
+			title: 'Help'
 		},
 		{
 			link: 'settings',
 			icon: SettingsIcon,
-			size: '24'
+			size: '24',
+			title: 'Settings'
 		}
 	];
 </script>
@@ -104,19 +112,29 @@
 <div class="navigation-container">
 	<div class="navigation--primary-nav">
 	{#each primaryNavigation as navItem}
-		<a href="{`#/${navItem.link}`}">
+		<a href="{`#/${navItem.link}`}" class="sy-tooltip--container">
 			<span class="navigation--item" use:active={{path: `/${navItem.link}`, className: 'navigation--item-active'}}>
 				<svelte:component this={navItem.icon} size="24"/>
 			</span>
+			<div class="sy-tooltip--body sy-tooltip--body-right">
+				<p>
+					{ navItem.title }
+				</p>
+			</div>
 		</a>
 	{/each}
 	</div>
 	<div class="navigation--secondary-nav">
 	{#each secondaryNavigation as navItem}
-		<a href="{`#/${navItem.link}`}">
+		<a href="{`#/${navItem.link}`}" class="sy-tooltip--container">
 			<span class="navigation--item" use:active={{path: `/${navItem.link}`, className: 'navigation--item-active'}}>
 				<svelte:component this={navItem.icon} size="{navItem.size}"/>
 			</span>
+			<div class="sy-tooltip--body sy-tooltip--body-right">
+				<p>
+					{ navItem.title }
+				</p>
+			</div>
 		</a>
 	{/each}
 	</div>

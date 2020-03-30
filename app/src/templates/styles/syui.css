@@ -1,0 +1,57 @@
+/* SYUI */
+
+/* Tooltip */
+.sy-tooltip--container {
+    display: inline-block;
+    position: relative;
+    text-align: left;
+}
+
+.sy-tooltip--container .sy-tooltip--body {
+    min-width: 50px;
+    width: max-content;
+    transform: translate(0, -50%);
+    padding: 5px;
+    color: #9F9FA0;
+    background-color: #FFFFFF;
+    font-size: 11px;
+    line-height: 1px;
+    text-align: center;
+    border-radius: 5px;
+    position: absolute;
+    z-index: 99999999;
+    box-sizing: border-box;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.10);
+    visibility: hidden; 
+    opacity: 0; 
+    transition: opacity 0.25s;
+}
+
+.sy-tooltip--container:hover .sy-tooltip--body {
+    visibility: visible; 
+    opacity: 1;
+}
+
+.sy-tooltip--body-right {
+	top: 50%;
+	left: 100%;
+	margin-left: 5px;
+}
+
+.sy-tooltip--body-left {
+	top: 50%;
+	right: 100%;
+	margin-right: 5px;
+}
+
+.sy-tooltip--body-top {
+	top: -20px;
+	left: 10%;
+	margin-bottom: 5px;
+}
+
+.sy-tooltip--body-bottom {
+	top: 60px;
+	left: 10%;
+	margin-top: 5px;
+}
