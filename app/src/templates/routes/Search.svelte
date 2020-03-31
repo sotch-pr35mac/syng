@@ -1,5 +1,10 @@
 <script>
 	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
+	import SyButton from '../components/SyButton/SyButton.svelte';
+	import {
+		ChevronLeftIcon,
+		ChevronRightIcon
+	} from 'svelte-feather-icons';
 </script>
 
 <style>
@@ -39,7 +44,15 @@
 
 <div class="search-page-container">
 	<div class="search-bar-container">
-		Search Bar
+		<SyButton style="ghost" size="large">
+			<ChevronLeftIcon size="16" />
+		</SyButton>
+		<SyButton style="ghost" size="large">
+			<ChevronRightIcon size="16" />
+		</SyButton>
+		<SyButton style="ghost" size="large">
+			EN
+		</SyButton>
 	</div>
 	<div class="search-content-container">
 		<div class="search-results">
