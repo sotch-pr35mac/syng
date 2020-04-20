@@ -1,10 +1,39 @@
 <script>
 	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 	import SyButton from '../components/SyButton/SyButton.svelte';
+	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+	import SyList from '../components/SyList/SyList.svelte';
 	import {
 		ChevronLeftIcon,
 		ChevronRightIcon
 	} from 'svelte-feather-icons';
+
+	const searchResults = [
+		{
+			headline: '你好',
+			subtitle: 'nihao',
+			content: 'Hello; How are you?; What up?',
+			active: false
+		},
+		{
+			headline: '人山人海',
+			subtitle: 'renshanrenhai',
+			content: 'People mountain people sea',
+			active: true
+		},
+		{
+			headline: '浇水',
+			subtitle: 'jiaoshui',
+			content: 'To water plants',
+			active: false
+		},
+		{
+			headline: '大象',
+			subtitle: 'daxiang',
+			content: 'Elephant',
+			active: false
+		}
+	];
 </script>
 
 <style>
@@ -22,6 +51,7 @@
 	background-color: var(--sy-color--white);
 	box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
 	z-index: 3;
+	align-items: center;
 }
 .search-content-container {
 	display: flex;
@@ -30,6 +60,7 @@
 	display: flex;
 	flex: 2;
 	z-index: 1;
+	flex-direction: column;
 }
 
 /* TODO: Consider moving some of the following styles to the component file itself */
@@ -45,17 +76,19 @@
 <div class="search-page-container">
 	<div class="search-bar-container">
 		<SyButton style="ghost" size="large">
-			<ChevronLeftIcon size="16" />
+			<ChevronLeftIcon size="20" />
 		</SyButton>
 		<SyButton style="ghost" size="large">
-			<ChevronRightIcon size="16" />
+			<ChevronRightIcon size="20" />
 		</SyButton>
 		<SyButton style="ghost" size="large">
 			EN
 		</SyButton>
+		<SyTextInput style="ghost" size="large" placeholder="Search..." />
 	</div>
 	<div class="search-content-container">
 		<div class="search-results">
+			<SyList style="preview" values="{searchResults}" />
 		</div>
 		<div class="dictionary-content">
 			<DictionaryContent></DictionaryContent>

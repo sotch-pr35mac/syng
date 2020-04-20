@@ -28,18 +28,26 @@
 
 <style>
 .sy-button {
-	margin: 0;
+	margin: 0 var(--sy-space);;
 	padding: var(--sy-space);
 	border: none;
 	cursor: pointer;
 	color: var(--sy-color--black);
 	font-family: var(--sy-font-family);
 }
+.sy-button:focus {
+	outline: none;
+}
 .sy-button--filled {
 	box-shadow: var(--sy-shadow);
 }
 .sy-button--ghost {
 	
+}
+.sy-button--ghost:hover {
+	color: var(--sy-color--blue);
+	transition-property: color;
+	transition-duration: var(--sy-transition-duration);
 }
 .sy-button--small {
 	font-size: 10px;

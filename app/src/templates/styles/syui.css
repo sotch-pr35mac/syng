@@ -12,7 +12,7 @@
     width: max-content;
     transform: translate(0, -50%);
     padding: var(--sy-space);
-    color: var(--sy-color--grey-2);
+    color: var(--sy-color--grey-5);
     background-color: var(--sy-color--white);
     font-size: 11px;
     line-height: 1px;

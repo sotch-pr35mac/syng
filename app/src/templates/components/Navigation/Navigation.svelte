@@ -61,7 +61,7 @@
 
 <style>
 .navigation-container {
-	background-color: var(--sy-color--grey-1);
+	background-color: var(--sy-color--grey-2);
 	height: 100vh;
 	width: 100%;
 	display: flex;
@@ -81,7 +81,7 @@
 	align-items: center;
 }
 .navigation--item {
-	color: var(--sy-color--grey-2);
+	color: var(--sy-color--grey-5);
 	margin: var(--sy-space);
 	padding: var(--sy-space--large);
 	height: 30px;
@@ -99,7 +99,7 @@
 	background-color: var(--sy-color--white);
 	border-radius: 100%;
 	box-shadow: var(--sy-shadow);
-	color: var(--sy-color--grey-2) !important;
+	color: var(--sy-color--grey-5) !important;
 	transition-property: background-color, box-shadow, border-radius, color !important;
 	transition-duration: var(--sy-transition-duration) !important;
 }
