@@ -1,9 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [X.X.X] - XXXX-XX-XX
+## [1.4.1] - 2020-10-22
 ### Changed
 - Updated Icon
+
+### Fixed
+- Fixed several CVE's
 
 ### Removed
 - Removed frequency data
