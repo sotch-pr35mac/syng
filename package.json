@@ -25,19 +25,17 @@
     "progressbar.js": "^1.0.1",
     "remote": "^0.2.6",
     "stream-json": "^0.5.2",
-    "tingodb": "^0.4.2",
+    "tingodb": "^0.6.1",
     "underscore": "^1.8.3",
     "vue": "^1.0.17",
     "vue-hot-reload-api": "^2.3.0"
   },
   "devDependencies": {
     "browserify": "^13.1.1",
-    "commitizen": "^2.9.2",
     "cz-conventional-changelog": "^1.2.0",
     "electron-packager": "^8.2.0",
     "electron-rebuild": "^1.1.2",
     "eslint": "^4.18.2",
-    "pre-commit": "^1.2.2",
     "vueify": "^8.7.0"
   },
   "scripts": {
@@ -45,10 +43,5 @@
     "build": "browserify -t vueify -e app/src/app.js -o app/src/syng.js",
     "start": "electron .",
     "lint": "eslint ./app/src/**/*.js"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
-    }
   }
 }
