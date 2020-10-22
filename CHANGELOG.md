@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This projec
 
 ### Removed
 - Removed frequency data
+- Removed loading messages
 
 ## [1.4.0] - 2018-09-29
 ### Added
