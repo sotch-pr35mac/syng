@@ -64,7 +64,6 @@
                 <Row>
                   <div class="pull-right word-tags">
                     <Tag v-if="currentWord.hsk" color="yellow">HSK: {{currentWord.hsk}}</Tag>
-                    <Tag v-if="(currentWord.simplified.length == 1) && getEra(currentWord.simplified)" color="green">Era: {{getEra(currentWord.simplified)}}</Tag>
                   </div>
                 </Row>
               </div>
@@ -371,9 +370,6 @@ module.exports = {
     });
   },
   methods: {
-    getEra: function(simplified) {
-        return window.engine.tagEra(simplified);
-    },
     filterList: function() {
       var self = this;
 

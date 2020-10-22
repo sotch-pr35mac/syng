@@ -4,15 +4,6 @@
 
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
----
-
-## __Notice__
-This project is no longer maintained, and will remain so for the forseeable future. 
-
-### Message from the Author
-It has been increasingly difficult to find good chunks of time to maintan this project, so I will no loner be maintaining it for the forseeable future. This will also allow me time to work on other projects I've been interested in. There is still a lot that I want to do with this project, and I hope to revive it at some point in the future. 
-
----
 
 ## __About__
 Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems.
@@ -91,10 +82,6 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
       - Language Detection for Search
    - [hanzi-writer](https://github.com/chanind/hanzi-writer) by [chanind](https://github.com/chanind)
       - Character Stroke Animations
-   - [Jun Da Frequency Data](http://lingua.mtsu.edu/chinese-computing/)
-      - Data for determining classical / modern characters.
-      - Data has been modified from original `.xlsx` format to JSON.
-      - Used with permission.
 
 ## __Developers Welcome__
 If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together.
