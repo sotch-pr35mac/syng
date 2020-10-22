@@ -41,7 +41,7 @@
   "dependencies": {
     "classnames": "2.2.3",
     "extract-text-webpack-plugin": "1.0.1",
-    "jquery": "2.2.1",
+    "jquery": "3.5.1",
     "path": "0.12.7"
   }
 }
