@@ -6,7 +6,7 @@
       <br>
       <h2>Syng | 词应</h2>
       <h3>Dictionary App | 词典应用</h3>
-      <h4>v1.4.0</h4>
+      <h4>v1.4.1</h4>
     </center>
     <br>
     <br>
@@ -27,10 +27,6 @@
         <p>
           The name Syng comes from the stylized spelling of cíyīng, the pinyin for 词应. 词应 is short for 词典应用, literally translating to Dictionary App.
         </p>
-        <br>
-        <p>
-          Syng is actively being developed, and contributors are welcome. For more information visit syngdict.com.
-        </p>
       </div>
     </div>
     <div v-if="!viewingAbout" class="about-dialog">
@@ -49,7 +45,6 @@
         <p><b>node-cc-cedict:</b> Syng uses a heavily modified version of John Heroy's node-cc-cedict project for using Node.js to query the CC-CEDICT database.</p>
         <p><b>Franc:</b> Language Detection for Search</p>
         <p><b>hanzi-writer:</b> Stroke Order Animations</p>
-        <p><b>Jun Da Frequency Data: </b> Modern / Classical Character Flag</p>
       </div>
     </div>
   </div>

@@ -37,9 +37,10 @@ Syng is a stylized spelling of cíyīng, the Pinyin for 词应. 词应 has been 
     - View character stroke order animations to study writing characters
 
 ## __What's new?__
-These are few feature additions and visual changes in v1.4.0. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
-1. Character Breakdown
-2. Visual Enhancements
+These are few feature additions and visual changes in v1.4.1. For a full list of changes, see [the changelog](https://github.com/sotch-pr35mac/syng/blob/master/CHANGELOG.md).
+1. Update Icon
+2. Fixed CVEs
+3. Removed Frequency Data
 
 ## __Screenshots__
 More screenshots available on [the Syng website](http://syngdict.com).
@@ -64,30 +65,6 @@ Alternatively, if you aren't comfortable running the pre-built installation scri
 To install Syng on macOS, simply download the `.dmg` file from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.4.0/Syng-macOS.dmg) and then drag and drop the Syng app into your Applications folder.
 #### __Windows__
 To install Syng on Windows, you can download the 64-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.2.0/Syng-Windows-setup-x64.exe) and the 32-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.2.0/Syng-Windows-setup-ia32.exe) and use it to install Syng.
-
-## __Built On__
-   - [Electron](http://electron.atom.io)
-      - Framework for Native Cross-Platform Support
-   - [CC-CEDICT](http://www.mdbg.net/chindict/chindict.php?page=cedict)
-      - Chinese Dictionary Database
-      - The file has been modified to JSON using the [Syng Dictionary Creator](https://github.com/sotch-pr35mac/syng-dictionary-creator)
-   - [Vue.js](https://vuejs.org/)
-      - Framework for building user interface
-   - [IView UI](https://www.iviewui.com/)
-      - User Interface Framework
-   - Heavily modified version of [node-cc-cedict](https://github.com/johnheroy/node-cc-cedict) by [John Heroy](http://johnheroy.com/)
-      - Node.js framework for CC-CEDICT Dictionary
-      - Modified to work using hashmaps and support English, and pinyin search functionality.
-   - [Franc](https://github.com/wooorm/franc)
-      - Language Detection for Search
-   - [hanzi-writer](https://github.com/chanind/hanzi-writer) by [chanind](https://github.com/chanind)
-      - Character Stroke Animations
-
-## __Developers Welcome__
-If you're interested in contributing to Syng, you can checkout [the Roadmap](https://github.com/sotch-pr35mac/syng/wiki/Roadmap), or feel free to [contact me](mailto://p.wanstobas@gmail.com) and we can build great software together.
-
-## __Contributing / Getting Started__
-If you're interested in contributing to Syng, you can find a guide to getting started [here](https://github.com/sotch-pr35mac/syng/wiki/Getting-Started) in the [Syng wiki](https://github.com/sotch-pr35mac/syng/wiki). This guide outlines the development stack, project structure, and how to create a feature branch.
 
 ## __Maintainers__
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
