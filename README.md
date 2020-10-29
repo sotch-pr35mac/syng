@@ -43,7 +43,7 @@ These are few feature additions and visual changes in v1.4.1. For a full list of
 3. Removed Frequency Data
 
 ## __Screenshots__
-More screenshots available on [the Syng website](http://syngdict.com).
+More screenshots available on [the Syng website](https://www.getsyng.com).
 
 ![image](./assets/homescreen.png)
 
@@ -62,7 +62,7 @@ wget -O- https://bit.ly/2OLXtay | bash
 
 Alternatively, if you aren't comfortable running the pre-built installation script, you can install manually by downloading the 64-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.3.0/Syng-linux-x64.tar.xz) and the 32-bit candidate [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.3.0/Syng-linux-ia32.tar.xz) and then following the installation instructions provided.
 #### __macOS__
-To install Syng on macOS, simply download the `.dmg` file from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.4.0/Syng-macOS.dmg) and then drag and drop the Syng app into your Applications folder.
+To install Syng on macOS, simply download the `.dmg` file from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.4.1/Syng-macOS.dmg) and then drag and drop the Syng app into your Applications folder.
 #### __Windows__
 To install Syng on Windows, you can download the 64-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.2.0/Syng-Windows-setup-x64.exe) and the 32-bit installer from [here](https://github.com/sotch-pr35mac/syng/releases/download/v1.2.0/Syng-Windows-setup-ia32.exe) and use it to install Syng.
 
@@ -70,4 +70,4 @@ To install Syng on Windows, you can download the 64-bit installer from [here](ht
 - [Preston Wang-Stosur-Bassett](http://www.stosur.info)
 
 ## __License__
-This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/). The files located in the directory at `app/src/db/junda` are sole property of the author, more information can be found [here](http://lingua.mtsu.edu/chinese-computing/copyright.html). The Jun Da dataset is used with permission.
+This software is licensed under the [GNU Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html). The file at `app/src/db/cc-cedict.json` is licensed under the [Creative Commons Attribution-Share Alike 3.0 License](http://creativecommons.org/licenses/by-sa/3.0/).
