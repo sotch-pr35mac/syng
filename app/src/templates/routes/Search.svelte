@@ -45,7 +45,6 @@
 }
 .search-bar-container {
 	display: flex;
-	width: 100%;
 	padding: var(--sy-space--extra-large) var(--sy-space--large);
 	margin: 0;
 	background-color: var(--sy-color--white);
@@ -59,6 +58,7 @@
 .search-results {
 	display: flex;
 	flex: 2;
+	max-width: fit-content;
 	z-index: 1;
 	flex-direction: column;
 }
@@ -68,7 +68,7 @@
 	display: flex;
 	flex: 9;
 	box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-	height: 100vh;
+	height: calc(100vh - 83px);
 	z-index: 2;
 }
 </style>

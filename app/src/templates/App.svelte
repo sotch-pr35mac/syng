@@ -32,6 +32,8 @@
 .navigation-container {
 	display: flex;
 	flex: 1;
+	max-width: 93px;
+	min-width: 92px;
 }
 .content-container {
 	display: flex;
