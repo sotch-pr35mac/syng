@@ -1,10 +1,15 @@
 <template>
   <div id="settings-panel">
     <center>
-      <h2>Settings</h2>
+      <h1>Settings</h1>
     </center>
     <br>
-    <language></language>
+	<span class="setting-panel-list">
+		<!--
+		<language></language>
+		-->
+		<pinyin-color></pinyin-color>
+	</span>
   </div>
 </template>
 
@@ -15,14 +20,16 @@
 </style>
 
 <script>
-var Language = require('./language.vue');
+var Language = require('./language/language.vue');
+var PinyinColor = require('./pinyinColor/pinyinColor.vue');
 
   module.exports = {
     data: function() {
-      return {}
+	return {}
     },
     components: {
-      language: Language
+      language: Language,
+	pinyinColor: PinyinColor
     }
   };
 </script>

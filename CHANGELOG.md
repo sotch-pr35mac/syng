@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [X.X.X] - XXXX-XX-XX
+### Added
+- Added support for custom tone colors as described in [Issue #146](https://github.com/sotch-pr35mac/syng/issues/146)
+
 ## [1.4.1] - 2020-10-22
 ### Changed
 - Updated Icon

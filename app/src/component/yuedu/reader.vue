@@ -171,6 +171,7 @@ var hsk = window.require('hsk-list');
 var _ = window.require('underscore');
 var Tts = require('../common/tts/tts.vue');
 var databaseManager = new window.DatMan();
+var colorManager = require('../../lib/pinyin-color/pinyinColorUtils.js');
 
 module.exports = {
     props: [ 'segmentedWords' ],
@@ -210,7 +211,7 @@ module.exports = {
         switchWord: function(entryIndex) {
             var self = this;
             self.currentWord = self.inspectionInformation[entryIndex];
-            
+            var colorDefinitions = colorManager.getColors(); 
             var hskLevel = hsk(self.currentWord.simplified);
             if(hskLevel > 0) {
                 self.currentWord.hsk = hskLevel;
@@ -218,19 +219,7 @@ module.exports = {
 
             var colors = [];
             _.each(self.currentWord.toneMarks, function(tone) {
-                if(tone == "1") {
-                    colors.push("blue");
-                } else if(tone == "2") {
-                    colors.push("orange");
-                } else if(tone == "3") {
-                    colors.push("red");
-                } else if(tone == "4") {
-                    colors.push("green");
-                } else if(tone == "5") {
-                    colors.push("black");
-                } else if(tone == "0") {
-                    colors.push("black");
-                }
+		colors.push(colorDefinitions[tone == '5' ? 0 : tone]);
             });
 
             self.currentWord.color = colors;
