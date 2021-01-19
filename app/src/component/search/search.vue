@@ -227,6 +227,8 @@ var searchResults = [];
 var franc = window.require('franc');
 var _ = window.require('underscore');
 var hsk = window.require('hsk-list');
+var colorManager = require('../../lib/pinyin-color/pinyinColorUtils.js');
+colorManager.initializeColorData();
 
 var databaseManager = new window.DatMan();
 
@@ -401,11 +403,7 @@ module.exports = {
 
       function compileResults(originalResults) {
         var compiledResults = [];
-        const BLACK_TONE = "black";
-        const BLUE_TONE = "blue";
-        const ORANGE_TONE = "orange";
-        const RED_TONE = "red";
-        const GREEN_TONE = "green";
+	var colorDefinitions = colorManager.getColors();
 
         _.each(originalResults, function(wordList) {
           _.each(wordList, function(word) {
@@ -413,24 +411,7 @@ module.exports = {
             var colors = [];
 
             _.each(word.toneMarks, function(tone) {
-              if(tone == "1") {
-                colors.push(BLUE_TONE);
-              }
-              else if(tone == "2") {
-                colors.push(ORANGE_TONE);
-              }
-              else if(tone == "3") {
-                colors.push(RED_TONE);
-              }
-              else if(tone == "4") {
-                colors.push(GREEN_TONE);
-              }
-              else if(tone == "5") {
-                colors.push(BLACK_TONE);
-              }
-              else if(tone == "0") {
-                colors.push(BLACK_TONE);
-              }
+		colors.push(colorDefinitions[tone == '5' ? 0 : tone]);
             });
 
             var newWord = {

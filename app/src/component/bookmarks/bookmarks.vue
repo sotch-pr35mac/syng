@@ -228,6 +228,7 @@ var Tts = require('../common/tts/tts.vue');
 var Components = require('../common/component-characters/component-characters.vue');
 var _ = require('underscore');
 var hsk = require('hsk-list');
+var colorManager = require('../../lib/pinyin-color/pinyinColorUtils.js');
 
 // Generate unqiue random ID's for the word listings expanded content to be linked with the expanded content
 function generateUIID() {
@@ -246,37 +247,14 @@ function generateUIID() {
 
 function colorTones(originalListing) {
   var compiledListing = [];
-  const BLACK_TONE = 'black';
-  const BLUE_TONE = 'blue';
-  const ORANGE_TONE = 'orange';
-  const RED_TONE = 'red';
-  const GREEN_TONE = 'green';
-
-  console.log(originalListing);
+	var colorDefinitions = colorManager.getColors();
 
   _.each(originalListing, function(word) {
     var uiid = generateUIID();
     var colors = [];
 
     _.each(word.toneMarks, function(tone) {
-      if(tone == '1') {
-        colors.push(BLUE_TONE);
-      }
-      else if(tone == '2') {
-        colors.push(ORANGE_TONE);
-      }
-      else if(tone == '3') {
-        colors.push(RED_TONE);
-      }
-      else if(tone == '4') {
-        colors.push(GREEN_TONE);
-      }
-      else if(tone == '5') {
-        colors.push(BLACK_TONE);
-      }
-      else if(tone == '0') {
-        colors.push(BLACK_TONE);
-      }
+	colors.push(colorDefinitions[tone == '5' ? 0 : tone]);
     });
 
     var formattedWord = {
