@@ -6,7 +6,7 @@
       <br>
       <h2>Syng | 词应</h2>
       <h3>Dictionary App | 词典应用</h3>
-      <h4>v1.4.1</h4>
+      <h4>v1.5.0</h4>
     </center>
     <br>
     <br>
