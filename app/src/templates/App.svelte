@@ -1,4 +1,8 @@
 <script>
+	window.dictionary = require('chinese-dictionary');
+	window.dictionary.init().then(() => document.dispatchEvent(new Event('init'))).catch(() => {
+		alert('There was an error starting Syng. Please quit and try again. If this problem persists, please file a bug report');
+	});
 	import Router from 'svelte-spa-router';
 	import Search from './routes/Search.svelte';
 	import Reader from './routes/Reader.svelte';
