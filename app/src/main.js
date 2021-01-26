@@ -1,31 +1,37 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const OPEN_DEV_TOOLS = true;
 require('electron-reload')(__dirname, {
 	electron: path.join(__dirname, '../node_modules', '.bin', 'electron'),
 	awaitWriteFinish: true
 });
+const createWindow = (path, properties, cb) => {
+	const win = new BrowserWindow(properties);
+	win.loadFile(path).then(cb);
+	if (OPEN_DEV_TOOLS)
+		win.webContents.openDevTools();
+	return win;
+}
 
-function createWindow() {
+function createMainView() {
 	// Create the browser window.
-	const win = new BrowserWindow({
+	createWindow('app/src/index.html', {
 		width: 1110,
 		height: 655,
+		show: true, 
+		title: 'Syng',
+		scrollBounce: true,
 		webPreferences: {
 			nodeIntegration: true
 		}
-	});
-	
-	// and load the index.html file of the app.
-	win.loadFile('app/src/index.html');
 
-	// Open the DevTools
-	win.webContents.openDevTools();
+	});
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(createWindow);
+app.whenReady().then(() => createMainView()).catch(console.trace);
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
@@ -40,7 +46,7 @@ app.on('active', () => {
 	// On macOS it is common to re-create a window in the app when the 
 	// dock icon is clicked and there are no other windows open
 	if(BrowserWindow.getAllWindows().length === 0) {
-		createWindow();
+		createMainView();
 	}
 });
 

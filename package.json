@@ -4,7 +4,9 @@
   "description": "An open source, cross platform, Chinese study app.",
   "main": "app/src/main.js",
   "scripts": {
-    "start": "npm run svelte-build && electron .",
+    "build": "electron-build-env neon build chinese-dictionary --release && rollup -c",
+    "dev": "npm run svelte-build && electron .",
+    "start": "electron .",
     "svelte-build": "rollup -c",
     "svelte-dev": "rollup -c -w",
     "svelte-start": "sirv app/src"
@@ -19,7 +21,9 @@
     "@rollup/plugin-commonjs": "^11.0.2",
     "@rollup/plugin-node-resolve": "^7.1.1",
     "electron": "^8.1.0",
+    "electron-build-env": "^0.2.0",
     "electron-reload": "^1.5.0",
+    "neon-cli": "^0.7.0",
     "rollup": "^2.0.2",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-svelte": "^5.1.1",
@@ -29,6 +33,7 @@
     "svelte-spa-router": "^2.0.1"
   },
   "dependencies": {
+    "chinese-dictionary": "^1.0.1",
     "concurrently": "^5.1.0",
     "sirv-cli": "^0.4.5"
   }
