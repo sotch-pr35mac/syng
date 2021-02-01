@@ -28,7 +28,7 @@
 
 <style>
 .sy-button {
-	margin: 0 var(--sy-space);;
+	margin: 0 var(--sy-space);
 	padding: var(--sy-space);
 	border: none;
 	cursor: pointer;
@@ -42,7 +42,7 @@
 	box-shadow: var(--sy-shadow);
 }
 .sy-button--ghost {
-	
+    background: none;	
 }
 .sy-button--ghost:hover {
 	color: var(--sy-color--blue);

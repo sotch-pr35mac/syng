@@ -31,6 +31,8 @@
 	border: none;
 	padding: var(--sy-space--large) var(--sy-space);
 	margin: var(--sy-space--small);
+    background-color: var(--sy-color--white);
+    color: var(--sy-color--black);
 }
 .sy-text-input::placeholder {
 	color: var(--sy-color--grey-1);

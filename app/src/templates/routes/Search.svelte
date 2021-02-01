@@ -61,6 +61,7 @@
 	max-width: fit-content;
 	z-index: 1;
 	flex-direction: column;
+    background-color: var(--sy-color--white);
 }
 
 /* TODO: Consider moving some of the following styles to the component file itself */
