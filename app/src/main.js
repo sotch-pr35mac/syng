@@ -37,7 +37,11 @@ app.on('ready', function() {
 		height: 655,
 		show: false,
 		title: "Syng",
-		'auto-hide-menu-bar': true
+		'auto-hide-menu-bar': true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
 	});
 
 	mainWindow.loadURL("file://"+__dirname+"/../views/index.html");

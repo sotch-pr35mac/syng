@@ -13,7 +13,7 @@ module.exports = class databaseManager {
 
     // Ensure the database exists
     const fs = require('fs');
-    if(!fs.exists(self.path.join(self.appData, 'db/syng'))) {
+    if(!fs.existsSync(self.path.join(self.appData, 'db/syng'))) {
       // The database directory doesn't exist, create it
       const mkdirp = require('mkdirp');
       mkdirp(self.path.join(self.appData, 'db/syng'), function(err) {

@@ -10,7 +10,6 @@
   "dependencies": {
     "babel-polyfill": "^6.26.0",
     "chinese-conv": "^1.0.1",
-    "electron-prebuilt": "^0.36.5",
     "franc": "^1.1.2",
     "hanzi": "^2.1.0",
     "hanzi-writer": "^0.3.3",
@@ -34,7 +33,7 @@
     "browserify": "^13.1.1",
     "cz-conventional-changelog": "^1.2.0",
     "electron-packager": "^8.2.0",
-    "electron-rebuild": "^1.1.2",
+    "electron": "^8.1.0",
     "eslint": "^4.18.2",
     "vueify": "^8.7.0"
   },
