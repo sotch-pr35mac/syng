@@ -28,7 +28,7 @@
 
 <style>
 .sy-button {
-	margin: 0 var(--sy-space);;
+	margin: 0 var(--sy-space);
 	padding: var(--sy-space);
 	border: none;
 	cursor: pointer;
