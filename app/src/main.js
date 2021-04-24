@@ -22,11 +22,16 @@ function createMainView() {
 		title: 'Syng',
 		scrollBounce: true,
 		webPreferences: {
-			nodeIntegration: true
+			nodeIntegration: true,
+            contextIsolation: false
 		}
 
 	});
 }
+
+// Allow renderer process reuse
+// to load native node modules
+app.allowRendererProcessReuse = false;
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

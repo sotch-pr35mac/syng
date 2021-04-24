@@ -42,7 +42,7 @@
 	box-shadow: var(--sy-shadow);
 }
 .sy-button--ghost {
-	
+    background: none;	
 }
 .sy-button--ghost:hover {
 	color: var(--sy-color--blue);
