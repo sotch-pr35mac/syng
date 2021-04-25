@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const OPEN_DEV_TOOLS = true;
 require('electron-reload')(__dirname, {
@@ -15,17 +15,30 @@ const createWindow = (path, properties, cb) => {
 
 function createMainView() {
 	// Create the browser window.
-	createWindow('app/src/index.html', {
+	const appWindow = createWindow('app/src/index.html', {
 		width: 1110,
 		height: 655,
 		show: true, 
 		title: 'Syng',
 		scrollBounce: true,
+		titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
+		trafficLightPosition: {
+			x: 19,
+			y: 25
+		},
 		webPreferences: {
 			nodeIntegration: true,
-            contextIsolation: false
+            		contextIsolation: false
 		}
 
+	});
+
+	// Register event listeners
+	appWindow.on('enter-full-screen', () => {
+		appWindow.webContents.send('enter-full-screen', true);
+	});
+	appWindow.on('leave-full-screen', () => {
+		appWindow.webContents.send('leave-full-screen', true);
 	});
 }
 

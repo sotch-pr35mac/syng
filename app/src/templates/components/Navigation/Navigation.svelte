@@ -11,6 +11,7 @@
 		HelpCircleIcon	
 	} from 'svelte-feather-icons';
 
+	const ipcRenderer = window.require('electron').ipcRenderer;
 	const primaryNavigation = [
 		{
 			link: '',
@@ -57,6 +58,17 @@
 			title: 'Settings'
 		}
 	];
+
+    let trafficLightMargin = process.platform === 'darwin';
+
+	ipcRenderer.on('enter-full-screen', () => {
+        trafficLightMargin = false;
+	});
+	ipcRenderer.on('leave-full-screen', () => {
+        if (process.platform === 'darwin') {
+            trafficLightMargin = true;
+        }
+	});
 </script>
 
 <style>
@@ -74,6 +86,10 @@
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+    margin-top: var(--sy-space);
+}
+.navigation--primary-nav--macos {
+	margin-top: calc(35px + var(--sy-space));
 }
 .navigation--secondary-nav {
 	display: flex;
@@ -110,7 +126,7 @@
 </style>
 
 <div class="navigation-container">
-	<div class="navigation--primary-nav">
+	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
 	{#each primaryNavigation as navItem}
 		<a href="{`#/${navItem.link}`}" class="sy-tooltip--container">
 			<span class="navigation--item" use:active={{path: `/${navItem.link}`, className: 'navigation--item-active'}}>
