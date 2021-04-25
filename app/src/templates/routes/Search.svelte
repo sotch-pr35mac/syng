@@ -34,6 +34,8 @@
 			active: false
 		}
 	];
+
+    const enableDrag = process.platform === 'darwin';
 </script>
 
 <style>
@@ -51,6 +53,9 @@
 	box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
 	z-index: 3;
 	align-items: center;
+}
+.search-bar--container--macos {
+    -webkit-app-region: drag;
 }
 .search-content-container {
 	display: flex;
@@ -75,7 +80,7 @@
 </style>
 
 <div class="search-page-container">
-	<div class="search-bar-container">
+	<div class="search-bar-container" class:search-bar--container--macos={enableDrag}>
 		<SyButton style="ghost" size="large">
 			<ChevronLeftIcon size="20" />
 		</SyButton>

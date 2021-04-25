@@ -57,8 +57,8 @@
 		--sy-color--grey-5: #9F9FA0;
 
 		/* Shadows */
-		--sy-shadow: 0px 1px 4px rgba(14, 14, 14, 0.25);
-		--sy-shadow--active: 0px 0px 10px rgba(14, 14, 14, 0.10);
+		--sy-shadow: 0px 1px 4px rgba(154, 154, 154, 0.50);
+		--sy-shadow--active: 0px 0px 10px rgba(220, 220, 220, 0.25);
 	}
 }
 
