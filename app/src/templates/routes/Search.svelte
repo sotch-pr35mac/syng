@@ -8,34 +8,53 @@
 		ChevronRightIcon
 	} from 'svelte-feather-icons';
 
-	const searchResults = [
-		{
-			headline: '你好',
-			subtitle: 'nihao',
-			content: 'Hello; How are you?; What up?',
-			active: false
-		},
-		{
-			headline: '人山人海',
-			subtitle: 'renshanrenhai',
-			content: 'People mountain people sea',
-			active: true
-		},
-		{
-			headline: '浇水',
-			subtitle: 'jiaoshui',
-			content: 'To water plants',
-			active: false
-		},
-		{
-			headline: '大象',
-			subtitle: 'daxiang',
-			content: 'Elephant',
-			active: false
-		}
-	];
-
+    let searchResults = [];
+    let searchLang = 'EN';
+    const langSwitcher = ['EN', 'PY', 'ZH'];
     const enableDrag = process.platform === 'darwin';
+    const updateSearchResults = results => {
+        searchResults = results.map(element => {
+            return {
+                headline: element.traditional === element.simplified ? element.simplified : `${element.traditional} (${element.simplified})`,
+                subtitle: element.pinyinMarks,
+                content: element.english.join('; '),
+                active: false
+            };
+        });
+    };
+    const query = text => {
+        window.dictionary.classify(text).then(result => {
+            searchLang = result;
+        }).catch(e => {
+            // TODO: Handle Errror
+        });
+        window.dictionary.query(text).then(updateSearchResults).catch(e => {
+            // TODO: Error handle
+        });
+    };
+    const queryWithLang = (text, lang) => {
+        try {
+            switch (lang) {
+                case 'EN':
+                    window.dictionary.queryByEnglish(text).then(updateSearchResults);
+                    break;
+                case 'PY':
+                    window.dictionary.queryByPinyin(text).then(updateSearchResults);
+                    break;
+                case 'ZH':
+                    window.dictionary.queryByChinese(text).then(updateSearchResults);
+                    break;
+            }
+        } catch (error) {
+            // TODO: Error handle
+        }
+        
+    };
+    const switchLang = () => {
+        const incrementedIndex = langSwitcher.indexOf(searchLang) + 1;
+        searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
+        queryWithLang(document.getElementById('search').value, searchLang);
+    };
 </script>
 
 <style>
@@ -63,10 +82,12 @@
 .search-results {
 	display: flex;
 	flex: 2;
-	max-width: fit-content;
 	z-index: 1;
 	flex-direction: column;
     background-color: var(--sy-color--white);
+    height: calc(100vh - 83px);
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
 /* TODO: Consider moving some of the following styles to the component file itself */
@@ -87,10 +108,10 @@
 		<SyButton style="ghost" size="large">
 			<ChevronRightIcon size="20" />
 		</SyButton>
-		<SyButton style="ghost" size="large">
-			EN
+		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
+            { searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." />
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail) }/>
 	</div>
 	<div class="search-content-container">
 		<div class="search-results">

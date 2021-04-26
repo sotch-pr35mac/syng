@@ -1,4 +1,6 @@
 <script>
+    import { createEventDispatcher } from 'svelte';
+
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - No background or shadow
@@ -18,7 +20,8 @@
 	// 'circle' - Circular
 	export let shape = 'rectangle';
 
-	let getClasses = () => {
+    const dispatch = createEventDispatcher();
+	const getClasses = () => {
 		return ['sy-button', 
 			`sy-button--${style}`,
 			`sy-button--${size}`,
@@ -66,6 +69,6 @@
 }
 </style>
 
-<button class="{getClasses()}">
+<button class="{getClasses()}" on:click={ () => dispatch('click') }>
 	<slot></slot>
 </button>
