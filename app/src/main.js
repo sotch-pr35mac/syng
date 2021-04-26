@@ -12,10 +12,12 @@ const createWindow = (path, properties, cb) => {
 		win.webContents.openDevTools();
 	return win;
 }
+// Keep a global reference to the main app window
+let appWindow;
 
 function createMainView() {
 	// Create the browser window.
-	const appWindow = createWindow('app/src/index.html', {
+	appWindow = createWindow('app/src/index.html', {
 		width: 1110,
 		height: 655,
 		show: true, 
@@ -40,6 +42,12 @@ function createMainView() {
 	appWindow.on('leave-full-screen', () => {
 		appWindow.webContents.send('leave-full-screen', true);
 	});
+	appWindow.on('close', e => {
+		if (process.platform === 'darwin') {
+			e.preventDefault();
+			appWindow.hide();
+		}
+	});
 }
 
 // Allow renderer process reuse
@@ -60,11 +68,21 @@ app.on('window-all-closed', () => {
 	}
 });
 
-app.on('active', () => {
+app.on('activate', () => {
 	// On macOS it is common to re-create a window in the app when the 
 	// dock icon is clicked and there are no other windows open
 	if(BrowserWindow.getAllWindows().length === 0) {
 		createMainView();
+	} else {
+		appWindow.show();
+	}
+});
+
+// Quit on macOS when the user requests to quit
+app.on('before-quit', e => {
+	if (process.platform === 'darwin') {
+		e.preventDefault();
+		app.exit();
 	}
 });
 
