@@ -108,7 +108,7 @@ if (process.platform == 'darwin') {
 		  label: 'Hide ' + name,
 		  accelerator: 'Command+H',
 		  role: 'hide',
-      click: function() { app.hide(); }
+      		  click: () => app.hide()
 		},
 		{
 		  label: 'Hide Others',
@@ -118,8 +118,8 @@ if (process.platform == 'darwin') {
 		{
 		  label: 'Show',
 		  role: 'unhide',
-      accelerator: 'Command+S',
-      click: function() { app.show(); }
+      		  accelerator: 'Command+S',
+      		  click: () => app.show()
 		},
 		{
 		  type: 'separator'
@@ -127,8 +127,7 @@ if (process.platform == 'darwin') {
 		{
 		  label: 'Quit',
 		  accelerator: 'Command+Q',
-			//selector: 'terminate:'
-		  click: function() { ipc.send("quit-app-mac") }
+		  click: () => app.quit();
 		}
 	 ]
   });
