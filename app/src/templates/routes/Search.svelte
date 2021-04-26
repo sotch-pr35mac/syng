@@ -1,41 +1,62 @@
 <script>
-	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
-	import SyButton from '../components/SyButton/SyButton.svelte';
-	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-	import SyList from '../components/SyList/SyList.svelte';
-	import {
-		ChevronLeftIcon,
-		ChevronRightIcon
-	} from 'svelte-feather-icons';
-
-	const searchResults = [
-		{
-			headline: '你好',
-			subtitle: 'nihao',
-			content: 'Hello; How are you?; What up?',
-			active: false
-		},
-		{
-			headline: '人山人海',
-			subtitle: 'renshanrenhai',
-			content: 'People mountain people sea',
-			active: true
-		},
-		{
-			headline: '浇水',
-			subtitle: 'jiaoshui',
-			content: 'To water plants',
-			active: false
-		},
-		{
-			headline: '大象',
-			subtitle: 'daxiang',
-			content: 'Elephant',
-			active: false
-		}
-	];
-
-    const enableDrag = process.platform === 'darwin';
+import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
+import SyButton from '../components/SyButton/SyButton.svelte';
+import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+import SyList from '../components/SyList/SyList.svelte';
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon
+} from 'svelte-feather-icons';
+let historyPosition = 0;
+let searchHistory = [];
+let searchResults = [];
+let searchLang = 'EN';
+const langSwitcher = ['EN', 'PY', 'ZH'];
+const enableDrag = process.platform === 'darwin';
+const updateSearchResults = (results, clearable) => {
+	if(results.length || clearable) {
+        	searchResults = results.map(element => {
+        		return {
+        			headline: element.traditional === element.simplified ? element.simplified : `${element.traditional} (${element.simplified})`,
+                		subtitle: element.pinyinMarks,
+                		content: element.english.join('; '),
+                		active: false
+            		};
+        	});
+	} 
+};
+const query = (text, clearable) => {
+	window.dictionary.classify(text).then(result => {
+        	searchLang = result;
+        }).catch(e => {
+        	// TODO: Handle Errror
+        });
+        window.dictionary.query(text).then(results => updateSearchResults(results, clearable)).catch(e => {
+        	// TODO: Error handle
+        });
+};
+const queryWithLang = (text, lang) => {
+        try {
+            	switch (lang) {
+                	case 'EN':
+                    		window.dictionary.queryByEnglish(text).then(results => updateSearchResults(results, true));
+                    		break;
+                	case 'PY':
+                    		window.dictionary.queryByPinyin(text).then(results => updateSearchResults(results, true));
+                    		break;
+                	case 'ZH':
+                    		window.dictionary.queryByChinese(text).then(results => updateSearchResults(results, true));
+                    		break;
+            	}
+        } catch (error) {
+        	// TODO: Error handle
+        }
+};
+const switchLang = () => {
+	const incrementedIndex = langSwitcher.indexOf(searchLang) + 1;
+        searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
+        queryWithLang(document.getElementById('search').value, searchLang);
+};
 </script>
 
 <style>
@@ -55,7 +76,7 @@
 	align-items: center;
 }
 .search-bar--container--macos {
-    -webkit-app-region: drag;
+	-webkit-app-region: drag;
 }
 .search-content-container {
 	display: flex;
@@ -63,10 +84,12 @@
 .search-results {
 	display: flex;
 	flex: 2;
-	max-width: fit-content;
 	z-index: 1;
 	flex-direction: column;
-    background-color: var(--sy-color--white);
+	background-color: var(--sy-color--white);
+   	height: calc(100vh - 83px);
+	overflow-y: scroll;
+	overflow-x: hidden;
 }
 
 /* TODO: Consider moving some of the following styles to the component file itself */
@@ -81,19 +104,19 @@
 
 <div class="search-page-container">
 	<div class="search-bar-container" class:search-bar--container--macos={enableDrag}>
-		<SyButton style="ghost" size="large">
+		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 2] == undefined) }>
 			<ChevronLeftIcon size="20" />
 		</SyButton>
-		<SyButton style="ghost" size="large">
+		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition] == undefined) }>
 			<ChevronRightIcon size="20" />
 		</SyButton>
-		<SyButton style="ghost" size="large">
-			EN
+		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
+            { searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." />
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) }/>
 	</div>
 	<div class="search-content-container">
-		<div class="search-results">
+		<div class="search-results" data-elastic>
 			<SyList style="preview" values="{searchResults}" />
 		</div>
 		<div class="dictionary-content">
