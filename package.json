@@ -35,6 +35,7 @@
   "dependencies": {
     "chinese-dictionary": "^1.1.1",
     "concurrently": "^5.1.0",
+    "elastic-scroll-polyfill": "^2.1.0",
     "sirv-cli": "^0.4.5"
   }
 }

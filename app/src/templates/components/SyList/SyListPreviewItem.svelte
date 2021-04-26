@@ -1,4 +1,6 @@
 <script>
+    import { createEventDispatcher } from 'svelte';
+
 	/* Headline Prop */
 	export let headline = '';
 	
@@ -8,19 +10,15 @@
 	/* Content Prop */
 	export let content = '';
 
+    /* Index Prop */
+    export let index;
+
 	/* Active Prop */
 	export let active = false;
 
 	const truncateContent = text => text.length > 25 ? `${ text.slice(0, 22) }...` : text ;
-	const getClasses = () => {
-		let classes = ['sy-list-preview-item-container'];
-
-		if(active) {
-			classes.push('sy-list-preview-item-container--active');
-		}
-	
-		return classes.join(' ');
-	};
+    const dispatch = createEventDispatcher();
+	const getClasses = () => ['sy-list-preview-item-container'].join(' ');
 </script>
 
 <style>
@@ -63,7 +61,7 @@
 }
 </style>
 
-<div class="{getClasses()}">
+<div class:sy-list-preview-item-container--active="{active}"  class="{getClasses()}" on:click={ () => dispatch('click', index) }>
 	<p class="sy-list-preview-item--text sy-list-preview-item--headline">{ headline }</p>
 	<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">{ subtitle }</p>
 	<p class="sy-list-preview-item--text sy-list-preview-item--content">{ truncateContent(content) }</p>

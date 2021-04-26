@@ -97,7 +97,7 @@
 	align-items: center;
 }
 .navigation--item {
-	color: var(--sy-color--grey-5);
+	color: var(--sy-color--grey-4);
 	margin: var(--sy-space);
 	padding: var(--sy-space--large);
 	height: 30px;
@@ -115,7 +115,7 @@
 	background-color: var(--sy-color--white);
 	border-radius: 100%;
 	box-shadow: var(--sy-shadow);
-	color: var(--sy-color--grey-5) !important;
+	color: var(--sy-color--grey-4) !important;
 	transition-property: background-color, box-shadow, border-radius, color !important;
 	transition-duration: var(--sy-transition-duration) !important;
 }
