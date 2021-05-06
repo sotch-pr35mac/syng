@@ -26,7 +26,7 @@
     "remote": "^0.2.6",
     "stream-json": "^0.5.2",
     "tingodb": "^0.6.1",
-    "underscore": "^1.8.3",
+    "underscore": "^1.12.1",
     "vue": "^1.0.17",
     "vue-hot-reload-api": "^2.3.0"
   },
