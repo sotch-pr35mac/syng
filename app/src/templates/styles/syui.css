@@ -12,7 +12,7 @@
     width: max-content;
     transform: translate(0, -50%);
     padding: var(--sy-space);
-    color: var(--sy-color--grey-5);
+    color: var(--sy-color--grey-4);
     background-color: var(--sy-color--white);
     font-size: 11px;
     line-height: 1px;
@@ -46,13 +46,13 @@
 
 .sy-tooltip--body-top {
 	top: -20px;
-	left: 10%;
+    right: 0px;
 	margin-bottom: var(--sy-space);
 }
 
 .sy-tooltip--body-bottom {
 	top: 60px;
-	left: 10%;
+    right: 0px;
 	margin-top: var(--sy-space);
 
 }

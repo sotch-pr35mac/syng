@@ -1,4 +1,6 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - 'Invisible' text box
@@ -19,7 +21,11 @@
 	/* Type Prop */
 	export let type = 'text';
 
-	let getClasses = () => {
+	/* ID Prop */
+	export let id;
+
+	const dispatch = createEventDispatcher();
+	const getClasses = () => {
 		return ['sy-text-input',
 			`sy-text-input--${style}`,
 			`sy-text-input--${size}`].join(' ');
@@ -49,10 +55,10 @@
 	outline: none;
 }
 .sy-text-input--small {
-	
+	/* TODO */	
 }
 .sy-text-input--medium {
-	
+	/* TODO */
 }
 .sy-text-input--large {
 	font-size: 16px;
@@ -62,4 +68,4 @@
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" />
+<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ e => dispatch('keyup', e.srcElement.value) }/>

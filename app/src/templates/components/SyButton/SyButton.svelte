@@ -1,29 +1,49 @@
 <script>
-	/* Style Prop */
-	/* Possible Values */
-	// 'ghost' - No background or shadow
-	// 'filled' - With background and shadow
-	export let style = 'filled';
+import { createEventDispatcher } from 'svelte';
 
-	/* Size Prop */
-	/* Possible Values */
-	// 'small' - Small button
-	// 'medium' - Medium button
-	// 'large' - Large button
-	export let size = 'medium';
+/* Style Prop */
+/* Possible Values */
+// 'ghost' - No background or shadow
+// 'filled' - With background and shadow
+export let style = 'filled';
 
-	/* Shape Prop */
-	/* Possible Values */
-	// 'rectangle' - Rectangular
-	// 'circle' - Circular
-	export let shape = 'rectangle';
+/* Size Prop */
+/* Possible Values */
+// 'small' - Small button
+// 'medium' - Medium button
+// 'large' - Large button
+export let size = 'medium';
 
-	let getClasses = () => {
-		return ['sy-button', 
-			`sy-button--${style}`,
-			`sy-button--${size}`,
-			`sy-button--${shape}`].join(' ');
-	}
+/* Shape Prop */
+/* Possible Values */
+// 'rectangle' - Rectangular
+// 'circle' - Circular
+export let shape = 'rectangle';
+
+/* Disabled Prop */
+/* Possible Values */
+// true
+// false
+export let disabled = false;
+
+/* Group Prop */
+/* Possible Values */
+// true
+// false
+export let grouped = false;
+
+/* Classes Prop */
+// A list of classes
+export let classes = [];
+
+const dispatch = createEventDispatcher();
+const getClasses = () => {
+	return classes.concat(['sy-button', 
+		`sy-button--${style}`,
+		`sy-button--${size}`,
+		`sy-button--${shape}`,
+        (grouped ? `sy-button--grouped` : '')]).join(' ');
+}
 </script>
 
 <style>
@@ -38,16 +58,33 @@
 .sy-button:focus {
 	outline: none;
 }
+.sy-button:disabled {
+	color: var(--sy-color--grey-5);
+	cursor: not-allowed;
+}
 .sy-button--filled {
 	box-shadow: var(--sy-shadow);
+    background-color: var(--sy-color--white);
+}
+.sy-button--filled:hover {
+    box-shadow: var(--sy-shadow--active);
+    background-color: var(--sy-color--grey-2);
+    transition-property: background-color, box-shadow;
+    transition-duration: var(--sy-transition-duration); 
+}
+.sy-button--filled:disabled {
+    color: var(--sy-color--grey-5);
 }
 .sy-button--ghost {
-    background: none;	
+	background: none;	
 }
 .sy-button--ghost:hover {
 	color: var(--sy-color--blue);
 	transition-property: color;
 	transition-duration: var(--sy-transition-duration);
+}
+.sy-button--ghost:hover:disabled {
+	color: var(--sy-color--grey-5);
 }
 .sy-button--small {
 	font-size: 10px;
@@ -57,6 +94,7 @@
 }
 .sy-button--large {
 	font-size: 16px;
+    padding: var(--sy-space--large);
 }
 .sy-button--rectangle {
 	border-radius: var(--sy-border-radius);
@@ -64,8 +102,12 @@
 .sy-button--circle {
 	border-radius: 50%;
 }
+.sy-button--grouped {
+    border-radius: 0px;
+    margin: 1px;
+}
 </style>
 
-<button class="{getClasses()}">
+<button class="{getClasses()}" on:click={ () => dispatch('click') } disabled={ disabled }>
 	<slot></slot>
 </button>
