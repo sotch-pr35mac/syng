@@ -1,35 +1,43 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher } from 'svelte';
 
-	/* Style Prop */
-	/* Possible Values */
-	// 'ghost' - 'Invisible' text box
-	// 'standard' - Standard text box styling
-	export let style = 'standard';
+/* Style Prop */
+/* Possible Values */
+// 'ghost' - 'Invisible' text box
+// 'standard' - Standard text box styling
+export let style = 'standard';
 
-	/* Size Prop */
-	/* Possible Values */
-	// 'small' - Small text field
-	// 'medium' - Medium text field (Default Value)
-	// 'large' - Large text field
-	// 'extra-large' - Extra large text field
-	export let size = 'medium';
+/* Size Prop */
+/* Possible Values */
+// 'small' - Small text field
+// 'medium' - Medium text field (Default Value)
+// 'large' - Large text field
+// 'extra-large' - Extra large text field
+export let size = 'medium';
 
-	/* Placeholder Prop */
-	export let placeholder = '';
+/* Placeholder Prop */
+export let placeholder = '';
 
-	/* Type Prop */
-	export let type = 'text';
+/* Type Prop */
+export let type = 'text';
 
-	/* ID Prop */
-	export let id;
+/* ID Prop */
+export let id;
 
-	const dispatch = createEventDispatcher();
-	const getClasses = () => {
-		return ['sy-text-input',
-			`sy-text-input--${style}`,
-			`sy-text-input--${size}`].join(' ');
-	};
+const dispatch = createEventDispatcher();
+const getClasses = () => {
+	return ['sy-text-input',
+		`sy-text-input--${style}`,
+		`sy-text-input--${size}`].join(' ');
+};
+const handleKeyup = event => {
+	console.log(event);
+	if(event.code == 'Enter') {
+		dispatch('enter', event);
+	} else {
+		dispatch('keyup', event.srcElement.value);
+	}
+};
 </script>
 
 <style>
@@ -37,8 +45,8 @@
 	border: none;
 	padding: var(--sy-space--large) var(--sy-space);
 	margin: var(--sy-space--small);
-    background-color: var(--sy-color--white);
-    color: var(--sy-color--black);
+	background-color: var(--sy-color--white);
+	color: var(--sy-color--black);
 }
 .sy-text-input::placeholder {
 	color: var(--sy-color--grey-1);
@@ -68,4 +76,4 @@
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ e => dispatch('keyup', e.srcElement.value) }/>
+<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ handleKeyup }/>
