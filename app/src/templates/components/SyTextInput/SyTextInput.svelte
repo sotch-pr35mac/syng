@@ -31,7 +31,6 @@ const getClasses = () => {
 		`sy-text-input--${size}`].join(' ');
 };
 const handleKeyup = event => {
-	console.log(event);
 	if(event.code == 'Enter') {
 		dispatch('enter', event);
 	} else {

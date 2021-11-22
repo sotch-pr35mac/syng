@@ -4,11 +4,6 @@ export let characters = '';
 
 /* Tones Prop */
 export let tones = [];
-
-const getClasses = index => {
-    let tone = tones[index] || 5;
-    return [`colored-characters--tone-${tone}`].join()
-}
 </script>
 
 <style>

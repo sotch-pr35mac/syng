@@ -4,6 +4,9 @@ import SyListPreviewItem from './SyListPreviewItem.svelte';
 
 /* Values Prop */
 export let values = [];
+
+// Suppress unexpected prop warning
+export const component = undefined;
     
 let activeIndex;
 
@@ -14,7 +17,7 @@ const handleSelection = event => {
 		index: activeIndex,
 		value: values[activeIndex]
 	});
-}
+};
 </script>
 
 {#each values as value, index }

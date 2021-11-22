@@ -1,0 +1,24 @@
+name: Lint
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Using Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 17
+          cache: 'npm'
+      - name: Install all dependencies
+        run: make install-dev
+      - name: Lint
+        run: make lint

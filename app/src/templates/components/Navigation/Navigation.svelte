@@ -59,16 +59,16 @@
 		}
 	];
 
-    let trafficLightMargin = process.platform === 'darwin';
+let trafficLightMargin = process.platform === 'darwin';
 
-	ipcRenderer.on('enter-full-screen', () => {
-        trafficLightMargin = false;
-	});
-	ipcRenderer.on('leave-full-screen', () => {
-        if (process.platform === 'darwin') {
-            trafficLightMargin = true;
-        }
-	});
+ipcRenderer.on('enter-full-screen', () => {
+		trafficLightMargin = false;
+});
+ipcRenderer.on('leave-full-screen', () => {
+		if (process.platform === 'darwin') {
+			trafficLightMargin = true;
+		}
+});
 </script>
 
 <style>

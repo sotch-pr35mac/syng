@@ -5,38 +5,38 @@ import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
 import SyButton from '../SyButton/SyButton.svelte';
 import SyList from '../SyList/SyList.svelte';
 import {
-    PlusIcon,
-    Maximize2Icon,
-    MoreHorizontalIcon
+	PlusIcon,
+	Maximize2Icon,
+	MoreHorizontalIcon
 } from 'svelte-feather-icons';
 
 /* Word Prop */
 export let word;
 
 const actions = [
-    {
-        component: PlusIcon,
-        tooltip: 'Add to List',
-        action: () => {
-            alert('Add word to bookmarks');
-            console.log(word);
-        }
-    },
-    {
-        component: Maximize2Icon,
-        tooltip: 'Enlarge Characters',
-        action: () => {
-            alert('Expand Characters');
-            console.log(word);
-        }
-    },
-    {
-        component: MoreHorizontalIcon,
-        tooltip: '',
-        action: () => {
-            alert('Do more stuff');
-        }
-    }
+	{
+		component: PlusIcon,
+		tooltip: 'Add to List',
+		action: () => {
+			alert('Add word to bookmarks');
+			console.log(word);
+		}
+	},
+	{
+		component: Maximize2Icon,
+		tooltip: 'Enlarge Characters',
+		action: () => {
+			alert('Expand Characters');
+			console.log(word);
+		}
+	},
+	{
+		component: MoreHorizontalIcon,
+		tooltip: '',
+		action: () => {
+			alert('Do more stuff');
+		}
+	}
 ];
 </script>
 
