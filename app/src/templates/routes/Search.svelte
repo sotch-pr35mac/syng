@@ -30,16 +30,18 @@ const updateSearchResults = (results, clearable) => {
 	} 
 };
 const query = (text, clearable) => {
-    if (text) {
-	    window.dictionary.classify(text).then(result => {
-            	searchLang = result;
-            }).catch(e => {
-                handleError('There was an error classifying the language of your query.', e);
-            });
-            window.dictionary.query(text).then(results => updateSearchResults(results, clearable)).catch(e => {
-                handleError('There was an error searching the dictionary for your query.', e);
-            });
-    }
+	if (text) {
+		window.dictionary.classify(text).then(result => {
+			searchLang = result;
+		}).catch(e => {
+			handleError('There was an error classifying the language of your query.', e);
+		});
+		window.dictionary.query(text).then(results => updateSearchResults(results, clearable)).catch(e => {
+			handleError('There was an error searching the dictionary for your query.', e);
+		});
+	} else {
+		updateSearchResults([], true);
+	}
 };
 const queryWithLang = (text, lang) => {
         try {
@@ -64,7 +66,14 @@ const switchLang = () => {
         queryWithLang(document.getElementById('search').value, searchLang);
 };
 const handleSelection = event => {
-    activeWord = fullResults[event.detail.index];
+	activeWord = fullResults[event.detail.index];
+};
+const handleEnter = () => {
+	try {
+		document.getElementsByClassName('sy-list-preview-item-container')[0].click();
+	} catch(e) {
+		// Fail silently
+	}
 };
 </script>
 
@@ -122,7 +131,7 @@ const handleSelection = event => {
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
             { searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) }/>
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ e => handleEnter() }/>
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>

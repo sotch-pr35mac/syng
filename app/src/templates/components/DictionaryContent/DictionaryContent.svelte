@@ -44,6 +44,8 @@ const actions = [
 .dictionary-content-container {
 	width: 100%;
 	background-color: var(--sy-color--grey-2);
+	overflow-y: scroll;
+	overflow-x: hidden;;
 }
 .dictionary-content {
     padding: var(--sy-space--extra-large);
