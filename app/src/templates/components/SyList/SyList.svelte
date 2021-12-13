@@ -14,7 +14,7 @@ export let values = [];
 
 /* Content-Style Component Prop */
 // This is prop is required when the style is content
-export let component;
+export let component = undefined;
 
 const dispatch = createEventDispatcher();
 const styleMap = {

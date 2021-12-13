@@ -18,15 +18,15 @@ const langSwitcher = ['EN', 'PY', 'ZH'];
 const enableDrag = process.platform === 'darwin';
 const updateSearchResults = (results, clearable) => {
 	if(results.length || clearable) {
-            fullResults = results;
-        	searchResults = results.map(element => {
-        		return {
-        			headline: element.traditional === element.simplified ? element.simplified : `${element.traditional} (${element.simplified})`,
-                		subtitle: element.pinyinMarks,
-                		content: element.english.join('; '),
-                		active: false
-            		};
-        	});
+		fullResults = results;
+		searchResults = results.map(element => {
+			return {
+				headline: element.traditional === element.simplified ? element.simplified : `${element.simplified} (${element.traditional})`,
+				subtitle: element.pinyinMarks,
+				content: element.english.join('; '),
+				active: false
+			};
+		});
 	} 
 };
 const query = (text, clearable) => {
@@ -44,34 +44,34 @@ const query = (text, clearable) => {
 	}
 };
 const queryWithLang = (text, lang) => {
-        try {
-            	switch (lang) {
-                	case 'EN':
-                    		window.dictionary.queryByEnglish(text).then(results => updateSearchResults(results, true));
-                    		break;
-                	case 'PY':
-                    		window.dictionary.queryByPinyin(text).then(results => updateSearchResults(results, true));
-                    		break;
-                	case 'ZH':
-                    		window.dictionary.queryByChinese(text).then(results => updateSearchResults(results, true));
-                    		break;
-            	}
-        } catch (error) {
-            handleError('There was an error searching the dictionary for your query.', error);
-        }
+	try {
+		switch (lang) {
+		case 'EN':
+			window.dictionary.queryByEnglish(text).then(results => updateSearchResults(results, true));
+			break;
+		case 'PY':
+			window.dictionary.queryByPinyin(text).then(results => updateSearchResults(results, true));
+			break;
+		case 'ZH':
+			window.dictionary.queryByChinese(text).then(results => updateSearchResults(results, true));
+			break;
+		}
+	} catch (error) {
+		handleError('There was an error searching the dictionary for your query.', error);
+	}
 };
 const switchLang = () => {
 	const incrementedIndex = langSwitcher.indexOf(searchLang) + 1;
-        searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
-        queryWithLang(document.getElementById('search').value, searchLang);
+	searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
+	queryWithLang(document.getElementById('search').value, searchLang);
 };
 const handleSelection = event => {
 	activeWord = fullResults[event.detail.index];
 };
-const handleEnter = () => {
+const handleEnter = (event) => { // eslint-disable-line no-unused-vars
 	try {
 		document.getElementsByClassName('sy-list-preview-item-container')[0].click();
-	} catch(e) {
+	} catch(error) {
 		// Fail silently
 	}
 };
@@ -121,7 +121,7 @@ const handleEnter = () => {
 </style>
 
 <div class="search-page-container">
-	<div class="search-bar-container" class:search-bar--container--macos={enableDrag}>
+	<div class="search-bar-container" class:search-bar--container--macos={enableDrag} data-testid="search-bar-container">
 		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 2] == undefined) }>
 			<ChevronLeftIcon size="20" />
 		</SyButton>
@@ -129,9 +129,9 @@ const handleEnter = () => {
 			<ChevronRightIcon size="20" />
 		</SyButton>
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
-            { searchLang }
+			{ searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ e => handleEnter() }/>
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter }/>
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>

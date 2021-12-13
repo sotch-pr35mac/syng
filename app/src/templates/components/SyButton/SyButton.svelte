@@ -42,8 +42,8 @@ const getClasses = () => {
 		`sy-button--${style}`,
 		`sy-button--${size}`,
 		`sy-button--${shape}`,
-        (grouped ? `sy-button--grouped` : '')]).join(' ');
-}
+		(grouped ? 'sy-button--grouped' : '')]).join(' ');
+};
 </script>
 
 <style>
@@ -64,16 +64,16 @@ const getClasses = () => {
 }
 .sy-button--filled {
 	box-shadow: var(--sy-shadow);
-    background-color: var(--sy-color--white);
+	background-color: var(--sy-color--white);
 }
 .sy-button--filled:hover {
-    box-shadow: var(--sy-shadow--active);
-    background-color: var(--sy-color--grey-2);
-    transition-property: background-color, box-shadow;
-    transition-duration: var(--sy-transition-duration); 
+ 	box-shadow: var(--sy-shadow--active);
+ 	background-color: var(--sy-color--grey-2);
+ 	transition-property: background-color, box-shadow;
+ 	transition-duration: var(--sy-transition-duration); 
 }
 .sy-button--filled:disabled {
-    color: var(--sy-color--grey-5);
+ 	color: var(--sy-color--grey-5);
 }
 .sy-button--ghost {
 	background: none;	
@@ -94,7 +94,7 @@ const getClasses = () => {
 }
 .sy-button--large {
 	font-size: 16px;
-    padding: var(--sy-space--large);
+ 	padding: var(--sy-space--large);
 }
 .sy-button--rectangle {
 	border-radius: var(--sy-border-radius);
@@ -103,11 +103,11 @@ const getClasses = () => {
 	border-radius: 50%;
 }
 .sy-button--grouped {
-    border-radius: 0px;
-    margin: 1px;
+ 	border-radius: 0px;
+ 	margin: 1px;
 }
 </style>
 
-<button class="{getClasses()}" on:click={ () => dispatch('click') } disabled={ disabled }>
+<button class="{getClasses()}" on:click={ () => dispatch('click') } disabled={ disabled } data-testid="sy-button">
 	<slot></slot>
 </button>

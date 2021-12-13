@@ -7,9 +7,9 @@
 export let size = 'medium';
 
 const getClasses = () => {
-    return [`sy-button-bar--container`,
-            `sy-button-bar--container--${size}`].join(' ');
-}
+	return ['sy-button-bar--container',
+		`sy-button-bar--container--${size}`].join(' ');
+};
 </script>
 
 <style>

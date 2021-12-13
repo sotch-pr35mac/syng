@@ -1,6 +1,8 @@
+// eslint-disable-next-line no-unused-vars
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const OPEN_DEV_TOOLS = true;
+const DEBUG_MODE = process.argv.includes('--debug');
+const OPEN_DEV_TOOLS = DEBUG_MODE;
 require('electron-reload')(__dirname, {
 	electron: path.join(__dirname, '../node_modules', '.bin', 'electron'),
 	awaitWriteFinish: true
@@ -11,7 +13,7 @@ const createWindow = (path, properties, cb) => {
 	if (OPEN_DEV_TOOLS)
 		win.webContents.openDevTools();
 	return win;
-}
+};
 // Keep a global reference to the main app window
 let appWindow;
 
@@ -30,7 +32,7 @@ function createMainView() {
 		},
 		webPreferences: {
 			nodeIntegration: true,
-            		contextIsolation: false
+			contextIsolation: false
 		}
 
 	});

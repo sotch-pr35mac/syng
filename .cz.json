@@ -1,0 +1,73 @@
+{
+	"commitizen": {
+		"name": "cz_customize",
+		"customize": {
+			"message_template": "{% if breaking_change %}BREAKING CHANGE: {% endif %}{{ change_type }}: {{ message }}{% if ticket %} as described in {{ ticket }}{% endif %}.",
+			"example": "BREAKING CHANGE feat: super cool new feature as described in #1.",
+			"schema": "<breaking_change> <type>: <body> as described in <ticket>.",
+			"schema_pattern": "^(?:BREAKING CHANGE: )?(feat|fix|refactor|chore|test|rm): \\w",
+			"questions": [
+				{
+					"type": "list",
+					"name": "change_type",
+					"message": "What type of change are you committing?",
+					"choices": [
+						{
+							"value": "feat",
+							"name": "feat: A new feature"
+						},
+						{
+							"value": "fix",
+							"name": "fix: A bug fix"
+						},
+						{
+							"value": "content",
+							"name": "content: A content change in the dictionary or in-app documentation"
+						},
+						{
+							"value": "refactor",
+							"name": "refactor: A code Refactor"
+						},
+						{
+							"value": "chore",
+							"name": "chore: A chore or other project infrastructure related change"
+						},
+						{
+							"value": "test",
+							"name": "test: A testing related change"
+						},
+						{
+							"value": "rm",
+							"name": "rm: A removal"
+						}
+					]
+				},
+				{
+					"type": "list",
+					"name": "breaking_change",
+					"message": "Is this a breaking change?",
+					"choices": [
+						{
+							"value": false,
+							"name": "No"
+						},
+						{
+							"value": true,
+							"name": "Yes"
+						}
+					]
+				},
+				{
+					"type": "input",
+					"name": "ticket",
+					"message": "Associated task, ticket, or issue (Leave blank if none)"
+				},
+				{
+					"type": "input",
+					"name": "message",
+					"message": "Change description"
+				}
+			]
+		}
+	}
+}

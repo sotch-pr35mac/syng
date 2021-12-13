@@ -1,24 +1,24 @@
 <script>
-    import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher } from 'svelte';
 
-	/* Headline Prop */
-	export let headline = '';
+/* Headline Prop */
+export let headline = '';
 	
-	/* Subtitle Prop */
-	export let subtitle = '';
+/* Subtitle Prop */
+export let subtitle = '';
 
-	/* Content Prop */
-	export let content = '';
+/* Content Prop */
+export let content = '';
 
-    /* Index Prop */
-    export let index;
+/* Index Prop */
+export let index;
 
-	/* Active Prop */
-	export let active = false;
+/* Active Prop */
+export let active = false;
 
-	const truncateContent = text => text.length > 25 ? `${ text.slice(0, 22) }...` : text ;
-    const dispatch = createEventDispatcher();
-	const getClasses = () => ['sy-list-preview-item-container'].join(' ');
+const truncateContent = text => text.length > 25 ? `${ text.slice(0, 22) }...` : text ;
+const dispatch = createEventDispatcher();
+const getClasses = () => ['sy-list-preview-item-container'].join(' ');
 </script>
 
 <style>

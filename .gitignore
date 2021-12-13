@@ -3,3 +3,4 @@ npm-debug.log
 .buildconfig
 .DS_Store
 app/src/templates/build/**
+coverage/
