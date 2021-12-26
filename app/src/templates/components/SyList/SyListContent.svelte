@@ -1,4 +1,6 @@
 <script>
+import { suppressUnusedExportLet } from '../../utils/';
+
 /* Values Prop */
 export let values = [];
 
@@ -6,6 +8,10 @@ export let values = [];
 // The component to render as a list item
 // The component must accept a value prop
 export let component;
+
+// Suppress the unexpected prop warning
+export let highlight = undefined;
+suppressUnusedExportLet(highlight);
 </script>
 
 <style>
@@ -31,7 +37,7 @@ export let component;
 <div class="sy-list--container">
     {#each values as value}
         <div class="sy-list--list-item">
-            <svelte:component this={component} value="{value}" />
+            <svelte:component this={component} value="{value}" on:event/>
         </div>
     {/each}
 </div>

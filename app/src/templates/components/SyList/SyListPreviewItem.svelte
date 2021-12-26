@@ -16,6 +16,9 @@ export let index;
 /* Active Prop */
 export let active = false;
 
+/* Highlight Prop */
+export let highlight;
+
 const truncateContent = text => text.length > 25 ? `${ text.slice(0, 22) }...` : text ;
 const dispatch = createEventDispatcher();
 const getClasses = () => ['sy-list-preview-item-container'].join(' ');
@@ -61,7 +64,7 @@ const getClasses = () => ['sy-list-preview-item-container'].join(' ');
 }
 </style>
 
-<div class:sy-list-preview-item-container--active="{active}"  class="{getClasses()}" on:click={ () => dispatch('click', index) }>
+<div class:sy-list-preview-item-container--active="{active && highlight}"  class="{getClasses()}" on:click={ () => dispatch('click', index) }>
 	<p class="sy-list-preview-item--text sy-list-preview-item--headline">{ headline }</p>
 	<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">{ subtitle }</p>
 	<p class="sy-list-preview-item--text sy-list-preview-item--content">{ truncateContent(content) }</p>

@@ -1,6 +1,8 @@
 <script>
+import { createEventDispatcher } from 'svelte';
 import EntryTopline from './EntryTopline.svelte';
 import DefinitionItem from './DefinitionItem.svelte';
+import MeasureWord from './MeasureWord.svelte';
 import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
 import SyButton from '../SyButton/SyButton.svelte';
 import SyList from '../SyList/SyList.svelte';
@@ -38,6 +40,9 @@ const actions = [
 		}
 	}
 ];
+
+const dispatch = createEventDispatcher();
+const handleOpenLink = event => dispatch('link', event.detail);
 </script>
 
 <style>
@@ -85,7 +90,15 @@ const actions = [
             <h2 class="dictionary-content--section-title">
                 Definitions
             </h2>
-            <SyList values="{word.english}" component="{DefinitionItem}"/>
+            <SyList values="{word.english}" component="{DefinitionItem}" on:event="{handleOpenLink}"/>
         </section>
+	{#if word.measureWords.length}
+	<section class="dictionary-content">
+		<h2 class="dictionary-content--section-title">
+			Measure Words
+		</h2>
+		<SyList values="{word.measureWords}" component="{MeasureWord}" on:event="{handleOpenLink}"/>
+	</section>
+	{/if}
     {/if}
 </div>

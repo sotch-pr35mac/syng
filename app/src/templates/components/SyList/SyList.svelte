@@ -16,6 +16,9 @@ export let values = [];
 // This is prop is required when the style is content
 export let component = undefined;
 
+/* Highlight Prop */
+export let highlight = true;
+
 const dispatch = createEventDispatcher();
 const styleMap = {
 	'preview': SyListPreview,
@@ -23,4 +26,4 @@ const styleMap = {
 };
 </script>
 
-<svelte:component this={styleMap[style]} values="{values}" component="{component}" on:selection="{ event => dispatch('selection', event.detail)}"/>
+<svelte:component this={styleMap[style]} values="{values}" component="{component}" on:selection="{ event => dispatch('selection', event.detail)}" highlight="{highlight}" on:event/>
