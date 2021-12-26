@@ -8,16 +8,18 @@ import {
 	ChevronLeftIcon,
 	ChevronRightIcon
 } from 'svelte-feather-icons';
-let historyPosition = 0;
+let historyPosition = -1;
 let searchHistory = [];
 let searchResults = [];
 let fullResults = [];
 let activeWord;
 let searchLang = 'EN';
+let highlightActive = true;
 const langSwitcher = ['EN', 'PY', 'ZH'];
 const enableDrag = process.platform === 'darwin';
 const updateSearchResults = (results, clearable) => {
 	if(results.length || clearable) {
+		highlightActive = false;
 		fullResults = results;
 		searchResults = results.map(element => {
 			return {
@@ -60,20 +62,52 @@ const queryWithLang = (text, lang) => {
 		handleError('There was an error searching the dictionary for your query.', error);
 	}
 };
+const updateActiveWord = (word, highlight) => {
+	activeWord = word;
+	highlightActive = highlight;
+};
+const historyBack = event => { // eslint-disable-line no-unused-vars
+	historyPosition -= 1;
+	updateActiveWord(searchHistory[historyPosition], false);
+};
+const historyForward = event => { // eslint-disable-line no-unused-vars
+	historyPosition += 1;
+	updateActiveWord(searchHistory[historyPosition], false);
+};
 const switchLang = () => {
 	const incrementedIndex = langSwitcher.indexOf(searchLang) + 1;
 	searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
 	queryWithLang(document.getElementById('search').value, searchLang);
 };
-const handleSelection = event => {
-	activeWord = fullResults[event.detail.index];
-};
-const handleEnter = (event) => { // eslint-disable-line no-unused-vars
+const selectElement = index => {
 	try {
-		document.getElementsByClassName('sy-list-preview-item-container')[0].click();
+		document.getElementsByClassName('sy-list-preview-item-container')[index].click();
 	} catch(error) {
 		// Fail silently
 	}
+};
+const handleSelection = event => {
+	const word = fullResults[event.detail.index];
+	updateActiveWord(word, true);
+
+	// Update search history
+	let previousEntry = searchHistory.map(entry => entry.wordId).indexOf(word.wordId);
+	if (previousEntry >= 0) {
+		searchHistory.splice(previousEntry, 1);
+		historyPosition -= 1;
+	}
+	searchHistory.push(word);
+	historyPosition += 1;
+};
+const handleEnter = event => { // eslint-disable-line no-unused-vars
+	selectElement(0);
+};
+const handleLink = event => {
+	const word = event.detail;
+	document.getElementById('search').value = word;
+	query(word, true);
+	setTimeout(() => selectElement(0), 0.001);
+	
 };
 </script>
 
@@ -122,10 +156,10 @@ const handleEnter = (event) => { // eslint-disable-line no-unused-vars
 
 <div class="search-page-container">
 	<div class="search-bar-container" class:search-bar--container--macos={enableDrag} data-testid="search-bar-container">
-		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 2] == undefined) }>
+		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 1] == undefined) } on:click="{historyBack}">
 			<ChevronLeftIcon size="20" />
 		</SyButton>
-		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition] == undefined) }>
+		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition + 1] == undefined) } on:click="{historyForward}">
 			<ChevronRightIcon size="20" />
 		</SyButton>
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
@@ -135,10 +169,10 @@ const handleEnter = (event) => { // eslint-disable-line no-unused-vars
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>
-			<SyList style="preview" values="{searchResults}" on:selection="{handleSelection}"/>
+			<SyList style="preview" values="{searchResults}" highlight="{highlightActive}" on:selection="{handleSelection}"/>
 		</div>
 		<div class="dictionary-content">
-			<DictionaryContent word="{activeWord}" />
+			<DictionaryContent word="{activeWord}" on:link="{handleLink}"/>
 		</div>
 	</div>
 </div>

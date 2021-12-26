@@ -8,7 +8,8 @@ global.dictionary = mockDictionary('EN', [{
 	traditional: '西瓜', 
 	simplified: '西瓜', 
 	english: ['watermelon'], 
-	pinyinMarks: [1, 1]
+	pinyinMarks: [1, 1],
+	measureWords: [{ simplified: 'MWA', traditional: 'MWA' }]
 }]);
 
 it('should update the language selection after entering text to the search bar', async () => {
@@ -28,7 +29,7 @@ it('should re-search after clicking the language selector', async () => {
 	});
 });
 it('should populate the search result list after a query', async () => {
-	const updateSearchResults = jest.fn(); //eslint-disable-line no-unused-vars
+	const updateSearchResults = jest.fn(); // eslint-disable-line no-unused-vars
 	const { getByPlaceholderText, getByText } = render(Search, {});
 	userEvent.type(getByPlaceholderText('Search...'), 'watermelon');
 	wait(() => {
@@ -43,6 +44,28 @@ it('should display word details after clicking on the search result', async () =
 		userEvent.click(getByText('西瓜'));
 		wait(() => {
 			expect(getByText('Definitions')).toBeTruthy();
+		});
+	});
+});
+it('should display measure words when present in the results', async () => {
+	const { getByPlaceholderText, getByText } = render(Search, {});
+	userEvent.type(getByPlaceholderText('Search...'), 'watermelon');
+	wait(() => {
+		userEvent.click(getByText('西瓜'));
+		wait(() => {
+			expect(getByText('Measure Words')).toBeTruthy();
+		});
+	});
+});
+it('should perform a query when a dictionary link is clicked', async () => {
+	const handleLink = jest.fn(); // eslint-disable-line no-unused-vars
+	const { getByPlaceholderText, getByText } = render(Search, {});
+	userEvent.type(getByPlaceholderText('Search...'), 'watermelon');
+	wait(() => {
+		userEvent.click(getByText('西瓜'));
+		wait(() => {
+			userEvent.click(getByText('MWA'));
+			expect(handleLink).toHaveBeenCalled();
 		});
 	});
 });

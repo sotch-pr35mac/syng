@@ -5,6 +5,7 @@
 :root {
 	/* Theme Colors */
 	--sy-color--blue-1: #76AFF9;
+	--sy-color--blue-2: #2C7EE7;
 	--sy-color--blue: var(--sy-color--blue-1);
 
 	/* Text Colors */

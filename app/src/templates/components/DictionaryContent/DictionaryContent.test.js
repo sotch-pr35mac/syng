@@ -7,7 +7,8 @@ const TEST_WORD = {
 	traditional: 'B',
 	english: ['test'],
 	pinyinMarks: ['a1'],
-	tonesMarks: [1]
+	tonesMarks: [1],
+	measureWords: []
 };
 
 it('should display the definitions', async () => {
