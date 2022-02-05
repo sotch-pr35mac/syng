@@ -16,6 +16,13 @@ const createWindow = (path, properties, cb) => {
 };
 // Keep a global reference to the main app window
 let appWindow;
+let characterWindow;
+
+function hideAllWindows() {
+	// Hide all windows
+	characterWindow.hide();
+	appWindow.hide();
+}
 
 function createMainView() {
 	// Create the browser window.
@@ -37,7 +44,7 @@ function createMainView() {
 
 	});
 
-	// Register event listeners
+	// Register event listeners for main window
 	appWindow.on('enter-full-screen', () => {
 		appWindow.webContents.send('enter-full-screen', true);
 	});
@@ -47,8 +54,36 @@ function createMainView() {
 	appWindow.on('close', e => {
 		if (process.platform === 'darwin') {
 			e.preventDefault();
-			appWindow.hide();
+			hideAllWindows();
 		}
+	});
+
+	// Create character window
+	characterWindow = createWindow('app/src/characters.html', {
+		width: 886,
+		height: 497,
+		show: false,
+		title: 'Syng | Characters',
+		scrollBounce: true,
+		titleBarStyle: process.platform === 'darwin' ? 'hidden' : 'default',
+		trafficLightPosition: {
+			x: 19,
+			y: 25
+		},
+		webPreferences: {
+			nodeIntegration: true,
+			contextIsolation: false
+		}
+	});
+
+	// Register event listeners for character window
+	characterWindow.on('close', e => {
+		e.preventDefault();
+		characterWindow.hide();
+	});
+	ipcMain.on('show-character-window', (e, word) => {
+		characterWindow.webContents.send('display-characters', word);
+		characterWindow.show();
 	});
 }
 

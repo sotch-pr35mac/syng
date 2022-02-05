@@ -15,6 +15,8 @@ import {
 /* Word Prop */
 export let word;
 
+const ipcRenderer = window.require('electron').ipcRenderer;
+const dispatch = createEventDispatcher();
 const actions = [
 	{
 		component: PlusIcon,
@@ -28,8 +30,7 @@ const actions = [
 		component: Maximize2Icon,
 		tooltip: 'Enlarge Characters',
 		action: () => {
-			alert('Expand Characters');
-			console.log(word);
+			ipcRenderer.send('show-character-window', word);
 		}
 	},
 	{
@@ -40,8 +41,6 @@ const actions = [
 		}
 	}
 ];
-
-const dispatch = createEventDispatcher();
 const handleOpenLink = event => dispatch('link', event.detail);
 </script>
 

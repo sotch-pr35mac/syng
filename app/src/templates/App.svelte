@@ -10,6 +10,15 @@
 	import Chat from './routes/Chat.svelte';
 	import NotFound from './routes/NotFound.svelte';
 	import Navigation from './components/Navigation/Navigation.svelte';
+	import { handleError } from './utils/';
+	import elasticScroll from 'elastic-scroll-polyfill';
+	window.dictionary = window.require('chinese-dictionary');
+	window.dictionary.init().then(() => document.dispatchEvent(new Event('init'))).catch(() => {
+		handleError('There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.');
+	});
+	window.onload = () => {
+		elasticScroll({ appleDeviceOnly: false, intensity: 1 });
+	};
 	
 	const routes = {
 		'/': Search,
