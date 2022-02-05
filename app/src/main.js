@@ -68,8 +68,11 @@ app.on('ready', function() {
 		}
 	});
 
-	ipc.on("quit-app-mac", function(event, args) {
-		app.exit(0);
+	app.on('before-quit', e => {
+		if (process.platform === 'darwin') {
+			e.preventDefault();
+			app.exit(0);
+		}
 	});
 
 	ipc.on("switch-input", function(event, args) {
