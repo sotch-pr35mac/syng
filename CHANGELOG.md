@@ -2,7 +2,11 @@
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [X.X.X] - XXXX-XX-XX
+### Changed
+- Updated electron version as described in Issue #151
+
 ### Fixed
+- Resolved Vulnerabilities
 - [`macOS`] Fixed macOS open/close behavior
 
 ## [1.5.0] - 2021-01-18
