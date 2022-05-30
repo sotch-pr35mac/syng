@@ -1,5 +1,7 @@
+import { act } from '@testing-library/svelte';
+
 // Wait for the DOM after triggering an event before executing subsequent actions
-export const wait = fn => setTimeout(fn, 0.001);
+export const wait = act;
 
 /*
 * Entries is an array of objects in the following format:
@@ -11,11 +13,9 @@ export const wait = fn => setTimeout(fn, 0.001);
 * }
 */
 export const mockDictionary = (lang, entries) => {
-	const query = param => {
-		return new Promise((res, rej) => {
-			res(entries);
-		});
-	};
+	const query = jest.fn().mockReturnValue(new Promise((res, rej) => {
+		res(entries);
+	}));
 	return {
 		classify: param => new Promise((res, rej) => res(lang)),
 		query,

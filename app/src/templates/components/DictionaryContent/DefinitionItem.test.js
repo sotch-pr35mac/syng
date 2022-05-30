@@ -2,7 +2,6 @@
 import DefinitionItem from './DefinitionItem.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { wait } from '../../../../test/utils/unitTestUtils.js';
 
 it('should display textual value with the correct styles', async () => {
 	const { getByText } = render(DefinitionItem, {
@@ -16,15 +15,13 @@ it('should display textual value with the correct styles', async () => {
 });
 
 it('should handle links if a link is present in the text', async () => {
+	const user = userEvent.setup();
 	const handleOpenLink = jest.fn();
-	const { getByText } = render(DefinitionItem, {
+	const { getByText, component } = render(DefinitionItem, {
 		value: 'numeral 9 in Suzhou numeral system 蘇州碼子|苏州码子[Su1 zhou1 ma3 zi5]'
 	});
-
-	wait(() => {
-		const link = getByText('numeral 9 in Suzhou numeral system 苏州码子 (蘇州碼子)');
-		expect(link.textContent).toBe('numeral 9 in Suzhou numeral system 苏州码子 (蘇州碼子)');
-		userEvent.click(link);
-		expect(handleOpenLink).toHaveBeenCalled();
-	});
+	const link = getByText('苏州码子 ( 蘇州碼子)');
+	component.$on('event', handleOpenLink);
+	await user.click(link);
+	expect(handleOpenLink).toHaveBeenCalled();
 });

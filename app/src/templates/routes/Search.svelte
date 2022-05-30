@@ -1,4 +1,5 @@
 <script>
+import { tick } from 'svelte';
 import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 import SyButton from '../components/SyButton/SyButton.svelte';
 import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
@@ -106,8 +107,9 @@ const handleLink = event => {
 	const word = event.detail;
 	document.getElementById('search').value = word;
 	query(word, true);
-	setTimeout(() => selectElement(0), 0.001);
-	
+	tick().then(() => {
+		selectElement(0);
+	});
 };
 </script>
 
@@ -123,11 +125,11 @@ const handleLink = event => {
 	padding: var(--sy-space--extra-large) var(--sy-space--large);
 	margin: 0;
 	background-color: var(--sy-color--white);
-	box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+	box-shadow: var(--sy-box-shadow);
 	z-index: 3;
 	align-items: center;
 }
-.search-bar--container--macos {
+.search-bar-container--macos {
 	-webkit-app-region: drag;
 }
 .search-content-container {
@@ -155,7 +157,7 @@ const handleLink = event => {
 </style>
 
 <div class="search-page-container">
-	<div class="search-bar-container" class:search-bar--container--macos={enableDrag} data-testid="search-bar-container">
+	<div class="search-bar-container" class:search-bar-container--macos={enableDrag} data-testid="search-bar-container">
 		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 1] == undefined) } on:click="{historyBack}">
 			<ChevronLeftIcon size="20" />
 		</SyButton>
