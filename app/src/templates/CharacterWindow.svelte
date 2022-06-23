@@ -40,7 +40,7 @@ const loadCharacter = character => {
 			padding: CHARACTER_PADDING,
 			strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
 			outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
-			charDataLoader: () => require(`hanzi-writer-data/${character}`)
+			charDataLoader: () => window.require(`hanzi-writer-data/${character}`)
 		});
 		activeCharacters.push(characterWriter);
 	} catch(error) {

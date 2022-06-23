@@ -18,6 +18,7 @@ let searchLang = 'EN';
 let highlightActive = true;
 const langSwitcher = ['EN', 'PY', 'ZH'];
 const enableDrag = process.platform === 'darwin';
+const enableTransparency = process.platform === 'darwin' && window.preferenceManager.get('transparency');
 const updateSearchResults = (results, clearable) => {
 	if(results.length || clearable) {
 		highlightActive = false;
@@ -129,6 +130,9 @@ const handleLink = event => {
 	z-index: 3;
 	align-items: center;
 }
+.search-bar-container--transparency {
+	background-color: var(--sy-color--white--transparency);
+}
 .search-bar-container--macos {
 	-webkit-app-region: drag;
 }
@@ -157,7 +161,7 @@ const handleLink = event => {
 </style>
 
 <div class="search-page-container">
-	<div class="search-bar-container" class:search-bar-container--macos={enableDrag} data-testid="search-bar-container">
+	<div class="search-bar-container" class:search-bar-container--macos={enableDrag} class:search-bar-container--transparency={enableTransparency} data-testid="search-bar-container">
 		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 1] == undefined) } on:click="{historyBack}">
 			<ChevronLeftIcon size="20" />
 		</SyButton>
@@ -167,7 +171,7 @@ const handleLink = event => {
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
 			{ searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter }/>
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" transparency={enableTransparency} on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter }/>
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>

@@ -15,6 +15,12 @@ export let style = 'standard';
 // 'extra-large' - Extra large text field
 export let size = 'medium';
 
+/* Transparency Prop */
+/* Possible Values */
+// true - Element will be transparent
+// false - Element will have standard background
+export let transparency = false;
+
 /* Placeholder Prop */
 export let placeholder = '';
 
@@ -27,6 +33,7 @@ export let id;
 const dispatch = createEventDispatcher();
 const getClasses = () => {
 	return ['sy-text-input',
+		transparency ? 'sy-text-input--transparency' : '',
 		`sy-text-input--${style}`,
 		`sy-text-input--${size}`].join(' ');
 };
@@ -72,6 +79,9 @@ const handleKeyup = event => {
 }
 .sy-text-input--extra-large {
 	font-size: 18px;
+}
+.sy-text-input--transparency {
+	background-color: rgba(0, 0, 0, 0);
 }
 </style>
 

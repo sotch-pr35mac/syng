@@ -1,12 +1,11 @@
 // eslint-disable-next-line no-unused-vars
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const { getAppMenu } = require(path.join(process.cwd(), 'app/src/menu.js'));
+
 const DEBUG_MODE = process.argv.includes('--debug');
 const OPEN_DEV_TOOLS = DEBUG_MODE;
-require('electron-reload')(__dirname, {
-	electron: path.join(__dirname, '../node_modules', '.bin', 'electron'),
-	awaitWriteFinish: true
-});
 const createWindow = (path, properties, cb) => {
 	const win = new BrowserWindow(properties);
 	win.loadFile(path).then(cb);
@@ -14,6 +13,10 @@ const createWindow = (path, properties, cb) => {
 		win.webContents.openDevTools();
 	return win;
 };
+const getPreferencePath = () => DEBUG_MODE ? path.join(process.cwd(), 'app/src/resources/debug_config.json') : path.join(app.getPath('userData'), 'config.json');
+const preferences = fs.existsSync(getPreferencePath()) ? require(getPreferencePath()) : require('./resources/defaults.json');
+const appMenu = getAppMenu(app, process.platform);
+
 // Keep a global reference to the main app window
 let appWindow;
 let characterWindow;
@@ -39,8 +42,11 @@ function createMainView() {
 		},
 		webPreferences: {
 			nodeIntegration: true,
-			contextIsolation: false
-		}
+			contextIsolation: false,
+			additionalArguments: [`--configPath=${getPreferencePath()}`]
+		},
+		transparent: process.platform === 'darwin' && preferences.transparency.value, 
+		vibrancy: process.platform === 'darwin' && preferences.transparency.value ? 'appearance-based' : undefined
 
 	});
 
@@ -123,5 +129,8 @@ app.on('before-quit', e => {
 	}
 });
 
-// In this file you can include the rest of your app's specific main process 
-// code. You can also put them in separate files and require them here
+// Set the application menu
+if(appMenu.length) {
+	const menu = Menu.buildFromTemplate(appMenu);
+	Menu.setApplicationMenu(menu);
+}
