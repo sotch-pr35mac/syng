@@ -1,6 +1,11 @@
 /* eslint-disable no-undef */
 import Search from './Search.svelte';
 import { render } from '@testing-library/svelte';
+import { mockPreferenceManager } from '../../../test/utils/unitTestUtils.js';
+
+global.preferenceManager = mockPreferenceManager({
+	transparency: process.platform === 'darwin'
+});
 
 it('should have a draggable search bar on macOS', async () => {
 	window.require = jest.fn().mockReturnValue(() => { null; });

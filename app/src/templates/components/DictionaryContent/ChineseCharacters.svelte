@@ -8,19 +8,19 @@ export let tones = [];
 
 <style>
 .colored-characters--tone-1 {
-    color: #2880F2;
+    color: var(--sy-tone-color--1);
 }
 .colored-characters--tone-2 {
-    color: #E48E1C;
+    color: var(--sy-tone-color--2);
 }
 .colored-characters--tone-3 {
-    color: #E43978;
+    color: var(--sy-tone-color--3);
 }
 .colored-characters--tone-4 {
-    color: #43B866;
+    color: var(--sy-tone-color--4);
 }
 .colored-characters--tone-5 {
-    color: var(--sy-color--grey-4);
+    color: var(--sy-tone-color--5);
 }
 </style>
 

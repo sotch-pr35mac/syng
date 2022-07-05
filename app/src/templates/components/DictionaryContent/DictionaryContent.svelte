@@ -22,7 +22,7 @@ const actions = [
 		component: PlusIcon,
 		tooltip: 'Add to List',
 		action: () => {
-			alert('Add word to bookmarks');
+			alert('Feature Not Implemented');
 			console.log(word);
 		}
 	},
@@ -37,7 +37,7 @@ const actions = [
 		component: MoreHorizontalIcon,
 		tooltip: '',
 		action: () => {
-			alert('Do more stuff');
+			alert('Feature Not Implemented');
 		}
 	}
 ];

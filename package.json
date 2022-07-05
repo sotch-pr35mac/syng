@@ -51,6 +51,7 @@
     "elastic-scroll-polyfill": "^2.1.0",
     "hanzi-writer": "^3.3.0",
     "hanzi-writer-data": "^2.0.1",
-    "sirv-cli": "^0.4.5"
+    "sirv-cli": "^0.4.5",
+    "uuid": "^8.3.2"
   }
 }

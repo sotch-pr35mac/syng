@@ -1,73 +1,82 @@
 <script>
-	import active from 'svelte-spa-router/active';
-	import { 
-		SearchIcon,
-		BookOpenIcon,
-		BookmarkIcon,
-		TrendingUpIcon,
-		MessageCircleIcon,
-		MoreVerticalIcon,
-		SettingsIcon,
-		HelpCircleIcon	
-	} from 'svelte-feather-icons';
+import active from 'svelte-spa-router/active';
+import { 
+	SearchIcon,
+	BookOpenIcon,
+	BookmarkIcon,
+	TrendingUpIcon,
+	MessageCircleIcon,
+	MoreVerticalIcon,
+	SettingsIcon,
+	HelpCircleIcon	
+} from 'svelte-feather-icons';
 
-	const ipcRenderer = window.require('electron').ipcRenderer;
-	const primaryNavigation = [
-		{
-			link: '',
-			icon: SearchIcon,
-			title: 'Search'
-		},
-		{
-			link: 'read',
-			icon: BookOpenIcon,
-			title: 'Read'
-		},
-		{
-			link: 'bookmarks',
-			icon: BookmarkIcon,
-			title: 'Bookmarks'
-		},
-		{
-			link: 'study',
-			icon: TrendingUpIcon,
-			title: 'Study'
-		},
-		{
-			link: 'chat',
-			icon: MessageCircleIcon,
-			title: 'Chat'
-		},
-		{
-			link: 'tools',
-			icon: MoreVerticalIcon,
-			title: 'Extras'
-		}
-	];
-	const secondaryNavigation = [
-		{
-			link: 'help',
-			icon: HelpCircleIcon,
-			size: '18',
-			title: 'Help'
-		},
-		{
-			link: 'settings',
-			icon: SettingsIcon,
-			size: '24',
-			title: 'Settings'
-		}
-	];
+const ipcRenderer = window.require('electron').ipcRenderer;
+const primaryNavigation = [
+	{
+		link: '',
+		icon: SearchIcon,
+		title: 'Search',
+		beta: false
+	},
+	{
+		link: 'read',
+		icon: BookOpenIcon,
+		title: 'Read',
+		beta: true
+	},
+	{
+		link: 'bookmarks',
+		icon: BookmarkIcon,
+		title: 'Bookmarks',
+		beta: true
+	},
+	{
+		link: 'study',
+		icon: TrendingUpIcon,
+		title: 'Study',
+		beta: true
+	},
+	{
+		link: 'chat',
+		icon: MessageCircleIcon,
+		title: 'Chat',
+		beta: true
+	},
+	{
+		link: 'tools',
+		icon: MoreVerticalIcon,
+		title: 'Extras',
+		beta: true
+	}
+];
+const secondaryNavigation = [
+	{
+		link: 'help',
+		icon: HelpCircleIcon,
+		size: '18',
+		title: 'Help',
+		beta: true
+	},
+	{
+		link: 'settings',
+		icon: SettingsIcon,
+		size: '24',
+		title: 'Settings',
+		beta: false
+	}
+];
 
+const enableBetaFeatures = window.preferenceManager.get('beta');
+const enableTransparency = process.platform === 'darwin' && window.preferenceManager.get('transparency');
 let trafficLightMargin = process.platform === 'darwin';
-
 ipcRenderer.on('enter-full-screen', () => {
-		trafficLightMargin = false;
+	trafficLightMargin = false;
 });
 ipcRenderer.on('leave-full-screen', () => {
-		if (process.platform === 'darwin') {
-			trafficLightMargin = true;
-		}
+	if (process.platform === 'darwin') {
+		trafficLightMargin = true;
+	}
 });
 </script>
 
@@ -81,6 +90,9 @@ ipcRenderer.on('leave-full-screen', () => {
 	align-items: center;
 	justify-content: space-between;
 	box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
+}
+.navigation-container--transparency {
+	background-color: var(--sy-color--grey-2--transparency);
 }
 .navigation--primary-nav {
 	display: flex;
@@ -125,9 +137,10 @@ ipcRenderer.on('leave-full-screen', () => {
 }
 </style>
 
-<div class="navigation-container">
+<div class="navigation-container" class:navigation-container--transparency={enableTransparency}>
 	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
 	{#each primaryNavigation as navItem}
+	{#if !navItem.beta || enableBetaFeatures}
 		<a href="{`#/${navItem.link}`}" class="sy-tooltip--container">
 			<span class="navigation--item" use:active={{path: `/${navItem.link}`, className: 'navigation--item-active'}}>
 				<svelte:component this={navItem.icon} size="24"/>
@@ -138,10 +151,12 @@ ipcRenderer.on('leave-full-screen', () => {
 				</p>
 			</div>
 		</a>
+	{/if}
 	{/each}
 	</div>
 	<div class="navigation--secondary-nav">
 	{#each secondaryNavigation as navItem}
+	{#if !navItem.beta || enableBetaFeatures}
 		<a href="{`#/${navItem.link}`}" class="sy-tooltip--container">
 			<span class="navigation--item" use:active={{path: `/${navItem.link}`, className: 'navigation--item-active'}}>
 				<svelte:component this={navItem.icon} size="{navItem.size}"/>
@@ -152,6 +167,7 @@ ipcRenderer.on('leave-full-screen', () => {
 				</p>
 			</div>
 		</a>
+	{/if}
 	{/each}
 	</div>
 </div>

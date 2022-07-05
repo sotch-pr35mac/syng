@@ -6,7 +6,24 @@
 	/* Theme Colors */
 	--sy-color--blue-1: #76AFF9;
 	--sy-color--blue-2: #2C7EE7;
+	--sy-color--blue-3: #2880F2;
 	--sy-color--blue: var(--sy-color--blue-1);
+	--sy-color--green-1: #BADA55;
+	--sy-color--green-2: #70A943;
+	--sy-color--green-3: #43B866;
+	--sy-color--green: var(--sy-color--green-1);
+	--sy-color--yellow-1: #E48E1C;
+	--sy-color--yellow: var(--sy-color--yellow-1);
+	--sy-color--red-1: #E43978;
+	--sy-color--red: var(--sy-color--red-1);
+
+	/* Tone Colors */
+	/* Make sure to update the default settings alongside these values */
+	--sy-tone-color--1: var(--sy-color--blue-3);
+	--sy-tone-color--2: var(--sy-color--yellow-1);
+	--sy-tone-color--3: var(--sy-color--red-1);
+	--sy-tone-color--4: var(--sy-color--green-3);
+	--sy-tone-color--5: var(--sy-color--grey-4);
 
 	/* Text Colors */
 	--sy-text--dark: var(--sy-color--black);
@@ -35,8 +52,10 @@
 		/* Theme Colors */
 		--sy-color--black: #474C5A;
 		--sy-color--white: #FFFFFF;
+		--sy-color--white--transparency: #FFFFFFCF;
 		--sy-color--grey-1: #CDD1D6;
 		--sy-color--grey-2: #F5F5F5;
+		--sy-color--grey-2--transparency: #F5F5F500;
 		--sy-color--grey-3: #788598;
 		--sy-color--grey-4: #9A9B9C; 
 		--sy-color--grey-5: #D7D7D7;
@@ -54,8 +73,10 @@
 		/* Theme Colors */
 		--sy-color--black: #FFFFFF;
 		--sy-color--white: #232323;
+		--sy-color--white--transparency: #23232370;
 		--sy-color--grey-1: #CDD1D6;
 		--sy-color--grey-2: #2C2C2C;
+		--sy-color--grey-2--transparency: #2C2C2C10;
 		--sy-color--grey-3: #788598;
 		--sy-color--grey-4: #9A9B9C; 
 		--sy-color--grey-5: #9F9FA0;

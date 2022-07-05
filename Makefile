@@ -1,8 +1,8 @@
 install:
-	npm install
+	npm install --force
 
 install-dev:
-	npm install --include=dev
+	npm install --include=dev --force
 
 build:
 	npm run build

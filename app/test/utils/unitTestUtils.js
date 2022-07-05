@@ -24,3 +24,10 @@ export const mockDictionary = (lang, entries) => {
 		queryByChinese: query
 	};
 };
+
+export const mockPreferenceManager = store => {
+	return {
+		get: name => store[name],
+		set: (name, value) => undefined
+	}
+}
