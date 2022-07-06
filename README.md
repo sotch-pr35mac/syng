@@ -5,7 +5,12 @@
 # __Syng | 词应__
 ##### Dictionary App | 词典应用
 
+## __Notice__
+
+This legacy version of Syng is no longer maintained. This branch serves as an archive only. For more information on the current state of Syng checkout the [main branch](https://github.com/sotch-pr35mac/syng/tree/master).
+
 ## __About__
+
 Syng is a free, open source, Chinese-To-English and English-To-Chinese Dictionary app that makes it easy to lookup words and phrases quickly. Currently Syng works on macOS, Windows, and Linux systems.
 
 ### Name
