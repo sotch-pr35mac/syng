@@ -3,17 +3,15 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [2.0.0] - XXXX-XX-XX
 ### Added
-
 - Better automatic language detection during search
+- Dark mode
 
 ### Changed
-
 - Redesigned interface
 - Improved startup speed
 - Improved search speed and accuracy
 
 ### Removed
-
 - Startup splash screen
 
 ## [1.5.0] - 2021-01-18
