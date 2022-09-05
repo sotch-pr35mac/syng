@@ -18,11 +18,12 @@
  */
 import { handleError } from './error.js';
 import { underTest } from './process.js';
-const fs = require('fs');
+const fs = window.__TAURI__.fs;
 
 const DEFAULTS_BASE = 'resources/defaults.json';
 const DEFAULTS_PATH = underTest ? `../../${DEFAULTS_BASE}` : `./${DEFAULTS_BASE}`;
-const DEFAULTS = require(DEFAULTS_PATH);
+let DEFAULTS = {}; 
+fetch(DEFAULTS_PATH).then(content => DEFAULTS = content.json());
 
 export class PreferenceManager {
 	/*
@@ -44,40 +45,43 @@ export class PreferenceManager {
 	init() {
 		return new Promise((resolve, reject) => {
 			const filePath = this._file;
-			if(fs.existsSync(filePath) && !underTest) {
+
+			// TODO: HACK! This hard coded just to test things out, eventually
+			// we'll need to move to using an actual database
+			fs.readTextFile(filePath, {
+				dir: fs.BaseDirectory.Home
+			}).then(content => {
 				// The configuration file exists and we should load it
-				const content = fs.readFileSync(filePath);
 				try {
 					this._config = JSON.parse(content);
 					this.initialized = true;
 					resolve();
 				} catch(e) {
 					console.error(e);
-					reject('There was an error loading user preferences. The file contains invalid JSON. Check the log for more details.');
+					reject('There was an error loading user preferences. The file contains invalid JSON. Check the logs for more details.');
 				}
-			} else {
+			}).catch(e => {
 				// The configuration file does not exist
-				//  so we should load the defaults and
-				//  save the defaults to a file so the user
-				//  can save their preferences later
+				// so we should load the defaults and
+				// save the defaults to a file so the user
+				// can save their preferences later.
 
-				// Optimistically use the defaults for this run
+				// Optimistically use teh defaults for this run
 				this._config = DEFAULTS;
 				this.initialized = true;
 
-				// Create the configuration file for subsequent runs
+				// Create the configuration file for the subsequent runs
+				// TODO: HACK! This hard coded just to test things out, eventually
+				// we'll need to move to using an actual database
 				if(!underTest) {
-					fs.writeFile(filePath, JSON.stringify(DEFAULTS), err => {
-						if(err) {
-							console.error(err);
-							reject('There was an error loading user preferences. Could not initialize config file. Check the log for more details.');
-						} else {
-							resolve();
-						}
+					fs.writeTextFile(filePath, JSON.stringify(DEFAULTS), {
+						dir: fs.BaseDirectory.Home
+					}).catch(e => {
+						console.error(e);
+						reject('There was an error loading user preferences. Could not initialize config file. Check the logs for more details.');
 					});
-
 				}
-			}
+			});
 		});
 	}
 
@@ -132,10 +136,12 @@ export class PreferenceManager {
 			return;
 		}
 
-		fs.writeFile(this._file, JSON.stringify(this._config), err => {
-			if(err) {
-				handleError('Cannot save preferences. An unexpected error occurred. Check the log for more details.', err);
-			} 
+		// TODO: HACK! This hard coded just to test things out, eventually
+		// we'll need to move to using an actual database
+		fs.writeTextFile(this._file, JSON.stringify(this._config), {
+			dir: fs.BaseDirectory.Home
+		}).catch(e => {
+			handleError('Cannot save preferences. An unexpected error occurred. Check the logs for more details.', e);
 		});
 	}
 }

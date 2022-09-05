@@ -8,15 +8,18 @@ build:
 	npm run build
 
 start:
-	npm run dev
+	npm run svelte-build
+	cargo tauri dev
 
 start-prod:
 	npm start
 
 lint:
+	cd src-tauri && cargo fmt --check
 	npm run lint
 
 fix-lint:
+	cd src-tauri && cargo fmt
 	npm run fix-lint
 
 test:

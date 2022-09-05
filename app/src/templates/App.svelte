@@ -10,10 +10,17 @@
 	import Chat from './routes/Chat.svelte';
 	import NotFound from './routes/NotFound.svelte';
 	import Navigation from './components/Navigation/Navigation.svelte';
-	import { handleError, PreferenceManager, getArgument } from './utils/';
+	import { handleError, PreferenceManager, inDebugMode } from './utils/';
 	import elasticScroll from 'elastic-scroll-polyfill';
-	window.dictionary = window.require('chinese-dictionary');
-	window.preferenceManager = new PreferenceManager(getArgument('configPath')); 
+	// TODO: Remove this node dependency and migrate it to Tauri since native npm modules 
+	// won't load in the browser
+	window.dictionary = {
+		init: () => new Promise((res, rej) => {
+			res();
+		})
+	};
+	const configPath = inDebugMode() ? 'Projects/syng/app/src/resources/debug_config.json' : 'config.json';
+	window.preferenceManager = new PreferenceManager(configPath);
 	Promise.all([
 		window.dictionary.init(),
 		window.preferenceManager.init()

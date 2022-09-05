@@ -15,7 +15,6 @@ import {
 /* Word Prop */
 export let word;
 
-const ipcRenderer = window.require('electron').ipcRenderer;
 const dispatch = createEventDispatcher();
 const actions = [
 	{
@@ -30,7 +29,10 @@ const actions = [
 		component: Maximize2Icon,
 		tooltip: 'Enlarge Characters',
 		action: () => {
-			ipcRenderer.send('show-character-window', word);
+			// TODO: Don't let this get merged in.
+			// HACK! Disable opening other windows temporarily
+			// for the Tauri migration.
+			// ipcRenderer.send('show-character-window', word);
 		}
 	},
 	{

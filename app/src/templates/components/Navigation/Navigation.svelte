@@ -11,7 +11,6 @@ import {
 	HelpCircleIcon	
 } from 'svelte-feather-icons';
 
-const ipcRenderer = window.require('electron').ipcRenderer;
 const primaryNavigation = [
 	{
 		link: '',
@@ -68,16 +67,22 @@ const secondaryNavigation = [
 ];
 
 const enableBetaFeatures = window.preferenceManager.get('beta');
-const enableTransparency = process.platform === 'darwin' && window.preferenceManager.get('transparency');
-let trafficLightMargin = process.platform === 'darwin';
+const enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
+let trafficLightMargin = window.__TAURI__.os.platform === 'darwin';
+
+// TODO: Don't let this get merged in.
+// Hack! Disabling moving around traffic lights to get app
+// rendering in Tauri.
+/*
 ipcRenderer.on('enter-full-screen', () => {
 	trafficLightMargin = false;
 });
 ipcRenderer.on('leave-full-screen', () => {
-	if (process.platform === 'darwin') {
+	if (window.__TAURI__.os.platform === 'darwin') {
 		trafficLightMargin = true;
 	}
 });
+*/
 </script>
 
 <style>

@@ -1,7 +1,7 @@
 <script>
 import SyToggle from '../components/SyToggle/SyToggle.svelte';
 import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
-const isMacos = process.platform === 'darwin';
+const isMacos = window.__TAURI__.os.platform === 'darwin';
 
 let preferences = [
 	{

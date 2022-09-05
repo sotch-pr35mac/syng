@@ -14,7 +14,7 @@ const CHARACTER_SIZE = 200;
 const CHARACTER_PADDING = 5;
 
 // Variables
-const enableDrag = process.platform === 'darwin';
+const enableDrag = window.__TAURI__.os.platform === 'darwin';
 let word;
 let activeCharacters = [];
 let activeScript = 'simplified';

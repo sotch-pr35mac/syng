@@ -17,8 +17,8 @@ let activeWord;
 let searchLang = 'EN';
 let highlightActive = true;
 const langSwitcher = ['EN', 'PY', 'ZH'];
-const enableDrag = process.platform === 'darwin';
-const enableTransparency = process.platform === 'darwin' && window.preferenceManager.get('transparency');
+const enableDrag = window.__TAURI__.os.platform === 'darwin';
+const enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
 const updateSearchResults = (results, clearable) => {
 	if(results.length || clearable) {
 		highlightActive = false;
