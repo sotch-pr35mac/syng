@@ -59,10 +59,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 655,
+        "width": 1110,
         "resizable": true,
-        "title": "Syng",
-        "width": 800
+        "title": "Syng"
       }
     ]
   }
