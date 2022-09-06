@@ -12,17 +12,11 @@
 	import Navigation from './components/Navigation/Navigation.svelte';
 	import { handleError, PreferenceManager, inDebugMode } from './utils/';
 	import elasticScroll from 'elastic-scroll-polyfill';
-	// TODO: Remove this node dependency and migrate it to Tauri since native npm modules 
-	// won't load in the browser
-	window.dictionary = {
-		init: () => new Promise((res, rej) => {
-			res();
-		})
-	};
+	const invoke = window.__TAURI__.invoke;
 	const configPath = inDebugMode() ? 'Projects/syng/app/src/resources/debug_config.json' : 'config.json';
 	window.preferenceManager = new PreferenceManager(configPath);
 	Promise.all([
-		window.dictionary.init(),
+		invoke('init_dictionary'),
 		window.preferenceManager.init()
 	]).then(() => {
 		document.dispatchEvent(new Event('init'));

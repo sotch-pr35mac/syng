@@ -29,14 +29,14 @@ export let word = {};
 
 <div class="chinese-characters--container">
     <h1 class="chinese-characters--character-container chinese-characters--character" data-testid="chinese-characters">
-        <ChineseCharacters characters="{word.simplified}" tones="{word.toneMarks}"></ChineseCharacters>
+        <ChineseCharacters characters="{word.simplified}" tones="{word.tone_marks}"></ChineseCharacters>
         {#if word.simplified != word.traditional}
-            &nbsp;(<ChineseCharacters characters="{word.traditional}" tones="{word.toneMarks}"></ChineseCharacters>)
+            &nbsp;(<ChineseCharacters characters="{word.traditional}" tones="{word.tone_marks}"></ChineseCharacters>)
         {/if}
     </h1>
     <div>
         <h3 class="chinese-characters--pinyin-container">
-            {word.pinyinMarks}
+            {word.pinyin_marks}
         </h3>
     </div>
 </div>

@@ -93,12 +93,12 @@ const handleOpenLink = event => dispatch('link', event.detail);
             </h2>
             <SyList values="{word.english}" component="{DefinitionItem}" on:event="{handleOpenLink}"/>
         </section>
-	{#if word.measureWords.length}
+	{#if word.measure_words.length}
 	<section class="dictionary-content">
 		<h2 class="dictionary-content--section-title">
 			Measure Words
 		</h2>
-		<SyList values="{word.measureWords}" component="{MeasureWord}" on:event="{handleOpenLink}"/>
+		<SyList values="{word.measure_words}" component="{MeasureWord}" on:event="{handleOpenLink}"/>
 	</section>
 	{/if}
     {/if}

@@ -16,6 +16,7 @@ let fullResults = [];
 let activeWord;
 let searchLang = 'EN';
 let highlightActive = true;
+const invoke = window.__TAURI__.invoke;
 const langSwitcher = ['EN', 'PY', 'ZH'];
 const enableDrag = window.__TAURI__.os.platform === 'darwin';
 const enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
@@ -26,21 +27,28 @@ const updateSearchResults = (results, clearable) => {
 		searchResults = results.map(element => {
 			return {
 				headline: element.traditional === element.simplified ? element.simplified : `${element.simplified} (${element.traditional})`,
-				subtitle: element.pinyinMarks,
+				subtitle: element.pinyin_marks,
 				content: element.english.join('; '),
 				active: false
 			};
 		});
 	} 
 };
-const query = (text, clearable) => {
+const query = (text, clearable, elementToSelect) => {
 	if (text) {
-		window.dictionary.classify(text).then(result => {
+		invoke('classify', { text }).then(result => {
 			searchLang = result;
 		}).catch(e => {
 			handleError('There was an error classifying the language of your query.', e);
 		});
-		window.dictionary.query(text).then(results => updateSearchResults(results, clearable)).catch(e => {
+		invoke('query', { text }).then(results => {
+			updateSearchResults(results, clearable);
+			if(elementToSelect != undefined) {
+				tick().then(() => {
+					selectElement(elementToSelect);
+				});
+			}
+		}).catch(e => {
 			handleError('There was an error searching the dictionary for your query.', e);
 		});
 	} else {
@@ -51,13 +59,13 @@ const queryWithLang = (text, lang) => {
 	try {
 		switch (lang) {
 		case 'EN':
-			window.dictionary.queryByEnglish(text).then(results => updateSearchResults(results, true));
+			invoke('query_by_english', { text }).then(results => updateSearchResults(results, true));
 			break;
 		case 'PY':
-			window.dictionary.queryByPinyin(text).then(results => updateSearchResults(results, true));
+			invoke('query_by_pinyin', { text }).then(results => updateSearchResults(results, true));
 			break;
 		case 'ZH':
-			window.dictionary.queryByChinese(text).then(results => updateSearchResults(results, true));
+			invoke('query_by_chinese', { text }).then(results => updateSearchResults(results, true));
 			break;
 		}
 	} catch (error) {
@@ -93,7 +101,7 @@ const handleSelection = event => {
 	updateActiveWord(word, true);
 
 	// Update search history
-	let previousEntry = searchHistory.map(entry => entry.wordId).indexOf(word.wordId);
+	let previousEntry = searchHistory.map(entry => entry.word_id).indexOf(word.word_id);
 	if (previousEntry >= 0) {
 		searchHistory.splice(previousEntry, 1);
 		historyPosition -= 1;
@@ -107,10 +115,7 @@ const handleEnter = event => { // eslint-disable-line no-unused-vars
 const handleLink = event => {
 	const word = event.detail;
 	document.getElementById('search').value = word;
-	query(word, true);
-	tick().then(() => {
-		selectElement(0);
-	});
+	query(word, true, 0);
 };
 </script>
 
