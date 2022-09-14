@@ -63,7 +63,7 @@ impl From<cd::WordEntry> for WordEntry {
 
 #[tauri::command]
 fn classify(text: String) -> Result<String, String> {
-    match cd::classify(&text) {
+    match cd::classify(text.trim()) {
         cd::ClassificationResult::ZH => Ok("ZH".to_string()),
         cd::ClassificationResult::EN => Ok("EN".to_string()),
         cd::ClassificationResult::PY => Ok("PY".to_string()),
@@ -80,7 +80,7 @@ fn init_dictionary() {
 
 #[tauri::command]
 fn query(text: String) -> Vec<WordEntry> {
-    match cd::query(&text) {
+    match cd::query(text.trim()) {
         Some(results) => results.into_iter().map(|x| x.clone().into()).collect(),
         None => vec![],
     }
@@ -88,7 +88,7 @@ fn query(text: String) -> Vec<WordEntry> {
 
 #[tauri::command]
 fn query_by_chinese(text: String) -> Vec<WordEntry> {
-    cd::query_by_chinese(&text)
+    cd::query_by_chinese(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
         .collect()
@@ -96,7 +96,7 @@ fn query_by_chinese(text: String) -> Vec<WordEntry> {
 
 #[tauri::command]
 fn query_by_pinyin(text: String) -> Vec<WordEntry> {
-    cd::query_by_pinyin(&text)
+    cd::query_by_pinyin(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
         .collect()
@@ -104,7 +104,7 @@ fn query_by_pinyin(text: String) -> Vec<WordEntry> {
 
 #[tauri::command]
 fn query_by_english(text: String) -> Vec<WordEntry> {
-    cd::query_by_english(&text)
+    cd::query_by_english(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
         .collect()
