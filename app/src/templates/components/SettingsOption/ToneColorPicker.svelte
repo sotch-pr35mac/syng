@@ -3,7 +3,7 @@ import { createEventDispatcher } from 'svelte';
 const dispatch = createEventDispatcher();
 const styles = getComputedStyle(document.body);
 const getRGB = value => value.substring(0, 2) == '--' ? styles.getPropertyValue(value) : value;
-const colors = window.preferenceManager.get('tone-colors').colors.map(color => getRGB(color).trim());
+const colors = window.preferenceManager.get('toneColors').colors.map(color => getRGB(color).trim());
 const tones = [
 	{
 		label: 'First Tone',

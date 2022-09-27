@@ -1,5 +1,8 @@
 module.exports = {
-	'ignorePatterns': ['app/src/templates/build'],
+	'ignorePatterns': [
+		'app/src/templates/build',
+		'app/src/templates/utils/pouchdb-7.3.0.min.js'
+	],
 	'env': {
 		'browser': true,
 		'es2021': true,
