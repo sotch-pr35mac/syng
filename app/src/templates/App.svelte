@@ -13,34 +13,30 @@
 	import { handleError, PreferenceManager, inDebugMode } from './utils/';
 	import elasticScroll from 'elastic-scroll-polyfill';
 	const invoke = window.__TAURI__.invoke;
-	const configPath = inDebugMode() ? 'Projects/syng/app/src/resources/debug_config.json' : 'config.json';
-	window.preferenceManager = new PreferenceManager(configPath);
+	const configDb = inDebugMode() ? 'development_config' : 'config';
+	window.preferenceManager = new PreferenceManager(configDb);
 	Promise.all([
 		invoke('init_dictionary'),
 		window.preferenceManager.init()
 	]).then(() => {
 		document.dispatchEvent(new Event('init'));
+		initializeStyles();
 	}).catch(e => {
 		handleError('There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.', e);
 	});
 
 	const initializeStyles = () => {
-		if(window.preferenceManager.initialized) {
-			const colorSettings = window.preferenceManager.get('tone-colors');
-			if(colorSettings.hasCustomColors) {
-				const globalStyles = document.querySelector(':root').style;
-				const toneColors = colorSettings.colors;
-				for(let i = 0; i < toneColors.length; i++) {
-					globalStyles.setProperty(`--sy-tone-color--${i+1}`, toneColors[i]);
-				}
+		const colorSettings = window.preferenceManager.get('toneColors');
+		if(colorSettings.hasCustomColors) {
+			const globalStyles = document.querySelector(':root').style;
+			const toneColors = colorSettings.colors;
+			for(let i = 0; i < toneColors.length; i++) {
+				globalStyles.setProperty(`--sy-tone-color--${i+1}`, toneColors[i]);
 			}
-		} else {
-			setTimeout(initializeStyles, 10);
 		}
 	};
 	window.onload = () => {
 		elasticScroll({ appleDeviceOnly: false, intensity: 1 });
-		initializeStyles();
 	};
 	
 	const routes = {

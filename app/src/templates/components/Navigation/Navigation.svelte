@@ -66,9 +66,14 @@ const secondaryNavigation = [
 	}
 ];
 
-const enableBetaFeatures = window.preferenceManager.get('beta');
-const enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
+let enableBetaFeatures = false;
+let enableTransparency = false;
 let trafficLightMargin = window.__TAURI__.os.platform === 'darwin';
+
+window.preferenceManager.waitForInit().then(() => {
+	enableBetaFeatures = window.preferenceManager.get('beta');
+	enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
+});
 
 // TODO: Don't let this get merged in.
 // Hack! Disabling moving around traffic lights to get app

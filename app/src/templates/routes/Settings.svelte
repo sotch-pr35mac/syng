@@ -16,7 +16,7 @@ let preferences = [
 	{
 		label: 'Tone Colors',
 		centerLabel: false,
-		handler: e => window.preferenceManager.set('tone-colors', e.detail),
+		handler: e => window.preferenceManager.set('toneColors', e.detail),
 		component: ToneColorPicker,
 		props: {}
 	}
