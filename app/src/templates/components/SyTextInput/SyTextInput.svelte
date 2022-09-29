@@ -49,8 +49,8 @@ const handleKeyup = event => {
 <style>
 .sy-text-input {
 	border: none;
-	padding: var(--sy-space--large) var(--sy-space);
-	margin: var(--sy-space--small);
+	padding: 0px;
+	margin: calc(var(--sy-space--small) + var(--sy-space--large)) calc(var(--sy-space--small) + var(--sy-space));
 	background-color: var(--sy-color--white);
 	color: var(--sy-color--black);
 }
