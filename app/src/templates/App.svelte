@@ -17,7 +17,7 @@
 	window.preferenceManager = new PreferenceManager(configDb);
 	Promise.all([
 		invoke('init_dictionary'),
-		window.preferenceManager.init()
+		window.preferenceManager.init(),
 	]).then(() => {
 		document.dispatchEvent(new Event('init'));
 		initializeStyles();
@@ -38,6 +38,7 @@
 	window.onload = () => {
 		elasticScroll({ appleDeviceOnly: false, intensity: 1 });
 	};
+	window.__TAURI__.os.platform().then(platform => window.platform = platform);
 	
 	const routes = {
 		'/': Search,

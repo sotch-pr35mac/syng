@@ -2678,6 +2678,7 @@ name = "syng"
 version = "2.0.0"
 dependencies = [
  "chinese_dictionary",
+ "cocoa",
  "serde",
  "serde_json",
  "tauri",

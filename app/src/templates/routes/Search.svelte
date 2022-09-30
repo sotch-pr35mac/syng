@@ -16,10 +16,21 @@ let fullResults = [];
 let activeWord;
 let searchLang = 'EN';
 let highlightActive = true;
+let isMacos = false;
+let enableTransparency = false;
+
+// Manually call the tauri platform promise instead of using `window.platform`
+// so that we can watch for updates and respond accordingly because this page
+// may load prior to `window.platform` being set.
+window.__TAURI__.os.platform().then(platform => {
+	isMacos = platform === 'darwin';
+
+	// Disabling transparency for now since it doesn't work in Tauri as well as in Electron
+	// enableTransparency = isMacos && window.preferenceManager.get('transparency');
+});
+
 const invoke = window.__TAURI__.invoke;
 const langSwitcher = ['EN', 'PY', 'ZH'];
-const enableDrag = window.__TAURI__.os.platform === 'darwin';
-const enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
 const updateSearchResults = (results, clearable) => {
 	if(results.length || clearable) {
 		highlightActive = false;
@@ -138,9 +149,6 @@ const handleLink = event => {
 .search-bar-container--transparency {
 	background-color: var(--sy-color--white--transparency);
 }
-.search-bar-container--macos {
-	-webkit-app-region: drag;
-}
 .search-content-container {
 	display: flex;
 }
@@ -166,7 +174,7 @@ const handleLink = event => {
 </style>
 
 <div class="search-page-container">
-	<div class="search-bar-container" class:search-bar-container--macos={enableDrag} class:search-bar-container--transparency={enableTransparency} data-testid="search-bar-container">
+	<div class="search-bar-container" class:search-bar-container--transparency={enableTransparency} data-testid="search-bar-container" data-tauri-drag-region={isMacos ? true : undefined}>
 		<SyButton style="ghost" size="large" disabled={ (searchHistory[historyPosition - 1] == undefined) } on:click="{historyBack}">
 			<ChevronLeftIcon size="20" />
 		</SyButton>
@@ -176,7 +184,7 @@ const handleLink = event => {
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
 			{ searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" transparency={enableTransparency} on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter }/>
+		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" transparency={enableTransparency} on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter } />
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>

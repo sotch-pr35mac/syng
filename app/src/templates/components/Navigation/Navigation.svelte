@@ -1,5 +1,6 @@
 <script>
 import active from 'svelte-spa-router/active';
+import { handleError } from '../../utils/';
 import { 
 	SearchIcon,
 	BookOpenIcon,
@@ -66,13 +67,21 @@ const secondaryNavigation = [
 	}
 ];
 
+let isMacos = false;
 let enableBetaFeatures = false;
 let enableTransparency = false;
-let trafficLightMargin = window.__TAURI__.os.platform === 'darwin';
+let trafficLightMargin = false;
 
-window.preferenceManager.waitForInit().then(() => {
+Promise.all([
+	window.preferenceManager.waitForInit(),
+	window.__TAURI__.os.platform()
+]).then(responses => {
+	isMacos = responses[1] === 'darwin';
+	trafficLightMargin = isMacos;
 	enableBetaFeatures = window.preferenceManager.get('beta');
-	enableTransparency = window.__TAURI__.os.platform === 'darwin' && window.preferenceManager.get('transparency');
+	enableTransparency = isMacos && window.preferenceManager.get('transparency');
+}).catch(err => {
+	handleError('There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.', err);
 });
 
 // TODO: Don't let this get merged in.
@@ -108,10 +117,10 @@ ipcRenderer.on('leave-full-screen', () => {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-    margin-top: var(--sy-space);
+    	margin-top: var(--sy-space);
 }
 .navigation--primary-nav--macos {
-	margin-top: calc(35px + var(--sy-space));
+	margin-top: calc(35px + var(--sy-space--large));
 }
 .navigation--secondary-nav {
 	display: flex;

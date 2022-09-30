@@ -1,7 +1,7 @@
 <script>
 import SyToggle from '../components/SyToggle/SyToggle.svelte';
 import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
-const isMacos = window.__TAURI__.os.platform === 'darwin';
+const isMacos = window.platform === 'darwin';
 
 let preferences = [
 	{
@@ -22,8 +22,9 @@ let preferences = [
 	}
 ];
 
-// Load system specific preferences
-if (isMacos) {
+/* Disabling transparency for the time being since Tauri handles it a bit differently than Electron */
+/*
+if(isMacos) {
 	const macOSPreferences = [
 		{
 			label: 'Transparency',
@@ -38,6 +39,7 @@ if (isMacos) {
 
 	preferences = [...macOSPreferences, ...preferences];
 }
+*/
 </script>
 
 <style>
@@ -50,9 +52,6 @@ if (isMacos) {
 .settings--title {
 	padding: var(--sy-space--extra-large) var(--sy-space);
 }
-.settings--title--macos {
-	-webkit-app-region: drag;
-}
 .settings--setting {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
@@ -64,8 +63,8 @@ if (isMacos) {
 </style>
 
 <div class="settings--container">
-	<div class="settings--title" class:settings--title--macos={isMacos}>
-		<h1>Settings</h1>
+	<div class="settings--title" data-tauri-drag-region={isMacos ? true : undefined}>
+		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Settings</h1>
 	</div>
 	<div class="settings--content">
 		{#each preferences as preference}

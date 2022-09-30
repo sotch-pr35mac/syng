@@ -60,7 +60,7 @@ export class PreferenceManager {
 				if(err.name === 'not_found') {
 					return {
 						_id: 'config',
-						transparency: createPreference(true, true),
+						transparency: createPreference(true, false),
 						beta: createPreference(true, false),
 						toneColors: createPreference(true, {
 							colors: ['--sy-color--blue-3', 
