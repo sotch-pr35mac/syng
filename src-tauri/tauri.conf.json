@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Syng",
-    "version": "0.1.0"
+    "version": "2.0.0"
   },
   "tauri": {
     "allowlist": {
@@ -58,11 +58,23 @@
     },
     "windows": [
       {
+	"label": "main",
         "fullscreen": false,
         "height": 655,
         "width": 1110,
         "resizable": true,
-        "title": "Syng"
+        "title": "Syng",
+	"url": "index.html"
+      },
+      {
+	"label": "characters",
+	"fullscreen": false,
+	"height": 497,
+	"width": 886,
+	"resizable": true,
+	"title": "Syng | Characters",
+	"visible": false,
+	"url": "characters.html"
       }
     ]
   }

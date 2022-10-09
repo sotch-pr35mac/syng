@@ -3,7 +3,6 @@ import HanziWriter from 'hanzi-writer';
 import { tick } from 'svelte';
 import { PlayIcon, PauseIcon } from 'svelte-feather-icons';
 import SyButton from './components/SyButton/SyButton.svelte';
-const ipcRenderer = window.require('electron').ipcRenderer;
 
 // Constants
 const LIGHT_MODE_TEXT_COLOR = '#474C5A';
@@ -14,7 +13,10 @@ const CHARACTER_SIZE = 200;
 const CHARACTER_PADDING = 5;
 
 // Variables
-const enableDrag = window.__TAURI__.os.platform === 'darwin';
+let enableDrag = false;
+window.__TAURI__.os.platform().then(platform => {
+	enableDrag = platform === 'darwin';
+});
 let word;
 let activeCharacters = [];
 let activeScript = 'simplified';
@@ -33,20 +35,26 @@ const switchScript = script => {
 	loadAllCharacters(word[activeScript]);
 };
 const loadCharacter = character => {
-	try {
-		characterWriter = HanziWriter.create('character-target', character, {
-			width: CHARACTER_SIZE,
-			height: CHARACTER_SIZE,
-			padding: CHARACTER_PADDING,
-			strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
-			outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
-			charDataLoader: () => window.require(`hanzi-writer-data/${character}`)
-		});
-		activeCharacters.push(characterWriter);
-	} catch(error) {
-		characterNotFound = true;
-		console.log(error);
-	}
+	characterWriter = HanziWriter.create('character-target', character, {
+		width: CHARACTER_SIZE,
+		height: CHARACTER_SIZE,
+		padding: CHARACTER_PADDING,
+		strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
+		outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
+		//charDataLoader: () => window.require(`hanzi-writer-data/${character}`)
+		charDataLoader: (char, onComplete) => {
+			//fetch('resources/defaults.json')
+			fetch(`resources/hanzi-writer-data/data/${char}.json`)
+				.then(file => file.json())
+				.then(data => {
+					onComplete(data);
+				}).catch(error => {
+					characterNotFound = true;
+					console.log(error);
+				});
+		}
+	});
+	activeCharacters.push(characterWriter);
 };
 const loadAllCharacters = characters => {
 	characterNotFound = false;
@@ -94,8 +102,8 @@ const handleControlButtonClick = () => {
 };
 
 // Event Listeners
-ipcRenderer.on('display-characters', (e, requested_word) => { // eslint-disable-line no-unused-vars
-	word = requested_word;
+window.__TAURI__.event.listen('display-characters', requestedWord => {
+	word = requestedWord.payload;
 	loadAllCharacters(word[activeScript]);
 });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { // eslint-disable-line no-unused-vars
@@ -118,9 +126,6 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
 	margin: 0;
 	background-color: var(--sy-color--white);
 	box-shadow: var(--sy-box-shadow);
-}
-.script-selector-container--macos {
-	-webkit-app-region: drag;
 }
 .script-selector--active {
 	text-decoration: underline;
@@ -164,7 +169,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e =
 </style>
 
 <div class="character-window-container">
-	<div class="script-selector-container" class:script-selector-container--macos={enableDrag}>
+	<div class="script-selector-container" data-tauri-drag-region={enableDrag ? true : undefined}>
 		<SyButton style="ghost" size="large" on:click={ () => switchScript('simplified') }>
 			<span class:script-selector--active={activeScript == 'simplified'}>
 				Simplified

@@ -1,7 +1,9 @@
 install:
+	git submodule update --init
 	npm install --force
 
 install-dev:
+	git submodule update --init
 	npm install --include=dev --force
 
 build:

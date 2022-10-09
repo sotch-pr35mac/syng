@@ -11,10 +11,12 @@ import {
 	Maximize2Icon,
 	MoreHorizontalIcon
 } from 'svelte-feather-icons';
+import { handleError } from '../../utils/';
 
 /* Word Prop */
 export let word;
 
+const invoke = window.__TAURI__.invoke;
 const dispatch = createEventDispatcher();
 const actions = [
 	{
@@ -29,10 +31,14 @@ const actions = [
 		component: Maximize2Icon,
 		tooltip: 'Enlarge Characters',
 		action: () => {
-			// TODO: Don't let this get merged in.
-			// HACK! Disable opening other windows temporarily
-			// for the Tauri migration.
-			// ipcRenderer.send('show-character-window', word);
+			invoke('open_character_window', { 
+				word: {
+					traditional: word.traditional,
+					simplified: word.simplified
+				}
+			}).catch(e => {
+				handleError('An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.', e);
+			});
 		}
 	},
 	{
