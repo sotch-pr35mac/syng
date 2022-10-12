@@ -5,9 +5,9 @@
 extern crate chinese_dictionary;
 
 use chinese_dictionary as cd;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::sync::Once;
-use tauri::{Manager, Runtime, Window};
+use tauri::{Manager, Runtime, Window, WindowEvent};
 
 static INIT: Once = Once::new();
 
@@ -31,6 +31,12 @@ struct WordEntry {
     measure_words: Vec<MeasureWord>,
     hsk: u8,
     word_id: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct CharacterWindowWord {
+    traditional: String,
+    simplified: String,
 }
 
 impl From<cd::MeasureWord> for MeasureWord {
@@ -110,6 +116,13 @@ fn query_by_english(text: String) -> Vec<WordEntry> {
         .collect()
 }
 
+#[tauri::command]
+fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindowWord) {
+    let character_window = app_handle.get_window("characters").unwrap();
+    character_window.emit("display-characters", word).unwrap();
+    character_window.show().unwrap();
+}
+
 pub enum ToolbarThickness {
     Thick,
     Medium,
@@ -160,9 +173,35 @@ unsafe fn make_toolbar(id: cocoa::base::id) {
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            window.set_transparent_titlebar(ToolbarThickness::Thick);
-            window.open_devtools();
+            let main_window = app.get_window("main").unwrap();
+            main_window.set_transparent_titlebar(ToolbarThickness::Thick);
+            main_window.open_devtools();
+
+            let character_window = app.get_window("characters").unwrap();
+            character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+            character_window.open_devtools();
+
+            let handle = app.handle();
+            main_window.on_window_event(move |event| {
+                if let WindowEvent::CloseRequested { .. } = event {
+                    /* TODO(macos): When the app icon is clicked from the dock, open the main window.
+                     * Currently, Tuair doesn't offer a way to capture dock click events, so
+                     * for now we'll just clcose the application when the main window is
+                     * closed, like we do for other platforms.
+                     */
+
+                    // When the main window is closed, emit an exit event.
+                    handle.exit(0);
+                }
+            });
+
+            let character_window_toggler = character_window.clone();
+            character_window.on_window_event(move |event| {
+                if let WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    character_window_toggler.hide().unwrap();
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler!(
@@ -171,7 +210,8 @@ fn main() {
             query,
             query_by_english,
             query_by_pinyin,
-            query_by_chinese
+            query_by_chinese,
+            open_character_window
         ))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
