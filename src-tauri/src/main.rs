@@ -7,7 +7,10 @@ extern crate chinese_dictionary;
 use chinese_dictionary as cd;
 use serde::{Deserialize, Serialize};
 use std::sync::Once;
-use tauri::{Manager, Runtime, Window, WindowEvent};
+use tauri::{
+    api::shell::open as open_browser, CustomMenuItem, Manager, Menu, MenuItem, Runtime, Submenu,
+    Window, WindowEvent,
+};
 
 static INIT: Once = Once::new();
 
@@ -35,35 +38,26 @@ fn init_dictionary() {
 }
 
 #[tauri::command]
-fn query(text: String) -> Vec<cd::WordEntry> {
+fn query(text: String) -> Vec<&'static cd::WordEntry> {
     match cd::query(text.trim()) {
-        Some(results) => results.into_iter().map(|x| x.clone().into()).collect(),
+        Some(results) => results,
         None => vec![],
     }
 }
 
 #[tauri::command]
-fn query_by_chinese(text: String) -> Vec<cd::WordEntry> {
+fn query_by_chinese(text: String) -> Vec<&'static cd::WordEntry> {
     cd::query_by_chinese(text.trim())
-        .into_iter()
-        .map(|x| x.clone().into())
-        .collect()
 }
 
 #[tauri::command]
-fn query_by_pinyin(text: String) -> Vec<cd::WordEntry> {
+fn query_by_pinyin(text: String) -> Vec<&'static cd::WordEntry> {
     cd::query_by_pinyin(text.trim())
-        .into_iter()
-        .map(|x| x.clone().into())
-        .collect()
 }
 
 #[tauri::command]
-fn query_by_english(text: String) -> Vec<cd::WordEntry> {
+fn query_by_english(text: String) -> Vec<&'static cd::WordEntry> {
     cd::query_by_english(text.trim())
-        .into_iter()
-        .map(|x| x.clone().into())
-        .collect()
 }
 
 #[tauri::command]
@@ -120,7 +114,22 @@ unsafe fn make_toolbar(id: cocoa::base::id) {
     id.setToolbar_(new_toolbar);
 }
 
+fn create_menu(app_name: &str) -> Menu {
+    Menu::os_default(app_name).add_submenu(Submenu::new(
+        "Help",
+        Menu::new()
+            .add_item(CustomMenuItem::new("github", "Github"))
+            .add_native_item(MenuItem::Separator)
+            .add_item(CustomMenuItem::new("license", "License"))
+            .add_item(CustomMenuItem::new("cc-cedict", "CC-CEDICT License"))
+            .add_native_item(MenuItem::Separator)
+            .add_item(CustomMenuItem::new("bug", "Report Bug")),
+    ))
+}
+
 fn main() {
+    let app_context = tauri::generate_context!();
+    let app_menu = create_menu(&app_context.package_info().name);
     tauri::Builder::default()
         .setup(|app| {
             let main_window = app.get_window("main").unwrap();
@@ -163,6 +172,42 @@ fn main() {
             query_by_chinese,
             open_character_window
         ))
-        .run(tauri::generate_context!())
+        .menu(app_menu)
+        .on_menu_event(|event| match event.menu_item_id() {
+            "github" => {
+                open_browser(
+                    &event.window().shell_scope(),
+                    "https://github.com/sotch-pr35mac/syng",
+                    None,
+                )
+                .unwrap();
+            }
+            "license" => {
+                open_browser(
+                    &event.window().shell_scope(),
+                    "https://github.com/sotch-pr35mac/syng/blob/master/LICENSE",
+                    None,
+                )
+                .unwrap();
+            }
+            "cc-cedict" => {
+                open_browser(
+                    &event.window().shell_scope(),
+                    "https://github.com/sotch-pr35mac/syng/blob/master/LICENSE-CC-CEDICT",
+                    None,
+                )
+                .unwrap();
+            }
+            "bug" => {
+                open_browser(
+                    &event.window().shell_scope(),
+                    "https://github.com/sotch-pr35mac/syng/issues",
+                    None,
+                )
+                .unwrap();
+            }
+            _ => (),
+        })
+        .run(app_context)
         .expect("error while running tauri application");
 }
