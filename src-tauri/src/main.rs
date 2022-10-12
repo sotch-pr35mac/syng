@@ -11,60 +11,10 @@ use tauri::{Manager, Runtime, Window, WindowEvent};
 
 static INIT: Once = Once::new();
 
-#[derive(Serialize)]
-struct MeasureWord {
-    traditional: String,
-    simplified: String,
-    pinyin_marks: String,
-    pinyin_numbers: String,
-}
-
-#[derive(Serialize)]
-struct WordEntry {
-    traditional: String,
-    simplified: String,
-    pinyin_marks: String,
-    pinyin_numbers: String,
-    english: Vec<String>,
-    tone_marks: Vec<u8>,
-    hash: u64,
-    measure_words: Vec<MeasureWord>,
-    hsk: u8,
-    word_id: u32,
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct CharacterWindowWord {
     traditional: String,
     simplified: String,
-}
-
-impl From<cd::MeasureWord> for MeasureWord {
-    fn from(mw: cd::MeasureWord) -> Self {
-        Self {
-            traditional: mw.traditional,
-            simplified: mw.simplified,
-            pinyin_marks: mw.pinyin_marks,
-            pinyin_numbers: mw.pinyin_numbers,
-        }
-    }
-}
-
-impl From<cd::WordEntry> for WordEntry {
-    fn from(we: cd::WordEntry) -> Self {
-        Self {
-            traditional: we.traditional,
-            simplified: we.simplified,
-            pinyin_marks: we.pinyin_marks,
-            pinyin_numbers: we.pinyin_numbers,
-            english: we.english,
-            tone_marks: we.tone_marks,
-            hash: we.hash,
-            measure_words: we.measure_words.into_iter().map(|x| x.into()).collect(),
-            hsk: we.hsk,
-            word_id: we.word_id,
-        }
-    }
 }
 
 #[tauri::command]
@@ -85,7 +35,7 @@ fn init_dictionary() {
 }
 
 #[tauri::command]
-fn query(text: String) -> Vec<WordEntry> {
+fn query(text: String) -> Vec<cd::WordEntry> {
     match cd::query(text.trim()) {
         Some(results) => results.into_iter().map(|x| x.clone().into()).collect(),
         None => vec![],
@@ -93,7 +43,7 @@ fn query(text: String) -> Vec<WordEntry> {
 }
 
 #[tauri::command]
-fn query_by_chinese(text: String) -> Vec<WordEntry> {
+fn query_by_chinese(text: String) -> Vec<cd::WordEntry> {
     cd::query_by_chinese(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
@@ -101,7 +51,7 @@ fn query_by_chinese(text: String) -> Vec<WordEntry> {
 }
 
 #[tauri::command]
-fn query_by_pinyin(text: String) -> Vec<WordEntry> {
+fn query_by_pinyin(text: String) -> Vec<cd::WordEntry> {
     cd::query_by_pinyin(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
@@ -109,7 +59,7 @@ fn query_by_pinyin(text: String) -> Vec<WordEntry> {
 }
 
 #[tauri::command]
-fn query_by_english(text: String) -> Vec<WordEntry> {
+fn query_by_english(text: String) -> Vec<cd::WordEntry> {
     cd::query_by_english(text.trim())
         .into_iter()
         .map(|x| x.clone().into())
