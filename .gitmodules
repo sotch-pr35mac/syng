@@ -1,3 +1,3 @@
 [submodule "app/src/resources/hanzi-writer-data"]
-	path = app/src/resources/hanzi-writer-data
+	path = src/views/resources/hanzi-writer-data
 	url = https://github.com/chanind/hanzi-writer-data.git
