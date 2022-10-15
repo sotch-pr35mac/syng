@@ -53,8 +53,8 @@ const handleUpdate = index => {
 <div class="tone-color-picker">
 	{#each tones as tone}
 		<div class="tone-color-picker--tone">
-			<label>{ tone.label }</label>
-			<input type="color" value="{ tone.color }" id="{ `tone-${tone.index + 1}` }" on:change={ () => handleUpdate(tone.index) }>
+			<label for="{ `tone-${tone.index + 1}` }">{ tone.label }</label>
+			<input type="color" value="{ tone.color }" id="{ `tone-${tone.index + 1}` }" name="{ `tone-${tone.index + 1}` }" on:change={ () => handleUpdate(tone.index) }>
 		</div>
 	{/each}
 </div>

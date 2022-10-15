@@ -29,5 +29,21 @@ export const mockPreferenceManager = store => {
 	return {
 		get: name => store[name],
 		set: (name, value) => undefined
-	}
-}
+	};
+};
+
+export const mockGlobalTauri = options => {
+	return {
+		invoke: (fnName, value) => {
+			return new Promise((res, rej) => {
+				res(options.invoke[fnName](value));
+			});
+		},
+		os: {
+			platform: () => new Promise((res, rej) => res(options.platform || 'other'))
+		},
+		event: {
+			listen: (e, cb) => wait(() => cb({ payload: options.events[e] }))
+		}
+	};
+};

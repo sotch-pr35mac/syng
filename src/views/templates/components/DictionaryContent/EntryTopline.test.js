@@ -5,14 +5,14 @@ import { render } from '@testing-library/svelte';
 const TEST_WORD_1 = {
 	simplified: 'AB',
 	traditional: 'CD',
-	toneMarks: [1, 2],
-	pinyinMarks: 'ac1 bd2'
+	tone_marks: [1, 2],
+	pinyin_marks: 'ac1 bd2'
 };
 const TEST_WORD_2 = {
 	simplified: 'AB',
 	traditional: 'AB',
-	toneMarks: [1, 2],
-	pinyinMarks: 'a1 b2'
+	tone_marks: [1, 2],
+	pinyin_marks: 'a1 b2'
 };
 
 it('should properly display pinyin', async () => {

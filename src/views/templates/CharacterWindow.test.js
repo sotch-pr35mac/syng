@@ -2,18 +2,13 @@
 import CharacterWindow from './CharacterWindow.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { wait } from '../../test/utils/unitTestUtils.js';
+import { mockGlobalTauri } from '../../test/utils/unitTestUtils.js';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
 const WORD = {
 	simplified: '你好',
 	traditional: '你好'
 };
-const mockIpcRenderer = jest.fn().mockReturnValue({
-	ipcRenderer: {
-		on: (e, cb) => wait(() => cb(e, WORD))
-	}
-});
 const mockMatchMedia = jest.fn().mockReturnValue({
 	addEventListener: (e, cb) => undefined // eslint-disable-line no-unused-vars
 });
@@ -31,11 +26,15 @@ jest.mock('hanzi-writer', () => {
 		}
 	};
 });
+global.__TAURI__ = mockGlobalTauri({
+	events: {
+		'display-characters': WORD
+	}
+});
 
 it('should highlight the tab that you click on', async () => {
 	const highlightClass = 'script-selector--active';
 	const user = userEvent.setup();
-	window.require = mockIpcRenderer;
 	window.matchMedia = mockMatchMedia;
 	const word = jest.fn().mockReturnValue(WORD); // eslint-disable-line no-unused-vars
 	const { getByText } = render(CharacterWindow, {});
@@ -57,7 +56,6 @@ it('should highlight the tab that you click on', async () => {
 
 it('should update the tooltip as you click it', async () => {
 	const user = userEvent.setup();
-	window.require = mockIpcRenderer;
 	window.matchMedia = mockMatchMedia;
 	const { getByTestId } = render(CharacterWindow, {});
 	const controlButton = getByTestId('control-button');

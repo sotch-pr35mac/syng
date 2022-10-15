@@ -2,18 +2,24 @@
 import DictionaryContent from './DictionaryContent.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import { mockGlobalTauri } from '../../../../test/utils/unitTestUtils.js';
 
 const TEST_WORD = {
 	simplified: 'A',
 	traditional: 'B',
 	english: ['test'],
-	pinyinMarks: ['a1'],
-	tonesMarks: [1],
-	measureWords: [{ simplified: 'MWA', traditional: 'MWA' }]
+	pinyin_marks: ['a1'],
+	tones_marks: [1],
+	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }]
 };
 
+global.__TAURI__ = mockGlobalTauri({
+	invoke: {
+		open_character_window: value => undefined // eslint-disable-line no-unused-vars
+	}
+});
+
 it('should display the definitions', async () => {
-	window.require = jest.fn().mockReturnValue(() => {});
 	const { getByText } = render(DictionaryContent, {
 		word: TEST_WORD
 	});
@@ -24,18 +30,16 @@ it('should display the definitions', async () => {
 });
 
 it('should display the pinyin', async () => {
-	window.require = jest.fn().mockReturnValue(() => {});
 	const { getByText } = render(DictionaryContent, {
 		word: TEST_WORD
 	});
 
-	const pinyin = getByText(TEST_WORD.pinyinMarks[0]);
+	const pinyin = getByText(TEST_WORD.pinyin_marks[0]);
 
 	expect(pinyin.textContent).toBe('a1');
 });
 
 it('should display the characters', async () => {
-	window.require = jest.fn().mockReturnValue(() => {});
 	const { getByText } = render(DictionaryContent, {
 		word: TEST_WORD
 	});
@@ -48,7 +52,6 @@ it('should display the characters', async () => {
 });
 
 it('should emit an event when dictionary link is clicked', async () => {
-	window.require = jest.fn().mockReturnValue(() => {});
 	const user = userEvent.setup();
 	const handleOpenLink = jest.fn();
 	const { component, getByText } = render(DictionaryContent, {

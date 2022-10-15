@@ -2,62 +2,22 @@
     all(not(debug_assertions), target_os = "windows"),
     windows_subsystem = "windows"
 )]
-extern crate chinese_dictionary;
 
-use chinese_dictionary as cd;
+mod dictionary;
+
+use dictionary::{
+    classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
+};
 use serde::{Deserialize, Serialize};
-use std::sync::Once;
 use tauri::{
     api::shell::open as open_browser, CustomMenuItem, Manager, Menu, MenuItem, Runtime, Submenu,
     Window, WindowEvent,
 };
 
-static INIT: Once = Once::new();
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct CharacterWindowWord {
     traditional: String,
     simplified: String,
-}
-
-#[tauri::command]
-fn classify(text: String) -> Result<String, String> {
-    match cd::classify(text.trim()) {
-        cd::ClassificationResult::ZH => Ok("ZH".to_string()),
-        cd::ClassificationResult::EN => Ok("EN".to_string()),
-        cd::ClassificationResult::PY => Ok("PY".to_string()),
-        cd::ClassificationResult::UN => Err(format!("Could not classify {}, uncertain.", text)),
-    }
-}
-
-#[tauri::command(async)]
-fn init_dictionary() {
-    INIT.call_once(|| {
-        cd::init();
-    });
-}
-
-#[tauri::command]
-fn query(text: String) -> Vec<&'static cd::WordEntry> {
-    match cd::query(text.trim()) {
-        Some(results) => results,
-        None => vec![],
-    }
-}
-
-#[tauri::command]
-fn query_by_chinese(text: String) -> Vec<&'static cd::WordEntry> {
-    cd::query_by_chinese(text.trim())
-}
-
-#[tauri::command]
-fn query_by_pinyin(text: String) -> Vec<&'static cd::WordEntry> {
-    cd::query_by_pinyin(text.trim())
-}
-
-#[tauri::command]
-fn query_by_english(text: String) -> Vec<&'static cd::WordEntry> {
-    cd::query_by_english(text.trim())
 }
 
 #[tauri::command]
