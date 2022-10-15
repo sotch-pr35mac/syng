@@ -9,6 +9,10 @@ install-dev:
 build:
 	npm run build
 
+build-ci:
+	cd src/native && cargo check
+	npm run build
+
 start:
 	npm run build
 	cargo tauri dev
