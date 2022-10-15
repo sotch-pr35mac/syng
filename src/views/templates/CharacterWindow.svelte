@@ -41,9 +41,7 @@ const loadCharacter = character => {
 		padding: CHARACTER_PADDING,
 		strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
 		outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
-		//charDataLoader: () => window.require(`hanzi-writer-data/${character}`)
 		charDataLoader: (char, onComplete) => {
-			//fetch('resources/defaults.json')
 			fetch(`resources/hanzi-writer-data/data/${char}.json`)
 				.then(file => file.json())
 				.then(data => {

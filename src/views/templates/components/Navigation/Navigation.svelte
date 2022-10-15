@@ -83,20 +83,6 @@ Promise.all([
 }).catch(err => {
 	handleError('There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.', err);
 });
-
-// TODO: Don't let this get merged in.
-// Hack! Disabling moving around traffic lights to get app
-// rendering in Tauri.
-/*
-ipcRenderer.on('enter-full-screen', () => {
-	trafficLightMargin = false;
-});
-ipcRenderer.on('leave-full-screen', () => {
-	if (window.__TAURI__.os.platform === 'darwin') {
-		trafficLightMargin = true;
-	}
-});
-*/
 </script>
 
 <style>

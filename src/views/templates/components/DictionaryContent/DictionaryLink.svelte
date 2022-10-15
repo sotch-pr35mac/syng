@@ -18,6 +18,7 @@ const openLink = () => dispatch('open', link);
 }
 </style>
 
+<!-- svelte-ignore a11y-invalid-attribute -->
 <a href="javascript:void(0)" class="dictionary-link" on:click={ () => openLink() } data-testid="dictionary-link">
 	<slot></slot>
 </a>

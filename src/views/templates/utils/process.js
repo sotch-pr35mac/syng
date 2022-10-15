@@ -1,6 +1,6 @@
 const getArgs = async () => {
 	try {
-		const mastches = await window.__TAURI__.cli.getMatches();
+		const matches = await window.__TAURI__.cli.getMatches();
 		return matches.subcommand.name === 'run' ? matches.subcommand.matches.args : matches.args;
 	} catch(e) {
 		console.error(e);
