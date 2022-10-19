@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file. This projec
 - Redesigned interface
 - Improved startup speed
 - Improved search speed and accuracy
+- Migrated from Electron to Tauri
+- Migrated to PouchDB
+- Updated app icon
 
 ### Removed
 - Startup splash screen
