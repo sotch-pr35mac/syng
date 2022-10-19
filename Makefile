@@ -1,23 +1,30 @@
 install:
-	npm install --force
+	git submodule update --init
+	npm install
 
 install-dev:
-	npm install --include=dev --force
+	git submodule update --init
+	npm install --include=dev
 
 build:
 	npm run build
 
-start:
-	npm run dev
+build-ci:
+	cd src/native && cargo check
+	npm run build
 
-start-prod:
-	npm start
+start:
+	npm run build
+	cargo tauri dev
 
 lint:
+	cd src/native && cargo fmt --check
 	npm run lint
 
 fix-lint:
+	cd src/native && cargo fmt
 	npm run fix-lint
 
 test:
+	cd src/native && cargo test
 	npm test

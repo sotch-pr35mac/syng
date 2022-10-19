@@ -1,5 +1,9 @@
 module.exports = {
-	'ignorePatterns': ['app/src/templates/build'],
+	'ignorePatterns': [
+		'src/views/templates/build',
+		'src/views/templates/utils/pouchdb-7.3.0.min.js',
+		'src/views/resources/hanzi-writer-data/index.js'
+	],
 	'env': {
 		'browser': true,
 		'es2021': true,
