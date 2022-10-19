@@ -93,12 +93,15 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             let main_window = app.get_window("main").unwrap();
-            main_window.set_transparent_titlebar(ToolbarThickness::Thick);
             main_window.open_devtools();
-
             let character_window = app.get_window("characters").unwrap();
-            character_window.set_transparent_titlebar(ToolbarThickness::Medium);
             character_window.open_devtools();
+
+            #[cfg(target_os = "macos")]
+            {
+                main_window.set_transparent_titlebar(ToolbarThickness::Thick);
+                character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+            }
 
             let handle = app.handle();
             main_window.on_window_event(move |event| {
