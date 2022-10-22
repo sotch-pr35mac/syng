@@ -10,7 +10,7 @@ build:
 	npm run build
 
 build-ci:
-	cd src/native && cargo check
+	cd src/native && cargo build
 	npm run build
 
 start:
@@ -28,3 +28,6 @@ fix-lint:
 test:
 	cd src/native && cargo test
 	npm test
+	
+icon:
+	cargo tauri icon assets/icon.png
