@@ -31,3 +31,18 @@ test:
 	
 icon:
 	cargo tauri icon assets/icon.png
+	
+package-windows:
+	rustup target add i686-pc-windows-msvc
+	rustup target add x86_64-pc-windows-msvc
+	cargo tauri build --target i686-pc-windows-msvc
+	cargo tauri build --target x86_64-pc-windows-msvc
+
+package-macos:
+	rustup target add aarch64-apple-darwin
+	rupstup target add x86_64-apple-darwin
+	cargo tauri build --target aarch64-apple-darwin
+	cargo tauri build --target x86_64-apple-darwin
+
+package-linux:
+	cargo tauri build
