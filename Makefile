@@ -40,7 +40,7 @@ package-windows:
 
 package-macos:
 	rustup target add aarch64-apple-darwin
-	rupstup target add x86_64-apple-darwin
+	rustup target add x86_64-apple-darwin
 	cargo tauri build --target aarch64-apple-darwin
 	cargo tauri build --target x86_64-apple-darwin
 
