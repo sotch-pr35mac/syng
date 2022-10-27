@@ -47,4 +47,9 @@ package-macos:
 	chmod +x /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app/Contents/MacOS/Syng
 
 package-linux:
-	cargo tauri build
+	rustup target add x86_64-unknown-linux-gnu
+	rustup target add i686-unknown-linux-gnu
+	rustup target add aarch64-unknown-linux-gnu
+	cargo tauri build --target x86_64-unknown-linux-gnu
+	cargo tauri build --target i686-unknown-linux-gnu
+	cargo tauri build --target aarch64-unknown-linux-gnu
