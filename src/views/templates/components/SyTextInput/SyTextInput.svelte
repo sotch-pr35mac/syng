@@ -30,6 +30,9 @@ export let type = 'text';
 /* ID Prop */
 export let id;
 
+/* Spellcheck Prop */
+export let spellcheck = undefined;
+
 const dispatch = createEventDispatcher();
 const getClasses = () => {
 	return ['sy-text-input',
@@ -85,4 +88,4 @@ const handleKeyup = event => {
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ handleKeyup }/>
+<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ handleKeyup }/>

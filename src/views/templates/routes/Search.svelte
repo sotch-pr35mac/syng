@@ -184,7 +184,7 @@ const handleLink = event => {
 		<SyButton style="ghost" size="large" on:click={ () => switchLang() }>
 			{ searchLang }
 		</SyButton>
-		<SyTextInput style="ghost" size="large" placeholder="Search..." id="search" transparency={enableTransparency} on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter } />
+		<SyTextInput spellcheck="false" style="ghost" size="large" placeholder="Search..." id="search" transparency={enableTransparency} on:change={ e => query(e.detail, true) } on:keyup={ e => query(e.detail, false) } on:enter={ handleEnter } />
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic>
