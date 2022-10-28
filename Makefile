@@ -47,6 +47,7 @@ package-macos:
 	chmod +x /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app/Contents/MacOS/Syng
 
 package-linux:
+	cargo install cross --git https://github.com/cross-rs/cross
 	rustup target add x86_64-unknown-linux-gnu
 	rustup target add i686-unknown-linux-gnu
 	rustup target add aarch64-unknown-linux-gnu
