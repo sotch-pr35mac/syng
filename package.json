@@ -1,6 +1,6 @@
 {
   "name": "syng",
-  "version": "2.0.0",
+  "version": "0.0.4",
   "description": "An open source, cross platform, Chinese study app.",
   "scripts": {
     "build": "rollup -c",
