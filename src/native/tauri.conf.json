@@ -12,10 +12,12 @@
   },
   "tauri": {
     "allowlist": {
-	"all": true,
-	"fs": {
-		"scope": ["*"]
-	}
+      "all": true,
+      "fs": {
+        "scope": [
+          "*"
+        ]
+      }
     },
     "bundle": {
       "active": true,
@@ -58,23 +60,25 @@
     },
     "windows": [
       {
-	"label": "main",
+        "label": "main",
         "fullscreen": false,
         "height": 655,
         "width": 1110,
         "resizable": true,
         "title": "Syng",
-	"url": "index.html"
+        "url": "index.html",
+        "acceptFirstMouse": true
       },
       {
-	"label": "characters",
-	"fullscreen": false,
-	"height": 497,
-	"width": 886,
-	"resizable": true,
-	"title": "Syng | Characters",
-	"visible": false,
-	"url": "characters.html"
+        "label": "characters",
+        "fullscreen": false,
+        "height": 497,
+        "width": 886,
+        "resizable": true,
+        "title": "Syng | Characters",
+        "visible": false,
+        "url": "characters.html",
+        "acceptFirstMouse": true
       }
     ]
   }
