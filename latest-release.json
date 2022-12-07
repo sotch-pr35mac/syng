@@ -1,0 +1,11 @@
+{
+	"version": "0.0.4",
+	"notes": "Syng 2 beta 4",
+	"pub_date": "2022-12-07T01:51:52Z",
+	"platforms": {
+		"darwin-aarch64": {
+			"signature": "",
+			"url": ""
+		}
+	}
+}
