@@ -35,6 +35,9 @@ jobs:
         run: cargo install tauri-cli
       - name: Build & Package (Windows Only)
         if: matrix.platform == 'windows-latest'
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: make package-windows
       - name: Build & Package (macOS Only)
         if: matrix.platform == 'macos-latest'
@@ -45,9 +48,14 @@ jobs:
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: make package-macos
       - name: Build & Package (Linux Only)
         if: matrix.platform == 'ubuntu-latest'
+        env:
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         run: make package-linux-amd64
       - name: Upload Artifacts (Linux Only)
         if: matrix.platform == 'ubuntu-latest'
@@ -57,6 +65,8 @@ jobs:
           path: |
             /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/deb/syng_2.0.0_amd64.deb
             /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage
+            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage.tar.gz
+            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage.tar.gz.sig
       - name: Upload Artifacts (macOS Only)
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v3
@@ -64,8 +74,12 @@ jobs:
           name: macOS Packages
           path: |
             /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app
+            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app.tar.gz
+            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app.tar.gz.sig
             /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/dmg/Syng_2.0.0_x64.dmg
             /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app
+            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app.tar.gz
+            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app.tar.gz.sig
             /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/dmg/Syng_2.0.0_aarch64.dmg
       - name: Upload Artifacts (Windows Only)
         if: matrix.platform == 'windows-latest'
@@ -74,4 +88,8 @@ jobs:
           name: Windows Packages
           path: |
             D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi
+            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi.zip
+            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi.zip.sig
             D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi
+            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi.zip
+            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi.zip.sig

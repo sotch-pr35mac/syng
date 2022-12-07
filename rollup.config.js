@@ -20,8 +20,9 @@ export default {
 			dev: !production,
 			// we'll extract any component CSS out into
 			// a separate file -- better for performance
+			// The implified directory that bundle.css builds to is src/views/templates/build
 			css: css => {
-				css.write('src/views/templates/build/bundle.css');
+				css.write('bundle.css');
 			}
 		}),
 

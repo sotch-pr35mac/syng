@@ -32,6 +32,14 @@ export let disabled = false;
 // false
 export let grouped = false;
 
+/* Color Prop */
+/* Possible Values */
+// 'green'
+// 'blue'
+// 'red'
+// 'yellow'
+export let color = undefined;
+
 /* Classes Prop */
 // A list of classes
 export let classes = [];
@@ -42,6 +50,7 @@ const getClasses = () => {
 		`sy-button--${style}`,
 		`sy-button--${size}`,
 		`sy-button--${shape}`,
+		(color ? `sy-button--color-${color}` : ''),
 		(grouped ? 'sy-button--grouped' : '')]).join(' ');
 };
 </script>
@@ -105,6 +114,18 @@ const getClasses = () => {
 .sy-button--grouped {
  	border-radius: 0px;
  	margin: 1px;
+}
+.sy-button--color-green {
+	color: var(--sy-color--green);
+}
+.sy-button--color-blue {
+	color: var(--sy-color--blue);
+}
+.sy-button--color-red {
+	color: var(--sy-color--red);
+}
+.sy-button--color-yellow {
+	color: var(--sy-color--yellow);
 }
 </style>
 

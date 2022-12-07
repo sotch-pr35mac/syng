@@ -1,6 +1,7 @@
 <script>
 import SyToggle from '../components/SyToggle/SyToggle.svelte';
 import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
+import UpdateChecker from '../components/SettingsOption/UpdateChecker.svelte';
 const isMacos = window.platform === 'darwin';
 
 let preferences = [
@@ -12,6 +13,13 @@ let preferences = [
 		props: {
 			checked: window.preferenceManager.get('beta')
 		}
+	},
+	{
+		label: 'Updates',
+		centerLabel: false,
+		component: UpdateChecker,
+		props: {},
+		handler: () => undefined
 	},
 	{
 		label: 'Tone Colors',
@@ -51,6 +59,11 @@ if(isMacos) {
 }
 .settings--title {
 	padding: var(--sy-space--extra-large) var(--sy-space);
+}
+.settings--content {
+	display: flex;
+	flex-direction: column;
+	gap: var(--sy-space--extra-large);
 }
 .settings--setting {
 	display: grid;
