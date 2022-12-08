@@ -63,33 +63,20 @@ jobs:
         with:
           name: Linux Packages
           path: |
-            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/deb/syng_2.0.0_amd64.deb
-            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage
-            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage.tar.gz
-            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/appimage/syng_2.0.0_amd64.AppImage.tar.gz.sig
+            /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/
       - name: Upload Artifacts (macOS Only)
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v3
         with:
           name: macOS Packages
           path: |
-            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app
-            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app.tar.gz
-            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app.tar.gz.sig
-            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/dmg/Syng_2.0.0_x64.dmg
-            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app
-            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app.tar.gz
-            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app.tar.gz.sig
-            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/dmg/Syng_2.0.0_aarch64.dmg
+            /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/
+            /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/
       - name: Upload Artifacts (Windows Only)
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v3
         with:
           name: Windows Packages
           path: |
-            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi
-            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi.zip
-            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x64_en-US.msi.zip.sig
-            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi
-            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi.zip
-            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/Syng_2.0.0_x86_en-US.msi.zip.sig
+            D:\a\syng\syng\src\native\target\x86_64-pc-windows-msvc\release\bundle/msi/
+            D:\a\syng\syng\src\native\target\i686-pc-windows-msvc\release\bundle/msi/
