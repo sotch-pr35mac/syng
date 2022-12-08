@@ -43,8 +43,6 @@ package-macos:
 	rustup target add x86_64-apple-darwin
 	cargo tauri build --target aarch64-apple-darwin
 	cargo tauri build --target x86_64-apple-darwin
-	chmod +x /Users/runner/work/syng/syng/src/native/target/x86_64-apple-darwin/release/bundle/macos/Syng.app/Contents/MacOS/Syng
-	chmod +x /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/macos/Syng.app/Contents/MacOS/Syng
 
 package-linux-arm64:
 	rustup target add aarch64-unknown-linux-gnu 
