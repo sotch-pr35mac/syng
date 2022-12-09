@@ -4,8 +4,24 @@
 	"pub_date": "2022-12-07T01:51:52Z",
 	"platforms": {
 		"darwin-aarch64": {
-			"signature": "",
-			"url": ""
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4enoyZExGN2QvY011TmoyT0NxdkV6SXQ5ZDhYY2UyUXVOQ2FvSWw1Rndmbk5ONDdKTy9EOEZJZ3VmU0lIOWd6VGVNaWx3SWNXYVN3aXR5Y0o3OWp4WWc0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjcwNDc0NDAyCWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKWi9HMnVzV3BweHJVZFFwYkl5TDd3c04wU3RWbGVhTFNJVGVaV0JWOUZGSHlSd05JNmZkemRnaUx0YUVCSldmdmdick82clVzQThGMFBYMGZneXYzRGc9PQo=",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-4/Syng.2_0.0.4_aarch64.app.tar.gz"
+		},
+		"darwin-x86_64": {
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4eitROTNxWnJRL2VSZUxNeitZQnpqa1BOOWZwdWgzVG1BTzRobExNR0hBWElld1M0L2czK3FTb2hnbnk1M1lUNzYwemZPcStOWjd2L25SQWhEbFhKc0EwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjcwNDc1MTIxCWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKZ1RodlNqb2tiTk5KbzVSQVFYQ1pSZDJKZ0tMaU05UHN3V3luWGNqdGFSNytxZUVlZStlaDZzTnNyUmV0d0c1aFl2bGE0Q0lBLzNqRlI3UVpadktTQlE9PQo=",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-4/Syng.2_0.0.4_x64.app.tar.gz"
+		},
+		"linux-x86_64": {
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4eisvdUFCb1BnN1c0UEZ4VHVDV2haZHZtdHhJQVpibFJ5OE1ubU1neFZtVnF3aVJjTlJMWXptSTdJNS9FWEFsMVQ3ajVoL2Z5UnJZWTl3c0dXRElqSWdrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjcwNDczNTAyCWZpbGU6c3luZy0yXzAuMC40X2FtZDY0LkFwcEltYWdlLnRhci5negpOR0lTTWZRWHBwZWhYOGNmNmQwSVhFREhaUWo1aWFVOGY5a0k3amNiZHJJSXFBdDNRckZJc1BJQ1ExREY4OHpMSFlZMjV3MzhYa0xmZTA0em1SeFFBZz09Cg==",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-4/syng-2_0.0.4_amd64.AppImage.tar.gz"
+		},
+		"windows-x86_64": {
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4ejRoODJjV3l6blM0QVF2Qk9GVDBKNTJvRFh1NG1KYUc4WXExSFZZQzVOUEdLQU5KWkZSTjFnaHlLWHFJVW5GMmNFQmxHSjYyTUZhZ3RGdExWcnFFNVF3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjcwNDc0Mjk4CWZpbGU6U3luZyAyXzAuMC40X3g2NF9lbi1VUy5tc2kuemlwCmxJWCtKVC9XcXdrK0NuQnNVNFlSQll6czFhT1YwK0xxREpVMnhqNW9NWWwyY0lpcERHeHFoaVdGVGxEa3lOT0FUNUVQamY2Zk5SWnN2KyswUWNtaEFBPT0K",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-4/Syng.2_0.0.4_x64_en-US.msi.zip"
+		},
+		"windows-i686": {
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4enpzbDJBcStFYzNYa2tMU05BMG9jK0tmRHcrYjRSYndReDRGMTBONVZNYm9nQVczS2FCb3RjVXNaS0VxTTh6MWJyZk8yVEVZckF0aHJzUlpxWTJ0aFEwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNjcwNDczNzU1CWZpbGU6U3luZyAyXzAuMC40X3g4Nl9lbi1VUy5tc2kuemlwCnpQQlhvTWhGd3B4SFh6SHF4dTJpTk56enpuaHNoUkpKSW1meGNPb0NlK0Z2S08wRWdtY1dFa0MvRklTd1FCSE14ZnIzbm9aQXNLYThGYzE3Y0hVVEFBPT0K",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-4/Syng.2_0.0.4_x86_en-US.msi.zip"
 		}
 	}
 }
