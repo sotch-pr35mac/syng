@@ -22,8 +22,8 @@ Syng v2 is a ground-up rewrite focussing on speed and user experience. Due to th
 - [x] Offline Support
 - [x] Cross Platform Support (macOS, Windows, Linux)
 - [x] Character Stroke Animations
+- [x] Bookmarks
 - [ ] Flash cards & Quizes
-- [ ] Bookmarks
 - [ ] Reader
 - [ ] Prettify Pinyin
 - [ ] Character Converter

@@ -10,35 +10,10 @@
 	import Chat from './routes/Chat.svelte';
 	import NotFound from './routes/NotFound.svelte';
 	import Navigation from './components/Navigation/Navigation.svelte';
-	import { handleError, PreferenceManager, inDebugMode } from './utils/';
-	import elasticScroll from 'elastic-scroll-polyfill';
-	const invoke = window.__TAURI__.invoke;
-	const configDb = inDebugMode() ? 'development_config' : 'config';
-	window.preferenceManager = new PreferenceManager(configDb);
-	Promise.all([
-		invoke('init_dictionary'),
-		window.preferenceManager.init(),
-	]).then(() => {
-		document.dispatchEvent(new Event('init'));
-		initializeStyles();
-	}).catch(e => {
-		handleError('There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.', e);
-	});
+	import { runStartupActions } from './utils';
 
-	const initializeStyles = () => {
-		const colorSettings = window.preferenceManager.get('toneColors');
-		if(colorSettings.hasCustomColors) {
-			const globalStyles = document.querySelector(':root').style;
-			const toneColors = colorSettings.colors;
-			for(let i = 0; i < toneColors.length; i++) {
-				globalStyles.setProperty(`--sy-tone-color--${i+1}`, toneColors[i]);
-			}
-		}
-	};
-	window.onload = () => {
-		elasticScroll({ appleDeviceOnly: false, intensity: 1 });
-	};
-	window.__TAURI__.os.platform().then(platform => window.platform = platform);
+	// Run the startup script
+	runStartupActions();
 	
 	const routes = {
 		'/': Search,

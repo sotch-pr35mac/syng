@@ -86,14 +86,16 @@ export class PreferenceManager {
 	waitForInit() {
 		/* eslint-disable no-unused-vars */
 		return new Promise((resolve, reject) => {
+			let shouldBreak = false;
 			const pollInit = () => {
 				if(this.initialized) {
 					resolve();
+					shouldBreak = true;
 				} else {
 					setTimeout(pollInit, 10);
 				}
 			};
-			pollInit();
+			shouldBreak ? undefined : pollInit();
 		});
 	}
 

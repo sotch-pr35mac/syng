@@ -28,6 +28,10 @@ fix-lint:
 test:
 	cd src/native && cargo test
 	npm test
+
+audit:
+	cd src/native && cargo audit
+	npm audit
 	
 icon:
 	cargo tauri icon assets/icon.png

@@ -46,13 +46,12 @@
 
 .sy-tooltip--body-top {
 	top: -20px;
-    right: 0px;
+	right: 0px;
 	margin-bottom: var(--sy-space);
 }
 
 .sy-tooltip--body-bottom {
 	top: 60px;
-    right: 0px;
+	right: -10px;
 	margin-top: var(--sy-space);
-
 }

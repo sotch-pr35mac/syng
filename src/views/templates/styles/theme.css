@@ -56,6 +56,7 @@
 	:root {
 		/* Theme Colors */
 		--sy-color--black: #474C5A;
+		--sy-color--black--transparency: #474C5A55;
 		--sy-color--white: #FFFFFF;
 		--sy-color--white--transparency: #FFFFFFCF;
 		--sy-color--grey-1: #CDD1D6;
@@ -69,7 +70,7 @@
 		/* Shadows */
 		--sy-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
 		--sy-shadow--active: 0px 0px 10px rgba(0, 0, 0, 0.10);
-        	--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.10);
+		--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.10);
 		--sy-box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
 	}
 }
@@ -78,6 +79,7 @@
 	:root {
 		/* Theme Colors */
 		--sy-color--black: #FFFFFF;
+		--sy-color--black--transparency: #FFFFFF55;
 		--sy-color--white: #232323;
 		--sy-color--white--transparency: #23232370;
 		--sy-color--grey-1: #CDD1D6;
