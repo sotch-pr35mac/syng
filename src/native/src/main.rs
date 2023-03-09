@@ -4,10 +4,12 @@
 )]
 
 mod dictionary;
+mod io;
 
 use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
 };
+use io::{export_list_data, import_list_data};
 use serde::{Deserialize, Serialize};
 use tauri::{
     api::shell::open as open_browser, CustomMenuItem, Manager, Menu, MenuItem, Runtime, Submenu,
@@ -137,7 +139,9 @@ fn main() {
             query_by_english,
             query_by_pinyin,
             query_by_chinese,
-            open_character_window
+            open_character_window,
+            export_list_data,
+            import_list_data,
         ))
         .menu(app_menu)
         .on_menu_event(|event| match event.menu_item_id() {

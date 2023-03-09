@@ -29,7 +29,7 @@ const primaryNavigation = [
 		link: 'bookmarks',
 		icon: BookmarkIcon,
 		title: 'Bookmarks',
-		beta: true
+		beta: false
 	},
 	{
 		link: 'study',

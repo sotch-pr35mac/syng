@@ -31,6 +31,30 @@ export const mockPreferenceManager = store => {
 		set: (name, value) => undefined
 	};
 };
+/*
+ * Store should be in the following format:
+ * {
+ *    words: [{
+ *       ...wordEntry, // Word entry object
+ *       lists: [] // Array of list names
+ *       notes: ''
+ *    }], // Array of word entries and list associations
+ *    lists: [] // Array of list names
+ * }
+ */
+export const mockBookmarkManager = store => {
+	return {
+		getLists: () => new Promise((res, rej) => res(store.lists)),
+		inList: hash => new Promise((res, rej) => {
+			const word = store.words.find(w => w.hash === hash);
+			res(word ? word.lists : []);
+		}),
+		getListContent: listName => new Promise((res, rej) => {
+			const words = store.words.filter(w => w.lists.includes(listName));
+			res(words);
+		})
+	};
+};
 
 export const mockGlobalTauri = options => {
 	return {

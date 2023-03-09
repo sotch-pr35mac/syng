@@ -1,4 +1,5 @@
 <script>
+import { createEventDispatcher } from 'svelte';
 import { suppressUnusedExportLet } from '../../utils/';
 
 /* Values Prop */
@@ -11,16 +12,20 @@ export let component;
 
 // Suppress the unexpected prop warning
 export let highlight = undefined;
+export let filterable = undefined;
 suppressUnusedExportLet(highlight);
+suppressUnusedExportLet(filterable);
+
+const dispatch = createEventDispatcher();
 </script>
 
 <style>
 .sy-list--container {
+    padding: var(--sy-space);
+    margin: var(--sy-space--extra-large);
     background-color: var(--sy-color--white);
     border-radius: var(--sy-border-radius);
     box-shadow: var(--sy-inner-shadow);
-    padding: var(--sy-space);
-    margin: var(--sy-space--extra-large);
 }
 .sy-list--list-item {
     border-top: var(--sy-border);
@@ -37,7 +42,7 @@ suppressUnusedExportLet(highlight);
 <div class="sy-list--container">
     {#each values as value}
         <div class="sy-list--list-item">
-            <svelte:component this={component} value="{value}" on:event/>
+            <svelte:component this={component} value="{value}" on:selection="{ event => dispatch('selection', event.detail) }" on:event/>
         </div>
     {/each}
 </div>

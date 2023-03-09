@@ -13,6 +13,7 @@ let historyPosition = -1;
 let searchHistory = [];
 let searchResults = [];
 let fullResults = [];
+let bookmarks = [];
 let activeWord;
 let searchLang = 'EN';
 let highlightActive = true;
@@ -128,6 +129,11 @@ const handleLink = event => {
 	document.getElementById('search').value = word;
 	query(word, true, 0);
 };
+window.bookmarkManager.getLists().then(lists => {
+	bookmarks = lists;
+}).catch(e => {
+	handleError('There was an error fetching word lists. Check the log for more details.', e);
+});
 </script>
 
 <style>
@@ -158,7 +164,7 @@ const handleLink = event => {
 	z-index: 1;
 	flex-direction: column;
 	background-color: var(--sy-color--white);
-   	height: calc(100vh - 83px);
+	height: calc(100vh - 83px);
 	overflow-y: scroll;
 	overflow-x: hidden;
 }
@@ -191,7 +197,7 @@ const handleLink = event => {
 			<SyList style="preview" values="{searchResults}" highlight="{highlightActive}" on:selection="{handleSelection}"/>
 		</div>
 		<div class="dictionary-content">
-			<DictionaryContent word="{activeWord}" on:link="{handleLink}"/>
+			<DictionaryContent word="{activeWord}" lists="{ bookmarks }" on:link="{handleLink}"/>
 		</div>
 	</div>
 </div>

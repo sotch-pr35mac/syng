@@ -2,7 +2,7 @@
 import DictionaryContent from './DictionaryContent.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri } from '../../../../test/utils/unitTestUtils.js';
+import { mockGlobalTauri, mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
 
 const TEST_WORD = {
 	simplified: 'A',
@@ -17,6 +17,11 @@ global.__TAURI__ = mockGlobalTauri({
 	invoke: {
 		open_character_window: value => undefined // eslint-disable-line no-unused-vars
 	}
+});
+
+global.bookmarkManager = mockBookmarkManager({
+	words: [],
+	lists: ['Bookmarks']
 });
 
 it('should display the definitions', async () => {

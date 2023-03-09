@@ -17,7 +17,10 @@ export let values = [];
 export let component = undefined;
 
 /* Highlight Prop */
-export let highlight = true;
+export let highlight = undefined;
+
+/* Filterable Prop */
+export let filterable = false;
 
 const dispatch = createEventDispatcher();
 const styleMap = {
@@ -26,4 +29,4 @@ const styleMap = {
 };
 </script>
 
-<svelte:component this={styleMap[style]} values="{values}" component="{component}" on:selection="{ event => dispatch('selection', event.detail)}" highlight="{highlight}" on:event/>
+<svelte:component this={styleMap[style]} values="{values}" component="{component}" on:selection="{ event => dispatch('selection', event.detail)}" highlight="{highlight}" filterable="{filterable}" on:event/>

@@ -2,7 +2,7 @@
 import Search from './Search.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri, mockDictionary, mockPreferenceManager } from '../../../test/utils/unitTestUtils.js';
+import { mockGlobalTauri, mockDictionary, mockPreferenceManager, mockBookmarkManager } from '../../../test/utils/unitTestUtils.js';
 
 global.dictionary = mockDictionary('EN', [{
 	traditional: '西瓜', 
@@ -21,6 +21,10 @@ const QUERY_RESULTS = [{
 }];
 global.preferenceManager = mockPreferenceManager({
 	transparency: process.platform === 'darwin'
+});
+global.bookmarkManager = mockBookmarkManager({
+	words: [],
+	lists: ['Bookmarks']
 });
 global.__TAURI__ = mockGlobalTauri({
 	invoke: {

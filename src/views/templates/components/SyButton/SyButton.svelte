@@ -40,6 +40,20 @@ export let grouped = false;
 // 'yellow'
 export let color = undefined;
 
+/* Hover Prop */
+/* Possible Values */
+// 'green'
+// 'blue'
+// 'red'
+// 'yellow'
+export let hover = undefined;
+
+/* Center Prop */
+/* Possible Values */
+// true
+// false
+export let center = false;
+
 /* Classes Prop */
 // A list of classes
 export let classes = [];
@@ -50,7 +64,9 @@ const getClasses = () => {
 		`sy-button--${style}`,
 		`sy-button--${size}`,
 		`sy-button--${shape}`,
+		(center ? 'sy-button--center' : ''),
 		(color ? `sy-button--color-${color}` : ''),
+		(hover ? `sy-button--hover-${hover}` : ''),
 		(grouped ? 'sy-button--grouped' : '')]).join(' ');
 };
 </script>
@@ -126,6 +142,23 @@ const getClasses = () => {
 }
 .sy-button--color-yellow {
 	color: var(--sy-color--yellow);
+}
+.sy-button--hover-green:hover {
+	color: var(--sy-color--green);
+}
+.sy-button--hover-blue:hover {
+	color: var(--sy-color--blue);
+}
+.sy-button--hover-red:hover {
+	color: var(--sy-color--red);
+}
+.sy-button--hover-yellow:hover {
+	color: var(--sy-color--yellow);
+}
+.sy-button--center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 </style>
 
