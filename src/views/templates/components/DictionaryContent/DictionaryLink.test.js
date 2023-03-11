@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
+import { fireEvent, render } from '@testing-library/svelte';
 import DictionaryLink from './DictionaryLink.svelte';
-import { render, fireEvent } from '@testing-library/svelte';
 
 it('should be styled like a link', async () => {
 	const { getByTestId } = render(DictionaryLink, {

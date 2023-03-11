@@ -1,15 +1,15 @@
 <script>
+import { ChevronDownIcon, DownloadIcon, PlusIcon, Trash2Icon, UploadIcon } from 'svelte-feather-icons';
+import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 import SyButton from '../components/SyButton/SyButton.svelte';
-import SyDropdown from '../components/SyDropdown/SyDropdown.svelte';
-import SimpleTextDropdownItem from '../components/SyDropdown/SimpleTextDropdownItem.svelte';
-import TextWithIconDropdownItem from '../components/SyDropdown/TextWithIconDropdownItem.svelte';
 import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
+import SimpleTextDropdownItem from '../components/SyDropdown/SimpleTextDropdownItem.svelte';
+import SyDropdown from '../components/SyDropdown/SyDropdown.svelte';
+import TextWithIconDropdownItem from '../components/SyDropdown/TextWithIconDropdownItem.svelte';
+import SyList from '../components/SyList/SyList.svelte';
 import SyModal from '../components/SyModal/SyModal.svelte';
 import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-import SyList from '../components/SyList/SyList.svelte';
-import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 import { handleError, resolveNameConflict } from '../utils/';
-import { PlusIcon, ChevronDownIcon, Trash2Icon, UploadIcon, DownloadIcon } from 'svelte-feather-icons';
 
 const invoke = window.__TAURI__.invoke;
 const isMacos = window.platform === 'darwin';

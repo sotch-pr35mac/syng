@@ -1,20 +1,18 @@
 <script>
 import { createEventDispatcher } from 'svelte';
-import EntryTopline from './EntryTopline.svelte';
-import DefinitionItem from './DefinitionItem.svelte';
-import MeasureWord from './MeasureWord.svelte';
-import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
-import SyButton from '../SyButton/SyButton.svelte';
-import SyList from '../SyList/SyList.svelte';
-import SyDropdown from '../SyDropdown/SyDropdown.svelte';
-import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
-import TextWithIconDropdownItem from '../SyDropdown/TextWithIconDropdownItem.svelte';
 import {
-	PlusIcon,
-	Maximize2Icon,
-	CheckIcon
+	CheckIcon, Maximize2Icon, PlusIcon
 } from 'svelte-feather-icons';
 import { handleError } from '../../utils/';
+import SyButton from '../SyButton/SyButton.svelte';
+import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
+import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
+import SyDropdown from '../SyDropdown/SyDropdown.svelte';
+import TextWithIconDropdownItem from '../SyDropdown/TextWithIconDropdownItem.svelte';
+import SyList from '../SyList/SyList.svelte';
+import DefinitionItem from './DefinitionItem.svelte';
+import EntryTopline from './EntryTopline.svelte';
+import MeasureWord from './MeasureWord.svelte';
 
 /* Word Prop */
 export let word;
@@ -147,17 +145,17 @@ const handleMembershipModification = e => {
 	overflow-x: hidden;;
 }
 .dictionary-content {
-    padding: var(--sy-space--extra-large);
+	padding: var(--sy-space--extra-large);
 }
 .dictionary-content--header {
-    display: flex;
-    justify-content: space-between;
+	display: flex;
+	justify-content: space-between;
 }
 .dictionary-content--section-title {
-    font-size: 1.8em;
-    font-weight: 400;
-    margin: var(--sy-space--small) var(--sy-space--large);
-    color: var(--sy-color--grey-4);
+	font-size: 1.8em;
+	font-weight: 400;
+	margin: var(--sy-space--small) var(--sy-space--large);
+	color: var(--sy-color--grey-4);
 }
 .dictionary-content--notes {
 	background-color: var(--sy-color--white);
@@ -175,44 +173,44 @@ const handleMembershipModification = e => {
 
 <div class="dictionary-content-container">
 	{#if word}
-    <section class="dictionary-content dictionary-content--header">
-        <EntryTopline word="{word}" />
-        <SyButtonBar>
-            {#each actions as action}
+	<section class="dictionary-content dictionary-content--header">
+		<EntryTopline word="{word}" />
+		<SyButtonBar>
+			{#each actions as action}
 							{#if action.dropdown }
 								<SyDropdown values="{ action.dropdown }" on:selection="{ handleMembershipModification }" position="right">
-		              <SyButton grouped="true" classes="{ ['sy-tooltip--container', ...action.classes] }" on:click="{action.action}">
-		                  <svelte:component this={action.component} size="18" />
-		                  {#if action.tooltip }
-		                      <div class="sy-tooltip--body sy-tooltip--body-bottom">
-		                          <p>
-		                              { action.tooltip }
-		                          </p>
-		                      </div>
-		                  {/if}
-		              </SyButton>
+					  <SyButton grouped="true" classes="{ ['sy-tooltip--container', ...action.classes] }" on:click="{action.action}">
+						  <svelte:component this={action.component} size="18" />
+						  {#if action.tooltip }
+							  <div class="sy-tooltip--body sy-tooltip--body-bottom">
+								  <p>
+									  { action.tooltip }
+								  </p>
+							  </div>
+						  {/if}
+					  </SyButton>
 								</SyDropdown>
 							{:else}
-	              <SyButton grouped="true" classes="{ ['sy-tooltip--container'] }" on:click="{action.action}">
-	                  <svelte:component this={action.component} size="18" />
-	                  {#if action.tooltip }
-	                      <div class="sy-tooltip--body sy-tooltip--body-bottom">
-	                          <p>
-	                              { action.tooltip }
-	                          </p>
-	                      </div>
-	                  {/if}
-	              </SyButton>
+				  <SyButton grouped="true" classes="{ ['sy-tooltip--container'] }" on:click="{action.action}">
+					  <svelte:component this={action.component} size="18" />
+					  {#if action.tooltip }
+						  <div class="sy-tooltip--body sy-tooltip--body-bottom">
+							  <p>
+								  { action.tooltip }
+							  </p>
+						  </div>
+					  {/if}
+				  </SyButton>
 							{/if}
-            {/each}
-        </SyButtonBar>
-    </section>
-    <section class="dictionary-content">
-        <h2 class="dictionary-content--section-title">
-            Definitions
-        </h2>
-        <SyList values="{word.english}" component="{DefinitionItem}" on:event="{handleOpenLink}"/>
-    </section>
+			{/each}
+		</SyButtonBar>
+	</section>
+	<section class="dictionary-content">
+		<h2 class="dictionary-content--section-title">
+			Definitions
+		</h2>
+		<SyList values="{word.english}" component="{DefinitionItem}" on:event="{handleOpenLink}"/>
+	</section>
 		{#if word.measure_words.length}
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">

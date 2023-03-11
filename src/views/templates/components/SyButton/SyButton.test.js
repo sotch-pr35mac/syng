@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
-import SyButton from './SyButton.svelte';
 import { render } from '@testing-library/svelte';
+import SyButton from './SyButton.svelte';
 
 it('should use the correct default values', async () => {
 	const { getByTestId } = render(SyButton, {});

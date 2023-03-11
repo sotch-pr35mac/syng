@@ -21,15 +21,15 @@ const dispatch = createEventDispatcher();
 
 <style>
 .sy-list--container {
-    padding: var(--sy-space);
-    margin: var(--sy-space--extra-large);
-    background-color: var(--sy-color--white);
-    border-radius: var(--sy-border-radius);
-    box-shadow: var(--sy-inner-shadow);
+	padding: var(--sy-space);
+	margin: var(--sy-space--extra-large);
+	background-color: var(--sy-color--white);
+	border-radius: var(--sy-border-radius);
+	box-shadow: var(--sy-inner-shadow);
 }
 .sy-list--list-item {
-    border-top: var(--sy-border);
-    border-bottom: var(--sy-border);
+	border-top: var(--sy-border);
+	border-bottom: var(--sy-border);
 }
 .sy-list--list-item:first-child {
 	border-top: none;
@@ -40,9 +40,9 @@ const dispatch = createEventDispatcher();
 </style>
 
 <div class="sy-list--container">
-    {#each values as value}
-        <div class="sy-list--list-item">
-            <svelte:component this={component} value="{value}" on:selection="{ event => dispatch('selection', event.detail) }" on:event/>
-        </div>
-    {/each}
+	{#each values as value}
+		<div class="sy-list--list-item">
+			<svelte:component this={component} value="{value}" on:selection="{ event => dispatch('selection', event.detail) }" on:event/>
+		</div>
+	{/each}
 </div>

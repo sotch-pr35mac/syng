@@ -39,38 +39,38 @@ const handleClick = e => {
 
 <style>
 .twi-dropdown-item--container {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  padding: var(--sy-space--large);
-  transition: all ease-in-out;
-  transition-duration: var(--sy-transition-duration) / 2;
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	padding: var(--sy-space--large);
+	transition: all ease-in-out;
+	transition-duration: var(--sy-transition-duration) / 2;
 }
 .twi-dropdown-item--color--blue {
-  color: var(--sy-color--blue);
+	color: var(--sy-color--blue);
 }
 .twi-dropdown-item--color--black {
-  color: var(--sy-color--black);
+	color: var(--sy-color--black);
 }
 .twi-dropdown-item--hover--blue:hover {
-  color: var(--sy-color--blue);
+	color: var(--sy-color--blue);
 }
 .twi-dropdown-item--hover--green:hover {
-  color: var(--sy-color--green-2);
+	color: var(--sy-color--green-2);
 }
 .twi-dropdown-item--hover--red:hover {
-  color: var(--sy-color--red);
+	color: var(--sy-color--red);
 }
 .twi-dropdown-item--container:first-child, .twi-dropdown-item--container:last-child {
-  border-radius: var(--sy-border-radius);
+	border-radius: var(--sy-border-radius);
 }
 .twi-dropdown-item--container:hover {
-  background-color: var(--sy-color--grey-2);
+	background-color: var(--sy-color--grey-2);
 }
 </style>
 
 <span class="{ getClasses() }" on:click="{ handleClick }" on:keyup="{ handleClick }">
-  <svelte:component this={ icon } size="14" />
-  &nbsp;
-  <span>{ text }</span>
+	<svelte:component this={ icon } size="14" />
+	&nbsp;
+	<span>{ text }</span>
 </span>

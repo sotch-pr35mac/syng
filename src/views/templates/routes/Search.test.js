@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import Search from './Search.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri, mockDictionary, mockPreferenceManager, mockBookmarkManager } from '../../../test/utils/unitTestUtils.js';
+import { mockBookmarkManager, mockDictionary, mockGlobalTauri, mockPreferenceManager } from '../../../test/utils/unitTestUtils.js';
+import Search from './Search.svelte';
 
 global.dictionary = mockDictionary('EN', [{
 	traditional: '西瓜', 

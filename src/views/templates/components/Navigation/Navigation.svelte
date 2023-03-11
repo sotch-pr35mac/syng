@@ -1,16 +1,10 @@
 <script>
+import {
+	BookmarkIcon, BookOpenIcon, HelpCircleIcon, MessageCircleIcon,
+	MoreVerticalIcon, SearchIcon, SettingsIcon, TrendingUpIcon
+} from 'svelte-feather-icons';
 import active from 'svelte-spa-router/active';
 import { handleError } from '../../utils/';
-import { 
-	SearchIcon,
-	BookOpenIcon,
-	BookmarkIcon,
-	TrendingUpIcon,
-	MessageCircleIcon,
-	MoreVerticalIcon,
-	SettingsIcon,
-	HelpCircleIcon	
-} from 'svelte-feather-icons';
 
 const primaryNavigation = [
 	{
@@ -103,7 +97,7 @@ Promise.all([
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-    	margin-top: var(--sy-space);
+		margin-top: var(--sy-space);
 }
 .navigation--primary-nav--macos {
 	margin-top: calc(35px + var(--sy-space--large));

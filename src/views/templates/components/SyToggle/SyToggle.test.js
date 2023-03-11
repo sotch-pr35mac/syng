@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
-import SyToggle from './SyToggle.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import SyToggle from './SyToggle.svelte';
 
 it('should have the uuid passed to it', async () => {
 	const { getByRole } = render(SyToggle, {

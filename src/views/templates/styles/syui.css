@@ -2,34 +2,34 @@
 
 /* Tooltip */
 .sy-tooltip--container {
-    display: inline-block;
-    position: relative;
-    text-align: left;
+	display: inline-block;
+	position: relative;
+	text-align: left;
 }
 
 .sy-tooltip--container .sy-tooltip--body {
-    min-width: 50px;
-    width: max-content;
-    transform: translate(0, -50%);
-    padding: var(--sy-space);
-    color: var(--sy-color--grey-4);
-    background-color: var(--sy-color--white);
-    font-size: 11px;
-    line-height: 1px;
-    text-align: center;
-    border-radius: var(--sy-border-radius);
-    position: absolute;
-    z-index: 99999999;
-    box-sizing: border-box;
-    box-shadow: var(--sy-shadow--active);
-    visibility: hidden; 
-    opacity: 0; 
-    transition: opacity var(--sy-transition-duraction);
+	min-width: 50px;
+	width: max-content;
+	transform: translate(0, -50%);
+	padding: var(--sy-space);
+	color: var(--sy-color--grey-4);
+	background-color: var(--sy-color--white);
+	font-size: 11px;
+	line-height: 1px;
+	text-align: center;
+	border-radius: var(--sy-border-radius);
+	position: absolute;
+	z-index: 99999999;
+	box-sizing: border-box;
+	box-shadow: var(--sy-shadow--active);
+	visibility: hidden; 
+	opacity: 0; 
+	transition: opacity var(--sy-transition-duraction);
 }
 
 .sy-tooltip--container:hover .sy-tooltip--body {
-    visibility: visible; 
-    opacity: 1;
+	visibility: visible; 
+	opacity: 1;
 }
 
 .sy-tooltip--body-right {

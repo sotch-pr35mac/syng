@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
-import MeasureWord from './MeasureWord.svelte';
 import { render } from '@testing-library/svelte';
+import MeasureWord from './MeasureWord.svelte';
 
 const mockMeasureWordA = {
 	simplified: 'A',

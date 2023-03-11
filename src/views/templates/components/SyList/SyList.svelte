@@ -1,7 +1,7 @@
 <script>
 import { createEventDispatcher } from 'svelte';
-import SyListPreview from './SyListPreview.svelte';
 import SyListContent from './SyListContent.svelte';
+import SyListPreview from './SyListPreview.svelte';
 
 /* Style Prop */
 /* Possible Values */

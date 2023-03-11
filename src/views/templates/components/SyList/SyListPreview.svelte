@@ -1,8 +1,8 @@
 <script>
 import { createEventDispatcher } from 'svelte';
 import { suppressUnusedExportLet } from '../../utils/';
-import SyListPreviewItem from './SyListPreviewItem.svelte';
 import SyTextInput from '../SyTextInput/SyTextInput.svelte';
+import SyListPreviewItem from './SyListPreviewItem.svelte';
 
 const id = Math.floor(Math.random() * 100);
 

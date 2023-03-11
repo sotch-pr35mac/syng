@@ -10,8 +10,8 @@ suppressUnusedExportLet(icon);
 
 <style>
 .sy-dropdown--divider {
-  border: 0.5px solid var(--sy-color--grey-2);  
-  margin: var(--sy-space) 0px;
+	border: 0.5px solid var(--sy-color--grey-2);  
+	margin: var(--sy-space) 0px;
 }
 </style>
 

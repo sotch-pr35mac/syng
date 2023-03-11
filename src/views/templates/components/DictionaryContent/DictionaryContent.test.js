@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import DictionaryContent from './DictionaryContent.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri, mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
+import { mockBookmarkManager, mockGlobalTauri } from '../../../../test/utils/unitTestUtils.js';
+import DictionaryContent from './DictionaryContent.svelte';
 
 const TEST_WORD = {
 	simplified: 'A',

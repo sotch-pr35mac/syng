@@ -1,6 +1,6 @@
 <script>
-import SyButton from '../SyButton/SyButton.svelte';
 import { handleError } from '../../utils/';
+import SyButton from '../SyButton/SyButton.svelte';
 
 let currentVersion = window.version || '';
 let updateVersion = window.updateVersion || '';
@@ -75,73 +75,73 @@ const fetchUpdate = () => {
 
 <style>
 .update-checker {
-    padding: var(--sy-space--large) 0px;
+	padding: var(--sy-space--large) 0px;
 }
 .update-checker--status {
-    display: flex;
-    flex-direction: column;
+	display: flex;
+	flex-direction: column;
 }
 .updater-checker--status--title {
-    margin-bottom: var(--sy-space);
-    font-size: var(--sy-font-size--medium);
-    font-weight: var(--sy-font-weight--regular);
+	margin-bottom: var(--sy-space);
+	font-size: var(--sy-font-size--medium);
+	font-weight: var(--sy-font-weight--regular);
 }
 .update-checker--status--subtitle {
-    font-size: var(--sy-font-size--small);
-    font-weight: var(--sy-font-weight--light);
+	font-size: var(--sy-font-size--small);
+	font-weight: var(--sy-font-weight--light);
 }
 .update-checker--update-available {
-    color: var(--sy-color--green);
+	color: var(--sy-color--green);
 }
 .update-checker--update-button {
-    margin-top: var(--sy-space--extra-large);
+	margin-top: var(--sy-space--extra-large);
 }
 </style>
 
 <div class="update-checker">
 {#if !knownStatus}
-    {#if checking}
-        <!-- Disabled button indicating to user we're fetching the update status -->
-        <SyButton disabled={true} size="large">
-            Checking for updates...
-        </SyButton>
-    {:else}
-        <!-- Default button, there is no known state and we are not actively checking -->
-        <SyButton size="large" on:click={ () => updateStatus() }>
-            Check for updates
-        </SyButton>
-    {/if}
+	{#if checking}
+		<!-- Disabled button indicating to user we're fetching the update status -->
+		<SyButton disabled={true} size="large">
+			Checking for updates...
+		</SyButton>
+	{:else}
+		<!-- Default button, there is no known state and we are not actively checking -->
+		<SyButton size="large" on:click={ () => updateStatus() }>
+			Check for updates
+		</SyButton>
+	{/if}
 {:else}
-    {#if updateAvailable}
-        <!-- Button indicating there is an update available. Click it will initiaite the update. -->
-       <div class="update-checker--status update-checker--update-available">
-            <span class="updater-checker--status--title">
-                Update available
-            </span>
-            <span class="update-checker--status--subtitle">
-                Version { updateVersion }<br/>
-                Release Notes: { releaseNotes }
-            </span>
-            <span class="update-checker--update-button" >
-                <SyButton color="green" size="large" on:click={() => fetchUpdate() } disabled={ updating }>
-                    {#if !updating }
-                        Update
-                    {:else}
-                        Updating...
-                    {/if}
-                </SyButton>
-            </span>
-        </div>
-    {:else}
-        <!-- Disabled button indicating to the user they are on the latest version -->
-        <div class="update-checker--up-to-date update-checker--status">
-            <span class="updater-checker--status--title">
-                You are up to date
-            </span>
-            <span class="update-checker--status--subtitle">
-                Version { currentVersion }
-            </span>
-        </div>
-    {/if}
+	{#if updateAvailable}
+		<!-- Button indicating there is an update available. Click it will initiaite the update. -->
+	   <div class="update-checker--status update-checker--update-available">
+			<span class="updater-checker--status--title">
+				Update available
+			</span>
+			<span class="update-checker--status--subtitle">
+				Version { updateVersion }<br/>
+				Release Notes: { releaseNotes }
+			</span>
+			<span class="update-checker--update-button" >
+				<SyButton color="green" size="large" on:click={() => fetchUpdate() } disabled={ updating }>
+					{#if !updating }
+						Update
+					{:else}
+						Updating...
+					{/if}
+				</SyButton>
+			</span>
+		</div>
+	{:else}
+		<!-- Disabled button indicating to the user they are on the latest version -->
+		<div class="update-checker--up-to-date update-checker--status">
+			<span class="updater-checker--status--title">
+				You are up to date
+			</span>
+			<span class="update-checker--status--subtitle">
+				Version { currentVersion }
+			</span>
+		</div>
+	{/if}
 {/if}
 </div>
