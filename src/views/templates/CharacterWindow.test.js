@@ -1,8 +1,8 @@
 /* eslint-disable no-undef */
-import CharacterWindow from './CharacterWindow.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { mockGlobalTauri } from '../../test/utils/unitTestUtils.js';
+import CharacterWindow from './CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
 const WORD = {

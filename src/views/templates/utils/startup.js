@@ -5,11 +5,11 @@
  * throughout the application, checks and fallbacks should be in place in case the user requests
  * something from an action that hasn't completed yet. 
  */
-import { inDebugMode } from './process.js';
+import elasticScroll from 'elastic-scroll-polyfill';
+import { BookmarkManager } from './bookmarkManager.js';
 import { handleError } from './error.js';
 import { PreferenceManager } from './preferenceManager.js';
-import { BookmarkManager } from './bookmarkManager.js';
-import elasticScroll from 'elastic-scroll-polyfill';
+import { inDebugMode } from './process.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.

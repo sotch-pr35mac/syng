@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
-import DefinitionItem from './DefinitionItem.svelte';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import DefinitionItem from './DefinitionItem.svelte';
 
 it('should display textual value with the correct styles', async () => {
 	const { getByText } = render(DefinitionItem, {

@@ -61,10 +61,10 @@ const handleKeyup = event => {
 	color: var(--sy-color--grey-1);
 }
 .sy-text-input--standard {
-    border-radius: var(--sy-border-radius);
-    border: var(--sy-border);
-    padding: var(--sy-space);
-    box-shadow: var(--sy-inner-shadow);
+	border-radius: var(--sy-border-radius);
+	border: var(--sy-border);
+	padding: var(--sy-space);
+	box-shadow: var(--sy-inner-shadow);
 }
 .sy-text-input--ghost {
 	height: 100%;

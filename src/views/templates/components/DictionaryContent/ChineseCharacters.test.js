@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
-import ChineseCharacters from './ChineseCharacters.svelte';
 import { render } from '@testing-library/svelte';
+import ChineseCharacters from './ChineseCharacters.svelte';
 
 it('should render the correct color for each character', async () => {
 	const { getByText } = render(ChineseCharacters, {

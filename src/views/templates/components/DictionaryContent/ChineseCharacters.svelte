@@ -8,24 +8,24 @@ export let tones = [];
 
 <style>
 .colored-characters--tone-1 {
-    color: var(--sy-tone-color--1);
+	color: var(--sy-tone-color--1);
 }
 .colored-characters--tone-2 {
-    color: var(--sy-tone-color--2);
+	color: var(--sy-tone-color--2);
 }
 .colored-characters--tone-3 {
-    color: var(--sy-tone-color--3);
+	color: var(--sy-tone-color--3);
 }
 .colored-characters--tone-4 {
-    color: var(--sy-tone-color--4);
+	color: var(--sy-tone-color--4);
 }
 .colored-characters--tone-5 {
-    color: var(--sy-tone-color--5);
+	color: var(--sy-tone-color--5);
 }
 </style>
 
 <span>
-    {#each characters as character, index}
-        <span class="{`colored-characters--tone-${tones[index] || 5}`}">{character}</span>
-    {/each}
+	{#each characters as character, index}
+		<span class="{`colored-characters--tone-${tones[index] || 5}`}">{character}</span>
+	{/each}
 </span>

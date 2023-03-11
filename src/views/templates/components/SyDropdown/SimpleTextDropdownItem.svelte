@@ -36,25 +36,25 @@ const handleClick = e => {
 
 <style>
 .st-dropdown-item--container {
-  cursor: pointer;
-  padding: var(--sy-space--large);
-  transition: all ease-in-out;
-  transition-duration: var(--sy-transition-duration) / 2;
+	cursor: pointer;
+	padding: var(--sy-space--large);
+	transition: all ease-in-out;
+	transition-duration: var(--sy-transition-duration) / 2;
 }
 .st-dropdown-item--container:first-child, .st-dropdown-item--container:last-child {
-  border-radius: var(--sy-border-radius);
+	border-radius: var(--sy-border-radius);
 }
 .st-dropdown-item--container:hover {
-  background-color: var(--sy-color--grey-2);
+	background-color: var(--sy-color--grey-2);
 }
 .st-dropdown-item--color--black {
-  color: var(--sy-color--black);
+	color: var(--sy-color--black);
 }
 .st-dropdown-item--hover--blue:hover {
-  color: var(--sy-color--blue);
+	color: var(--sy-color--blue);
 }
 </style>
 
 <span class="{ getClasses() }" on:click="{ handleClick }" on:keyup="{ handleClick }">
-  { text }
+	{ text }
 </span>

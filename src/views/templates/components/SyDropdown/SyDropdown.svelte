@@ -1,5 +1,5 @@
 <script>
-import { onDestroy, createEventDispatcher } from 'svelte';
+import { createEventDispatcher, onDestroy } from 'svelte';
 
 /* Dropdown Values Prop */
 // The values to be present in the dropdown list.

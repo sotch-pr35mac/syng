@@ -1,7 +1,7 @@
 <script>
 import HanziWriter from 'hanzi-writer';
 import { tick } from 'svelte';
-import { PlayIcon, PauseIcon } from 'svelte-feather-icons';
+import { PauseIcon, PlayIcon } from 'svelte-feather-icons';
 import SyButton from './components/SyButton/SyButton.svelte';
 
 // Constants
