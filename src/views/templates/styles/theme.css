@@ -44,6 +44,15 @@
 	--sy-space--large: calc(var(--sy-space) * 2);
 	--sy-space--extra-large: calc(var(--sy-space) * 4);
 
+	/* Layering */
+	--sy-z-index--top: 99999999;
+	--sy-z-index--top-1: 99999998;
+	--sy-z-index--top-2: 99999997;
+	--sy-z-index--top-3: 99999996;
+	--sy-z-index--base-2: 3;
+	--sy-z-index--base-1: 2;
+	--sy-z-index--base: 1;
+
 	/* Borders */
 	--sy-border: 1px solid var(--sy-color--grey-2);
 	--sy-border-radius: 5px;
