@@ -16,7 +16,7 @@ const MODIFIABLE_BOOKMARK_PROPERTIES = [
 	'notes'
 ];
 
-function BreakException() {}
+function BreakException() { }
 
 export class BookmarkManager {
 	/*
@@ -42,9 +42,9 @@ export class BookmarkManager {
 			this._list_db.allDocs({ include_docs: true }).then(documents => {
 				// Syng expects there to always be a bookmarks list. If a bookmarks
 				// list is not present, initialize it.
-				if(!documents.rows.map(list => list.doc.name).includes('Bookmarks')) {
+				if (!documents.rows.map(list => list.doc.name).includes('Bookmarks')) {
 					this._list_db.post({ name: 'Bookmarks' }).then(result => {
-						if(result.ok) {
+						if (result.ok) {
 							this.initialized = true;
 							resolve();
 						} else {
@@ -80,7 +80,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			let shouldBreak = false;
 			const pollInit = () => {
-				if(this.initialized) {
+				if (this.initialized) {
 					resolve();
 					shouldBreak = true;
 				} else {
@@ -108,6 +108,34 @@ export class BookmarkManager {
 	}
 
 	/*
+	 * Description: Get a list of the empty lists (lists with no contents).
+	 * Return: Promise<Array<String>>: Returns a Promise that resolves to a list
+	 * of strings representing the names of the lists without contents.
+	 */
+	getEmptyLists() {
+		let lists = undefined;
+		return new Promise((resolve, reject) => {
+			this._list_db.allDocs({ include_docs: true }).then(documents => {
+				lists = documents.rows.map(list => list.doc);
+				return this._document_db.allDocs({ include_docs: true });
+			}).then(words => {
+				words = words.rows.map(word => word.doc);
+
+				const emptyLists = lists.filter(list => {
+					const listId = list._id;
+					const list_contents = words.filter(word => word.lists.includes(listId));
+					return !list_contents.length;
+				}).map(list => list.name);
+
+				resolve(emptyLists);
+			}).catch(e => {
+				console.error(e);
+				reject(new Error('There was an error trying to fetch empty lists.'));
+			});
+		});
+	}
+
+	/*
 	 * Description: Create a new word list.
 	 * Param: String: listName: The name of the list to create.
 	 * Return: Promise: Resolves when the list has been successfully created.
@@ -120,7 +148,7 @@ export class BookmarkManager {
 				return documents.rows.map(list => list.doc.name);
 			}).then(lists => {
 				// List names should be unique
-				if(lists.includes(listName)) {
+				if (lists.includes(listName)) {
 					reject(new Error(`Cannot create list. A list with the name ${listName} already exists.`));
 					throw new BreakException();
 				}
@@ -128,7 +156,7 @@ export class BookmarkManager {
 				// Create the new list.
 				return this._list_db.post({ name: listName });
 			}).then(result => {
-				if(result.ok) {
+				if (result.ok) {
 					resolve();
 				} else {
 					console.error(result);
@@ -153,7 +181,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			this._list_db.allDocs({ include_docs: true }).then(documents => {
 				const listToRemove = documents.rows.filter(list => list.doc.name === listName)[0];
-				if(!listToRemove) {
+				if (!listToRemove) {
 					reject(new Error(`There was an error deleting the list ${listName}. The list does not exist.`));
 					throw new BreakException();
 				}
@@ -162,7 +190,7 @@ export class BookmarkManager {
 				listId = listToRemove.doc._id;
 				return this._list_db.put(listToRemove.doc);
 			}).then(result => {
-				if(result.ok) {
+				if (result.ok) {
 					// Now that we've removed the list, we should remove the list from all associated words
 					return this._document_db.allDocs({ include_docs: true });
 				} else {
@@ -172,10 +200,10 @@ export class BookmarkManager {
 				}
 			}).then(documents => {
 				const words = documents.rows.map(doc => doc.doc);
-				for(let i = 0; i < words.length; i++) {
+				for (let i = 0; i < words.length; i++) {
 					const word = words[i];
 					word.lists = word.lists.filter(id => id !== listId);
-					if(!word.lists.length) {
+					if (!word.lists.length) {
 						word._deleted = true;
 					}
 				}
@@ -183,7 +211,7 @@ export class BookmarkManager {
 				// Update or remove the bookmarked words
 				return this._document_db.bulkDocs(words);
 			}).then(results => {
-				if(results.map(result => result.ok).includes(false)) {
+				if (results.map(result => result.ok).includes(false)) {
 					console.error(results);
 					reject(new Error(`There was an error deleting the list ${listName}. Check the log for more details.`));
 				} else {
@@ -206,7 +234,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			this._list_db.allDocs({ include_docs: true }).then(documents => {
 				const list = documents.rows.filter(list => list.doc.name === listName)[0];
-				if(!list) {
+				if (!list) {
 					console.error(documents);
 					reject(new Error(`There was an error fetching the contents of ${listName}. List does not exist! Check the log for more details.`));
 					throw new BreakException();
@@ -263,7 +291,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			this._list_db.allDocs({ include_docs: true }).then(lists => {
 				const list = lists.rows.filter(list => list.doc.name === listName).map(list => list.doc)[0];
-				if(!list) {
+				if (!list) {
 					reject(new Error(`There was an error adding the word to ${listName}. List does not exist!`));
 					throw new BreakException();
 				}
@@ -273,7 +301,7 @@ export class BookmarkManager {
 				// First, check if this word is already present.
 				const words = documents.rows.map(word => word.doc);
 				let word = words.filter(word => word.hash === wordToAdd.hash)[0];
-				if(!word) {
+				if (!word) {
 					// If the word doesn't exist yet, create it.
 					word = this._createWordEntry(wordToAdd, listId);
 					return this._document_db.post(word);
@@ -283,7 +311,7 @@ export class BookmarkManager {
 					return this._document_db.put(word);
 				}
 			}).then(result => {
-				if(result.ok) {
+				if (result.ok) {
 					resolve();
 				} else {
 					console.error(result);
@@ -307,7 +335,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			this._list_db.allDocs({ include_docs: true }).then(lists => {
 				const list = lists.rows.filter(list => list.doc.name === listName).map(list => list.doc)[0];
-				if(!list) {
+				if (!list) {
 					reject(new Error(`There was an error removing the word from ${listName}. The list does not exist.`));
 					throw new BreakException();
 				}
@@ -317,7 +345,7 @@ export class BookmarkManager {
 				// First, check to make sure the word is present.
 				const words = documents.rows.map(word => word.doc);
 				let word = words.filter(word => word.hash === wordToRemove.hash)[0];
-				if(!word) {
+				if (!word) {
 					reject(new Error(`There was an error removing the word from ${listName}. The word does not exist!`));
 					throw new BreakException();
 				} else {
@@ -325,7 +353,7 @@ export class BookmarkManager {
 					return this._document_db.put(word);
 				}
 			}).then(result => {
-				if(result.ok) {
+				if (result.ok) {
 					resolve();
 				} else {
 					console.error(result);
@@ -370,13 +398,13 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			const word = this.getWordByHash(hash).then(word => {
 				// Check to make sure the word is present in the cache
-				if(!word) {
+				if (!word) {
 					reject(new Error('There was an error updating the bookmarks entry. That word could not be found in any of your lists.'));
 					throw new BreakException();
 				}
 
 				// Check to make sure the property is editable
-				if(!MODIFIABLE_BOOKMARK_PROPERTIES.includes(name)) {
+				if (!MODIFIABLE_BOOKMARK_PROPERTIES.includes(name)) {
 					reject(new Error(`There was an error updating the bookmarks entry. The property ${name} cannot be updated with this method.`));
 					throw new BreakException();
 				}
@@ -384,7 +412,7 @@ export class BookmarkManager {
 				word[name] = value;
 				return this._document_db.put(word);
 			}).then(result => {
-				if(result.ok) {
+				if (result.ok) {
 					resolve();
 				} else {
 					reject(new Error('There was an error updating the bookmarks entry.'));
