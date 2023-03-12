@@ -73,7 +73,7 @@ const getListClasses = () => {
 	width: max-content;
 	background-color: var(--sy-color--white);
 	border-radius: var(--sy-border-radius);
-	z-index: 99999996;
+	z-index: var(--sy-z-index--top-3);
 	box-sizing: border-box;
 	box-shadow: var(--sy-shadow--active);
 	visibility: hidden;

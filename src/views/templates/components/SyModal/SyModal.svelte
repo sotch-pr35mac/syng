@@ -32,7 +32,7 @@ const dispatch = createEventDispatcher();
 	width: 100%;
 	height: 100%;
 	background-color: var(--sy-color--black--transparency);
-	z-index: 99999997;
+	z-index: var(--sy-z-index--top-2);
 }
 .sy-modal--content {
 	position: fixed;
@@ -40,7 +40,7 @@ const dispatch = createEventDispatcher();
 	box-shadow: var(--sy-shadow--active);
 	border-radius: var(--sy-border-radius);
 	padding: var(--sy-space--large);
-	z-index: 99999998;
+	z-index: var(--sy-z-index--top-1);
 }
 .sy-modal--header {
 	display: flex;

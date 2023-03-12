@@ -19,7 +19,7 @@
 	text-align: center;
 	border-radius: var(--sy-border-radius);
 	position: absolute;
-	z-index: 99999999;
+	z-index: var(--sy-z-index--top);
 	box-sizing: border-box;
 	box-shadow: var(--sy-shadow--active);
 	visibility: hidden; 

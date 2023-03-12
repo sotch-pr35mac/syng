@@ -150,7 +150,7 @@ window.bookmarkManager.getLists().then(lists => {
 	margin: 0;
 	background-color: var(--sy-color--white);
 	box-shadow: var(--sy-box-shadow);
-	z-index: 3;
+	z-index: var(--sy-z-index--base-2);
 	align-items: center;
 }
 .search-bar-container--transparency {
@@ -162,7 +162,7 @@ window.bookmarkManager.getLists().then(lists => {
 .search-results {
 	display: flex;
 	flex: 2;
-	z-index: 1;
+	z-index: var(--sy-index--base);
 	flex-direction: column;
 	background-color: var(--sy-color--white);
 	height: calc(100vh - 83px);
@@ -176,7 +176,7 @@ window.bookmarkManager.getLists().then(lists => {
 	flex: 9;
 	box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 	height: calc(100vh - 83px);
-	z-index: 2;
+	z-index: var(--sy-z-index--base-1);
 }
 </style>
 
