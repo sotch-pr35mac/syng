@@ -228,7 +228,7 @@ mod tests {
                 simplified: "上水".to_string(),
                 tone_marks: vec![4 as u8, 3 as u8],
                 traditional: "上水".to_string(),
-                word_id: 1589
+                word_id: 1669
             }
         );
     }
