@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { mockBookmarkManager, mockGlobalTauri } from '../../../../test/utils/unitTestUtils.js';
 import DictionaryContent from './DictionaryContent.svelte';
 
+jest.mock('svelte-feather-icons', () => {
+	return {
+		PlusIcon: require('../__mocks__/FeatherIcon.svelte').default,
+	};
+});
+
 const TEST_WORD = {
 	simplified: 'A',
 	traditional: 'B',

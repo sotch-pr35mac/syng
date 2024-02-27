@@ -4,17 +4,25 @@ import userEvent from '@testing-library/user-event';
 import { mockBookmarkManager, mockDictionary, mockGlobalTauri, mockPreferenceManager } from '../../../test/utils/unitTestUtils.js';
 import Search from './Search.svelte';
 
+
+jest.mock('svelte-feather-icons', () => {
+	const mockFeatherIcon = require('../components/__mocks__/FeatherIcon.svelte').default;
+	return {
+		ChevronLeftIcon: mockFeatherIcon,
+		ChevronRightIcon: mockFeatherIcon,
+	};
+});
 global.dictionary = mockDictionary('EN', [{
-	traditional: '西瓜', 
-	simplified: '西瓜', 
-	english: ['watermelon'], 
+	traditional: '西瓜',
+	simplified: '西瓜',
+	english: ['watermelon'],
 	toneMarks: [1, 1],
 	measureWords: [{ simplified: 'MWA', traditional: 'MWA' }]
 }]);
 const QUERY_RESULTS = [{
-	traditional: '西瓜', 
-	simplified: '西瓜', 
-	english: ['watermelon'], 
+	traditional: '西瓜',
+	simplified: '西瓜',
+	english: ['watermelon'],
 	tone_marks: [1, 1],
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }]
 

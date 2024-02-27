@@ -5,6 +5,14 @@ import { mockGlobalTauri } from '../../test/utils/unitTestUtils.js';
 import CharacterWindow from './CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
+jest.mock('svelte-feather-icons', () => {
+	const mockFeatherIcon = require('./components/__mocks__/FeatherIcon.svelte').default;
+	return {
+		PlayIcon: mockFeatherIcon,
+		PauseIcon: mockFeatherIcon,
+	};
+});
+
 const WORD = {
 	simplified: '你好',
 	traditional: '你好'
@@ -38,10 +46,10 @@ it('should highlight the tab that you click on', async () => {
 	window.matchMedia = mockMatchMedia;
 	const word = jest.fn().mockReturnValue(WORD); // eslint-disable-line no-unused-vars
 	const { getByText } = render(CharacterWindow, {});
-	
+
 	// Make sure Simplified is selected by default
 	const traditionalTab = getByText('Traditional');
-	let traditionalClasses = traditionalTab.className.split(' '); 
+	let traditionalClasses = traditionalTab.className.split(' ');
 	let simplifiedClasses = getByText('Simplified').className.split(' ');
 	expect(simplifiedClasses).toContain(highlightClass);
 	expect(traditionalClasses).not.toContain(highlightClass);
@@ -63,7 +71,7 @@ it('should update the tooltip as you click it', async () => {
 
 	// Move the cursor over the control button
 	await user.hover(controlButton);
-	
+
 	// Test tooltip before first interaction
 	expect(tooltip.innerHTML).toBe('Play Stroke Order');
 
