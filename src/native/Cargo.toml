@@ -1,6 +1,6 @@
 [package]
 name = "syng"
-version = "0.0.5"
+version = "0.0.6"
 description = "An open source, cross platform, Chinese study toolkit."
 authors = ["Preston Wang-Stosur-Bassett"]
 license = "GPL-3.0"

@@ -20,7 +20,9 @@ const getCharactersFromMatch = text => {
 };
 const getDisplayValue = text => {
 	const characters = getCharactersFromMatch(text);
-	return characters.traditional == characters.simplified ? `${characters.traditional}` : `${characters.simplified} (${characters.traditional})`;
+	return characters.traditional == characters.simplified
+		? `${characters.traditional}` 
+		: `${characters.simplified} (${characters.traditional})`;
 };
 const getLink = text => {
 	const characters = getCharactersFromMatch(text);

@@ -11,46 +11,48 @@
 	import Study from './routes/Study.svelte';
 	import Tools from './routes/Tools.svelte';
 	import { runStartupActions } from './utils';
+	import Flashcards from './routes/Study/Flashcards.svelte';
 
 	// Run the startup script
 	runStartupActions();
-	
+
 	const routes = {
 		'/': Search,
 		'/read': Reader,
 		'/bookmarks': Bookmarks,
 		'/study': Study,
+		'/study/flashcards': Flashcards,
 		'/tools': Tools,
 		'/help': Help,
 		'/settings': Settings,
 		'/chat': Chat,
-		'*': NotFound
+		'*': NotFound,
 	};
 </script>
 
-<style>
-.app-container {
-	display: flex;
-	height: 100vh;
-	overflow: hidden;
-}
-.navigation-container {
-	display: flex;
-	flex: 1;
-	max-width: 93px;
-	min-width: 92px;
-}
-.content-container {
-	display: flex;
-	flex: 11;
-}
-</style>
-
 <div class="app-container">
 	<div class="navigation-container">
-		<Navigation/>
+		<Navigation />
 	</div>
 	<div class="content-container">
-		<Router {routes}/>
+		<Router {routes} />
 	</div>
-</div> 
+</div>
+
+<style>
+	.app-container {
+		display: flex;
+		height: 100vh;
+		overflow: hidden;
+	}
+	.navigation-container {
+		display: flex;
+		flex: 1;
+		max-width: 93px;
+		min-width: 92px;
+	}
+	.content-container {
+		display: flex;
+		flex: 11;
+	}
+</style>
