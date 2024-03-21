@@ -32,8 +32,14 @@
 
 	$: populatedLists = lists.filter((list) => !emptyLists.includes(list));
 
-	const handleSelection = (list) => {
-		const url = `#/study/flashcards?list=${list.detail}`;
+	const handleSelection = selectionData => {
+		const { list, action } = selectionData.detail;
+		let url;
+		if (action === 'quiz') {
+			url = `#/study/quiz?list=${list}`;
+		} else {
+			url = `#/study/flashcards?list=${list}`;
+		}
 		document.location.href = url;
 	};
 </script>

@@ -12,6 +12,7 @@
 	import Tools from './routes/Tools.svelte';
 	import { runStartupActions } from './utils';
 	import Flashcards from './routes/Study/Flashcards.svelte';
+	import Quiz from './routes/Study/Quiz.svelte';
 
 	// Run the startup script
 	runStartupActions();
@@ -22,6 +23,7 @@
 		'/bookmarks': Bookmarks,
 		'/study': Study,
 		'/study/flashcards': Flashcards,
+		'/study/quiz': Quiz,
 		'/tools': Tools,
 		'/help': Help,
 		'/settings': Settings,

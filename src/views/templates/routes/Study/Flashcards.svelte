@@ -27,10 +27,10 @@
     let lists = [];
     window.bookmarkManager
     	.getLists()
-    	.then((wl) => {
+    	.then(wl => {
     		lists = wl;
     	})
-    	.catch((e) => {
+    	.catch(e => {
     		handleError(
     			'There was an error fetching word lists. Check the log for more details.',
     			e,
@@ -40,11 +40,11 @@
     const handleListChange = () => {
     	window.bookmarkManager
     		.getListContent(activeList)
-    		.then((contents) => {
+    		.then(contents => {
     			listContent = contents;
     			loading = false;
     		})
-    		.catch((e) => {
+    		.catch(e => {
     			handleError(
     				'There was an error fetching list content. Check the log for more details.',
     				e,
