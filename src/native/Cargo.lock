@@ -3621,6 +3621,7 @@ version = "0.0.6"
 dependencies = [
  "chinese_dictionary",
  "cocoa",
+ "objc",
  "serde",
  "serde_json",
  "tauri",
