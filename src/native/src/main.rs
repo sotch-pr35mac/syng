@@ -147,8 +147,7 @@ fn main() {
 
             #[cfg(target_os = "macos")]
             {
-                // main_window.set_transparent_titlebar(ToolbarThickness::Thick);
-                // character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+                character_window.set_transparent_titlebar(ToolbarThickness::Medium);
                 main_window
                     .lock()
                     .unwrap()
@@ -166,13 +165,12 @@ fn main() {
             main_window.lock().unwrap().on_window_event(move |event| {
                 match event {
                     WindowEvent::CloseRequested { .. } => {
-                        /* TODO(macos): When the app icon is clicked from the dock, open the main window.
-                         * Currently, Tuair doesn't offer a way to capture dock click events, so
-                         * for now we'll just clcose the application when the main window is
-                         * closed, like we do for other platforms.
+                        /* TODO(macos): When the app icon is clicked from the dock, open the main
+                         * window. Currently, Tauri doesn't offer a way to capture dock click
+                         * events, so for now we'll just clcose the application when the main
+                         * window is closed, like we do for other platforms.
                          */
 
-                        // When the main window is closed, emit an exit event.
                         handle.exit(0);
                     }
                     WindowEvent::Resized { .. } => {
