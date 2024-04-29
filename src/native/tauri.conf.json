@@ -69,16 +69,22 @@
         "fullscreen": false,
         "height": 655,
         "width": 1110,
+        "minHeight": 567,
+        "minWidth": 567,
         "resizable": true,
         "title": "Syng",
         "url": "index.html",
-        "acceptFirstMouse": true
+        "acceptFirstMouse": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       },
       {
         "label": "characters",
         "fullscreen": false,
         "height": 497,
         "width": 886,
+        "minHeight": 497,
+        "minWidth": 886,
         "resizable": true,
         "title": "Syng | Characters",
         "visible": false,

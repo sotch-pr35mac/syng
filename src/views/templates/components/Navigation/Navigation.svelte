@@ -73,6 +73,19 @@
 	let enableTransparency = false;
 	let trafficLightMargin = false;
 
+	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
+	$: if (isMacos) {
+		window.__TAURI__.window.appWindow.onResized(() => {
+			window.__TAURI__.window.appWindow.isFullscreen().then(fullscreen => {
+				if (fullscreen) {
+					trafficLightMargin = false;
+				} else {
+					trafficLightMargin = true;
+				}
+			});
+		});
+	}
+
 	Promise.all([
 		window.preferenceManager.waitForInit(),
 		window.__TAURI__.os.platform(),

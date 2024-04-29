@@ -111,4 +111,7 @@ body {
 	font-family: var(--sy-font-family);
 	color: var(--sy-color--black);
 	margin: 0;
+	overflow: hidden;
+	user-select: none;
+	cursor: default;
 }

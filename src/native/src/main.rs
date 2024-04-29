@@ -11,6 +11,7 @@ use dictionary::{
 };
 use io::{export_list_data, import_list_data};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 use tauri::{
     api::shell::open as open_browser, CustomMenuItem, Manager, Menu, MenuItem, Runtime, Submenu,
     Window, WindowEvent,
@@ -29,6 +30,12 @@ fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindowWord
     character_window.show().unwrap();
 }
 
+// Code to set the macOS traffic lights inset.
+// Implementation taken from:
+// https://github.com/hoppscotch/hoppscotch/blob/main/packages/hoppscotch-selfhost-desktop/src-tauri/src/mac/window.rs
+const WINDOW_CONTROL_PAD_X: f64 = 20.0;
+const WINDOW_CONTROL_PAD_Y: f64 = 23.0;
+
 pub enum ToolbarThickness {
     Thick,
     Medium,
@@ -38,6 +45,9 @@ pub enum ToolbarThickness {
 pub trait WindowExt {
     #[cfg(target_os = "macos")]
     fn set_transparent_titlebar(&self, thickness: ToolbarThickness);
+
+    #[cfg(target_os = "macos")]
+    fn set_window_controls_pos(&self, x: f64, y: f64);
 }
 
 impl<R: Runtime> WindowExt for Window<R> {
@@ -62,6 +72,43 @@ impl<R: Runtime> WindowExt for Window<R> {
                 ToolbarThickness::Thin => {
                     id.setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
                 }
+            }
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn set_window_controls_pos(&self, x: f64, y: f64) {
+        use cocoa::{
+            appkit::{NSView, NSWindow, NSWindowButton},
+            foundation::NSRect,
+        };
+        use objc::{msg_send, sel, sel_impl};
+
+        unsafe {
+            let window = self.ns_window().unwrap() as cocoa::base::id;
+
+            let close = window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
+            let minimize = window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
+            let maximize = window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
+
+            let title_bar_container_view = close.superview().superview();
+
+            let close_rect: NSRect = msg_send![close, frame];
+            let button_height = close_rect.size.height;
+
+            let title_bar_frame_height = button_height + y;
+            let mut title_bar_rect = NSView::frame(title_bar_container_view);
+            title_bar_rect.size.height = title_bar_frame_height;
+            title_bar_rect.origin.y = NSView::frame(window).size.height - title_bar_frame_height;
+            let _: () = msg_send![title_bar_container_view, setFrame: title_bar_rect];
+
+            let window_buttons = vec![close, minimize, maximize];
+            let space_between = NSView::frame(minimize).origin.x - NSView::frame(close).origin.x;
+
+            for (i, button) in window_buttons.into_iter().enumerate() {
+                let mut rect: NSRect = NSView::frame(button);
+                rect.origin.x = x + (i as f64 * space_between);
+                button.setFrameOrigin(rect.origin);
             }
         }
     }
@@ -95,31 +142,48 @@ fn main() {
     tauri::Builder::default()
         .setup(|app| {
             let main_window = app.get_window("main").unwrap();
+            let main_window = Arc::new(Mutex::new(main_window));
             let character_window = app.get_window("characters").unwrap();
 
             #[cfg(target_os = "macos")]
             {
-                main_window.set_transparent_titlebar(ToolbarThickness::Thick);
                 character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+                main_window
+                    .lock()
+                    .unwrap()
+                    .set_window_controls_pos(WINDOW_CONTROL_PAD_X, WINDOW_CONTROL_PAD_Y);
             }
 
             #[cfg(debug_assertions)]
             {
-                main_window.open_devtools();
+                main_window.lock().unwrap().open_devtools();
                 character_window.open_devtools();
             }
 
             let handle = app.handle();
-            main_window.on_window_event(move |event| {
-                if let WindowEvent::CloseRequested { .. } = event {
-                    /* TODO(macos): When the app icon is clicked from the dock, open the main window.
-                     * Currently, Tuair doesn't offer a way to capture dock click events, so
-                     * for now we'll just clcose the application when the main window is
-                     * closed, like we do for other platforms.
-                     */
+            let main_window_clone = main_window.clone();
+            main_window.lock().unwrap().on_window_event(move |event| {
+                match event {
+                    WindowEvent::CloseRequested { .. } => {
+                        /* TODO(macos): When the app icon is clicked from the dock, open the main
+                         * window. Currently, Tauri doesn't offer a way to capture dock click
+                         * events, so for now we'll just clcose the application when the main
+                         * window is closed, like we do for other platforms.
+                         */
 
-                    // When the main window is closed, emit an exit event.
-                    handle.exit(0);
+                        handle.exit(0);
+                    }
+                    WindowEvent::Resized { .. } => {
+                        // On macOS we want to redraw the traffic lights when the window is resized.
+                        #[cfg(target_os = "macos")]
+                        {
+                            main_window_clone.lock().unwrap().set_window_controls_pos(
+                                WINDOW_CONTROL_PAD_X,
+                                WINDOW_CONTROL_PAD_Y,
+                            );
+                        }
+                    }
+                    _ => (),
                 }
             });
 
