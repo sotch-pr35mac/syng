@@ -16,7 +16,7 @@ tauri-build = { version = "1.5.1", features = [] }
 chinese_dictionary = "2.1.6"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.6.0", features = ["api-all", "updater"] }
+tauri = { version = "1.6.7", features = ["api-all", "updater"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 cocoa = "0.24.0"
