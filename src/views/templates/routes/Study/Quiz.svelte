@@ -1,88 +1,102 @@
 <script>
-	import { ChevronLeftIcon,ArrowRightIcon } from 'svelte-feather-icons';
-	import SyButton from '../../components/SyButton/SyButton.svelte';
-	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
-	import { querystring } from 'svelte-spa-router';
-	import { handleError } from '../../utils';
-	
+	import { ChevronLeftIcon, ArrowRightIcon } from "svelte-feather-icons";
+	import SyButton from "../../components/SyButton/SyButton.svelte";
+	import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
+	import { querystring } from "svelte-spa-router";
+	import { handleError } from "../../utils";
+	import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.svelte";
+
 	// TODO: Consider moving these into a utility file or something...
 	// Quiz Constants
-	const PINYIN_QUESTIONS = 'Pinyin';
-	const ENGLISH_QUESTIONS = 'English';
-	const CHARACTER_QUESTIONS = 'Characters';
-	const SIMPLE_QUIZ = 'Simple';
-	
-	const EMPTY_MESSAGE = 'No Questions Available';
-	const LOADING_MESSAGE = 'Loading...';
-	const isMacos = window.platform === 'darwin';
+	const PINYIN_QUESTIONS = "Pinyin";
+	const ENGLISH_QUESTIONS = "English";
+	const CHARACTER_QUESTIONS = "Characters";
+	const SIMPLE_QUIZ = "Simple";
+
+	const EMPTY_MESSAGE = "No Questions Available";
+	const LOADING_MESSAGE = "Loading...";
+	const isMacos = window.platform === "darwin";
 	let loading = true;
-	
+
 	let activeList = undefined;
 	let question = undefined;
 	let showAnswer = false;
 	let answer = undefined;
 	let lists = [];
 	let params = new URLSearchParams($querystring);
-	activeList = params.get('list');
+	activeList = params.get("list");
 
 	// Initialize the lists value
 	window.bookmarkManager
 		.getLists()
-		.then(wl => {
+		.then((wl) => {
 			lists = wl;
 		})
-		.catch(e => {
+		.catch((e) => {
 			handleError(
-				'There was an error fetching word lists. Check the log for more details.',
+				"There was an error fetching word lists. Check the log for more details.",
 				e,
 			);
 		});
 
-	const handleQuestionChange = quizQuestion => {
+	const handleQuestionChange = (quizQuestion) => {
 		question = quizQuestion;
 		loading = false;
 		showAnswer = false;
+		showResult = false;
+		forcePause = false;
 	};
-	const handleAnswerChange = answerResponse => {
+	const handleAnswerChange = (answerResponse) => {
 		answer = answerResponse.question.MultipleChoice.word_data;
 		showAnswer = true;
+		showResult = true;
+		lastAnswerCorrect = answerResponse.correct;
 	};
-	const answerQuestion = answer => {
-		window.__TAURI__.invoke('answer_question', {
-			response: {
-				response: answer,
-				answered_in: 0,
-			},
-		}).then(answerResponse => {
-			handleAnswerChange(answerResponse);
-		}).catch(e => {
-			handleError(
-				'There was an error answering the question. Check the log for more details.', 
-				e
-			);
-		});
+	const answerQuestion = (answer) => {
+		chosenAnswer = answer;
+		window.__TAURI__
+			.invoke("answer_question", {
+				response: {
+					response: answer,
+					answered_in: 0,
+				},
+			})
+			.then((answerResponse) => {
+				handleAnswerChange(answerResponse);
+			})
+			.catch((e) => {
+				handleError(
+					"There was an error answering the question. Check the log for more details.",
+					e,
+				);
+			});
 	};
 	const handleListChange = () => {
-		if(activeList) {
+		if (activeList) {
 			window.bookmarkManager
 				.getListContent(activeList)
-				.then(contents => {
-					return window.__TAURI__.invoke('start_quiz', {
+				.then((contents) => {
+					return window.__TAURI__.invoke("start_quiz", {
 						config: {
 							words: contents,
 							kind: SIMPLE_QUIZ,
 							question_kinds: [
-								PINYIN_QUESTIONS, ENGLISH_QUESTIONS, CHARACTER_QUESTIONS
-							]
-						}
+								PINYIN_QUESTIONS,
+								ENGLISH_QUESTIONS,
+								CHARACTER_QUESTIONS,
+							],
+						},
 					});
-				}).then(() => {
-					return window.__TAURI__.invoke('get_next_question');
-				}).then(quizQuestion => {
+				})
+				.then(() => {
+					return window.__TAURI__.invoke("get_next_question");
+				})
+				.then((quizQuestion) => {
 					handleQuestionChange(quizQuestion);
-				}).catch(e => {
+				})
+				.catch((e) => {
 					handleError(
-						'There was an error starting the quiz. Check the log for more details.',
+						"There was an error starting the quiz. Check the log for more details.",
 						e,
 					);
 				});
@@ -91,37 +105,71 @@
 	const leftActions = [
 		{
 			icon: ChevronLeftIcon,
-			label: 'Back',
+			label: "Back",
 			disabled: false,
 			action: () => {
 				window.history.back();
-			}
-		}
+			},
+		},
 	];
 	const rightActions = [];
-	$: rightActions[0] = showAnswer ? {
-		icon: ArrowRightIcon,
-		label: 'Continue',
-		disabled: false,
-		action: () => {
-			window.__TAURI__.invoke('get_next_question')
-				.then(quizQuestion => {
-					handleQuestionChange(quizQuestion);
-				}).catch(e => {
-					handleError(
-						'There was an error getting the next quesetion.',
-						e,
-					);
-				});
-		}
-	} : undefined;
+	$: rightActions[0] = showAnswer
+		? {
+				icon: ArrowRightIcon,
+				label: "Continue",
+				disabled: false,
+				action: () => {
+					showResult = false;
+					forcePause = false;
+					window.__TAURI__
+						.invoke("get_next_question")
+						.then((quizQuestion) => {
+							handleQuestionChange(quizQuestion);
+						})
+						.catch((e) => {
+							handleError(
+								"There was an error getting the next question.",
+								e,
+							);
+						});
+				},
+			}
+		: undefined;
 
 	// Call `handleListChange` whenever `activeList` changes.
 	$: handleListChange();
+
+	let forcePause = false;
+	let showResult = false;
+	let lastAnswerCorrect = false;
+	let chosenAnswer = "";
+
+	let timerRef; // Reference to the timer component
+
+	const handleResultTimerComplete = () => {
+		showResult = false;
+		if (showAnswer) {
+			// Move to next question
+			rightActions[0]?.action();
+		}
+	};
+
+	// Update the handlePageClick function
+	function handlePageClick(event) {
+		// Stop if the click was on the timer itself
+		if (event.target.closest(".timer")) {
+			return;
+		}
+
+		if (showResult) {
+			timerRef?.pause();
+		}
+	}
 </script>
 
 <div class="quiz--container">
-	<div class="quiz--header"
+	<div
+		class="quiz--header"
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<div class="quiz--header--section">
@@ -139,6 +187,15 @@
 			{/each}
 		</div>
 		<div class="quiz--header--section">
+			{#if showResult}
+				<ResultIndicator
+					show={showResult}
+					isCorrect={lastAnswerCorrect}
+					{chosenAnswer}
+					onComplete={handleResultTimerComplete}
+					bind:timer={timerRef}
+				/>
+			{/if}
 			{#each rightActions as action}
 				{#if action}
 					<SyButton
@@ -155,7 +212,8 @@
 			{/each}
 		</div>
 	</div>
-	<div class="quiz--content">
+
+	<div class="quiz--content" on:click={handlePageClick}>
 		{#if showAnswer}
 			<div class="quiz--answer">
 				<DictionaryContent
@@ -168,19 +226,22 @@
 			<div class="quiz--questions">
 				{#if question != undefined}
 					<span class="quiz--question">
-						{ question.question.MultipleChoice.question }
+						{question.question.MultipleChoice.question}
 					</span>
 					<div class="quiz--options">
 						{#each question.question.MultipleChoice.options as option}
-							<button class="quiz--option" on:click={ () => answerQuestion(option) }>
-								{ option }
+							<button
+								class="quiz--option"
+								on:click={() => answerQuestion(option)}
+							>
+								{option}
 							</button>
 						{/each}
 					</div>
 				{:else}
 					<div class="title-message--container">
 						<h1 class="title-message">
-							{ loading ? LOADING_MESSAGE : EMPTY_MESSAGE }
+							{loading ? LOADING_MESSAGE : EMPTY_MESSAGE}
 						</h1>
 					</div>
 				{/if}
@@ -274,5 +335,12 @@
 	.title-message {
 		font-size: 10vh;
 		font-weight: 200;
+	}
+
+	.timer-container {
+		position: absolute;
+		right: 80px;
+		top: 50%;
+		transform: translateY(-50%);
 	}
 </style>
