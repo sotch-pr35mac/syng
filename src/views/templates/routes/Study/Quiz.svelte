@@ -5,6 +5,7 @@
 	import { querystring } from "svelte-spa-router";
 	import { handleError } from "../../utils";
 	import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.svelte";
+	import SyTimer from "../../components/SyTimer/SyTimer.svelte";
 
 	// TODO: Consider moving these into a utility file or something...
 	// Quiz Constants
@@ -22,6 +23,7 @@
 	let question = undefined;
 	let showAnswer = false;
 	let answer = undefined;
+	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
 	let lists = [];
 	let params = new URLSearchParams($querystring);
 	activeList = params.get("list");
@@ -38,9 +40,12 @@
 				e,
 			);
 		});
-
+	const handleQuestionTimerComplete = () => {
+		answerQuestion("N/A");
+	};
 	const handleQuestionChange = (quizQuestion) => {
 		question = quizQuestion;
+		questionDuration = quizQuestion.question.MultipleChoice.time_limit;
 		loading = false;
 		showAnswer = false;
 		showResult = false;
@@ -92,6 +97,9 @@
 					return window.__TAURI__.invoke("get_next_question");
 				})
 				.then((quizQuestion) => {
+					// DEBUG
+					console.log("quizQuestion", quizQuestion);
+					// /DEBUG
 					handleQuestionChange(quizQuestion);
 				})
 				.catch((e) => {
@@ -195,6 +203,16 @@
 					onComplete={handleResultTimerComplete}
 					bind:timer={timerRef}
 				/>
+			{:else}
+				<div class="question-timer--container">
+					<SyTimer
+						duration={questionDuration}
+						autoStart={true}
+						size={32}
+						on:complete={handleQuestionTimerComplete}
+						progressColor={"var(--sy-color--red)"}
+					/>
+				</div>
 			{/if}
 			{#each rightActions as action}
 				{#if action}
@@ -336,11 +354,7 @@
 		font-size: 10vh;
 		font-weight: 200;
 	}
-
-	.timer-container {
-		position: absolute;
-		right: 80px;
-		top: 50%;
-		transform: translateY(-50%);
+	.question-timer--container {
+		margin: 0 var(--sy-space--large);
 	}
 </style>

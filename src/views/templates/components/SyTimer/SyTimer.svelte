@@ -5,6 +5,7 @@
     export let duration = 10; // Duration in seconds
     export let size = 40; // Size in pixels
     export let autoStart = false;
+    export let progressColor = null; // New prop for progress color
 
     // Internal state
     const dispatch = createEventDispatcher();
@@ -16,11 +17,50 @@
     let pausedTime = 0;
 
     // Theme colors
-    const lightGrey = "var(--sy-color--grey-2, #F5F5F5)";
-    const darkGrey = "var(--sy-color--grey-1, #CDD1D6)";
+    const lightGrey = "var(--sy-color--grey-2)";
+    const darkGrey = "var(--sy-color--grey-1)";
 
     // Reactive values
     $: angle = progress * 360;
+
+    // Helper function to convert hex to RGB components
+    function parseColor(color) {
+        const variableName = color.match(/\(([^)]+)\)/)[1];
+        let hex = getComputedStyle(document.documentElement)
+            .getPropertyValue(variableName)
+            .trim();
+
+        // Remove the hash if present
+        hex = hex.replace("#", "");
+
+        // Convert to RGB
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+
+        return [r, g, b];
+    }
+
+    // Calculate interpolated color based on progress
+    function interpolateColor(progress) {
+        if (!progressColor) return darkGrey;
+
+        const color1 = parseColor(progressColor);
+        const color2 = parseColor(darkGrey);
+
+        // Simple linear interpolation between the two colors
+        const r = Math.round(
+            color1[0] + (color2[0] - color1[0]) * (1 - progress),
+        );
+        const g = Math.round(
+            color1[1] + (color2[1] - color1[1]) * (1 - progress),
+        );
+        const b = Math.round(
+            color1[2] + (color2[2] - color1[2]) * (1 - progress),
+        );
+
+        return `rgb(${r}, ${g}, ${b})`;
+    }
 
     // Public methods
     export function pause() {
@@ -144,7 +184,12 @@
                     rx="1"
                 />
             {:else}
-                <circle cx="20" cy="20" r="16" fill={darkGrey} />
+                <circle
+                    cx="20"
+                    cy="20"
+                    r="16"
+                    fill={interpolateColor(progress)}
+                />
                 <path d={pathD} fill={lightGrey} />
             {/if}
         </svg>
