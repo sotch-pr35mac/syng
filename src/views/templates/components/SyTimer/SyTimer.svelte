@@ -1,5 +1,6 @@
 <script>
     import { onMount, createEventDispatcher, onDestroy } from "svelte";
+    import { interpolateColor } from "../../utils/color";
 
     // TODO: Fix before merge: Get this component code style to match the other components.
     // Specifically, the props documentation.
@@ -26,43 +27,10 @@
     // Reactive values
     $: angle = progress * 360;
 
-    // Helper function to convert hex to RGB components
-    function parseColor(color) {
-        const variableName = color.match(/\(([^)]+)\)/)[1];
-        let hex = getComputedStyle(document.documentElement)
-            .getPropertyValue(variableName)
-            .trim();
-
-        // Remove the hash if present
-        hex = hex.replace("#", "");
-
-        // Convert to RGB
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-
-        return [r, g, b];
-    }
-
     // Calculate interpolated color based on progress
-    function interpolateColor(progress) {
+    function getProgressColor(progress) {
         if (!progressColor) return darkGrey;
-
-        const color1 = parseColor(progressColor);
-        const color2 = parseColor(darkGrey);
-
-        // Simple linear interpolation between the two colors
-        const r = Math.round(
-            color1[0] + (color2[0] - color1[0]) * (1 - progress),
-        );
-        const g = Math.round(
-            color1[1] + (color2[1] - color1[1]) * (1 - progress),
-        );
-        const b = Math.round(
-            color1[2] + (color2[2] - color1[2]) * (1 - progress),
-        );
-
-        return `rgb(${r}, ${g}, ${b})`;
+        return interpolateColor(progressColor, darkGrey, 1 - progress);
     }
 
     // Public methods
@@ -190,7 +158,7 @@
                     cx="20"
                     cy="20"
                     r="16"
-                    fill={interpolateColor(progress)}
+                    fill={getProgressColor(progress)}
                 />
                 <path d={pathD} fill={lightGrey} />
             {/if}

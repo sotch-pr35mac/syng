@@ -24,6 +24,7 @@
 	let question = undefined;
 	let showAnswer = false;
 	let answer = undefined;
+	let questionStartTime = undefined;
 	let questionsTotal = 0;
 	let questionsCompleted = 0;
 	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
@@ -55,6 +56,7 @@
 		showAnswer = false;
 		showResult = false;
 		forcePause = false;
+		questionStartTime = Date.now();
 	};
 	const handleAnswerChange = (answerResponse) => {
 		answer = answerResponse.question.MultipleChoice.word_data;
@@ -64,11 +66,12 @@
 	};
 	const answerQuestion = (answer) => {
 		chosenAnswer = answer;
+		const answeredIn = Math.round((Date.now() - questionStartTime) / 1000);
 		window.__TAURI__
 			.invoke("answer_question", {
 				response: {
 					response: answer,
-					answered_in: 0,
+					answered_in: answeredIn,
 				},
 			})
 			.then((answerResponse) => {
@@ -102,9 +105,6 @@
 					return window.__TAURI__.invoke("get_next_question");
 				})
 				.then((quizQuestion) => {
-					// DEBUG
-					console.log("quizQuestion", quizQuestion);
-					// /DEBUG
 					handleQuestionChange(quizQuestion);
 				})
 				.catch((e) => {

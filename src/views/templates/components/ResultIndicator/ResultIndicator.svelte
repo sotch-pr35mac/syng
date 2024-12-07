@@ -19,7 +19,7 @@
 {#if show}
     <div class="result-container">
         <!-- Result badge with slide animation -->
-        <div class="result-indicator" in:slide={{ duration: 200, axis: "x" }}>
+        <div class="result-indicator" in:slide={{ duration: 250, axis: "x" }}>
             <div class="indicator-content">
                 {#if isCorrect}
                     <div class="icon-container" class:correct={isCorrect}>
@@ -37,7 +37,7 @@
         </div>
 
         <!-- Timer with fade animation -->
-        <div class="timer-wrapper" in:fade={{ duration: 200 }}>
+        <div class="timer-wrapper" in:fade={{ duration: 250 }}>
             <SyTimer
                 bind:this={timer}
                 duration={RESULT_DISPLAY_TIME}
@@ -57,13 +57,11 @@
         height: 100%;
         overflow: hidden;
     }
-
     .result-indicator {
         position: relative;
         min-width: 0;
         flex-shrink: 0;
     }
-
     .indicator-content {
         display: flex;
         align-items: center;
@@ -71,7 +69,6 @@
         white-space: nowrap;
         color: var(--sy-color--grey-dark);
     }
-
     .icon-container {
         display: flex;
         align-items: center;
@@ -80,28 +77,23 @@
         padding: calc(var(--sy-space) * 0.5);
         border-radius: var(--sy-border-radius);
     }
-
     .correct {
         background-color: var(--sy-color--green);
         color: var(--sy-color--white);
     }
-
     .incorrect {
         background-color: var(--sy-color--red);
         color: var(--sy-color--white);
     }
-
     .text {
         font-size: 14px;
         font-family: var(--sy-font-family);
     }
-
     .answer-text {
         max-width: 200px;
         overflow: hidden;
         text-overflow: ellipsis;
     }
-
     .timer-wrapper {
         margin-left: var(--sy-space);
         flex-shrink: 0;
