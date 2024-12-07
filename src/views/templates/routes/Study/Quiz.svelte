@@ -6,6 +6,7 @@
 	import { handleError } from "../../utils";
 	import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.svelte";
 	import SyTimer from "../../components/SyTimer/SyTimer.svelte";
+	import SyProgressLine from "../../components/SyProgressLine/SyProgressLine.svelte";
 
 	// TODO: Consider moving these into a utility file or something...
 	// Quiz Constants
@@ -23,6 +24,8 @@
 	let question = undefined;
 	let showAnswer = false;
 	let answer = undefined;
+	let questionsTotal = 0;
+	let questionsCompleted = 0;
 	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
 	let lists = [];
 	let params = new URLSearchParams($querystring);
@@ -46,6 +49,8 @@
 	const handleQuestionChange = (quizQuestion) => {
 		question = quizQuestion;
 		questionDuration = quizQuestion.question.MultipleChoice.time_limit;
+		questionsCompleted = quizQuestion.completed;
+		questionsTotal = quizQuestion.completed + quizQuestion.pending;
 		loading = false;
 		showAnswer = false;
 		showResult = false;
@@ -113,7 +118,7 @@
 	const leftActions = [
 		{
 			icon: ChevronLeftIcon,
-			label: "Back",
+			label: "Exit",
 			disabled: false,
 			action: () => {
 				window.history.back();
@@ -230,8 +235,11 @@
 			{/each}
 		</div>
 	</div>
-
-	<div class="quiz--content" on:click={handlePageClick}>
+	<div
+		class="quiz--content"
+		on:click={handlePageClick}
+		on:keydown={handlePageClick}
+	>
 		{#if showAnswer}
 			<div class="quiz--answer">
 				<DictionaryContent
@@ -265,6 +273,11 @@
 				{/if}
 			</div>
 		{/if}
+		<SyProgressLine
+			completed={questionsCompleted}
+			total={questionsTotal}
+			endColor="var(--sy-color--green-3)"
+		/>
 	</div>
 </div>
 
@@ -298,18 +311,20 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		z-index: var(--sy-z-index--base-1);
+		flex-direction: column;
+		align-items: space-between;
 	}
 	.quiz--answer {
-		width: 100%;
 		display: flex;
 		margin: var(--sy-space--large) var(--sy-space--extra-large);
+		flex: 1;
 	}
 	.quiz--questions {
 		display: flex;
 		align-items: center;
-		width: 100%;
 		flex-direction: column;
 		padding: var(--sy-space--extra-large);
+		flex: 1;
 	}
 	.quiz--question {
 		margin: calc(var(--sy-space--extra-large) * 2);

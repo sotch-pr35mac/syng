@@ -3,6 +3,9 @@
     import { CheckIcon, XIcon } from "svelte-feather-icons";
     import SyTimer from "../SyTimer/SyTimer.svelte";
 
+    // TODO: Fix before merge: Get this component code style to match the other components.
+    // Specifically, the props documentation.
+
     // Props
     export let isCorrect = true;
     export let show = false;

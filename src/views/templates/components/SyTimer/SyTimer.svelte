@@ -1,6 +1,9 @@
 <script>
     import { onMount, createEventDispatcher, onDestroy } from "svelte";
 
+    // TODO: Fix before merge: Get this component code style to match the other components.
+    // Specifically, the props documentation.
+
     // Props
     export let duration = 10; // Duration in seconds
     export let size = 40; // Size in pixels
@@ -130,7 +133,6 @@
     let pathD;
 </script>
 
-<!-- Timer UI -->
 <div
     class="timer"
     style="width: {size}px; height: {size}px;"
