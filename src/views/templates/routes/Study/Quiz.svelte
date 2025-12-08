@@ -27,6 +27,11 @@
 	let questionStartTime = undefined;
 	let questionsTotal = 0;
 	let questionsCompleted = 0;
+	let questionsPending = 0;
+	let finalIncorrect = [];
+	let finalScore = undefined;
+	let finalCorrect = undefined;
+	let finalTotal = undefined;
 	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
 	let lists = [];
 	let params = new URLSearchParams($querystring);
@@ -44,6 +49,20 @@
 				e,
 			);
 		});
+	const handleFinishQuiz = () => {
+		console.log("finalScore", finalScore);
+		console.log("finalCorrect", finalCorrect);
+		console.log("finalTotal", finalTotal);
+		console.log("finalIncorrect", finalIncorrect);
+	};
+	const handleScoreChange = (score) => {
+		finalScore = score.score;
+		finalCorrect = score.correct;
+		finalTotal = score.total;
+	};
+	const handleIncorrectChange = (incorrect) => {
+		finalIncorrect = incorrect;
+	};
 	const handleQuestionTimerComplete = () => {
 		answerQuestion("N/A");
 	};
@@ -51,6 +70,7 @@
 		question = quizQuestion;
 		questionDuration = quizQuestion.question.MultipleChoice.time_limit;
 		questionsCompleted = quizQuestion.completed;
+		questionsPending = quizQuestion.pending;
 		questionsTotal = quizQuestion.completed + quizQuestion.pending;
 		loading = false;
 		showAnswer = false;
@@ -129,22 +149,43 @@
 	$: rightActions[0] = showAnswer
 		? {
 				icon: ArrowRightIcon,
-				label: "Continue",
+				label: questionsPending > 1 ? "Continue" : "Finish",
 				disabled: false,
 				action: () => {
-					showResult = false;
+					showResult = questionsPending > 1 ? false : true;
 					forcePause = false;
-					window.__TAURI__
-						.invoke("get_next_question")
-						.then((quizQuestion) => {
-							handleQuestionChange(quizQuestion);
-						})
-						.catch((e) => {
-							handleError(
-								"There was an error getting the next question.",
-								e,
-							);
-						});
+					if (questionsPending > 1) {
+						window.__TAURI__
+							.invoke("get_next_question")
+							.then((quizQuestion) => {
+								handleQuestionChange(quizQuestion);
+							})
+							.catch((e) => {
+								handleError(
+									"There was an error getting the next question.",
+									e,
+								);
+							});
+					} else {
+						window.__TAURI__
+							.invoke("score_quiz")
+							.then((score) => {
+								handleScoreChange(score);
+								return window.__TAURI__.invoke(
+									"get_incorrect_questions",
+								);
+							})
+							.then((incorrect) => {
+								handleIncorrectChange(incorrect);
+								handleFinishQuiz();
+							})
+							.catch((e) => {
+								handleError(
+									"There was an error getting the next question.",
+									e,
+								);
+							});
+					}
 				},
 			}
 		: undefined;
