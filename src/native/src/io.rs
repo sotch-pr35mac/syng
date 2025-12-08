@@ -152,8 +152,7 @@ pub async fn import_list_data() -> Result<Option<BookmarksExport>, String> {
         .add_filter("Syng List Formats", &["sld", "syli"])
         .pick_file();
 
-    if file_path.is_some() {
-        let file_path = file_path.unwrap();
+    if let Some(file_path) = file_path {
         let path = file_path
             .to_str()
             .ok_or("Unsupported file path")?

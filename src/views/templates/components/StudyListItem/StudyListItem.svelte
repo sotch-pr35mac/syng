@@ -1,6 +1,6 @@
 <script>
   import SyButton from '../SyButton/SyButton.svelte';
-  import { CopyIcon } from 'svelte-feather-icons';
+  import { CopyIcon, AwardIcon } from 'svelte-feather-icons';
   import { createEventDispatcher } from 'svelte';
 
   /* Required Value Prop */
@@ -8,18 +8,26 @@
 
   const dispatch = createEventDispatcher();
 
-  const handleFlashcards = () => {
+  const handleSelection = actionType => {
   	if (value) {
-  		dispatch('selection', value);
+  		dispatch('selection', {
+  			action: actionType,
+  			list: value
+  		});
   	}
   };
 
   const actions = [
   	{
   		icon: CopyIcon,
-  		action: handleFlashcards,
+  		action: () => handleSelection('flashcards'),
   		tooltip: `Flashcards for ${value}`,
   	},
+  	{
+  		icon: AwardIcon,
+  		action: () => handleSelection('quiz'),
+  		tooltip: `Start quiz for ${value}`,
+  	}
   ];
 </script>
 
@@ -27,7 +35,7 @@
   <span>
     {value}
   </span>
-  <span>
+  <span class="study-list-item--actions">
     {#each actions as action}
       <SyButton
         center={true}
@@ -53,5 +61,11 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+  .study-list-item--actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
   }
 </style>

@@ -1,0 +1,19 @@
+{
+	"rust-analyzer.linkedProjects": [
+		"src/native/Cargo.toml"
+	],
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"editor.detectIndentation": false,
+	"[javascript]": {
+		"editor.insertSpaces": false,
+	},
+	"[svelte]": {
+		"editor.insertSpaces": false,
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	},
+	"prettier.enable": false,
+	"svelte.plugin.svelte.format.config.svelteIndentScriptAndStyle": false,
+	"javascript.preferences.quoteStyle": "single",
+	"typescript.preferences.quoteStyle": "single"
+}

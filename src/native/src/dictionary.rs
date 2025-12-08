@@ -24,10 +24,7 @@ pub async fn init_dictionary() {
 
 #[tauri::command]
 pub fn query(text: String) -> Vec<&'static dictionary::WordEntry> {
-    match dictionary::query(text.trim()) {
-        Some(results) => results,
-        None => vec![],
-    }
+    dictionary::query(text.trim()).unwrap_or_default()
 }
 
 #[tauri::command]

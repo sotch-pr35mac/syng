@@ -5,11 +5,16 @@
 
 mod dictionary;
 mod io;
+mod quiz;
+mod utils;
 
 use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
 };
 use io::{export_list_data, import_list_data};
+use quiz::{
+    answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
+};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tauri::{
@@ -196,6 +201,7 @@ fn main() {
             });
             Ok(())
         })
+        .manage(QuizState::default())
         .invoke_handler(tauri::generate_handler!(
             init_dictionary,
             classify,
@@ -206,6 +212,11 @@ fn main() {
             open_character_window,
             export_list_data,
             import_list_data,
+            start_quiz,
+            get_next_question,
+            answer_question,
+            score_quiz,
+            get_incorrect_questions
         ))
         .menu(app_menu)
         .on_menu_event(|event| match event.menu_item_id() {

@@ -57,10 +57,10 @@
     let leftActions = [
     	{
     		icon: ChevronLeftIcon,
-    		label: 'Back',
+    		label: 'Exit',
     		disabled: false,
     		action: () => {
-    			window.history.back();
+    			window.location.hash = '#/study';
     		},
     	},
     	{
@@ -198,7 +198,7 @@
         height: 100%;
     }
     .flashcard--front h1 {
-        font-size: 10vh;
+        font-size: var(--sy-font-size--display-large);
         font-weight: 200;
         margin-bottom: 83px;
     }

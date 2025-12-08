@@ -1,4 +1,5 @@
 export * from './bookmarkManager.js';
+export * from './color.js';
 export * from './error.js';
 export * from './name.js';
 export * from './preferenceManager.js';

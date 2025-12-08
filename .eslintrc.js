@@ -4,6 +4,7 @@ module.exports = {
 		'src/views/templates/utils/pouchdb-7.3.0.min.js',
 		'src/views/resources/hanzi-writer-data/index.js',
 		'src/views/templates/components/__mocks__/',
+		'src/views/templates/components/SyTimer/SyTimer.svelte',
 	],
 	'env': {
 		'browser': true,
