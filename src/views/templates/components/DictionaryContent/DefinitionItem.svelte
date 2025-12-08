@@ -1,6 +1,6 @@
 <script>
-	import { createEventDispatcher } from "svelte";
-	import DictionaryLink from "./DictionaryLink.svelte";
+	import { createEventDispatcher } from 'svelte';
+	import DictionaryLink from './DictionaryLink.svelte';
 
 	/* Required Value Prop */
 	export let value;
@@ -11,8 +11,8 @@
 		return matches ? matches[0] : null;
 	};
 	const getCharactersFromMatch = (text) => {
-		const characters = text.split("[")[0];
-		const breakdown = characters.split("|");
+		const characters = text.split('[')[0];
+		const breakdown = characters.split('|');
 		return {
 			traditional: breakdown[0],
 			simplified: breakdown[1] || breakdown[0],
@@ -29,7 +29,7 @@
 		return characters.traditional;
 	};
 	const dispatch = createEventDispatcher();
-	const handleOpenLink = (event) => dispatch("event", event.detail);
+	const handleOpenLink = (event) => dispatch('event', event.detail);
 </script>
 
 <div class="dictionary-content--definition-item sy-text--selectable">

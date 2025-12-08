@@ -1,94 +1,94 @@
 <script>
     import {
-        ChevronLeftIcon,
-        ArrowLeftIcon,
-        ArrowRightIcon,
-        RotateCwIcon,
-        RotateCcwIcon,
-    } from "svelte-feather-icons";
-    import SyButton from "../../components/SyButton/SyButton.svelte";
-    import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
-    import { querystring } from "svelte-spa-router";
-    import { handleError } from "../../utils";
+    	ChevronLeftIcon,
+    	ArrowLeftIcon,
+    	ArrowRightIcon,
+    	RotateCwIcon,
+    	RotateCcwIcon,
+    } from 'svelte-feather-icons';
+    import SyButton from '../../components/SyButton/SyButton.svelte';
+    import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
+    import { querystring } from 'svelte-spa-router';
+    import { handleError } from '../../utils';
 
-    const EMPTY_LIST_MESSAGE = "No flashcards in this list";
-    const LOADING_LIST_MESSAGE = "Loading...";
+    const EMPTY_LIST_MESSAGE = 'No flashcards in this list';
+    const LOADING_LIST_MESSAGE = 'Loading...';
     let loading = true;
 
-    const isMacos = window.platform === "darwin";
+    const isMacos = window.platform === 'darwin';
     let activeList = undefined;
     let activeIndex = 0;
     let showDetails = false;
     let listContent = [];
     let params = new URLSearchParams($querystring);
-    activeList = params.get("list");
+    activeList = params.get('list');
 
     // Get the word lists
     let lists = [];
     window.bookmarkManager
-        .getLists()
-        .then((wl) => {
-            lists = wl;
-        })
-        .catch((e) => {
-            handleError(
-                "There was an error fetching word lists. Check the log for more details.",
-                e,
-            );
-        });
+    	.getLists()
+    	.then((wl) => {
+    		lists = wl;
+    	})
+    	.catch((e) => {
+    		handleError(
+    			'There was an error fetching word lists. Check the log for more details.',
+    			e,
+    		);
+    	});
 
     const handleListChange = () => {
-        window.bookmarkManager
-            .getListContent(activeList)
-            .then((contents) => {
-                listContent = contents;
-                loading = false;
-            })
-            .catch((e) => {
-                handleError(
-                    "There was an error fetching list content. Check the log for more details.",
-                    e,
-                );
-            });
+    	window.bookmarkManager
+    		.getListContent(activeList)
+    		.then((contents) => {
+    			listContent = contents;
+    			loading = false;
+    		})
+    		.catch((e) => {
+    			handleError(
+    				'There was an error fetching list content. Check the log for more details.',
+    				e,
+    			);
+    		});
     };
     // Call `handleListChange` whenever `activeList` changes.
     $: handleListChange();
 
     let leftActions = [
-        {
-            icon: ChevronLeftIcon,
-            label: "Exit",
-            disabled: false,
-            action: () => {
-                window.location.hash = "#/study";
-            },
-        },
-        {
-            icon: ArrowLeftIcon,
-            label: "Previous",
-            disabled: activeIndex === 0,
-            action: () => {
-                activeIndex = activeIndex - 1;
-            },
-        },
+    	{
+    		icon: ChevronLeftIcon,
+    		label: 'Exit',
+    		disabled: false,
+    		action: () => {
+    			window.location.hash = '#/study';
+    		},
+    	},
+    	{
+    		icon: ArrowLeftIcon,
+    		label: 'Previous',
+    		disabled: activeIndex === 0,
+    		action: () => {
+    			activeIndex = activeIndex - 1;
+    		},
+    	},
     ];
     let rightActions = [
-        {
-            icon: RotateCwIcon,
-            label: "Flip",
-            disabled: false,
-            action: () => {
-                showDetails = !showDetails;
-            },
-        },
-        {
-            icon: ArrowRightIcon,
-            label: "Next",
-            disabled: activeIndex === listContent.length - 1,
-            action: () => {
-                activeIndex = activeIndex + 1;
-            },
-        },
+    	{
+    		icon: RotateCwIcon,
+    		label: 'Flip',
+    		disabled: false,
+    		action: () => {
+    			showDetails = !showDetails;
+    		},
+    	},
+    	{
+    		icon: ArrowRightIcon,
+    		label: 'Next',
+    		disabled: activeIndex === listContent.length - 1,
+    		action: () => {
+    			activeIndex = activeIndex + 1;
+    		},
+    	},
     ];
     $: leftActions[1].disabled = activeIndex === 0;
     $: rightActions[1].disabled = activeIndex === listContent.length - 1;

@@ -1,7 +1,7 @@
 <script>
-    import { fade, slide } from "svelte/transition";
-    import { CheckIcon, XIcon } from "svelte-feather-icons";
-    import SyTimer from "../SyTimer/SyTimer.svelte";
+    import { fade, slide } from 'svelte/transition';
+    import { CheckIcon, XIcon } from 'svelte-feather-icons';
+    import SyTimer from '../SyTimer/SyTimer.svelte';
 
     /* Is Correct Prop */
     /* Possible Values */
@@ -21,7 +21,7 @@
 
     /* Chosen Answer Prop */
     /* The answer that was chosen by the user */
-    export let chosenAnswer = "";
+    export let chosenAnswer = '';
 
     /* Timer Prop */
     /* Timer component reference for external control (bindable) */
@@ -33,7 +33,7 @@
 {#if show}
     <div class="result-container">
         <!-- Result badge with slide animation -->
-        <div class="result-indicator" in:slide={{ duration: 250, axis: "x" }}>
+        <div class="result-indicator" in:slide={{ duration: 250, axis: 'x' }}>
             <div class="indicator-content">
                 {#if isCorrect}
                     <div class="icon-container" class:correct={isCorrect}>

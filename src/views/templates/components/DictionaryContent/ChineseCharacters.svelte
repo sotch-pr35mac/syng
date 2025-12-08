@@ -1,6 +1,6 @@
 <script>
 	/* Characters Prop */
-	export let characters = "";
+	export let characters = '';
 
 	/* Tones Prop */
 	export let tones = [];

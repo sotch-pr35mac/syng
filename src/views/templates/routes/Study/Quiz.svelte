@@ -4,25 +4,25 @@
 		ArrowRightIcon,
 		CopyIcon,
 		RotateCwIcon,
-	} from "svelte-feather-icons";
-	import SyButton from "../../components/SyButton/SyButton.svelte";
-	import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
-	import { querystring } from "svelte-spa-router";
-	import { handleError } from "../../utils";
-	import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.svelte";
-	import SyTimer from "../../components/SyTimer/SyTimer.svelte";
-	import SyProgressLine from "../../components/SyProgressLine/SyProgressLine.svelte";
+	} from 'svelte-feather-icons';
+	import SyButton from '../../components/SyButton/SyButton.svelte';
+	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
+	import { querystring } from 'svelte-spa-router';
+	import { handleError } from '../../utils';
+	import ResultIndicator from '../../components/ResultIndicator/ResultIndicator.svelte';
+	import SyTimer from '../../components/SyTimer/SyTimer.svelte';
+	import SyProgressLine from '../../components/SyProgressLine/SyProgressLine.svelte';
 
 	// TODO: Consider moving these into a utility file or something...
 	// Quiz Constants
-	const PINYIN_QUESTIONS = "Pinyin";
-	const ENGLISH_QUESTIONS = "English";
-	const CHARACTER_QUESTIONS = "Characters";
-	const SIMPLE_QUIZ = "Simple";
+	const PINYIN_QUESTIONS = 'Pinyin';
+	const ENGLISH_QUESTIONS = 'English';
+	const CHARACTER_QUESTIONS = 'Characters';
+	const SIMPLE_QUIZ = 'Simple';
 
-	const EMPTY_MESSAGE = "No Questions Available";
-	const LOADING_MESSAGE = "Loading...";
-	const isMacos = window.platform === "darwin";
+	const EMPTY_MESSAGE = 'No Questions Available';
+	const LOADING_MESSAGE = 'Loading...';
+	const isMacos = window.platform === 'darwin';
 	let loading = true;
 
 	let activeList = undefined;
@@ -40,7 +40,7 @@
 	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
 	let lists = [];
 	let params = new URLSearchParams($querystring);
-	activeList = params.get("list");
+	activeList = params.get('list');
 
 	// Initialize the lists value
 	window.bookmarkManager
@@ -50,7 +50,7 @@
 		})
 		.catch((e) => {
 			handleError(
-				"There was an error fetching word lists. Check the log for more details.",
+				'There was an error fetching word lists. Check the log for more details.',
 				e,
 			);
 		});
@@ -83,7 +83,7 @@
 		finalIncorrect = incorrect;
 	};
 	const handleQuestionTimerComplete = () => {
-		answerQuestion("N/A");
+		answerQuestion('N/A');
 	};
 	const handleQuestionChange = (quizQuestion) => {
 		question = quizQuestion;
@@ -106,7 +106,7 @@
 		chosenAnswer = answer;
 		const answeredIn = Math.round((Date.now() - questionStartTime) / 1000);
 		window.__TAURI__
-			.invoke("answer_question", {
+			.invoke('answer_question', {
 				response: {
 					response: answer,
 					answered_in: answeredIn,
@@ -117,7 +117,7 @@
 			})
 			.catch((e) => {
 				handleError(
-					"There was an error answering the question. Check the log for more details.",
+					'There was an error answering the question. Check the log for more details.',
 					e,
 				);
 			});
@@ -127,7 +127,7 @@
 			window.bookmarkManager
 				.getListContent(activeList)
 				.then((contents) => {
-					return window.__TAURI__.invoke("start_quiz", {
+					return window.__TAURI__.invoke('start_quiz', {
 						config: {
 							words: contents,
 							kind: SIMPLE_QUIZ,
@@ -140,14 +140,14 @@
 					});
 				})
 				.then(() => {
-					return window.__TAURI__.invoke("get_next_question");
+					return window.__TAURI__.invoke('get_next_question');
 				})
 				.then((quizQuestion) => {
 					handleQuestionChange(quizQuestion);
 				})
 				.catch((e) => {
 					handleError(
-						"There was an error starting the quiz. Check the log for more details.",
+						'There was an error starting the quiz. Check the log for more details.',
 						e,
 					);
 				});
@@ -156,10 +156,10 @@
 	const leftActions = [
 		{
 			icon: ChevronLeftIcon,
-			label: "Exit",
+			label: 'Exit',
 			disabled: false,
 			action: () => {
-				window.location.hash = "#/study";
+				window.location.hash = '#/study';
 			},
 		},
 	];
@@ -172,13 +172,13 @@
 			rightActions = [
 				{
 					icon: RotateCwIcon,
-					label: "Retake",
+					label: 'Retake',
 					disabled: false,
 					action: handleRetakeQuiz,
 				},
 				{
 					icon: CopyIcon,
-					label: "Flashcards",
+					label: 'Flashcards',
 					disabled: false,
 					action: handleStudyFlashcards,
 				},
@@ -188,29 +188,29 @@
 			rightActions = [
 				{
 					icon: ArrowRightIcon,
-					label: questionsPending > 1 ? "Continue" : "Finish",
+					label: questionsPending > 1 ? 'Continue' : 'Finish',
 					disabled: false,
 					action: () => {
 						showResult = questionsPending > 1 ? false : true;
 						if (questionsPending > 1) {
 							window.__TAURI__
-								.invoke("get_next_question")
+								.invoke('get_next_question')
 								.then((quizQuestion) => {
 									handleQuestionChange(quizQuestion);
 								})
 								.catch((e) => {
 									handleError(
-										"There was an error getting the next question.",
+										'There was an error getting the next question.',
 										e,
 									);
 								});
 						} else {
 							window.__TAURI__
-								.invoke("score_quiz")
+								.invoke('score_quiz')
 								.then((score) => {
 									handleScoreChange(score);
 									return window.__TAURI__.invoke(
-										"get_incorrect_questions",
+										'get_incorrect_questions',
 									);
 								})
 								.then((incorrect) => {
@@ -218,7 +218,7 @@
 								})
 								.catch((e) => {
 									handleError(
-										"There was an error getting the next question.",
+										'There was an error getting the next question.',
 										e,
 									);
 								});
@@ -237,7 +237,7 @@
 
 	let showResult = false;
 	let lastAnswerCorrect = false;
-	let chosenAnswer = "";
+	let chosenAnswer = '';
 
 	let timerRef; // Reference to the timer component
 
@@ -252,7 +252,7 @@
 	// Update the handlePageClick function
 	function handlePageClick(event) {
 		// Stop if the click was on the timer itself
-		if (event.target.closest(".timer")) {
+		if (event.target.closest('.timer')) {
 			return;
 		}
 
@@ -298,7 +298,7 @@
 							autoStart={true}
 							size={32}
 							on:complete={handleQuestionTimerComplete}
-							progressColor={"var(--sy-color--red)"}
+							progressColor={'var(--sy-color--red)'}
 						/>
 					</div>
 				{/if}

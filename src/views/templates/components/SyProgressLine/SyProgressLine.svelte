@@ -1,5 +1,5 @@
 <script>
-    import { interpolateColor } from "../../utils";
+    import { interpolateColor } from '../../utils';
 
     /* Total Prop */
     /* Total number of items */
@@ -11,7 +11,7 @@
 
     /* Start Color Prop */
     /* Starting color for the progress bar */
-    export let startColor = "var(--sy-color--blue)";
+    export let startColor = 'var(--sy-color--blue)';
 
     /* End Color Prop */
     /* Ending color for the progress bar, interpolates from start to end based on progress */

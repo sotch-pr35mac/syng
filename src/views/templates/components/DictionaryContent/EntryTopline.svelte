@@ -1,5 +1,5 @@
 <script>
-	import ChineseCharacters from "./ChineseCharacters.svelte";
+	import ChineseCharacters from './ChineseCharacters.svelte';
 
 	/* Word Prop */
 	export let word = {};

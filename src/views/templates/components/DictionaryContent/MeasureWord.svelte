@@ -1,12 +1,12 @@
 <script>
-	import { createEventDispatcher } from "svelte";
-	import DictionaryLink from "./DictionaryLink.svelte";
+	import { createEventDispatcher } from 'svelte';
+	import DictionaryLink from './DictionaryLink.svelte';
 
 	/* Required Measure Word Prop */
 	export let value;
 
 	const dispatch = createEventDispatcher();
-	const handleOpenLink = (event) => dispatch("event", event.detail);
+	const handleOpenLink = (event) => dispatch('event', event.detail);
 </script>
 
 <div class="dictionary-content--mw sy-text--selectable">
