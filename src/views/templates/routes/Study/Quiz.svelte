@@ -1,5 +1,10 @@
 <script>
-	import { ChevronLeftIcon, ArrowRightIcon } from "svelte-feather-icons";
+	import {
+		ChevronLeftIcon,
+		ArrowRightIcon,
+		CopyIcon,
+		RotateCwIcon,
+	} from "svelte-feather-icons";
 	import SyButton from "../../components/SyButton/SyButton.svelte";
 	import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
 	import { querystring } from "svelte-spa-router";
@@ -54,6 +59,26 @@
 		console.log("finalCorrect", finalCorrect);
 		console.log("finalTotal", finalTotal);
 		console.log("finalIncorrect", finalIncorrect);
+	};
+	const handleRetakeQuiz = () => {
+		// Reset the quiz state
+		finalScore = undefined;
+		finalCorrect = undefined;
+		finalTotal = undefined;
+		finalIncorrect = [];
+		question = undefined;
+		showAnswer = false;
+		answer = undefined;
+		questionsCompleted = 0;
+		questionsPending = 0;
+		questionsTotal = 0;
+		showResult = false;
+		loading = true;
+		// Restart the quiz
+		handleListChange();
+	};
+	const handleStudyFlashcards = () => {
+		window.location.hash = `#/study/flashcards?list=${activeList}`;
 	};
 	const handleScoreChange = (score) => {
 		finalScore = score.score;
@@ -141,54 +166,80 @@
 			label: "Exit",
 			disabled: false,
 			action: () => {
-				window.history.back();
+				window.location.hash = "#/study";
 			},
 		},
 	];
-	const rightActions = [];
-	$: rightActions[0] = showAnswer
-		? {
-				icon: ArrowRightIcon,
-				label: questionsPending > 1 ? "Continue" : "Finish",
-				disabled: false,
-				action: () => {
-					showResult = questionsPending > 1 ? false : true;
-					forcePause = false;
-					if (questionsPending > 1) {
-						window.__TAURI__
-							.invoke("get_next_question")
-							.then((quizQuestion) => {
-								handleQuestionChange(quizQuestion);
-							})
-							.catch((e) => {
-								handleError(
-									"There was an error getting the next question.",
-									e,
-								);
-							});
-					} else {
-						window.__TAURI__
-							.invoke("score_quiz")
-							.then((score) => {
-								handleScoreChange(score);
-								return window.__TAURI__.invoke(
-									"get_incorrect_questions",
-								);
-							})
-							.then((incorrect) => {
-								handleIncorrectChange(incorrect);
-								handleFinishQuiz();
-							})
-							.catch((e) => {
-								handleError(
-									"There was an error getting the next question.",
-									e,
-								);
-							});
-					}
+	let rightActions = [];
+
+	// Reactive statement to update rightActions based on quiz state
+	$: {
+		if (finalScore !== undefined) {
+			// Show results page actions
+			rightActions = [
+				{
+					icon: RotateCwIcon,
+					label: "Retake",
+					disabled: false,
+					action: handleRetakeQuiz,
 				},
-			}
-		: undefined;
+				{
+					icon: CopyIcon,
+					label: "Flashcards",
+					disabled: false,
+					action: handleStudyFlashcards,
+				},
+			];
+		} else if (showAnswer) {
+			// Show continue/finish button during quiz
+			rightActions = [
+				{
+					icon: ArrowRightIcon,
+					label: questionsPending > 1 ? "Continue" : "Finish",
+					disabled: false,
+					action: () => {
+						showResult = questionsPending > 1 ? false : true;
+						forcePause = false;
+						if (questionsPending > 1) {
+							window.__TAURI__
+								.invoke("get_next_question")
+								.then((quizQuestion) => {
+									handleQuestionChange(quizQuestion);
+								})
+								.catch((e) => {
+									handleError(
+										"There was an error getting the next question.",
+										e,
+									);
+								});
+						} else {
+							window.__TAURI__
+								.invoke("score_quiz")
+								.then((score) => {
+									handleScoreChange(score);
+									return window.__TAURI__.invoke(
+										"get_incorrect_questions",
+									);
+								})
+								.then((incorrect) => {
+									handleIncorrectChange(incorrect);
+									handleFinishQuiz();
+								})
+								.catch((e) => {
+									handleError(
+										"There was an error getting the next question.",
+										e,
+									);
+								});
+						}
+					},
+				},
+			];
+		} else {
+			// No actions during question display
+			rightActions = [];
+		}
+	}
 
 	// Call `handleListChange` whenever `activeList` changes.
 	$: handleListChange();
@@ -241,24 +292,26 @@
 			{/each}
 		</div>
 		<div class="quiz--header--section">
-			{#if showResult}
-				<ResultIndicator
-					show={showResult}
-					isCorrect={lastAnswerCorrect}
-					{chosenAnswer}
-					onComplete={handleResultTimerComplete}
-					bind:timer={timerRef}
-				/>
-			{:else}
-				<div class="question-timer--container">
-					<SyTimer
-						duration={questionDuration}
-						autoStart={true}
-						size={32}
-						on:complete={handleQuestionTimerComplete}
-						progressColor={"var(--sy-color--red)"}
+			{#if finalScore === undefined}
+				{#if showResult}
+					<ResultIndicator
+						show={showResult}
+						isCorrect={lastAnswerCorrect}
+						{chosenAnswer}
+						onComplete={handleResultTimerComplete}
+						bind:timer={timerRef}
 					/>
-				</div>
+				{:else}
+					<div class="question-timer--container">
+						<SyTimer
+							duration={questionDuration}
+							autoStart={true}
+							size={32}
+							on:complete={handleQuestionTimerComplete}
+							progressColor={"var(--sy-color--red)"}
+						/>
+					</div>
+				{/if}
 			{/if}
 			{#each rightActions as action}
 				{#if action}
@@ -281,44 +334,117 @@
 		on:click={handlePageClick}
 		on:keydown={handlePageClick}
 	>
-		{#if showAnswer}
-			<div class="quiz--answer">
-				<DictionaryContent
-					word={answer}
-					backgroundColor="white"
-					{lists}
-				/>
-			</div>
-		{:else}
-			<div class="quiz--questions">
-				{#if question != undefined}
-					<span class="quiz--question">
-						{question.question.MultipleChoice.question}
-					</span>
-					<div class="quiz--options">
-						{#each question.question.MultipleChoice.options as option}
-							<button
-								class="quiz--option"
-								on:click={() => answerQuestion(option)}
-							>
-								{option}
-							</button>
-						{/each}
+		{#if finalScore !== undefined}
+			<!-- Results Page -->
+			<div class="quiz--results">
+				<div class="results--score-container">
+					<div class="results--score">
+						<span class="results--score-text">
+							{Math.round((finalCorrect / finalTotal) * 100)}%
+						</span>
+						<span class="results--percentage">
+							{finalCorrect}/{finalTotal}
+						</span>
 					</div>
-				{:else}
-					<div class="title-message--container">
-						<h1 class="title-message">
-							{loading ? LOADING_MESSAGE : EMPTY_MESSAGE}
-						</h1>
+					{#if finalCorrect === finalTotal}
+						<p class="results--message results--message-perfect">
+							Perfect score! Excellent work!
+						</p>
+					{:else if finalCorrect / finalTotal >= 0.8}
+						<p class="results--message results--message-good">
+							Great job! Keep it up!
+						</p>
+					{:else if finalCorrect / finalTotal >= 0.6}
+						<p class="results--message results--message-okay">
+							Good effort! A bit more practice will help.
+						</p>
+					{:else}
+						<p class="results--message results--message-needs-work">
+							Keep practicing - you'll get there!
+						</p>
+					{/if}
+				</div>
+
+				{#if finalIncorrect && finalIncorrect.length > 0}
+					<div class="results--incorrect">
+						<h2 class="results--incorrect-title">
+							Incorrect Answers
+						</h2>
+						<div class="results--incorrect-list">
+							{#each finalIncorrect as incorrect}
+								<div class="results--incorrect-item">
+									<div class="results--incorrect-question">
+										<strong>Question:</strong>
+										{incorrect.question.MultipleChoice
+											.question}
+									</div>
+									<div class="results--incorrect-details">
+										<span
+											class="results--incorrect-your-answer"
+										>
+											Your answer: <span
+												class="incorrect-highlight"
+												>{incorrect.response}</span
+											>
+										</span>
+										<span
+											class="results--incorrect-correct-answer"
+										>
+											Correct answer: <span
+												class="correct-highlight"
+												>{incorrect.question
+													.MultipleChoice
+													.answer}</span
+											>
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{/if}
 			</div>
+		{:else}
+			<!-- Quiz Questions/Answers -->
+			{#if showAnswer}
+				<div class="quiz--answer">
+					<DictionaryContent
+						word={answer}
+						backgroundColor="white"
+						{lists}
+					/>
+				</div>
+			{:else}
+				<div class="quiz--questions">
+					{#if question != undefined}
+						<span class="quiz--question">
+							{question.question.MultipleChoice.question}
+						</span>
+						<div class="quiz--options">
+							{#each question.question.MultipleChoice.options as option}
+								<button
+									class="quiz--option"
+									on:click={() => answerQuestion(option)}
+								>
+									{option}
+								</button>
+							{/each}
+						</div>
+					{:else}
+						<div class="title-message--container">
+							<h1 class="title-message">
+								{loading ? LOADING_MESSAGE : EMPTY_MESSAGE}
+							</h1>
+						</div>
+					{/if}
+				</div>
+			{/if}
+			<SyProgressLine
+				completed={questionsCompleted}
+				total={questionsTotal}
+				endColor="var(--sy-color--green-3)"
+			/>
 		{/if}
-		<SyProgressLine
-			completed={questionsCompleted}
-			total={questionsTotal}
-			endColor="var(--sy-color--green-3)"
-		/>
 	</div>
 </div>
 
@@ -412,5 +538,103 @@
 	}
 	.question-timer--container {
 		margin: 0 var(--sy-space--large);
+	}
+
+	/* Results Page Styles */
+	.quiz--results {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-start;
+		padding: calc(var(--sy-space--extra-large) * 2);
+		flex: 1;
+		overflow-y: auto;
+		width: 100%;
+		box-sizing: border-box;
+	}
+	.results--score-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+	}
+	.results--score {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.results--score-text {
+		font-size: 14vh;
+		font-weight: 200;
+		color: var(--sy-color--blue);
+		line-height: 1;
+		margin-bottom: var(--sy-space--large);
+	}
+	.results--percentage {
+		font-size: 6vh;
+		font-weight: 200;
+		color: var(--sy-color--text-secondary);
+		margin-top: var(--sy-space);
+	}
+	.results--message {
+		font-size: 3vh;
+		font-weight: 300;
+		text-align: center;
+	}
+	.results--message-perfect {
+		color: var(--sy-color--green-3);
+	}
+	.results--message-good {
+		color: var(--sy-color--blue);
+	}
+	.results--message-okay {
+		color: var(--sy-color--orange);
+	}
+	.results--message-needs-work {
+		color: var(--sy-color--text-secondary);
+	}
+	.results--incorrect {
+		width: 100%;
+		max-width: 800px;
+		margin: 0 auto;
+	}
+	.results--incorrect-title {
+		font-size: 4vh;
+		font-weight: 300;
+		margin-bottom: var(--sy-space--large);
+		text-align: center;
+		color: var(--sy-color--text);
+	}
+	.results--incorrect-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space--large);
+	}
+	.results--incorrect-item {
+		background-color: var(--sy-color--white);
+		border-radius: var(--sy-border-radius);
+		padding: var(--sy-space--large);
+		box-shadow: var(--sy-shadow);
+		border-left: 4px solid var(--sy-color--red);
+	}
+	.results--incorrect-question {
+		font-size: 2.5vh;
+		margin-bottom: var(--sy-space);
+		color: var(--sy-color--text);
+	}
+	.results--incorrect-details {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space);
+		font-size: 2vh;
+		color: var(--sy-color--text-secondary);
+	}
+	.incorrect-highlight {
+		color: var(--sy-color--red);
+		font-weight: 600;
+	}
+	.correct-highlight {
+		color: var(--sy-color--green-3);
+		font-weight: 600;
 	}
 </style>

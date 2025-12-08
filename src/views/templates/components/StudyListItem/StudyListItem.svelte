@@ -9,12 +9,12 @@
   const dispatch = createEventDispatcher();
 
   const handleSelection = actionType => {
-    if (value) {
-      dispatch('selection', {
-        action: actionType,
-        list: value
-      });
-    }
+  	if (value) {
+  		dispatch('selection', {
+  			action: actionType,
+  			list: value
+  		});
+  	}
   };
 
   const actions = [
@@ -24,9 +24,9 @@
   		tooltip: `Flashcards for ${value}`,
   	},
   	{
-      icon: AwardIcon,
-      action: () => handleSelection('quiz'),
-      tooltip: `Start quiz for ${value}`,
+  		icon: AwardIcon,
+  		action: () => handleSelection('quiz'),
+  		tooltip: `Start quiz for ${value}`,
   	}
   ];
 </script>

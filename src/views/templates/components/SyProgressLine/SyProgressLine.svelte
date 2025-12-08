@@ -1,11 +1,11 @@
 <script>
-    import { interpolateColor } from "../../utils";
+    import { interpolateColor } from '../../utils';
     // TODO: Fix before merge: Get this component code style to match the other components.
     // Specifically, the props documentation.
 
     export let total = 41;
     export let completed = 41;
-    export let startColor = "var(--sy-color--blue)";
+    export let startColor = 'var(--sy-color--blue)';
     export let endColor = undefined;
 
     $: progress = Math.min(1, Math.max(0, completed / total));
