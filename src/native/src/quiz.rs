@@ -92,6 +92,13 @@ fn get_question_answer_options(
         })
         .collect();
 
+    if possible_options.len() < 3 {
+        return Err(
+            "Not enough words in the list to generate quiz options. Need at least 4 words."
+                .to_string(),
+        );
+    }
+
     for _ in [0, 1, 2] {
         let index = rng.gen_range(0..possible_options.len());
         options.push(possible_options.swap_remove(index));
@@ -197,7 +204,7 @@ pub trait QuizActions: Send + Sync {
     // Get the final score
     fn score(&self) -> Result<ScoreCard, String>;
 
-    // Respond to the question wtih an answer
+    // Respond to the question with an answer
     fn answer(&mut self, response: AnswerCard) -> Result<Answer, String>;
 
     // Get the incorrect questions
@@ -257,9 +264,9 @@ impl QuizActions for SimpleQuiz {
         let total = self.pending.len() + self.completed.len();
         let incorrect = self.pending.len() + self.completed.iter().filter(|a| !a.correct).count();
         let correct = total - incorrect;
-        let percentage = correct / total;
+        let percentage = ((correct as f64 / total as f64) * 100.0).round() as u8;
         Ok(ScoreCard {
-            score: percentage as u8,
+            score: percentage,
             correct,
             total,
         })

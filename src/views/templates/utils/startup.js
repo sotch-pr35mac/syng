@@ -3,7 +3,7 @@
  * UI at this point. Therefore, these actions should be quick to complete, if an action is mission
  * critical it should have fatal error handling, and where the results of these actions are used
  * throughout the application, checks and fallbacks should be in place in case the user requests
- * something from an action that hasn't completed yet. 
+ * something from an action that hasn't completed yet.
  */
 import elasticScroll from 'elastic-scroll-polyfill';
 import { BookmarkManager } from './bookmarkManager.js';
@@ -13,8 +13,15 @@ import { inDebugMode } from './process.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
+
+// Disable right-click context menu throughout the entire app
+document.addEventListener('contextmenu', (event) => {
+	event.preventDefault();
+	return false;
+});
+
 window.onload = () => {
-	elasticScroll({ appleDevicesOnly: false, intensity: 1});
+	elasticScroll({ appleDevicesOnly: false, intensity: 1 });
 };
 
 // Startup actions to only be run once per application start.
@@ -59,11 +66,11 @@ export const runStartupActions = () => {
 
 	const initializeStyles = () => {
 		const colorSettings = window.preferenceManager.get('toneColors');
-		if(colorSettings.hasCustomColors) {
+		if (colorSettings.hasCustomColors) {
 			const globalStyles = document.querySelector(':root').style;
 			const toneColors = colorSettings.colors;
-			for(let i = 0; i < toneColors.length; i++) {
-				globalStyles.setProperty(`--sy-tone-color--${i+1}`, toneColors[i]);
+			for (let i = 0; i < toneColors.length; i++) {
+				globalStyles.setProperty(`--sy-tone-color--${i + 1}`, toneColors[i]);
 			}
 		}
 	};

@@ -54,12 +54,6 @@
 				e,
 			);
 		});
-	const handleFinishQuiz = () => {
-		console.log("finalScore", finalScore);
-		console.log("finalCorrect", finalCorrect);
-		console.log("finalTotal", finalTotal);
-		console.log("finalIncorrect", finalIncorrect);
-	};
 	const handleRetakeQuiz = () => {
 		// Reset the quiz state
 		finalScore = undefined;
@@ -100,7 +94,6 @@
 		loading = false;
 		showAnswer = false;
 		showResult = false;
-		forcePause = false;
 		questionStartTime = Date.now();
 	};
 	const handleAnswerChange = (answerResponse) => {
@@ -199,7 +192,6 @@
 					disabled: false,
 					action: () => {
 						showResult = questionsPending > 1 ? false : true;
-						forcePause = false;
 						if (questionsPending > 1) {
 							window.__TAURI__
 								.invoke("get_next_question")
@@ -223,7 +215,6 @@
 								})
 								.then((incorrect) => {
 									handleIncorrectChange(incorrect);
-									handleFinishQuiz();
 								})
 								.catch((e) => {
 									handleError(
@@ -244,7 +235,6 @@
 	// Call `handleListChange` whenever `activeList` changes.
 	$: handleListChange();
 
-	let forcePause = false;
 	let showResult = false;
 	let lastAnswerCorrect = false;
 	let chosenAnswer = "";
@@ -340,7 +330,7 @@
 				<div class="results--score-container">
 					<div class="results--score">
 						<span class="results--score-text">
-							{Math.round((finalCorrect / finalTotal) * 100)}%
+							{finalScore}%
 						</span>
 						<span class="results--percentage">
 							{finalCorrect}/{finalTotal}
@@ -495,7 +485,7 @@
 	}
 	.quiz--question {
 		margin: calc(var(--sy-space--extra-large) * 2);
-		font-size: 10vh;
+		font-size: var(--sy-font-size--display-large);
 		font-weight: 200;
 	}
 	.quiz--options {
@@ -517,7 +507,7 @@
 		color: var(--sy-color--white);
 		background-color: var(--sy-color--blue);
 		border-radius: var(--sy-border-radius);
-		font-size: 5vh;
+		font-size: var(--sy-font-size--display-medium);
 	}
 	.quiz--option:hover {
 		box-shadow: var(--sy-shadow--active);
@@ -533,7 +523,7 @@
 		margin-bottom: 83px;
 	}
 	.title-message {
-		font-size: 10vh;
+		font-size: var(--sy-font-size--display-large);
 		font-weight: 200;
 	}
 	.question-timer--container {
@@ -564,20 +554,20 @@
 		align-items: center;
 	}
 	.results--score-text {
-		font-size: 14vh;
+		font-size: var(--sy-font-size--display-extra-large);
 		font-weight: 200;
 		color: var(--sy-color--blue);
 		line-height: 1;
 		margin-bottom: var(--sy-space--large);
 	}
 	.results--percentage {
-		font-size: 6vh;
+		font-size: var(--sy-font-size--display-medium);
 		font-weight: 200;
 		color: var(--sy-color--text-secondary);
 		margin-top: var(--sy-space);
 	}
 	.results--message {
-		font-size: 3vh;
+		font-size: var(--sy-font-size--display-small);
 		font-weight: 300;
 		text-align: center;
 	}
@@ -599,7 +589,7 @@
 		margin: 0 auto;
 	}
 	.results--incorrect-title {
-		font-size: 4vh;
+		font-size: var(--sy-font-size--display-medium);
 		font-weight: 300;
 		margin-bottom: var(--sy-space--large);
 		text-align: center;
@@ -618,7 +608,7 @@
 		border-left: 4px solid var(--sy-color--red);
 	}
 	.results--incorrect-question {
-		font-size: 2.5vh;
+		font-size: var(--sy-font-size--display-small);
 		margin-bottom: var(--sy-space);
 		color: var(--sy-color--text);
 	}
@@ -626,7 +616,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space);
-		font-size: 2vh;
+		font-size: var(--sy-font-size--display-extra-small);
 		color: var(--sy-color--text-secondary);
 	}
 	.incorrect-highlight {

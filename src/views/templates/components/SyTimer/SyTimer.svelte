@@ -1,15 +1,24 @@
 <script>
-    import { onMount, createEventDispatcher, onDestroy } from 'svelte';
-    import { interpolateColor } from '../../utils/color';
+    import { onMount, createEventDispatcher, onDestroy } from "svelte";
+    import { interpolateColor } from "../../utils/color";
 
-    // TODO: Fix before merge: Get this component code style to match the other components.
-    // Specifically, the props documentation.
+    /* Duration Prop */
+    /* Duration in seconds */
+    export let duration = 10;
 
-    // Props
-    export let duration = 10; // Duration in seconds
-    export let size = 40; // Size in pixels
+    /* Size Prop */
+    /* Size of the timer in pixels */
+    export let size = 40;
+
+    /* Auto Start Prop */
+    /* Possible Values */
+    // true
+    // false
     export let autoStart = false;
-    export let progressColor = null; // New prop for progress color
+
+    /* Progress Color Prop */
+    /* Custom progress color, if null uses default grey */
+    export let progressColor = null;
 
     // Internal state
     const dispatch = createEventDispatcher();
@@ -21,82 +30,82 @@
     let pausedTime = 0;
 
     // Theme colors
-    const lightGrey = 'var(--sy-color--grey-2)';
-    const darkGrey = 'var(--sy-color--grey-1)';
+    const lightGrey = "var(--sy-color--grey-2)";
+    const darkGrey = "var(--sy-color--grey-1)";
 
     // Reactive values
     $: angle = progress * 360;
 
     // Calculate interpolated color based on progress
     function getProgressColor(progress) {
-    	if (!progressColor) return darkGrey;
-    	return interpolateColor(progressColor, darkGrey, 1 - progress);
+        if (!progressColor) return darkGrey;
+        return interpolateColor(progressColor, darkGrey, 1 - progress);
     }
 
     // Public methods
     export function pause() {
-    	if (!isPaused) {
-    		isPaused = true;
-    		pausedTime = Date.now() - startTime;
-    	}
+        if (!isPaused) {
+            isPaused = true;
+            pausedTime = Date.now() - startTime;
+        }
     }
 
     export function resume() {
-    	if (isPaused) {
-    		isPaused = false;
-    		startTime = Date.now() - pausedTime;
-    		startTimer();
-    	}
+        if (isPaused) {
+            isPaused = false;
+            startTime = Date.now() - pausedTime;
+            startTimer();
+        }
     }
 
     // Timer functionality
     function startTimer() {
-    	if (intervalId) clearInterval(intervalId);
+        if (intervalId) clearInterval(intervalId);
 
-    	intervalId = setInterval(() => {
-    		if (!isPaused) {
-    			const elapsed = Date.now() - startTime;
-    			progress = Math.min(elapsed / (duration * 1000), 1);
+        intervalId = setInterval(() => {
+            if (!isPaused) {
+                const elapsed = Date.now() - startTime;
+                progress = Math.min(elapsed / (duration * 1000), 1);
 
-    			if (progress >= 1) {
-    				clearInterval(intervalId);
-    				dispatch('complete');
-    			}
-    		}
-    	}, 16);
+                if (progress >= 1) {
+                    clearInterval(intervalId);
+                    dispatch("complete");
+                }
+            }
+        }, 16);
     }
 
     function handleClick() {
-    	if (isPaused) {
-    		resume();
-    	} else {
-    		pause();
-    	}
+        if (isPaused) {
+            resume();
+        } else {
+            pause();
+        }
     }
 
     // Lifecycle
     onMount(() => {
-    	if (autoStart) {
-    		startTime = Date.now();
-    		startTimer();
-    	}
+        if (autoStart) {
+            startTime = Date.now();
+            startTimer();
+        }
     });
 
     onDestroy(() => {
-    	if (intervalId) {
-    		clearInterval(intervalId);
-    	}
+        if (intervalId) {
+            clearInterval(intervalId);
+        }
     });
 
     // SVG path calculation for pie slice
     $: {
-    	const rad = ((angle - 90) * Math.PI) / 180;
-    	const x = 20 + 16 * Math.cos(rad);
-    	const y = 20 + 16 * Math.sin(rad);
-    	pathD =
+        const rad = ((angle - 90) * Math.PI) / 180;
+        const x = 20 + 16 * Math.cos(rad);
+        const y = 20 + 16 * Math.sin(rad);
+        pathD =
             angle >= 360
-            	? ''
-            	: `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
+                ? ""
+                : `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
     }
     let pathD;
 </script>
@@ -105,7 +114,7 @@
     class="timer"
     style="width: {size}px; height: {size}px;"
     on:click={handleClick}
-    on:keydown={(e) => e.key === ' ' && handleClick()}
+    on:keydown={(e) => e.key === " " && handleClick()}
     on:mouseenter={() => (hovering = true)}
     on:mouseleave={() => (hovering = false)}
 >
