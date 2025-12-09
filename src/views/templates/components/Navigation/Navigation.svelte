@@ -72,8 +72,7 @@ const secondaryNavigation = [
 
 let isMacos = platform() === "macos";
 let enableBetaFeatures = false;
-let enableTransparency =
-  isMacos && window.preferenceManager.get("transparency");
+let enableTransparency = false;
 let trafficLightMargin = isMacos;
 
 // On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
@@ -97,6 +96,8 @@ window.preferenceManager
   .waitForInit()
   .then(() => {
     enableBetaFeatures = window.preferenceManager.get("beta");
+    enableTransparency =
+      isMacos && window.preferenceManager.get("transparency");
   })
   .catch((err) => {
     handleError(
