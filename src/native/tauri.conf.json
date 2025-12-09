@@ -1,99 +1,99 @@
 {
-	"build": {
-		"beforeBuildCommand": "",
-		"beforeDevCommand": "",
-		"devPath": "../views/",
-		"distDir": "../views/",
-		"withGlobalTauri": true
-	},
-	"package": {
-		"productName": "Syng 2",
-		"version": "0.0.7"
-	},
-	"tauri": {
-		"updater": {
-			"active": true,
-			"endpoints": [
-				"https://raw.githubusercontent.com/sotch-pr35mac/syng/master/latest-release.json"
-			],
-			"dialog": false,
-			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK"
-		},
-		"allowlist": {
-			"all": true,
-			"fs": {
-				"scope": [
-					"*",
-					"$APPDATA",
-					"$APPDATA/*",
-					"$APPDATA/**"
-				]
-			}
-		},
-		"bundle": {
-			"active": true,
-			"category": "DeveloperTool",
-			"copyright": "",
-			"deb": {
-				"depends": []
-			},
-			"externalBin": [],
-			"icon": [
-				"icons/32x32.png",
-				"icons/128x128.png",
-				"icons/128x128@2x.png",
-				"icons/icon.icns",
-				"icons/icon.ico"
-			],
-			"identifier": "org.syng.app",
-			"longDescription": "",
-			"macOS": {
-				"entitlements": null,
-				"exceptionDomain": "",
-				"frameworks": [],
-				"providerShortName": null,
-				"signingIdentity": null
-			},
-			"resources": [],
-			"shortDescription": "",
-			"targets": "all",
-			"windows": {
-				"certificateThumbprint": null,
-				"digestAlgorithm": "sha256",
-				"timestampUrl": ""
-			}
-		},
-		"security": {
-			"csp": null
-		},
-		"windows": [
-			{
-				"label": "main",
-				"fullscreen": false,
-				"height": 655,
-				"width": 1110,
-				"minHeight": 567,
-				"minWidth": 567,
-				"resizable": true,
-				"title": "Syng",
-				"url": "index.html",
-				"acceptFirstMouse": true,
-				"titleBarStyle": "Overlay",
-				"hiddenTitle": true
-			},
-			{
-				"label": "characters",
-				"fullscreen": false,
-				"height": 497,
-				"width": 886,
-				"minHeight": 497,
-				"minWidth": 886,
-				"resizable": true,
-				"title": "Syng | Characters",
-				"visible": false,
-				"url": "characters.html",
-				"acceptFirstMouse": true
-			}
-		]
-	}
+  "build": {
+    "beforeBuildCommand": "",
+    "beforeDevCommand": "",
+    "frontendDist": "../views/"
+  },
+  "bundle": {
+    "active": true,
+    "category": "DeveloperTool",
+    "copyright": "",
+    "targets": "all",
+    "externalBin": [],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    },
+    "longDescription": "",
+    "macOS": {
+      "entitlements": null,
+      "exceptionDomain": "",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "resources": [],
+    "shortDescription": "",
+    "linux": {
+      "deb": {
+        "depends": []
+      }
+    },
+    "createUpdaterArtifacts": "v1Compatible"
+  },
+  "productName": "Syng 2",
+  "mainBinaryName": "Syng 2",
+  "version": "0.0.6",
+  "identifier": "org.syng.app",
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK",
+      "endpoints": [
+        "https://raw.githubusercontent.com/sotch-pr35mac/syng/master/latest-release.json"
+      ]
+    },
+    "cli": {
+      "description": "Syng CLI",
+      "subcommands": {
+        "run": {
+          "description": "Run the application"
+        }
+      }
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "fullscreen": false,
+        "height": 655,
+        "width": 1110,
+        "minHeight": 567,
+        "minWidth": 567,
+        "resizable": true,
+        "title": "Syng",
+        "url": "index.html",
+        "acceptFirstMouse": true,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "useHttpsScheme": true
+      },
+      {
+        "label": "characters",
+        "fullscreen": false,
+        "height": 497,
+        "width": 886,
+        "minHeight": 497,
+        "minWidth": 886,
+        "resizable": true,
+        "title": "Syng | Characters",
+        "visible": false,
+        "url": "characters.html",
+        "acceptFirstMouse": true,
+        "useHttpsScheme": true
+      }
+    ],
+    "withGlobalTauri": true,
+    "security": {
+      "csp": null
+    }
+  }
 }

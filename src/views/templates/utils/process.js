@@ -1,8 +1,10 @@
+import { getMatches } from '@tauri-apps/plugin-cli';
+
 const getArgs = async () => {
 	try {
-		const matches = await window.__TAURI__.cli.getMatches();
-		return matches.subcommand.name === 'run' ? matches.subcommand.matches.args : matches.args;
-	} catch(e) {
+		const matches = await getMatches();
+		return matches.subcommand?.name === 'run' ? matches.subcommand.matches.args : matches.args;
+	} catch (e) {
 		console.error(e);
 		return {};
 	}
@@ -25,4 +27,4 @@ export const getArgument = async name => {
 };
 
 // underTest: Boolean: Is this environment driven by a Jest test
-export const underTest = typeof(process) !== 'undefined' && process !== null ? process.env.JEST_WORKER_ID !== undefined : false;
+export const underTest = typeof (process) !== 'undefined' && process !== null ? process.env.JEST_WORKER_ID !== undefined : false;

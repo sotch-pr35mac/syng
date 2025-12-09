@@ -15,6 +15,8 @@ import {
 } from './migrationManager.js';
 import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
+import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -41,7 +43,7 @@ export const runStartupActions = () => {
 	const startupActions = [
 		{
 			name: 'init-dictionary',
-			action: window.__TAURI__.invoke('init_dictionary')
+			action: invoke('init_dictionary')
 		},
 		{
 			name: 'init-preference-manager',
@@ -49,7 +51,11 @@ export const runStartupActions = () => {
 		},
 		{
 			name: 'cache-platform',
-			action: window.__TAURI__.os.platform()
+			action: () => {
+				return new Promise((resolve, _reject) => {
+					resolve(platform())
+				});
+			}
 		},
 		{
 			name: 'init-bookmark-manager',
