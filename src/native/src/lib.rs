@@ -17,8 +17,10 @@ use quiz::{
 };
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
+#[cfg(desktop)]
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager, Runtime, WebviewWindow, Window, WindowEvent};
+#[cfg(desktop)]
 use tauri_plugin_shell::ShellExt;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -31,6 +33,7 @@ struct CharacterWindowWord {
 fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindowWord) {
     let character_window = app_handle.get_webview_window("characters").unwrap();
     character_window.emit("display-characters", word).unwrap();
+    #[cfg(desktop)]
     character_window.show().unwrap();
 }
 
@@ -191,6 +194,7 @@ unsafe fn make_toolbar(id: cocoa::base::id) {
     id.setToolbar_(new_toolbar);
 }
 
+#[cfg(desktop)]
 fn create_menu<R: Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<tauri::menu::Menu<R>, tauri::Error> {
@@ -209,29 +213,59 @@ fn create_menu<R: Runtime>(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let app_context = tauri::generate_context!();
-    tauri::Builder::default()
-        .plugin(tauri_plugin_updater::Builder::new().build())
+    let mut builder = tauri::Builder::default();
+
+    #[cfg(desktop)]
+    {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+        builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+    }
+
+    builder = builder
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
-		.plugin(tauri_plugin_cli::init())
+        .plugin(tauri_plugin_cli::init())
         .setup(|app| {
-            let app_menu = create_menu(app.handle())?;
-            app.set_menu(app_menu)?;
             let main_window = app.get_webview_window("main").unwrap();
             let main_window = Arc::new(Mutex::new(main_window));
-            let character_window = app.get_webview_window("characters").unwrap();
 
-            #[cfg(target_os = "macos")]
+            #[cfg(desktop)]
             {
-                character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+                let app_menu = create_menu(app.handle())?;
+                app.set_menu(app_menu)?;
+
+                let character_window = app.get_webview_window("characters").unwrap();
+
+                #[cfg(target_os = "macos")]
+                {
+                    character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+                    main_window
+                        .lock()
+                        .unwrap()
+                        .set_window_controls_pos(WINDOW_CONTROL_PAD_X, WINDOW_CONTROL_PAD_Y);
+                }
+
+                #[cfg(debug_assertions)]
+                character_window.open_devtools();
+
+                let character_window_toggler = character_window.clone();
+                character_window.on_window_event(move |event| {
+                    if let WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        character_window_toggler.hide().unwrap();
+                    }
+                });
+            }
+
+            #[cfg(all(not(desktop), target_os = "macos"))]
+            {
                 main_window
                     .lock()
                     .unwrap()
@@ -239,12 +273,10 @@ pub fn run() {
             }
 
             #[cfg(debug_assertions)]
-            {
-                main_window.lock().unwrap().open_devtools();
-                character_window.open_devtools();
-            }
+            main_window.lock().unwrap().open_devtools();
 
             let handle = app.handle().clone();
+            #[cfg(target_os = "macos")]
             let main_window_clone = main_window.clone();
             main_window.lock().unwrap().on_window_event(move |event| {
                 match event {
@@ -271,13 +303,6 @@ pub fn run() {
                 }
             });
 
-            let character_window_toggler = character_window.clone();
-            character_window.on_window_event(move |event| {
-                if let WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    character_window_toggler.hide().unwrap();
-                }
-            });
             Ok(())
         })
         .manage(QuizState::default())
@@ -296,8 +321,11 @@ pub fn run() {
             answer_question,
             score_quiz,
             get_incorrect_questions
-        ))
-        .on_menu_event(|app, event| {
+        ));
+
+    #[cfg(desktop)]
+    {
+        builder = builder.on_menu_event(|app, event| {
             if let Some(window) = app.get_webview_window("main") {
                 match event.id().as_ref() {
                     "github" => {
@@ -337,7 +365,10 @@ pub fn run() {
                     _ => (),
                 }
             }
-        })
+        });
+    }
+
+    builder
         .run(app_context)
         .expect("error while running tauri application");
 }
