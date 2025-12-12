@@ -1,32 +1,45 @@
 <script>
+  import { run } from 'svelte/legacy';
+
 import { onMount, createEventDispatcher, onDestroy } from "svelte";
 import { interpolateColor } from "../../utils/color";
 
 /* Duration Prop */
-/* Duration in seconds */
-export let duration = 10;
+
 
 /* Size Prop */
-/* Size of the timer in pixels */
-export let size = 40;
+
 
 /* Auto Start Prop */
 /* Possible Values */
 // true
-// false
-export let autoStart = false;
+
 
 /* Progress Color Prop */
-/* Custom progress color, if null uses default grey */
-export let progressColor = null;
+
+  /**
+   * @typedef {Object} Props
+   * @property {number} [duration] - Duration in seconds
+   * @property {number} [size] - Size of the timer in pixels
+   * @property {boolean} [autoStart] - false
+   * @property {any} [progressColor] - Custom progress color, if null uses default grey
+   */
+
+  /** @type {Props} */
+  let {
+    duration = 10,
+    size = 40,
+    autoStart = false,
+    progressColor = null
+  } = $props();
 
 // Internal state
 const dispatch = createEventDispatcher();
-let progress = 0;
+let progress = $state(0);
 let intervalId;
 let startTime;
-let hovering = false;
-let isPaused = false;
+let hovering = $state(false);
+let isPaused = $state(false);
 let pausedTime = 0;
 
 // Theme colors
@@ -34,7 +47,7 @@ const lightGrey = "var(--sy-color--grey-2)";
 const darkGrey = "var(--sy-color--grey-1)";
 
 // Reactive values
-$: angle = progress * 360;
+let angle = $derived(progress * 360);
 
 // Calculate interpolated color based on progress
 function getProgressColor(progress) {
@@ -98,7 +111,7 @@ onDestroy(() => {
 });
 
 // SVG path calculation for pie slice
-$: {
+run(() => {
   const rad = ((angle - 90) * Math.PI) / 180;
   const x = 20 + 16 * Math.cos(rad);
   const y = 20 + 16 * Math.sin(rad);
@@ -106,17 +119,17 @@ $: {
     angle >= 360
       ? ""
       : `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
-}
-let pathD;
+});
+let pathD = $state();
 </script>
 
 <div
   class="timer"
   style="width: {size}px; height: {size}px;"
-  on:click={handleClick}
-  on:keydown={(e) => e.key === " " && handleClick()}
-  on:mouseenter={() => (hovering = true)}
-  on:mouseleave={() => (hovering = false)}
+  onclick={handleClick}
+  onkeydown={(e) => e.key === " " && handleClick()}
+  onmouseenter={() => (hovering = true)}
+  onmouseleave={() => (hovering = false)}
 >
   {#if isPaused}
     {#if hovering}

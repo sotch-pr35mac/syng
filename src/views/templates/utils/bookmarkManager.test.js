@@ -1,94 +1,95 @@
 /* eslint-disable no-undef */
+import { vi } from 'vitest';
 import { BookmarkManager } from './bookmarkManager.js';
 
 // Mock the PouchDB API
 const getRandomNumber = () => Math.floor(Math.random() * 1000000);
 const getDocuments = dbName => {
 	switch (dbName) {
-	case 'test-lists-empty':
-		return [];
-	case 'test-lists':
-		return [{
-			doc: {
-				_id: 'bookmarks',
-				name: 'Bookmarks'
-			}
-		},
-		{
-			doc: {
-				_id: 'test-list-1',
-				name: 'Test List 1'
-			}
-		},
-		{
-			doc: {
-				_id: 'test-list-2',
-				name: 'Test List 2'
-			}
-		}];
-	case 'test-bookmarks-empty':
-		return [];
-	case 'test-bookmarks':
-		return [{
-			doc: {
-				_id: '123',
-				_rev: '1',
-				hash: '123',
-				notes: '',
-				lists: ['test-list-1', 'test-list-2']
-			}
-		}, {
-			doc: {
-				_id: '456',
-				_rev: '1',
-				hash: '456',
-				notes: '',
-				lists: ['test-list-1']
-			}
-		},
-		{
-			doc: {
-				_id: '789',
-				_rev: '1',
-				hash: '789',
-				notes: '',
-				lists: ['test-list-2']
-			}
-		}, {
-			doc: {
-				_id: '101112',
-				_rev: '1',
-				hash: '101112',
-				notes: '',
-				lists: ['test-list-1', 'test-list-2', 'bookmarks']
-			}
-		}, {
-			doc: {
-				_id: '131415',
-				_rev: '1',
-				hash: '131415',
-				notes: '',
-				lists: ['bookmarks']
-			}
-		}, {
-			doc: {
-				_id: '161718',
-				_rev: '1',
-				hash: '161718',
-				notes: '',
-				lists: ['bookmarks', 'test-list-1']
-			}
-		}];
-	default:
-		throw new Error(`Unknown database name: ${dbName}`);
+		case 'test-lists-empty':
+			return [];
+		case 'test-lists':
+			return [{
+				doc: {
+					_id: 'bookmarks',
+					name: 'Bookmarks'
+				}
+			},
+			{
+				doc: {
+					_id: 'test-list-1',
+					name: 'Test List 1'
+				}
+			},
+			{
+				doc: {
+					_id: 'test-list-2',
+					name: 'Test List 2'
+				}
+			}];
+		case 'test-bookmarks-empty':
+			return [];
+		case 'test-bookmarks':
+			return [{
+				doc: {
+					_id: '123',
+					_rev: '1',
+					hash: '123',
+					notes: '',
+					lists: ['test-list-1', 'test-list-2']
+				}
+			}, {
+				doc: {
+					_id: '456',
+					_rev: '1',
+					hash: '456',
+					notes: '',
+					lists: ['test-list-1']
+				}
+			},
+			{
+				doc: {
+					_id: '789',
+					_rev: '1',
+					hash: '789',
+					notes: '',
+					lists: ['test-list-2']
+				}
+			}, {
+				doc: {
+					_id: '101112',
+					_rev: '1',
+					hash: '101112',
+					notes: '',
+					lists: ['test-list-1', 'test-list-2', 'bookmarks']
+				}
+			}, {
+				doc: {
+					_id: '131415',
+					_rev: '1',
+					hash: '131415',
+					notes: '',
+					lists: ['bookmarks']
+				}
+			}, {
+				doc: {
+					_id: '161718',
+					_rev: '1',
+					hash: '161718',
+					notes: '',
+					lists: ['bookmarks', 'test-list-1']
+				}
+			}];
+		default:
+			throw new Error(`Unknown database name: ${dbName}`);
 	}
 };
 global.PouchDB = class {
 	constructor(dbName) {
 		const documents = getDocuments(dbName);
 
-		this.put = jest.fn(newItem => {
-			if(newItem._deleted) {
+		this.put = vi.fn(newItem => {
+			if (newItem._deleted) {
 				const index = documents.findIndex(doc => doc.doc._id === newItem._id);
 				documents.splice(index, 1);
 				return Promise.resolve({
@@ -106,7 +107,7 @@ global.PouchDB = class {
 				});
 			}
 		});
-		this.post = jest.fn(newItem => {
+		this.post = vi.fn(newItem => {
 			newItem = {
 				_id: getRandomNumber(),
 				_rev: getRandomNumber(),
@@ -119,10 +120,10 @@ global.PouchDB = class {
 				rev: newItem._rev
 			});
 		});
-		this.allDocs = jest.fn(() => Promise.resolve({
+		this.allDocs = vi.fn(() => Promise.resolve({
 			rows: documents
 		}));
-		this.remove = jest.fn(itemToRemove => {
+		this.remove = vi.fn(itemToRemove => {
 			const index = documents.findIndex(doc => doc.doc._id === itemToRemove._id);
 			documents.splice(index, 1);
 			console.error('test');
@@ -132,9 +133,9 @@ global.PouchDB = class {
 				rev: getRandomNumber()
 			});
 		});
-		this.bulkDocs = jest.fn(items => {
+		this.bulkDocs = vi.fn(items => {
 			items.forEach(item => {
-				if(!item._id) {
+				if (!item._id) {
 					item = {
 						_id: getRandomNumber(),
 						_rev: getRandomNumber(),
@@ -142,7 +143,7 @@ global.PouchDB = class {
 					};
 					documents.push({ doc: item });
 				} else {
-					if(item._deleted) {
+					if (item._deleted) {
 						const index = documents.findIndex(doc => doc.doc._id === item._id);
 						documents.splice(index, 1);
 					} else {

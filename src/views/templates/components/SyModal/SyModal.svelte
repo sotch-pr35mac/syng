@@ -4,12 +4,25 @@ import { XIcon } from 'svelte-feather-icons';
 import SyButton from '../SyButton/SyButton.svelte';
 
 /* Visible Prop */
-// Whether or not the modal is visible
-export let visible = false;
+
 
 /* Title Prop */
-// The text to display in the modal header
-export let title = '';
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [visible] - Whether or not the modal is visible
+	 * @property {string} [title] - The text to display in the modal header
+	 * @property {import('svelte').Snippet} [body]
+	 * @property {import('svelte').Snippet} [footer]
+	 */
+
+	/** @type {Props} */
+	let {
+		visible = false,
+		title = '',
+		body,
+		footer
+	} = $props();
 
 const dispatch = createEventDispatcher();
 </script>
@@ -71,10 +84,10 @@ const dispatch = createEventDispatcher();
 			</SyButton>
 		</div>
 		<div class="sy-modal--body">
-			<slot name="body"></slot>
+			{@render body?.()}
 		</div>
 		<div class="sy-modal--footer">
-			<slot name="footer"></slot>
+			{@render footer?.()}
 		</div>
 	</div>
 	<div class="sy-modal--backdrop"></div>

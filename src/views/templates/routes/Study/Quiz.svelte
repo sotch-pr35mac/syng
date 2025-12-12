@@ -1,4 +1,6 @@
 <script>
+  import { run } from 'svelte/legacy';
+
 import {
 	ChevronLeftIcon,
 	ArrowRightIcon,
@@ -24,22 +26,22 @@ const SIMPLE_QUIZ = 'Simple';
 const EMPTY_MESSAGE = 'No Questions Available';
 const LOADING_MESSAGE = 'Loading...';
 const isMacos = window.platform === 'darwin';
-let loading = true;
+let loading = $state(true);
 
 let activeList = undefined;
-let question = undefined;
-let showAnswer = false;
-let answer = undefined;
+let question = $state(undefined);
+let showAnswer = $state(false);
+let answer = $state(undefined);
 let questionStartTime = undefined;
-let questionsTotal = 0;
-let questionsCompleted = 0;
-let questionsPending = 0;
-let finalIncorrect = [];
-let finalScore = undefined;
-let finalCorrect = undefined;
-let finalTotal = undefined;
-let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
-let lists = [];
+let questionsTotal = $state(0);
+let questionsCompleted = $state(0);
+let questionsPending = $state(0);
+let finalIncorrect = $state([]);
+let finalScore = $state(undefined);
+let finalCorrect = $state(undefined);
+let finalTotal = $state(undefined);
+let questionDuration = $state(10); // Default to 10 seconds, but ultimately determined by the quiz config
+let lists = $state([]);
 let params = new URLSearchParams($querystring);
 activeList = params.get('list');
 
@@ -163,10 +165,10 @@ const leftActions = [
 		},
 	},
 ];
-let rightActions = [];
+let rightActions = $state([]);
 
 // Reactive statement to update rightActions based on quiz state
-$: {
+run(() => {
 	if (finalScore !== undefined) {
 		// Show results page actions
 		rightActions = [
@@ -220,16 +222,18 @@ $: {
 		// No actions during question display
 		rightActions = [];
 	}
-}
+});
 
 // Call `handleListChange` whenever `activeList` changes.
-$: handleListChange();
+run(() => {
+    handleListChange();
+  });
 
-let showResult = false;
-let lastAnswerCorrect = false;
-let chosenAnswer = '';
+let showResult = $state(false);
+let lastAnswerCorrect = $state(false);
+let chosenAnswer = $state('');
 
-let timerRef; // Reference to the timer component
+let timerRef = $state(); // Reference to the timer component
 
 const handleResultTimerComplete = () => {
 	showResult = false;
@@ -262,7 +266,7 @@ function handlePageClick(event) {
           style="ghost"
           center={true}
         >
-          <svelte:component this={action.icon} />
+          <action.icon />
           &nbsp;
           {action.label}
         </SyButton>
@@ -300,7 +304,7 @@ function handlePageClick(event) {
           >
             {action.label}
             &nbsp;
-            <svelte:component this={action.icon} />
+            <action.icon />
           </SyButton>
         {/if}
       {/each}
@@ -308,8 +312,8 @@ function handlePageClick(event) {
   </div>
   <div
     class="quiz--content"
-    on:click={handlePageClick}
-    on:keydown={handlePageClick}
+    onclick={handlePageClick}
+    onkeydown={handlePageClick}
   >
     {#if finalScore !== undefined}
       <!-- Results Page -->
@@ -386,7 +390,7 @@ function handlePageClick(event) {
               {#each question.question.MultipleChoice.options as option}
                 <button
                   class="quiz--option"
-                  on:click={() => answerQuestion(option)}
+                  onclick={() => answerQuestion(option)}
                 >
                   {option}
                 </button>

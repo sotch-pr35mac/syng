@@ -4,34 +4,48 @@ import { createEventDispatcher } from 'svelte';
 /* Style Prop */
 /* Possible Values */
 // 'ghost' - 'Invisible' text box
-// 'standard' - Standard text box styling
-export let style = 'standard';
+
 
 /* Size Prop */
 /* Possible Values */
 // 'small' - Small text field
 // 'medium' - Medium text field (Default Value)
 // 'large' - Large text field
-// 'extra-large' - Extra large text field
-export let size = 'medium';
+
 
 /* Transparency Prop */
 /* Possible Values */
 // true - Element will be transparent
-// false - Element will have standard background
-export let transparency = false;
 
-/* Placeholder Prop */
-export let placeholder = '';
 
-/* Type Prop */
-export let type = 'text';
 
-/* ID Prop */
-export let id;
 
-/* Spellcheck Prop */
-export let spellcheck = undefined;
+
+
+
+
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [style] - 'standard' - Standard text box styling
+	 * @property {string} [size] - 'extra-large' - Extra large text field
+	 * @property {boolean} [transparency] - false - Element will have standard background
+	 * @property {string} [placeholder] - Placeholder Prop
+	 * @property {string} [type] - Type Prop
+	 * @property {any} id - ID Prop
+	 * @property {any} [spellcheck] - Spellcheck Prop
+	 */
+
+	/** @type {Props} */
+	let {
+		style = 'standard',
+		size = 'medium',
+		transparency = false,
+		placeholder = '',
+		type = 'text',
+		id,
+		spellcheck = undefined
+	} = $props();
 
 const dispatch = createEventDispatcher();
 const getClasses = () => {
@@ -91,4 +105,4 @@ const handleKeyup = event => {
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} on:change={ e => dispatch('change', e.srcElement.value) } on:keyup={ handleKeyup }/>
+<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} onchange={e => dispatch('change', e.srcElement.value)} onkeyup={handleKeyup}/>

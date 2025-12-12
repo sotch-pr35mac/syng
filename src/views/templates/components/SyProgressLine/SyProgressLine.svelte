@@ -2,30 +2,41 @@
     import { interpolateColor } from '../../utils';
 
     /* Total Prop */
-    /* Total number of items */
-    export let total = 41;
+    
 
     /* Completed Prop */
-    /* Number of completed items */
-    export let completed = 41;
+    
 
     /* Start Color Prop */
-    /* Starting color for the progress bar */
-    export let startColor = 'var(--sy-color--blue)';
+    
 
     /* End Color Prop */
-    /* Ending color for the progress bar, interpolates from start to end based on progress */
-    export let endColor = undefined;
+    
+    /**
+     * @typedef {Object} Props
+     * @property {number} [total] - Total number of items
+     * @property {number} [completed] - Number of completed items
+     * @property {string} [startColor] - Starting color for the progress bar
+     * @property {any} [endColor] - Ending color for the progress bar, interpolates from start to end based on progress
+     */
 
-    $: progress = Math.min(1, Math.max(0, completed / total));
-    $: progressColor = interpolateColor(startColor, endColor, progress);
+    /** @type {Props} */
+    let {
+        total = 41,
+        completed = 41,
+        startColor = 'var(--sy-color--blue)',
+        endColor = undefined
+    } = $props();
+
+    let progress = $derived(Math.min(1, Math.max(0, completed / total)));
+    let progressColor = $derived(interpolateColor(startColor, endColor, progress));
 </script>
 
 <div class="progress-line--container">
     <div
         class="progress-line--progress"
         style="width: {progress * 100}%; background-color: {progressColor};"
-    />
+></div>
 </div>
 
 <style>

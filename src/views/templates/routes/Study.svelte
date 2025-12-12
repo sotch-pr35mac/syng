@@ -1,12 +1,14 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import SyList from '../components/SyList/SyList.svelte';
 	import StudyListItem from '../components/StudyListItem/StudyListItem.svelte';
 	import { handleError } from '../utils';
 
 	const isMacos = window.platform === 'darwin';
-	let lists = [];
-	let emptyLists = [];
-	let populatedLists = [];
+	let lists = $state([]);
+	let emptyLists = $state([]);
+	let populatedLists = $state([]);
 	window.bookmarkManager
 		.getLists()
 		.then((wordLists) => {
@@ -30,7 +32,9 @@
 			);
 		});
 
-	$: populatedLists = lists.filter((list) => !emptyLists.includes(list));
+	run(() => {
+		populatedLists = lists.filter((list) => !emptyLists.includes(list));
+	});
 
 	const handleSelection = selectionData => {
 		const { list, action } = selectionData.detail;

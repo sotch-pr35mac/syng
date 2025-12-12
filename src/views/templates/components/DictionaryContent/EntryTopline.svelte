@@ -1,8 +1,14 @@
 <script>
 	import ChineseCharacters from './ChineseCharacters.svelte';
 
-	/* Word Prop */
-	export let word = {};
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [word] - Word Prop
+	 */
+
+	/** @type {Props} */
+	let { word = {} } = $props();
 </script>
 
 <div class="chinese-characters--container">

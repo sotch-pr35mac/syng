@@ -1,9 +1,15 @@
 <script>
 import { suppressUnusedExportLet } from '../../utils/';
 
-// Suppress the unexpected prop warning
-export let text = undefined;
-export let icon = undefined;
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [text] - Suppress the unexpected prop warning
+	 * @property {any} [icon]
+	 */
+
+	/** @type {Props} */
+	let { text = undefined, icon = undefined } = $props();
 suppressUnusedExportLet(text);
 suppressUnusedExportLet(icon);
 </script>

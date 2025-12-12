@@ -1,9 +1,15 @@
 <script>
-	/* Characters Prop */
-	export let characters = '';
+	
 
-	/* Tones Prop */
-	export let tones = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [characters] - Characters Prop
+	 * @property {any} [tones] - Tones Prop
+	 */
+
+	/** @type {Props} */
+	let { characters = '', tones = [] } = $props();
 </script>
 
 <span>

@@ -6,26 +6,38 @@
     /* Is Correct Prop */
     /* Possible Values */
     // true
-    // false
-    export let isCorrect = true;
+    
 
     /* Show Prop */
     /* Possible Values */
     // true
-    // false
-    export let show = false;
+    
 
     /* On Complete Prop */
-    /* Callback function when the timer completes */
-    export let onComplete = () => {};
+    
 
     /* Chosen Answer Prop */
-    /* The answer that was chosen by the user */
-    export let chosenAnswer = '';
+    
 
     /* Timer Prop */
-    /* Timer component reference for external control (bindable) */
-    export let timer;
+    
+    /**
+     * @typedef {Object} Props
+     * @property {boolean} [isCorrect] - false
+     * @property {boolean} [show] - false
+     * @property {any} [onComplete] - Callback function when the timer completes
+     * @property {string} [chosenAnswer] - The answer that was chosen by the user
+     * @property {any} timer - Timer component reference for external control (bindable)
+     */
+
+    /** @type {Props} */
+    let {
+        isCorrect = true,
+        show = false,
+        onComplete = () => {},
+        chosenAnswer = '',
+        timer = $bindable()
+    } = $props();
 
     const RESULT_DISPLAY_TIME = 10;
 </script>

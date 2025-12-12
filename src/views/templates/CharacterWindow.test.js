@@ -1,38 +1,46 @@
 /* eslint-disable no-undef */
+import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { mockGlobalTauri } from '../../test/utils/unitTestUtils.js';
 import CharacterWindow from './CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
-jest.mock('svelte-feather-icons', () => {
-	const mockFeatherIcon = require('./components/__mocks__/FeatherIcon.svelte').default;
+// Mock must be defined with async factory because vi.mock is hoisted before imports
+vi.mock('svelte-feather-icons', async () => {
+	const mockFeatherIcon = (await import('./components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		PlayIcon: mockFeatherIcon,
 		PauseIcon: mockFeatherIcon,
 	};
 });
 
-const WORD = {
-	simplified: '你好',
-	traditional: '你好'
-};
-const mockMatchMedia = jest.fn().mockReturnValue({
-	addEventListener: (e, cb) => undefined // eslint-disable-line no-unused-vars
-});
-jest.mock('hanzi-writer', () => {
+vi.mock('hanzi-writer', () => {
 	return {
 		'default': {
 			create: (param1, param2, param3) => { // eslint-disable-line no-unused-vars
 				return {
-					hideCharacter: jest.fn(),
-					animateCharacter: jest.fn(),
-					pauseAnimation: jest.fn(),
-					resumeAnimation: jest.fn()
+					hideCharacter: vi.fn(),
+					animateCharacter: vi.fn(),
+					pauseAnimation: vi.fn(),
+					resumeAnimation: vi.fn()
 				};
 			}
 		}
 	};
+});
+
+// Mock @tauri-apps/plugin-os
+vi.mock('@tauri-apps/plugin-os', () => ({
+	platform: () => 'macos'
+}));
+
+const WORD = {
+	simplified: '你好',
+	traditional: '你好'
+};
+const mockMatchMedia = vi.fn().mockReturnValue({
+	addEventListener: (e, cb) => undefined // eslint-disable-line no-unused-vars
 });
 global.__TAURI__ = mockGlobalTauri({
 	events: {
@@ -44,7 +52,7 @@ it('should highlight the tab that you click on', async () => {
 	const highlightClass = 'script-selector--active';
 	const user = userEvent.setup();
 	window.matchMedia = mockMatchMedia;
-	const word = jest.fn().mockReturnValue(WORD); // eslint-disable-line no-unused-vars
+	const word = vi.fn().mockReturnValue(WORD); // eslint-disable-line no-unused-vars
 	const { getByText } = render(CharacterWindow, {});
 
 	// Make sure Simplified is selected by default
@@ -73,13 +81,13 @@ it('should update the tooltip as you click it', async () => {
 	await user.hover(controlButton);
 
 	// Test tooltip before first interaction
-	expect(tooltip.innerHTML).toBe('Play Stroke Order');
+	expect(tooltip.textContent).toBe('Play Stroke Order');
 
 	// Test tooltip after first interaction
 	await user.click(controlButton);
-	expect(tooltip.innerHTML).toBe('Pause');
+	expect(tooltip.textContent).toBe('Pause');
 
 	// Test tooltip after second interaction
 	await user.click(controlButton);
-	expect(tooltip.innerHTML).toBe('Resume');
+	expect(tooltip.textContent).toBe('Resume');
 });

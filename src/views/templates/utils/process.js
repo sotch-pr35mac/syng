@@ -26,5 +26,5 @@ export const getArgument = async name => {
 	return args.filter(arg => arg.split('=')[0] == name).map(arg => arg.split('=')[1])[0];
 };
 
-// underTest: Boolean: Is this environment driven by a Jest test
-export const underTest = typeof (process) !== 'undefined' && process !== null ? process.env.JEST_WORKER_ID !== undefined : false;
+// underTest: Boolean: Is this environment driven by a test runner (Jest or Vitest)
+export const underTest = typeof (process) !== 'undefined' && process !== null ? (process.env.JEST_WORKER_ID !== undefined || process.env.VITEST !== undefined) : false;

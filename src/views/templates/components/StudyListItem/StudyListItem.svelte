@@ -3,8 +3,14 @@
   import { CopyIcon, AwardIcon } from 'svelte-feather-icons';
   import { createEventDispatcher } from 'svelte';
 
-  /* Required Value Prop */
-  export let value;
+  
+  /**
+   * @typedef {Object} Props
+   * @property {any} value - Required Value Prop
+   */
+
+  /** @type {Props} */
+  let { value } = $props();
 
   const dispatch = createEventDispatcher();
 
@@ -43,7 +49,7 @@
         size="large"
         classes={['sy-tooltip--container']}
       >
-        <svelte:component this={action.icon} size="18" />
+        <action.icon size="18" />
         <div class="sy-tooltip--body sy-tooltip--body-bottom">
           <p>
             {action.tooltip}

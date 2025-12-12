@@ -17,12 +17,12 @@ const CHARACTER_PADDING = 5;
 let enableDrag = platform() === 'macos';
 let word;
 let activeCharacters = [];
-let activeScript = 'simplified';
-let activeAnimation = false;
-let pausedAnimation = false;
+let activeScript = $state('simplified');
+let activeAnimation = $state(false);
+let pausedAnimation = $state(false);
 let currentlyAnimating; // The index of the character currently being animated
 let characterWriter;
-let characterNotFound = false;
+let characterNotFound = $state(false);
 
 // Functions
 const inDarkMode = () =>

@@ -2,13 +2,13 @@
 import { handleError } from '../../utils/';
 import SyButton from '../SyButton/SyButton.svelte';
 
-let currentVersion = window.version || '';
-let updateVersion = window.updateVersion || '';
-let releaseNotes = window.updateReleaseNotes || '';
-let knownStatus = window.updateStatusAvailable || false;
-let updateAvailable = window.updateAvailable || false;
-let checking = false;
-let updating = false;
+let currentVersion = $state(window.version || '');
+let updateVersion = $state(window.updateVersion || '');
+let releaseNotes = $state(window.updateReleaseNotes || '');
+let knownStatus = $state(window.updateStatusAvailable || false);
+let updateAvailable = $state(window.updateAvailable || false);
+let checking = $state(false);
+let updating = $state(false);
 
 if(!window.version) {
 	window.__TAURI__.app.getVersion().then(version => {
@@ -124,7 +124,7 @@ const fetchUpdate = () => {
 			</span>
 			<span class="update-checker--update-button" >
 				<SyButton color="green" size="large" on:click={() => fetchUpdate() } disabled={ updating }>
-					{#if !updating }
+					{#if !updating}
 						Update
 					{:else}
 						Updating...

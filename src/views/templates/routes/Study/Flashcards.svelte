@@ -1,4 +1,6 @@
 <script>
+    import { run } from 'svelte/legacy';
+
     import {
     	ChevronLeftIcon,
     	ArrowLeftIcon,
@@ -13,18 +15,18 @@
 
     const EMPTY_LIST_MESSAGE = 'No flashcards in this list';
     const LOADING_LIST_MESSAGE = 'Loading...';
-    let loading = true;
+    let loading = $state(true);
 
     const isMacos = window.platform === 'darwin';
     let activeList = undefined;
-    let activeIndex = 0;
-    let showDetails = false;
-    let listContent = [];
+    let activeIndex = $state(0);
+    let showDetails = $state(false);
+    let listContent = $state([]);
     let params = new URLSearchParams($querystring);
     activeList = params.get('list');
 
     // Get the word lists
-    let lists = [];
+    let lists = $state([]);
     window.bookmarkManager
     	.getLists()
     	.then((wl) => {
@@ -52,9 +54,11 @@
     		});
     };
     // Call `handleListChange` whenever `activeList` changes.
-    $: handleListChange();
+    run(() => {
+        handleListChange();
+    });
 
-    let leftActions = [
+    let leftActions = $state([
     	{
     		icon: ChevronLeftIcon,
     		label: 'Exit',
@@ -71,8 +75,8 @@
     			activeIndex = activeIndex - 1;
     		},
     	},
-    ];
-    let rightActions = [
+    ]);
+    let rightActions = $state([
     	{
     		icon: RotateCwIcon,
     		label: 'Flip',
@@ -89,11 +93,19 @@
     			activeIndex = activeIndex + 1;
     		},
     	},
-    ];
-    $: leftActions[1].disabled = activeIndex === 0;
-    $: rightActions[1].disabled = activeIndex === listContent.length - 1;
-    $: rightActions[0].icon = showDetails ? RotateCcwIcon : RotateCwIcon;
-    $: activeIndex, (showDetails = false);
+    ]);
+    run(() => {
+        leftActions[1].disabled = activeIndex === 0;
+    });
+    run(() => {
+        rightActions[1].disabled = activeIndex === listContent.length - 1;
+    });
+    run(() => {
+        rightActions[0].icon = showDetails ? RotateCcwIcon : RotateCwIcon;
+    });
+    run(() => {
+        activeIndex, (showDetails = false);
+    });
 </script>
 
 <div class="flashcard--container">
@@ -109,7 +121,7 @@
                     style="ghost"
                     center={true}
                 >
-                    <svelte:component this={action.icon} />
+                    <action.icon />
                     &nbsp;
                     {action.label}
                 </SyButton>
@@ -125,7 +137,7 @@
                 >
                     {action.label}
                     &nbsp;
-                    <svelte:component this={action.icon} />
+                    <action.icon />
                 </SyButton>
             {/each}
         </div>

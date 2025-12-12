@@ -2,12 +2,10 @@
 import { createEventDispatcher } from 'svelte';
 
 /* Icon Prop */
-// The icon component to use
-export let icon = undefined;
+
 
 /* Text Prop */
-// The text value to display
-export let text = '';
+
 
 /* Hover Prop */
 // Color of text and icon on hover
@@ -15,16 +13,29 @@ export let text = '';
 // Possible Values:
 // 'blue'
 // 'green'
-// 'red'
-export let hover = 'blue';
+
 
 /* Color Prop */
 // Color of the text and icon
 // Defaults to black
 // Possible Values:
 // 'blue'
-// 'black'
-export let color = 'black';
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [icon] - The icon component to use
+	 * @property {string} [text] - The text value to display
+	 * @property {string} [hover] - 'red'
+	 * @property {string} [color] - 'black'
+	 */
+
+	/** @type {Props} */
+	let {
+		icon = undefined,
+		text = '',
+		hover = 'blue',
+		color = 'black'
+	} = $props();
 
 const dispatch = createEventDispatcher();
 const getClasses = () => {
@@ -35,6 +46,8 @@ const getClasses = () => {
 const handleClick = e => {
 	dispatch('click', e);
 };
+
+	const SvelteComponent = $derived(icon);
 </script>
 
 <style>
@@ -69,8 +82,8 @@ const handleClick = e => {
 }
 </style>
 
-<span class="{ getClasses() }" on:click="{ handleClick }" on:keyup="{ handleClick }">
-	<svelte:component this={ icon } size="14" />
+<span class="{ getClasses() }" onclick={handleClick} onkeyup={handleClick}>
+	<SvelteComponent size="14" />
 	&nbsp;
 	<span>{ text }</span>
 </span>

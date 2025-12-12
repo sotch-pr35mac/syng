@@ -8,8 +8,15 @@
 /* Possible Values */
 /* large */
 /* medium */
-/* small */
-export let size = 'medium';
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [size] - small
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let { size = 'medium', children } = $props();
 
 const getClasses = () => {
 	return ['sy-button-bar--container',
@@ -72,5 +79,5 @@ const getClasses = () => {
 </style>
 
 <div class="{ getClasses() }">
-	<slot></slot>
+	{@render children?.()}
 </div>

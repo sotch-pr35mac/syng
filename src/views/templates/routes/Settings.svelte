@@ -83,7 +83,7 @@ if(isMacos) {
 		{#each preferences as preference}
 			<div class="settings--setting" class:settings--setting--center={ preference.centerLabel }>
 				<p>{ preference.label }</p>
-				<svelte:component this={ preference.component } on:change={ preference.handler } {...preference.props} />
+				<preference.component on:change={ preference.handler } {...preference.props} />
 			</div>
 		{/each}
 	</div>

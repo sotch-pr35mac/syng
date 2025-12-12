@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 import { createEventDispatcher, onDestroy } from 'svelte';
 
 /* Dropdown Values Prop */
@@ -9,18 +11,25 @@ import { createEventDispatcher, onDestroy } from 'svelte';
 //     text: 'Value to display', // if applicable
 //     icon: SvelteComponent, // if applicable
 //     id: 'unique identifier',
-//     component: SvelteComponent // One of the supported SyDropdown Item components 
+//     component: SvelteComponent // One of the supported SyDropdown Item components
 //     color: 'some color',
 //     hover: 'some hover color'
-//   } 
-// ]
-export let values = [];
+//   }
+
 
 /* Position Prop */
 /* Possible Values */
 // 'right' - Right aligned to the dropdown trigger
-// 'left' - Left aligned to the dropdown trigger
-export let position = 'left';
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [values] - ]
+	 * @property {string} [position] - 'left' - Left aligned to the dropdown trigger
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let { values = [], position = 'left', children } = $props();
 
 // Generate a random ID for this dropdown
 const dropId = Math.floor(Math.random() * 100);
@@ -29,7 +38,7 @@ const dropId = Math.floor(Math.random() * 100);
 const thisDropdown = document.getElementById(dropId);
 
 // Whether or not the dropdown is "open".
-let active = false;
+let active = $state(false);
 
 const dispatch = createEventDispatcher();
 const handleClick = e => {
@@ -48,11 +57,13 @@ const toggleDropdown = () => {
 };
 
 // Close the dropdown if the user clicks outside of it
-$: if(active) {
-	document.addEventListener('click', handleClick, { capture: true });
-} else {
-	document.removeEventListener('click', handleClick, { capture: true });
-}
+run(() => {
+		if(active) {
+		document.addEventListener('click', handleClick, { capture: true });
+	} else {
+		document.removeEventListener('click', handleClick, { capture: true });
+	}
+	});
 onDestroy(() => {
 	document.removeEventListener('click', handleClick, { capture: true });
 });
@@ -102,15 +113,15 @@ const getListClasses = () => {
 </style>
 
 <div class="sy-dropdown--container" class:sy-dropdown--active="{ active }" id="{ dropId }">
-	<span class="sy-dropdown--trigger" on:click="{ toggleDropdown }" on:keyup="{ toggleDropdown }">
-		<slot></slot>
+	<span class="sy-dropdown--trigger" onclick={toggleDropdown} onkeyup={toggleDropdown}>
+		{@render children?.()}
 	</span>
 	<div class="{ getListClasses() }">
 		<div class="sy-dropdown--list--content">
-			{#each values as value}
-				<!-- eslint-disable-next-line no-unused-vars -->
-				<svelte:component this="{value.component}" text="{value.text}" icon="{value.icon}" color="{value.color}" hover="{value.hover}" on:click="{ e => handleSelect(value.id, e) }" />
-			{/each}
+		{#each values as value}
+			<!-- eslint-disable-next-line no-unused-vars -->
+			<svelte:component this={value.component} text={value.text} icon={value.icon} color={value.color} hover={value.hover} onclick={(e) => handleSelect(value.id, e)} />
+		{/each}
 		</div>
 	</div>
 </div>

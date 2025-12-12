@@ -3,23 +3,34 @@ import { createEventDispatcher } from 'svelte';
 import { suppressUnusedExportLet } from '../../utils/';
 
 /* Text Prop */
-// The value to be displayed
-export let text = undefined;
+
 
 /* Color Prop */
 // Color of the text
 // Possible Values:
-// 'black'
-export let color = 'black';
+
 
 /* Hover Prop */
 // Color of the text on hover
 // Possible Values:
-// 'blue'
-export let hover = 'blue';
 
-// Suppress the unexpected prop warning
-export let icon = undefined;
+
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [text] - The value to be displayed
+	 * @property {string} [color] - 'black'
+	 * @property {string} [hover] - 'blue'
+	 * @property {any} [icon] - Suppress the unexpected prop warning
+	 */
+
+	/** @type {Props} */
+	let {
+		text = undefined,
+		color = 'black',
+		hover = 'blue',
+		icon = undefined
+	} = $props();
 suppressUnusedExportLet(icon);
 
 const getClasses = () => {
@@ -55,6 +66,6 @@ const handleClick = e => {
 }
 </style>
 
-<span class="{ getClasses() }" on:click="{ handleClick }" on:keyup="{ handleClick }">
+<span class="{ getClasses() }" onclick={handleClick} onkeyup={handleClick}>
 	{ text }
 </span>

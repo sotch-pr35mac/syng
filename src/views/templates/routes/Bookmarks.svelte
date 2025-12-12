@@ -22,12 +22,12 @@ const isMacos = window.platform === 'darwin';
 
 // Set the active list
 // Syng expects there to always be a list called 'Bookmarks'
-let activeList = 'Bookmarks';
-let activeWord = undefined;
+let activeList = $state('Bookmarks');
+let activeWord = $state(undefined);
 
 // Get the word lists
-let lists = []; // The list of word lists
-let dropdownList = []; // The list of dropdown items, including the list of word lists.
+let lists = $state([]); // The list of word lists
+let dropdownList = $state([]); // The list of dropdown items, including the list of word lists.
 const createDropdownList = (list) => {
 	return [
 		...list
@@ -73,7 +73,7 @@ updateLists(() => undefined);
 
 // Get the words for the active list
 let words = [];
-let wordList = [];
+let wordList = $state([]);
 const getWordList = (items) => {
 	highlightActive = false;
 	return items.map((item) => {
@@ -130,8 +130,8 @@ const createNewPlaceholders = [
 const restrictedListNames = ['create-new', 'Bookmarks'];
 const getNewPlaceholder = () =>
 	createNewPlaceholders.slice(Math.random() * createNewPlaceholders.length)[0];
-let createNewModalVisible = false;
-let createNewButtonDisabled = false;
+let createNewModalVisible = $state(false);
+let createNewButtonDisabled = $state(false);
 const closeNewModal = () => {
 	createNewModalVisible = false;
 	document.getElementById('create-new-list-input').value = '';
@@ -169,7 +169,7 @@ const handleSelection = (selected) => {
 	activeWord = words[selected.detail.index];
 	highlightActive = true;
 };
-let highlightActive = true;
+let highlightActive = $state(true);
 
 // Actions
 let disableDeleteButton = false;
@@ -317,7 +317,7 @@ const actions = [
               hover={action.hover}
               classes={['sy-tooltip--container']}
             >
-              <svelte:component this={action.icon} size="20" />
+              <action.icon size="20" />
               <div class="sy-tooltip--body sy-tooltip--body-bottom">
                 <p>{action.tooltip}</p>
               </div>
@@ -346,26 +346,30 @@ const actions = [
     visible={createNewModalVisible}
     on:close={closeNewModal}
   >
-    <div class="bookmarks-modal-content" slot="body">
-      <p>What would you like to call this list?</p>
-      <SyTextInput
-        size="large"
-        placeholder={`ex. ${getNewPlaceholder()}`}
-        id="create-new-list-input"
-      />
-    </div>
-    <svelte:fragment slot="footer">
-      <SyButton size="large" on:click={closeNewModal}>Cancel</SyButton>
-      &nbsp;
-      <SyButton
-        size="large"
-        color="green"
-        on:click={createNewList}
-        disabled={createNewButtonDisabled}
-      >
-        Create
-      </SyButton>
-    </svelte:fragment>
+    {#snippet body()}
+				<div class="bookmarks-modal-content" >
+	      <p>What would you like to call this list?</p>
+	      <SyTextInput
+	        size="large"
+	        placeholder={`ex. ${getNewPlaceholder()}`}
+	        id="create-new-list-input"
+	      />
+	    </div>
+			{/snippet}
+    {#snippet footer()}
+			
+	      <SyButton size="large" on:click={closeNewModal}>Cancel</SyButton>
+	      &nbsp;
+	      <SyButton
+	        size="large"
+	        color="green"
+	        on:click={createNewList}
+	        disabled={createNewButtonDisabled}
+	      >
+	        Create
+	      </SyButton>
+	    
+			{/snippet}
   </SyModal>
 </div>
 

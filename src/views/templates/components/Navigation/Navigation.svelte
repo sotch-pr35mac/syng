@@ -1,4 +1,6 @@
 <script>
+  import { run } from 'svelte/legacy';
+
 import {
 	BookmarkIcon,
 	BookOpenIcon,
@@ -71,26 +73,28 @@ const secondaryNavigation = [
 ];
 
 let isMacos = platform() === 'macos';
-let enableBetaFeatures = false;
-let enableTransparency = false;
-let trafficLightMargin = isMacos;
+let enableBetaFeatures = $state(false);
+let enableTransparency = $state(false);
+let trafficLightMargin = $state(isMacos);
 
 // On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
-$: if (isMacos) {
-	getCurrentWindow()
-		.onResized()
-		.then(() => {
-			getCurrentWindow()
-				.isFullscreen()
-				.then((fullscreen) => {
-					if (fullscreen) {
-						trafficLightMargin = false;
-					} else {
-						trafficLightMargin = true;
-					}
-				});
-		});
-}
+run(() => {
+    if (isMacos) {
+  	getCurrentWindow()
+  		.onResized()
+  		.then(() => {
+  			getCurrentWindow()
+  				.isFullscreen()
+  				.then((fullscreen) => {
+  					if (fullscreen) {
+  						trafficLightMargin = false;
+  					} else {
+  						trafficLightMargin = true;
+  					}
+  				});
+  		});
+  }
+  });
 
 window.preferenceManager
 	.waitForInit()
@@ -125,7 +129,7 @@ window.preferenceManager
               className: 'navigation--item-active',
             }}
           >
-            <svelte:component this={navItem.icon} size="24" />
+            <navItem.icon size="24" />
           </span>
           <div class="sy-tooltip--body sy-tooltip--body-right">
             <p>
@@ -147,7 +151,7 @@ window.preferenceManager
               className: 'navigation--item-active',
             }}
           >
-            <svelte:component this={navItem.icon} size={navItem.size} />
+            <navItem.icon size={navItem.size} />
           </span>
           <div class="sy-tooltip--body sy-tooltip--body-right">
             <p>
