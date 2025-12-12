@@ -1,0 +1,7 @@
+.github
+.vscode
+node_modules
+src/views/resources/hanzi-writer-data
+src/views/templates/build
+src/native/gen
+src/native/target
