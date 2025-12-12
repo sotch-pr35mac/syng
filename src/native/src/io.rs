@@ -132,7 +132,7 @@ pub async fn export_list_data(
         .file()
         .set_title("Save Vocabulary List")
         .add_filter("Syng List Formats", &["sld", "syli"])
-        .set_file_name(&format!("{}.syli", &name))
+        .set_file_name(format!("{}.syli", &name))
         .blocking_save_file();
     if let Some(file_path) = file_path {
         let path = match file_path {

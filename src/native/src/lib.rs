@@ -40,8 +40,8 @@ fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindowWord
 // Code to set the macOS traffic lights inset.
 // Implementation taken from:
 // https://github.com/hoppscotch/hoppscotch/blob/main/packages/hoppscotch-selfhost-desktop/src-tauri/src/mac/window.rs
-const WINDOW_CONTROL_PAD_X: f64 = 20.0;
-const WINDOW_CONTROL_PAD_Y: f64 = 23.0;
+const WINDOW_CONTROL_PAD_X: f64 = 17.0;
+const WINDOW_CONTROL_PAD_Y: f64 = 28.0;
 
 pub enum ToolbarThickness {
     Thick,
@@ -60,24 +60,27 @@ pub trait WindowExt {
 impl<R: Runtime> WindowExt for Window<R> {
     #[cfg(target_os = "macos")]
     fn set_transparent_titlebar(&self, thickness: ToolbarThickness) {
-        use cocoa::appkit::{NSWindow, NSWindowTitleVisibility};
+        use objc2::rc::Retained;
+        use objc2::runtime::AnyObject;
+        use objc2_app_kit::{NSWindow, NSWindowTitleVisibility};
 
         unsafe {
-            let id = self.ns_window().unwrap() as cocoa::base::id;
+            let ns_window_ptr = self.ns_window().unwrap() as *mut AnyObject;
+            let ns_window = Retained::retain(ns_window_ptr as *mut NSWindow).unwrap();
 
-            id.setTitlebarAppearsTransparent_(cocoa::base::YES);
+            ns_window.setTitlebarAppearsTransparent(true);
 
             match thickness {
                 ToolbarThickness::Thick => {
                     self.set_title("").expect("Title wasn't set to ''");
-                    make_toolbar(id);
+                    make_toolbar(ns_window.as_ref());
                 }
                 ToolbarThickness::Medium => {
-                    id.setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
-                    make_toolbar(id);
+                    ns_window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
+                    make_toolbar(ns_window.as_ref());
                 }
                 ToolbarThickness::Thin => {
-                    id.setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
+                    ns_window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
                 }
             }
         }
@@ -85,35 +88,40 @@ impl<R: Runtime> WindowExt for Window<R> {
 
     #[cfg(target_os = "macos")]
     fn set_window_controls_pos(&self, x: f64, y: f64) {
-        use cocoa::{
-            appkit::{NSView, NSWindow, NSWindowButton},
-            foundation::NSRect,
-        };
-        use objc::{msg_send, sel, sel_impl};
+        use objc2::rc::Retained;
+        use objc2::runtime::AnyObject;
+        use objc2_app_kit::{NSWindow, NSWindowButton};
 
         unsafe {
-            let window = self.ns_window().unwrap() as cocoa::base::id;
+            let ns_window_ptr = self.ns_window().unwrap() as *mut AnyObject;
+            let window = Retained::retain(ns_window_ptr as *mut NSWindow).unwrap();
 
-            let close = window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
-            let minimize = window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
-            let maximize = window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
+            let close = window
+                .standardWindowButton(NSWindowButton::CloseButton)
+                .unwrap();
+            let minimize = window
+                .standardWindowButton(NSWindowButton::MiniaturizeButton)
+                .unwrap();
+            let maximize = window
+                .standardWindowButton(NSWindowButton::ZoomButton)
+                .unwrap();
 
-            let title_bar_container_view = close.superview().superview();
+            let title_bar_container_view = close.superview().unwrap().superview().unwrap();
 
-            let close_rect: NSRect = msg_send![close, frame];
+            let close_rect = close.frame();
             let button_height = close_rect.size.height;
 
             let title_bar_frame_height = button_height + y;
-            let mut title_bar_rect = NSView::frame(title_bar_container_view);
+            let mut title_bar_rect = title_bar_container_view.frame();
             title_bar_rect.size.height = title_bar_frame_height;
-            title_bar_rect.origin.y = NSView::frame(window).size.height - title_bar_frame_height;
-            let _: () = msg_send![title_bar_container_view, setFrame: title_bar_rect];
+            title_bar_rect.origin.y = window.frame().size.height - title_bar_frame_height;
+            title_bar_container_view.setFrame(title_bar_rect);
 
+            let space_between = minimize.frame().origin.x - close.frame().origin.x;
             let window_buttons = vec![close, minimize, maximize];
-            let space_between = NSView::frame(minimize).origin.x - NSView::frame(close).origin.x;
 
             for (i, button) in window_buttons.into_iter().enumerate() {
-                let mut rect: NSRect = NSView::frame(button);
+                let mut rect = button.frame();
                 rect.origin.x = x + (i as f64 * space_between);
                 button.setFrameOrigin(rect.origin);
             }
@@ -124,24 +132,27 @@ impl<R: Runtime> WindowExt for Window<R> {
 impl<R: Runtime> WindowExt for WebviewWindow<R> {
     #[cfg(target_os = "macos")]
     fn set_transparent_titlebar(&self, thickness: ToolbarThickness) {
-        use cocoa::appkit::{NSWindow, NSWindowTitleVisibility};
+        use objc2::rc::Retained;
+        use objc2::runtime::AnyObject;
+        use objc2_app_kit::{NSWindow, NSWindowTitleVisibility};
 
         unsafe {
-            let id = self.ns_window().unwrap() as cocoa::base::id;
+            let ns_window_ptr = self.ns_window().unwrap() as *mut AnyObject;
+            let ns_window = Retained::retain(ns_window_ptr as *mut NSWindow).unwrap();
 
-            id.setTitlebarAppearsTransparent_(cocoa::base::YES);
+            ns_window.setTitlebarAppearsTransparent(true);
 
             match thickness {
                 ToolbarThickness::Thick => {
                     self.set_title("").expect("Title wasn't set to ''");
-                    make_toolbar(id);
+                    make_toolbar(ns_window.as_ref());
                 }
                 ToolbarThickness::Medium => {
-                    id.setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
-                    make_toolbar(id);
+                    ns_window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
+                    make_toolbar(ns_window.as_ref());
                 }
                 ToolbarThickness::Thin => {
-                    id.setTitleVisibility_(NSWindowTitleVisibility::NSWindowTitleHidden);
+                    ns_window.setTitleVisibility(NSWindowTitleVisibility::Hidden);
                 }
             }
         }
@@ -149,35 +160,40 @@ impl<R: Runtime> WindowExt for WebviewWindow<R> {
 
     #[cfg(target_os = "macos")]
     fn set_window_controls_pos(&self, x: f64, y: f64) {
-        use cocoa::{
-            appkit::{NSView, NSWindow, NSWindowButton},
-            foundation::NSRect,
-        };
-        use objc::{msg_send, sel, sel_impl};
+        use objc2::rc::Retained;
+        use objc2::runtime::AnyObject;
+        use objc2_app_kit::{NSWindow, NSWindowButton};
 
         unsafe {
-            let window = self.ns_window().unwrap() as cocoa::base::id;
+            let ns_window_ptr = self.ns_window().unwrap() as *mut AnyObject;
+            let window = Retained::retain(ns_window_ptr as *mut NSWindow).unwrap();
 
-            let close = window.standardWindowButton_(NSWindowButton::NSWindowCloseButton);
-            let minimize = window.standardWindowButton_(NSWindowButton::NSWindowMiniaturizeButton);
-            let maximize = window.standardWindowButton_(NSWindowButton::NSWindowZoomButton);
+            let close = window
+                .standardWindowButton(NSWindowButton::CloseButton)
+                .unwrap();
+            let minimize = window
+                .standardWindowButton(NSWindowButton::MiniaturizeButton)
+                .unwrap();
+            let maximize = window
+                .standardWindowButton(NSWindowButton::ZoomButton)
+                .unwrap();
 
-            let title_bar_container_view = close.superview().superview();
+            let title_bar_container_view = close.superview().unwrap().superview().unwrap();
 
-            let close_rect: NSRect = msg_send![close, frame];
+            let close_rect = close.frame();
             let button_height = close_rect.size.height;
 
             let title_bar_frame_height = button_height + y;
-            let mut title_bar_rect = NSView::frame(title_bar_container_view);
+            let mut title_bar_rect = title_bar_container_view.frame();
             title_bar_rect.size.height = title_bar_frame_height;
-            title_bar_rect.origin.y = NSView::frame(window).size.height - title_bar_frame_height;
-            let _: () = msg_send![title_bar_container_view, setFrame: title_bar_rect];
+            title_bar_rect.origin.y = window.frame().size.height - title_bar_frame_height;
+            title_bar_container_view.setFrame(title_bar_rect);
 
+            let space_between = minimize.frame().origin.x - close.frame().origin.x;
             let window_buttons = vec![close, minimize, maximize];
-            let space_between = NSView::frame(minimize).origin.x - NSView::frame(close).origin.x;
 
             for (i, button) in window_buttons.into_iter().enumerate() {
-                let mut rect: NSRect = NSView::frame(button);
+                let mut rect = button.frame();
                 rect.origin.x = x + (i as f64 * space_between);
                 button.setFrameOrigin(rect.origin);
             }
@@ -186,12 +202,15 @@ impl<R: Runtime> WindowExt for WebviewWindow<R> {
 }
 
 #[cfg(target_os = "macos")]
-unsafe fn make_toolbar(id: cocoa::base::id) {
-    use cocoa::appkit::{NSToolbar, NSWindow};
+unsafe fn make_toolbar(window: &objc2_app_kit::NSWindow) {
+    use objc2::{MainThreadMarker, MainThreadOnly};
+    use objc2_app_kit::NSToolbar;
+    use objc2_foundation::NSString;
 
-    let new_toolbar = NSToolbar::alloc(id);
-    new_toolbar.init_();
-    id.setToolbar_(new_toolbar);
+    let mtm = MainThreadMarker::new().expect("must be on main thread");
+    let toolbar =
+        NSToolbar::initWithIdentifier(NSToolbar::alloc(mtm), &NSString::from_str("window_toolbar"));
+    window.setToolbar(Some(&toolbar));
 }
 
 #[cfg(desktop)]
