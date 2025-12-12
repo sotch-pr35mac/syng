@@ -33,7 +33,7 @@
 {#if show}
     <div class="result-container">
         <!-- Result badge with slide animation -->
-        <div class="result-indicator" in:slide={{ duration: 250, axis: 'x' }}>
+        <div class="result-indicator" in:slide|global={{ duration: 250, axis: 'x' }}>
             <div class="indicator-content">
                 {#if isCorrect}
                     <div class="icon-container" class:correct={isCorrect}>
@@ -51,7 +51,7 @@
         </div>
 
         <!-- Timer with fade animation -->
-        <div class="timer-wrapper" in:fade={{ duration: 250 }}>
+        <div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
             <SyTimer
                 bind:this={timer}
                 duration={RESULT_DISPLAY_TIME}
