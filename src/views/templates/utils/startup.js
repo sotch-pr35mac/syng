@@ -15,8 +15,8 @@ import {
 } from './migrationManager.js';
 import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
-import { invoke } from "@tauri-apps/api/core";
-import { platform } from "@tauri-apps/plugin-os";
+import { invoke } from '@tauri-apps/api/core';
+import { platform } from '@tauri-apps/plugin-os';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -53,7 +53,7 @@ export const runStartupActions = () => {
 			name: 'cache-platform',
 			action: () => {
 				return new Promise((resolve, _reject) => {
-					resolve(platform())
+					resolve(platform());
 				});
 			}
 		},

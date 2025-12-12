@@ -1,110 +1,110 @@
 <script>
 import {
-  BookmarkIcon,
-  BookOpenIcon,
-  HelpCircleIcon,
-  MessageCircleIcon,
-  MoreVerticalIcon,
-  SearchIcon,
-  SettingsIcon,
-  TrendingUpIcon,
-} from "svelte-feather-icons";
-import active from "svelte-spa-router/active";
-import { handleError } from "../../utils/";
-import { platform } from "@tauri-apps/plugin-os";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+	BookmarkIcon,
+	BookOpenIcon,
+	HelpCircleIcon,
+	MessageCircleIcon,
+	MoreVerticalIcon,
+	SearchIcon,
+	SettingsIcon,
+	TrendingUpIcon,
+} from 'svelte-feather-icons';
+import active from 'svelte-spa-router/active';
+import { handleError } from '../../utils/';
+import { platform } from '@tauri-apps/plugin-os';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const primaryNavigation = [
-  {
-    link: "",
-    icon: SearchIcon,
-    title: "Search",
-    beta: false,
-  },
-  {
-    link: "read",
-    icon: BookOpenIcon,
-    title: "Read",
-    beta: true,
-  },
-  {
-    link: "bookmarks",
-    icon: BookmarkIcon,
-    title: "Bookmarks",
-    beta: false,
-  },
-  {
-    link: "study",
-    pattern: /\/study(\/.*)?/,
-    icon: TrendingUpIcon,
-    title: "Study",
-    beta: false,
-  },
-  {
-    link: "chat",
-    icon: MessageCircleIcon,
-    title: "Chat",
-    beta: true,
-  },
-  {
-    link: "tools",
-    icon: MoreVerticalIcon,
-    title: "Extras",
-    beta: true,
-  },
+	{
+		link: '',
+		icon: SearchIcon,
+		title: 'Search',
+		beta: false,
+	},
+	{
+		link: 'read',
+		icon: BookOpenIcon,
+		title: 'Read',
+		beta: true,
+	},
+	{
+		link: 'bookmarks',
+		icon: BookmarkIcon,
+		title: 'Bookmarks',
+		beta: false,
+	},
+	{
+		link: 'study',
+		pattern: /\/study(\/.*)?/,
+		icon: TrendingUpIcon,
+		title: 'Study',
+		beta: false,
+	},
+	{
+		link: 'chat',
+		icon: MessageCircleIcon,
+		title: 'Chat',
+		beta: true,
+	},
+	{
+		link: 'tools',
+		icon: MoreVerticalIcon,
+		title: 'Extras',
+		beta: true,
+	},
 ];
 const secondaryNavigation = [
-  {
-    link: "help",
-    icon: HelpCircleIcon,
-    size: "18",
-    title: "Help",
-    beta: true,
-  },
-  {
-    link: "settings",
-    icon: SettingsIcon,
-    size: "24",
-    title: "Settings",
-    beta: false,
-  },
+	{
+		link: 'help',
+		icon: HelpCircleIcon,
+		size: '18',
+		title: 'Help',
+		beta: true,
+	},
+	{
+		link: 'settings',
+		icon: SettingsIcon,
+		size: '24',
+		title: 'Settings',
+		beta: false,
+	},
 ];
 
-let isMacos = platform() === "macos";
+let isMacos = platform() === 'macos';
 let enableBetaFeatures = false;
 let enableTransparency = false;
 let trafficLightMargin = isMacos;
 
 // On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
 $: if (isMacos) {
-  getCurrentWindow()
-    .onResized()
-    .then(() => {
-      getCurrentWindow()
-        .isFullscreen()
-        .then((fullscreen) => {
-          if (fullscreen) {
-            trafficLightMargin = false;
-          } else {
-            trafficLightMargin = true;
-          }
-        });
-    });
+	getCurrentWindow()
+		.onResized()
+		.then(() => {
+			getCurrentWindow()
+				.isFullscreen()
+				.then((fullscreen) => {
+					if (fullscreen) {
+						trafficLightMargin = false;
+					} else {
+						trafficLightMargin = true;
+					}
+				});
+		});
 }
 
 window.preferenceManager
-  .waitForInit()
-  .then(() => {
-    enableBetaFeatures = window.preferenceManager.get("beta");
-    enableTransparency =
-      isMacos && window.preferenceManager.get("transparency");
-  })
-  .catch((err) => {
-    handleError(
-      "There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.",
-      err,
-    );
-  });
+	.waitForInit()
+	.then(() => {
+		enableBetaFeatures = window.preferenceManager.get('beta');
+		enableTransparency =
+      isMacos && window.preferenceManager.get('transparency');
+	})
+	.catch((err) => {
+		handleError(
+			'There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.',
+			err,
+		);
+	});
 </script>
 
 <div
@@ -122,7 +122,7 @@ window.preferenceManager
             class="navigation--item"
             use:active={{
               path: navItem.pattern || `/${navItem.link}`,
-              className: "navigation--item-active",
+              className: 'navigation--item-active',
             }}
           >
             <svelte:component this={navItem.icon} size="24" />
@@ -144,7 +144,7 @@ window.preferenceManager
             class="navigation--item"
             use:active={{
               path: `/${navItem.link}`,
-              className: "navigation--item-active",
+              className: 'navigation--item-active',
             }}
           >
             <svelte:component this={navItem.icon} size={navItem.size} />
