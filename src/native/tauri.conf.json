@@ -39,9 +39,9 @@
 		},
 		"createUpdaterArtifacts": "v1Compatible"
 	},
-	"productName": "Syng 2",
-	"mainBinaryName": "Syng 2",
-	"version": "0.0.6",
+	"productName": "Syng",
+	"mainBinaryName": "Syng",
+	"version": "2.0.0",
 	"identifier": "org.syng.app",
 	"plugins": {
 		"updater": {

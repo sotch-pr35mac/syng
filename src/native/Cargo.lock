@@ -4371,7 +4371,11 @@ dependencies = [
 
 [[package]]
 name = "syng"
+<<<<<<< HEAD
 version = "0.0.7"
+=======
+version = "2.0.0"
+>>>>>>> 57356ca3 (Updated version number)
 dependencies = [
  "chinese_dictionary",
  "objc2 0.6.3",
