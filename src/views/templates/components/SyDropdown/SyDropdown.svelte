@@ -110,7 +110,7 @@ const getListClasses = () => {
 </style>
 
 <div class="sy-dropdown--container" class:sy-dropdown--active="{ active }" id="{ dropId }">
-	<span class="sy-dropdown--trigger" onclick={toggleDropdown} onkeyup={toggleDropdown}>
+	<span class="sy-dropdown--trigger" role="button" tabindex="0" onclick={toggleDropdown} onkeyup={toggleDropdown}>
 		{@render children?.()}
 	</span>
 	<div class="{ getListClasses() }">

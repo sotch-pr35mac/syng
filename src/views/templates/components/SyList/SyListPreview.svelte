@@ -1,5 +1,4 @@
 <script>
-import { suppressUnusedExportLet } from "../../utils/";
 import SyTextInput from "../SyTextInput/SyTextInput.svelte";
 import SyListPreviewItem from "./SyListPreviewItem.svelte";
 
@@ -20,11 +19,10 @@ let {
   values = [],
   highlight = true,
   filterable = false,
-  component = undefined,
+  component: _component = undefined,
   onselection,
   onevent,
 } = $props();
-suppressUnusedExportLet(component);
 
 let activeIndex = $state();
 let filteredValues = $state([]);

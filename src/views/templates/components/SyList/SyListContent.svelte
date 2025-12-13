@@ -1,6 +1,4 @@
 <script>
-import { suppressUnusedExportLet } from "../../utils/";
-
 /* Component Prop */
 // The component to render as a list item
 
@@ -18,13 +16,11 @@ import { suppressUnusedExportLet } from "../../utils/";
 let {
   values = [],
   component,
-  highlight = undefined,
-  filterable = undefined,
+  highlight: _highlight = undefined,
+  filterable: _filterable = undefined,
   onselection,
   onevent,
 } = $props();
-suppressUnusedExportLet(highlight);
-suppressUnusedExportLet(filterable);
 </script>
 
 <div class="sy-list--container">

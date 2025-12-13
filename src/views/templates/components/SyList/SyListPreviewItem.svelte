@@ -37,6 +37,8 @@ const handleClick = () => onclick?.({ detail: index });
 <div
   class:sy-list-preview-item-container--active={active && highlight}
   class={getClasses()}
+  role="button"
+  tabindex="0"
   onclick={handleClick}
   onkeyup={handleKeyup}
 >
