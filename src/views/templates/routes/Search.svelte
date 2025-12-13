@@ -18,9 +18,6 @@ let activeWord = $state();
 let searchLang = $state("EN");
 let highlightActive = $state(true);
 let enableTransparency = false;
-// Manually call the tauri platform promise instead of using `window.platform`
-// so that we can watch for updates and respond accordingly because this page
-// may load prior to `window.platform` being set.
 let isMacos = platform() === "macos";
 // Disabling transparency for now since it doesn't work in Tauri as well as in Electron
 // enableTransparency = isMacos && window.preferenceManager.get('transparency');

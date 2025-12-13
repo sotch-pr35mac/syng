@@ -10,12 +10,13 @@ import SyButton from "../../components/SyButton/SyButton.svelte";
 import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
 import { querystring } from "svelte-spa-router";
 import { handleError } from "../../utils";
+import { platform } from "@tauri-apps/plugin-os";
 
 const EMPTY_LIST_MESSAGE = "No flashcards in this list";
 const LOADING_LIST_MESSAGE = "Loading...";
 let loading = $state(true);
 
-const isMacos = window.platform === "darwin";
+const isMacos = platform() === "macos";
 let activeList = undefined;
 let activeIndex = $state(0);
 let showDetails = $state(false);

@@ -8,6 +8,7 @@ import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.sv
 import SyTimer from "../../components/SyTimer/SyTimer.svelte";
 import SyProgressLine from "../../components/SyProgressLine/SyProgressLine.svelte";
 import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 
 // TODO: Consider moving these into a utility file or something...
 // Quiz Constants
@@ -18,7 +19,7 @@ const SIMPLE_QUIZ = "Simple";
 
 const EMPTY_MESSAGE = "No Questions Available";
 const LOADING_MESSAGE = "Loading...";
-const isMacos = window.platform === "darwin";
+const isMacos = platform() === "macos";
 let loading = $state(true);
 
 let activeList = undefined;

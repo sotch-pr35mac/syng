@@ -2,8 +2,9 @@
 import SyList from "../components/SyList/SyList.svelte";
 import StudyListItem from "../components/StudyListItem/StudyListItem.svelte";
 import { handleError } from "../utils";
+import { platform } from "@tauri-apps/plugin-os";
 
-const isMacos = window.platform === "darwin";
+const isMacos = platform() === "macos";
 let lists = $state([]);
 let emptyLists = $state([]);
 

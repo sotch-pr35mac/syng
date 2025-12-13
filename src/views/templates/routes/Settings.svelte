@@ -2,7 +2,9 @@
 import ToneColorPicker from "../components/SettingsOption/ToneColorPicker.svelte";
 import UpdateChecker from "../components/SettingsOption/UpdateChecker.svelte";
 import SyToggle from "../components/SyToggle/SyToggle.svelte";
-const isMacos = window.platform === "darwin";
+import { platform } from "@tauri-apps/plugin-os";
+
+const isMacos = platform() === "macos";
 
 let preferences = [
   {
