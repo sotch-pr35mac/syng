@@ -166,8 +166,7 @@ const saveNotes = () => {
   }, 500);
 };
 
-const handleMembershipModification = (e) => {
-  const listName = e.detail;
+const handleMembershipModification = (listName) => {
   if (memberLists.includes(listName)) {
     // The word is present in the selected list. The user must be
     // requesting to remove the word from this list.
@@ -196,13 +195,13 @@ const getContainerClasses = () => {
           {#if action.dropdown}
             <SyDropdown
               values={action.dropdown}
-              on:selection={handleMembershipModification}
+              onselection={handleMembershipModification}
               position="right"
             >
               <SyButton
                 grouped="true"
                 classes={["sy-tooltip--container", ...action.classes]}
-                on:click={action.action}
+                onclick={action.action}
               >
                 <action.component size="18" />
                 {#if action.tooltip}
@@ -218,7 +217,7 @@ const getContainerClasses = () => {
             <SyButton
               grouped="true"
               classes={["sy-tooltip--container"]}
-              on:click={action.action}
+              onclick={action.action}
             >
               <action.component size="18" />
               {#if action.tooltip}
