@@ -1,7 +1,5 @@
 <script>
-	import { run } from 'svelte/legacy';
 
-import { onDestroy } from 'svelte';
 
 /* Dropdown Values Prop */
 // The values to be present in the dropdown list.
@@ -57,15 +55,14 @@ const toggleDropdown = () => {
 };
 
 // Close the dropdown if the user clicks outside of it
-run(() => {
-		if(active) {
+// $effect automatically handles cleanup when the component is destroyed
+$effect(() => {
+	if (active) {
 		document.addEventListener('click', handleClick, { capture: true });
-	} else {
-		document.removeEventListener('click', handleClick, { capture: true });
+		return () => {
+			document.removeEventListener('click', handleClick, { capture: true });
+		};
 	}
-	});
-onDestroy(() => {
-	document.removeEventListener('click', handleClick, { capture: true });
 });
 
 const getListClasses = () => {
@@ -119,8 +116,7 @@ const getListClasses = () => {
 	<div class="{ getListClasses() }">
 		<div class="sy-dropdown--list--content">
 		{#each values as value}
-			<!-- eslint-disable-next-line no-unused-vars -->
-			<svelte:component this={value.component} text={value.text} icon={value.icon} color={value.color} hover={value.hover} onclick={(e) => handleSelect(value.id, e)} />
+			<value.component text={value.text} icon={value.icon} color={value.color} hover={value.hover} onclick={(e) => handleSelect(value.id, e)} />
 		{/each}
 		</div>
 	</div>

@@ -1,27 +1,22 @@
 <script>
-import { createEventDispatcher } from "svelte";
-
 /* Checked Prop */
 /* Possible Values */
 // true - The toggle is in the 'on' position
 
-
 /* ID Prop */
-
 
 /* Value Prop */
 
-  /**
-   * @typedef {Object} Props
-   * @property {boolean} [checked] - false - The toggle is in the 'off' position
-   * @property {any} [id] - HTML ID for reference
-   * @property {any} value - The value property for the HTML checkbox
-   */
+/**
+ * @typedef {Object} Props
+ * @property {boolean} [checked] - false - The toggle is in the 'off' position
+ * @property {any} [id] - HTML ID for reference
+ * @property {any} value - The value property for the HTML checkbox
+ * @property {(checked: boolean) => void} [onchange] - Change handler
+ */
 
-  /** @type {Props} */
-  let { checked = false, id = crypto.randomUUID(), value } = $props();
-
-const dispatch = createEventDispatcher();
+/** @type {Props} */
+let { checked = false, id = crypto.randomUUID(), value, onchange } = $props();
 </script>
 
 <span class="sy-toggle--container">
@@ -31,7 +26,7 @@ const dispatch = createEventDispatcher();
     class="sy-toggle"
     {value}
     {checked}
-    onchange={(e) => dispatch("change", e.srcElement.checked)}
+    onchange={(e) => onchange?.(e.target.checked)}
   />
   <label for={id} class="sy-toggle--label">Toggle</label>
 </span>

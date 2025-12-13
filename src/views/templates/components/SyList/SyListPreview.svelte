@@ -1,6 +1,4 @@
 <script>
-import { run } from "svelte/legacy";
-
 import { suppressUnusedExportLet } from "../../utils/";
 import SyTextInput from "../SyTextInput/SyTextInput.svelte";
 import SyListPreviewItem from "./SyListPreviewItem.svelte";
@@ -30,7 +28,9 @@ suppressUnusedExportLet(component);
 
 let activeIndex = $state();
 let filteredValues = $state([]);
-run(() => {
+
+// Reset filtered values when values prop changes
+$effect(() => {
   if (values) {
     filteredValues = values;
 

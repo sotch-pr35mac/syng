@@ -1,39 +1,34 @@
 <script>
-  import { run } from 'svelte/legacy';
-
 import { onMount, onDestroy } from "svelte";
 import { interpolateColor } from "../../utils/color";
 
 /* Duration Prop */
 
-
 /* Size Prop */
-
 
 /* Auto Start Prop */
 /* Possible Values */
 // true
 
-
 /* Progress Color Prop */
 
-  /**
-   * @typedef {Object} Props
-   * @property {number} [duration] - Duration in seconds
-   * @property {number} [size] - Size of the timer in pixels
-   * @property {boolean} [autoStart] - false
-   * @property {any} [progressColor] - Custom progress color, if null uses default grey
-   * @property {() => void} [oncomplete] - Complete handler
-   */
+/**
+ * @typedef {Object} Props
+ * @property {number} [duration] - Duration in seconds
+ * @property {number} [size] - Size of the timer in pixels
+ * @property {boolean} [autoStart] - false
+ * @property {any} [progressColor] - Custom progress color, if null uses default grey
+ * @property {() => void} [oncomplete] - Complete handler
+ */
 
-  /** @type {Props} */
-  let {
-    duration = 10,
-    size = 40,
-    autoStart = false,
-    progressColor = null,
-    oncomplete = () => {}
-  } = $props();
+/** @type {Props} */
+let {
+  duration = 10,
+  size = 40,
+  autoStart = false,
+  progressColor = null,
+  oncomplete = () => {},
+} = $props();
 
 // Internal state
 let progress = $state(0);
@@ -111,17 +106,15 @@ onDestroy(() => {
   }
 });
 
-// SVG path calculation for pie slice
-run(() => {
+// SVG path calculation for pie slice - derived from angle
+let pathD = $derived.by(() => {
   const rad = ((angle - 90) * Math.PI) / 180;
   const x = 20 + 16 * Math.cos(rad);
   const y = 20 + 16 * Math.sin(rad);
-  pathD =
-    angle >= 360
-      ? ""
-      : `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
+  return angle >= 360
+    ? ""
+    : `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
 });
-let pathD = $state();
 </script>
 
 <div

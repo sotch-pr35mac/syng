@@ -1,6 +1,4 @@
 <script>
-import { run } from "svelte/legacy";
-
 import {
   ChevronLeftIcon,
   ArrowRightIcon,
@@ -169,13 +167,11 @@ const leftActions = [
     },
   },
 ];
-let rightActions = $state([]);
-
-// Reactive statement to update rightActions based on quiz state
-run(() => {
+// Derive rightActions based on quiz state
+let rightActions = $derived.by(() => {
   if (finalScore !== undefined) {
     // Show results page actions
-    rightActions = [
+    return [
       {
         icon: RotateCwIcon,
         label: "Retake",
@@ -191,7 +187,7 @@ run(() => {
     ];
   } else if (showAnswer) {
     // Show continue/finish button during quiz
-    rightActions = [
+    return [
       {
         icon: ArrowRightIcon,
         label: questionsPending > 1 ? "Continue" : "Finish",
@@ -224,12 +220,12 @@ run(() => {
     ];
   } else {
     // No actions during question display
-    rightActions = [];
+    return [];
   }
 });
 
-// Call `handleListChange` whenever `activeList` changes.
-run(() => {
+// Call `handleListChange` on mount
+$effect(() => {
   handleListChange();
 });
 

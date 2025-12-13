@@ -1,6 +1,4 @@
 <script>
-import { run } from "svelte/legacy";
-
 import { CheckIcon, Maximize2Icon, PlusIcon } from "svelte-feather-icons";
 import { handleError } from "../../utils/";
 import SyButton from "../SyButton/SyButton.svelte";
@@ -73,12 +71,11 @@ const addListMembership = (list, word) => {
   _modifyListMembership("addToList", list, word);
 };
 
-run(() => {
-  word
-    ? (() => {
-        updateListMembership();
-      })()
-    : null;
+// Update list membership when word changes
+$effect(() => {
+  if (word) {
+    updateListMembership();
+  }
 });
 
 const getBookmarkIcon = () => (memberLists.length ? CheckIcon : PlusIcon);
