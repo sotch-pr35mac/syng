@@ -1,31 +1,31 @@
 <script>
-  import { run } from 'svelte/legacy';
+import { run } from "svelte/legacy";
 
 import {
-	ChevronLeftIcon,
-	ArrowRightIcon,
-	CopyIcon,
-	RotateCwIcon,
-} from 'svelte-feather-icons';
-import SyButton from '../../components/SyButton/SyButton.svelte';
-import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
-import { querystring } from 'svelte-spa-router';
-import { handleError } from '../../utils';
-import ResultIndicator from '../../components/ResultIndicator/ResultIndicator.svelte';
-import SyTimer from '../../components/SyTimer/SyTimer.svelte';
-import SyProgressLine from '../../components/SyProgressLine/SyProgressLine.svelte';
-import { invoke } from '@tauri-apps/api/core';
+  ChevronLeftIcon,
+  ArrowRightIcon,
+  CopyIcon,
+  RotateCwIcon,
+} from "svelte-feather-icons";
+import SyButton from "../../components/SyButton/SyButton.svelte";
+import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
+import { querystring } from "svelte-spa-router";
+import { handleError } from "../../utils";
+import ResultIndicator from "../../components/ResultIndicator/ResultIndicator.svelte";
+import SyTimer from "../../components/SyTimer/SyTimer.svelte";
+import SyProgressLine from "../../components/SyProgressLine/SyProgressLine.svelte";
+import { invoke } from "@tauri-apps/api/core";
 
 // TODO: Consider moving these into a utility file or something...
 // Quiz Constants
-const PINYIN_QUESTIONS = 'Pinyin';
-const ENGLISH_QUESTIONS = 'English';
-const CHARACTER_QUESTIONS = 'Characters';
-const SIMPLE_QUIZ = 'Simple';
+const PINYIN_QUESTIONS = "Pinyin";
+const ENGLISH_QUESTIONS = "English";
+const CHARACTER_QUESTIONS = "Characters";
+const SIMPLE_QUIZ = "Simple";
 
-const EMPTY_MESSAGE = 'No Questions Available';
-const LOADING_MESSAGE = 'Loading...';
-const isMacos = window.platform === 'darwin';
+const EMPTY_MESSAGE = "No Questions Available";
+const LOADING_MESSAGE = "Loading...";
+const isMacos = window.platform === "darwin";
 let loading = $state(true);
 
 let activeList = undefined;
@@ -42,217 +42,215 @@ let finalCorrect = $state(undefined);
 let finalTotal = $state(undefined);
 let questionDuration = $state(10); // Default to 10 seconds, but ultimately determined by the quiz config
 let lists = $state([]);
+let showResult = $state(false);
+let lastAnswerCorrect = $state(false);
+let chosenAnswer = $state("");
+let timerRef = $state(); // Reference to the timer component
 let params = new URLSearchParams($querystring);
-activeList = params.get('list');
+activeList = params.get("list");
 
 // Initialize the lists value
 window.bookmarkManager
-	.getLists()
-	.then((wl) => {
-		lists = wl;
-	})
-	.catch((e) => {
-		handleError(
-			'There was an error fetching word lists. Check the log for more details.',
-			e,
-		);
-	});
+  .getLists()
+  .then((wl) => {
+    lists = wl;
+  })
+  .catch((e) => {
+    handleError(
+      "There was an error fetching word lists. Check the log for more details.",
+      e,
+    );
+  });
 const handleRetakeQuiz = () => {
-	// Reset the quiz state
-	finalScore = undefined;
-	finalCorrect = undefined;
-	finalTotal = undefined;
-	finalIncorrect = [];
-	question = undefined;
-	showAnswer = false;
-	answer = undefined;
-	questionsCompleted = 0;
-	questionsPending = 0;
-	questionsTotal = 0;
-	showResult = false;
-	loading = true;
-	// Restart the quiz
-	handleListChange();
+  // Reset the quiz state
+  finalScore = undefined;
+  finalCorrect = undefined;
+  finalTotal = undefined;
+  finalIncorrect = [];
+  question = undefined;
+  showAnswer = false;
+  answer = undefined;
+  questionsCompleted = 0;
+  questionsPending = 0;
+  questionsTotal = 0;
+  showResult = false;
+  loading = true;
+  // Restart the quiz
+  handleListChange();
 };
 const handleStudyFlashcards = () => {
-	window.location.hash = `#/study/flashcards?list=${activeList}`;
+  window.location.hash = `#/study/flashcards?list=${activeList}`;
 };
 const handleScoreChange = (score) => {
-	finalScore = score.score;
-	finalCorrect = score.correct;
-	finalTotal = score.total;
+  finalScore = score.score;
+  finalCorrect = score.correct;
+  finalTotal = score.total;
 };
 const handleIncorrectChange = (incorrect) => {
-	finalIncorrect = incorrect;
+  finalIncorrect = incorrect;
 };
 const handleQuestionTimerComplete = () => {
-	answerQuestion('N/A');
+  answerQuestion("N/A");
 };
 const handleQuestionChange = (quizQuestion) => {
-	question = quizQuestion;
-	questionDuration = quizQuestion.question.MultipleChoice.time_limit;
-	questionsCompleted = quizQuestion.completed;
-	questionsPending = quizQuestion.pending;
-	questionsTotal = quizQuestion.completed + quizQuestion.pending;
-	loading = false;
-	showAnswer = false;
-	showResult = false;
-	questionStartTime = Date.now();
+  question = quizQuestion;
+  questionDuration = quizQuestion.question.MultipleChoice.time_limit;
+  questionsCompleted = quizQuestion.completed;
+  questionsPending = quizQuestion.pending;
+  questionsTotal = quizQuestion.completed + quizQuestion.pending;
+  loading = false;
+  showAnswer = false;
+  showResult = false;
+  questionStartTime = Date.now();
 };
 const handleAnswerChange = (answerResponse) => {
-	answer = answerResponse.question.MultipleChoice.word_data;
-	showAnswer = true;
-	showResult = true;
-	lastAnswerCorrect = answerResponse.correct;
+  answer = answerResponse.question.MultipleChoice.word_data;
+  showAnswer = true;
+  showResult = true;
+  lastAnswerCorrect = answerResponse.correct;
 };
 const answerQuestion = (answer) => {
-	chosenAnswer = answer;
-	const answeredIn = Math.round((Date.now() - questionStartTime) / 1000);
-	invoke('answer_question', {
-		response: {
-			response: answer,
-			answered_in: answeredIn,
-		},
-	})
-		.then((answerResponse) => {
-			handleAnswerChange(answerResponse);
-		})
-		.catch((e) => {
-			handleError(
-				'There was an error answering the question. Check the log for more details.',
-				e,
-			);
-		});
+  chosenAnswer = answer;
+  const answeredIn = Math.round((Date.now() - questionStartTime) / 1000);
+  invoke("answer_question", {
+    response: {
+      response: answer,
+      answered_in: answeredIn,
+    },
+  })
+    .then((answerResponse) => {
+      handleAnswerChange(answerResponse);
+    })
+    .catch((e) => {
+      handleError(
+        "There was an error answering the question. Check the log for more details.",
+        e,
+      );
+    });
 };
 const handleListChange = () => {
-	if (activeList) {
-		window.bookmarkManager
-			.getListContent(activeList)
-			.then((contents) => {
-				return invoke('start_quiz', {
-					config: {
-						words: contents,
-						kind: SIMPLE_QUIZ,
-						question_kinds: [
-							PINYIN_QUESTIONS,
-							ENGLISH_QUESTIONS,
-							CHARACTER_QUESTIONS,
-						],
-					},
-				});
-			})
-			.then(() => {
-				return invoke('get_next_question');
-			})
-			.then((quizQuestion) => {
-				handleQuestionChange(quizQuestion);
-			})
-			.catch((e) => {
-				handleError(
-					'There was an error starting the quiz. Check the log for more details.',
-					e,
-				);
-			});
-	}
+  if (activeList) {
+    window.bookmarkManager
+      .getListContent(activeList)
+      .then((contents) => {
+        return invoke("start_quiz", {
+          config: {
+            words: contents,
+            kind: SIMPLE_QUIZ,
+            question_kinds: [
+              PINYIN_QUESTIONS,
+              ENGLISH_QUESTIONS,
+              CHARACTER_QUESTIONS,
+            ],
+          },
+        });
+      })
+      .then(() => {
+        return invoke("get_next_question");
+      })
+      .then((quizQuestion) => {
+        handleQuestionChange(quizQuestion);
+      })
+      .catch((e) => {
+        handleError(
+          "There was an error starting the quiz. Check the log for more details.",
+          e,
+        );
+      });
+  }
 };
 const leftActions = [
-	{
-		icon: ChevronLeftIcon,
-		label: 'Exit',
-		disabled: false,
-		action: () => {
-			window.location.hash = '#/study';
-		},
-	},
+  {
+    icon: ChevronLeftIcon,
+    label: "Exit",
+    disabled: false,
+    action: () => {
+      window.location.hash = "#/study";
+    },
+  },
 ];
 let rightActions = $state([]);
 
 // Reactive statement to update rightActions based on quiz state
 run(() => {
-	if (finalScore !== undefined) {
-		// Show results page actions
-		rightActions = [
-			{
-				icon: RotateCwIcon,
-				label: 'Retake',
-				disabled: false,
-				action: handleRetakeQuiz,
-			},
-			{
-				icon: CopyIcon,
-				label: 'Flashcards',
-				disabled: false,
-				action: handleStudyFlashcards,
-			},
-		];
-	} else if (showAnswer) {
-		// Show continue/finish button during quiz
-		rightActions = [
-			{
-				icon: ArrowRightIcon,
-				label: questionsPending > 1 ? 'Continue' : 'Finish',
-				disabled: false,
-				action: () => {
-					showResult = questionsPending > 1 ? false : true;
-					if (questionsPending > 1) {
-						invoke('get_next_question')
-							.then((quizQuestion) => {
-								handleQuestionChange(quizQuestion);
-							})
-							.catch((e) => {
-								handleError('There was an error getting the next question.', e);
-							});
-					} else {
-						invoke('score_quiz')
-							.then((score) => {
-								handleScoreChange(score);
-								return invoke('get_incorrect_questions');
-							})
-							.then((incorrect) => {
-								handleIncorrectChange(incorrect);
-							})
-							.catch((e) => {
-								handleError('There was an error getting the next question.', e);
-							});
-					}
-				},
-			},
-		];
-	} else {
-		// No actions during question display
-		rightActions = [];
-	}
+  if (finalScore !== undefined) {
+    // Show results page actions
+    rightActions = [
+      {
+        icon: RotateCwIcon,
+        label: "Retake",
+        disabled: false,
+        action: handleRetakeQuiz,
+      },
+      {
+        icon: CopyIcon,
+        label: "Flashcards",
+        disabled: false,
+        action: handleStudyFlashcards,
+      },
+    ];
+  } else if (showAnswer) {
+    // Show continue/finish button during quiz
+    rightActions = [
+      {
+        icon: ArrowRightIcon,
+        label: questionsPending > 1 ? "Continue" : "Finish",
+        disabled: false,
+        action: () => {
+          showResult = questionsPending > 1 ? false : true;
+          if (questionsPending > 1) {
+            invoke("get_next_question")
+              .then((quizQuestion) => {
+                handleQuestionChange(quizQuestion);
+              })
+              .catch((e) => {
+                handleError("There was an error getting the next question.", e);
+              });
+          } else {
+            invoke("score_quiz")
+              .then((score) => {
+                handleScoreChange(score);
+                return invoke("get_incorrect_questions");
+              })
+              .then((incorrect) => {
+                handleIncorrectChange(incorrect);
+              })
+              .catch((e) => {
+                handleError("There was an error getting the next question.", e);
+              });
+          }
+        },
+      },
+    ];
+  } else {
+    // No actions during question display
+    rightActions = [];
+  }
 });
 
 // Call `handleListChange` whenever `activeList` changes.
 run(() => {
-    handleListChange();
-  });
-
-let showResult = $state(false);
-let lastAnswerCorrect = $state(false);
-let chosenAnswer = $state('');
-
-let timerRef = $state(); // Reference to the timer component
+  handleListChange();
+});
 
 const handleResultTimerComplete = () => {
-	showResult = false;
-	if (showAnswer) {
-		// Move to next question
-		rightActions[0]?.action();
-	}
+  showResult = false;
+  if (showAnswer) {
+    // Move to next question
+    rightActions[0]?.action();
+  }
 };
 
 // Update the handlePageClick function
 function handlePageClick(event) {
-	// Stop if the click was on the timer itself
-	if (event.target.closest('.timer')) {
-		return;
-	}
+  // Stop if the click was on the timer itself
+  if (event.target.closest(".timer")) {
+    return;
+  }
 
-	if (showResult) {
-		timerRef?.pause();
-	}
+  if (showResult) {
+    timerRef?.pause();
+  }
 }
 </script>
 
@@ -289,7 +287,7 @@ function handlePageClick(event) {
               autoStart={true}
               size={32}
               oncomplete={handleQuestionTimerComplete}
-              progressColor={'var(--sy-color--red)'}
+              progressColor={"var(--sy-color--red)"}
             />
           </div>
         {/if}
