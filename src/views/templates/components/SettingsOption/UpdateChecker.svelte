@@ -1,4 +1,6 @@
 <script>
+import { check } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { handleError } from "../../utils/";
 import SyButton from "../SyButton/SyButton.svelte";
 
@@ -9,6 +11,9 @@ let knownStatus = $state(window.updateStatusAvailable || false);
 let updateAvailable = $state(window.updateAvailable || false);
 let checking = $state(false);
 let updating = $state(false);
+
+// Store the update object so we can call downloadAndInstall on it later
+let pendingUpdate = $state(window.pendingUpdate || null);
 
 if (!window.version) {
   window.__TAURI__.app.getVersion().then((version) => {
@@ -24,31 +29,34 @@ const resetStatus = () => {
   knownStatus = false;
   updateVersion = "";
   releaseNotes = "";
+  pendingUpdate = null;
   window.updateAvailable = false;
   window.updateStatusAvailable = false;
   window.updateVersion = "";
   window.updateReleaseNotes = "";
+  window.pendingUpdate = null;
 };
 
 const updateStatus = () => {
   checking = true;
   updating = false;
-  window.__TAURI__.updater
-    .checkUpdate()
-    .then((updater) => {
-      if (updater.shouldUpdate) {
+  check()
+    .then((update) => {
+      if (update) {
         // Update the page
-        updateVersion = updater.manifest.version;
-        releaseNotes = updater.manifest.body;
+        updateVersion = update.version;
+        releaseNotes = update.body || "";
         knownStatus = true;
         updateAvailable = true;
         checking = false;
+        pendingUpdate = update;
 
         // Cache the results
-        window.updateVersion = updater.manifest.version;
-        window.updateReleaseNotes = updater.manifest.body;
+        window.updateVersion = update.version;
+        window.updateReleaseNotes = update.body || "";
         window.updateStatusAvailable = true;
         window.updateAvailable = true;
+        window.pendingUpdate = update;
       } else {
         // Update the page
         knownStatus = true;
@@ -68,12 +76,18 @@ const updateStatus = () => {
       );
     });
 };
+
 const fetchUpdate = () => {
   updating = true;
-  window.__TAURI__.updater
-    .installUpdate()
+  if (!pendingUpdate) {
+    resetStatus();
+    handleError("No pending update available.", new Error("No pending update"));
+    return;
+  }
+  pendingUpdate
+    .downloadAndInstall()
     .then(() => {
-      window.__TAURI__.process.relaunch();
+      relaunch();
     })
     .catch((e) => {
       resetStatus();
