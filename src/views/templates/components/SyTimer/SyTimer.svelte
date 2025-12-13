@@ -1,7 +1,7 @@
 <script>
   import { run } from 'svelte/legacy';
 
-import { onMount, createEventDispatcher, onDestroy } from "svelte";
+import { onMount, onDestroy } from "svelte";
 import { interpolateColor } from "../../utils/color";
 
 /* Duration Prop */
@@ -23,6 +23,7 @@ import { interpolateColor } from "../../utils/color";
    * @property {number} [size] - Size of the timer in pixels
    * @property {boolean} [autoStart] - false
    * @property {any} [progressColor] - Custom progress color, if null uses default grey
+   * @property {() => void} [oncomplete] - Complete handler
    */
 
   /** @type {Props} */
@@ -30,11 +31,11 @@ import { interpolateColor } from "../../utils/color";
     duration = 10,
     size = 40,
     autoStart = false,
-    progressColor = null
+    progressColor = null,
+    oncomplete = () => {}
   } = $props();
 
 // Internal state
-const dispatch = createEventDispatcher();
 let progress = $state(0);
 let intervalId;
 let startTime;
@@ -82,7 +83,7 @@ function startTimer() {
 
       if (progress >= 1) {
         clearInterval(intervalId);
-        dispatch("complete");
+        oncomplete();
       }
     }
   }, 16);

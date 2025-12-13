@@ -1,6 +1,4 @@
 <script>
-import { createEventDispatcher } from 'svelte';
-
 /* Style Prop */
 /* Possible Values */
 // 'ghost' - No background or shadow
@@ -60,6 +58,7 @@ import { createEventDispatcher } from 'svelte';
 	 * @property {boolean} [center] - false
 	 * @property {any} [classes] - A list of classes
 	 * @property {import('svelte').Snippet} [children]
+	 * @property {() => void} [onclick] - Click handler
 	 */
 
 	/** @type {Props} */
@@ -73,12 +72,11 @@ import { createEventDispatcher } from 'svelte';
 		hover = undefined,
 		center = false,
 		classes = [],
-		children
+		children,
+		onclick = () => {}
 	} = $props();
-
-const dispatch = createEventDispatcher();
 const getClasses = () => {
-	return classes.concat(['sy-button', 
+	return classes.concat(['sy-button',
 		`sy-button--${style}`,
 		`sy-button--${size}`,
 		`sy-button--${shape}`,
@@ -113,13 +111,13 @@ const getClasses = () => {
  	box-shadow: var(--sy-shadow--active);
  	background-color: var(--sy-color--grey-2);
  	transition-property: background-color, box-shadow;
- 	transition-duration: var(--sy-transition-duration); 
+ 	transition-duration: var(--sy-transition-duration);
 }
 .sy-button--filled:disabled {
  	color: var(--sy-color--grey-5);
 }
 .sy-button--ghost {
-	background: none;	
+	background: none;
 }
 .sy-button--ghost:hover {
 	color: var(--sy-color--blue);
@@ -180,6 +178,6 @@ const getClasses = () => {
 }
 </style>
 
-<button class="{getClasses()}" onclick={() => dispatch('click')} disabled={ disabled } data-testid="sy-button">
+<button class="{getClasses()}" onclick={onclick} disabled={ disabled } data-testid="sy-button">
 	{@render children?.()}
 </button>

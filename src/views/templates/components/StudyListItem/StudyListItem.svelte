@@ -1,22 +1,20 @@
 <script>
   import SyButton from '../SyButton/SyButton.svelte';
   import { CopyIcon, AwardIcon } from 'svelte-feather-icons';
-  import { createEventDispatcher } from 'svelte';
 
-  
+
   /**
    * @typedef {Object} Props
    * @property {any} value - Required Value Prop
+   * @property {(data: {action: string, list: any}) => void} [onselection] - Selection callback
    */
 
   /** @type {Props} */
-  let { value } = $props();
-
-  const dispatch = createEventDispatcher();
+  let { value, onselection = () => {} } = $props();
 
   const handleSelection = actionType => {
   	if (value) {
-  		dispatch('selection', {
+  		onselection({
   			action: actionType,
   			list: value
   		});
@@ -45,7 +43,7 @@
     {#each actions as action}
       <SyButton
         center={true}
-        on:click={action.action}
+        onclick={action.action}
         size="large"
         classes={['sy-tooltip--container']}
       >

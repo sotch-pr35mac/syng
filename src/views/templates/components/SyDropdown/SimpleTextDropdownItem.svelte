@@ -1,5 +1,4 @@
 <script>
-import { createEventDispatcher } from 'svelte';
 import { suppressUnusedExportLet } from '../../utils/';
 
 /* Text Prop */
@@ -22,6 +21,7 @@ import { suppressUnusedExportLet } from '../../utils/';
 	 * @property {string} [color] - 'black'
 	 * @property {string} [hover] - 'blue'
 	 * @property {any} [icon] - Suppress the unexpected prop warning
+	 * @property {(e: Event) => void} [onclick] - Click handler
 	 */
 
 	/** @type {Props} */
@@ -29,7 +29,8 @@ import { suppressUnusedExportLet } from '../../utils/';
 		text = undefined,
 		color = 'black',
 		hover = 'blue',
-		icon = undefined
+		icon = undefined,
+		onclick = () => {}
 	} = $props();
 suppressUnusedExportLet(icon);
 
@@ -39,9 +40,8 @@ const getClasses = () => {
 		`st-dropdown-item--hover--${hover}`].join(' ');
 };
 
-const dispatch = createEventDispatcher();
 const handleClick = e => {
-	dispatch('click', e);
+	onclick(e);
 };
 </script>
 

@@ -1,5 +1,4 @@
 <script>
-import { createEventDispatcher } from 'svelte';
 import { XIcon } from 'svelte-feather-icons';
 import SyButton from '../SyButton/SyButton.svelte';
 
@@ -14,6 +13,7 @@ import SyButton from '../SyButton/SyButton.svelte';
 	 * @property {string} [title] - The text to display in the modal header
 	 * @property {import('svelte').Snippet} [body]
 	 * @property {import('svelte').Snippet} [footer]
+	 * @property {() => void} [onclose] - Close handler
 	 */
 
 	/** @type {Props} */
@@ -21,10 +21,9 @@ import SyButton from '../SyButton/SyButton.svelte';
 		visible = false,
 		title = '',
 		body,
-		footer
+		footer,
+		onclose = () => {}
 	} = $props();
-
-const dispatch = createEventDispatcher();
 </script>
 
 <style>
@@ -79,7 +78,7 @@ const dispatch = createEventDispatcher();
 	<div class="sy-modal--content">
 		<div class="sy-modal--header">
 			<h2 class="sy-modal--title">{ title }</h2>
-			<SyButton style="ghost" on:click="{ e => { dispatch('close', e); } }">
+			<SyButton style="ghost" onclick={onclose}>
 				<XIcon size="14" />
 			</SyButton>
 		</div>

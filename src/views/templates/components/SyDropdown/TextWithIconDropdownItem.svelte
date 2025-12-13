@@ -1,6 +1,4 @@
 <script>
-import { createEventDispatcher } from 'svelte';
-
 /* Icon Prop */
 
 
@@ -27,6 +25,7 @@ import { createEventDispatcher } from 'svelte';
 	 * @property {string} [text] - The text value to display
 	 * @property {string} [hover] - 'red'
 	 * @property {string} [color] - 'black'
+	 * @property {(e: Event) => void} [onclick] - Click handler
 	 */
 
 	/** @type {Props} */
@@ -34,17 +33,17 @@ import { createEventDispatcher } from 'svelte';
 		icon = undefined,
 		text = '',
 		hover = 'blue',
-		color = 'black'
+		color = 'black',
+		onclick = () => {}
 	} = $props();
 
-const dispatch = createEventDispatcher();
 const getClasses = () => {
 	return ['twi-dropdown-item--container',
 		`twi-dropdown-item--color--${color}`,
 		`twi-dropdown-item--hover--${hover}`].join(' ');
 };
 const handleClick = e => {
-	dispatch('click', e);
+	onclick(e);
 };
 
 	const SvelteComponent = $derived(icon);

@@ -1,5 +1,4 @@
 <script>
-import { createEventDispatcher } from 'svelte';
 
 /* Style Prop */
 /* Possible Values */
@@ -34,6 +33,9 @@ import { createEventDispatcher } from 'svelte';
 	 * @property {string} [type] - Type Prop
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
+	 * @property {(value: string) => void} [onchange] - Change handler
+	 * @property {(value: string) => void} [onkeyup] - Keyup handler
+	 * @property {(event: Event) => void} [onenter] - Enter key handler
 	 */
 
 	/** @type {Props} */
@@ -44,10 +46,11 @@ import { createEventDispatcher } from 'svelte';
 		placeholder = '',
 		type = 'text',
 		id,
-		spellcheck = undefined
+		spellcheck = undefined,
+		onchange = () => {},
+		onkeyup = () => {},
+		onenter = () => {}
 	} = $props();
-
-const dispatch = createEventDispatcher();
 const getClasses = () => {
 	return ['sy-text-input',
 		transparency ? 'sy-text-input--transparency' : '',
@@ -56,9 +59,9 @@ const getClasses = () => {
 };
 const handleKeyup = event => {
 	if(event.code == 'Enter') {
-		dispatch('enter', event);
+		onenter(event);
 	} else {
-		dispatch('keyup', event.srcElement.value);
+		onkeyup(event.srcElement.value);
 	}
 };
 </script>
@@ -89,7 +92,7 @@ const handleKeyup = event => {
 	outline: none;
 }
 .sy-text-input--small {
-	/* TODO */	
+	/* TODO */
 }
 .sy-text-input--medium {
 	/* TODO */
@@ -105,4 +108,4 @@ const handleKeyup = event => {
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} onchange={e => dispatch('change', e.srcElement.value)} onkeyup={handleKeyup}/>
+<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} onchange={e => onchange(e.srcElement.value)} onkeyup={handleKeyup}/>

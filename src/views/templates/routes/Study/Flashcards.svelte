@@ -117,7 +117,7 @@
             {#each leftActions as action}
                 <SyButton
                     disabled={action.disabled}
-                    on:click={action.action}
+                    onclick={action.action}
                     style="ghost"
                     center={true}
                 >
@@ -131,7 +131,7 @@
             {#each rightActions as action}
                 <SyButton
                     disabled={action.disabled}
-                    on:click={action.action}
+                    onclick={action.action}
                     style="ghost"
                     center={true}
                 >

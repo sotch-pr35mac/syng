@@ -1,7 +1,7 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-import { createEventDispatcher, onDestroy } from 'svelte';
+import { onDestroy } from 'svelte';
 
 /* Dropdown Values Prop */
 // The values to be present in the dropdown list.
@@ -26,10 +26,11 @@ import { createEventDispatcher, onDestroy } from 'svelte';
 	 * @property {any} [values] - ]
 	 * @property {string} [position] - 'left' - Left aligned to the dropdown trigger
 	 * @property {import('svelte').Snippet} [children]
+	 * @property {(id: any) => void} [onselection] - Selection handler
 	 */
 
 	/** @type {Props} */
-	let { values = [], position = 'left', children } = $props();
+	let { values = [], position = 'left', children, onselection = () => {} } = $props();
 
 // Generate a random ID for this dropdown
 const dropId = Math.floor(Math.random() * 100);
@@ -40,7 +41,6 @@ const thisDropdown = document.getElementById(dropId);
 // Whether or not the dropdown is "open".
 let active = $state(false);
 
-const dispatch = createEventDispatcher();
 const handleClick = e => {
 	if(!e.composedPath().includes(thisDropdown)) {
 		active = false;
@@ -48,7 +48,7 @@ const handleClick = e => {
 };
 const handleSelect = id => {
 	if(id) {
-		dispatch('selection', id);
+		onselection(id);
 		active = false;
 	}
 };

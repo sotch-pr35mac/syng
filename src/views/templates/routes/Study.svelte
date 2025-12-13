@@ -36,8 +36,8 @@
 		populatedLists = lists.filter((list) => !emptyLists.includes(list));
 	});
 
-	const handleSelection = selectionData => {
-		const { list, action } = selectionData.detail;
+	const handleSelection = (data) => {
+		const { list, action } = data;
 		let url;
 		if (action === 'quiz') {
 			url = `#/study/quiz?list=${list}`;
@@ -60,7 +60,7 @@
 			<SyList
 				values={populatedLists}
 				component={StudyListItem}
-				on:selection={handleSelection}
+				onselection={handleSelection}
 			/>
 		{:else}
 			<div class="study--empty">

@@ -110,9 +110,9 @@ const updateActiveList = (nextList) => {
 	activeList = nextList;
 	updateListContent(() => undefined);
 };
-const handleListSelection = (event) => {
-	if (event.detail !== 'create-new') {
-		updateActiveList(event.detail);
+const handleListSelection = (id) => {
+	if (id !== 'create-new') {
+		updateActiveList(id);
 	} else {
 		createNewModalVisible = true;
 	}
@@ -165,8 +165,8 @@ const createNewList = () => {
 };
 
 // Word Selection
-const handleSelection = (selected) => {
-	activeWord = words[selected.detail.index];
+const handleSelection = (data) => {
+	activeWord = words[data.index];
 	highlightActive = true;
 };
 let highlightActive = $state(true);
@@ -301,7 +301,7 @@ const actions = [
     class="bookmarks--header"
     data-tauri-drag-region={isMacos ? true : undefined}
   >
-    <SyDropdown values={dropdownList} on:selection={handleListSelection}>
+    <SyDropdown values={dropdownList} onselection={handleListSelection}>
       <SyButton size="large" style="ghost" center={true}>
         {activeList}&nbsp;<ChevronDownIcon size="20" />
       </SyButton>
@@ -312,7 +312,7 @@ const actions = [
           <span class="bookmarks--header--action-item">
             <SyButton
               style="ghost"
-              on:click={action.action}
+              onclick={action.action}
               disabled={action.disabled}
               hover={action.hover}
               classes={['sy-tooltip--container']}
@@ -333,7 +333,7 @@ const actions = [
         style="preview"
         values={wordList}
         highlight={highlightActive}
-        on:selection={handleSelection}
+        onselection={handleSelection}
         filterable={true}
       />
     </div>
@@ -344,7 +344,7 @@ const actions = [
   <SyModal
     title="Create List"
     visible={createNewModalVisible}
-    on:close={closeNewModal}
+    onclose={closeNewModal}
   >
     {#snippet body()}
 				<div class="bookmarks-modal-content" >
@@ -356,19 +356,19 @@ const actions = [
 	      />
 	    </div>
 			{/snippet}
-    {#snippet footer()}
-			
-	      <SyButton size="large" on:click={closeNewModal}>Cancel</SyButton>
+{#snippet footer()}
+
+	      <SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
 	      &nbsp;
 	      <SyButton
 	        size="large"
 	        color="green"
-	        on:click={createNewList}
+	        onclick={createNewList}
 	        disabled={createNewButtonDisabled}
 	      >
 	        Create
 	      </SyButton>
-	    
+
 			{/snippet}
   </SyModal>
 </div>

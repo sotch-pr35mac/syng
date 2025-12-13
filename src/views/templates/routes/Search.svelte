@@ -176,7 +176,7 @@ window.bookmarkManager
       style="ghost"
       size="large"
       disabled={searchHistory[historyPosition - 1] == undefined}
-      on:click={historyBack}
+      onclick={historyBack}
     >
       <ChevronLeftIcon size="20" />
     </SyButton>
@@ -184,11 +184,11 @@ window.bookmarkManager
       style="ghost"
       size="large"
       disabled={searchHistory[historyPosition + 1] == undefined}
-      on:click={historyForward}
+      onclick={historyForward}
     >
       <ChevronRightIcon size="20" />
     </SyButton>
-    <SyButton style="ghost" size="large" on:click={() => switchLang()}>
+    <SyButton style="ghost" size="large" onclick={() => switchLang()}>
       {searchLang}
     </SyButton>
     <SyTextInput
@@ -198,9 +198,9 @@ window.bookmarkManager
       placeholder="Search..."
       id="search"
       transparency={enableTransparency}
-      on:change={(e) => query(e.detail, true)}
-      on:keyup={(e) => query(e.detail, false)}
-      on:enter={handleEnter}
+      onchange={(value) => query(value, true)}
+      onkeyup={(value) => query(value, false)}
+      onenter={handleEnter}
     />
   </div>
   <div class="search-content-container">

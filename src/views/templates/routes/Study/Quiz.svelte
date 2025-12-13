@@ -262,7 +262,7 @@ function handlePageClick(event) {
       {#each leftActions as action}
         <SyButton
           disabled={action.disabled}
-          on:click={action.action}
+          onclick={action.action}
           style="ghost"
           center={true}
         >
@@ -288,7 +288,7 @@ function handlePageClick(event) {
               duration={questionDuration}
               autoStart={true}
               size={32}
-              on:complete={handleQuestionTimerComplete}
+              oncomplete={handleQuestionTimerComplete}
               progressColor={'var(--sy-color--red)'}
             />
           </div>
@@ -298,7 +298,7 @@ function handlePageClick(event) {
         {#if action}
           <SyButton
             disabled={action.disabled}
-            on:click={action.action}
+            onclick={action.action}
             style="ghost"
             center={true}
           >

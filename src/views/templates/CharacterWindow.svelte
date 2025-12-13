@@ -125,7 +125,7 @@ window
     <SyButton
       style="ghost"
       size="large"
-      on:click={() => switchScript('simplified')}
+      onclick={() => switchScript('simplified')}
     >
       <span class:script-selector--active={activeScript == 'simplified'}>
         Simplified
@@ -134,7 +134,7 @@ window
     <SyButton
       style="ghost"
       size="large"
-      on:click={() => switchScript('traditional')}
+      onclick={() => switchScript('traditional')}
     >
       <span class:script-selector--active={activeScript == 'traditional'}>
         Traditional
@@ -154,7 +154,7 @@ window
       <div class="character-actions">
         <SyButton
           classes={['sy-tooltip--container']}
-          on:click={() => handleControlButtonClick()}
+          onclick={() => handleControlButtonClick()}
         >
           <span
             class="animate-button--icon-container"
