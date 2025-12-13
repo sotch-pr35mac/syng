@@ -20,7 +20,7 @@ const handleSelection = (actionType) => {
   }
 };
 
-const actions = [
+const actions = $derived([
   {
     icon: SquareStack,
     action: () => handleSelection("flashcards"),
@@ -31,7 +31,7 @@ const actions = [
     action: () => handleSelection("quiz"),
     tooltip: `Start quiz for ${value}`,
   },
-];
+]);
 </script>
 
 <div class="study-list-item">

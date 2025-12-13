@@ -124,6 +124,9 @@ let pathD = $derived.by(() => {
   onkeydown={(e) => e.key === " " && handleClick()}
   onmouseenter={() => (hovering = true)}
   onmouseleave={() => (hovering = false)}
+  role="button"
+  tabindex="0"
+  aria-label={isPaused ? "Resume timer" : "Pause timer"}
 >
   {#if isPaused}
     {#if hovering}

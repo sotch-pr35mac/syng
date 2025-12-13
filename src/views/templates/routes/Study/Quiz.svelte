@@ -303,6 +303,9 @@ function handlePageClick(event) {
     class="quiz--content"
     onclick={handlePageClick}
     onkeydown={handlePageClick}
+    role="button"
+    tabindex="0"
+    aria-label="Click to pause timer"
   >
     {#if finalScore !== undefined}
       <!-- Results Page -->

@@ -1,24 +1,18 @@
 <script>
-import { suppressUnusedExportLet } from '../../utils/';
+/**
+ * This component renders a divider in a dropdown menu.
+ * It accepts but ignores text/icon props for compatibility with other dropdown items.
+ */
 
-
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} [text] - Suppress the unexpected prop warning
-	 * @property {any} [icon]
-	 */
-
-	/** @type {Props} */
-	let { text = undefined, icon = undefined } = $props();
-suppressUnusedExportLet(text);
-suppressUnusedExportLet(icon);
+// Accept and ignore props that other dropdown items use
+let { text = undefined, icon = undefined, ...rest } = $props();
 </script>
+
+<hr class="sy-dropdown--divider" />
 
 <style>
 .sy-dropdown--divider {
-	border: 0.5px solid var(--sy-color--grey-2);  
-	margin: var(--sy-space) 0px;
+  border: 0.5px solid var(--sy-color--grey-2);
+  margin: var(--sy-space) 0px;
 }
 </style>
-
-<hr class="sy-dropdown--divider" />
