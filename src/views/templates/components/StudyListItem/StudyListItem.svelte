@@ -1,38 +1,37 @@
 <script>
-  import SyButton from '../SyButton/SyButton.svelte';
-  import { CopyIcon, AwardIcon } from 'svelte-feather-icons';
+import SyButton from "../SyButton/SyButton.svelte";
+import { SquareStack, Award } from "lucide-svelte";
 
+/**
+ * @typedef {Object} Props
+ * @property {any} value - Required Value Prop
+ * @property {(data: {action: string, list: any}) => void} [onselection] - Selection callback
+ */
 
-  /**
-   * @typedef {Object} Props
-   * @property {any} value - Required Value Prop
-   * @property {(data: {action: string, list: any}) => void} [onselection] - Selection callback
-   */
+/** @type {Props} */
+let { value, onselection = () => {} } = $props();
 
-  /** @type {Props} */
-  let { value, onselection = () => {} } = $props();
+const handleSelection = (actionType) => {
+  if (value) {
+    onselection({
+      action: actionType,
+      list: value,
+    });
+  }
+};
 
-  const handleSelection = actionType => {
-  	if (value) {
-  		onselection({
-  			action: actionType,
-  			list: value
-  		});
-  	}
-  };
-
-  const actions = [
-  	{
-  		icon: CopyIcon,
-  		action: () => handleSelection('flashcards'),
-  		tooltip: `Flashcards for ${value}`,
-  	},
-  	{
-  		icon: AwardIcon,
-  		action: () => handleSelection('quiz'),
-  		tooltip: `Start quiz for ${value}`,
-  	}
-  ];
+const actions = [
+  {
+    icon: SquareStack,
+    action: () => handleSelection("flashcards"),
+    tooltip: `Flashcards for ${value}`,
+  },
+  {
+    icon: Award,
+    action: () => handleSelection("quiz"),
+    tooltip: `Start quiz for ${value}`,
+  },
+];
 </script>
 
 <div class="study-list-item">
@@ -45,7 +44,7 @@
         center={true}
         onclick={action.action}
         size="large"
-        classes={['sy-tooltip--container']}
+        classes={["sy-tooltip--container"]}
       >
         <action.icon size="18" />
         <div class="sy-tooltip--body sy-tooltip--body-bottom">
@@ -59,17 +58,17 @@
 </div>
 
 <style>
-  .study-list-item {
-    padding: var(--sy-space--large);
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .study-list-item--actions {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-around;
-  }
+.study-list-item {
+  padding: var(--sy-space--large);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.study-list-item--actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-around;
+}
 </style>

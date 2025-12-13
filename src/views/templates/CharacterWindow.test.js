@@ -7,11 +7,11 @@ import CharacterWindow from './CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
-vi.mock('svelte-feather-icons', async () => {
-	const mockFeatherIcon = (await import('./components/__mocks__/FeatherIcon.svelte')).default;
+vi.mock('lucide-svelte', async () => {
+	const mockIcon = (await import('./components/__mocks__/FeatherIcon.svelte')).default;
 	return {
-		PlayIcon: mockFeatherIcon,
-		PauseIcon: mockFeatherIcon,
+		Play: mockIcon,
+		Pause: mockIcon,
 	};
 });
 

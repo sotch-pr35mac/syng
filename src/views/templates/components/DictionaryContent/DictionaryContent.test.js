@@ -6,12 +6,12 @@ import { mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
 import DictionaryContent from './DictionaryContent.svelte';
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
-vi.mock('svelte-feather-icons', async () => {
-	const mockFeatherIcon = (await import('../__mocks__/FeatherIcon.svelte')).default;
+vi.mock('lucide-svelte', async () => {
+	const mockIcon = (await import('../__mocks__/FeatherIcon.svelte')).default;
 	return {
-		PlusIcon: mockFeatherIcon,
-		CheckIcon: mockFeatherIcon,
-		Maximize2Icon: mockFeatherIcon,
+		Plus: mockIcon,
+		Check: mockIcon,
+		Brush: mockIcon,
 	};
 });
 

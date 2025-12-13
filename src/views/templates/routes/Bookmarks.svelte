@@ -1,11 +1,11 @@
 <script>
 import {
-	ChevronDownIcon,
-	DownloadIcon,
-	PlusIcon,
-	Trash2Icon,
-	UploadIcon,
-} from 'svelte-feather-icons';
+	ChevronDown,
+	FolderDown,
+	Plus,
+	Trash2,
+	FolderUp,
+} from 'lucide-svelte';
 import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 import SyButton from '../components/SyButton/SyButton.svelte';
 import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
@@ -47,7 +47,7 @@ const createDropdownList = (list) => {
 				text: 'Create New',
 				id: 'create-new',
 				component: TextWithIconDropdownItem,
-				icon: PlusIcon,
+				icon: Plus,
 				color: 'blue',
 				hover: 'green',
 			},
@@ -272,21 +272,21 @@ const importList = () => {
 
 const actions = [
 	{
-		icon: DownloadIcon,
+		icon: FolderDown,
 		action: importList,
 		tooltip: 'Import',
 		exclude: [],
 		disabled: false,
 	},
 	{
-		icon: UploadIcon,
+		icon: FolderUp,
 		action: exportActiveList,
 		tooltip: 'Export',
 		exclude: [],
 		disabled: false,
 	},
 	{
-		icon: Trash2Icon,
+		icon: Trash2,
 		action: deleteActiveList,
 		tooltip: 'Delete',
 		exclude: ['Bookmarks'],
@@ -303,7 +303,7 @@ const actions = [
   >
     <SyDropdown values={dropdownList} onselection={handleListSelection}>
       <SyButton size="large" style="ghost" center={true}>
-        {activeList}&nbsp;<ChevronDownIcon size="20" />
+        {activeList}&nbsp;<ChevronDown size="20" />
       </SyButton>
     </SyDropdown>
     <div class="bookmarks--header--actions">

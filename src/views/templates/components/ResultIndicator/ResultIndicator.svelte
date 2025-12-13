@@ -1,6 +1,6 @@
 <script>
 import { fade, slide } from "svelte/transition";
-import { CheckIcon, XIcon } from "svelte-feather-icons";
+import { Check, X } from "lucide-svelte";
 import SyTimer from "../SyTimer/SyTimer.svelte";
 
 /* Is Correct Prop */
@@ -48,13 +48,13 @@ const RESULT_DISPLAY_TIME = 10;
       <div class="indicator-content">
         {#if isCorrect}
           <div class="icon-container" class:correct={isCorrect}>
-            <CheckIcon size="20" />
+            <Check size="20" />
           </div>
           <span class="text">Correct!</span>
         {:else}
           <span class="text answer-text">{chosenAnswer} |</span>
           <div class="icon-container" class:incorrect={!isCorrect}>
-            <XIcon size="20" />
+            <X size="20" />
           </div>
           <span class="text">Incorrect</span>
         {/if}

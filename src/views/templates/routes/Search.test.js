@@ -6,14 +6,14 @@ import { mockBookmarkManager, mockDictionary, mockPreferenceManager } from '../.
 import Search from './Search.svelte';
 
 // Mock must be defined inline because vi.mock is hoisted before imports
-vi.mock('svelte-feather-icons', async () => {
-	const mockFeatherIcon = (await import('../components/__mocks__/FeatherIcon.svelte')).default;
+vi.mock('lucide-svelte', async () => {
+	const mockIcon = (await import('../components/__mocks__/FeatherIcon.svelte')).default;
 	return {
-		ChevronLeftIcon: mockFeatherIcon,
-		ChevronRightIcon: mockFeatherIcon,
-		PlusIcon: mockFeatherIcon,
-		CheckIcon: mockFeatherIcon,
-		Maximize2Icon: mockFeatherIcon,
+		ChevronLeft: mockIcon,
+		ChevronRight: mockIcon,
+		Plus: mockIcon,
+		Check: mockIcon,
+		Brush: mockIcon,
 	};
 });
 

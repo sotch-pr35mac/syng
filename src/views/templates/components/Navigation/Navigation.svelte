@@ -1,14 +1,14 @@
 <script>
 import {
-  BookmarkIcon,
-  BookOpenIcon,
-  HelpCircleIcon,
-  MessageCircleIcon,
-  MoreVerticalIcon,
-  SearchIcon,
-  SettingsIcon,
-  TrendingUpIcon,
-} from "svelte-feather-icons";
+  Bookmark,
+  BookOpen,
+  CircleQuestionMark,
+  MessageCircle,
+  EllipsisVertical,
+  Search,
+  Settings,
+  GraduationCap,
+} from "lucide-svelte";
 import active from "svelte-spa-router/active";
 import { handleError } from "../../utils/";
 import { platform } from "@tauri-apps/plugin-os";
@@ -17,38 +17,38 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 const primaryNavigation = [
   {
     link: "",
-    icon: SearchIcon,
+    icon: Search,
     title: "Search",
     beta: false,
   },
   {
     link: "read",
-    icon: BookOpenIcon,
+    icon: BookOpen,
     title: "Read",
     beta: true,
   },
   {
     link: "bookmarks",
-    icon: BookmarkIcon,
+    icon: Bookmark,
     title: "Bookmarks",
     beta: false,
   },
   {
     link: "study",
     pattern: /\/study(\/.*)?/,
-    icon: TrendingUpIcon,
+    icon: GraduationCap,
     title: "Study",
     beta: false,
   },
   {
     link: "chat",
-    icon: MessageCircleIcon,
+    icon: MessageCircle,
     title: "Chat",
     beta: true,
   },
   {
     link: "tools",
-    icon: MoreVerticalIcon,
+    icon: EllipsisVertical,
     title: "Extras",
     beta: true,
   },
@@ -56,14 +56,14 @@ const primaryNavigation = [
 const secondaryNavigation = [
   {
     link: "help",
-    icon: HelpCircleIcon,
+    icon: CircleQuestionMark,
     size: "18",
     title: "Help",
     beta: true,
   },
   {
     link: "settings",
-    icon: SettingsIcon,
+    icon: Settings,
     size: "24",
     title: "Settings",
     beta: false,

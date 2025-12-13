@@ -1,6 +1,6 @@
 <script>
 import { tick } from "svelte";
-import { ChevronLeftIcon, ChevronRightIcon } from "svelte-feather-icons";
+import { ChevronLeft, ChevronRight } from "lucide-svelte";
 import DictionaryContent from "../components/DictionaryContent/DictionaryContent.svelte";
 import SyButton from "../components/SyButton/SyButton.svelte";
 import SyList from "../components/SyList/SyList.svelte";
@@ -178,7 +178,7 @@ window.bookmarkManager
       disabled={searchHistory[historyPosition - 1] == undefined}
       onclick={historyBack}
     >
-      <ChevronLeftIcon size="20" />
+      <ChevronLeft size="20" />
     </SyButton>
     <SyButton
       style="ghost"
@@ -186,7 +186,7 @@ window.bookmarkManager
       disabled={searchHistory[historyPosition + 1] == undefined}
       onclick={historyForward}
     >
-      <ChevronRightIcon size="20" />
+      <ChevronRight size="20" />
     </SyButton>
     <SyButton style="ghost" size="large" onclick={() => switchLang()}>
       {searchLang}

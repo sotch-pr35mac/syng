@@ -1,5 +1,5 @@
 <script>
-import { CheckIcon, Maximize2Icon, PlusIcon } from "svelte-feather-icons";
+import { Check, Brush, Plus } from "lucide-svelte";
 import { handleError } from "../../utils/";
 import SyButton from "../SyButton/SyButton.svelte";
 import SyButtonBar from "../SyButtonBar/SyButtonBar.svelte";
@@ -78,7 +78,7 @@ $effect(() => {
   }
 });
 
-const getBookmarkIcon = () => (memberLists.length ? CheckIcon : PlusIcon);
+const getBookmarkIcon = () => (memberLists.length ? Check : Plus);
 const getBookmarkTooltip = () =>
   `${memberLists.length ? "Remove from" : "Add to"} ${lists.length > 1 ? "List" : "Bookmarks"}`;
 let actions = $derived([
@@ -106,15 +106,15 @@ let actions = $derived([
               component: inList
                 ? TextWithIconDropdownItem
                 : SimpleTextDropdownItem,
-              icon: inList ? CheckIcon : undefined,
+              icon: inList ? Check : undefined,
               hover: inList ? "red" : undefined,
             };
           }),
     classes: ["sy-button--grouped--first"],
   },
   {
-    component: Maximize2Icon,
-    tooltip: "Enlarge Characters",
+    component: Brush,
+    tooltip: "Write Characters",
     action: () => {
       invoke("open_character_window", {
         word: {

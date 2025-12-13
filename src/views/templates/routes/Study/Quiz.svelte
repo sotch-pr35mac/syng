@@ -1,10 +1,5 @@
 <script>
-import {
-  ChevronLeftIcon,
-  ArrowRightIcon,
-  CopyIcon,
-  RotateCwIcon,
-} from "svelte-feather-icons";
+import { ChevronLeft, ArrowRight, SquareStack, RotateCw } from "lucide-svelte";
 import SyButton from "../../components/SyButton/SyButton.svelte";
 import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
 import { querystring } from "svelte-spa-router";
@@ -159,7 +154,7 @@ const handleListChange = () => {
 };
 const leftActions = [
   {
-    icon: ChevronLeftIcon,
+    icon: ChevronLeft,
     label: "Exit",
     disabled: false,
     action: () => {
@@ -173,13 +168,13 @@ let rightActions = $derived.by(() => {
     // Show results page actions
     return [
       {
-        icon: RotateCwIcon,
+        icon: RotateCw,
         label: "Retake",
         disabled: false,
         action: handleRetakeQuiz,
       },
       {
-        icon: CopyIcon,
+        icon: SquareStack,
         label: "Flashcards",
         disabled: false,
         action: handleStudyFlashcards,
@@ -189,7 +184,7 @@ let rightActions = $derived.by(() => {
     // Show continue/finish button during quiz
     return [
       {
-        icon: ArrowRightIcon,
+        icon: ArrowRight,
         label: questionsPending > 1 ? "Continue" : "Finish",
         disabled: false,
         action: () => {

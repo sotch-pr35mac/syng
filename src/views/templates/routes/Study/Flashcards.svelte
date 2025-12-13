@@ -1,11 +1,11 @@
 <script>
 import {
-  ChevronLeftIcon,
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  RotateCwIcon,
-  RotateCcwIcon,
-} from "svelte-feather-icons";
+  ChevronLeft,
+  ArrowLeft,
+  ArrowRight,
+  RotateCw,
+  RotateCcw,
+} from "lucide-svelte";
 import SyButton from "../../components/SyButton/SyButton.svelte";
 import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
 import { querystring } from "svelte-spa-router";
@@ -66,7 +66,7 @@ $effect(() => {
 // Derive left actions based on current state
 let leftActions = $derived([
   {
-    icon: ChevronLeftIcon,
+    icon: ChevronLeft,
     label: "Exit",
     disabled: false,
     action: () => {
@@ -74,7 +74,7 @@ let leftActions = $derived([
     },
   },
   {
-    icon: ArrowLeftIcon,
+    icon: ArrowLeft,
     label: "Previous",
     disabled: activeIndex === 0,
     action: () => {
@@ -86,7 +86,7 @@ let leftActions = $derived([
 // Derive right actions based on current state
 let rightActions = $derived([
   {
-    icon: showDetails ? RotateCcwIcon : RotateCwIcon,
+    icon: showDetails ? RotateCcw : RotateCw,
     label: "Flip",
     disabled: false,
     action: () => {
@@ -94,7 +94,7 @@ let rightActions = $derived([
     },
   },
   {
-    icon: ArrowRightIcon,
+    icon: ArrowRight,
     label: "Next",
     disabled: activeIndex === listContent.length - 1,
     action: () => {

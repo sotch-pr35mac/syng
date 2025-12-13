@@ -1,5 +1,5 @@
 <script>
-import { XIcon } from 'svelte-feather-icons';
+import { X } from 'lucide-svelte';
 import SyButton from '../SyButton/SyButton.svelte';
 
 /* Visible Prop */
@@ -79,7 +79,7 @@ import SyButton from '../SyButton/SyButton.svelte';
 		<div class="sy-modal--header">
 			<h2 class="sy-modal--title">{ title }</h2>
 			<SyButton style="ghost" onclick={onclose}>
-				<XIcon size="14" />
+				<X size="14" />
 			</SyButton>
 		</div>
 		<div class="sy-modal--body">
