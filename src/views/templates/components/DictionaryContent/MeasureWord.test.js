@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { render } from '@testing-library/svelte';
 import MeasureWord from './MeasureWord.svelte';
 

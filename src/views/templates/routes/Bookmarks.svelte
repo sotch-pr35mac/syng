@@ -1,68 +1,69 @@
 <script>
-import { ChevronDown, FolderDown, Plus, Trash2, FolderUp } from "lucide-svelte";
-import DictionaryContent from "../components/DictionaryContent/DictionaryContent.svelte";
-import SyButton from "../components/SyButton/SyButton.svelte";
-import DividerDropdownItem from "../components/SyDropdown/DividerDropdownItem.svelte";
-import SimpleTextDropdownItem from "../components/SyDropdown/SimpleTextDropdownItem.svelte";
-import SyDropdown from "../components/SyDropdown/SyDropdown.svelte";
-import TextWithIconDropdownItem from "../components/SyDropdown/TextWithIconDropdownItem.svelte";
-import SyList from "../components/SyList/SyList.svelte";
-import SyModal from "../components/SyModal/SyModal.svelte";
-import SyTextInput from "../components/SyTextInput/SyTextInput.svelte";
-import { handleError, resolveNameConflict } from "../utils/";
-import { invoke } from "@tauri-apps/api/core";
-import { platform } from "@tauri-apps/plugin-os";
+import { ChevronDown, FolderDown, Plus, Trash2, FolderUp } from 'lucide-svelte';
+import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
+import SyButton from '../components/SyButton/SyButton.svelte';
+import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
+import SimpleTextDropdownItem from '../components/SyDropdown/SimpleTextDropdownItem.svelte';
+import SyDropdown from '../components/SyDropdown/SyDropdown.svelte';
+import TextWithIconDropdownItem from '../components/SyDropdown/TextWithIconDropdownItem.svelte';
+import SyList from '../components/SyList/SyList.svelte';
+import SyModal from '../components/SyModal/SyModal.svelte';
+import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+import { handleError, resolveNameConflict } from '../utils/';
+import { invoke } from '@tauri-apps/api/core';
+import { platform } from '@tauri-apps/plugin-os';
 
-const isMacos = platform() === "macos";
+const isMacos = platform() === 'macos';
 
 // Set the active list
 // Syng expects there to always be a list called 'Bookmarks'
-let activeList = $state("Bookmarks");
+let activeList = $state('Bookmarks');
 let activeWord = $state(undefined);
 
 // Get the word lists
 let lists = $state([]); // The list of word lists
 let dropdownList = $state([]); // The list of dropdown items, including the list of word lists.
 const createDropdownList = (list) => {
-  return [
-    ...list
-      .map((listName) => {
-        return {
-          text: listName,
-          id: listName,
-          component: SimpleTextDropdownItem,
-        };
-      })
-      .sort((a, b) => a.text.localeCompare(b.text)),
-    ...[
-      {
-        component: DividerDropdownItem,
-      },
-      {
-        text: "Create New",
-        id: "create-new",
-        component: TextWithIconDropdownItem,
-        icon: Plus,
-        color: "blue",
-        hover: "green",
-      },
-    ],
-  ];
+	return [
+		...list
+			.map((listName) => {
+				return {
+					text: listName,
+					id: listName,
+					component: SimpleTextDropdownItem,
+				};
+			})
+			.sort((a, b) => a.text.localeCompare(b.text)),
+		...[
+			{
+				component: DividerDropdownItem,
+			},
+			{
+				text: 'Create New',
+				id: 'create-new',
+				component: TextWithIconDropdownItem,
+				icon: Plus,
+				color: 'blue',
+				hover: 'green',
+			},
+		],
+	];
 };
 const updateLists = (cb) => {
-  window.bookmarkManager
-    .getLists()
-    .then((wordLists) => {
-      lists = wordLists;
-      dropdownList = createDropdownList(wordLists);
-      cb();
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error fetching word lists. Check the logs for more details.",
-        e,
-      );
-    });
+	window.bookmarkManager
+		.getLists()
+		.then((wordLists) => {
+			lists = wordLists;
+			dropdownList = createDropdownList(wordLists);
+			cb();
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error fetching word lists. Check the logs for more details.',
+				e,
+			);
+		});
 };
 updateLists(() => undefined);
 
@@ -70,224 +71,219 @@ updateLists(() => undefined);
 let words = [];
 let wordList = $state([]);
 const getWordList = (items) => {
-  highlightActive = false;
-  return items.map((item) => {
-    return {
-      headline:
+	highlightActive = false;
+	return items.map((item) => {
+		return {
+			headline:
         item.traditional === item.simplified
-          ? item.simplified
-          : `${item.simplified} (${item.traditional})`,
-      subtitle: item.pinyin_marks,
-      content: item.english.join("; "),
-      active: false,
-    };
-  });
+        	? item.simplified
+        	: `${item.simplified} (${item.traditional})`,
+			subtitle: item.pinyin_marks,
+			content: item.english.join('; '),
+			active: false,
+		};
+	});
 };
 const updateListContent = (cb) => {
-  window.bookmarkManager
-    .getListContent(activeList)
-    .then((activeListWords) => {
-      words = activeListWords;
-      wordList = getWordList(activeListWords);
-      cb();
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error fetching the word list content. Check the logs for more details.",
-        e,
-      );
-    });
+	window.bookmarkManager
+		.getListContent(activeList)
+		.then((activeListWords) => {
+			words = activeListWords;
+			wordList = getWordList(activeListWords);
+			cb();
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error fetching the word list content. Check the logs for more details.',
+				e,
+			);
+		});
 };
 updateListContent(() => undefined);
 
 // Handle active list selection
 const updateActiveList = (nextList) => {
-  activeList = nextList;
-  updateListContent(() => undefined);
+	activeList = nextList;
+	updateListContent(() => undefined);
 };
 const handleListSelection = (id) => {
-  if (id !== "create-new") {
-    updateActiveList(id);
-  } else {
-    createNewModalVisible = true;
-  }
+	if (id !== 'create-new') {
+		updateActiveList(id);
+	} else {
+		createNewModalVisible = true;
+	}
 };
 
 // Create New Modal
 // Set the create list placeholder text
 const createNewPlaceholders = [
-  "HSK 1",
-  "Week 3 Vocab",
-  "Internet Slang",
-  "Idioms",
-  "Chapter 7",
+	'HSK 1',
+	'Week 3 Vocab',
+	'Internet Slang',
+	'Idioms',
+	'Chapter 7',
 ];
-const restrictedListNames = ["create-new", "Bookmarks"];
+const restrictedListNames = ['create-new', 'Bookmarks'];
 const getNewPlaceholder = () =>
-  createNewPlaceholders.slice(Math.random() * createNewPlaceholders.length)[0];
+	createNewPlaceholders.slice(Math.random() * createNewPlaceholders.length)[0];
 let createNewModalVisible = $state(false);
 let createNewButtonDisabled = $state(false);
 const closeNewModal = () => {
-  createNewModalVisible = false;
-  document.getElementById("create-new-list-input").value = "";
-  createNewButtonDisabled = false;
+	createNewModalVisible = false;
+	document.getElementById('create-new-list-input').value = '';
+	createNewButtonDisabled = false;
 };
 const createNewList = () => {
-  createNewButtonDisabled = true;
-  const newListName = document
-    .getElementById("create-new-list-input")
-    .value.trim();
-  if (!newListName || restrictedListNames.includes(newListName)) {
-    handleError(`Cannot create new list with name ${newListName}.`);
-    closeNewModal();
-    return;
-  }
+	createNewButtonDisabled = true;
+	const newListName = document
+		.getElementById('create-new-list-input')
+		.value.trim();
+	if (!newListName || restrictedListNames.includes(newListName)) {
+		handleError(`Cannot create new list with name ${newListName}.`);
+		closeNewModal();
+		return;
+	}
 
-  window.bookmarkManager
-    .createList(newListName)
-    .then(() => {
-      updateLists(() => {
-        closeNewModal();
-      });
-    })
-    .catch((e) => {
-      handleError(
-        `There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-        e,
-      );
-      closeNewModal();
-    });
+	window.bookmarkManager
+		.createList(newListName)
+		.then(() => {
+			updateLists(() => {
+				closeNewModal();
+			});
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
+				e,
+			);
+			closeNewModal();
+		});
 };
 
 // Word Selection
 const handleSelection = (data) => {
-  activeWord = words[data.index];
-  highlightActive = true;
+	activeWord = words[data.index];
+	highlightActive = true;
 };
 let highlightActive = $state(true);
 
 // Actions
 let disableDeleteButton = false;
 const deleteActiveList = () => {
-  disableDeleteButton = true;
-  window.__TAURI__.dialog
-    .ask(`Are you sure you want to delete ${activeList}?`, "Delete List")
-    .then((confirmed) => {
-      if (confirmed) {
-        window.bookmarkManager
-          .deleteList(activeList)
-          .then(() => {
-            updateActiveList("Bookmarks");
-            updateLists(() => {
-              disableDeleteButton = false;
-            });
-          })
-          .catch((e) => {
-            handleError(
-              `There was an unexpected error deleting the list ${activeList}. Please check the log for more details.`,
-              e,
-            );
-            disableDeleteButton = false;
-          });
-      } else {
-        disableDeleteButton = false;
-      }
-    })
-    .catch((e) => {
-      handleError(
-        `There was an unexpected error while attempting to delete the list ${activeList}. Check the log for more details.`,
-        e,
-      );
-      disableDeleteButton = false;
-    });
+	disableDeleteButton = true;
+	window.__TAURI__.dialog
+		.ask(`Are you sure you want to delete ${activeList}?`, 'Delete List')
+		.then((confirmed) => {
+			if (confirmed) {
+				return window.bookmarkManager
+					.deleteList(activeList)
+					.then(() => {
+						updateActiveList('Bookmarks');
+						updateLists(() => {
+							disableDeleteButton = false;
+						});
+						return undefined;
+					})
+					.catch((e) => {
+						handleError(
+							`There was an unexpected error deleting the list ${activeList}. Please check the log for more details.`,
+							e,
+						);
+						disableDeleteButton = false;
+					});
+			} else {
+				disableDeleteButton = false;
+				return undefined;
+			}
+		})
+		.catch((e) => {
+			handleError(
+				`There was an unexpected error while attempting to delete the list ${activeList}. Check the log for more details.`,
+				e,
+			);
+			disableDeleteButton = false;
+		});
 };
-let disableExportButton = false;
 const exportActiveList = () => {
-  disableExportButton = true;
-  invoke("export_list_data", { name: activeList, data: words })
-    .then(() => {
-      disableExportButton = false;
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error exporting your list. Check the log for more details.",
-        e,
-      );
-      disableExportButton = false;
-    });
+	invoke('export_list_data', { name: activeList, data: words })
+		.then(() => {
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error exporting your list. Check the log for more details.',
+				e,
+			);
+		});
 };
-let disableImportButton = false;
 const importList = () => {
-  disableImportButton = true;
-  invoke("import_list_data")
-    .then((importArchive) => {
-      if (importArchive) {
-        const listName = resolveNameConflict(importArchive.meta.name, lists);
-        window.bookmarkManager
-          .createList(listName)
-          .then(() => {
-            // List imports from Syng v1 occationally come with duplicated entries where the last entry in the list
-            // is the most up to date. Here we deduplicate the list preserving the last instance of a duplicate.
-            const entries = importArchive.entries.reduceRight(
-              (acc, cur) =>
-                acc.find((entry) => entry.hash === cur.hash)
-                  ? acc
-                  : [...acc, cur],
-              [],
-            );
-            const bulkImport = entries.map((entry) =>
-              window.bookmarkManager.addToList(listName, entry),
-            );
-            return Promise.all(bulkImport);
-          })
-          .then(() => {
-            updateLists(() => {
-              disableImportButton = false;
-            });
-          })
-          .catch((e) => {
-            handleError(
-              "There was an error importing the list. Check the log for more details.",
-              e,
-            );
-            disableImportButton = false;
-          });
-      } else {
-        disableImportButton = false;
-      }
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error importing the list. Check the log for more details.",
-        e,
-      );
-      disableImportButton = false;
-    });
+	invoke('import_list_data')
+		.then((importArchive) => {
+			if (importArchive) {
+				const listName = resolveNameConflict(importArchive.meta.name, lists);
+				return window.bookmarkManager
+					.createList(listName)
+					.then(() => {
+						// List imports from Syng v1 occationally come with duplicated entries where the last entry in the list
+						// is the most up to date. Here we deduplicate the list preserving the last instance of a duplicate.
+						const entries = importArchive.entries.reduceRight(
+							(acc, cur) =>
+								acc.find((entry) => entry.hash === cur.hash)
+									? acc
+									: [...acc, cur],
+							[],
+						);
+						const bulkImport = entries.map((entry) =>
+							window.bookmarkManager.addToList(listName, entry),
+						);
+						return Promise.all(bulkImport);
+					})
+					.then(() => {
+						updateLists(() => undefined);
+						return undefined;
+					})
+					.catch((e) => {
+						handleError(
+							'There was an error importing the list. Check the log for more details.',
+							e,
+						);
+					});
+			}
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error importing the list. Check the log for more details.',
+				e,
+			);
+		});
 };
 
 const actions = [
-  {
-    icon: FolderDown,
-    action: importList,
-    tooltip: "Import",
-    exclude: [],
-    disabled: false,
-  },
-  {
-    icon: FolderUp,
-    action: exportActiveList,
-    tooltip: "Export",
-    exclude: [],
-    disabled: false,
-  },
-  {
-    icon: Trash2,
-    action: deleteActiveList,
-    tooltip: "Delete",
-    exclude: ["Bookmarks"],
-    disabled: disableDeleteButton,
-    hover: "red",
-  },
+	{
+		icon: FolderDown,
+		action: importList,
+		tooltip: 'Import',
+		exclude: [],
+		disabled: false,
+	},
+	{
+		icon: FolderUp,
+		action: exportActiveList,
+		tooltip: 'Export',
+		exclude: [],
+		disabled: false,
+	},
+	{
+		icon: Trash2,
+		action: deleteActiveList,
+		tooltip: 'Delete',
+		exclude: ['Bookmarks'],
+		disabled: disableDeleteButton,
+		hover: 'red',
+	},
 ];
 </script>
 
@@ -302,7 +298,7 @@ const actions = [
       </SyButton>
     </SyDropdown>
     <div class="bookmarks--header--actions">
-      {#each actions as action}
+      {#each actions as action (action.tooltip)}
         {#if !action.exclude.includes(activeList)}
           <span class="bookmarks--header--action-item">
             <SyButton
@@ -310,7 +306,7 @@ const actions = [
               onclick={action.action}
               disabled={action.disabled}
               hover={action.hover}
-              classes={["sy-tooltip--container"]}
+              classes={['sy-tooltip--container']}
             >
               <action.icon size="20" />
               <div class="sy-tooltip--body sy-tooltip--body-bottom">

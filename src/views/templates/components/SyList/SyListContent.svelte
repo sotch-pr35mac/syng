@@ -13,18 +13,18 @@
  */
 
 /** @type {Props} */
-let {
-  values = [],
-  component,
-  highlight: _highlight = undefined,
-  filterable: _filterable = undefined,
-  onselection,
-  onevent,
+const {
+	values = [],
+	component,
+	highlight: _highlight = undefined,
+	filterable: _filterable = undefined,
+	onselection,
+	onevent,
 } = $props();
 </script>
 
 <div class="sy-list--container">
-  {#each values as value}
+  {#each values as value, index (index)}
     {@const SvelteComponent = component}
     <div class="sy-list--list-item">
       <SvelteComponent {value} {onselection} {onevent} />

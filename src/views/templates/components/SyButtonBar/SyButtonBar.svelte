@@ -16,7 +16,7 @@
 	 */
 
 	/** @type {Props} */
-	let { size = 'medium', children } = $props();
+	const { size = 'medium', children } = $props();
 
 const getClasses = () => {
 	return ['sy-button-bar--container',
@@ -78,6 +78,6 @@ const getClasses = () => {
 }
 </style>
 
-<div class="{ getClasses() }">
+<div class={ getClasses() }>
 	{@render children?.()}
 </div>

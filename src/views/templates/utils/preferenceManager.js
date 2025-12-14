@@ -2,7 +2,7 @@
  * File: preferenceManager.js
  * Description: Describes the preference manger to read and write Syng preferences.
  * An instance of PreferenceManager class is created from a desired pouchdb.
- * After initialization the preference values are ready to be read and written. 
+ * After initialization the preference values are ready to be read and written.
  * Initialization must occur as Syng prefers to operate over a cache of the preferences
  * from the db during the session.
  */
@@ -33,7 +33,7 @@ export class PreferenceManager {
 	constructor(dbName) {
 		this._name = dbName;
 		this._config = {};
-		this.initialized = false; 
+		this.initialized = false;
 	}
 
 	/*
@@ -44,7 +44,7 @@ export class PreferenceManager {
 	 */
 	init() {
 		return new Promise((resolve, reject) => {
-			/* eslint-disable no-undef */
+
 			this._db = new PouchDB(this._name);
 			this._db.get('config').catch(err => {
 				if(err.name === 'not_found') {
@@ -53,22 +53,23 @@ export class PreferenceManager {
 						transparency: createPreference(true, false),
 						beta: createPreference(true, false),
 						toneColors: createPreference(true, {
-							colors: ['--sy-color--blue-3', 
+							colors: ['--sy-color--blue-3',
 								'--sy-color--yellow-1',
-								'--sy-color--red-1', 
-								'--sy-color--green-3', 
+								'--sy-color--red-1',
+								'--sy-color--green-3',
 								'--sy-color--grey-4'],
 							hasCustomColors: false
 						})
 					};
-				} else {
-					console.error(err);
-					reject('There was an error loading user preferences. Check the logs for more details.');
 				}
+				console.error(err);
+				reject('There was an error loading user preferences. Check the logs for more details.');
+				return undefined;
 			}).then(configuration => {
 				this._config = configuration;
 				this.initialized = true;
 				resolve();
+				return undefined;
 			}).catch(err => {
 				console.error(err);
 				reject('There was an error loading user preferences. Check the logs for more details.');
@@ -82,20 +83,18 @@ export class PreferenceManager {
  	 * that there may be a race condition with db initialization. Internally just polls the
  	 * value of `initialized` until initialization has completed.
  	 * Return: Promise: Returns a promise that resolves once initialization has been completed.
- 	 */ 
+ 	 */
 	waitForInit() {
-		/* eslint-disable no-unused-vars */
-		return new Promise((resolve, reject) => {
-			let shouldBreak = false;
+		const POLL_INTERVAL_MS = 10;
+		return new Promise((resolve) => {
 			const pollInit = () => {
 				if(this.initialized) {
 					resolve();
-					shouldBreak = true;
 				} else {
-					setTimeout(pollInit, 10);
+					setTimeout(pollInit, POLL_INTERVAL_MS);
 				}
 			};
-			shouldBreak ? undefined : pollInit();
+			pollInit();
 		});
 	}
 
@@ -108,12 +107,13 @@ export class PreferenceManager {
 		if(!this.initialized) {
 			handleError('Cannot read preferences. Preferences not yet initialized.');
 			console.log('Trying to access property ' + property);
-			return;
+			return undefined;
 		}
 
 		const preference = this._config[property];
 		if(!preference) {
 			handleError(`Requested preference ${property} does not exist!`);
+			return undefined;
 		}
 		return preference.value;
 	}
@@ -145,9 +145,9 @@ export class PreferenceManager {
 			} else {
 				handleError('Cannot save preferences. An unknown error occurred. Check the log for more details.', response);
 			}
+			return undefined;
 		}).catch(err => {
 			handleError('Cannot save preferences. An unknown error occurred. Check the logs for more details.', err);
-			return;
 		});
 	}
 }

@@ -21,15 +21,15 @@
      */
 
     /** @type {Props} */
-    let {
-        total = 41,
-        completed = 41,
-        startColor = 'var(--sy-color--blue)',
-        endColor = undefined
+    const {
+    	total = 41,
+    	completed = 41,
+    	startColor = 'var(--sy-color--blue)',
+    	endColor = undefined
     } = $props();
 
-    let progress = $derived(Math.min(1, Math.max(0, completed / total)));
-    let progressColor = $derived(interpolateColor(startColor, endColor, progress));
+    const progress = $derived(Math.min(1, Math.max(0, completed / total)));
+    const progressColor = $derived(interpolateColor(startColor, endColor, progress));
 </script>
 
 <div class="progress-line--container">

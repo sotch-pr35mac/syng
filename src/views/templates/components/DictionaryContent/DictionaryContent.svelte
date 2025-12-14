@@ -1,16 +1,16 @@
 <script>
-import { Check, Brush, Plus } from "lucide-svelte";
-import { handleError } from "../../utils/";
-import SyButton from "../SyButton/SyButton.svelte";
-import SyButtonBar from "../SyButtonBar/SyButtonBar.svelte";
-import SimpleTextDropdownItem from "../SyDropdown/SimpleTextDropdownItem.svelte";
-import SyDropdown from "../SyDropdown/SyDropdown.svelte";
-import TextWithIconDropdownItem from "../SyDropdown/TextWithIconDropdownItem.svelte";
-import SyList from "../SyList/SyList.svelte";
-import DefinitionItem from "./DefinitionItem.svelte";
-import EntryTopline from "./EntryTopline.svelte";
-import MeasureWord from "./MeasureWord.svelte";
-import { invoke } from "@tauri-apps/api/core";
+import { Check, Brush, Plus } from 'lucide-svelte';
+import { handleError } from '../../utils/';
+import SyButton from '../SyButton/SyButton.svelte';
+import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
+import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
+import SyDropdown from '../SyDropdown/SyDropdown.svelte';
+import TextWithIconDropdownItem from '../SyDropdown/TextWithIconDropdownItem.svelte';
+import SyList from '../SyList/SyList.svelte';
+import DefinitionItem from './DefinitionItem.svelte';
+import EntryTopline from './EntryTopline.svelte';
+import MeasureWord from './MeasureWord.svelte';
+import { invoke } from '@tauri-apps/api/core';
 
 /* Background Color Prop */
 /* Possible Values */
@@ -25,111 +25,113 @@ import { invoke } from "@tauri-apps/api/core";
  */
 
 /** @type {Props} */
-let { word, lists = [], backgroundColor = "grey", onlink } = $props();
+const { word, lists = [], backgroundColor = 'grey', onlink } = $props();
 
 let memberLists = $state([]);
 
 const updateListMembership = () => {
-  window.bookmarkManager
-    .inList(word.hash)
-    .then((lists) => {
-      memberLists = lists;
+	window.bookmarkManager
+		.inList(word.hash)
+		.then((lists) => {
+			memberLists = lists;
 
-      // After updating list membership update the 'add to bookmarks' action item icon
-      // and tooltip to best reflect the new state.
-      // Note: Here, the 'add to bookmarks' action item is assumed to be the first action
-      actions[0].component = getBookmarkIcon();
-      actions[0].tooltip = getBookmarkTooltip();
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error fetching list membership. Check the log for more details.",
-        e,
-      );
-    });
+			// After updating list membership update the 'add to bookmarks' action item icon
+			// and tooltip to best reflect the new state.
+			// Note: Here, the 'add to bookmarks' action item is assumed to be the first action
+			actions[0].component = getBookmarkIcon();
+			actions[0].tooltip = getBookmarkTooltip();
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error fetching list membership. Check the log for more details.',
+				e,
+			);
+		});
 };
 const _modifyListMembership = (fnName, list, word) => {
-  window.bookmarkManager[fnName](list, word)
-    .then(() => {
-      updateListMembership();
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error modifying the list membership. Check the log for more details.",
-        {
-          e,
-          word,
-          list,
-        },
-      );
-    });
+	window.bookmarkManager[fnName](list, word)
+		.then(() => {
+			updateListMembership();
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error modifying the list membership. Check the log for more details.',
+				{
+					e,
+					word,
+					list,
+				},
+			);
+		});
 };
 const removeListMembership = (list, word) => {
-  _modifyListMembership("removeFromList", list, word);
+	_modifyListMembership('removeFromList', list, word);
 };
 const addListMembership = (list, word) => {
-  _modifyListMembership("addToList", list, word);
+	_modifyListMembership('addToList', list, word);
 };
 
 // Update list membership when word changes
 $effect(() => {
-  if (word) {
-    updateListMembership();
-  }
+	if (word) {
+		updateListMembership();
+	}
 });
 
 const getBookmarkIcon = () => (memberLists.length ? Check : Plus);
 const getBookmarkTooltip = () =>
-  `${memberLists.length ? "Remove from" : "Add to"} ${lists.length > 1 ? "List" : "Bookmarks"}`;
-let actions = $derived([
-  {
-    component: getBookmarkIcon(),
-    tooltip: getBookmarkTooltip(),
-    action: () => {
-      if (lists.length === 1) {
-        const bookmarks = lists[0];
-        if (memberLists.includes(bookmarks)) {
-          removeListMembership(bookmarks, word);
-        } else {
-          addListMembership(bookmarks, word);
-        }
-      }
-    },
-    dropdown:
+	`${memberLists.length ? 'Remove from' : 'Add to'} ${lists.length > 1 ? 'List' : 'Bookmarks'}`;
+const actions = $derived([
+	{
+		component: getBookmarkIcon(),
+		tooltip: getBookmarkTooltip(),
+		action: () => {
+			if (lists.length === 1) {
+				const bookmarks = lists[0];
+				if (memberLists.includes(bookmarks)) {
+					removeListMembership(bookmarks, word);
+				} else {
+					addListMembership(bookmarks, word);
+				}
+			}
+		},
+		dropdown:
       lists.length === 1
-        ? undefined
-        : lists.map((item) => {
-            let inList = memberLists.includes(item);
-            return {
-              text: item,
-              id: item,
-              component: inList
-                ? TextWithIconDropdownItem
-                : SimpleTextDropdownItem,
-              icon: inList ? Check : undefined,
-              hover: inList ? "red" : undefined,
-            };
-          }),
-    classes: ["sy-button--grouped--first"],
-  },
-  {
-    component: Brush,
-    tooltip: "Write Characters",
-    action: () => {
-      invoke("open_character_window", {
-        word: {
-          traditional: word.traditional,
-          simplified: word.simplified,
-        },
-      }).catch((e) => {
-        handleError(
-          "An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.",
-          e,
-        );
-      });
-    },
-  },
-  /*
+      	? undefined
+      	: lists.map((item) => {
+      		const inList = memberLists.includes(item);
+      		return {
+      			text: item,
+      			id: item,
+      			component: inList
+      				? TextWithIconDropdownItem
+      				: SimpleTextDropdownItem,
+      			icon: inList ? Check : undefined,
+      			hover: inList ? 'red' : undefined,
+      		};
+      	}),
+		classes: ['sy-button--grouped--first'],
+	},
+	{
+		component: Brush,
+		tooltip: 'Write Characters',
+		action: () => {
+			invoke('open_character_window', {
+				word: {
+					traditional: word.traditional,
+					simplified: word.simplified,
+				},
+			}).catch((e) => {
+				handleError(
+					'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
+					e,
+				);
+			});
+		},
+	},
+	/*
 	{
 		component: MoreHorizontalIcon,
 		tooltip: '',
@@ -143,43 +145,45 @@ const handleOpenLink = (detail) => onlink?.(detail);
 
 let saveNotesDebounce;
 const saveNotes = () => {
-  const cachedWord = word;
-  clearTimeout(saveNotesDebounce);
-  saveNotesDebounce = setTimeout(() => {
-    const notes = document
-      .getElementById("dictionary-content--notes")
-      .value.trim();
-    window.bookmarkManager
-      .updateProperty(cachedWord.hash, "notes", notes)
-      .then(() => {
-        cachedWord.notes = notes;
-      })
-      .catch((e) => {
-        handleError(
-          "An unknown error occurred while trying to save the notes. Please check the log for more details.",
-          e,
-        );
-      });
-  }, 500);
+	const cachedWord = word;
+	clearTimeout(saveNotesDebounce);
+	const DEBOUNCE_MS = 500;
+	saveNotesDebounce = setTimeout(() => {
+		const notes = document
+			.getElementById('dictionary-content--notes')
+			.value.trim();
+		window.bookmarkManager
+			.updateProperty(cachedWord.hash, 'notes', notes)
+			.then(() => {
+				cachedWord.notes = notes;
+				return undefined;
+			})
+			.catch((e) => {
+				handleError(
+					'An unknown error occurred while trying to save the notes. Please check the log for more details.',
+					e,
+				);
+			});
+	}, DEBOUNCE_MS);
 };
 
 const handleMembershipModification = (listName) => {
-  if (memberLists.includes(listName)) {
-    // The word is present in the selected list. The user must be
-    // requesting to remove the word from this list.
-    removeListMembership(listName, word);
-  } else {
-    // The word is not present in the selected list. The user must be
-    // requesting to add the word to that list.
-    addListMembership(listName, word);
-  }
+	if (memberLists.includes(listName)) {
+		// The word is present in the selected list. The user must be
+		// requesting to remove the word from this list.
+		removeListMembership(listName, word);
+	} else {
+		// The word is not present in the selected list. The user must be
+		// requesting to add the word to that list.
+		addListMembership(listName, word);
+	}
 };
 
 const getContainerClasses = () => {
-  return [
-    "dictionary-content-container",
-    `dictionary-content--background-${backgroundColor}`,
-  ].join(" ");
+	return [
+		'dictionary-content-container',
+		`dictionary-content--background-${backgroundColor}`,
+	].join(' ');
 };
 </script>
 
@@ -188,7 +192,7 @@ const getContainerClasses = () => {
     <section class="dictionary-content dictionary-content--header">
       <EntryTopline {word} />
       <SyButtonBar>
-        {#each actions as action}
+        {#each actions as action, index (index)}
           {#if action.dropdown}
             <SyDropdown
               values={action.dropdown}
@@ -197,7 +201,7 @@ const getContainerClasses = () => {
             >
               <SyButton
                 grouped="true"
-                classes={["sy-tooltip--container", ...action.classes]}
+                classes={['sy-tooltip--container', ...action.classes]}
                 onclick={action.action}
               >
                 <action.component size="18" />
@@ -213,7 +217,7 @@ const getContainerClasses = () => {
           {:else}
             <SyButton
               grouped="true"
-              classes={["sy-tooltip--container"]}
+              classes={['sy-tooltip--container']}
               onclick={action.action}
             >
               <action.component size="18" />
@@ -247,7 +251,7 @@ const getContainerClasses = () => {
         />
       </section>
     {/if}
-    {#if typeof word.notes === "string"}
+    {#if typeof word.notes === 'string'}
       <section class="dictionary-content">
         <h2 class="dictionary-content--section-title">Notes</h2>
         <textarea

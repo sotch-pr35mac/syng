@@ -1,12 +1,12 @@
 <script>
-import { check } from "@tauri-apps/plugin-updater";
-import { relaunch } from "@tauri-apps/plugin-process";
-import { handleError } from "../../utils/";
-import SyButton from "../SyButton/SyButton.svelte";
+import { check } from '@tauri-apps/plugin-updater';
+import { relaunch } from '@tauri-apps/plugin-process';
+import { handleError } from '../../utils/';
+import SyButton from '../SyButton/SyButton.svelte';
 
-let currentVersion = $state(window.version || "");
-let updateVersion = $state(window.updateVersion || "");
-let releaseNotes = $state(window.updateReleaseNotes || "");
+let currentVersion = $state(window.version || '');
+let updateVersion = $state(window.updateVersion || '');
+let releaseNotes = $state(window.updateReleaseNotes || '');
 let knownStatus = $state(window.updateStatusAvailable || false);
 let updateAvailable = $state(window.updateAvailable || false);
 let checking = $state(false);
@@ -16,86 +16,90 @@ let updating = $state(false);
 let pendingUpdate = $state(window.pendingUpdate || null);
 
 if (!window.version) {
-  window.__TAURI__.app.getVersion().then((version) => {
-    currentVersion = version;
-    window.version = version;
-  });
+	window.__TAURI__.app.getVersion().then((version) => {
+		currentVersion = version;
+		window.version = version;
+		return undefined;
+	}).catch((e) => {
+		console.error('Error getting version:', e);
+	});
 }
 
 const resetStatus = () => {
-  checking = false;
-  updating = false;
-  updateAvailable = false;
-  knownStatus = false;
-  updateVersion = "";
-  releaseNotes = "";
-  pendingUpdate = null;
-  window.updateAvailable = false;
-  window.updateStatusAvailable = false;
-  window.updateVersion = "";
-  window.updateReleaseNotes = "";
-  window.pendingUpdate = null;
+	checking = false;
+	updating = false;
+	updateAvailable = false;
+	knownStatus = false;
+	updateVersion = '';
+	releaseNotes = '';
+	pendingUpdate = null;
+	window.updateAvailable = false;
+	window.updateStatusAvailable = false;
+	window.updateVersion = '';
+	window.updateReleaseNotes = '';
+	window.pendingUpdate = null;
 };
 
 const updateStatus = () => {
-  checking = true;
-  updating = false;
-  check()
-    .then((update) => {
-      if (update) {
-        // Update the page
-        updateVersion = update.version;
-        releaseNotes = update.body || "";
-        knownStatus = true;
-        updateAvailable = true;
-        checking = false;
-        pendingUpdate = update;
+	checking = true;
+	updating = false;
+	check()
+		.then((update) => {
+			if (update) {
+				// Update the page
+				updateVersion = update.version;
+				releaseNotes = update.body || '';
+				knownStatus = true;
+				updateAvailable = true;
+				checking = false;
+				pendingUpdate = update;
 
-        // Cache the results
-        window.updateVersion = update.version;
-        window.updateReleaseNotes = update.body || "";
-        window.updateStatusAvailable = true;
-        window.updateAvailable = true;
-        window.pendingUpdate = update;
-      } else {
-        // Update the page
-        knownStatus = true;
-        checking = false;
-        updateAvailable = false;
+				// Cache the results
+				window.updateVersion = update.version;
+				window.updateReleaseNotes = update.body || '';
+				window.updateStatusAvailable = true;
+				window.updateAvailable = true;
+				window.pendingUpdate = update;
+			} else {
+				// Update the page
+				knownStatus = true;
+				checking = false;
+				updateAvailable = false;
 
-        // Cache the results
-        window.updateAvailable = false;
-        window.updateStatusAvailable = true;
-      }
-    })
-    .catch((e) => {
-      resetStatus();
-      handleError(
-        "There was an error checking for updates. Please try again later. Check the log for more details.",
-        e,
-      );
-    });
+				// Cache the results
+				window.updateAvailable = false;
+				window.updateStatusAvailable = true;
+			}
+			return undefined;
+		})
+		.catch((e) => {
+			resetStatus();
+			handleError(
+				'There was an error checking for updates. Please try again later. Check the log for more details.',
+				e,
+			);
+		});
 };
 
 const fetchUpdate = () => {
-  updating = true;
-  if (!pendingUpdate) {
-    resetStatus();
-    handleError("No pending update available.", new Error("No pending update"));
-    return;
-  }
-  pendingUpdate
-    .downloadAndInstall()
-    .then(() => {
-      relaunch();
-    })
-    .catch((e) => {
-      resetStatus();
-      handleError(
-        "There was an error fetching the update. Please try again later. Check the log for more details.",
-        e,
-      );
-    });
+	updating = true;
+	if (!pendingUpdate) {
+		resetStatus();
+		handleError('No pending update available.', new Error('No pending update'));
+		return;
+	}
+	pendingUpdate
+		.downloadAndInstall()
+		.then(() => {
+			return relaunch();
+		})
+		.catch((e) => {
+			resetStatus();
+			handleError(
+				'There was an error fetching the update. Please try again later. Check the log for more details.',
+				e,
+			);
+		});
 };
 </script>
 

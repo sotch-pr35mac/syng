@@ -26,23 +26,23 @@
  */
 
 /** @type {Props} */
-let {
-  icon = undefined,
-  text = "",
-  hover = "blue",
-  color = "black",
-  onclick = () => {},
+const {
+	icon = undefined,
+	text = '',
+	hover = 'blue',
+	color = 'black',
+	onclick = () => {},
 } = $props();
 
 const getClasses = () => {
-  return [
-    "twi-dropdown-item--container",
-    `twi-dropdown-item--color--${color}`,
-    `twi-dropdown-item--hover--${hover}`,
-  ].join(" ");
+	return [
+		'twi-dropdown-item--container',
+		`twi-dropdown-item--color--${color}`,
+		`twi-dropdown-item--hover--${hover}`,
+	].join(' ');
 };
 const handleClick = (e) => {
-  onclick(e);
+	onclick(e);
 };
 
 const SvelteComponent = $derived(icon);

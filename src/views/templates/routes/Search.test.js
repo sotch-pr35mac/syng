@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
@@ -35,15 +35,15 @@ const QUERY_RESULTS = [{
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn((cmd) => {
 		switch (cmd) {
-			case 'classify':
-				return Promise.resolve('EN');
-			case 'query':
-			case 'query_by_english':
-			case 'query_by_pinyin':
-			case 'query_by_chinese':
-				return Promise.resolve(QUERY_RESULTS);
-			default:
-				return Promise.resolve(null);
+		case 'classify':
+			return Promise.resolve('EN');
+		case 'query':
+		case 'query_by_english':
+		case 'query_by_pinyin':
+		case 'query_by_chinese':
+			return Promise.resolve(QUERY_RESULTS);
+		default:
+			return Promise.resolve(null);
 		}
 	})
 }));

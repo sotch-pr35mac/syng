@@ -28,7 +28,7 @@
 	 */
 
 	/** @type {Props} */
-	let { values = [], position = 'left', children, onselection = () => {} } = $props();
+	const { values = [], position = 'left', children, onselection = () => {} } = $props();
 
 // Generate a random ID for this dropdown
 const dropId = Math.floor(Math.random() * 100);
@@ -63,6 +63,7 @@ $effect(() => {
 			document.removeEventListener('click', handleClick, { capture: true });
 		};
 	}
+	return undefined;
 });
 
 const getListClasses = () => {
@@ -109,13 +110,13 @@ const getListClasses = () => {
 }
 </style>
 
-<div class="sy-dropdown--container" class:sy-dropdown--active="{ active }" id="{ dropId }">
+<div class="sy-dropdown--container" class:sy-dropdown--active={ active } id={ dropId }>
 	<span class="sy-dropdown--trigger" role="button" tabindex="0" onclick={toggleDropdown} onkeyup={toggleDropdown}>
 		{@render children?.()}
 	</span>
-	<div class="{ getListClasses() }">
+	<div class={ getListClasses() }>
 		<div class="sy-dropdown--list--content">
-		{#each values as value}
+		{#each values as value (value.id)}
 			<value.component text={value.text} icon={value.icon} color={value.color} hover={value.hover} onclick={(e) => handleSelect(value.id, e)} />
 		{/each}
 		</div>

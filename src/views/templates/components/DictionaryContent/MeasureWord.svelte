@@ -1,5 +1,5 @@
 <script>
-import DictionaryLink from "./DictionaryLink.svelte";
+import DictionaryLink from './DictionaryLink.svelte';
 
 /**
  * @typedef {Object} Props
@@ -8,7 +8,7 @@ import DictionaryLink from "./DictionaryLink.svelte";
  */
 
 /** @type {Props} */
-let { value, onevent } = $props();
+const { value, onevent } = $props();
 
 const handleOpenLink = (event) => onevent?.(event.detail);
 </script>
@@ -16,7 +16,7 @@ const handleOpenLink = (event) => onevent?.(event.detail);
 <div class="dictionary-content--mw sy-text--selectable">
   <DictionaryLink link={value.traditional} onopen={handleOpenLink}>
     {value.simplified}
-    {#if value.simplified != value.traditional}
+    {#if value.simplified !== value.traditional}
       &nbsp;({value.traditional})
     {/if}
   </DictionaryLink>

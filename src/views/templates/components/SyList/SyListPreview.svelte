@@ -1,6 +1,6 @@
 <script>
-import SyTextInput from "../SyTextInput/SyTextInput.svelte";
-import SyListPreviewItem from "./SyListPreviewItem.svelte";
+import SyTextInput from '../SyTextInput/SyTextInput.svelte';
+import SyListPreviewItem from './SyListPreviewItem.svelte';
 
 const id = Math.floor(Math.random() * 100);
 
@@ -15,13 +15,13 @@ const id = Math.floor(Math.random() * 100);
  */
 
 /** @type {Props} */
-let {
-  values = [],
-  highlight = true,
-  filterable = false,
-  component: _component = undefined,
-  onselection,
-  onevent,
+const {
+	values = [],
+	highlight = true,
+	filterable = false,
+	component: _component = undefined,
+	onselection,
+	onevent,
 } = $props();
 
 let activeIndex = $state();
@@ -29,35 +29,35 @@ let filteredValues = $state([]);
 
 // Reset filtered values when values prop changes
 $effect(() => {
-  if (values) {
-    filteredValues = values;
+	if (values) {
+		filteredValues = values;
 
-    // Reset the filter text field
-    if (filterable) {
-      const filterInput = document.getElementById(id);
-      if (filterInput) {
-        filterInput.value = "";
-      }
-    }
-  }
+		// Reset the filter text field
+		if (filterable) {
+			const filterInput = document.getElementById(id);
+			if (filterInput) {
+				filterInput.value = '';
+			}
+		}
+	}
 });
 
 const handleSelection = (event) => {
-  activeIndex = event.detail;
-  onselection?.({
-    index: values.indexOf(filteredValues[activeIndex]),
-    value: filteredValues[activeIndex],
-  });
+	activeIndex = event.detail;
+	onselection?.({
+		index: values.indexOf(filteredValues[activeIndex]),
+		value: filteredValues[activeIndex],
+	});
 };
-const handleFilter = (text) => {
-  text = text.detail;
-  filteredValues = values.filter((item) => {
-    return (
-      item.content.includes(text) ||
-      item.headline.includes(text) ||
-      item.subtitle.includes(text)
-    );
-  });
+const handleFilter = (event) => {
+	const filterText = event.detail;
+	filteredValues = values.filter((item) => {
+		return (
+			item.content.includes(filterText) ||
+      item.headline.includes(filterText) ||
+      item.subtitle.includes(filterText)
+		);
+	});
 };
 </script>
 
@@ -70,7 +70,7 @@ const handleFilter = (text) => {
     onkeyup={handleFilter}
   />
 {/if}
-{#each filteredValues as value, index}
+{#each filteredValues as value, index (index)}
   <SyListPreviewItem
     headline={value.headline}
     subtitle={value.subtitle}

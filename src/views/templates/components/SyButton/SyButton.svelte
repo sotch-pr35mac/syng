@@ -62,7 +62,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
+	const {
 		style = 'filled',
 		size = 'medium',
 		shape = 'rectangle',
@@ -178,6 +178,6 @@ const getClasses = () => {
 }
 </style>
 
-<button class="{getClasses()}" onclick={onclick} disabled={ disabled } data-testid="sy-button">
+<button class={getClasses()} onclick={onclick} disabled={ disabled } data-testid="sy-button">
 	{@render children?.()}
 </button>

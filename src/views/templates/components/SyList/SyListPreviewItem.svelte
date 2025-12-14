@@ -12,24 +12,27 @@
  */
 
 /** @type {Props} */
-let {
-  headline = "",
-  subtitle = "",
-  content = "",
-  index,
-  active = false,
-  highlight,
-  onclick,
-  onevent,
+const {
+	headline = '',
+	subtitle = '',
+	content = '',
+	index,
+	active = false,
+	highlight,
+	onclick,
+	onevent: _onevent,
 } = $props();
+const ENTER_KEY_CODE = 13;
+const MAX_CONTENT_LENGTH = 25;
+const MAX_TRUNCATION_LENGTH = 22;
 
 const truncateContent = (text) =>
-  text.length > 25 ? `${text.slice(0, 22)}...` : text;
-const getClasses = () => ["sy-list-preview-item-container"].join(" ");
+	text.length > MAX_CONTENT_LENGTH ? `${text.slice(0, MAX_TRUNCATION_LENGTH)}...` : text;
+const getClasses = () => ['sy-list-preview-item-container'].join(' ');
 const handleKeyup = (e) => {
-  if (e.keycode === 13) {
-    onclick?.({ detail: index });
-  }
+	if (e.keycode === ENTER_KEY_CODE) {
+		onclick?.({ detail: index });
+	}
 };
 const handleClick = () => onclick?.({ detail: index });
 </script>

@@ -1,5 +1,5 @@
 <script>
-	let page = 'CHAT';
+	const page = 'CHAT';
 </script>
 
 <center>

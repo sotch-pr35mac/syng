@@ -1,35 +1,35 @@
 <script>
-import ToneColorPicker from "../components/SettingsOption/ToneColorPicker.svelte";
-import UpdateChecker from "../components/SettingsOption/UpdateChecker.svelte";
-import SyToggle from "../components/SyToggle/SyToggle.svelte";
-import { platform } from "@tauri-apps/plugin-os";
+import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
+import UpdateChecker from '../components/SettingsOption/UpdateChecker.svelte';
+import SyToggle from '../components/SyToggle/SyToggle.svelte';
+import { platform } from '@tauri-apps/plugin-os';
 
-const isMacos = platform() === "macos";
+const isMacos = platform() === 'macos';
 
-let preferences = [
-  {
-    label: "Under Construction Features",
-    centerLabel: true,
-    component: SyToggle,
-    props: {
-      checked: window.preferenceManager.get("beta"),
-      onchange: (checked) => window.preferenceManager.set("beta", checked),
-    },
-  },
-  {
-    label: "Updates",
-    centerLabel: false,
-    component: UpdateChecker,
-    props: {},
-  },
-  {
-    label: "Tone Colors",
-    centerLabel: false,
-    component: ToneColorPicker,
-    props: {
-      onchange: (data) => window.preferenceManager.set("toneColors", data),
-    },
-  },
+const preferences = [
+	{
+		label: 'Under Construction Features',
+		centerLabel: true,
+		component: SyToggle,
+		props: {
+			checked: window.preferenceManager.get('beta'),
+			onchange: (checked) => window.preferenceManager.set('beta', checked),
+		},
+	},
+	{
+		label: 'Updates',
+		centerLabel: false,
+		component: UpdateChecker,
+		props: {},
+	},
+	{
+		label: 'Tone Colors',
+		centerLabel: false,
+		component: ToneColorPicker,
+		props: {
+			onchange: (data) => window.preferenceManager.set('toneColors', data),
+		},
+	},
 ];
 
 /* Disabling transparency for the time being since Tauri handles it a bit differently than Electron */
@@ -60,7 +60,7 @@ if(isMacos) {
     <h1 data-tauri-drag-region={isMacos ? true : undefined}>Settings</h1>
   </div>
   <div class="settings--content">
-    {#each preferences as preference}
+    {#each preferences as preference (preference.label)}
       <div
         class="settings--setting"
         class:settings--setting--center={preference.centerLabel}

@@ -1,6 +1,6 @@
 <script>
-import SyListContent from "./SyListContent.svelte";
-import SyListPreview from "./SyListPreview.svelte";
+import SyListContent from './SyListContent.svelte';
+import SyListPreview from './SyListPreview.svelte';
 
 /* Style Prop */
 /* Possible Values */
@@ -20,19 +20,19 @@ import SyListPreview from "./SyListPreview.svelte";
  */
 
 /** @type {Props} */
-let {
-  style = "content",
-  values = [],
-  component = undefined,
-  highlight = undefined,
-  filterable = false,
-  onselection,
-  onevent,
+const {
+	style = 'content',
+	values = [],
+	component = undefined,
+	highlight = undefined,
+	filterable = false,
+	onselection,
+	onevent,
 } = $props();
 
 const styleMap = {
-  preview: SyListPreview,
-  content: SyListContent,
+	preview: SyListPreview,
+	content: SyListContent,
 };
 
 const SvelteComponent = $derived(styleMap[style]);

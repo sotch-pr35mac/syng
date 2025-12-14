@@ -1,108 +1,112 @@
 <script>
 import {
-  Bookmark,
-  BookOpen,
-  CircleQuestionMark,
-  MessageCircle,
-  EllipsisVertical,
-  Search,
-  Settings,
-  GraduationCap,
-} from "lucide-svelte";
-import active from "svelte-spa-router/active";
-import { handleError } from "../../utils/";
-import { platform } from "@tauri-apps/plugin-os";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+	Bookmark,
+	BookOpen,
+	CircleQuestionMark,
+	MessageCircle,
+	EllipsisVertical,
+	Search,
+	Settings,
+	GraduationCap,
+} from 'lucide-svelte';
+import active from 'svelte-spa-router/active';
+import { handleError } from '../../utils/';
+import { platform } from '@tauri-apps/plugin-os';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const primaryNavigation = [
-  {
-    link: "",
-    icon: Search,
-    title: "Search",
-    beta: false,
-  },
-  {
-    link: "read",
-    icon: BookOpen,
-    title: "Read",
-    beta: true,
-  },
-  {
-    link: "bookmarks",
-    icon: Bookmark,
-    title: "Bookmarks",
-    beta: false,
-  },
-  {
-    link: "study",
-    pattern: /\/study(\/.*)?/,
-    icon: GraduationCap,
-    title: "Study",
-    beta: false,
-  },
-  {
-    link: "chat",
-    icon: MessageCircle,
-    title: "Chat",
-    beta: true,
-  },
-  {
-    link: "tools",
-    icon: EllipsisVertical,
-    title: "Extras",
-    beta: true,
-  },
+	{
+		link: '',
+		icon: Search,
+		title: 'Search',
+		beta: false,
+	},
+	{
+		link: 'read',
+		icon: BookOpen,
+		title: 'Read',
+		beta: true,
+	},
+	{
+		link: 'bookmarks',
+		icon: Bookmark,
+		title: 'Bookmarks',
+		beta: false,
+	},
+	{
+		link: 'study',
+		pattern: /\/study(\/.*)?/,
+		icon: GraduationCap,
+		title: 'Study',
+		beta: false,
+	},
+	{
+		link: 'chat',
+		icon: MessageCircle,
+		title: 'Chat',
+		beta: true,
+	},
+	{
+		link: 'tools',
+		icon: EllipsisVertical,
+		title: 'Extras',
+		beta: true,
+	},
 ];
 const secondaryNavigation = [
-  {
-    link: "help",
-    icon: CircleQuestionMark,
-    size: "18",
-    title: "Help",
-    beta: true,
-  },
-  {
-    link: "settings",
-    icon: Settings,
-    size: "24",
-    title: "Settings",
-    beta: false,
-  },
+	{
+		link: 'help',
+		icon: CircleQuestionMark,
+		size: '18',
+		title: 'Help',
+		beta: true,
+	},
+	{
+		link: 'settings',
+		icon: Settings,
+		size: '24',
+		title: 'Settings',
+		beta: false,
+	},
 ];
 
-let isMacos = platform() === "macos";
+const isMacos = platform() === 'macos';
 let enableBetaFeatures = $state(false);
 let enableTransparency = $state(false);
 let trafficLightMargin = $state(isMacos);
 
 // On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
 $effect(() => {
-  if (isMacos) {
-    getCurrentWindow()
-      .onResized()
-      .then(() => {
-        getCurrentWindow()
-          .isFullscreen()
-          .then((fullscreen) => {
-            trafficLightMargin = !fullscreen;
-          });
-      });
-  }
+	if (isMacos) {
+		getCurrentWindow()
+			.onResized()
+			.then(() => {
+				return getCurrentWindow().isFullscreen();
+			})
+			.then((fullscreen) => {
+				trafficLightMargin = !fullscreen;
+				return undefined;
+			})
+			.catch((err) => {
+				console.error('Error checking fullscreen state:', err);
+			});
+	}
 });
 
 window.preferenceManager
-  .waitForInit()
-  .then(() => {
-    enableBetaFeatures = window.preferenceManager.get("beta");
-    enableTransparency =
-      isMacos && window.preferenceManager.get("transparency");
-  })
-  .catch((err) => {
-    handleError(
-      "There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.",
-      err,
-    );
-  });
+	.waitForInit()
+	.then(() => {
+		enableBetaFeatures = window.preferenceManager.get('beta');
+		enableTransparency =
+      isMacos && window.preferenceManager.get('transparency');
+		return undefined;
+	})
+	.catch((err) => {
+		handleError(
+			'There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.',
+			err,
+		);
+	});
 </script>
 
 <div
@@ -113,14 +117,14 @@ window.preferenceManager
     class="navigation--primary-nav"
     class:navigation--primary-nav--macos={trafficLightMargin}
   >
-    {#each primaryNavigation as navItem}
+    {#each primaryNavigation as navItem (navItem.link)}
       {#if !navItem.beta || enableBetaFeatures}
         <a href={`#/${navItem.link}`} class="sy-tooltip--container">
           <span
             class="navigation--item"
             use:active={{
-              path: navItem.pattern || `/${navItem.link}`,
-              className: "navigation--item-active",
+            	path: navItem.pattern || `/${navItem.link}`,
+            	className: 'navigation--item-active',
             }}
           >
             <navItem.icon size="24" />
@@ -135,14 +139,14 @@ window.preferenceManager
     {/each}
   </div>
   <div class="navigation--secondary-nav">
-    {#each secondaryNavigation as navItem}
+    {#each secondaryNavigation as navItem (navItem.link)}
       {#if !navItem.beta || enableBetaFeatures}
         <a href={`#/${navItem.link}`} class="sy-tooltip--container">
           <span
             class="navigation--item"
             use:active={{
-              path: `/${navItem.link}`,
-              className: "navigation--item-active",
+            	path: `/${navItem.link}`,
+            	className: 'navigation--item-active',
             }}
           >
             <navItem.icon size={navItem.size} />

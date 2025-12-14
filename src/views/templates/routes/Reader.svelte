@@ -1,5 +1,5 @@
 <script>
-	let page = 'READER';
+	const page = 'READER';
 </script>
 
 <center>

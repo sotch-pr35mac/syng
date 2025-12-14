@@ -1,19 +1,17 @@
 {
-	"rust-analyzer.linkedProjects": [
-		"src/native/Cargo.toml"
+	"editor.formatOnSave": false,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	},
+	"eslint.validate": [
+		"javascript",
+		"svelte"
 	],
-	"editor.insertSpaces": false,
-	"editor.tabSize": 4,
-	"editor.detectIndentation": false,
+	"eslint.useFlatConfig": true,
 	"[javascript]": {
-		"editor.insertSpaces": false,
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint"
 	},
 	"[svelte]": {
-		"editor.insertSpaces": false,
-		"editor.defaultFormatter": "svelte.svelte-vscode"
-	},
-	"prettier.enable": false,
-	"svelte.plugin.svelte.format.config.svelteIndentScriptAndStyle": false,
-	"javascript.preferences.quoteStyle": "single",
-	"typescript.preferences.quoteStyle": "single"
+		"editor.defaultFormatter": "dbaeumer.vscode-eslint"
+	}
 }

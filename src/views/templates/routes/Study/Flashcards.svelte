@@ -1,107 +1,109 @@
 <script>
 import {
-  ChevronLeft,
-  ArrowLeft,
-  ArrowRight,
-  RotateCw,
-  RotateCcw,
-} from "lucide-svelte";
-import SyButton from "../../components/SyButton/SyButton.svelte";
-import DictionaryContent from "../../components/DictionaryContent/DictionaryContent.svelte";
-import { querystring } from "svelte-spa-router";
-import { handleError } from "../../utils";
-import { platform } from "@tauri-apps/plugin-os";
+	ChevronLeft,
+	ArrowLeft,
+	ArrowRight,
+	RotateCw,
+	RotateCcw,
+} from 'lucide-svelte';
+import SyButton from '../../components/SyButton/SyButton.svelte';
+import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
+import { querystring } from 'svelte-spa-router';
+import { handleError } from '../../utils';
+import { platform } from '@tauri-apps/plugin-os';
 
-const EMPTY_LIST_MESSAGE = "No flashcards in this list";
-const LOADING_LIST_MESSAGE = "Loading...";
+const EMPTY_LIST_MESSAGE = 'No flashcards in this list';
+const LOADING_LIST_MESSAGE = 'Loading...';
 let loading = $state(true);
 
-const isMacos = platform() === "macos";
+const isMacos = platform() === 'macos';
 let activeList = undefined;
 let activeIndex = $state(0);
 let showDetails = $state(false);
 let listContent = $state([]);
-let params = new URLSearchParams($querystring);
-activeList = params.get("list");
+const params = new URLSearchParams($querystring);
+activeList = params.get('list');
 
 // Get the word lists
 let lists = $state([]);
 window.bookmarkManager
-  .getLists()
-  .then((wl) => {
-    lists = wl;
-  })
-  .catch((e) => {
-    handleError(
-      "There was an error fetching word lists. Check the log for more details.",
-      e,
-    );
-  });
+	.getLists()
+	.then((wl) => {
+		lists = wl;
+		return undefined;
+	})
+	.catch((e) => {
+		handleError(
+			'There was an error fetching word lists. Check the log for more details.',
+			e,
+		);
+	});
 
 const handleListChange = () => {
-  window.bookmarkManager
-    .getListContent(activeList)
-    .then((contents) => {
-      listContent = contents;
-      loading = false;
-    })
-    .catch((e) => {
-      handleError(
-        "There was an error fetching list content. Check the log for more details.",
-        e,
-      );
-    });
+	window.bookmarkManager
+		.getListContent(activeList)
+		.then((contents) => {
+			listContent = contents;
+			loading = false;
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error fetching list content. Check the log for more details.',
+				e,
+			);
+		});
 };
 
 // Call `handleListChange` on mount (activeList doesn't change dynamically)
 $effect(() => {
-  handleListChange();
+	handleListChange();
 });
 
 // Reset showDetails when activeIndex changes
 $effect(() => {
-  activeIndex; // track dependency
-  showDetails = false;
+	activeIndex; // track dependency
+	showDetails = false;
 });
 
 // Derive left actions based on current state
-let leftActions = $derived([
-  {
-    icon: ChevronLeft,
-    label: "Exit",
-    disabled: false,
-    action: () => {
-      window.location.hash = "#/study";
-    },
-  },
-  {
-    icon: ArrowLeft,
-    label: "Previous",
-    disabled: activeIndex === 0,
-    action: () => {
-      activeIndex = activeIndex - 1;
-    },
-  },
+const leftActions = $derived([
+	{
+		icon: ChevronLeft,
+		label: 'Exit',
+		disabled: false,
+		action: () => {
+			window.location.hash = '#/study';
+		},
+	},
+	{
+		icon: ArrowLeft,
+		label: 'Previous',
+		disabled: activeIndex === 0,
+		action: () => {
+			activeIndex = activeIndex - 1;
+		},
+	},
 ]);
 
 // Derive right actions based on current state
-let rightActions = $derived([
-  {
-    icon: showDetails ? RotateCcw : RotateCw,
-    label: "Flip",
-    disabled: false,
-    action: () => {
-      showDetails = !showDetails;
-    },
-  },
-  {
-    icon: ArrowRight,
-    label: "Next",
-    disabled: activeIndex === listContent.length - 1,
-    action: () => {
-      activeIndex = activeIndex + 1;
-    },
-  },
+const rightActions = $derived([
+	{
+		icon: showDetails ? RotateCcw : RotateCw,
+		label: 'Flip',
+		disabled: false,
+		action: () => {
+			showDetails = !showDetails;
+		},
+	},
+	{
+		icon: ArrowRight,
+		label: 'Next',
+		disabled: activeIndex === listContent.length - 1,
+		action: () => {
+			activeIndex = activeIndex + 1;
+		},
+	},
 ]);
 </script>
 
@@ -111,7 +113,7 @@ let rightActions = $derived([
     data-tauri-drag-region={isMacos ? true : undefined}
   >
     <div class="flashcard--header--section">
-      {#each leftActions as action}
+      {#each leftActions as action (action.label)}
         <SyButton
           disabled={action.disabled}
           onclick={action.action}
@@ -125,7 +127,7 @@ let rightActions = $derived([
       {/each}
     </div>
     <div class="flashcard--header--section">
-      {#each rightActions as action}
+      {#each rightActions as action (action.label)}
         <SyButton
           disabled={action.disabled}
           onclick={action.action}
@@ -155,7 +157,7 @@ let rightActions = $derived([
         {#if listContent.length > 0}
           <h1>
             {listContent[activeIndex].simplified}&nbsp;({listContent[
-              activeIndex
+            	activeIndex
             ].traditional})
           </h1>
         {:else}

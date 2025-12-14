@@ -1,6 +1,6 @@
 <script>
-import SyButton from "../SyButton/SyButton.svelte";
-import { SquareStack, Award } from "lucide-svelte";
+import SyButton from '../SyButton/SyButton.svelte';
+import { SquareStack, Award } from 'lucide-svelte';
 
 /**
  * @typedef {Object} Props
@@ -9,28 +9,28 @@ import { SquareStack, Award } from "lucide-svelte";
  */
 
 /** @type {Props} */
-let { value, onselection = () => {} } = $props();
+const { value, onselection = () => {} } = $props();
 
 const handleSelection = (actionType) => {
-  if (value) {
-    onselection({
-      action: actionType,
-      list: value,
-    });
-  }
+	if (value) {
+		onselection({
+			action: actionType,
+			list: value,
+		});
+	}
 };
 
 const actions = $derived([
-  {
-    icon: SquareStack,
-    action: () => handleSelection("flashcards"),
-    tooltip: `Flashcards for ${value}`,
-  },
-  {
-    icon: Award,
-    action: () => handleSelection("quiz"),
-    tooltip: `Start quiz for ${value}`,
-  },
+	{
+		icon: SquareStack,
+		action: () => handleSelection('flashcards'),
+		tooltip: `Flashcards for ${value}`,
+	},
+	{
+		icon: Award,
+		action: () => handleSelection('quiz'),
+		tooltip: `Start quiz for ${value}`,
+	},
 ]);
 </script>
 
@@ -39,12 +39,12 @@ const actions = $derived([
     {value}
   </span>
   <span class="study-list-item--actions">
-    {#each actions as action}
+    {#each actions as action (action.tooltip)}
       <SyButton
         center={true}
         onclick={action.action}
         size="large"
-        classes={["sy-tooltip--container"]}
+        classes={['sy-tooltip--container']}
       >
         <action.icon size="18" />
         <div class="sy-tooltip--body sy-tooltip--body-bottom">

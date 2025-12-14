@@ -16,7 +16,7 @@
  */
 
 /** @type {Props} */
-let { checked = false, id = crypto.randomUUID(), value, onchange } = $props();
+const { checked = false, id = crypto.randomUUID(), value, onchange } = $props();
 </script>
 
 <span class="sy-toggle--container">

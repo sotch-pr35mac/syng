@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import EntryTopline from './EntryTopline.svelte';
 import { render } from '@testing-library/svelte';
 

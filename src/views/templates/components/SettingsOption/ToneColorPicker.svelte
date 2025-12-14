@@ -5,53 +5,53 @@
  */
 
 /** @type {Props} */
-let { onchange } = $props();
+const { onchange } = $props();
 
 const styles = getComputedStyle(document.body);
 const getRGB = (value) =>
-  value.substring(0, 2) == "--" ? styles.getPropertyValue(value) : value;
+	value.substring(0, 2) === '--' ? styles.getPropertyValue(value) : value;
 const colors = window.preferenceManager
-  .get("toneColors")
-  .colors.map((color) => getRGB(color).trim());
+	.get('toneColors')
+	.colors.map((color) => getRGB(color).trim());
 const tones = [
-  {
-    label: "First Tone",
-    color: colors[0],
-    index: 0,
-  },
-  {
-    label: "Second Tone",
-    color: colors[1],
-    index: 1,
-  },
-  {
-    label: "Third Tone",
-    color: colors[2],
-    index: 2,
-  },
-  {
-    label: "Fourth Tone",
-    color: colors[3],
-    index: 3,
-  },
-  {
-    label: "No Tone",
-    color: colors[4],
-    index: 4,
-  },
+	{
+		label: 'First Tone',
+		color: colors[0],
+		index: 0,
+	},
+	{
+		label: 'Second Tone',
+		color: colors[1],
+		index: 1,
+	},
+	{
+		label: 'Third Tone',
+		color: colors[2],
+		index: 2,
+	},
+	{
+		label: 'Fourth Tone',
+		color: colors[3],
+		index: 3,
+	},
+	{
+		label: 'No Tone',
+		color: colors[4],
+		index: 4,
+	},
 ];
 
 const handleUpdate = (index) => {
-  colors[index] = document.getElementById(`tone-${index + 1}`).value;
-  onchange?.({
-    hasCustomColors: true,
-    colors: colors,
-  });
+	colors[index] = document.getElementById(`tone-${index + 1}`).value;
+	onchange?.({
+		hasCustomColors: true,
+		colors: colors,
+	});
 };
 </script>
 
 <div class="tone-color-picker">
-  {#each tones as tone}
+  {#each tones as tone (tone.index)}
     <div class="tone-color-picker--tone">
       <label for={`tone-${tone.index + 1}`}>{tone.label}</label>
       <input

@@ -19,24 +19,24 @@
  */
 
 /** @type {Props} */
-let {
-  text = undefined,
-  color = "black",
-  hover = "blue",
-  icon: _icon = undefined,
-  onclick = () => {},
+const {
+	text = undefined,
+	color = 'black',
+	hover = 'blue',
+	icon: _icon = undefined,
+	onclick = () => {},
 } = $props();
 
 const getClasses = () => {
-  return [
-    "st-dropdown-item--container",
-    `st-dropdown-item--color--${color}`,
-    `st-dropdown-item--hover--${hover}`,
-  ].join(" ");
+	return [
+		'st-dropdown-item--container',
+		`st-dropdown-item--color--${color}`,
+		`st-dropdown-item--hover--${hover}`,
+	].join(' ');
 };
 
 const handleClick = (e) => {
-  onclick(e);
+	onclick(e);
 };
 </script>
 

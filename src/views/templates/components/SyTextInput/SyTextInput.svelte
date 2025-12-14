@@ -39,7 +39,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
+	const {
 		style = 'standard',
 		size = 'medium',
 		transparency = false,
@@ -58,7 +58,7 @@ const getClasses = () => {
 		`sy-text-input--${size}`].join(' ');
 };
 const handleKeyup = event => {
-	if(event.code == 'Enter') {
+	if(event.code === 'Enter') {
 		onenter(event);
 	} else {
 		onkeyup(event.srcElement.value);
@@ -108,4 +108,4 @@ const handleKeyup = event => {
 }
 </style>
 
-<input placeholder="{placeholder}" type="{type}" class="{getClasses()}" id={id} spellcheck={spellcheck} onchange={e => onchange(e.srcElement.value)} onkeyup={handleKeyup}/>
+<input placeholder={placeholder} type={type} class={getClasses()} id={id} spellcheck={spellcheck} onchange={e => onchange(e.srcElement.value)} onkeyup={handleKeyup}/>

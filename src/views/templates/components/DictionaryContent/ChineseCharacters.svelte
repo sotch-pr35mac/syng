@@ -1,7 +1,4 @@
 <script>
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [characters] - Characters Prop
@@ -9,13 +6,15 @@
 	 */
 
 	/** @type {Props} */
-	let { characters = '', tones = [] } = $props();
+	const { characters = '', tones = [] } = $props();
+
+	const NO_TONE_INDEX = 5;
 </script>
 
 <span>
-	{#each characters as character, index}
+	{#each characters as character, index (index)}
 		<span
-			class="sy-text--selectable {`colored-characters--tone-${tones[index] || 5}`}"
+			class="sy-text--selectable {`colored-characters--tone-${tones[index] || NO_TONE_INDEX}`}"
 			>{character}</span
 		>
 	{/each}

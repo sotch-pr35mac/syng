@@ -23,7 +23,7 @@ export const inDebugMode = async () => 'debug' in await getArgs();
  */
 export const getArgument = async name => {
 	const args = await getArgs();
-	return args.filter(arg => arg.split('=')[0] == name).map(arg => arg.split('=')[1])[0];
+	return args.filter(arg => arg.split('=')[0] === name).map(arg => arg.split('=')[1])[0];
 };
 
 // underTest: Boolean: Is this environment driven by a test runner (Jest or Vitest)

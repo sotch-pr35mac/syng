@@ -1,5 +1,5 @@
 <script>
-	let page = 'TOOLS';
+	const page = 'TOOLS';
 </script>
 
 <center>

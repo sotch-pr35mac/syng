@@ -21,6 +21,7 @@
 		"@testing-library/svelte": "^5.0.0",
 		"@testing-library/user-event": "^14.2.0",
 		"eslint": "^9.0.0",
+		"eslint-plugin-promise": "^7.2.1",
 		"eslint-plugin-svelte": "^3.0.0",
 		"jsdom": "^26.0.0",
 		"lucide-svelte": "^0.561.0",

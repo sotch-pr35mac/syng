@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import SyToggle from './SyToggle.svelte';

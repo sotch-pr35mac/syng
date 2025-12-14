@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { vi } from 'vitest';
 import { handleError } from './error.js';
 

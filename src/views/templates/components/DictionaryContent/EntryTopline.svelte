@@ -1,14 +1,13 @@
 <script>
 	import ChineseCharacters from './ChineseCharacters.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} [word] - Word Prop
 	 */
 
 	/** @type {Props} */
-	let { word = {} } = $props();
+	const { word = {} } = $props();
 </script>
 
 <div class="chinese-characters--container">
@@ -18,7 +17,7 @@
 	>
 		<ChineseCharacters characters={word.simplified} tones={word.tone_marks}
 		></ChineseCharacters>
-		{#if word.simplified != word.traditional}
+		{#if word.simplified !== word.traditional}
 			&nbsp;(<ChineseCharacters
 				characters={word.traditional}
 				tones={word.tone_marks}

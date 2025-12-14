@@ -7,7 +7,7 @@
 	 */
 
 	/** @type {Props} */
-	let { link, children, onopen } = $props();
+	const { link, children, onopen } = $props();
 
 	const openLink = () => onopen?.({ detail: link });
 </script>

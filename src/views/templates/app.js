@@ -1,6 +1,6 @@
 import App from './App.svelte';
 import CharacterWindow from './CharacterWindow.svelte';
-import { mount } from "svelte";
+import { mount } from 'svelte';
 
 let app;
 

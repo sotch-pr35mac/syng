@@ -1,7 +1,7 @@
 <script>
-import { fade, slide } from "svelte/transition";
-import { Check, X } from "lucide-svelte";
-import SyTimer from "../SyTimer/SyTimer.svelte";
+import { fade, slide } from 'svelte/transition';
+import { Check, X } from 'lucide-svelte';
+import SyTimer from '../SyTimer/SyTimer.svelte';
 
 /* Is Correct Prop */
 /* Possible Values */
@@ -26,14 +26,16 @@ import SyTimer from "../SyTimer/SyTimer.svelte";
  * @property {any} timer - Timer component reference for external control (bindable)
  */
 
+/* eslint-disable prefer-const -- timer uses $bindable() which requires let for the entire destructuring */
 /** @type {Props} */
 let {
-  isCorrect = true,
-  show = false,
-  onComplete = () => {},
-  chosenAnswer = "",
-  timer = $bindable(),
+	isCorrect = true,
+	show = false,
+	onComplete = () => {},
+	chosenAnswer = '',
+	timer = $bindable(),
 } = $props();
+/* eslint-enable prefer-const */
 
 const RESULT_DISPLAY_TIME = 10;
 </script>
@@ -43,7 +45,7 @@ const RESULT_DISPLAY_TIME = 10;
     <!-- Result badge with slide animation -->
     <div
       class="result-indicator"
-      in:slide|global={{ duration: 250, axis: "x" }}
+      in:slide|global={{ duration: 250, axis: 'x' }}
     >
       <div class="indicator-content">
         {#if isCorrect}
@@ -63,6 +65,7 @@ const RESULT_DISPLAY_TIME = 10;
 
     <!-- Timer with fade animation -->
     <div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
+      <!-- eslint-disable no-magic-numbers -->
       <SyTimer
         bind:this={timer}
         duration={RESULT_DISPLAY_TIME}
@@ -70,6 +73,7 @@ const RESULT_DISPLAY_TIME = 10;
         autoStart={true}
         oncomplete={onComplete}
       />
+      <!-- eslint-enable no-magic-numbers -->
     </div>
   </div>
 {/if}

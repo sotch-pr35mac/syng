@@ -51,11 +51,7 @@ export const runStartupActions = () => {
 		},
 		{
 			name: 'cache-platform',
-			action: () => {
-				return new Promise((resolve, _reject) => {
-					resolve(platform());
-				});
-			}
+			action: () => Promise.resolve(platform())
 		},
 		{
 			name: 'init-bookmark-manager',
@@ -117,6 +113,7 @@ export const runStartupActions = () => {
 
 		document.dispatchEvent(new Event('init'));
 		initializeStyles();
+		return undefined;
 	}).catch(e => {
 		handleError('There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.', e);
 	});

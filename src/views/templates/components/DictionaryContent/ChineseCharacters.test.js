@@ -1,11 +1,10 @@
-/* eslint-disable no-undef */
 import { render } from '@testing-library/svelte';
 import ChineseCharacters from './ChineseCharacters.svelte';
 
 it('should render the correct color for each character', async () => {
 	const { getByText } = render(ChineseCharacters, {
 		characters: '妈痲吗蚂么',
-		tones: [1, 2, 3, 4, 5]
+		tones: [1, 2, 3, 4, 5] // eslint-disable-line no-magic-numbers
 	});
 
 	const firstTone = getByText('妈').className.split(' ');

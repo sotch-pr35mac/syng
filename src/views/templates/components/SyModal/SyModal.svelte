@@ -17,7 +17,7 @@ import SyButton from '../SyButton/SyButton.svelte';
 	 */
 
 	/** @type {Props} */
-	let {
+	const {
 		visible = false,
 		title = '',
 		body,
@@ -74,7 +74,7 @@ import SyButton from '../SyButton/SyButton.svelte';
 }
 </style>
 
-<div class="sy-modal--container" class:sy-modal--active="{ visible }">
+<div class="sy-modal--container" class:sy-modal--active={ visible }>
 	<div class="sy-modal--content">
 		<div class="sy-modal--header">
 			<h2 class="sy-modal--title">{ title }</h2>

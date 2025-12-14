@@ -5,7 +5,7 @@
  */
 
 // Accept and ignore props that other dropdown items use
-let { text = undefined, icon = undefined, ...rest } = $props();
+const { text: _text = undefined, icon: _icon = undefined, ..._rest } = $props();
 </script>
 
 <hr class="sy-dropdown--divider" />

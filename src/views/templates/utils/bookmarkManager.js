@@ -26,7 +26,6 @@ export class BookmarkManager {
    * Return: BookmarkManager: The BookmarkManager instance.
    */
 	constructor(listDb, documentDb) {
-		/* eslint-disable no-undef */
 		this.initialized = false;
 		this._list_db = new PouchDB(listDb);
 		this._document_db = new PouchDB(documentDb);
@@ -43,7 +42,7 @@ export class BookmarkManager {
 				// Syng expects there to always be a bookmarks list. If a bookmarks
 				// list is not present, initialize it.
 				if (!documents.rows.map(list => list.doc.name).includes('Bookmarks')) {
-					this._list_db.post({ name: 'Bookmarks' }).then(result => {
+					return this._list_db.post({ name: 'Bookmarks' }).then(result => {
 						if (result.ok) {
 							this.initialized = true;
 							resolve();
@@ -52,15 +51,16 @@ export class BookmarkManager {
 							reject(new Error('There was an error initializing the bookmarks data. Check the logs for more details.'));
 							throw new BreakException();
 						}
+						return undefined;
 					}).catch(e => {
 						console.error(e);
 						reject(new Error('There was an error initializing the bookmarks data. Check the logs for more details.'));
 						throw new BreakException();
 					});
-				} else {
-					this.initialized = true;
-					resolve();
 				}
+				this.initialized = true;
+				resolve();
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error('There was an error loading bookmarks data. Check the logs for more details.'));
@@ -76,18 +76,16 @@ export class BookmarkManager {
    * Return: Promise: Returns a promise that resolves once initialization has been completed.
    */
 	waitForInit() {
-		/*eslint-disable no-unused-vars */
-		return new Promise((resolve, reject) => {
-			let shouldBreak = false;
+		const POLL_INTERVAL_MS = 10;
+		return new Promise((resolve) => {
 			const pollInit = () => {
 				if (this.initialized) {
 					resolve();
-					shouldBreak = true;
 				} else {
-					setTimeout(pollInit, 10);
+					setTimeout(pollInit, POLL_INTERVAL_MS);
 				}
 			};
-			shouldBreak ? undefined : pollInit();
+			pollInit();
 		});
 	}
 
@@ -100,6 +98,7 @@ export class BookmarkManager {
 		return new Promise((resolve, reject) => {
 			this._list_db.allDocs({ include_docs: true }).then(documents => {
 				resolve(documents.rows.map(list => list.doc.name));
+				return undefined;
 			}).catch(e => {
 				console.error(e);
 				reject(new Error('There was an error fetching the available word lists.'));
@@ -118,16 +117,17 @@ export class BookmarkManager {
 			this._list_db.allDocs({ include_docs: true }).then(documents => {
 				lists = documents.rows.map(list => list.doc);
 				return this._document_db.allDocs({ include_docs: true });
-			}).then(words => {
-				words = words.rows.map(word => word.doc);
+			}).then(wordsResult => {
+				const wordDocs = wordsResult.rows.map(word => word.doc);
 
 				const emptyLists = lists.filter(list => {
 					const listId = list._id;
-					const list_contents = words.filter(word => word.lists.includes(listId));
-					return !list_contents.length;
+					const listContents = wordDocs.filter(word => word.lists.includes(listId));
+					return !listContents.length;
 				}).map(list => list.name);
 
 				resolve(emptyLists);
+				return undefined;
 			}).catch(e => {
 				console.error(e);
 				reject(new Error('There was an error trying to fetch empty lists.'));
@@ -162,6 +162,7 @@ export class BookmarkManager {
 					console.error(result);
 					reject(new Error(`There was an error while creating ${listName}. Check the logs for more details.`));
 				}
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error(`There was an error while creating ${listName}. Check the logs for more details.`));
@@ -217,6 +218,7 @@ export class BookmarkManager {
 				} else {
 					resolve();
 				}
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error(`There was an error deleting the list ${listName}. Check the log for more details.`));
@@ -244,6 +246,7 @@ export class BookmarkManager {
 				return this._document_db.allDocs({ include_docs: true });
 			}).then(documents => {
 				resolve(documents.rows.filter(word => word.doc.lists.includes(listId)).map(word => word.doc));
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error(`There was an error loading the list ${listName}. Check the log for more details.`));
@@ -258,10 +261,14 @@ export class BookmarkManager {
 	 * database doesn't contain a word with that hash.
 	 */
 	getWordByHash(hash) {
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			this._document_db.allDocs({ include_docs: true }).then(documents => {
 				// Syng expects the entries in the document DB to be unique by hash.
 				resolve(documents.rows.filter(word => word.doc.hash === hash).map(word => word.doc)[0]);
+				return undefined;
+			}).catch(e => {
+				console.error(e);
+				resolve(undefined);
 			});
 		});
 	}
@@ -317,6 +324,7 @@ export class BookmarkManager {
 					console.error(result);
 					reject(new Error(`There was an error adding the word to ${listName}. Check the log for more details.`));
 				}
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error(`There was an error adding the word to ${listName}. Check the log for more details.`));
@@ -344,7 +352,7 @@ export class BookmarkManager {
 			}).then(documents => {
 				// First, check to make sure the word is present.
 				const words = documents.rows.map(word => word.doc);
-				let word = words.filter(word => word.hash === wordToRemove.hash)[0];
+				const word = words.filter(word => word.hash === wordToRemove.hash)[0];
 				if (!word) {
 					reject(new Error(`There was an error removing the word from ${listName}. The word does not exist!`));
 					throw new BreakException();
@@ -359,6 +367,7 @@ export class BookmarkManager {
 					console.error(result);
 					reject(new Error(`There was an error removing the word from ${listName}. Check the log for more details.`));
 				}
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error(`There was an error removing the word from ${listName}. Check the log for more details.`));
@@ -379,6 +388,7 @@ export class BookmarkManager {
 				return this._list_db.allDocs({ include_docs: true });
 			}).then(documents => {
 				resolve(documents.rows.filter(list => wordLists.includes(list.doc._id)).map(list => list.doc.name));
+				return undefined;
 			}).catch(e => {
 				console.error(e);
 				reject(new Error('There was an error fetching bookmarks data. Please check the log for more details.'));
@@ -396,9 +406,9 @@ export class BookmarkManager {
 	 */
 	updateProperty(hash, name, value) {
 		return new Promise((resolve, reject) => {
-			const word = this.getWordByHash(hash).then(word => {
+			this.getWordByHash(hash).then(wordEntry => {
 				// Check to make sure the word is present in the cache
-				if (!word) {
+				if (!wordEntry) {
 					reject(new Error('There was an error updating the bookmarks entry. That word could not be found in any of your lists.'));
 					throw new BreakException();
 				}
@@ -409,14 +419,15 @@ export class BookmarkManager {
 					throw new BreakException();
 				}
 
-				word[name] = value;
-				return this._document_db.put(word);
+				wordEntry[name] = value;
+				return this._document_db.put(wordEntry);
 			}).then(result => {
 				if (result.ok) {
 					resolve();
 				} else {
 					reject(new Error('There was an error updating the bookmarks entry.'));
 				}
+				return undefined;
 			}).catch(BreakException, () => undefined).catch(e => {
 				console.error(e);
 				reject(new Error('There was an error updating the bookmarks entry. Check the log for more details.'));

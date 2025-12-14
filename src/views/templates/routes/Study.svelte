@@ -1,50 +1,52 @@
 <script>
-import SyList from "../components/SyList/SyList.svelte";
-import StudyListItem from "../components/StudyListItem/StudyListItem.svelte";
-import { handleError } from "../utils";
-import { platform } from "@tauri-apps/plugin-os";
+import SyList from '../components/SyList/SyList.svelte';
+import StudyListItem from '../components/StudyListItem/StudyListItem.svelte';
+import { handleError } from '../utils';
+import { platform } from '@tauri-apps/plugin-os';
 
-const isMacos = platform() === "macos";
+const isMacos = platform() === 'macos';
 let lists = $state([]);
 let emptyLists = $state([]);
 
 // Derive populatedLists from lists and emptyLists
-let populatedLists = $derived(
-  lists.filter((list) => !emptyLists.includes(list)),
+const populatedLists = $derived(
+	lists.filter((list) => !emptyLists.includes(list)),
 );
 
 window.bookmarkManager
-  .getLists()
-  .then((wordLists) => {
-    lists = wordLists.sort((a, b) => a.localeCompare(b));
-  })
-  .catch((e) => {
-    handleError(
-      "There was an error fetching word lists. Check the logs for more details.",
-      e,
-    );
-  });
+	.getLists()
+	.then((wordLists) => {
+		lists = wordLists.sort((a, b) => a.localeCompare(b));
+		return undefined;
+	})
+	.catch((e) => {
+		handleError(
+			'There was an error fetching word lists. Check the logs for more details.',
+			e,
+		);
+	});
 window.bookmarkManager
-  .getEmptyLists()
-  .then((fetchedLists) => {
-    emptyLists = fetchedLists;
-  })
-  .catch((e) => {
-    handleError(
-      "There was an error fetching the empty lists. Check the log for more details.",
-      e,
-    );
-  });
+	.getEmptyLists()
+	.then((fetchedLists) => {
+		emptyLists = fetchedLists;
+		return undefined;
+	})
+	.catch((e) => {
+		handleError(
+			'There was an error fetching the empty lists. Check the log for more details.',
+			e,
+		);
+	});
 
 const handleSelection = (data) => {
-  const { list, action } = data;
-  let url;
-  if (action === "quiz") {
-    url = `#/study/quiz?list=${list}`;
-  } else {
-    url = `#/study/flashcards?list=${list}`;
-  }
-  document.location.href = url;
+	const { list, action } = data;
+	let url;
+	if (action === 'quiz') {
+		url = `#/study/quiz?list=${list}`;
+	} else {
+		url = `#/study/flashcards?list=${list}`;
+	}
+	document.location.href = url;
 };
 </script>
 

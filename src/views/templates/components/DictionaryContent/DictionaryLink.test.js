@@ -1,4 +1,4 @@
-/* eslint-disable no-undef */
+ 
 import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 import DictionaryLink from './DictionaryLink.svelte';
