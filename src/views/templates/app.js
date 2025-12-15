@@ -8,12 +8,12 @@ const appContainer = document.getElementById('app');
 const charactersContainer = document.getElementById('characters');
 if (appContainer) {
 	app = mount(App, {
-    		target: appContainer
-    	});
+		target: appContainer,
+	});
 } else if (charactersContainer) {
 	app = mount(CharacterWindow, {
-    		target: charactersContainer
-    	});
+		target: charactersContainer,
+	});
 }
 
 export default app;

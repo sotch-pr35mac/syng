@@ -1,220 +1,222 @@
 <script>
-import {
-	Bookmark,
-	BookOpen,
-	CircleQuestionMark,
-	MessageCircle,
-	EllipsisVertical,
-	Search,
-	Settings,
-	GraduationCap,
-} from 'lucide-svelte';
-import active from 'svelte-spa-router/active';
-import { handleError } from '../../utils/';
-import { platform } from '@tauri-apps/plugin-os';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { onMount } from 'svelte';
+	import {
+		Bookmark,
+		BookOpen,
+		CircleQuestionMark,
+		MessageCircle,
+		EllipsisVertical,
+		Search,
+		Settings,
+		GraduationCap,
+	} from 'lucide-svelte';
+	import active from 'svelte-spa-router/active';
+	import { handleError } from '../../utils/';
+	import { platform } from '@tauri-apps/plugin-os';
+	import { getCurrentWindow } from '@tauri-apps/api/window';
 
-const primaryNavigation = [
-	{
-		link: '',
-		icon: Search,
-		title: 'Search',
-		beta: false,
-	},
-	{
-		link: 'read',
-		icon: BookOpen,
-		title: 'Read',
-		beta: true,
-	},
-	{
-		link: 'bookmarks',
-		icon: Bookmark,
-		title: 'Bookmarks',
-		beta: false,
-	},
-	{
-		link: 'study',
-		pattern: /\/study(\/.*)?/,
-		icon: GraduationCap,
-		title: 'Study',
-		beta: false,
-	},
-	{
-		link: 'chat',
-		icon: MessageCircle,
-		title: 'Chat',
-		beta: true,
-	},
-	{
-		link: 'tools',
-		icon: EllipsisVertical,
-		title: 'Extras',
-		beta: true,
-	},
-];
-const secondaryNavigation = [
-	{
-		link: 'help',
-		icon: CircleQuestionMark,
-		size: '18',
-		title: 'Help',
-		beta: true,
-	},
-	{
-		link: 'settings',
-		icon: Settings,
-		size: '24',
-		title: 'Settings',
-		beta: false,
-	},
-];
+	const primaryNavigation = [
+		{
+			link: '',
+			icon: Search,
+			title: 'Search',
+			beta: false,
+		},
+		{
+			link: 'read',
+			icon: BookOpen,
+			title: 'Read',
+			beta: true,
+		},
+		{
+			link: 'bookmarks',
+			icon: Bookmark,
+			title: 'Bookmarks',
+			beta: false,
+		},
+		{
+			link: 'study',
+			pattern: /\/study(\/.*)?/,
+			icon: GraduationCap,
+			title: 'Study',
+			beta: false,
+		},
+		{
+			link: 'chat',
+			icon: MessageCircle,
+			title: 'Chat',
+			beta: true,
+		},
+		{
+			link: 'tools',
+			icon: EllipsisVertical,
+			title: 'Extras',
+			beta: true,
+		},
+	];
+	const secondaryNavigation = [
+		{
+			link: 'help',
+			icon: CircleQuestionMark,
+			size: '18',
+			title: 'Help',
+			beta: true,
+		},
+		{
+			link: 'settings',
+			icon: Settings,
+			size: '24',
+			title: 'Settings',
+			beta: false,
+		},
+	];
 
-const isMacos = platform() === 'macos';
-let enableBetaFeatures = $state(false);
-let enableTransparency = $state(false);
-let trafficLightMargin = $state(isMacos);
+	const isMacos = platform() === 'macos';
+	let enableBetaFeatures = $state(false);
+	let enableTransparency = $state(false);
+	let trafficLightMargin = $state(isMacos);
 
-// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
-$effect(() => {
-	if (isMacos) {
-		getCurrentWindow()
-			.onResized()
-			.then(() => {
-				return getCurrentWindow().isFullscreen();
-			})
-			.then((fullscreen) => {
-				trafficLightMargin = !fullscreen;
-				return undefined;
-			})
-			.catch((err) => {
-				console.error('Error checking fullscreen state:', err);
-			});
-	}
-});
+	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
+	onMount(() => {
+		let unlisten;
 
-window.preferenceManager
-	.waitForInit()
-	.then(() => {
-		enableBetaFeatures = window.preferenceManager.get('beta');
-		enableTransparency =
-      isMacos && window.preferenceManager.get('transparency');
-		return undefined;
-	})
-	.catch((err) => {
-		handleError(
-			'There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.',
-			err,
-		);
+		if (isMacos) {
+			getCurrentWindow()
+				.onResized(async () => {
+					const fullscreen = await getCurrentWindow().isFullscreen();
+					trafficLightMargin = !fullscreen;
+				})
+				.then((unlistenFn) => {
+					unlisten = unlistenFn;
+					return undefined;
+				})
+				.catch((err) => {
+					console.error('Error setting up fullscreen listener:', err);
+				});
+		}
+
+		return () => {
+			if (unlisten) {
+				unlisten();
+			}
+		};
 	});
+
+	window.preferenceManager
+		.waitForInit()
+		.then(() => {
+			enableBetaFeatures = window.preferenceManager.get('beta');
+			enableTransparency = isMacos && window.preferenceManager.get('transparency');
+			return undefined;
+		})
+		.catch((err) => {
+			handleError(
+				'There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.',
+				err
+			);
+		});
 </script>
 
-<div
-  class="navigation-container"
-  class:navigation-container--transparency={enableTransparency}
->
-  <div
-    class="navigation--primary-nav"
-    class:navigation--primary-nav--macos={trafficLightMargin}
-  >
-    {#each primaryNavigation as navItem (navItem.link)}
-      {#if !navItem.beta || enableBetaFeatures}
-        <a href={`#/${navItem.link}`} class="sy-tooltip--container">
-          <span
-            class="navigation--item"
-            use:active={{
-            	path: navItem.pattern || `/${navItem.link}`,
-            	className: 'navigation--item-active',
-            }}
-          >
-            <navItem.icon size="24" />
-          </span>
-          <div class="sy-tooltip--body sy-tooltip--body-right">
-            <p>
-              {navItem.title}
-            </p>
-          </div>
-        </a>
-      {/if}
-    {/each}
-  </div>
-  <div class="navigation--secondary-nav">
-    {#each secondaryNavigation as navItem (navItem.link)}
-      {#if !navItem.beta || enableBetaFeatures}
-        <a href={`#/${navItem.link}`} class="sy-tooltip--container">
-          <span
-            class="navigation--item"
-            use:active={{
-            	path: `/${navItem.link}`,
-            	className: 'navigation--item-active',
-            }}
-          >
-            <navItem.icon size={navItem.size} />
-          </span>
-          <div class="sy-tooltip--body sy-tooltip--body-right">
-            <p>
-              {navItem.title}
-            </p>
-          </div>
-        </a>
-      {/if}
-    {/each}
-  </div>
+<div class="navigation-container" class:navigation-container--transparency={enableTransparency}>
+	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
+		{#each primaryNavigation as navItem (navItem.link)}
+			{#if !navItem.beta || enableBetaFeatures}
+				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
+					<span
+						class="navigation--item"
+						use:active={{
+							path: navItem.pattern || `/${navItem.link}`,
+							className: 'navigation--item-active',
+						}}
+					>
+						<navItem.icon size="24" />
+					</span>
+					<div class="sy-tooltip--body sy-tooltip--body-right">
+						<p>
+							{navItem.title}
+						</p>
+					</div>
+				</a>
+			{/if}
+		{/each}
+	</div>
+	<div class="navigation--secondary-nav">
+		{#each secondaryNavigation as navItem (navItem.link)}
+			{#if !navItem.beta || enableBetaFeatures}
+				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
+					<span
+						class="navigation--item"
+						use:active={{
+							path: `/${navItem.link}`,
+							className: 'navigation--item-active',
+						}}
+					>
+						<navItem.icon size={navItem.size} />
+					</span>
+					<div class="sy-tooltip--body sy-tooltip--body-right">
+						<p>
+							{navItem.title}
+						</p>
+					</div>
+				</a>
+			{/if}
+		{/each}
+	</div>
 </div>
 
 <style>
-.navigation-container {
-  background-color: var(--sy-color--grey-2);
-  height: 100vh;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
-}
-.navigation-container--transparency {
-  background-color: var(--sy-color--grey-2--transparency);
-}
-.navigation--primary-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-top: var(--sy-space);
-}
-.navigation--primary-nav--macos {
-  margin-top: calc(35px + var(--sy-space--large));
-}
-.navigation--secondary-nav {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.navigation--item {
-  color: var(--sy-color--grey-4);
-  margin: var(--sy-space);
-  padding: var(--sy-space--large);
-  height: 30px;
-  width: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.navigation--item:hover {
-  color: var(--sy-color--blue);
-  transition-property: color;
-  transition-duration: var(--sy-transition-duration);
-}
-:global(.navigation--item-active) {
-  background-color: var(--sy-color--white);
-  border-radius: 100%;
-  box-shadow: var(--sy-shadow);
-  color: var(--sy-color--grey-4) !important;
-  transition-property: background-color, box-shadow, border-radius, color !important;
-  transition-duration: var(--sy-transition-duration) !important;
-}
-:global(.navigation--item-active:hover) {
-  box-shadow: var(--sy-shadow--active);
-  border-radius: 100%;
-}
+	.navigation-container {
+		background-color: var(--sy-color--grey-2);
+		height: 100vh;
+		width: 100%;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: space-between;
+		box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
+	}
+	.navigation-container--transparency {
+		background-color: var(--sy-color--grey-2--transparency);
+	}
+	.navigation--primary-nav {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-top: var(--sy-space);
+	}
+	.navigation--primary-nav--macos {
+		margin-top: calc(35px + var(--sy-space--large));
+	}
+	.navigation--secondary-nav {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.navigation--item {
+		color: var(--sy-color--grey-4);
+		margin: var(--sy-space);
+		padding: var(--sy-space--large);
+		height: 30px;
+		width: 30px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.navigation--item:hover {
+		color: var(--sy-color--blue);
+		transition-property: color;
+		transition-duration: var(--sy-transition-duration);
+	}
+	:global(.navigation--item-active) {
+		background-color: var(--sy-color--white);
+		border-radius: 100%;
+		box-shadow: var(--sy-shadow);
+		color: var(--sy-color--grey-4) !important;
+		transition-property: background-color, box-shadow, border-radius, color !important;
+		transition-duration: var(--sy-transition-duration) !important;
+	}
+	:global(.navigation--item-active:hover) {
+		box-shadow: var(--sy-shadow--active);
+		border-radius: 100%;
+	}
 </style>

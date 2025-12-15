@@ -5,9 +5,7 @@
  */
 export function parseColor(color) {
 	const variableName = color.match(/\(([^)]+)\)/)[1];
-	let hex = getComputedStyle(document.documentElement)
-		.getPropertyValue(variableName)
-		.trim();
+	let hex = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
 
 	hex = hex.replace('#', '');
 	/* eslint-disable no-magic-numbers */
@@ -27,7 +25,9 @@ export function parseColor(color) {
  * @returns {string} RGB color string
  */
 export function interpolateColor(startColor, endColor, progress) {
-	if (!endColor) {return startColor;}
+	if (!endColor) {
+		return startColor;
+	}
 
 	const color1 = parseColor(startColor);
 	const color2 = parseColor(endColor);

@@ -1,11 +1,10 @@
- 
 import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 import DictionaryLink from './DictionaryLink.svelte';
 
 it('should be styled like a link', async () => {
 	const { getByTestId } = render(DictionaryLink, {
-		link: 'A'
+		link: 'A',
 	});
 
 	const link = getByTestId('dictionary-link');
@@ -17,7 +16,7 @@ it('should dispatch an event when the link is clicked', async () => {
 	const mock = vi.fn();
 	const { getByTestId } = render(DictionaryLink, {
 		link: 'A',
-		onopen: mock
+		onopen: mock,
 	});
 
 	const link = getByTestId('dictionary-link');

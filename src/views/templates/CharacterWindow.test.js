@@ -1,4 +1,3 @@
- 
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
@@ -17,35 +16,35 @@ vi.mock('lucide-svelte', async () => {
 
 vi.mock('hanzi-writer', () => {
 	return {
-		'default': {
-			create: (param1, param2, param3) => { // eslint-disable-line no-unused-vars
+		default: {
+			create: (_param1, _param2, _param3) => {
 				return {
 					hideCharacter: vi.fn(),
 					animateCharacter: vi.fn(),
 					pauseAnimation: vi.fn(),
-					resumeAnimation: vi.fn()
+					resumeAnimation: vi.fn(),
 				};
-			}
-		}
+			},
+		},
 	};
 });
 
 // Mock @tauri-apps/plugin-os
 vi.mock('@tauri-apps/plugin-os', () => ({
-	platform: () => 'macos'
+	platform: () => 'macos',
 }));
 
 const WORD = {
 	simplified: '你好',
-	traditional: '你好'
+	traditional: '你好',
 };
 const mockMatchMedia = vi.fn().mockReturnValue({
-	addEventListener: (e, cb) => undefined // eslint-disable-line no-unused-vars
+	addEventListener: (e, cb) => undefined, // eslint-disable-line no-unused-vars
 });
 global.__TAURI__ = mockGlobalTauri({
 	events: {
-		'display-characters': WORD
-	}
+		'display-characters': WORD,
+	},
 });
 
 it('should highlight the tab that you click on', async () => {

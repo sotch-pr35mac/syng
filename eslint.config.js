@@ -12,7 +12,6 @@ export default [
 			'src/views/templates/utils/pouchdb-7.3.0.min.js',
 			'src/views/resources/hanzi-writer-data/index.js',
 			'src/views/templates/components/__mocks__/**',
-			'src/views/templates/components/SyTimer/SyTimer.svelte',
 		]
 	},
 	{
@@ -20,7 +19,7 @@ export default [
 			promise
 		},
 		languageOptions: {
-			ecmaVersion: 2021,
+			ecmaVersion: 2022,
 			sourceType: 'module',
 			globals: {
 				...globals.browser,
@@ -43,14 +42,6 @@ export default [
 			}
 		},
 		rules: {
-			// ===================
-			// Formatting Rules
-			// ===================
-			'indent': ['error', 'tab'],
-			'linebreak-style': ['error', 'unix'],
-			'quotes': ['error', 'single'],
-			'semi': ['error', 'always'],
-
 			// ===================
 			// Rust-Inspired Rules
 			// ===================
@@ -104,19 +95,6 @@ export default [
 
 			// Correct parameter names in Promise constructors
 			'promise/param-names': 'error',
-
-			// ===================
-			// Svelte-Specific Rules
-			// ===================
-
-			// Double quotes in HTML attributes, single quotes in JS
-			'svelte/html-quotes': ['error', {
-				prefer: 'double',
-				dynamic: {
-					quoted: false,
-					avoidInvalidUnquotedInHTML: false
-				}
-			}],
 		}
 	}
 ];

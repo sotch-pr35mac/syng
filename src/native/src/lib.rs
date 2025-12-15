@@ -21,7 +21,7 @@ use std::sync::{Arc, Mutex};
 use tauri::menu::{MenuBuilder, SubmenuBuilder};
 use tauri::{Emitter, Manager, Runtime, WebviewWindow, Window, WindowEvent};
 #[cfg(desktop)]
-use tauri_plugin_shell::ShellExt;
+use tauri_plugin_opener::OpenerExt;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 struct CharacterWindowWord {
@@ -345,44 +345,18 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.on_menu_event(|app, event| {
-            if let Some(window) = app.get_webview_window("main") {
-                match event.id().as_ref() {
-                    "github" => {
-                        #[allow(deprecated)]
-                        window
-                            .shell()
-                            .open("https://github.com/sotch-pr35mac/syng", None)
-                            .unwrap();
-                    }
-                    "license" => {
-                        #[allow(deprecated)]
-                        window
-                            .shell()
-                            .open(
-                                "https://github.com/sotch-pr35mac/syng/blob/master/LICENSE",
-                                None,
-                            )
-                            .unwrap();
-                    }
-                    "cc-cedict" => {
-                        #[allow(deprecated)]
-                        window
-                            .shell()
-                            .open(
-                                "https://github.com/sotch-pr35mac/syng/blob/master/LICENSE-CC-CEDICT",
-                                None,
-                            )
-                            .unwrap();
-                    }
-                    "bug" => {
-                        #[allow(deprecated)]
-                        window
-                            .shell()
-                            .open("https://github.com/sotch-pr35mac/syng/issues", None)
-                            .unwrap();
-                    }
-                    _ => (),
+            let url = match event.id().as_ref() {
+                "github" => Some("https://github.com/sotch-pr35mac/syng"),
+                "license" => Some("https://github.com/sotch-pr35mac/syng/blob/master/LICENSE"),
+                "cc-cedict" => {
+                    Some("https://github.com/sotch-pr35mac/syng/blob/master/LICENSE-CC-CEDICT")
                 }
+                "bug" => Some("https://github.com/sotch-pr35mac/syng/issues"),
+                _ => None,
+            };
+
+            if let Some(url) = url {
+                app.opener().open_url(url, None::<&str>).unwrap();
             }
         });
     }

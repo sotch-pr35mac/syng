@@ -20,7 +20,7 @@ import { handleError } from './error.js';
 const createPreference = (restart, value) => {
 	return {
 		requiresRestart: restart,
-		value: value
+		value: value,
 	};
 };
 
@@ -44,51 +44,61 @@ export class PreferenceManager {
 	 */
 	init() {
 		return new Promise((resolve, reject) => {
-
 			this._db = new PouchDB(this._name);
-			this._db.get('config').catch(err => {
-				if(err.name === 'not_found') {
-					return {
-						_id: 'config',
-						transparency: createPreference(true, false),
-						beta: createPreference(true, false),
-						toneColors: createPreference(true, {
-							colors: ['--sy-color--blue-3',
-								'--sy-color--yellow-1',
-								'--sy-color--red-1',
-								'--sy-color--green-3',
-								'--sy-color--grey-4'],
-							hasCustomColors: false
-						})
-					};
-				}
-				console.error(err);
-				reject('There was an error loading user preferences. Check the logs for more details.');
-				return undefined;
-			}).then(configuration => {
-				this._config = configuration;
-				this.initialized = true;
-				resolve();
-				return undefined;
-			}).catch(err => {
-				console.error(err);
-				reject('There was an error loading user preferences. Check the logs for more details.');
-			});
+			this._db
+				.get('config')
+				.catch((err) => {
+					if (err.name === 'not_found') {
+						return {
+							_id: 'config',
+							transparency: createPreference(true, false),
+							beta: createPreference(true, false),
+							toneColors: createPreference(true, {
+								colors: [
+									'--sy-color--blue-3',
+									'--sy-color--yellow-1',
+									'--sy-color--red-1',
+									'--sy-color--green-3',
+									'--sy-color--grey-4',
+								],
+								hasCustomColors: false,
+							}),
+						};
+					} else {
+						console.error(err);
+						reject(
+							'There was an error loading user preferences. Check the logs for more details.'
+						);
+						return undefined;
+					}
+				})
+				.then((configuration) => {
+					this._config = configuration;
+					this.initialized = true;
+					resolve();
+					return undefined;
+				})
+				.catch((err) => {
+					console.error(err);
+					reject(
+						'There was an error loading user preferences. Check the logs for more details.'
+					);
+				});
 		});
 	}
 
 	/*
- 	 * Description: A function that resolves a promise once the database has been initalized.
- 	 * Should be used when data is required at application load when it is reasonable
- 	 * that there may be a race condition with db initialization. Internally just polls the
- 	 * value of `initialized` until initialization has completed.
- 	 * Return: Promise: Returns a promise that resolves once initialization has been completed.
- 	 */
+	 * Description: A function that resolves a promise once the database has been initalized.
+	 * Should be used when data is required at application load when it is reasonable
+	 * that there may be a race condition with db initialization. Internally just polls the
+	 * value of `initialized` until initialization has completed.
+	 * Return: Promise: Returns a promise that resolves once initialization has been completed.
+	 */
 	waitForInit() {
 		const POLL_INTERVAL_MS = 10;
 		return new Promise((resolve) => {
 			const pollInit = () => {
-				if(this.initialized) {
+				if (this.initialized) {
 					resolve();
 				} else {
 					setTimeout(pollInit, POLL_INTERVAL_MS);
@@ -104,14 +114,14 @@ export class PreferenceManager {
 	 * Return: Any: The value of the given preoperty. Could be any valid type.
 	 */
 	get(property) {
-		if(!this.initialized) {
+		if (!this.initialized) {
 			handleError('Cannot read preferences. Preferences not yet initialized.');
 			console.log('Trying to access property ' + property);
 			return undefined;
 		}
 
 		const preference = this._config[property];
-		if(!preference) {
+		if (!preference) {
 			handleError(`Requested preference ${property} does not exist!`);
 			return undefined;
 		}
@@ -124,30 +134,39 @@ export class PreferenceManager {
 	 * Param: value: Any: The value to set as the value of the given preference.
 	 */
 	set(property, value) {
-		if(!this.initialized) {
+		if (!this.initialized) {
 			handleError('Cannot save preferences. Preferences not yet initialized.');
 			return;
 		}
 
 		const preference = this._config[property];
-		if(!preference) {
+		if (!preference) {
 			handleError(`Requested preference ${property} does not exist!`);
 			return;
 		}
-		if(preference.requiresRestart) {
+		if (preference.requiresRestart) {
 			alert('You must restart Syng for this change to take effect.');
 		}
 
 		this._config[property].value = value;
-		this._db.put(this._config).then(response => {
-			if(response.ok) {
-				this._config._rev = response.rev;
-			} else {
-				handleError('Cannot save preferences. An unknown error occurred. Check the log for more details.', response);
-			}
-			return undefined;
-		}).catch(err => {
-			handleError('Cannot save preferences. An unknown error occurred. Check the logs for more details.', err);
-		});
+		this._db
+			.put(this._config)
+			.then((response) => {
+				if (response.ok) {
+					this._config._rev = response.rev;
+				} else {
+					handleError(
+						'Cannot save preferences. An unknown error occurred. Check the log for more details.',
+						response
+					);
+				}
+				return undefined;
+			})
+			.catch((err) => {
+				handleError(
+					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
+					err
+				);
+			});
 	}
 }

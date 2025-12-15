@@ -12,17 +12,22 @@
 	const openLink = () => onopen?.({ detail: link });
 </script>
 
-<style>
-.dictionary-link {
-	cursor: pointer;
-	color: var(--sy-color--blue);
-}
-.dictionary-link:hover {
-	color: var(--sy-color--blue-2);
-}
-</style>
-
 <!-- svelte-ignore a11y_invalid_attribute -->
-<a href="javascript:void(0)" class="dictionary-link" onclick={() => openLink()} data-testid="dictionary-link">
+<a
+	href="javascript:void(0)"
+	class="dictionary-link"
+	onclick={() => openLink()}
+	data-testid="dictionary-link"
+>
 	{@render children?.()}
 </a>
+
+<style>
+	.dictionary-link {
+		cursor: pointer;
+		color: var(--sy-color--blue);
+	}
+	.dictionary-link:hover {
+		color: var(--sy-color--blue-2);
+	}
+</style>

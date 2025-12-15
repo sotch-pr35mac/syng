@@ -15,12 +15,9 @@
 		class="chinese-characters--character-container chinese-characters--character"
 		data-testid="chinese-characters"
 	>
-		<ChineseCharacters characters={word.simplified} tones={word.tone_marks}
-		></ChineseCharacters>
+		<ChineseCharacters characters={word.simplified} tones={word.tone_marks}></ChineseCharacters>
 		{#if word.simplified !== word.traditional}
-			&nbsp;(<ChineseCharacters
-				characters={word.traditional}
-				tones={word.tone_marks}
+			&nbsp;(<ChineseCharacters characters={word.traditional} tones={word.tone_marks}
 			></ChineseCharacters>)
 		{/if}
 	</h1>

@@ -1,5 +1,4 @@
- 
-import { underTest } from './process.js';  
+import { underTest } from './process.js';
 
 describe('underTest', () => {
 	it('should reflect the testing environment', () => {

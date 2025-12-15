@@ -6,6 +6,8 @@
 		"build": "vite build",
 		"lint": "eslint src/views",
 		"fix-lint": "eslint src/views --fix",
+		"format": "prettier --write \"src/views/**/*.{js,svelte}\"",
+		"format:check": "prettier --check \"src/views/**/*.{js,svelte}\"",
 		"test": "vitest run",
 		"test-coverage": "vitest run --coverage"
 	},
@@ -25,6 +27,8 @@
 		"eslint-plugin-svelte": "^3.0.0",
 		"jsdom": "^26.0.0",
 		"lucide-svelte": "^0.561.0",
+		"prettier": "^3.4.0",
+		"prettier-plugin-svelte": "^3.3.0",
 		"svelte": "^5.0.0",
 		"svelte-spa-router": "^3.3.0",
 		"vite": "^7.0.0",

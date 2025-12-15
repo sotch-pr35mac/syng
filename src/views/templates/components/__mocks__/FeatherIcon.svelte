@@ -1,5 +1,5 @@
 <script>
-    let { size } = $props();
+	let { size } = $props();
 </script>
 
 <div></div>

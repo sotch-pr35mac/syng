@@ -43,31 +43,31 @@ export const runStartupActions = () => {
 	const startupActions = [
 		{
 			name: 'init-dictionary',
-			action: invoke('init_dictionary')
+			action: invoke('init_dictionary'),
 		},
 		{
 			name: 'init-preference-manager',
-			action: window.preferenceManager.init()
+			action: window.preferenceManager.init(),
 		},
 		{
 			name: 'cache-platform',
-			action: () => Promise.resolve(platform())
+			action: () => Promise.resolve(platform()),
 		},
 		{
 			name: 'init-bookmark-manager',
-			action: window.bookmarkManager.init()
-		}
+			action: window.bookmarkManager.init(),
+		},
 	];
-	const parseStartupResults = results => {
+	const parseStartupResults = (results) => {
 		return results.map((result, index) => {
 			return {
 				name: startupActions[index].name,
-				result: result
+				result: result,
 			};
 		});
 	};
 	const findResultByName = (name, results) => {
-		const found = results.find(item => item.name === name);
+		const found = results.find((item) => item.name === name);
 		return found ? found.result : undefined;
 	};
 

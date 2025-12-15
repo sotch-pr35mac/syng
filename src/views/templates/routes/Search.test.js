@@ -1,8 +1,11 @@
- 
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager, mockDictionary, mockPreferenceManager } from '../../../test/utils/unitTestUtils.js';
+import {
+	mockBookmarkManager,
+	mockDictionary,
+	mockPreferenceManager,
+} from '../../../test/utils/unitTestUtils.js';
 import Search from './Search.svelte';
 
 // Mock must be defined inline because vi.mock is hoisted before imports
@@ -19,48 +22,52 @@ vi.mock('lucide-svelte', async () => {
 
 // Mock @tauri-apps/plugin-os
 vi.mock('@tauri-apps/plugin-os', () => ({
-	platform: () => 'macos'
+	platform: () => 'macos',
 }));
 
-const QUERY_RESULTS = [{
-	traditional: '西瓜',
-	simplified: '西瓜',
-	english: ['watermelon'],
-	pinyin_marks: ['xī', 'guā'],
-	tone_marks: [1, 1],
-	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }]
-}];
+const QUERY_RESULTS = [
+	{
+		traditional: '西瓜',
+		simplified: '西瓜',
+		english: ['watermelon'],
+		pinyin_marks: ['xī', 'guā'],
+		tone_marks: [1, 1],
+		measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
+	},
+];
 
 // Mock @tauri-apps/api/core
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn((cmd) => {
 		switch (cmd) {
-		case 'classify':
-			return Promise.resolve('EN');
-		case 'query':
-		case 'query_by_english':
-		case 'query_by_pinyin':
-		case 'query_by_chinese':
-			return Promise.resolve(QUERY_RESULTS);
-		default:
-			return Promise.resolve(null);
+			case 'classify':
+				return Promise.resolve('EN');
+			case 'query':
+			case 'query_by_english':
+			case 'query_by_pinyin':
+			case 'query_by_chinese':
+				return Promise.resolve(QUERY_RESULTS);
+			default:
+				return Promise.resolve(null);
 		}
-	})
+	}),
 }));
 
-global.dictionary = mockDictionary('EN', [{
-	traditional: '西瓜',
-	simplified: '西瓜',
-	english: ['watermelon'],
-	toneMarks: [1, 1],
-	measureWords: [{ simplified: 'MWA', traditional: 'MWA' }]
-}]);
+global.dictionary = mockDictionary('EN', [
+	{
+		traditional: '西瓜',
+		simplified: '西瓜',
+		english: ['watermelon'],
+		toneMarks: [1, 1],
+		measureWords: [{ simplified: 'MWA', traditional: 'MWA' }],
+	},
+]);
 global.preferenceManager = mockPreferenceManager({
-	transparency: process.platform === 'darwin'
+	transparency: process.platform === 'darwin',
 });
 global.bookmarkManager = mockBookmarkManager({
 	words: [],
-	lists: ['Bookmarks']
+	lists: ['Bookmarks'],
 });
 
 it('should update the language selection after entering text to the search bar', async () => {

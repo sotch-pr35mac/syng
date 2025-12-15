@@ -1,0 +1,12 @@
+# Build outputs
+src/views/templates/build/
+
+# Dependencies
+node_modules/
+
+# Vendored files
+src/views/templates/utils/pouchdb-7.3.0.min.js
+src/views/resources/hanzi-writer-data/
+
+# Generated files
+src/native/gen/
