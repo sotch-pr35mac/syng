@@ -8,6 +8,11 @@
 import elasticScroll from 'elastic-scroll-polyfill';
 import { BookmarkManager } from './bookmarkManager.js';
 import { handleError } from './error.js';
+import {
+	checkAndPerformMigration,
+	exportMigrationData,
+	setupShutdownHook
+} from './migrationManager.js';
 import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
 
@@ -75,9 +80,35 @@ export const runStartupActions = () => {
 		}
 	};
 
-	Promise.all(startupActions.map(item => item.action)).then(res => {
+	Promise.all(startupActions.map(item => item.action)).then(async res => {
 		const results = parseStartupResults(res);
 		window.platform = findResultByName('cache-platform', results);
+
+		// Migration: Check if we need to restore from a backup file
+		// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
+		try {
+			await checkAndPerformMigration(
+				window.preferenceManager,
+				window.bookmarkManager
+			);
+		} catch (e) {
+			console.error('Migration check failed:', e);
+			// Non-fatal: continue with fresh/existing data
+		}
+
+		// Migration: Setup shutdown hook to save data when app closes
+		// This ensures fresh data is available for future migrations
+		setupShutdownHook(window.preferenceManager, window.bookmarkManager);
+
+		// Migration: Also export a backup on startup as a safety net
+		// In case the app crashes before a clean shutdown
+		try {
+			await exportMigrationData(window.preferenceManager, window.bookmarkManager);
+		} catch (e) {
+			console.error('Startup backup export failed:', e);
+			// Non-fatal: shutdown hook will try again
+		}
+
 		document.dispatchEvent(new Event('init'));
 		initializeStyles();
 	}).catch(e => {

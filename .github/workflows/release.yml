@@ -14,17 +14,17 @@ jobs:
           - windows-latest
     runs-on: '${{ matrix.platform }}'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Prepare Node Environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
-          node-version: 17
+          node-version: 20
           cache: npm
       - name: Install Dependencies (Ubuntu Only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
-          sudo apt update 
-          sudo apt install libssl-dev libwebkit2gtk-4.0-dev build-essential curl wget libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev 
+          sudo apt update
+          sudo apt install libssl-dev libwebkit2gtk-4.1-dev build-essential curl wget libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
           make install-dev
       - name: Install Dependencies (macOS & Windows)
         if: matrix.platform != 'ubuntu-latest'
@@ -60,14 +60,14 @@ jobs:
         run: make package-linux-amd64
       - name: Upload Artifacts (Linux Only)
         if: matrix.platform == 'ubuntu-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Linux Packages
           path: |
             /home/runner/work/syng/syng/src/native/target/x86_64-unknown-linux-gnu/release/bundle/
       - name: Upload Artifacts (macOS Only)
         if: matrix.platform == 'macos-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: macOS Packages
           path: |
@@ -75,7 +75,7 @@ jobs:
             /Users/runner/work/syng/syng/src/native/target/aarch64-apple-darwin/release/bundle/
       - name: Upload Artifacts (Windows Only)
         if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Windows Packages
           path: |
