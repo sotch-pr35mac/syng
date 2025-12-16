@@ -24,7 +24,7 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt update
-          sudo apt install libssl-dev libwebkit2gtk-4.0-dev build-essential curl wget libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+          sudo apt install libssl-dev libwebkit2gtk-4.1-dev build-essential curl wget libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
           make install-dev
       - name: Install Dependencies (macOS & Windows)
         if: matrix.platform != 'ubuntu-latest'

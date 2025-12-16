@@ -220,10 +220,10 @@ export function setupShutdownHook(preferenceManager, bookmarkManager) {
 			await exportMigrationData(preferenceManager, bookmarkManager);
 		} catch (e) {
 			console.error('Error exporting migration data on shutdown:', e);
-			// Don't block app close on export failure
+		} finally {
+			// Always close the window, even if export fails
+			window.__TAURI__.window.appWindow.close();
 		}
-		// Now actually close the window
-		window.__TAURI__.window.appWindow.close();
 	});
 	console.log('Shutdown hook registered for migration data export');
 }

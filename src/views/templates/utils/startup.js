@@ -87,14 +87,10 @@ export const runStartupActions = () => {
 		// Migration: Check if we need to restore from a backup file
 		// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
 		try {
-			const didMigrate = await checkAndPerformMigration(
+			await checkAndPerformMigration(
 				window.preferenceManager,
 				window.bookmarkManager
 			);
-			if (didMigrate) {
-				console.log('Migration completed, reinitializing styles...');
-				initializeStyles();
-			}
 		} catch (e) {
 			console.error('Migration check failed:', e);
 			// Non-fatal: continue with fresh/existing data
