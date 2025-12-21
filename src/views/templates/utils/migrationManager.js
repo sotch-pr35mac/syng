@@ -14,7 +14,6 @@
  * See MIGRATION.md for detailed documentation.
  */
 
-// Tauri 2 imports
 import { appDataDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { listen } from '@tauri-apps/api/event';
