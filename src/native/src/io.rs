@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
 use std::hash::{Hash, Hasher};
-use tauri::api::dialog::blocking::FileDialogBuilder;
+use tauri_plugin_dialog::DialogExt;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum BookmarksExportVersion {
@@ -122,13 +122,27 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
 }
 
 #[tauri::command(async)]
-pub async fn export_list_data(name: String, data: Vec<BookmarkEntry>) -> Result<(), String> {
-    let file_path = FileDialogBuilder::new()
+pub async fn export_list_data(
+    app: tauri::AppHandle,
+    name: String,
+    data: Vec<BookmarkEntry>,
+) -> Result<(), String> {
+    let file_path = app
+        .dialog()
+        .file()
         .set_title("Save Vocabulary List")
         .add_filter("Syng List Formats", &["sld", "syli"])
-        .set_file_name(&format!("{}.syli", &name))
-        .save_file();
-    if file_path.is_some() {
+        .set_file_name(format!("{}.syli", &name))
+        .blocking_save_file();
+    if let Some(file_path) = file_path {
+        let path = match file_path {
+            tauri_plugin_dialog::FilePath::Path(p) => p,
+            tauri_plugin_dialog::FilePath::Url(_) => {
+                return Err(
+                    "URL-based file paths are not supported for file operations".to_string()
+                );
+            }
+        };
         let export = BookmarksExport {
             meta: BookmarksExportMeta {
                 name,
@@ -138,7 +152,7 @@ pub async fn export_list_data(name: String, data: Vec<BookmarkEntry>) -> Result<
         };
         let export_data = serde_json::to_string(&export)
             .map_err(|err| format!("Could not prepare data for export: {}", err))?;
-        fs::write(file_path.unwrap(), export_data)
+        fs::write(&path, export_data)
             .map_err(|err| format!("Could not write export to the specified file: {}", err))?;
     }
 
@@ -146,14 +160,24 @@ pub async fn export_list_data(name: String, data: Vec<BookmarkEntry>) -> Result<
 }
 
 #[tauri::command(async)]
-pub async fn import_list_data() -> Result<Option<BookmarksExport>, String> {
-    let file_path = FileDialogBuilder::new()
+pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksExport>, String> {
+    let file_path = app
+        .dialog()
+        .file()
         .set_title("Import Syng Vocabulary List")
         .add_filter("Syng List Formats", &["sld", "syli"])
-        .pick_file();
+        .blocking_pick_file();
 
     if let Some(file_path) = file_path {
-        let path = file_path
+        let path_buf = match file_path {
+            tauri_plugin_dialog::FilePath::Path(p) => p,
+            tauri_plugin_dialog::FilePath::Url(_) => {
+                return Err(
+                    "URL-based file paths are not supported for file operations".to_string()
+                );
+            }
+        };
+        let path = path_buf
             .to_str()
             .ok_or("Unsupported file path")?
             .to_string();
@@ -161,7 +185,7 @@ pub async fn import_list_data() -> Result<Option<BookmarksExport>, String> {
             .rfind('.')
             .map(|i| &path[i + 1..])
             .ok_or("Unsupported file type")?;
-        let file = fs::read_to_string(file_path)
+        let file = fs::read_to_string(&path_buf)
             .map_err(|err| format!("Failed to read from file: {}", err))?;
         return match extension {
             "sld" => {

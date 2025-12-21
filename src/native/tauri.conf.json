@@ -2,70 +2,64 @@
 	"build": {
 		"beforeBuildCommand": "",
 		"beforeDevCommand": "",
-		"devPath": "../views/",
-		"distDir": "../views/",
-		"withGlobalTauri": true
+		"frontendDist": "../views/"
 	},
-	"package": {
-		"productName": "Syng 2",
-		"version": "0.0.7"
-	},
-	"tauri": {
-		"updater": {
-			"active": true,
-			"endpoints": [
-				"https://raw.githubusercontent.com/sotch-pr35mac/syng/master/latest-release.json"
-			],
-			"dialog": false,
-			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK"
+	"bundle": {
+		"active": true,
+		"category": "DeveloperTool",
+		"copyright": "",
+		"targets": "all",
+		"externalBin": [],
+		"icon": [
+			"icons/32x32.png",
+			"icons/128x128.png",
+			"icons/128x128@2x.png",
+			"icons/icon.icns",
+			"icons/icon.ico"
+		],
+		"windows": {
+			"certificateThumbprint": null,
+			"digestAlgorithm": "sha256",
+			"timestampUrl": ""
 		},
-		"allowlist": {
-			"all": true,
-			"fs": {
-				"scope": [
-					"*",
-					"$APPDATA",
-					"$APPDATA/*",
-					"$APPDATA/**"
-				]
-			}
+		"longDescription": "",
+		"macOS": {
+			"entitlements": null,
+			"exceptionDomain": "",
+			"frameworks": [],
+			"providerShortName": null,
+			"signingIdentity": null
 		},
-		"bundle": {
-			"active": true,
-			"category": "DeveloperTool",
-			"copyright": "",
+		"resources": [],
+		"shortDescription": "",
+		"linux": {
 			"deb": {
 				"depends": []
-			},
-			"externalBin": [],
-			"icon": [
-				"icons/32x32.png",
-				"icons/128x128.png",
-				"icons/128x128@2x.png",
-				"icons/icon.icns",
-				"icons/icon.ico"
-			],
-			"identifier": "org.syng.app",
-			"longDescription": "",
-			"macOS": {
-				"entitlements": null,
-				"exceptionDomain": "",
-				"frameworks": [],
-				"providerShortName": null,
-				"signingIdentity": null
-			},
-			"resources": [],
-			"shortDescription": "",
-			"targets": "all",
-			"windows": {
-				"certificateThumbprint": null,
-				"digestAlgorithm": "sha256",
-				"timestampUrl": ""
 			}
 		},
-		"security": {
-			"csp": null
+		"createUpdaterArtifacts": "v1Compatible"
+	},
+	"productName": "Syng",
+	"mainBinaryName": "Syng",
+	"version": "2.0.0",
+	"identifier": "org.syng.app",
+	"plugins": {
+		"updater": {
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK",
+			"endpoints": [
+				"https://raw.githubusercontent.com/sotch-pr35mac/syng/master/latest-release.json"
+			]
 		},
+		"cli": {
+			"description": "Syng CLI",
+			"subcommands": {
+				"run": {
+					"description": "Run the application"
+				}
+			}
+		}
+	},
+	"app": {
 		"windows": [
 			{
 				"label": "main",
@@ -79,7 +73,8 @@
 				"url": "index.html",
 				"acceptFirstMouse": true,
 				"titleBarStyle": "Overlay",
-				"hiddenTitle": true
+				"hiddenTitle": true,
+				"useHttpsScheme": true
 			},
 			{
 				"label": "characters",
@@ -92,8 +87,13 @@
 				"title": "Syng | Characters",
 				"visible": false,
 				"url": "characters.html",
-				"acceptFirstMouse": true
+				"acceptFirstMouse": true,
+				"useHttpsScheme": true
 			}
-		]
+		],
+		"withGlobalTauri": true,
+		"security": {
+			"csp": null
+		}
 	}
 }

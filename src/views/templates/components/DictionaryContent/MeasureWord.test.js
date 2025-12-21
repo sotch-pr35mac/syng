@@ -1,20 +1,19 @@
-/* eslint-disable no-undef */
 import { render } from '@testing-library/svelte';
 import MeasureWord from './MeasureWord.svelte';
 
 const mockMeasureWordA = {
 	simplified: 'A',
-	traditional: 'A'
+	traditional: 'A',
 };
 
 const mockMeasureWordB = {
 	simplified: 'A',
-	traditional: 'B'
+	traditional: 'B',
 };
 
 it('should display a dictionary link', async () => {
 	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordA 
+		value: mockMeasureWordA,
 	});
 
 	const text = getByText(mockMeasureWordA.traditional);
@@ -24,7 +23,7 @@ it('should display a dictionary link', async () => {
 
 it('should display a single character when the traditional and simplified match', async () => {
 	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordA
+		value: mockMeasureWordA,
 	});
 
 	const text = getByText(mockMeasureWordA.traditional);
@@ -33,7 +32,7 @@ it('should display a single character when the traditional and simplified match'
 
 it('should display both traditional and simplified when they do not match', async () => {
 	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordB
+		value: mockMeasureWordB,
 	});
 
 	const text = getByText(`${mockMeasureWordB.simplified} (${mockMeasureWordB.traditional})`);

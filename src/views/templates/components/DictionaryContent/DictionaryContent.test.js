@@ -1,14 +1,23 @@
-/* eslint-disable no-undef */
+import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager, mockGlobalTauri } from '../../../../test/utils/unitTestUtils.js';
+import { mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
 import DictionaryContent from './DictionaryContent.svelte';
 
-jest.mock('svelte-feather-icons', () => {
+// Mock must be defined with async factory because vi.mock is hoisted before imports
+vi.mock('lucide-svelte', async () => {
+	const mockIcon = (await import('../__mocks__/FeatherIcon.svelte')).default;
 	return {
-		PlusIcon: require('../__mocks__/FeatherIcon.svelte').default,
+		Plus: mockIcon,
+		Check: mockIcon,
+		Brush: mockIcon,
 	};
 });
+
+// Mock @tauri-apps/api/core
+vi.mock('@tauri-apps/api/core', () => ({
+	invoke: vi.fn(() => Promise.resolve()),
+}));
 
 const TEST_WORD = {
 	simplified: 'A',
@@ -16,23 +25,17 @@ const TEST_WORD = {
 	english: ['test'],
 	pinyin_marks: ['a1'],
 	tones_marks: [1],
-	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }]
+	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
-
-global.__TAURI__ = mockGlobalTauri({
-	invoke: {
-		open_character_window: value => undefined // eslint-disable-line no-unused-vars
-	}
-});
 
 global.bookmarkManager = mockBookmarkManager({
 	words: [],
-	lists: ['Bookmarks']
+	lists: ['Bookmarks'],
 });
 
 it('should display the definitions', async () => {
 	const { getByText } = render(DictionaryContent, {
-		word: TEST_WORD
+		word: TEST_WORD,
 	});
 
 	const definition = getByText(TEST_WORD.english[0]);
@@ -42,7 +45,7 @@ it('should display the definitions', async () => {
 
 it('should display the pinyin', async () => {
 	const { getByText } = render(DictionaryContent, {
-		word: TEST_WORD
+		word: TEST_WORD,
 	});
 
 	const pinyin = getByText(TEST_WORD.pinyin_marks[0]);
@@ -52,7 +55,7 @@ it('should display the pinyin', async () => {
 
 it('should display the characters', async () => {
 	const { getByText } = render(DictionaryContent, {
-		word: TEST_WORD
+		word: TEST_WORD,
 	});
 
 	const simplified = getByText(TEST_WORD.simplified);
@@ -64,11 +67,11 @@ it('should display the characters', async () => {
 
 it('should emit an event when dictionary link is clicked', async () => {
 	const user = userEvent.setup();
-	const handleOpenLink = jest.fn();
-	const { component, getByText } = render(DictionaryContent, {
-		word: TEST_WORD
+	const handleOpenLink = vi.fn();
+	const { getByText } = render(DictionaryContent, {
+		word: TEST_WORD,
+		onlink: handleOpenLink,
 	});
-	component.$on('link', handleOpenLink);
 	await user.click(getByText('MWA'));
 	expect(handleOpenLink).toHaveBeenCalled();
 });

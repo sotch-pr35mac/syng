@@ -1,52 +1,55 @@
 <script>
+	import { onMount } from 'svelte';
 	import {
-		BookmarkIcon,
-		BookOpenIcon,
-		HelpCircleIcon,
-		MessageCircleIcon,
-		MoreVerticalIcon,
-		SearchIcon,
-		SettingsIcon,
-		TrendingUpIcon,
-	} from 'svelte-feather-icons';
+		Bookmark,
+		BookOpen,
+		CircleQuestionMark,
+		MessageCircle,
+		EllipsisVertical,
+		Search,
+		Settings,
+		GraduationCap,
+	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
 	import { handleError } from '../../utils/';
+	import { platform } from '@tauri-apps/plugin-os';
+	import { getCurrentWindow } from '@tauri-apps/api/window';
 
 	const primaryNavigation = [
 		{
 			link: '',
-			icon: SearchIcon,
+			icon: Search,
 			title: 'Search',
 			beta: false,
 		},
 		{
 			link: 'read',
-			icon: BookOpenIcon,
+			icon: BookOpen,
 			title: 'Read',
 			beta: true,
 		},
 		{
 			link: 'bookmarks',
-			icon: BookmarkIcon,
+			icon: Bookmark,
 			title: 'Bookmarks',
 			beta: false,
 		},
 		{
 			link: 'study',
 			pattern: /\/study(\/.*)?/,
-			icon: TrendingUpIcon,
+			icon: GraduationCap,
 			title: 'Study',
 			beta: false,
 		},
 		{
 			link: 'chat',
-			icon: MessageCircleIcon,
+			icon: MessageCircle,
 			title: 'Chat',
 			beta: true,
 		},
 		{
 			link: 'tools',
-			icon: MoreVerticalIcon,
+			icon: EllipsisVertical,
 			title: 'Extras',
 			beta: true,
 		},
@@ -54,66 +57,69 @@
 	const secondaryNavigation = [
 		{
 			link: 'help',
-			icon: HelpCircleIcon,
+			icon: CircleQuestionMark,
 			size: '18',
 			title: 'Help',
 			beta: true,
 		},
 		{
 			link: 'settings',
-			icon: SettingsIcon,
+			icon: Settings,
 			size: '24',
 			title: 'Settings',
 			beta: false,
 		},
 	];
 
-	let isMacos = false;
-	let enableBetaFeatures = false;
-	let enableTransparency = false;
-	let trafficLightMargin = false;
+	const isMacos = platform() === 'macos';
+	let enableBetaFeatures = $state(false);
+	let enableTransparency = $state(false);
+	let trafficLightMargin = $state(isMacos);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
-	$: if (isMacos) {
-		window.__TAURI__.window.appWindow.onResized(() => {
-			window.__TAURI__.window.appWindow.isFullscreen().then(fullscreen => {
-				if (fullscreen) {
-					trafficLightMargin = false;
-				} else {
-					trafficLightMargin = true;
-				}
-			});
-		});
-	}
+	onMount(() => {
+		let unlisten;
 
-	Promise.all([
-		window.preferenceManager.waitForInit(),
-		window.__TAURI__.os.platform(),
-	])
-		.then((responses) => {
-			isMacos = responses[1] === 'darwin';
-			trafficLightMargin = isMacos;
+		if (isMacos) {
+			getCurrentWindow()
+				.onResized(async () => {
+					const fullscreen = await getCurrentWindow().isFullscreen();
+					trafficLightMargin = !fullscreen;
+				})
+				.then((unlistenFn) => {
+					unlisten = unlistenFn;
+					return undefined;
+				})
+				.catch((err) => {
+					console.error('Error setting up fullscreen listener:', err);
+				});
+		}
+
+		return () => {
+			if (unlisten) {
+				unlisten();
+			}
+		};
+	});
+
+	window.preferenceManager
+		.waitForInit()
+		.then(() => {
 			enableBetaFeatures = window.preferenceManager.get('beta');
-			enableTransparency =
-				isMacos && window.preferenceManager.get('transparency');
+			enableTransparency = isMacos && window.preferenceManager.get('transparency');
+			return undefined;
 		})
 		.catch((err) => {
 			handleError(
 				'There was an unexpected error reading system information. Syng may not operate as expected. Please restart Syng. If this problem persists, please report this bug. For more details check the logs.',
-				err,
+				err
 			);
 		});
 </script>
 
-<div
-	class="navigation-container"
-	class:navigation-container--transparency={enableTransparency}
->
-	<div
-		class="navigation--primary-nav"
-		class:navigation--primary-nav--macos={trafficLightMargin}
-	>
-		{#each primaryNavigation as navItem}
+<div class="navigation-container" class:navigation-container--transparency={enableTransparency}>
+	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
+		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
 				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
 					<span
@@ -123,7 +129,7 @@
 							className: 'navigation--item-active',
 						}}
 					>
-						<svelte:component this={navItem.icon} size="24" />
+						<navItem.icon size="24" />
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-right">
 						<p>
@@ -135,7 +141,7 @@
 		{/each}
 	</div>
 	<div class="navigation--secondary-nav">
-		{#each secondaryNavigation as navItem}
+		{#each secondaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
 				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
 					<span
@@ -145,10 +151,7 @@
 							className: 'navigation--item-active',
 						}}
 					>
-						<svelte:component
-							this={navItem.icon}
-							size={navItem.size}
-						/>
+						<navItem.icon size={navItem.size} />
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-right">
 						<p>

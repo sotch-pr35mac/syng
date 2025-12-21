@@ -1,24 +1,33 @@
 <script>
-import { createEventDispatcher } from 'svelte';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} link - Required Link Prop
+	 * @property {import('svelte').Snippet} [children]
+	 * @property {(detail: any) => void} [onopen] - Optional callback when link is opened
+	 */
 
-/* Required Link Prop */
-export let link;
+	/** @type {Props} */
+	const { link, children, onopen } = $props();
 
-const dispatch = createEventDispatcher();
-const openLink = () => dispatch('open', link);
+	const openLink = () => onopen?.({ detail: link });
 </script>
 
-<style>
-.dictionary-link {
-	cursor: pointer;
-	color: var(--sy-color--blue);
-}
-.dictionary-link:hover {
-	color: var(--sy-color--blue-2);
-}
-</style>
-
-<!-- svelte-ignore a11y-invalid-attribute -->
-<a href="javascript:void(0)" class="dictionary-link" on:click={ () => openLink() } data-testid="dictionary-link">
-	<slot></slot>
+<!-- svelte-ignore a11y_invalid_attribute -->
+<a
+	href="javascript:void(0)"
+	class="dictionary-link"
+	onclick={() => openLink()}
+	data-testid="dictionary-link"
+>
+	{@render children?.()}
 </a>
+
+<style>
+	.dictionary-link {
+		cursor: pointer;
+		color: var(--sy-color--blue);
+	}
+	.dictionary-link:hover {
+		color: var(--sy-color--blue-2);
+	}
+</style>

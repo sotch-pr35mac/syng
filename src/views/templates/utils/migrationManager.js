@@ -14,6 +14,11 @@
  * See MIGRATION.md for detailed documentation.
  */
 
+import { appDataDir } from '@tauri-apps/api/path';
+import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
 const MIGRATION_VERSION = 1;
 
@@ -24,7 +29,7 @@ const MIGRATION_VERSION = 1;
  * @returns {object} Options object with dir set to AppData
  */
 function getAppDataOptions() {
-	return { dir: window.__TAURI__.fs.BaseDirectory.AppData };
+	return { baseDir: BaseDirectory.AppData };
 }
 
 /**
@@ -35,9 +40,9 @@ async function ensureAppDataDirExists() {
 	try {
 		// Create the app data directory with recursive option
 		// Using empty string as path creates the base AppData directory itself
-		await window.__TAURI__.fs.createDir('', {
-			dir: window.__TAURI__.fs.BaseDirectory.AppData,
-			recursive: true
+		await mkdir('', {
+			baseDir: BaseDirectory.AppData,
+			recursive: true,
 		});
 	} catch (e) {
 		// Directory may already exist, which is fine
@@ -68,25 +73,25 @@ export async function exportMigrationData(preferenceManager, bookmarkManager) {
 		version: MIGRATION_VERSION,
 		exportedAt: new Date().toISOString(),
 		databases: {
-			config: configData.rows.map(row => row.doc),
-			wordLists: listData.rows.map(row => row.doc),
-			bookmarks: bookmarkData.rows.map(row => row.doc)
-		}
+			config: configData.rows.map((row) => row.doc),
+			wordLists: listData.rows.map((row) => row.doc),
+			bookmarks: bookmarkData.rows.map((row) => row.doc),
+		},
 	};
 
 	// Ensure the app data directory exists
 	await ensureAppDataDirExists();
 
 	// Write the migration file using BaseDirectory.AppData
-	await window.__TAURI__.fs.writeTextFile(
+	await writeTextFile(
 		MIGRATION_FILE_NAME,
 		JSON.stringify(migrationData, null, 2),
 		getAppDataOptions()
 	);
 
 	// Log the full path for debugging
-	const appDataDir = await window.__TAURI__.path.appDataDir();
-	console.log(`Migration data exported successfully to ${appDataDir}${MIGRATION_FILE_NAME}`);
+	const appDataDirPath = await appDataDir();
+	console.log(`Migration data exported successfully to ${appDataDirPath}${MIGRATION_FILE_NAME}`);
 }
 
 /**
@@ -110,7 +115,7 @@ export async function isDatabaseEmpty(bookmarkManager) {
  */
 export async function migrationFileExists() {
 	try {
-		await window.__TAURI__.fs.readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
+		await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
 		return true;
 	} catch {
 		return false;
@@ -125,10 +130,12 @@ export async function migrationFileExists() {
  * @returns {Promise<void>}
  */
 export async function importMigrationData(preferenceManager, bookmarkManager) {
-	const fileContent = await window.__TAURI__.fs.readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
+	const fileContent = await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
 	const migrationData = JSON.parse(fileContent);
 
-	console.log(`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`);
+	console.log(
+		`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`
+	);
 
 	// Import config documents
 	for (const doc of migrationData.databases.config) {
@@ -196,7 +203,9 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
 	const isEmpty = await isDatabaseEmpty(bookmarkManager);
 	const fileExists = await migrationFileExists();
 
-	console.log(`Migration check: database empty = ${isEmpty}, migration file exists = ${fileExists}`);
+	console.log(
+		`Migration check: database empty = ${isEmpty}, migration file exists = ${fileExists}`
+	);
 
 	if (isEmpty && fileExists) {
 		console.log('Performing migration from backup file...');
@@ -214,7 +223,7 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
  * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
  */
 export function setupShutdownHook(preferenceManager, bookmarkManager) {
-	window.__TAURI__.event.listen('tauri://close-requested', async () => {
+	listen('tauri://close-requested', async () => {
 		console.log('App closing, exporting migration data...');
 		try {
 			await exportMigrationData(preferenceManager, bookmarkManager);
@@ -222,9 +231,8 @@ export function setupShutdownHook(preferenceManager, bookmarkManager) {
 			console.error('Error exporting migration data on shutdown:', e);
 		} finally {
 			// Always close the window, even if export fails
-			window.__TAURI__.window.appWindow.close();
+			await getCurrentWindow().close();
 		}
 	});
 	console.log('Shutdown hook registered for migration data export');
 }
-

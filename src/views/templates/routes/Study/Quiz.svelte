@@ -1,10 +1,5 @@
 <script>
-	import {
-		ChevronLeftIcon,
-		ArrowRightIcon,
-		CopyIcon,
-		RotateCwIcon,
-	} from 'svelte-feather-icons';
+	import { ChevronLeft, ArrowRight, SquareStack, RotateCw } from 'lucide-svelte';
 	import SyButton from '../../components/SyButton/SyButton.svelte';
 	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
 	import { querystring } from 'svelte-spa-router';
@@ -12,6 +7,8 @@
 	import ResultIndicator from '../../components/ResultIndicator/ResultIndicator.svelte';
 	import SyTimer from '../../components/SyTimer/SyTimer.svelte';
 	import SyProgressLine from '../../components/SyProgressLine/SyProgressLine.svelte';
+	import { invoke } from '@tauri-apps/api/core';
+	import { platform } from '@tauri-apps/plugin-os';
 
 	// TODO: Consider moving these into a utility file or something...
 	// Quiz Constants
@@ -19,27 +16,34 @@
 	const ENGLISH_QUESTIONS = 'English';
 	const CHARACTER_QUESTIONS = 'Characters';
 	const SIMPLE_QUIZ = 'Simple';
+	const GOOD_SCORE_THRESHOLD = 0.8;
+	const OKAY_SCORE_THRESHOLD = 0.6;
 
 	const EMPTY_MESSAGE = 'No Questions Available';
 	const LOADING_MESSAGE = 'Loading...';
-	const isMacos = window.platform === 'darwin';
-	let loading = true;
+	const isMacos = platform() === 'macos';
+	let loading = $state(true);
 
 	let activeList = undefined;
-	let question = undefined;
-	let showAnswer = false;
-	let answer = undefined;
+	let question = $state(undefined);
+	let showAnswer = $state(false);
+	let answer = $state(undefined);
 	let questionStartTime = undefined;
-	let questionsTotal = 0;
-	let questionsCompleted = 0;
-	let questionsPending = 0;
-	let finalIncorrect = [];
-	let finalScore = undefined;
-	let finalCorrect = undefined;
-	let finalTotal = undefined;
-	let questionDuration = 10; // Default to 10 seconds, but ultimately determined by the quiz config
-	let lists = [];
-	let params = new URLSearchParams($querystring);
+	let questionsTotal = $state(0);
+	let questionsCompleted = $state(0);
+	let questionsPending = $state(0);
+	let finalIncorrect = $state([]);
+	let finalScore = $state(undefined);
+	let finalCorrect = $state(undefined);
+	let finalTotal = $state(undefined);
+	// eslint-disable-next-line no-magic-numbers
+	let questionDuration = $state(10); // Default to 10 seconds, but ultimately determined by the quiz config
+	let lists = $state([]);
+	let showResult = $state(false);
+	let lastAnswerCorrect = $state(false);
+	let chosenAnswer = $state('');
+	let timerRef = $state(); // Reference to the timer component
+	const params = new URLSearchParams($querystring);
 	activeList = params.get('list');
 
 	// Initialize the lists value
@@ -47,11 +51,12 @@
 		.getLists()
 		.then((wl) => {
 			lists = wl;
+			return undefined;
 		})
 		.catch((e) => {
 			handleError(
 				'There was an error fetching word lists. Check the log for more details.',
-				e,
+				e
 			);
 		});
 	const handleRetakeQuiz = () => {
@@ -105,20 +110,20 @@
 	const answerQuestion = (answer) => {
 		chosenAnswer = answer;
 		const answeredIn = Math.round((Date.now() - questionStartTime) / 1000);
-		window.__TAURI__
-			.invoke('answer_question', {
-				response: {
-					response: answer,
-					answered_in: answeredIn,
-				},
-			})
+		invoke('answer_question', {
+			response: {
+				response: answer,
+				answered_in: answeredIn,
+			},
+		})
 			.then((answerResponse) => {
 				handleAnswerChange(answerResponse);
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error answering the question. Check the log for more details.',
-					e,
+					e
 				);
 			});
 	};
@@ -127,7 +132,7 @@
 			window.bookmarkManager
 				.getListContent(activeList)
 				.then((contents) => {
-					return window.__TAURI__.invoke('start_quiz', {
+					return invoke('start_quiz', {
 						config: {
 							words: contents,
 							kind: SIMPLE_QUIZ,
@@ -140,22 +145,23 @@
 					});
 				})
 				.then(() => {
-					return window.__TAURI__.invoke('get_next_question');
+					return invoke('get_next_question');
 				})
 				.then((quizQuestion) => {
 					handleQuestionChange(quizQuestion);
+					return undefined;
 				})
 				.catch((e) => {
 					handleError(
 						'There was an error starting the quiz. Check the log for more details.',
-						e,
+						e
 					);
 				});
 		}
 	};
 	const leftActions = [
 		{
-			icon: ChevronLeftIcon,
+			icon: ChevronLeft,
 			label: 'Exit',
 			disabled: false,
 			action: () => {
@@ -163,21 +169,19 @@
 			},
 		},
 	];
-	let rightActions = [];
-
-	// Reactive statement to update rightActions based on quiz state
-	$: {
+	// Derive rightActions based on quiz state
+	const rightActions = $derived.by(() => {
 		if (finalScore !== undefined) {
 			// Show results page actions
-			rightActions = [
+			return [
 				{
-					icon: RotateCwIcon,
+					icon: RotateCw,
 					label: 'Retake',
 					disabled: false,
 					action: handleRetakeQuiz,
 				},
 				{
-					icon: CopyIcon,
+					icon: SquareStack,
 					label: 'Flashcards',
 					disabled: false,
 					action: handleStudyFlashcards,
@@ -185,42 +189,34 @@
 			];
 		} else if (showAnswer) {
 			// Show continue/finish button during quiz
-			rightActions = [
+			return [
 				{
-					icon: ArrowRightIcon,
+					icon: ArrowRight,
 					label: questionsPending > 1 ? 'Continue' : 'Finish',
 					disabled: false,
 					action: () => {
 						showResult = questionsPending > 1 ? false : true;
 						if (questionsPending > 1) {
-							window.__TAURI__
-								.invoke('get_next_question')
+							invoke('get_next_question')
 								.then((quizQuestion) => {
 									handleQuestionChange(quizQuestion);
+									return undefined;
 								})
 								.catch((e) => {
-									handleError(
-										'There was an error getting the next question.',
-										e,
-									);
+									handleError('There was an error getting the next question.', e);
 								});
 						} else {
-							window.__TAURI__
-								.invoke('score_quiz')
+							invoke('score_quiz')
 								.then((score) => {
 									handleScoreChange(score);
-									return window.__TAURI__.invoke(
-										'get_incorrect_questions',
-									);
+									return invoke('get_incorrect_questions');
 								})
 								.then((incorrect) => {
 									handleIncorrectChange(incorrect);
+									return undefined;
 								})
 								.catch((e) => {
-									handleError(
-										'There was an error getting the next question.',
-										e,
-									);
+									handleError('There was an error getting the next question.', e);
 								});
 						}
 					},
@@ -228,18 +224,14 @@
 			];
 		} else {
 			// No actions during question display
-			rightActions = [];
+			return [];
 		}
-	}
+	});
 
-	// Call `handleListChange` whenever `activeList` changes.
-	$: handleListChange();
-
-	let showResult = false;
-	let lastAnswerCorrect = false;
-	let chosenAnswer = '';
-
-	let timerRef; // Reference to the timer component
+	// Call `handleListChange` on mount
+	$effect(() => {
+		handleListChange();
+	});
 
 	const handleResultTimerComplete = () => {
 		showResult = false;
@@ -263,19 +255,16 @@
 </script>
 
 <div class="quiz--container">
-	<div
-		class="quiz--header"
-		data-tauri-drag-region={isMacos ? true : undefined}
-	>
+	<div class="quiz--header" data-tauri-drag-region={isMacos ? true : undefined}>
 		<div class="quiz--header--section">
-			{#each leftActions as action}
+			{#each leftActions as action (action.label)}
 				<SyButton
 					disabled={action.disabled}
-					on:click={action.action}
+					onclick={action.action}
 					style="ghost"
 					center={true}
 				>
-					<svelte:component this={action.icon} />
+					<action.icon />
 					&nbsp;
 					{action.label}
 				</SyButton>
@@ -293,27 +282,29 @@
 					/>
 				{:else}
 					<div class="question-timer--container">
+						<!-- eslint-disable no-magic-numbers -->
 						<SyTimer
 							duration={questionDuration}
 							autoStart={true}
 							size={32}
-							on:complete={handleQuestionTimerComplete}
-							progressColor={'var(--sy-color--red)'}
+							oncomplete={handleQuestionTimerComplete}
+							progressColor="var(--sy-color--red)"
 						/>
+						<!-- eslint-enable no-magic-numbers -->
 					</div>
 				{/if}
 			{/if}
-			{#each rightActions as action}
+			{#each rightActions as action (action.label)}
 				{#if action}
 					<SyButton
 						disabled={action.disabled}
-						on:click={action.action}
+						onclick={action.action}
 						style="ghost"
 						center={true}
 					>
 						{action.label}
 						&nbsp;
-						<svelte:component this={action.icon} />
+						<action.icon />
 					</SyButton>
 				{/if}
 			{/each}
@@ -321,8 +312,11 @@
 	</div>
 	<div
 		class="quiz--content"
-		on:click={handlePageClick}
-		on:keydown={handlePageClick}
+		onclick={handlePageClick}
+		onkeydown={handlePageClick}
+		role="button"
+		tabindex="0"
+		aria-label="Click to pause timer"
 	>
 		{#if finalScore !== undefined}
 			<!-- Results Page -->
@@ -340,11 +334,9 @@
 						<p class="results--message results--message-perfect">
 							Perfect score! Excellent work!
 						</p>
-					{:else if finalCorrect / finalTotal >= 0.8}
-						<p class="results--message results--message-good">
-							Great job! Keep it up!
-						</p>
-					{:else if finalCorrect / finalTotal >= 0.6}
+					{:else if finalCorrect / finalTotal >= GOOD_SCORE_THRESHOLD}
+						<p class="results--message results--message-good">Great job! Keep it up!</p>
+					{:else if finalCorrect / finalTotal >= OKAY_SCORE_THRESHOLD}
 						<p class="results--message results--message-okay">
 							Good effort! A bit more practice will help.
 						</p>
@@ -357,34 +349,23 @@
 
 				{#if finalIncorrect && finalIncorrect.length > 0}
 					<div class="results--incorrect">
-						<h2 class="results--incorrect-title">
-							Incorrect Answers
-						</h2>
+						<h2 class="results--incorrect-title">Incorrect Answers</h2>
 						<div class="results--incorrect-list">
-							{#each finalIncorrect as incorrect}
+							{#each finalIncorrect as incorrect, index (index)}
 								<div class="results--incorrect-item">
 									<div class="results--incorrect-question">
 										<strong>Question:</strong>
-										{incorrect.question.MultipleChoice
-											.question}
+										{incorrect.question.MultipleChoice.question}
 									</div>
 									<div class="results--incorrect-details">
-										<span
-											class="results--incorrect-your-answer"
-										>
-											Your answer: <span
-												class="incorrect-highlight"
+										<span class="results--incorrect-your-answer">
+											Your answer: <span class="incorrect-highlight"
 												>{incorrect.response}</span
 											>
 										</span>
-										<span
-											class="results--incorrect-correct-answer"
-										>
-											Correct answer: <span
-												class="correct-highlight"
-												>{incorrect.question
-													.MultipleChoice
-													.answer}</span
+										<span class="results--incorrect-correct-answer">
+											Correct answer: <span class="correct-highlight"
+												>{incorrect.question.MultipleChoice.answer}</span
 											>
 										</span>
 									</div>
@@ -398,24 +379,17 @@
 			<!-- Quiz Questions/Answers -->
 			{#if showAnswer}
 				<div class="quiz--answer">
-					<DictionaryContent
-						word={answer}
-						backgroundColor="white"
-						{lists}
-					/>
+					<DictionaryContent word={answer} backgroundColor="white" {lists} />
 				</div>
 			{:else}
 				<div class="quiz--questions">
-					{#if question != undefined}
+					{#if question !== undefined}
 						<span class="quiz--question">
 							{question.question.MultipleChoice.question}
 						</span>
 						<div class="quiz--options">
-							{#each question.question.MultipleChoice.options as option}
-								<button
-									class="quiz--option"
-									on:click={() => answerQuestion(option)}
-								>
+							{#each question.question.MultipleChoice.options as option (option)}
+								<button class="quiz--option" onclick={() => answerQuestion(option)}>
 									{option}
 								</button>
 							{/each}

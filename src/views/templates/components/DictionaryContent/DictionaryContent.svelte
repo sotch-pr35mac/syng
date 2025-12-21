@@ -1,6 +1,5 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	import { CheckIcon, Maximize2Icon, PlusIcon } from 'svelte-feather-icons';
+	import { Check, Brush, Plus } from 'lucide-svelte';
 	import { handleError } from '../../utils/';
 	import SyButton from '../SyButton/SyButton.svelte';
 	import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
@@ -11,20 +10,24 @@
 	import DefinitionItem from './DefinitionItem.svelte';
 	import EntryTopline from './EntryTopline.svelte';
 	import MeasureWord from './MeasureWord.svelte';
-
-	/* Word Prop */
-	export let word;
-
-	/* Lists Prop */
-	export let lists = [];
+	import { invoke } from '@tauri-apps/api/core';
 
 	/* Background Color Prop */
 	/* Possible Values */
 	// 'grey' - Grey Background
-	// 'white' - White Background
-	export let backgroundColor = 'grey';
 
-	let memberLists = [];
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} word - Word Prop
+	 * @property {any} [lists] - Lists Prop
+	 * @property {string} [backgroundColor] - 'white' - White Background
+	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
+	 */
+
+	/** @type {Props} */
+	const { word, lists = [], backgroundColor = 'grey', onlink } = $props();
+
+	let memberLists = $state([]);
 
 	const updateListMembership = () => {
 		window.bookmarkManager
@@ -37,11 +40,12 @@
 				// Note: Here, the 'add to bookmarks' action item is assumed to be the first action
 				actions[0].component = getBookmarkIcon();
 				actions[0].tooltip = getBookmarkTooltip();
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error fetching list membership. Check the log for more details.',
-					e,
+					e
 				);
 			});
 	};
@@ -49,6 +53,7 @@
 		window.bookmarkManager[fnName](list, word)
 			.then(() => {
 				updateListMembership();
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
@@ -57,7 +62,7 @@
 						e,
 						word,
 						list,
-					},
+					}
 				);
 			});
 	};
@@ -68,18 +73,17 @@
 		_modifyListMembership('addToList', list, word);
 	};
 
-	$: word
-		? (() => {
+	// Update list membership when word changes
+	$effect(() => {
+		if (word) {
 			updateListMembership();
-		})()
-		: null;
+		}
+	});
 
-	const invoke = window.__TAURI__.invoke;
-	const dispatch = createEventDispatcher();
-	const getBookmarkIcon = () => (memberLists.length ? CheckIcon : PlusIcon);
+	const getBookmarkIcon = () => (memberLists.length ? Check : Plus);
 	const getBookmarkTooltip = () =>
 		`${memberLists.length ? 'Remove from' : 'Add to'} ${lists.length > 1 ? 'List' : 'Bookmarks'}`;
-	$: actions = [
+	const actions = $derived([
 		{
 			component: getBookmarkIcon(),
 			tooltip: getBookmarkTooltip(),
@@ -97,22 +101,22 @@
 				lists.length === 1
 					? undefined
 					: lists.map((item) => {
-						let inList = memberLists.includes(item);
-						return {
-							text: item,
-							id: item,
-							component: inList
-								? TextWithIconDropdownItem
-								: SimpleTextDropdownItem,
-							icon: inList ? CheckIcon : undefined,
-							hover: inList ? 'red' : undefined,
-						};
-					}),
+							const inList = memberLists.includes(item);
+							return {
+								text: item,
+								id: item,
+								component: inList
+									? TextWithIconDropdownItem
+									: SimpleTextDropdownItem,
+								icon: inList ? Check : undefined,
+								hover: inList ? 'red' : undefined,
+							};
+						}),
 			classes: ['sy-button--grouped--first'],
 		},
 		{
-			component: Maximize2Icon,
-			tooltip: 'Enlarge Characters',
+			component: Brush,
+			tooltip: 'Write Characters',
 			action: () => {
 				invoke('open_character_window', {
 					word: {
@@ -122,7 +126,7 @@
 				}).catch((e) => {
 					handleError(
 						'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
-						e,
+						e
 					);
 				});
 			},
@@ -136,33 +140,32 @@
 		}
 	}
 	*/
-	];
-	const handleOpenLink = (event) => dispatch('link', event.detail);
+	]);
+	const handleOpenLink = (detail) => onlink?.(detail);
 
 	let saveNotesDebounce;
 	const saveNotes = () => {
 		const cachedWord = word;
 		clearTimeout(saveNotesDebounce);
+		const DEBOUNCE_MS = 500;
 		saveNotesDebounce = setTimeout(() => {
-			const notes = document
-				.getElementById('dictionary-content--notes')
-				.value.trim();
+			const notes = document.getElementById('dictionary-content--notes').value.trim();
 			window.bookmarkManager
 				.updateProperty(cachedWord.hash, 'notes', notes)
 				.then(() => {
 					cachedWord.notes = notes;
+					return undefined;
 				})
 				.catch((e) => {
 					handleError(
 						'An unknown error occurred while trying to save the notes. Please check the log for more details.',
-						e,
+						e
 					);
 				});
-		}, 500);
+		}, DEBOUNCE_MS);
 	};
 
-	const handleMembershipModification = (e) => {
-		const listName = e.detail;
+	const handleMembershipModification = (listName) => {
 		if (memberLists.includes(listName)) {
 			// The word is present in the selected list. The user must be
 			// requesting to remove the word from this list.
@@ -187,29 +190,21 @@
 		<section class="dictionary-content dictionary-content--header">
 			<EntryTopline {word} />
 			<SyButtonBar>
-				{#each actions as action}
+				{#each actions as action, index (index)}
 					{#if action.dropdown}
 						<SyDropdown
 							values={action.dropdown}
-							on:selection={handleMembershipModification}
+							onselection={handleMembershipModification}
 							position="right"
 						>
 							<SyButton
 								grouped="true"
-								classes={[
-									'sy-tooltip--container',
-									...action.classes,
-								]}
-								on:click={action.action}
+								classes={['sy-tooltip--container', ...action.classes]}
+								onclick={action.action}
 							>
-								<svelte:component
-									this={action.component}
-									size="18"
-								/>
+								<action.component size="18" />
 								{#if action.tooltip}
-									<div
-										class="sy-tooltip--body sy-tooltip--body-bottom"
-									>
+									<div class="sy-tooltip--body sy-tooltip--body-bottom">
 										<p>
 											{action.tooltip}
 										</p>
@@ -221,16 +216,11 @@
 						<SyButton
 							grouped="true"
 							classes={['sy-tooltip--container']}
-							on:click={action.action}
+							onclick={action.action}
 						>
-							<svelte:component
-								this={action.component}
-								size="18"
-							/>
+							<action.component size="18" />
 							{#if action.tooltip}
-								<div
-									class="sy-tooltip--body sy-tooltip--body-bottom"
-								>
+								<div class="sy-tooltip--body sy-tooltip--body-bottom">
 									<p>
 										{action.tooltip}
 									</p>
@@ -243,11 +233,7 @@
 		</section>
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">Definitions</h2>
-			<SyList
-				values={word.english}
-				component={DefinitionItem}
-				on:event={handleOpenLink}
-			/>
+			<SyList values={word.english} component={DefinitionItem} onevent={handleOpenLink} />
 		</section>
 		{#if word.measure_words.length}
 			<section class="dictionary-content">
@@ -255,7 +241,7 @@
 				<SyList
 					values={word.measure_words}
 					component={MeasureWord}
-					on:event={handleOpenLink}
+					onevent={handleOpenLink}
 				/>
 			</section>
 		{/if}
@@ -266,7 +252,7 @@
 					placeholder="No Notes"
 					class="dictionary-content--notes"
 					id="dictionary-content--notes"
-					on:input={saveNotes}>{word.notes}</textarea
+					oninput={saveNotes}>{word.notes}</textarea
 				>
 			</section>
 		{/if}
@@ -308,11 +294,6 @@
 		color: var(--sy-color--black);
 		height: auto;
 		/* Full width subtracting the margin on it and its parent to achieve a cross-compatible `-webkit-fill-available` effect */
-		width: calc(
-			95% -
-				calc(
-					var(--sy-space--extra-large) + var(--sy-space--extra-large)
-				)
-		);
+		width: calc(95% - calc(var(--sy-space--extra-large) + var(--sy-space--extra-large)));
 	}
 </style>

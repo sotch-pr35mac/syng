@@ -1,5 +1,5 @@
 <script>
-	let page = 'NOT FOUND';
+	const page = 'NOT FOUND';
 </script>
 
 <center>

@@ -11,10 +11,12 @@ import { handleError } from './error.js';
 import {
 	checkAndPerformMigration,
 	exportMigrationData,
-	setupShutdownHook
+	setupShutdownHook,
 } from './migrationManager.js';
 import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
+import { invoke } from '@tauri-apps/api/core';
+import { platform } from '@tauri-apps/plugin-os';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -41,31 +43,31 @@ export const runStartupActions = () => {
 	const startupActions = [
 		{
 			name: 'init-dictionary',
-			action: window.__TAURI__.invoke('init_dictionary')
+			action: invoke('init_dictionary'),
 		},
 		{
 			name: 'init-preference-manager',
-			action: window.preferenceManager.init()
+			action: window.preferenceManager.init(),
 		},
 		{
 			name: 'cache-platform',
-			action: window.__TAURI__.os.platform()
+			action: () => Promise.resolve(platform()),
 		},
 		{
 			name: 'init-bookmark-manager',
-			action: window.bookmarkManager.init()
-		}
+			action: window.bookmarkManager.init(),
+		},
 	];
-	const parseStartupResults = results => {
+	const parseStartupResults = (results) => {
 		return results.map((result, index) => {
 			return {
 				name: startupActions[index].name,
-				result: result
+				result: result,
 			};
 		});
 	};
 	const findResultByName = (name, results) => {
-		const found = results.find(item => item.name === name);
+		const found = results.find((item) => item.name === name);
 		return found ? found.result : undefined;
 	};
 
@@ -80,38 +82,41 @@ export const runStartupActions = () => {
 		}
 	};
 
-	Promise.all(startupActions.map(item => item.action)).then(async res => {
-		const results = parseStartupResults(res);
-		window.platform = findResultByName('cache-platform', results);
+	Promise.all(startupActions.map((item) => item.action))
+		.then(async (res) => {
+			const results = parseStartupResults(res);
+			window.platform = findResultByName('cache-platform', results);
 
-		// Migration: Check if we need to restore from a backup file
-		// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
-		try {
-			await checkAndPerformMigration(
-				window.preferenceManager,
-				window.bookmarkManager
+			// Migration: Check if we need to restore from a backup file
+			// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
+			try {
+				await checkAndPerformMigration(window.preferenceManager, window.bookmarkManager);
+			} catch (e) {
+				console.error('Migration check failed:', e);
+				// Non-fatal: continue with fresh/existing data
+			}
+
+			// Migration: Setup shutdown hook to save data when app closes
+			// This ensures fresh data is available for future migrations
+			setupShutdownHook(window.preferenceManager, window.bookmarkManager);
+
+			// Migration: Also export a backup on startup as a safety net
+			// In case the app crashes before a clean shutdown
+			try {
+				await exportMigrationData(window.preferenceManager, window.bookmarkManager);
+			} catch (e) {
+				console.error('Startup backup export failed:', e);
+				// Non-fatal: shutdown hook will try again
+			}
+
+			document.dispatchEvent(new Event('init'));
+			initializeStyles();
+			return undefined;
+		})
+		.catch((e) => {
+			handleError(
+				'There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.',
+				e
 			);
-		} catch (e) {
-			console.error('Migration check failed:', e);
-			// Non-fatal: continue with fresh/existing data
-		}
-
-		// Migration: Setup shutdown hook to save data when app closes
-		// This ensures fresh data is available for future migrations
-		setupShutdownHook(window.preferenceManager, window.bookmarkManager);
-
-		// Migration: Also export a backup on startup as a safety net
-		// In case the app crashes before a clean shutdown
-		try {
-			await exportMigrationData(window.preferenceManager, window.bookmarkManager);
-		} catch (e) {
-			console.error('Startup backup export failed:', e);
-			// Non-fatal: shutdown hook will try again
-		}
-
-		document.dispatchEvent(new Event('init'));
-		initializeStyles();
-	}).catch(e => {
-		handleError('There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.', e);
-	});
+		});
 };

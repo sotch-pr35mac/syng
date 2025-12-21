@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { act } from '@testing-library/svelte';
 
 // Wait for the DOM after triggering an event before executing subsequent actions
@@ -5,7 +6,7 @@ export const wait = act;
 
 /*
 * Entries is an array of objects in the following format:
-* { 
+* {
 * 	traditional, // String
 *	simplified, // String
 * 	pinyinMarks, // Array of Numbers
@@ -13,7 +14,7 @@ export const wait = act;
 * }
 */
 export const mockDictionary = (lang, entries) => {
-	const query = jest.fn().mockReturnValue(new Promise((res, rej) => {
+	const query = vi.fn().mockReturnValue(new Promise((res, rej) => {
 		res(entries);
 	}));
 	return {

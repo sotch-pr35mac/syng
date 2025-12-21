@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { resolveNameConflict } from './name.js';
 
 it('should return the name if it is not in the list', async () => {

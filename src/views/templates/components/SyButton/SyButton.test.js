@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { render } from '@testing-library/svelte';
 import SyButton from './SyButton.svelte';
 
@@ -13,7 +12,7 @@ it('should use the correct default values', async () => {
 });
 it('should include the classes passed in as props', async () => {
 	const { getByTestId } = render(SyButton, {
-		classes: ['test-class']
+		classes: ['test-class'],
 	});
 	const classes = getByTestId('sy-button').className.split(' ');
 
@@ -21,7 +20,7 @@ it('should include the classes passed in as props', async () => {
 });
 it('should respond to the grouped prop', async () => {
 	const { getByTestId } = render(SyButton, {
-		grouped: true
+		grouped: true,
 	});
 	const classes = getByTestId('sy-button').className.split(' ');
 
@@ -29,7 +28,7 @@ it('should respond to the grouped prop', async () => {
 });
 it('should not respond to click events when disbaled', async () => {
 	const { getByTestId } = render(SyButton, {
-		disabled: true
+		disabled: true,
 	});
 	const button = getByTestId('sy-button');
 
@@ -39,7 +38,7 @@ it('should respond to different shapes, styles, and sizes', async () => {
 	const { getByTestId } = render(SyButton, {
 		style: 'ghost',
 		size: 'large',
-		shape: 'circle'
+		shape: 'circle',
 	});
 	const classes = getByTestId('sy-button').className.split(' ');
 

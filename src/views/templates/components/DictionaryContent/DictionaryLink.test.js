@@ -1,10 +1,10 @@
-/* eslint-disable no-undef */
+import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
 import DictionaryLink from './DictionaryLink.svelte';
 
 it('should be styled like a link', async () => {
 	const { getByTestId } = render(DictionaryLink, {
-		link: 'A'
+		link: 'A',
 	});
 
 	const link = getByTestId('dictionary-link');
@@ -13,13 +13,13 @@ it('should be styled like a link', async () => {
 });
 
 it('should dispatch an event when the link is clicked', async () => {
-	const { getByTestId, component } = render(DictionaryLink, {
-		link: 'A'
+	const mock = vi.fn();
+	const { getByTestId } = render(DictionaryLink, {
+		link: 'A',
+		onopen: mock,
 	});
 
 	const link = getByTestId('dictionary-link');
-	const mock = jest.fn();
-	component.$on('open', mock);
-	fireEvent.click(link);
+	await fireEvent.click(link);
 	expect(mock).toHaveBeenCalled();
 });

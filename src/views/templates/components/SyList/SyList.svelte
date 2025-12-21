@@ -1,32 +1,41 @@
 <script>
-import { createEventDispatcher } from 'svelte';
-import SyListContent from './SyListContent.svelte';
-import SyListPreview from './SyListPreview.svelte';
+	import SyListContent from './SyListContent.svelte';
+	import SyListPreview from './SyListPreview.svelte';
 
-/* Style Prop */
-/* Possible Values */
-// 'preview' - Preview Content List Style
-// 'content' - Content List Style
-export let style = 'content';
+	/* Style Prop */
+	/* Possible Values */
+	// 'preview' - Preview Content List Style
 
-/* Values Prop */
-export let values = [];
+	/* Content-Style Component Prop */
 
-/* Content-Style Component Prop */
-// This is prop is required when the style is content
-export let component = undefined;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [style] - 'content' - Content List Style
+	 * @property {any} [values] - Values Prop
+	 * @property {any} [component] - This is prop is required when the style is content
+	 * @property {any} [highlight] - Highlight Prop
+	 * @property {boolean} [filterable] - Filterable Prop
+	 * @property {(detail: any) => void} [onselection] - Selection callback
+	 * @property {(detail: any) => void} [onevent] - Event callback
+	 */
 
-/* Highlight Prop */
-export let highlight = undefined;
+	/** @type {Props} */
+	const {
+		style = 'content',
+		values = [],
+		component = undefined,
+		highlight = undefined,
+		filterable = false,
+		onselection,
+		onevent,
+	} = $props();
 
-/* Filterable Prop */
-export let filterable = false;
+	const styleMap = {
+		preview: SyListPreview,
+		content: SyListContent,
+	};
 
-const dispatch = createEventDispatcher();
-const styleMap = {
-	'preview': SyListPreview,
-	'content': SyListContent		
-};
+	const SvelteComponent = $derived(styleMap[style]);
 </script>
 
-<svelte:component this={styleMap[style]} values="{values}" component="{component}" on:selection="{ event => dispatch('selection', event.detail)}" highlight="{highlight}" filterable="{filterable}" on:event/>
+<SvelteComponent {values} {component} {onselection} {highlight} {filterable} {onevent} />

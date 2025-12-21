@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import SyToggle from './SyToggle.svelte';
@@ -6,7 +5,7 @@ import SyToggle from './SyToggle.svelte';
 it('should have the uuid passed to it', async () => {
 	const { getByRole } = render(SyToggle, {
 		id: 'test-id',
-		value: 'test'
+		value: 'test',
 	});
 	const id = getByRole('checkbox', { hidden: true }).id;
 
@@ -16,7 +15,7 @@ it('should have the uuid passed to it', async () => {
 it('should respect the state passed to it', async () => {
 	const { getByRole } = render(SyToggle, {
 		value: 'test',
-		checked: true
+		checked: true,
 	});
 	const state = getByRole('checkbox', { hidden: true }).checked;
 
@@ -26,7 +25,7 @@ it('should respect the state passed to it', async () => {
 it('should update its state once clicked', async () => {
 	const user = userEvent.setup();
 	const { getByRole } = render(SyToggle, {
-		value: 'test'
+		value: 'test',
 	});
 	const element = getByRole('checkbox', { hidden: true });
 

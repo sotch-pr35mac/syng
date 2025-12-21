@@ -17,7 +17,7 @@ export const resolveNameConflict = (name, list) => {
 	// attempts are supported.
 	const MAX_ITER = 100;
 
-	while(list.includes(newName) && iter <= MAX_ITER) {
+	while (list.includes(newName) && iter <= MAX_ITER) {
 		newName = `${name} ${iter}`;
 		iter++;
 	}

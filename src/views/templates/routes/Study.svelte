@@ -2,38 +2,42 @@
 	import SyList from '../components/SyList/SyList.svelte';
 	import StudyListItem from '../components/StudyListItem/StudyListItem.svelte';
 	import { handleError } from '../utils';
+	import { platform } from '@tauri-apps/plugin-os';
 
-	const isMacos = window.platform === 'darwin';
-	let lists = [];
-	let emptyLists = [];
-	let populatedLists = [];
+	const isMacos = platform() === 'macos';
+	let lists = $state([]);
+	let emptyLists = $state([]);
+
+	// Derive populatedLists from lists and emptyLists
+	const populatedLists = $derived(lists.filter((list) => !emptyLists.includes(list)));
+
 	window.bookmarkManager
 		.getLists()
 		.then((wordLists) => {
 			lists = wordLists.sort((a, b) => a.localeCompare(b));
+			return undefined;
 		})
 		.catch((e) => {
 			handleError(
 				'There was an error fetching word lists. Check the logs for more details.',
-				e,
+				e
 			);
 		});
 	window.bookmarkManager
 		.getEmptyLists()
-		.then((lists) => {
-			emptyLists = lists;
+		.then((fetchedLists) => {
+			emptyLists = fetchedLists;
+			return undefined;
 		})
 		.catch((e) => {
 			handleError(
 				'There was an error fetching the empty lists. Check the log for more details.',
-				e,
+				e
 			);
 		});
 
-	$: populatedLists = lists.filter((list) => !emptyLists.includes(list));
-
-	const handleSelection = selectionData => {
-		const { list, action } = selectionData.detail;
+	const handleSelection = (data) => {
+		const { list, action } = data;
 		let url;
 		if (action === 'quiz') {
 			url = `#/study/quiz?list=${list}`;
@@ -45,10 +49,7 @@
 </script>
 
 <div class="study--container">
-	<div
-		class="study--title"
-		data-tauri-drag-region={isMacos ? true : undefined}
-	>
+	<div class="study--title" data-tauri-drag-region={isMacos ? true : undefined}>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
 	<div class="study--content">
@@ -56,14 +57,11 @@
 			<SyList
 				values={populatedLists}
 				component={StudyListItem}
-				on:selection={handleSelection}
+				onselection={handleSelection}
 			/>
 		{:else}
 			<div class="study--empty">
-				<span>
-					To take a quiz or study flashcards, add vocab words to your
-					lists.
-				</span>
+				<span> To take a quiz or study flashcards, add vocab words to your lists. </span>
 			</div>
 		{/if}
 	</div>

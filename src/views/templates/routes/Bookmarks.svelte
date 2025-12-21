@@ -1,11 +1,5 @@
 <script>
-	import {
-		ChevronDownIcon,
-		DownloadIcon,
-		PlusIcon,
-		Trash2Icon,
-		UploadIcon,
-	} from 'svelte-feather-icons';
+	import { ChevronDown, FolderDown, Plus, Trash2, FolderUp } from 'lucide-svelte';
 	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 	import SyButton from '../components/SyButton/SyButton.svelte';
 	import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
@@ -16,18 +10,19 @@
 	import SyModal from '../components/SyModal/SyModal.svelte';
 	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
 	import { handleError, resolveNameConflict } from '../utils/';
+	import { invoke } from '@tauri-apps/api/core';
+	import { platform } from '@tauri-apps/plugin-os';
 
-	const invoke = window.__TAURI__.invoke;
-	const isMacos = window.platform === 'darwin';
+	const isMacos = platform() === 'macos';
 
 	// Set the active list
 	// Syng expects there to always be a list called 'Bookmarks'
-	let activeList = 'Bookmarks';
-	let activeWord = undefined;
+	let activeList = $state('Bookmarks');
+	let activeWord = $state(undefined);
 
 	// Get the word lists
-	let lists = []; // The list of word lists
-	let dropdownList = []; // The list of dropdown items, including the list of word lists.
+	let lists = $state([]); // The list of word lists
+	let dropdownList = $state([]); // The list of dropdown items, including the list of word lists.
 	const createDropdownList = (list) => {
 		return [
 			...list
@@ -47,7 +42,7 @@
 					text: 'Create New',
 					id: 'create-new',
 					component: TextWithIconDropdownItem,
-					icon: PlusIcon,
+					icon: Plus,
 					color: 'blue',
 					hover: 'green',
 				},
@@ -61,11 +56,12 @@
 				lists = wordLists;
 				dropdownList = createDropdownList(wordLists);
 				cb();
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error fetching word lists. Check the logs for more details.',
-					e,
+					e
 				);
 			});
 	};
@@ -73,7 +69,7 @@
 
 	// Get the words for the active list
 	let words = [];
-	let wordList = [];
+	let wordList = $state([]);
 	const getWordList = (items) => {
 		highlightActive = false;
 		return items.map((item) => {
@@ -95,11 +91,12 @@
 				words = activeListWords;
 				wordList = getWordList(activeListWords);
 				cb();
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error fetching the word list content. Check the logs for more details.',
-					e,
+					e
 				);
 			});
 	};
@@ -110,9 +107,9 @@
 		activeList = nextList;
 		updateListContent(() => undefined);
 	};
-	const handleListSelection = (event) => {
-		if (event.detail !== 'create-new') {
-			updateActiveList(event.detail);
+	const handleListSelection = (id) => {
+		if (id !== 'create-new') {
+			updateActiveList(id);
 		} else {
 			createNewModalVisible = true;
 		}
@@ -129,11 +126,9 @@
 	];
 	const restrictedListNames = ['create-new', 'Bookmarks'];
 	const getNewPlaceholder = () =>
-		createNewPlaceholders.slice(
-			Math.random() * createNewPlaceholders.length,
-		)[0];
-	let createNewModalVisible = false;
-	let createNewButtonDisabled = false;
+		createNewPlaceholders.slice(Math.random() * createNewPlaceholders.length)[0];
+	let createNewModalVisible = $state(false);
+	let createNewButtonDisabled = $state(false);
 	const closeNewModal = () => {
 		createNewModalVisible = false;
 		document.getElementById('create-new-list-input').value = '';
@@ -141,9 +136,7 @@
 	};
 	const createNewList = () => {
 		createNewButtonDisabled = true;
-		const newListName = document
-			.getElementById('create-new-list-input')
-			.value.trim();
+		const newListName = document.getElementById('create-new-list-input').value.trim();
 		if (!newListName || restrictedListNames.includes(newListName)) {
 			handleError(`Cannot create new list with name ${newListName}.`);
 			closeNewModal();
@@ -156,87 +149,79 @@
 				updateLists(() => {
 					closeNewModal();
 				});
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-					e,
+					e
 				);
 				closeNewModal();
 			});
 	};
 
 	// Word Selection
-	const handleSelection = (selected) => {
-		activeWord = words[selected.detail.index];
+	const handleSelection = (data) => {
+		activeWord = words[data.index];
 		highlightActive = true;
 	};
-	let highlightActive = true;
+	let highlightActive = $state(true);
 
 	// Actions
 	let disableDeleteButton = false;
 	const deleteActiveList = () => {
 		disableDeleteButton = true;
 		window.__TAURI__.dialog
-			.ask(
-				`Are you sure you want to delete ${activeList}?`,
-				'Delete List',
-			)
+			.ask(`Are you sure you want to delete ${activeList}?`, 'Delete List')
 			.then((confirmed) => {
 				if (confirmed) {
-					window.bookmarkManager
+					return window.bookmarkManager
 						.deleteList(activeList)
 						.then(() => {
 							updateActiveList('Bookmarks');
 							updateLists(() => {
 								disableDeleteButton = false;
 							});
+							return undefined;
 						})
 						.catch((e) => {
 							handleError(
 								`There was an unexpected error deleting the list ${activeList}. Please check the log for more details.`,
-								e,
+								e
 							);
 							disableDeleteButton = false;
 						});
 				} else {
 					disableDeleteButton = false;
+					return undefined;
 				}
 			})
 			.catch((e) => {
 				handleError(
 					`There was an unexpected error while attempting to delete the list ${activeList}. Check the log for more details.`,
-					e,
+					e
 				);
 				disableDeleteButton = false;
 			});
 	};
-	let disableExportButton = false;
 	const exportActiveList = () => {
-		disableExportButton = true;
 		invoke('export_list_data', { name: activeList, data: words })
 			.then(() => {
-				disableExportButton = false;
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error exporting your list. Check the log for more details.',
-					e,
+					e
 				);
-				disableExportButton = false;
 			});
 	};
-	let disableImportButton = false;
 	const importList = () => {
-		disableImportButton = true;
 		invoke('import_list_data')
 			.then((importArchive) => {
 				if (importArchive) {
-					const listName = resolveNameConflict(
-						importArchive.meta.name,
-						lists,
-					);
-					window.bookmarkManager
+					const listName = resolveNameConflict(importArchive.meta.name, lists);
+					return window.bookmarkManager
 						.createList(listName)
 						.then(() => {
 							// List imports from Syng v1 occationally come with duplicated entries where the last entry in the list
@@ -246,58 +231,51 @@
 									acc.find((entry) => entry.hash === cur.hash)
 										? acc
 										: [...acc, cur],
-								[],
+								[]
 							);
 							const bulkImport = entries.map((entry) =>
-								window.bookmarkManager.addToList(
-									listName,
-									entry,
-								),
+								window.bookmarkManager.addToList(listName, entry)
 							);
 							return Promise.all(bulkImport);
 						})
 						.then(() => {
-							updateLists(() => {
-								disableImportButton = false;
-							});
+							updateLists(() => undefined);
+							return undefined;
 						})
 						.catch((e) => {
 							handleError(
 								'There was an error importing the list. Check the log for more details.',
-								e,
+								e
 							);
-							disableImportButton = false;
 						});
-				} else {
-					disableImportButton = false;
 				}
+				return undefined;
 			})
 			.catch((e) => {
 				handleError(
 					'There was an error importing the list. Check the log for more details.',
-					e,
+					e
 				);
-				disableImportButton = false;
 			});
 	};
 
 	const actions = [
 		{
-			icon: DownloadIcon,
+			icon: FolderDown,
 			action: importList,
 			tooltip: 'Import',
 			exclude: [],
 			disabled: false,
 		},
 		{
-			icon: UploadIcon,
+			icon: FolderUp,
 			action: exportActiveList,
 			tooltip: 'Export',
 			exclude: [],
 			disabled: false,
 		},
 		{
-			icon: Trash2Icon,
+			icon: Trash2,
 			action: deleteActiveList,
 			tooltip: 'Delete',
 			exclude: ['Bookmarks'],
@@ -308,30 +286,25 @@
 </script>
 
 <div class="bookmarks--container">
-	<div
-		class="bookmarks--header"
-		data-tauri-drag-region={isMacos ? true : undefined}
-	>
-		<SyDropdown values={dropdownList} on:selection={handleListSelection}>
+	<div class="bookmarks--header" data-tauri-drag-region={isMacos ? true : undefined}>
+		<SyDropdown values={dropdownList} onselection={handleListSelection}>
 			<SyButton size="large" style="ghost" center={true}>
-				{activeList}&nbsp;<ChevronDownIcon size="20" />
+				{activeList}&nbsp;<ChevronDown size="20" />
 			</SyButton>
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
-			{#each actions as action}
+			{#each actions as action (action.tooltip)}
 				{#if !action.exclude.includes(activeList)}
 					<span class="bookmarks--header--action-item">
 						<SyButton
 							style="ghost"
-							on:click={action.action}
+							onclick={action.action}
 							disabled={action.disabled}
 							hover={action.hover}
 							classes={['sy-tooltip--container']}
 						>
-							<svelte:component this={action.icon} size="20" />
-							<div
-								class="sy-tooltip--body sy-tooltip--body-bottom"
-							>
+							<action.icon size="20" />
+							<div class="sy-tooltip--body sy-tooltip--body-bottom">
 								<p>{action.tooltip}</p>
 							</div>
 						</SyButton>
@@ -346,7 +319,7 @@
 				style="preview"
 				values={wordList}
 				highlight={highlightActive}
-				on:selection={handleSelection}
+				onselection={handleSelection}
 				filterable={true}
 			/>
 		</div>
@@ -354,31 +327,29 @@
 			<DictionaryContent word={activeWord} {lists} />
 		</div>
 	</div>
-	<SyModal
-		title="Create List"
-		visible={createNewModalVisible}
-		on:close={closeNewModal}
-	>
-		<div class="bookmarks-modal-content" slot="body">
-			<p>What would you like to call this list?</p>
-			<SyTextInput
-				size="large"
-				placeholder={`ex. ${getNewPlaceholder()}`}
-				id="create-new-list-input"
-			/>
-		</div>
-		<svelte:fragment slot="footer">
-			<SyButton size="large" on:click={closeNewModal}>Cancel</SyButton>
+	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>
+		{#snippet body()}
+			<div class="bookmarks-modal-content">
+				<p>What would you like to call this list?</p>
+				<SyTextInput
+					size="large"
+					placeholder={`ex. ${getNewPlaceholder()}`}
+					id="create-new-list-input"
+				/>
+			</div>
+		{/snippet}
+		{#snippet footer()}
+			<SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
 			&nbsp;
 			<SyButton
 				size="large"
 				color="green"
-				on:click={createNewList}
+				onclick={createNewList}
 				disabled={createNewButtonDisabled}
 			>
 				Create
 			</SyButton>
-		</svelte:fragment>
+		{/snippet}
 	</SyModal>
 </div>
 

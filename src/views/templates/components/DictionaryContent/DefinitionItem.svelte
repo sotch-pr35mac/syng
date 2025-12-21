@@ -1,9 +1,14 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import DictionaryLink from './DictionaryLink.svelte';
 
-	/* Required Value Prop */
-	export let value;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} value - Required Value Prop
+	 * @property {(detail: any) => void} [onevent] - Optional callback when link event occurs
+	 */
+
+	/** @type {Props} */
+	const { value, onevent } = $props();
 
 	const pattern = /\s\S+\[(\S|\s\S)+.\]/g;
 	const findPattern = (text) => {
@@ -20,7 +25,7 @@
 	};
 	const getDisplayValue = (text) => {
 		const characters = getCharactersFromMatch(text);
-		return characters.traditional == characters.simplified
+		return characters.traditional === characters.simplified
 			? `${characters.traditional}`
 			: `${characters.simplified} (${characters.traditional})`;
 	};
@@ -28,17 +33,13 @@
 		const characters = getCharactersFromMatch(text);
 		return characters.traditional;
 	};
-	const dispatch = createEventDispatcher();
-	const handleOpenLink = (event) => dispatch('event', event.detail);
+	const handleOpenLink = (event) => onevent?.(event.detail);
 </script>
 
 <div class="dictionary-content--definition-item sy-text--selectable">
 	{#if pattern.test(value)}
 		{value.split(findPattern(value))}&nbsp;
-		<DictionaryLink
-			link={getLink(findPattern(value))}
-			on:open={handleOpenLink}
-		>
+		<DictionaryLink link={getLink(findPattern(value))} onopen={handleOpenLink}>
 			{getDisplayValue(findPattern(value))}
 		</DictionaryLink>
 	{:else}

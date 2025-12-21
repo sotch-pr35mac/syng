@@ -1,8 +1,9 @@
 <script>
 	import HanziWriter from 'hanzi-writer';
 	import { tick } from 'svelte';
-	import { PauseIcon, PlayIcon } from 'svelte-feather-icons';
+	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from './components/SyButton/SyButton.svelte';
+	import { platform } from '@tauri-apps/plugin-os';
 
 	// Constants
 	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
@@ -13,22 +14,18 @@
 	const CHARACTER_PADDING = 5;
 
 	// Variables
-	let enableDrag = false;
-	window.__TAURI__.os.platform().then((platform) => {
-		enableDrag = platform === 'darwin';
-	});
+	const enableDrag = platform() === 'macos';
 	let word;
 	let activeCharacters = [];
-	let activeScript = 'simplified';
-	let activeAnimation = false;
-	let pausedAnimation = false;
+	let activeScript = $state('simplified');
+	let activeAnimation = $state(false);
+	let pausedAnimation = $state(false);
 	let currentlyAnimating; // The index of the character currently being animated
 	let characterWriter;
-	let characterNotFound = false;
+	let characterNotFound = $state(false);
 
 	// Functions
-	const inDarkMode = () =>
-		window.matchMedia('(prefers-color-scheme: dark)').matches;
+	const inDarkMode = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
 	const switchScript = (script) => {
 		activeScript = script;
 		activeAnimation = false;
@@ -40,17 +37,14 @@
 			width: CHARACTER_SIZE,
 			height: CHARACTER_SIZE,
 			padding: CHARACTER_PADDING,
-			strokeColor: inDarkMode()
-				? DARK_MODE_TEXT_COLOR
-				: LIGHT_MODE_TEXT_COLOR,
-			outlineColor: inDarkMode()
-				? DARK_MODE_OUTLINE_COLOR
-				: LIGHT_MODE_OUTLINE_COLOR,
+			strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
+			outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
 			charDataLoader: (char, onComplete) => {
 				fetch(`resources/hanzi-writer-data/data/${char}.json`)
 					.then((file) => file.json())
 					.then((data) => {
 						onComplete(data);
+						return undefined;
 					})
 					.catch((error) => {
 						characterNotFound = true;
@@ -63,16 +57,21 @@
 	const loadAllCharacters = (characters) => {
 		characterNotFound = false;
 		// Wait for the DOM to finish updating from the change from the line above before proceeding
-		tick().then(() => {
-			const target = document.getElementById('character-target');
-			if (target) {
-				target.innerHTML = '';
-			}
-			activeCharacters = [];
-			for (let i = 0; i < characters.length; i++) {
-				loadCharacter(characters[i]);
-			}
-		});
+		tick()
+			.then(() => {
+				const target = document.getElementById('character-target');
+				if (target) {
+					target.innerHTML = '';
+				}
+				activeCharacters = [];
+				for (let i = 0; i < characters.length; i++) {
+					loadCharacter(characters[i]);
+				}
+				return undefined;
+			})
+			.catch((error) => {
+				console.error('Error loading characters:', error);
+			});
 	};
 	const animateCharacter = (index, is_initial_call) => {
 		if (is_initial_call) {
@@ -122,25 +121,12 @@
 </script>
 
 <div class="character-window-container">
-	<div
-		class="script-selector-container"
-		data-tauri-drag-region={enableDrag ? true : undefined}
-	>
-		<SyButton
-			style="ghost"
-			size="large"
-			on:click={() => switchScript('simplified')}
-		>
-			<span class:script-selector--active={activeScript == 'simplified'}>
-				Simplified
-			</span>
+	<div class="script-selector-container" data-tauri-drag-region={enableDrag ? true : undefined}>
+		<SyButton style="ghost" size="large" onclick={() => switchScript('simplified')}>
+			<span class:script-selector--active={activeScript === 'simplified'}> Simplified </span>
 		</SyButton>
-		<SyButton
-			style="ghost"
-			size="large"
-			on:click={() => switchScript('traditional')}
-		>
-			<span class:script-selector--active={activeScript == 'traditional'}>
+		<SyButton style="ghost" size="large" onclick={() => switchScript('traditional')}>
+			<span class:script-selector--active={activeScript === 'traditional'}>
 				Traditional
 			</span>
 		</SyButton>
@@ -150,24 +136,21 @@
 			<div class="character-window--character-not-found--container">
 				<h1>Character Data Not Found</h1>
 				<p>
-					The stroke order data cannot be found for at least one of
-					the characters in this word.
+					The stroke order data cannot be found for at least one of the characters in this
+					word.
 				</p>
 			</div>
 		{:else}
 			<div class="character-actions">
 				<SyButton
 					classes={['sy-tooltip--container']}
-					on:click={() => handleControlButtonClick()}
+					onclick={() => handleControlButtonClick()}
 				>
-					<span
-						class="animate-button--icon-container"
-						data-testid="control-button"
-					>
+					<span class="animate-button--icon-container" data-testid="control-button">
 						{#if !activeAnimation}
-							<PlayIcon size="18" />
+							<Play size="18" />
 						{:else}
-							<PauseIcon size="18" />
+							<Pause size="18" />
 						{/if}
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-bottom">

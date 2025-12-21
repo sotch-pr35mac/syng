@@ -1,57 +1,78 @@
 <script>
-import { createEventDispatcher } from 'svelte';
-import { suppressUnusedExportLet } from '../../utils/';
-import SyTextInput from '../SyTextInput/SyTextInput.svelte';
-import SyListPreviewItem from './SyListPreviewItem.svelte';
+	import SyTextInput from '../SyTextInput/SyTextInput.svelte';
+	import SyListPreviewItem from './SyListPreviewItem.svelte';
 
-const id = Math.floor(Math.random() * 100);
+	const id = Math.floor(Math.random() * 100);
 
-/* Values Prop */
-export let values = [];
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [values] - Values Prop
+	 * @property {boolean} [highlight] - Highlight Prop
+	 * @property {boolean} [filterable] - Filterable Prop
+	 * @property {any} [component] - Suppress the unexpected prop warning
+	 * @property {(detail: any) => void} [onselection] - Selection callback
+	 * @property {(detail: any) => void} [onevent] - Event callback
+	 */
 
-/* Highlight Prop */
-export let highlight = true;
+	/** @type {Props} */
+	const {
+		values = [],
+		highlight = true,
+		filterable = false,
+		component: _component = undefined,
+		onselection,
+		onevent,
+	} = $props();
 
-/* Filterable Prop */
-export let filterable = false;
+	let activeIndex = $state();
+	let filteredValues = $state([]);
 
-// Suppress the unexpected prop warning
-export let component = undefined;
-suppressUnusedExportLet(component);
+	// Reset filtered values when values prop changes
+	$effect(() => {
+		if (values) {
+			filteredValues = values;
 
-let activeIndex;
-let filteredValues = [];
-$: if(values) {
-	filteredValues = values;
-
-	// Reset the filter text field
-	if(filterable) {
-		const filterInput = document.getElementById(id);
-		if(filterInput) {
-			filterInput.value = '';
+			// Reset the filter text field
+			if (filterable) {
+				const filterInput = document.getElementById(id);
+				if (filterInput) {
+					filterInput.value = '';
+				}
+			}
 		}
-	}
-}
+	});
 
-const dispatch = createEventDispatcher();
-const handleSelection = event => {
-	activeIndex = event.detail;
-	dispatch('selection', {
-		index: values.indexOf(filteredValues[activeIndex]),
-		value: filteredValues[activeIndex]
-	});
-};
-const handleFilter = text => {
-	text = text.detail;
-	filteredValues = values.filter(item => {
-		return item.content.includes(text) || item.headline.includes(text) || item.subtitle.includes(text);
-	});
-};
+	const handleSelection = (event) => {
+		activeIndex = event.detail;
+		onselection?.({
+			index: values.indexOf(filteredValues[activeIndex]),
+			value: filteredValues[activeIndex],
+		});
+	};
+	const handleFilter = (event) => {
+		const filterText = event.detail;
+		filteredValues = values.filter((item) => {
+			return (
+				item.content.includes(filterText) ||
+				item.headline.includes(filterText) ||
+				item.subtitle.includes(filterText)
+			);
+		});
+	};
 </script>
 
 {#if filterable}
-	<SyTextInput spellcheck="{ false }" placeholder="Filter" size="large" id="{ id }" on:keyup="{ handleFilter }" />
+	<SyTextInput spellcheck={false} placeholder="Filter" size="large" {id} onkeyup={handleFilter} />
 {/if}
-{#each filteredValues as value, index }
-	<SyListPreviewItem headline="{value.headline}" subtitle="{value.subtitle}" content="{value.content}" active="{activeIndex === index}" index="{index}" highlight="{highlight}" on:click="{handleSelection}" on:event/>
+{#each filteredValues as value, index (index)}
+	<SyListPreviewItem
+		headline={value.headline}
+		subtitle={value.subtitle}
+		content={value.content}
+		active={activeIndex === index}
+		{index}
+		{highlight}
+		onclick={handleSelection}
+		{onevent}
+	/>
 {/each}
