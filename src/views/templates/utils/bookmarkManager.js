@@ -14,7 +14,8 @@ const DEFAULT_BOOKMARK_DATA = {
 // through the `updateProperty` method.
 const MODIFIABLE_BOOKMARK_PROPERTIES = ['notes'];
 
-function BreakException() {}
+// Symbol for early exit from promise chains
+const EARLY_EXIT = Symbol('EARLY_EXIT');
 
 export class BookmarkManager {
 	/*
@@ -55,7 +56,7 @@ export class BookmarkManager {
 											'There was an error initializing the bookmarks data. Check the logs for more details.'
 										)
 									);
-									throw new BreakException();
+									throw EARLY_EXIT;
 								}
 								return undefined;
 							})
@@ -66,14 +67,19 @@ export class BookmarkManager {
 										'There was an error initializing the bookmarks data. Check the logs for more details.'
 									)
 								);
-								throw new BreakException();
+								throw EARLY_EXIT;
 							});
 					}
 					this.initialized = true;
 					resolve();
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -185,7 +191,7 @@ export class BookmarkManager {
 								`Cannot create list. A list with the name ${listName} already exists.`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 
 					// Create the new list.
@@ -204,7 +210,12 @@ export class BookmarkManager {
 					}
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -238,7 +249,7 @@ export class BookmarkManager {
 								`There was an error deleting the list ${listName}. The list does not exist.`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 
 					listToRemove.doc._deleted = true;
@@ -254,7 +265,7 @@ export class BookmarkManager {
 						reject(
 							`There was an error deleting the list ${listName}. Check the log for more details.`
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 				})
 				.then((documents) => {
@@ -283,7 +294,12 @@ export class BookmarkManager {
 					}
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -314,7 +330,7 @@ export class BookmarkManager {
 								`There was an error fetching the contents of ${listName}. List does not exist! Check the log for more details.`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 
 					listId = list.doc._id;
@@ -328,7 +344,12 @@ export class BookmarkManager {
 					);
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -401,7 +422,7 @@ export class BookmarkManager {
 								`There was an error adding the word to ${listName}. List does not exist!`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 					listId = list._id;
 					return this._document_db.allDocs({ include_docs: true });
@@ -433,7 +454,12 @@ export class BookmarkManager {
 					}
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -466,7 +492,7 @@ export class BookmarkManager {
 								`There was an error removing the word from ${listName}. The list does not exist.`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 					listId = list._id;
 					return this._document_db.allDocs({ include_docs: true });
@@ -481,7 +507,7 @@ export class BookmarkManager {
 								`There was an error removing the word from ${listName}. The word does not exist!`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					} else {
 						word.lists = word.lists.filter((list) => list !== listId);
 						return this._document_db.put(word);
@@ -500,7 +526,12 @@ export class BookmarkManager {
 					}
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(
@@ -563,7 +594,7 @@ export class BookmarkManager {
 								'There was an error updating the bookmarks entry. That word could not be found in any of your lists.'
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 
 					// Check to make sure the property is editable
@@ -573,7 +604,7 @@ export class BookmarkManager {
 								`There was an error updating the bookmarks entry. The property ${name} cannot be updated with this method.`
 							)
 						);
-						throw new BreakException();
+						throw EARLY_EXIT;
 					}
 
 					wordEntry[name] = value;
@@ -587,7 +618,12 @@ export class BookmarkManager {
 					}
 					return undefined;
 				})
-				.catch(BreakException, () => undefined)
+				.catch((e) => {
+					if (e === EARLY_EXIT) {
+						return;
+					}
+					throw e;
+				})
 				.catch((e) => {
 					console.error(e);
 					reject(

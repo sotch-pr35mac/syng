@@ -1,7 +1,8 @@
 use crate::utils::word_utils;
 use chinese_dictionary as dictionary;
+use rand::prelude::IndexedRandom;
 use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 
@@ -21,7 +22,7 @@ enum AnswerKind {
 
 impl AnswerKind {
     fn get_random(exclude: AnswerKind) -> Result<Self, String> {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let options = match exclude {
             AnswerKind::Pinyin => vec![AnswerKind::English, AnswerKind::Characters],
             AnswerKind::English => vec![AnswerKind::Pinyin, AnswerKind::Characters],
@@ -53,7 +54,7 @@ fn get_question_answer_options(
     word: &dictionary::WordEntry,
     list: &[dictionary::WordEntry],
 ) -> Result<QuestionAnswerOptions, String> {
-    let mut rng = thread_rng();
+    let mut rng = rng();
     let mut options = Vec::with_capacity(4);
     let exclude_answer_kind = match question_kind {
         QuestionKind::Pinyin => AnswerKind::Pinyin,
@@ -100,7 +101,7 @@ fn get_question_answer_options(
     }
 
     for _ in 0..3 {
-        let index = rng.gen_range(0..possible_options.len());
+        let index = rng.random_range(0..possible_options.len());
         options.push(possible_options.swap_remove(index));
     }
 
@@ -215,7 +216,7 @@ pub fn generate_questions(
     list: &[dictionary::WordEntry],
     kinds: &[QuestionKind],
 ) -> Result<Vec<Question>, String> {
-    let mut rng = thread_rng();
+    let mut rng = rng();
 
     let mut questions: Vec<Question> = list
         .iter()

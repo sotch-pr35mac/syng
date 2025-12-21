@@ -65,7 +65,7 @@ mod tests {
     #[test]
     fn test_best_match() {
         assert_eq!(
-            find_best_match("上水", "上水", &[4 as u8, 3 as u8], 4)
+            find_best_match("上水", "上水", &[4u8, 3u8], 4)
                 .unwrap()
                 .traditional,
             "上水".to_string()
