@@ -99,7 +99,7 @@ fn get_question_answer_options(
         );
     }
 
-    for _ in [0, 1, 2] {
+    for _ in 0..3 {
         let index = rng.gen_range(0..possible_options.len());
         options.push(possible_options.swap_remove(index));
     }

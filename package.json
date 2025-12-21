@@ -31,6 +31,7 @@
 		"prettier-plugin-svelte": "^3.3.0",
 		"svelte": "^5.0.0",
 		"svelte-spa-router": "^3.3.0",
+		"terser": "^5.44.1",
 		"vite": "^7.0.0",
 		"vitest": "^3.0.0"
 	},

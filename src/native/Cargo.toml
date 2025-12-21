@@ -45,6 +45,12 @@ default = ["custom-protocol"]
 # DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]
 
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = 3
+strip = true
+
 [lib]
 name = "syng_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]

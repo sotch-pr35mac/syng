@@ -11,8 +11,15 @@ export default defineConfig({
 	build: {
 		outDir: 'src/views/templates/build',
 		emptyOutDir: true,
-		sourcemap: true,
+		sourcemap: process.env.NODE_ENV !== 'production',
 		cssCodeSplit: false,
+		minify: 'terser',
+		terserOptions: {
+			compress: {
+				drop_console: true,
+				drop_debugger: true
+			}
+		},
 		rollupOptions: {
 			input: resolve(import.meta.dirname, 'src/views/templates/app.js'),
 			output: {
