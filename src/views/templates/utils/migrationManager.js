@@ -42,7 +42,7 @@ async function ensureAppDataDirExists() {
 		// Using empty string as path creates the base AppData directory itself
 		await mkdir('', {
 			baseDir: BaseDirectory.AppData,
-			recursive: true
+			recursive: true,
 		});
 	} catch (e) {
 		// Directory may already exist, which is fine
@@ -73,10 +73,10 @@ export async function exportMigrationData(preferenceManager, bookmarkManager) {
 		version: MIGRATION_VERSION,
 		exportedAt: new Date().toISOString(),
 		databases: {
-			config: configData.rows.map(row => row.doc),
-			wordLists: listData.rows.map(row => row.doc),
-			bookmarks: bookmarkData.rows.map(row => row.doc)
-		}
+			config: configData.rows.map((row) => row.doc),
+			wordLists: listData.rows.map((row) => row.doc),
+			bookmarks: bookmarkData.rows.map((row) => row.doc),
+		},
 	};
 
 	// Ensure the app data directory exists
@@ -133,7 +133,9 @@ export async function importMigrationData(preferenceManager, bookmarkManager) {
 	const fileContent = await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
 	const migrationData = JSON.parse(fileContent);
 
-	console.log(`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`);
+	console.log(
+		`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`
+	);
 
 	// Import config documents
 	for (const doc of migrationData.databases.config) {
@@ -201,7 +203,9 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
 	const isEmpty = await isDatabaseEmpty(bookmarkManager);
 	const fileExists = await migrationFileExists();
 
-	console.log(`Migration check: database empty = ${isEmpty}, migration file exists = ${fileExists}`);
+	console.log(
+		`Migration check: database empty = ${isEmpty}, migration file exists = ${fileExists}`
+	);
 
 	if (isEmpty && fileExists) {
 		console.log('Performing migration from backup file...');
