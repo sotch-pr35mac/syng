@@ -83,44 +83,38 @@ Structure:
 | `src/views/templates/utils/migrationManager.js` | Core migration logic (export, import, hooks) |
 | `src/views/templates/utils/startup.js` | Integrates migration into app startup |
 
-## Assumptions & Requirements for Tauri 2 Upgrade
+## Tauri 2 Upgrade Status
 
-When you upgrade to Tauri 2, the migration should work automatically with **no additional code changes** required, assuming:
+✅ **The migration code has been updated for Tauri 2!** The following changes have been implemented:
 
 ### 1. Bundle Identifier Remains the Same
 
-The app data directory is determined by the bundle identifier. Ensure `tauri.conf.json` keeps:
+The app data directory is determined by the bundle identifier. The `tauri.conf.json` maintains:
 
 ```json
 {
-  "tauri": {
-    "bundle": {
-      "identifier": "org.syng.app"
-    }
-  }
+  "identifier": "org.syng.app"
 }
 ```
 
-If this changes, the migration file won't be found.
+### 2. Tauri 2 API Migration Completed
 
-### 2. Tauri 2 API Compatibility
+The migration code has been updated from Tauri 1 to Tauri 2 APIs:
 
-The migration code uses these Tauri APIs:
+| Tauri 1 API | Tauri 2 Implementation | Status |
+|-------------|------------------------|--------|
+| `window.__TAURI__.path.appDataDir()` | `import { appDataDir } from '@tauri-apps/api/path'` | ✅ Updated |
+| `window.__TAURI__.fs.readTextFile()` | `import { readTextFile } from '@tauri-apps/plugin-fs'` | ✅ Updated |
+| `window.__TAURI__.fs.writeTextFile()` | `import { writeTextFile } from '@tauri-apps/plugin-fs'` | ✅ Updated |
+| `window.__TAURI__.fs.createDir()` | `import { mkdir } from '@tauri-apps/plugin-fs'` | ✅ Updated |
+| `window.__TAURI__.event.listen()` | `import { listen } from '@tauri-apps/api/event'` | ✅ Updated |
+| `window.__TAURI__.window.appWindow.close()` | `import { getCurrentWindow } from '@tauri-apps/api/window'` | ✅ Updated |
 
-| Tauri 1 API | Tauri 2 Equivalent | Notes |
-|-------------|-------------------|-------|
-| `window.__TAURI__.path.appDataDir()` | `import { appDataDir } from '@tauri-apps/api/path'` | May need import style change |
-| `window.__TAURI__.fs.readTextFile()` | `import { readTextFile } from '@tauri-apps/plugin-fs'` | Tauri 2 uses plugins |
-| `window.__TAURI__.fs.writeTextFile()` | `import { writeTextFile } from '@tauri-apps/plugin-fs'` | Tauri 2 uses plugins |
-| `window.__TAURI__.fs.createDir()` | `import { mkdir } from '@tauri-apps/plugin-fs'` | Function renamed |
-| `window.__TAURI__.event.listen()` | `import { listen } from '@tauri-apps/api/event'` | Similar API |
-| `window.__TAURI__.window.appWindow.close()` | `import { getCurrentWindow } from '@tauri-apps/api/window'` | API change |
+**Additional Changes for Tauri 2:**
 
-**When upgrading to Tauri 2**, you may need to:
-
-1. Update imports in `migrationManager.js` to use the new Tauri 2 module-based APIs
-2. Add the `fs` plugin to your Tauri 2 configuration
-3. Update the `close()` call to use the new window API
+1. ✅ Updated `migrationManager.js` to use ES module imports instead of `window.__TAURI__`
+2. ✅ Changed `dir` option to `baseDir` for filesystem operations
+3. ✅ Added `fs:allow-appdata-read-recursive` and `fs:allow-appdata-write-recursive` permissions to `capabilities/migrated.json`
 
 ### 3. PouchDB Continues to Work
 
