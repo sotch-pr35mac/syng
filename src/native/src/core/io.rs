@@ -1,4 +1,4 @@
-use crate::dictionary::find_best_match;
+use super::dictionary::find_best_match;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
