@@ -1,15 +1,15 @@
 {
-	"version": "0.0.6",
-	"notes": "Syng 2 beta 6",
-	"pub_date": "2024-03-20T00:21:52Z",
+	"version": "0.0.7",
+	"notes": "Syng 2 beta 7",
+	"pub_date": "2025-12-21T00:00:00Z",
 	"platforms": {
 		"darwin-aarch64": {
-			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4endvME1vdHgydGttWXhhOGJiaHJPMTJrU1YvUkx3STFhMy9LRHhuRjAxRGVSUnRRUU5UWWpqYzRheXV1NTEvNDQ0QlZsOVhyNlJCenMzY25FNW0yREFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEwOTUyMjIzCWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKZGtnNG1aWXBjbWVkUGhnaHgrMzFKWlhsb2ZyTWxXVjJiVlE1V3lnbS9kcVVnbEdZYUEzWlp3RkE4WlB1OXdNVWtwNFIxaFN4SXdMSENVM0t2djVsQ3c9PQo=",
-			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-6/Syng.20.0.6_aarch64.app.tar.gz"
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4ejNZOVhLako1dkZhZVpxVDdydS9zVzE0aGZ0amZVL3VBZGVrYWdENFBrR3RRZVVXeDYvUXRyTHVwdFV6MXVPMnBmN2Nlb1VaNFQzY3hYN2VnSGhtNndFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY1ODgxMzc2CWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKeGNDM2oxNTZsek1lT3VrY29yZFlhWjN4R2l3SEhPZTNyNHJOK2liZExWdVgvT21IUFk1WGpQOVZtbE0xREVxWVZyZCtKVzFINVZocVVMNzBrVVhiQ0E9PQo=",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-7/Syng.2_0.0.7_aarch64.app.tar.gz"
 		},
 		"darwin-x86_64": {
-			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4ei9lWW5BYUZPT2RLSFBQcFA1d0ZsRXZVZDNSR3dDcUtrUWJIOE1ubm1BZm54NkpuZGZPUktkRjJqNUpOaytCc3h2eWpxZUhOKzNyRFpKUGRUK296U2drPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEwOTUyNjA1CWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKN3ozUmZKRGczOERSdk9ST2F2Y283VzY4NEl2QW5HV2hDMU9zSUJxVlRxOFY4UUtKejQ4YTgxVVdoVXFxeSsrS1ZHc3dkUDc0SjFxWGNIaEVraEx6RHc9PQo=",
-			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-6/Syng.2_0.0.6_x64.app.tar.gz"
+			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4ejNxbitLaEFZbEtTTmVSeXYzaFk5UzRKTktXbUk0d29vTmQxS0ZCZXVUR3BkVW1ZNjRXeUhqTS8wOEdNZWQwTjRjY0J3L0k5U2daZnRDSUIwSXhsand3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzY1ODgxNDkwCWZpbGU6U3luZyAyLmFwcC50YXIuZ3oKaStvWDJBUm4xcXdDbDlETTAxeGJ5TTdxMXdUTlFmWXhPajZrNGlEcWlLL0xMRlRobDhrU2lVZUNHM2J0ZWNFbXRSTm4wMjBweW9Yd1Nra2JtaDZtQWc9PQo=",
+			"url": "https://github.com/sotch-pr35mac/syng/releases/download/v2.0.0-beta-7/Syng.2_0.0.7_x64.app.tar.gz"
 		},
 		"linux-x86_64": {
 			"signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSQW9QaThSejl4ejJsOTNuVTdlY1Q3UFBEcWg1U1RkMWRUVkJodGM5Z2VnbWIxdHE5WE1UVlc5V0VXNlZObjVHOGRscjFYbGx0bVFlTkhaWG9KWkZPczMyQVByL1VhYlFFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzEwOTQ2NDI2CWZpbGU6c3luZy0yXzAuMC42X2FtZDY0LkFwcEltYWdlLnRhci5negpWR2VIYXN5aWVNTFl3RDE4NmFhSVArVkNQWmVmNzR2OHVsQ0xMd0RtYm44RWZYZU43bzlLYkdLdnQwYkppWDFNMHpwQmdzdkJBNmZtcTJtUHdWdTREZz09Cg==",
