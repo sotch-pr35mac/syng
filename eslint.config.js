@@ -2,10 +2,25 @@ import js from '@eslint/js';
 import svelte from 'eslint-plugin-svelte';
 import promise from 'eslint-plugin-promise';
 import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default [
 	js.configs.recommended,
 	...svelte.configs.recommended,
+	{
+		files: ['**/*.ts'],
+		languageOptions: {
+			parser: tseslint.parser,
+		},
+	},
+	{
+		files: ['**/*.svelte'],
+		languageOptions: {
+			parserOptions: {
+				parser: tseslint.parser,
+			},
+		},
+	},
 	{
 		ignores: [
 			'src/views/templates/build/**',

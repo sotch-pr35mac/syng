@@ -4,10 +4,11 @@
 	"description": "An open source, cross platform, Chinese study app.",
 	"scripts": {
 		"build": "vite build",
+		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
 		"lint": "eslint src/views",
 		"fix-lint": "eslint src/views --fix",
-		"format": "prettier --write \"src/views/**/*.{js,svelte}\"",
-		"format:check": "prettier --check \"src/views/**/*.{js,svelte}\"",
+		"format": "prettier --write \"src/views/**/*.{js,ts,svelte}\"",
+		"format:check": "prettier --check \"src/views/**/*.{js,ts,svelte}\"",
 		"test": "vitest run",
 		"test-coverage": "vitest run --coverage"
 	},
@@ -30,8 +31,11 @@
 		"prettier": "^3.4.0",
 		"prettier-plugin-svelte": "^3.3.0",
 		"svelte": "^5.0.0",
+		"svelte-check": "^4.4.6",
 		"svelte-spa-router": "^3.3.0",
 		"terser": "^5.44.1",
+		"typescript": "^6.0.2",
+		"typescript-eslint": "^8.58.1",
 		"vite": "^7.0.0",
 		"vitest": "^3.0.0"
 	},
