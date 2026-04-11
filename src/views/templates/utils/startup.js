@@ -98,7 +98,7 @@ export const runStartupActions = () => {
 
 			// Migration: Setup shutdown hook to save data when app closes
 			// This ensures fresh data is available for future migrations
-			setupShutdownHook(window.preferenceManager, window.bookmarkManager);
+			await setupShutdownHook(window.preferenceManager, window.bookmarkManager);
 
 			// Migration: Also export a backup on startup as a safety net
 			// In case the app crashes before a clean shutdown

@@ -15,6 +15,7 @@ use core::{
     import_list_data, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
     score_quiz, start_quiz, QuizState,
 };
+use tauri::Manager;
 use windows::open_character_window;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -78,5 +79,33 @@ pub fn run() {
     builder
         .build(app_context)
         .expect("error while building tauri application")
-        .run(|_, _| {});
+        .run(|app_handle, event| {
+            #[cfg(target_os = "macos")]
+            match event {
+                // Dock icon: NSApplicationDelegate applicationShouldHandleReopen
+                tauri::RunEvent::Reopen { .. } => {
+                    if let Some(window) = app_handle.get_webview_window("syng") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+                // Cmd-Tab and other activation paths do not always emit Reopen; if every
+                // webview is hidden, bring the main window back when the app resumes.
+                tauri::RunEvent::Resumed => {
+                    let any_visible = app_handle
+                        .webview_windows()
+                        .values()
+                        .any(|w| w.is_visible().unwrap_or(false));
+                    if !any_visible {
+                        if let Some(window) = app_handle.get_webview_window("syng") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                }
+                _ => {}
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (app_handle, event);
+        });
 }

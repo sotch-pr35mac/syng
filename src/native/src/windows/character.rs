@@ -4,7 +4,7 @@
 //! stroke order and character information.
 
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager, WebviewWindow};
+use tauri::{Emitter, Manager, WebviewWindow, WindowEvent};
 
 /// Data structure for displaying character information.
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -25,14 +25,21 @@ pub fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindow
 /// Sets up the character window with appropriate event handlers.
 #[cfg(desktop)]
 pub fn setup(character_window: &WebviewWindow) {
-    // TEMPORARILY DISABLED FOR TESTING
-    // #[cfg(target_os = "macos")]
-    // {
-    //     use crate::platform::{ToolbarThickness, WindowExt};
-    //     character_window.set_transparent_titlebar(ToolbarThickness::Medium);
-    // }
+    #[cfg(target_os = "macos")]
+    {
+        use crate::platform::{ToolbarThickness, WindowExt};
+        character_window.set_transparent_titlebar(ToolbarThickness::Medium);
+    }
 
     #[cfg(debug_assertions)]
     character_window.open_devtools();
+
+    let window = character_window.clone();
+    character_window.on_window_event(move |event| {
+        if let WindowEvent::CloseRequested { api, .. } = event {
+            api.prevent_close();
+            let _ = window.hide();
+        }
+    });
 }
 

@@ -16,7 +16,8 @@
 
 import { appDataDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { platform } from '@tauri-apps/plugin-os';
 
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
 const MIGRATION_VERSION = 1;
@@ -218,20 +219,41 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
 /**
  * Setup the shutdown hook to export data before the app closes.
  * This ensures the most up-to-date data is saved for potential future migration.
+ *
+ * On macOS, the Rust CloseRequested handler calls prevent_close() + hide() to keep
+ * the window alive in the dock. However, because a JS listener is registered here,
+ * Tauri also emits tauri://close-requested to JS. We must call event.preventDefault()
+ * on macOS to stop onCloseRequested from calling destroy() after this handler,
+ * which would force-destroy the window and break the dock reopen flow.
+ *
+ * Tauri’s `onCloseRequested` implementation awaits your handler, then calls
+ * `destroy()` only if `preventDefault()` was not set. An `async` handler still
+ * runs its synchronous code before the first `await`, so `preventDefault()` at
+ * the top of an async function would work in theory; we use a **non-async**
+ * handler anyway so the intent is obvious and `preventDefault()` cannot
+ * accidentally move below a future `await` during edits.
+ *
+ * We also `await` listener registration so the close hook is active before the
+ * user can interact with the window, and we use {@link getCurrentWebviewWindow}
+ * because Tauri 2 windows are webview windows.
+ *
  * @param {PreferenceManager} preferenceManager - The preference manager instance
  * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
  */
-export function setupShutdownHook(preferenceManager, bookmarkManager) {
-	getCurrentWindow().listen('tauri://close-requested', async () => {
-		console.log('App closing, exporting migration data...');
-		try {
-			await exportMigrationData(preferenceManager, bookmarkManager);
-		} catch (e) {
-			console.error('Error exporting migration data on shutdown:', e);
-		} finally {
-			// Always close the window, even if export fails
-			await getCurrentWindow().close();
+export async function setupShutdownHook(preferenceManager, bookmarkManager) {
+	await getCurrentWebviewWindow().onCloseRequested((event) => {
+		if (platform() === 'macos') {
+			event.preventDefault();
 		}
+
+		void (async () => {
+			console.log('App closing, exporting migration data...');
+			try {
+				await exportMigrationData(preferenceManager, bookmarkManager);
+			} catch (e) {
+				console.error('Error exporting migration data on shutdown:', e);
+			}
+		})();
 	});
 	console.log('Shutdown hook registered for migration data export');
 }

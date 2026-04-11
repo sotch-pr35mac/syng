@@ -2,7 +2,7 @@
 //!
 //! This module handles the creation and event handling for the application menu.
 
-use tauri::menu::{MenuBuilder, SubmenuBuilder};
+use tauri::menu::{MenuBuilder, PredefinedMenuItem, Submenu, SubmenuBuilder};
 use tauri::Runtime;
 use tauri_plugin_opener::OpenerExt;
 
@@ -17,6 +17,25 @@ pub fn create<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu
         .text("bug", "Report Bug")
         .build()?;
 
+    #[cfg(target_os = "macos")]
+    {
+        let title = app
+            .config()
+            .product_name
+            .clone()
+            .unwrap_or_else(|| app.package_info().name.clone());
+        let app_menu = Submenu::with_items(
+            app,
+            title,
+            true,
+            &[&PredefinedMenuItem::quit(app, None)?],
+        )?;
+        return MenuBuilder::new(app)
+            .items(&[&app_menu, &help_submenu])
+            .build();
+    }
+
+    #[cfg(not(target_os = "macos"))]
     MenuBuilder::new(app).items(&[&help_submenu]).build()
 }
 
