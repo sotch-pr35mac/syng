@@ -16,7 +16,6 @@
 
 import { appDataDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
-import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
@@ -223,7 +222,7 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
  * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
  */
 export function setupShutdownHook(preferenceManager, bookmarkManager) {
-	listen('tauri://close-requested', async () => {
+	getCurrentWindow().listen('tauri://close-requested', async () => {
 		console.log('App closing, exporting migration data...');
 		try {
 			await exportMigrationData(preferenceManager, bookmarkManager);

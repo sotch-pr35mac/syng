@@ -76,6 +76,7 @@ pub fn run() {
     }
 
     builder
-        .run(app_context)
-        .expect("error while running tauri application");
+        .build(app_context)
+        .expect("error while building tauri application")
+        .run(|_, _| {});
 }

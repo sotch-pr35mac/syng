@@ -8,7 +8,7 @@
 	],
 	"local": true,
 	"windows": [
-		"main",
+		"syng",
 		"characters"
 	],
 	"permissions": [
