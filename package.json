@@ -47,6 +47,7 @@
 		"@tauri-apps/plugin-process": "^2.3.1",
 		"@tauri-apps/plugin-updater": "^2.9.0",
 		"elastic-scroll-polyfill": "^2.1.0",
-		"hanzi-writer": "^3.7.3"
+		"hanzi-writer": "^3.7.3",
+		"marked": "^18.0.0"
 	}
 }

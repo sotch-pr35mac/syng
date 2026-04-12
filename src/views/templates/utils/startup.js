@@ -17,7 +17,7 @@ import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
 import { invoke } from '@tauri-apps/api/core';
 import { platform } from '@tauri-apps/plugin-os';
-import { check } from '@tauri-apps/plugin-updater';
+import { checkForUpdate } from './updateManager.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -115,41 +115,9 @@ export const runStartupActions = () => {
 
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.
-
-			//DEBUG
-			const debugUpdate = { version: '99.99.99', body: 'Debug: simulated update available' };
-			window.updateVersion = debugUpdate.version;
-			window.updateReleaseNotes = debugUpdate.body;
-			window.updateStatusAvailable = true;
-			window.updateAvailable = true;
-			window.pendingUpdate = debugUpdate;
-			document.dispatchEvent(
-				new CustomEvent('update-check-complete', { detail: { updateAvailable: true } })
-			);
-			// /DEBUG
-
-			// check()
-			// 	.then((update) => {
-			// 		if (update) {
-			// 			window.updateVersion = update.version;
-			// 			window.updateReleaseNotes = update.body || '';
-			// 			window.updateStatusAvailable = true;
-			// 			window.updateAvailable = true;
-			// 			window.pendingUpdate = update;
-			// 		} else {
-			// 			window.updateAvailable = false;
-			// 			window.updateStatusAvailable = true;
-			// 		}
-			// 		document.dispatchEvent(
-			// 			new CustomEvent('update-check-complete', {
-			// 				detail: { updateAvailable: !!update },
-			// 			})
-			// 		);
-			// 		return undefined;
-			// 	})
-			// 	.catch((e) => {
-			// 		console.error('Startup update check failed:', e);
-			// 	});
+			checkForUpdate().catch((e) => {
+				console.error('Startup update check failed:', e);
+			});
 
 			return undefined;
 		})
