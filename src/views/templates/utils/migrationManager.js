@@ -226,7 +226,7 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
  * on macOS to stop onCloseRequested from calling destroy() after this handler,
  * which would force-destroy the window and break the dock reopen flow.
  *
- * Tauri’s `onCloseRequested` implementation awaits your handler, then calls
+ * Tauri’s `onCloseRequested` implementation awaits the handler, then calls
  * `destroy()` only if `preventDefault()` was not set. An `async` handler still
  * runs its synchronous code before the first `await`, so `preventDefault()` at
  * the top of an async function would work in theory; we use a **non-async**
