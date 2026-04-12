@@ -75,6 +75,7 @@
 	let enableBetaFeatures = $state(false);
 	let enableTransparency = $state(false);
 	let trafficLightMargin = $state(isMacos);
+	let updateAvailable = $state(false);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
 	onMount(() => {
@@ -95,10 +96,21 @@
 				});
 		}
 
+		// Seed from window in case the startup update check already finished
+		if (window.updateStatusAvailable) {
+			updateAvailable = window.updateAvailable || false;
+		}
+
+		const onUpdateCheckComplete = (e) => {
+			updateAvailable = e.detail.updateAvailable;
+		};
+		document.addEventListener('update-check-complete', onUpdateCheckComplete);
+
 		return () => {
 			if (unlisten) {
 				unlisten();
 			}
+			document.removeEventListener('update-check-complete', onUpdateCheckComplete);
 		};
 	});
 
@@ -143,7 +155,10 @@
 	<div class="navigation--secondary-nav">
 		{#each secondaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
-				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
+				<a
+					href={`#/${navItem.link}`}
+					class="sy-tooltip--container"
+				>
 					<span
 						class="navigation--item"
 						use:active={{
@@ -152,6 +167,9 @@
 						}}
 					>
 						<navItem.icon size={navItem.size} />
+						{#if navItem.link === 'settings' && updateAvailable}
+							<span class="navigation--badge"></span>
+						{/if}
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-right">
 						<p>
@@ -201,6 +219,17 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		position: relative;
+	}
+	.navigation--badge {
+		position: absolute;
+		top: 4px;
+		right: 4px;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background-color: var(--sy-color--blue);
+		pointer-events: none;
 	}
 	.navigation--item:hover {
 		color: var(--sy-color--blue);
