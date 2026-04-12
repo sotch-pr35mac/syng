@@ -42,4 +42,3 @@ pub fn setup(character_window: &WebviewWindow) {
         }
     });
 }
-

@@ -155,10 +155,7 @@
 	<div class="navigation--secondary-nav">
 		{#each secondaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
-				<a
-					href={`#/${navItem.link}`}
-					class="sy-tooltip--container"
-				>
+				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
 					<span
 						class="navigation--item"
 						use:active={{

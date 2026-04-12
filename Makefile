@@ -21,6 +21,7 @@ lint:
 	cd src/native && cargo fmt --check
 	npm run format:check
 	npm run lint
+	npm run typecheck
 
 fix-lint:
 	cd src/native && cargo fmt

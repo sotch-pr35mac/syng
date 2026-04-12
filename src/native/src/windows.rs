@@ -26,4 +26,3 @@ pub fn setup(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

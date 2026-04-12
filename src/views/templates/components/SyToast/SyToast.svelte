@@ -37,11 +37,14 @@
 		ondismiss = () => {},
 	}: Props = $props();
 
+	const DISMISS_TIMEOUT_MS = 8000;
+
 	$effect(() => {
-		if (visible) {
-			const timer = setTimeout(() => ondismiss(), 8000);
-			return () => clearTimeout(timer);
+		if (!visible) {
+			return undefined;
 		}
+		const timer = setTimeout(() => ondismiss(), DISMISS_TIMEOUT_MS);
+		return () => clearTimeout(timer);
 	});
 </script>
 

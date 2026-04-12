@@ -24,12 +24,8 @@ pub fn create<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu
             .product_name
             .clone()
             .unwrap_or_else(|| app.package_info().name.clone());
-        let app_menu = Submenu::with_items(
-            app,
-            title,
-            true,
-            &[&PredefinedMenuItem::quit(app, None)?],
-        )?;
+        let app_menu =
+            Submenu::with_items(app, title, true, &[&PredefinedMenuItem::quit(app, None)?])?;
         return MenuBuilder::new(app)
             .items(&[&app_menu, &help_submenu])
             .build();
@@ -53,4 +49,3 @@ pub fn handle_event<R: Runtime>(app: &tauri::AppHandle<R>, event: &tauri::menu::
         app.opener().open_url(url, None::<&str>).unwrap();
     }
 }
-

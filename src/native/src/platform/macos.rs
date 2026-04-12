@@ -123,4 +123,3 @@ macro_rules! impl_window_ext {
 
 impl_window_ext!(Window<R>);
 impl_window_ext!(WebviewWindow<R>);
-

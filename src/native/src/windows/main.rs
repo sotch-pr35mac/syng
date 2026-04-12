@@ -61,4 +61,3 @@ pub fn setup(app: &tauri::App) {
     #[cfg(debug_assertions)]
     main_window.open_devtools();
 }
-

@@ -15,4 +15,3 @@ pub use io::{export_list_data, import_list_data};
 pub use quiz::{
     answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
 };
-

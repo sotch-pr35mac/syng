@@ -6,7 +6,7 @@
     "linux"
   ],
   "windows": [
-    "syng"
+    "main"
   ],
   "permissions": [
     "global-shortcut:default",

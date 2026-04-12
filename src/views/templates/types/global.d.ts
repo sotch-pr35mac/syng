@@ -1,6 +1,7 @@
 // Global Window augmentations for app-wide cached state.
 // Properties set by startup.js and updateManager.ts and read across components.
 
+// eslint-disable-next-line no-unused-vars
 interface Window {
 	// Update state
 	updateVersion: string;

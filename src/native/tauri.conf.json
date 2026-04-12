@@ -62,7 +62,7 @@
 	"app": {
 		"windows": [
 			{
-				"label": "syng",
+				"label": "main",
 				"fullscreen": false,
 				"height": 655,
 				"width": 1110,

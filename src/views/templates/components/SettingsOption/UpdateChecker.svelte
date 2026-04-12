@@ -1,6 +1,7 @@
 <script>
 	import { handleError, checkForUpdate, installPendingUpdate } from '../../utils/';
 	import { marked } from 'marked';
+	import DOMPurify from 'dompurify';
 	import SyButton from '../SyButton/SyButton.svelte';
 
 	let currentVersion = $state(window.version || '');
@@ -93,7 +94,8 @@
 			<span class="update-checker--status--subtitle">Version {updateVersion}</span>
 			{#if releaseNotes}
 				<div class="update-checker--release-notes sy-text--selectable">
-					{@html marked(releaseNotes)}
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html DOMPurify.sanitize(String(marked(releaseNotes)))}
 				</div>
 			{/if}
 			<span class="update-checker--update-button">

@@ -23,7 +23,9 @@
 	let toastMessage = $state('A new version of Syng is available.');
 
 	const buildToastMessage = () =>
-		window.updateVersion ? `Syng ${window.updateVersion} is available.` : 'A new version of Syng is available.';
+		window.updateVersion
+			? `Syng ${window.updateVersion} is available.`
+			: 'A new version of Syng is available.';
 
 	onMount(() => {
 		// Seed from window in case the startup update check already finished before mount
