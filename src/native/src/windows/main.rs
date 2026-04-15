@@ -14,7 +14,7 @@ use crate::platform::{WindowExt, WINDOW_CONTROL_PAD_X, WINDOW_CONTROL_PAD_Y};
 /// - Window resize behavior (redraws traffic lights on macOS)
 /// - DevTools in debug mode
 pub fn setup(app: &tauri::App) {
-    let main_window = app.get_webview_window("syng").unwrap();
+    let main_window = app.get_webview_window("main").unwrap();
 
     #[cfg(target_os = "macos")]
     {

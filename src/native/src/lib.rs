@@ -84,7 +84,7 @@ pub fn run() {
             match event {
                 // Dock icon: NSApplicationDelegate applicationShouldHandleReopen
                 tauri::RunEvent::Reopen { .. } => {
-                    if let Some(window) = app_handle.get_webview_window("syng") {
+                    if let Some(window) = app_handle.get_webview_window("main") {
                         let _ = window.show();
                         let _ = window.set_focus();
                     }
@@ -97,7 +97,7 @@ pub fn run() {
                         .values()
                         .any(|w| w.is_visible().unwrap_or(false));
                     if !any_visible {
-                        if let Some(window) = app_handle.get_webview_window("syng") {
+                        if let Some(window) = app_handle.get_webview_window("main") {
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
