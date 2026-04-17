@@ -13,7 +13,9 @@ mod windows;
 use core::{
     answer_question, classify, export_list_data, get_incorrect_questions, get_next_question,
     import_list_data, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
-    score_quiz, start_quiz, QuizState,
+    score_quiz, start_quiz, telemetry_get_prefs, telemetry_get_queued_events, telemetry_init,
+    telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
+    QuizState, TelemetryManager,
 };
 use tauri::Manager;
 use windows::open_character_window;
@@ -52,6 +54,7 @@ pub fn run() {
             Ok(())
         })
         .manage(QuizState::default())
+        .manage(TelemetryManager::default())
         .invoke_handler(tauri::generate_handler!(
             init_dictionary,
             classify,
@@ -66,7 +69,14 @@ pub fn run() {
             get_next_question,
             answer_question,
             score_quiz,
-            get_incorrect_questions
+            get_incorrect_questions,
+            telemetry_init,
+            telemetry_track_event,
+            telemetry_track_screen,
+            telemetry_track_error,
+            telemetry_get_queued_events,
+            telemetry_get_prefs,
+            telemetry_set_pref
         ));
 
     #[cfg(desktop)]

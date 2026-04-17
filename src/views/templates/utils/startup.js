@@ -18,6 +18,7 @@ import { inDebugMode } from './process.js';
 import { invoke } from '@tauri-apps/api/core';
 import { platform } from '@tauri-apps/plugin-os';
 import { checkForUpdate } from './updateManager.js';
+import { telemetry } from './telemetry.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -57,6 +58,10 @@ export const runStartupActions = () => {
 		{
 			name: 'init-bookmark-manager',
 			action: window.bookmarkManager.init(),
+		},
+		{
+			name: 'init-telemetry',
+			action: telemetry.init(),
 		},
 	];
 	const parseStartupResults = (results) => {
@@ -112,6 +117,7 @@ export const runStartupActions = () => {
 
 			document.dispatchEvent(new Event('init'));
 			initializeStyles();
+			telemetry.trackEvent('app.started', {}).catch(() => {});
 
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.

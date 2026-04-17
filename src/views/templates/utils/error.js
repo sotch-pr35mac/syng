@@ -1,3 +1,5 @@
+import { telemetry } from './telemetry.js';
+
 /*
  * Description: Handle errors by alerting the user and logging additional information to the Chrome console
  * Param: message: String: The message to display to the user.
@@ -7,5 +9,6 @@ export const handleError = (message, moreInfo) => {
 	if (moreInfo) {
 		console.error(moreInfo);
 	}
+	telemetry.trackError('app.error', message, {}).catch(() => {});
 	alert(message);
 };

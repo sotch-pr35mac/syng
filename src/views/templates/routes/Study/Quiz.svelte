@@ -3,7 +3,7 @@
 	import SyButton from '../../components/SyButton/SyButton.svelte';
 	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
 	import { querystring } from 'svelte-spa-router';
-	import { handleError } from '../../utils';
+	import { handleError, telemetry } from '../../utils';
 	import ResultIndicator from '../../components/ResultIndicator/ResultIndicator.svelte';
 	import SyTimer from '../../components/SyTimer/SyTimer.svelte';
 	import SyProgressLine from '../../components/SyProgressLine/SyProgressLine.svelte';
@@ -83,6 +83,7 @@
 		finalScore = score.score;
 		finalCorrect = score.correct;
 		finalTotal = score.total;
+		telemetry.trackEvent('quiz.completed', {}).catch(() => {});
 	};
 	const handleIncorrectChange = (incorrect) => {
 		finalIncorrect = incorrect;
@@ -142,6 +143,11 @@
 								CHARACTER_QUESTIONS,
 							],
 						},
+					}).then((result) => {
+						telemetry
+							.trackEvent('quiz.started', { word_count: contents.length })
+							.catch(() => {});
+						return result;
 					});
 				})
 				.then(() => {

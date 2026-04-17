@@ -5,7 +5,7 @@
 	import SyButton from '../components/SyButton/SyButton.svelte';
 	import SyList from '../components/SyList/SyList.svelte';
 	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-	import { handleError } from '../utils/';
+	import { handleError, telemetry } from '../utils/';
 	import { invoke } from '@tauri-apps/api/core';
 	import { platform } from '@tauri-apps/plugin-os';
 
@@ -17,6 +17,8 @@
 	let activeWord = $state();
 	let searchLang = $state('EN');
 	let highlightActive = $state(true);
+	const SEARCH_TRACK_DEBOUNCE_MS = 800;
+	let searchTrackDebounce;
 	const enableTransparency = false;
 	const isMacos = platform() === 'macos';
 	// Disabling transparency for now since it doesn't work in Tauri as well as in Electron
@@ -42,6 +44,10 @@
 	};
 	const query = (text, clearable, elementToSelect) => {
 		if (text) {
+			clearTimeout(searchTrackDebounce);
+			searchTrackDebounce = setTimeout(() => {
+				telemetry.trackEvent('search.query', { term_length: text.length }).catch(() => {});
+			}, SEARCH_TRACK_DEBOUNCE_MS);
 			invoke('classify', { text })
 				.then((result) => {
 					searchLang = result;
