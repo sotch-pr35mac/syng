@@ -1,6 +1,6 @@
 <script>
 	import { Check, Brush, Plus } from 'lucide-svelte';
-	import { handleError } from '../../utils/';
+	import { handleError, telemetry } from '../../utils/';
 	import SyButton from '../SyButton/SyButton.svelte';
 	import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
 	import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
@@ -67,9 +67,11 @@
 			});
 	};
 	const removeListMembership = (list, word) => {
+		telemetry.trackEvent('bookmark.removed', {}).catch(() => {});
 		_modifyListMembership('removeFromList', list, word);
 	};
 	const addListMembership = (list, word) => {
+		telemetry.trackEvent('bookmark.added', {}).catch(() => {});
 		_modifyListMembership('addToList', list, word);
 	};
 
@@ -118,6 +120,7 @@
 			component: Brush,
 			tooltip: 'Write Characters',
 			action: () => {
+				telemetry.trackEvent('character_window.opened', {}).catch(() => {});
 				invoke('open_character_window', {
 					word: {
 						traditional: word.traditional,

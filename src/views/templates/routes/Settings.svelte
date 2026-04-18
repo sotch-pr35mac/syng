@@ -1,10 +1,15 @@
 <script>
 	import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
 	import UpdateChecker from '../components/SettingsOption/UpdateChecker.svelte';
+	import TelemetrySettings from '../components/TelemetrySettings/TelemetrySettings.svelte';
+	import SyTab from '../components/SyTab/SyTab.svelte';
 	import SyToggle from '../components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { telemetry } from '../utils';
 
 	const isMacos = platform() === 'macos';
+
+	let activeTab = $state('general');
 
 	const preferences = [
 		{
@@ -13,7 +18,10 @@
 			component: SyToggle,
 			props: {
 				checked: window.preferenceManager.get('beta'),
-				onchange: (checked) => window.preferenceManager.set('beta', checked),
+				onchange: (checked) => {
+					window.preferenceManager.set('beta', checked);
+					telemetry.trackEvent('settings.changed', { setting: 'beta' }).catch(() => {});
+				},
 			},
 		},
 		{
@@ -27,7 +35,12 @@
 			centerLabel: false,
 			component: ToneColorPicker,
 			props: {
-				onchange: (data) => window.preferenceManager.set('toneColors', data),
+				onchange: (data) => {
+					window.preferenceManager.set('toneColors', data);
+					telemetry
+						.trackEvent('settings.changed', { setting: 'toneColors' })
+						.catch(() => {});
+				},
 			},
 		},
 	];
@@ -56,13 +69,28 @@ if(isMacos) {
 	<div class="settings--title" data-tauri-drag-region={isMacos ? true : undefined}>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Settings</h1>
 	</div>
+	<div class="settings--tabs">
+		<SyTab active={activeTab === 'general'} onclick={() => (activeTab = 'general')}>
+			General
+		</SyTab>
+		<SyTab active={activeTab === 'telemetry'} onclick={() => (activeTab = 'telemetry')}>
+			Telemetry
+		</SyTab>
+	</div>
 	<div class="settings--content">
-		{#each preferences as preference (preference.label)}
-			<div class="settings--setting" class:settings--setting--center={preference.centerLabel}>
-				<p>{preference.label}</p>
-				<preference.component {...preference.props} />
-			</div>
-		{/each}
+		{#if activeTab === 'general'}
+			{#each preferences as preference (preference.label)}
+				<div
+					class="settings--setting"
+					class:settings--setting--center={preference.centerLabel}
+				>
+					<p>{preference.label}</p>
+					<preference.component {...preference.props} />
+				</div>
+			{/each}
+		{:else}
+			<TelemetrySettings />
+		{/if}
 	</div>
 </div>
 
@@ -72,14 +100,26 @@ if(isMacos) {
 		background-color: var(--sy-color--white);
 		overflow: hidden;
 		width: -webkit-fill-available;
+		display: flex;
+		flex-direction: column;
 	}
 	.settings--title {
 		padding: var(--sy-space--extra-large) var(--sy-space);
+	}
+	.settings--tabs {
+		display: flex;
+		gap: var(--sy-space--large);
+		padding: 0 var(--sy-space);
+		border-bottom: var(--sy-border);
+		margin-bottom: var(--sy-space--extra-large);
 	}
 	.settings--content {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--extra-large);
+		overflow-y: auto;
+		flex: 1;
+		padding-bottom: var(--sy-space--extra-large);
 	}
 	.settings--setting {
 		display: grid;

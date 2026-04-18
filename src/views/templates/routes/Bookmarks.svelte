@@ -9,7 +9,7 @@
 	import SyList from '../components/SyList/SyList.svelte';
 	import SyModal from '../components/SyModal/SyModal.svelte';
 	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-	import { handleError, resolveNameConflict } from '../utils/';
+	import { handleError, resolveNameConflict, telemetry } from '../utils/';
 	import { invoke } from '@tauri-apps/api/core';
 	import { platform } from '@tauri-apps/plugin-os';
 
@@ -146,6 +146,7 @@
 		window.bookmarkManager
 			.createList(newListName)
 			.then(() => {
+				telemetry.trackEvent('list.created', {}).catch(() => {});
 				updateLists(() => {
 					closeNewModal();
 				});
@@ -178,6 +179,7 @@
 					return window.bookmarkManager
 						.deleteList(activeList)
 						.then(() => {
+							telemetry.trackEvent('list.deleted', {}).catch(() => {});
 							updateActiveList('Bookmarks');
 							updateLists(() => {
 								disableDeleteButton = false;
@@ -207,6 +209,7 @@
 	const exportActiveList = () => {
 		invoke('export_list_data', { name: activeList, data: words })
 			.then(() => {
+				telemetry.trackEvent('list.exported', {}).catch(() => {});
 				return undefined;
 			})
 			.catch((e) => {
@@ -239,6 +242,7 @@
 							return Promise.all(bulkImport);
 						})
 						.then(() => {
+							telemetry.trackEvent('list.imported', {}).catch(() => {});
 							updateLists(() => undefined);
 							return undefined;
 						})

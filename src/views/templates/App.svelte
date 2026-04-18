@@ -12,7 +12,8 @@
 	import Settings from './routes/Settings.svelte';
 	import Study from './routes/Study.svelte';
 	import Tools from './routes/Tools.svelte';
-	import { runStartupActions, handleError, installPendingUpdate } from './utils';
+	import { location } from 'svelte-spa-router';
+	import { runStartupActions, handleError, installPendingUpdate, telemetry } from './utils';
 	import Flashcards from './routes/Study/Flashcards.svelte';
 	import Quiz from './routes/Study/Quiz.svelte';
 
@@ -26,6 +27,13 @@
 		window.updateVersion
 			? `Syng ${window.updateVersion} is available.`
 			: 'A new version of Syng is available.';
+
+	$effect(() => {
+		const screenName = routeScreenNames[$location];
+		if (screenName) {
+			telemetry.trackScreen(screenName).catch(() => {});
+		}
+	});
 
 	onMount(() => {
 		// Seed from window in case the startup update check already finished before mount
@@ -69,6 +77,19 @@
 		'/settings': Settings,
 		'/chat': Chat,
 		'*': NotFound,
+	};
+
+	const routeScreenNames = {
+		'/': 'search',
+		'/read': 'reader',
+		'/bookmarks': 'bookmarks',
+		'/study': 'study',
+		'/study/flashcards': 'flashcards',
+		'/study/quiz': 'quiz',
+		'/tools': 'tools',
+		'/help': 'help',
+		'/settings': 'settings',
+		'/chat': 'chat',
 	};
 </script>
 
