@@ -1,7 +1,7 @@
 <script>
-	import { check } from '@tauri-apps/plugin-updater';
-	import { relaunch } from '@tauri-apps/plugin-process';
-	import { handleError } from '../../utils/';
+	import { handleError, checkForUpdate, installPendingUpdate } from '../../utils/';
+	import { marked } from 'marked';
+	import DOMPurify from 'dompurify';
 	import SyButton from '../SyButton/SyButton.svelte';
 
 	let currentVersion = $state(window.version || '');
@@ -11,9 +11,6 @@
 	let updateAvailable = $state(window.updateAvailable || false);
 	let checking = $state(false);
 	let updating = $state(false);
-
-	// Store the update object so we can call downloadAndInstall on it later
-	let pendingUpdate = $state(window.pendingUpdate || null);
 
 	if (!window.version) {
 		window.__TAURI__.app
@@ -35,7 +32,6 @@
 		knownStatus = false;
 		updateVersion = '';
 		releaseNotes = '';
-		pendingUpdate = null;
 		window.updateAvailable = false;
 		window.updateStatusAvailable = false;
 		window.updateVersion = '';
@@ -46,32 +42,16 @@
 	const updateStatus = () => {
 		checking = true;
 		updating = false;
-		check()
+		checkForUpdate()
 			.then((update) => {
+				knownStatus = true;
+				checking = false;
 				if (update) {
-					// Update the page
 					updateVersion = update.version;
 					releaseNotes = update.body || '';
-					knownStatus = true;
 					updateAvailable = true;
-					checking = false;
-					pendingUpdate = update;
-
-					// Cache the results
-					window.updateVersion = update.version;
-					window.updateReleaseNotes = update.body || '';
-					window.updateStatusAvailable = true;
-					window.updateAvailable = true;
-					window.pendingUpdate = update;
 				} else {
-					// Update the page
-					knownStatus = true;
-					checking = false;
 					updateAvailable = false;
-
-					// Cache the results
-					window.updateAvailable = false;
-					window.updateStatusAvailable = true;
 				}
 				return undefined;
 			})
@@ -86,16 +66,8 @@
 
 	const fetchUpdate = () => {
 		updating = true;
-		if (!pendingUpdate) {
-			resetStatus();
-			handleError('No pending update available.', new Error('No pending update'));
-			return;
-		}
-		pendingUpdate
-			.downloadAndInstall()
-			.then(() => {
-				return relaunch();
-			})
+		installPendingUpdate()
+			.then(() => undefined)
 			.catch((e) => {
 				resetStatus();
 				handleError(
@@ -119,10 +91,13 @@
 		<!-- Button indicating there is an update available. Click it will initiaite the update. -->
 		<div class="update-checker--status update-checker--update-available">
 			<span class="updater-checker--status--title"> Update available </span>
-			<span class="update-checker--status--subtitle">
-				Version {updateVersion}<br />
-				Release Notes: {releaseNotes}
-			</span>
+			<span class="update-checker--status--subtitle">Version {updateVersion}</span>
+			{#if releaseNotes}
+				<div class="update-checker--release-notes sy-text--selectable">
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html DOMPurify.sanitize(String(marked(releaseNotes)))}
+				</div>
+			{/if}
 			<span class="update-checker--update-button">
 				<SyButton
 					color="green"
@@ -168,6 +143,34 @@
 	}
 	.update-checker--update-available {
 		color: var(--sy-color--green);
+	}
+	.update-checker--release-notes {
+		margin-top: var(--sy-space--large);
+		font-size: var(--sy-font-size--small);
+		font-weight: var(--sy-font-weight--light);
+	}
+	.update-checker--release-notes :global(h1),
+	.update-checker--release-notes :global(h2),
+	.update-checker--release-notes :global(h3) {
+		font-size: var(--sy-font-size--small);
+		font-weight: var(--sy-font-weight--bold);
+		margin: var(--sy-space--large) 0 var(--sy-space) 0;
+	}
+	.update-checker--release-notes :global(h1:first-child),
+	.update-checker--release-notes :global(h2:first-child),
+	.update-checker--release-notes :global(h3:first-child) {
+		margin-top: 0;
+	}
+	.update-checker--release-notes :global(p) {
+		margin: 0 0 var(--sy-space) 0;
+	}
+	.update-checker--release-notes :global(ul),
+	.update-checker--release-notes :global(ol) {
+		margin: 0 0 var(--sy-space) 0;
+		padding-left: var(--sy-space--extra-large);
+	}
+	.update-checker--release-notes :global(li) {
+		margin-bottom: var(--sy-space--small);
 	}
 	.update-checker--update-button {
 		margin-top: var(--sy-space--extra-large);

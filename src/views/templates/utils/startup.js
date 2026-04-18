@@ -17,6 +17,7 @@ import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
 import { invoke } from '@tauri-apps/api/core';
 import { platform } from '@tauri-apps/plugin-os';
+import { checkForUpdate } from './updateManager.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -98,7 +99,7 @@ export const runStartupActions = () => {
 
 			// Migration: Setup shutdown hook to save data when app closes
 			// This ensures fresh data is available for future migrations
-			setupShutdownHook(window.preferenceManager, window.bookmarkManager);
+			await setupShutdownHook(window.preferenceManager, window.bookmarkManager);
 
 			// Migration: Also export a backup on startup as a safety net
 			// In case the app crashes before a clean shutdown
@@ -111,6 +112,13 @@ export const runStartupActions = () => {
 
 			document.dispatchEvent(new Event('init'));
 			initializeStyles();
+
+			// Non-blocking update check — results are cached to window and broadcast
+			// via event so Navigation can show a badge without blocking startup.
+			checkForUpdate().catch((e) => {
+				console.error('Startup update check failed:', e);
+			});
+
 			return undefined;
 		})
 		.catch((e) => {

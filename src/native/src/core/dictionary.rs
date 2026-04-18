@@ -45,24 +45,17 @@ pub fn query_by_english(text: String) -> Vec<&'static dictionary::WordEntry> {
 pub fn find_best_match(
     traditional: &str,
     simplified: &str,
-    tone_marks: &Vec<u8>,
+    tone_marks: &[u8],
     en_len: usize,
 ) -> Option<&'static dictionary::WordEntry> {
-    let results = dictionary::query_by_chinese(traditional);
-    let filtered_results: Vec<_> = results
+    dictionary::query_by_chinese(traditional)
         .into_iter()
-        .filter(|result| {
+        .find(|result| {
             result.traditional == traditional
                 && result.simplified == simplified
-                && &result.tone_marks == tone_marks
+                && result.tone_marks == tone_marks
                 && result.english.len() == en_len
         })
-        .collect();
-    if !filtered_results.is_empty() {
-        filtered_results.into_iter().next()
-    } else {
-        None
-    }
 }
 
 #[cfg(test)]
@@ -72,7 +65,7 @@ mod tests {
     #[test]
     fn test_best_match() {
         assert_eq!(
-            find_best_match("上水", "上水", &vec![4 as u8, 3 as u8], 4)
+            find_best_match("上水", "上水", &[4u8, 3u8], 4)
                 .unwrap()
                 .traditional,
             "上水".to_string()
@@ -80,6 +73,6 @@ mod tests {
     }
     #[test]
     fn test_best_match_no_match() {
-        assert_eq!(find_best_match("上水", "水上", &vec![], 1), None);
+        assert_eq!(find_best_match("上水", "水上", &[], 1), None);
     }
 }

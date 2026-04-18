@@ -5,3 +5,4 @@ export * from './name.js';
 export * from './preferenceManager.js';
 export * from './process.js';
 export * from './startup.js';
+export * from './updateManager.js';

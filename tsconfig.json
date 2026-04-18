@@ -1,0 +1,28 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"allowJs": true,
+		"checkJs": false,
+		"strict": false,
+		"noEmit": true,
+		"isolatedModules": true,
+		"resolveJsonModule": true,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": false,
+		"skipLibCheck": true
+	},
+	"include": [
+		"src/views/templates/**/*.ts",
+		"src/views/templates/**/*.svelte",
+		"vite.config.js"
+	],
+	"exclude": [
+		"node_modules",
+		"src/views/templates/build",
+		"src/views/templates/utils/pouchdb-7.3.0.min.js",
+		"src/views/resources/hanzi-writer-data/index.js"
+	]
+}

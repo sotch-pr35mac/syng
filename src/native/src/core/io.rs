@@ -1,4 +1,4 @@
-use crate::dictionary::find_best_match;
+use super::dictionary::find_best_match;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::fs;
@@ -229,7 +229,7 @@ mod tests {
                 "to add some water".to_string(),
                 "to water (a crop etc)".to_string(),
             ],
-            tone_marks: vec![4 as u8, 3 as u8],
+            tone_marks: vec![4u8, 3u8],
             notes: "This is a test".to_string(),
         };
         let converted = BookmarkEntry::from(original);
@@ -249,7 +249,7 @@ mod tests {
                 pinyin_marks: "shàng shuǐ".to_string(),
                 pinyin_numbers: "shang4 shui3".to_string(),
                 simplified: "上水".to_string(),
-                tone_marks: vec![4 as u8, 3 as u8],
+                tone_marks: vec![4u8, 3u8],
                 traditional: "上水".to_string(),
                 word_id: 1669
             }
@@ -262,7 +262,7 @@ mod tests {
             traditional: "上水".to_string(),
             simplified: "上水".to_string(),
             definitions: vec!["Totally made up word.".to_string()],
-            tone_marks: vec![1 as u8, 2 as u8],
+            tone_marks: vec![1u8, 2u8],
             notes: "This word doesn't exist.".to_string(),
         };
         let converted = BookmarkEntry::from(original);
@@ -277,7 +277,7 @@ mod tests {
                 pinyin_marks: "Pinyin not found".to_string(),
                 pinyin_numbers: "Pinyin not found".to_string(),
                 simplified: "上水".to_string(),
-                tone_marks: vec![1 as u8, 2 as u8],
+                tone_marks: vec![1u8, 2u8],
                 traditional: "上水".to_string(),
                 word_id: 0
             }
