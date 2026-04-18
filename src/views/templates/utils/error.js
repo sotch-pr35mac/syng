@@ -5,10 +5,12 @@ import { telemetry } from './telemetry.js';
  * Param: message: String: The message to display to the user.
  * Param: moreInfo: Any: (Optional) Any additional information to log to the console.
  */
-export const handleError = (message, moreInfo) => {
+export const handleError = (message, moreInfo, { silent = false } = {}) => {
 	if (moreInfo) {
 		console.error(moreInfo);
 	}
 	telemetry.trackError('app.error', message, {}).catch(() => {});
-	alert(message);
+	if (!silent) {
+		alert(message);
+	}
 };

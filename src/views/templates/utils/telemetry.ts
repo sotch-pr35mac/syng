@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { version } from '@tauri-apps/plugin-os';
+import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
 
 export interface TelemetryPrefs {
 	enabled: boolean;
@@ -25,20 +26,20 @@ export const telemetry = {
 		} catch {
 			// noop
 		}
-		return invoke('telemetry_init', { osVersion });
+		return invoke(NATIVE_COMMANDS.TELEMETRY.INIT, { osVersion });
 	},
 	trackEvent: (name: string, payload: Record<string, unknown> = {}): Promise<void> =>
-		invoke('telemetry_track_event', { name, payload }),
+		invoke(NATIVE_COMMANDS.TELEMETRY.TRACK_EVENT, { name, payload }),
 	trackScreen: (name: string, payload: Record<string, unknown> = {}): Promise<void> =>
-		invoke('telemetry_track_screen', { name, payload }),
+		invoke(NATIVE_COMMANDS.TELEMETRY.TRACK_SCREEN, { name, payload }),
 	trackError: (
 		name: string,
 		message: string,
 		payload: Record<string, unknown> = {}
-	): Promise<void> => invoke('telemetry_track_error', { name, message, payload }),
+	): Promise<void> => invoke(NATIVE_COMMANDS.TELEMETRY.TRACK_ERROR, { name, message, payload }),
 	getQueuedEvents: (limit = 50): Promise<TelemetryEvent[]> =>
-		invoke('telemetry_get_queued_events', { limit }),
-	getPrefs: (): Promise<TelemetryPrefs> => invoke('telemetry_get_prefs'),
+		invoke(NATIVE_COMMANDS.TELEMETRY.GET_QUEUED_EVENTS, { limit }),
+	getPrefs: (): Promise<TelemetryPrefs> => invoke(NATIVE_COMMANDS.TELEMETRY.GET_PREFS),
 	setPref: (key: string, value: boolean): Promise<void> =>
-		invoke('telemetry_set_pref', { key, value }),
+		invoke(NATIVE_COMMANDS.TELEMETRY.SET_PREF, { key, value }),
 };

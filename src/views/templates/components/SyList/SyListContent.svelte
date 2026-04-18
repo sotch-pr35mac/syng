@@ -1,4 +1,6 @@
 <script>
+	import { isMobile } from '../../utils/device.js';
+
 	/* Component Prop */
 	// The component to render as a list item
 
@@ -12,6 +14,8 @@
 	 * @property {(detail: any) => void} [onevent] - Event callback
 	 */
 
+	const mobile = isMobile();
+
 	/** @type {Props} */
 	const {
 		values = [],
@@ -23,7 +27,7 @@
 	} = $props();
 </script>
 
-<div class="sy-list--container">
+<div class="sy-list--container" class:sy-list--container--mobile={mobile}>
 	{#each values as value, index (index)}
 		{@const SvelteComponent = component}
 		<div class="sy-list--list-item">
@@ -39,6 +43,13 @@
 		background-color: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
 		box-shadow: var(--sy-inner-shadow);
+	}
+	.sy-list--container--mobile {
+		padding: 0;
+		margin: var(--sy-mobile-space--medium) 0;
+		border: var(--sy-mobile-surface-border);
+		box-shadow: none;
+		overflow: hidden;
 	}
 	.sy-list--list-item {
 		border-top: var(--sy-border);

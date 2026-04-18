@@ -1,63 +1,24 @@
 <script>
 	import { ChevronLeft, ArrowLeft, ArrowRight, RotateCw, RotateCcw } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 	import SyButton from '../../components/SyButton/SyButton.svelte';
 	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
 	import { querystring } from 'svelte-spa-router';
-	import { handleError } from '../../utils';
 	import { platform } from '@tauri-apps/plugin-os';
-
-	const EMPTY_LIST_MESSAGE = 'No flashcards in this list';
-	const LOADING_LIST_MESSAGE = 'Loading...';
-	let loading = $state(true);
-
+	import { scrollRestore } from '../../actions/scrollRestore.svelte.js';
+	import {
+		EMPTY_FLASHCARDS_LIST_MESSAGE,
+		LOADING_STUDY_MESSAGE,
+	} from '../../composables/study.js';
+	import { flashcardsRoute } from '../../composables/flashcards.svelte.js';
 	const isMacos = platform() === 'macos';
-	let activeList = undefined;
-	let activeIndex = $state(0);
-	let showDetails = $state(false);
-	let listContent = $state([]);
 	const params = new URLSearchParams($querystring);
-	activeList = params.get('list');
+	const listFromUrl = params.get('list');
+	const lists = $derived(flashcardsRoute.lists);
+	const activeWord = $derived(flashcardsRoute.activeWord);
 
-	// Get the word lists
-	let lists = $state([]);
-	window.bookmarkManager
-		.getLists()
-		.then((wl) => {
-			lists = wl;
-			return undefined;
-		})
-		.catch((e) => {
-			handleError(
-				'There was an error fetching word lists. Check the log for more details.',
-				e
-			);
-		});
-
-	const handleListChange = () => {
-		window.bookmarkManager
-			.getListContent(activeList)
-			.then((contents) => {
-				listContent = contents;
-				loading = false;
-				return undefined;
-			})
-			.catch((e) => {
-				handleError(
-					'There was an error fetching list content. Check the log for more details.',
-					e
-				);
-			});
-	};
-
-	// Call `handleListChange` on mount (activeList doesn't change dynamically)
-	$effect(() => {
-		handleListChange();
-	});
-
-	// Reset showDetails when activeIndex changes
-	$effect(() => {
-		activeIndex; // track dependency
-		showDetails = false;
+	onMount(() => {
+		flashcardsRoute.load(listFromUrl);
 	});
 
 	// Derive left actions based on current state
@@ -66,37 +27,29 @@
 			icon: ChevronLeft,
 			label: 'Exit',
 			disabled: false,
-			action: () => {
-				window.location.hash = '#/study';
-			},
+			action: flashcardsRoute.exit,
 		},
 		{
 			icon: ArrowLeft,
 			label: 'Previous',
-			disabled: activeIndex === 0,
-			action: () => {
-				activeIndex = activeIndex - 1;
-			},
+			disabled: !flashcardsRoute.canGoPrevious,
+			action: flashcardsRoute.previous,
 		},
 	]);
 
 	// Derive right actions based on current state
 	const rightActions = $derived([
 		{
-			icon: showDetails ? RotateCcw : RotateCw,
+			icon: flashcardsRoute.showDetails ? RotateCcw : RotateCw,
 			label: 'Flip',
 			disabled: false,
-			action: () => {
-				showDetails = !showDetails;
-			},
+			action: flashcardsRoute.flip,
 		},
 		{
 			icon: ArrowRight,
 			label: 'Next',
-			disabled: activeIndex === listContent.length - 1,
-			action: () => {
-				activeIndex = activeIndex + 1;
-			},
+			disabled: !flashcardsRoute.canGoNext,
+			action: flashcardsRoute.next,
 		},
 	]);
 </script>
@@ -132,27 +85,24 @@
 			{/each}
 		</div>
 	</div>
-	<div class="flashcard--content">
-		{#if showDetails}
+	<div class="flashcard--content" use:scrollRestore={'flashcard-content'}>
+		{#if flashcardsRoute.showDetails}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">
-					<DictionaryContent
-						word={listContent[activeIndex]}
-						backgroundColor="white"
-						{lists}
-					/>
+					<DictionaryContent word={activeWord} backgroundColor="white" {lists} />
 				</div>
 			</div>
 		{:else}
 			<div class="flashcard--front">
-				{#if listContent.length > 0}
+				{#if flashcardsRoute.listContent.length > 0 && activeWord}
 					<h1>
-						{listContent[activeIndex].simplified}&nbsp;({listContent[activeIndex]
-							.traditional})
+						{activeWord.simplified}&nbsp;({activeWord.traditional})
 					</h1>
 				{:else}
 					<h1>
-						{loading ? LOADING_LIST_MESSAGE : EMPTY_LIST_MESSAGE}
+						{flashcardsRoute.loading
+							? LOADING_STUDY_MESSAGE
+							: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					</h1>
 				{/if}
 			</div>

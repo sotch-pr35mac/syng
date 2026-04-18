@@ -13,6 +13,7 @@ pub const WINDOW_CONTROL_PAD_X: f64 = 17.0;
 pub const WINDOW_CONTROL_PAD_Y: f64 = 28.0;
 
 /// Controls the thickness of the transparent titlebar.
+#[allow(dead_code)]
 pub enum ToolbarThickness {
     /// Thick toolbar with visible title area.
     Thick,

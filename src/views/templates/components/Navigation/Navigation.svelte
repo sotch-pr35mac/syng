@@ -13,6 +13,7 @@
 	import active from 'svelte-spa-router/active';
 	import { handleError } from '../../utils/';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { isIPad } from '../../utils/device.js';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 
 	const primaryNavigation = [
@@ -72,9 +73,10 @@
 	];
 
 	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 	let enableBetaFeatures = $state(false);
 	let enableTransparency = $state(false);
-	let trafficLightMargin = $state(isMacos);
+	let trafficLightMargin = $state(isMacos || isIPadDevice);
 	let updateAvailable = $state(false);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
@@ -92,7 +94,7 @@
 					return undefined;
 				})
 				.catch((err) => {
-					console.error('Error setting up fullscreen listener:', err);
+					handleError('Error setting up fullscreen listener.', err, { silent: true });
 				});
 		}
 
@@ -228,10 +230,12 @@
 		background-color: var(--sy-color--blue);
 		pointer-events: none;
 	}
-	.navigation--item:hover {
-		color: var(--sy-color--blue);
-		transition-property: color;
-		transition-duration: var(--sy-transition-duration);
+	@media (hover: hover) {
+		.navigation--item:hover {
+			color: var(--sy-color--blue);
+			transition-property: color;
+			transition-duration: var(--sy-transition-duration);
+		}
 	}
 	:global(.navigation--item-active) {
 		background-color: var(--sy-color--white);

@@ -24,8 +24,14 @@
 	 * @property {any} [spellcheck] - Spellcheck Prop
 	 * @property {(value: string) => void} [onchange] - Change handler
 	 * @property {(value: string) => void} [onkeyup] - Keyup handler
+	 * @property {(value: string) => void} [oninput] - Input handler
 	 * @property {(event: Event) => void} [onenter] - Enter key handler
 	 */
+
+	import { isMobile } from '../../utils/device.js';
+
+	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
+	const mobile = isMobile();
 
 	/** @type {Props} */
 	const {
@@ -38,6 +44,7 @@
 		spellcheck = undefined,
 		onchange = () => {},
 		onkeyup = () => {},
+		oninput = () => {},
 		onenter = () => {},
 	} = $props();
 	const getClasses = () => {
@@ -46,14 +53,18 @@
 			transparency ? 'sy-text-input--transparency' : '',
 			`sy-text-input--${style}`,
 			`sy-text-input--${size}`,
+			mobile ? 'sy-text-input--mobile' : '',
 		].join(' ');
 	};
 	const handleKeyup = (event) => {
 		if (event.code === 'Enter') {
 			onenter(event);
 		} else {
-			onkeyup(event.srcElement.value);
+			onkeyup(event.currentTarget.value);
 		}
+	};
+	const handleInput = (event) => {
+		oninput(event.currentTarget.value);
 	};
 </script>
 
@@ -63,7 +74,8 @@
 	class={getClasses()}
 	{id}
 	{spellcheck}
-	onchange={(e) => onchange(e.srcElement.value)}
+	onchange={(e) => onchange(e.currentTarget.value)}
+	oninput={handleInput}
 	onkeyup={handleKeyup}
 />
 
@@ -93,12 +105,6 @@
 	.sy-text-input--ghost:focus {
 		outline: none;
 	}
-	.sy-text-input--small {
-		/* TODO */
-	}
-	.sy-text-input--medium {
-		/* TODO */
-	}
 	.sy-text-input--large {
 		font-size: 16px;
 	}
@@ -107,5 +113,13 @@
 	}
 	.sy-text-input--transparency {
 		background-color: rgba(0, 0, 0, 0);
+	}
+	.sy-text-input--mobile {
+		font-size: var(--sy-font-size--mobile-large);
+		min-height: var(--sy-mobile-touch-target);
+	}
+	.sy-text-input--mobile.sy-text-input--standard {
+		border: var(--sy-mobile-surface-border);
+		box-shadow: none;
 	}
 </style>

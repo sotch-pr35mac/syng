@@ -7,6 +7,7 @@
  */
 import elasticScroll from 'elastic-scroll-polyfill';
 import { BookmarkManager } from './bookmarkManager.js';
+import { bookmarksStore } from '../stores/bookmarks.svelte.js';
 import { handleError } from './error.js';
 import {
 	checkAndPerformMigration,
@@ -16,8 +17,9 @@ import {
 import { PreferenceManager } from './preferenceManager.js';
 import { inDebugMode } from './process.js';
 import { invoke } from '@tauri-apps/api/core';
-import { platform } from '@tauri-apps/plugin-os';
 import { checkForUpdate } from './updateManager.js';
+import { isMobile } from './device.js';
+import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
 import { telemetry } from './telemetry.js';
 
 // This should be run on all windows, not just the main window. Therefore
@@ -45,15 +47,11 @@ export const runStartupActions = () => {
 	const startupActions = [
 		{
 			name: 'init-dictionary',
-			action: invoke('init_dictionary'),
+			action: invoke(NATIVE_COMMANDS.DICTIONARY.INIT),
 		},
 		{
 			name: 'init-preference-manager',
 			action: window.preferenceManager.init(),
-		},
-		{
-			name: 'cache-platform',
-			action: () => Promise.resolve(platform()),
 		},
 		{
 			name: 'init-bookmark-manager',
@@ -64,19 +62,6 @@ export const runStartupActions = () => {
 			action: telemetry.init(),
 		},
 	];
-	const parseStartupResults = (results) => {
-		return results.map((result, index) => {
-			return {
-				name: startupActions[index].name,
-				result: result,
-			};
-		});
-	};
-	const findResultByName = (name, results) => {
-		const found = results.find((item) => item.name === name);
-		return found ? found.result : undefined;
-	};
-
 	const initializeStyles = () => {
 		const colorSettings = window.preferenceManager.get('toneColors');
 		if (colorSettings.hasCustomColors) {
@@ -89,17 +74,13 @@ export const runStartupActions = () => {
 	};
 
 	Promise.all(startupActions.map((item) => item.action))
-		.then(async (res) => {
-			const results = parseStartupResults(res);
-			window.platform = findResultByName('cache-platform', results);
-
+		.then(async () => {
 			// Migration: Check if we need to restore from a backup file
 			// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
 			try {
 				await checkAndPerformMigration(window.preferenceManager, window.bookmarkManager);
-			} catch (e) {
-				console.error('Migration check failed:', e);
-				// Non-fatal: continue with fresh/existing data
+			} catch (error) {
+				handleError('Migration check failed', error, { silent: true });
 			}
 
 			// Migration: Setup shutdown hook to save data when app closes
@@ -110,20 +91,28 @@ export const runStartupActions = () => {
 			// In case the app crashes before a clean shutdown
 			try {
 				await exportMigrationData(window.preferenceManager, window.bookmarkManager);
-			} catch (e) {
-				console.error('Startup backup export failed:', e);
-				// Non-fatal: shutdown hook will try again
+			} catch (error) {
+				handleError('Startup backup export failed', error, { silent: true });
 			}
 
 			document.dispatchEvent(new Event('init'));
 			initializeStyles();
 			telemetry.trackEvent('app.started', {}).catch(() => {});
 
+			// Populate the bookmarks store cache now that the manager is ready (and any
+			// migration has completed). Non-blocking — views read reactive `bookmarksStore.lists`
+			// and will update when this resolves.
+			bookmarksStore.refresh().catch((error) => {
+				handleError('Initial bookmarks store load failed', error, { silent: true });
+			});
+
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.
-			checkForUpdate().catch((e) => {
-				console.error('Startup update check failed:', e);
-			});
+			if (!isMobile()) {
+				checkForUpdate().catch((error) => {
+					handleError('Startup update check failed', error, { silent: true });
+				});
+			}
 
 			return undefined;
 		})

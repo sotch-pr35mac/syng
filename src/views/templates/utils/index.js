@@ -1,4 +1,5 @@
 export * from './bookmarkManager.js';
+export * from './device.js';
 export * from './telemetry.js';
 export * from './color.js';
 export * from './error.js';

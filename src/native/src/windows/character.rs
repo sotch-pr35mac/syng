@@ -3,10 +3,13 @@
 //! This module handles the character detail window, which displays
 //! stroke order and character information.
 
+#[cfg(desktop)]
 use serde::{Deserialize, Serialize};
+#[cfg(desktop)]
 use tauri::{Emitter, Manager, WebviewWindow, WindowEvent};
 
 /// Data structure for displaying character information.
+#[cfg(desktop)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CharacterWindowWord {
     pub traditional: String,
@@ -14,11 +17,11 @@ pub struct CharacterWindowWord {
 }
 
 /// Opens the character window and displays the given word.
+#[cfg(desktop)]
 #[tauri::command]
 pub fn open_character_window(app_handle: tauri::AppHandle, word: CharacterWindowWord) {
     let character_window = app_handle.get_webview_window("characters").unwrap();
     character_window.emit("display-characters", word).unwrap();
-    #[cfg(desktop)]
     character_window.show().unwrap();
 }
 

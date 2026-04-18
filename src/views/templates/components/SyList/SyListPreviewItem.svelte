@@ -12,6 +12,11 @@
 	 */
 
 	/** @type {Props} */
+	import { isMobile } from '../../utils/device.js';
+
+	// Optimized for mobile: larger touch targets and row height.
+	const mobile = isMobile();
+
 	const {
 		headline = '',
 		subtitle = '',
@@ -26,11 +31,15 @@
 	const MAX_CONTENT_LENGTH = 25;
 	const MAX_TRUNCATION_LENGTH = 22;
 
-	const truncateContent = (text) =>
+	const truncateContent = (text = '') =>
 		text.length > MAX_CONTENT_LENGTH ? `${text.slice(0, MAX_TRUNCATION_LENGTH)}...` : text;
-	const getClasses = () => ['sy-list-preview-item-container'].join(' ');
+	const getClasses = () =>
+		[
+			'sy-list-preview-item-container',
+			mobile ? 'sy-list-preview-item-container--mobile' : '',
+		].join(' ');
 	const handleKeyup = (e) => {
-		if (e.keycode === ENTER_KEY_CODE) {
+		if (e.key === 'Enter' || e.keyCode === ENTER_KEY_CODE) {
 			onclick?.({ detail: index });
 		}
 	};
@@ -45,15 +54,27 @@
 	onclick={handleClick}
 	onkeyup={handleKeyup}
 >
-	<p class="sy-list-preview-item--text sy-list-preview-item--headline">
-		{headline}
-	</p>
-	<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">
-		{subtitle}
-	</p>
-	<p class="sy-list-preview-item--text sy-list-preview-item--content">
-		{truncateContent(content)}
-	</p>
+	{#if mobile}
+		<p class="sy-list-preview-item--text sy-list-preview-item--topline">
+			<span class="sy-list-preview-item--headline">{headline}</span>
+			{#if subtitle}
+				<span class="sy-list-preview-item--subtitle">{subtitle}</span>
+			{/if}
+		</p>
+		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+			{truncateContent(content)}
+		</p>
+	{:else}
+		<p class="sy-list-preview-item--text sy-list-preview-item--headline">
+			{headline}
+		</p>
+		<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">
+			{subtitle}
+		</p>
+		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+			{truncateContent(content)}
+		</p>
+	{/if}
 </div>
 
 <style>
@@ -78,6 +99,62 @@
 		background-color: var(--sy-color--grey-2);
 		transition-property: background-color, color;
 		transition-duration: var(--sy-transition-duration);
+	}
+	.sy-list-preview-item-container--mobile {
+		box-sizing: border-box;
+		min-height: var(--sy-mobile-list-item-min-height);
+		padding: calc(var(--sy-mobile-space--small) * 3) var(--sy-mobile-space--large);
+		justify-content: center;
+		color: var(--sy-color--black);
+		background-color: var(--sy-color--white);
+		border-bottom: var(--sy-mobile-surface-border);
+	}
+	.sy-list-preview-item-container--mobile:last-child {
+		border-bottom: none;
+	}
+	.sy-list-preview-item-container--mobile:hover {
+		color: var(--sy-color--black);
+		background-color: var(--sy-color--white);
+	}
+	.sy-list-preview-item-container--mobile:active {
+		background-color: var(--sy-mobile-state-pressed);
+	}
+	.sy-list-preview-item-container--mobile.sy-list-preview-item-container--active {
+		color: var(--sy-color--black);
+		background-color: var(--sy-mobile-state-pressed);
+	}
+	.sy-list-preview-item-container--mobile .sy-list-preview-item--text {
+		margin: 0;
+	}
+	.sy-list-preview-item-container--mobile .sy-list-preview-item--topline {
+		display: flex;
+		align-items: baseline;
+		gap: var(--sy-mobile-space--medium);
+		min-width: 0;
+	}
+	.sy-list-preview-item-container--mobile .sy-list-preview-item--headline {
+		flex: 0 1 auto;
+		min-width: 0;
+		color: var(--sy-color--grey-4);
+		font-size: var(--sy-font-size--mobile-extra-large);
+		font-weight: var(--sy-font-weight--medium);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.sy-list-preview-item-container--mobile .sy-list-preview-item--subtitle {
+		flex: 1 1 auto;
+		min-width: 0;
+		color: var(--sy-color--grey-3);
+		font-size: var(--sy-font-size--mobile-small);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.sy-list-preview-item-container--mobile .sy-list-preview-item--content {
+		margin-top: var(--sy-mobile-space--extra-small);
+		color: var(--sy-color--grey-4);
+		font-size: var(--sy-font-size--mobile-small);
 	}
 	.sy-list-preview-item--text {
 		margin: var(--sy-space--small);

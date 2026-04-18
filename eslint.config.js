@@ -54,6 +54,10 @@ export default [
 				global: 'readonly',
 				// App-specific globals
 				PouchDB: 'readonly',
+				// Svelte rune globals are available in .svelte and .svelte.ts files.
+				$derived: 'readonly',
+				$effect: 'readonly',
+				$state: 'readonly',
 			}
 		},
 		rules: {

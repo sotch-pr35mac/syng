@@ -1,29 +1,30 @@
 <script>
+	import { onMount } from 'svelte';
 	import SyList from '../components/SyList/SyList.svelte';
 	import StudyListItem from '../components/StudyListItem/StudyListItem.svelte';
 	import { handleError } from '../utils';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { bookmarksStore } from '../stores/bookmarks.svelte.js';
+	import { studySubRouteStore } from '../stores/studyRoute.svelte.js';
+	import { flashcardsActiveListStore } from '../stores/flashcards.svelte.js';
+	import { isIPad } from '../utils/device.js';
 
 	const isMacos = platform() === 'macos';
-	let lists = $state([]);
+	const isIPadDevice = isIPad();
 	let emptyLists = $state([]);
 
-	// Derive populatedLists from lists and emptyLists
+	onMount(() => {
+		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
+			window.location.hash = `#/study/flashcards?list=${flashcardsActiveListStore.value}`;
+		}
+	});
+
+	// List names come reactively from the shared bookmarks store; only emptyLists needs
+	// to be fetched here because it scans list contents which are not cached.
+	const lists = $derived([...bookmarksStore.lists].sort((a, b) => a.localeCompare(b)));
 	const populatedLists = $derived(lists.filter((list) => !emptyLists.includes(list)));
 
-	window.bookmarkManager
-		.getLists()
-		.then((wordLists) => {
-			lists = wordLists.sort((a, b) => a.localeCompare(b));
-			return undefined;
-		})
-		.catch((e) => {
-			handleError(
-				'There was an error fetching word lists. Check the logs for more details.',
-				e
-			);
-		});
-	window.bookmarkManager
+	bookmarksStore
 		.getEmptyLists()
 		.then((fetchedLists) => {
 			emptyLists = fetchedLists;
@@ -49,7 +50,11 @@
 </script>
 
 <div class="study--container">
-	<div class="study--title" data-tauri-drag-region={isMacos ? true : undefined}>
+	<div
+		class="study--title"
+		class:study--title--ipad={isIPadDevice}
+		data-tauri-drag-region={isMacos ? true : undefined}
+	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
 	<div class="study--content">
@@ -76,6 +81,10 @@
 	}
 	.study--title {
 		padding: var(--sy-space--extra-large) var(--sy-space);
+	}
+	.study--title--ipad {
+		padding-top: var(--sy-space--large);
+		padding-bottom: var(--sy-space--large);
 	}
 	.study--empty {
 		display: flex;

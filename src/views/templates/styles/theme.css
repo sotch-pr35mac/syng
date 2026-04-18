@@ -36,6 +36,11 @@
 	--sy-font-weight--bold: 700;
 	--sy-font-weight--normal: 400;
 	--sy-font-weight--light: 300;
+	--sy-font-size--mobile-small: 0.875rem;
+	--sy-font-size--mobile-medium: 0.9375rem;
+	--sy-font-size--mobile-large: 1rem;
+	--sy-font-size--mobile-extra-large: 1.125rem;
+	--sy-font-size--result-caption: 0.875rem;
 
 	/* Display Sizes (viewport-based for large UI elements) */
 	--sy-font-size--display-extra-large: 14vh;
@@ -50,12 +55,26 @@
 	--sy-space--medium: var(--sy-space);
 	--sy-space--large: calc(var(--sy-space) * 2);
 	--sy-space--extra-large: calc(var(--sy-space) * 4);
+	--sy-mobile-space: 4px;
+	--sy-mobile-space--extra-small: calc(var(--sy-mobile-space) / 2);
+	--sy-mobile-space--small: var(--sy-mobile-space);
+	--sy-mobile-space--medium: calc(var(--sy-mobile-space) * 2);
+	--sy-mobile-space--large: calc(var(--sy-mobile-space) * 4);
+	--sy-mobile-space--extra-large: calc(var(--sy-mobile-space) * 8);
+	--sy-mobile-touch-target: 44px;
+	--sy-mobile-list-item-min-height: 64px;
+	--sy-mobile-bar-exit-row-height: 42px;
+	--sy-mobile-bar-actions-row-height: 58px;
+	--sy-mobile-quiz-option-min-height: 56px;
+	--sy-result-accent-border-width: 4px;
 
 	/* Layering */
 	--sy-z-index--top: 99999999;
 	--sy-z-index--top-1: 99999998;
 	--sy-z-index--top-2: 99999997;
 	--sy-z-index--top-3: 99999996;
+	--sy-z-index--mobile-sheet: 4;
+	--sy-z-index--mobile-nav: 5;
 	--sy-z-index--base-2: 3;
 	--sy-z-index--base-1: 2;
 	--sy-z-index--base: 1;
@@ -88,6 +107,10 @@
 		--sy-shadow--active: 0px 0px 10px rgba(0, 0, 0, 0.10);
 		--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.10);
 		--sy-box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+		--sy-mobile-surface-border: 1px solid rgba(71, 76, 90, 0.12);
+		--sy-mobile-state-pressed: rgba(71, 76, 90, 0.08);
+		--sy-mobile-overlay-shadow: 0px 8px 24px rgba(0, 0, 0, 0.14);
+		--sy-mobile-dock-shadow: 0 -1px 0 rgba(71, 76, 90, 0.12);
 	}
 }
 
@@ -109,16 +132,27 @@
 		/* Shadows */
 		--sy-shadow: 0px 1px 4px rgba(154, 154, 154, 0.50);
 		--sy-shadow--active: 0px 0px 10px rgba(220, 220, 220, 0.25);
-		--sy-inner-shadow: inset 0px 1px 4px rbga(0, 0, 0, 0.10);
-		--sy-box-shadow: 0px 4px 4px rbga(0, 0, 0, 0.05);
+		--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.10);
+		--sy-box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
+		--sy-mobile-surface-border: 1px solid rgba(255, 255, 255, 0.10);
+		--sy-mobile-state-pressed: rgba(255, 255, 255, 0.08);
+		--sy-mobile-overlay-shadow: 0px 8px 24px rgba(0, 0, 0, 0.32);
+		--sy-mobile-dock-shadow: 0 -1px 0 rgba(255, 255, 255, 0.10);
 	}
+}
+
+html {
+	-webkit-touch-callout: none;
+	overscroll-behavior: none;
 }
 
 body {
 	font-family: var(--sy-font-family);
 	color: var(--sy-color--black);
+	background-color: var(--sy-color--grey-2);
 	margin: 0;
 	overflow: hidden;
+	overscroll-behavior: none;
 
 	/* Disable text selection across all browser engines */
 	-webkit-user-select: none;
@@ -130,6 +164,10 @@ body {
 	user-select: none;
 	/* Standard syntax */
 	cursor: default;
+}
+
+* {
+	-webkit-tap-highlight-color: transparent;
 }
 
 /* Utility class for text that should be selectable */

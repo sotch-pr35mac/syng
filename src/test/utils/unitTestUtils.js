@@ -14,11 +14,9 @@ export const wait = act;
 * }
 */
 export const mockDictionary = (lang, entries) => {
-	const query = vi.fn().mockReturnValue(new Promise((res, rej) => {
-		res(entries);
-	}));
+	const query = vi.fn().mockReturnValue(Promise.resolve(entries));
 	return {
-		classify: param => new Promise((res, rej) => res(lang)),
+		classify: _param => Promise.resolve(lang),
 		query,
 		queryByPinyin: query,
 		queryByEnglish: query,
@@ -29,7 +27,7 @@ export const mockDictionary = (lang, entries) => {
 export const mockPreferenceManager = store => {
 	return {
 		get: name => store[name],
-		set: (name, value) => undefined
+		set: (_name, _value) => undefined
 	};
 };
 /*
@@ -45,27 +43,26 @@ export const mockPreferenceManager = store => {
  */
 export const mockBookmarkManager = store => {
 	return {
-		getLists: () => new Promise((res, rej) => res(store.lists)),
-		inList: hash => new Promise((res, rej) => {
+		waitForInit: () => Promise.resolve(),
+		getLists: () => Promise.resolve(store.lists),
+		inList: hash => {
 			const word = store.words.find(w => w.hash === hash);
-			res(word ? word.lists : []);
-		}),
-		getListContent: listName => new Promise((res, rej) => {
+			return Promise.resolve(word ? word.lists : []);
+		},
+		getListContent: listName => {
 			const words = store.words.filter(w => w.lists.includes(listName));
-			res(words);
-		})
+			return Promise.resolve(words);
+		}
 	};
 };
 
 export const mockGlobalTauri = options => {
 	return {
 		invoke: (fnName, value) => {
-			return new Promise((res, rej) => {
-				res(options.invoke[fnName](value));
-			});
+			return Promise.resolve(options.invoke[fnName](value));
 		},
 		os: {
-			platform: () => new Promise((res, rej) => res(options.platform || 'other'))
+			platform: () => Promise.resolve(options.platform || 'other')
 		},
 		event: {
 			listen: (e, cb) => wait(() => cb({ payload: options.events[e] }))

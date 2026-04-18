@@ -27,9 +27,11 @@
 	transition: opacity var(--sy-transition-duraction);
 }
 
-.sy-tooltip--container:hover .sy-tooltip--body {
-	visibility: visible; 
-	opacity: 1;
+@media (hover: hover) {
+	.sy-tooltip--container:hover .sy-tooltip--body {
+		visibility: visible;
+		opacity: 1;
+	}
 }
 
 .sy-tooltip--body-right {

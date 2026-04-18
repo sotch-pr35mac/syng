@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B7717B988566ADF2F9B620EC"
-               BuildableName = "Syng 2.app"
+               BuildableName = "Syng.app"
                BlueprintName = "syng_iOS"
                ReferencedContainer = "container:syng.xcodeproj">
             </BuildableReference>
@@ -31,7 +31,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7717B988566ADF2F9B620EC"
-            BuildableName = "Syng 2.app"
+            BuildableName = "Syng.app"
             BlueprintName = "syng_iOS"
             ReferencedContainer = "container:syng.xcodeproj">
          </BuildableReference>
@@ -66,7 +66,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7717B988566ADF2F9B620EC"
-            BuildableName = "Syng 2.app"
+            BuildableName = "Syng.app"
             BlueprintName = "syng_iOS"
             ReferencedContainer = "container:syng.xcodeproj">
          </BuildableReference>
@@ -95,7 +95,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7717B988566ADF2F9B620EC"
-            BuildableName = "Syng 2.app"
+            BuildableName = "Syng.app"
             BlueprintName = "syng_iOS"
             ReferencedContainer = "container:syng.xcodeproj">
          </BuildableReference>

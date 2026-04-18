@@ -1,181 +1,153 @@
-<script>
+<script lang="ts">
 	import { tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 	import SyButton from '../components/SyButton/SyButton.svelte';
 	import SyList from '../components/SyList/SyList.svelte';
 	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-	import { handleError, telemetry } from '../utils/';
-	import { invoke } from '@tauri-apps/api/core';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { searchStore as search } from '../composables/search.svelte.js';
+	import type { SearchEntry } from '../types/search.js';
+	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
+	import { isIPad } from '../utils/device.js';
 
-	let historyPosition = $state(-1);
-	const searchHistory = [];
-	let searchResults = $state([]);
-	let fullResults = [];
-	let bookmarks = $state([]);
-	let activeWord = $state();
-	let searchLang = $state('EN');
 	let highlightActive = $state(true);
-	const SEARCH_TRACK_DEBOUNCE_MS = 800;
-	let searchTrackDebounce;
 	const enableTransparency = false;
 	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 	// Disabling transparency for now since it doesn't work in Tauri as well as in Electron
 	// enableTransparency = isMacos && window.preferenceManager.get('transparency');
 
-	const langSwitcher = ['EN', 'PY', 'ZH'];
-	const updateSearchResults = (results, clearable) => {
-		if (results.length || clearable) {
-			highlightActive = false;
-			fullResults = results;
-			searchResults = results.map((element) => {
-				return {
-					headline:
-						element.traditional === element.simplified
-							? element.simplified
-							: `${element.simplified} (${element.traditional})`,
-					subtitle: element.pinyin_marks,
-					content: element.english.join('; '),
-					active: false,
-				};
-			});
-		}
-	};
-	const query = (text, clearable, elementToSelect) => {
-		if (text) {
-			clearTimeout(searchTrackDebounce);
-			searchTrackDebounce = setTimeout(() => {
-				telemetry.trackEvent('search.query', { term_length: text.length }).catch(() => {});
-			}, SEARCH_TRACK_DEBOUNCE_MS);
-			invoke('classify', { text })
-				.then((result) => {
-					searchLang = result;
-					return undefined;
-				})
-				.catch((e) => {
-					handleError('There was an error classifying the language of your query.', e);
-				});
-			invoke('query', { text })
-				.then((results) => {
-					updateSearchResults(results, clearable);
-					if (elementToSelect !== undefined) {
-						return tick().then(() => {
-							selectElement(elementToSelect);
-							return undefined;
-						});
-					}
-					return undefined;
-				})
-				.catch((e) => {
-					handleError('There was an error searching the dictionary for your query.', e);
-				});
-		} else {
-			updateSearchResults([], true);
-		}
-	};
-	const queryWithLang = (text, lang) => {
-		const handleResults = (results) => {
-			updateSearchResults(results, true);
-			return undefined;
-		};
-		const handleQueryError = (e) => {
-			handleError('There was an error searching the dictionary for your query.', e);
-		};
-		switch (lang) {
-			case 'EN':
-				invoke('query_by_english', { text }).then(handleResults).catch(handleQueryError);
-				break;
-			case 'PY':
-				invoke('query_by_pinyin', { text }).then(handleResults).catch(handleQueryError);
-				break;
-			case 'ZH':
-				invoke('query_by_chinese', { text }).then(handleResults).catch(handleQueryError);
-				break;
-		}
-	};
-	const updateActiveWord = (word, highlight) => {
-		activeWord = word;
-		highlightActive = highlight;
-	};
-	const historyBack = () => {
-		historyPosition -= 1;
-		updateActiveWord(searchHistory[historyPosition], false);
-	};
-	const historyForward = () => {
-		historyPosition += 1;
-		updateActiveWord(searchHistory[historyPosition], false);
-	};
-	const switchLang = () => {
-		const incrementedIndex = langSwitcher.indexOf(searchLang) + 1;
-		searchLang = langSwitcher[incrementedIndex < langSwitcher.length ? incrementedIndex : 0];
-		queryWithLang(document.getElementById('search').value, searchLang);
-	};
-	const selectElement = (index) => {
-		const elements = document.getElementsByClassName('sy-list-preview-item-container');
-		if (elements[index]) {
-			elements[index].click();
-		}
-	};
-	const handleSelection = (data) => {
-		const word = fullResults[data.index];
-		updateActiveWord(word, true);
+	const searchResults = $derived(
+		search.fullResults.map((entry) => ({
+			headline:
+				entry.traditional === entry.simplified
+					? entry.simplified
+					: `${entry.simplified} (${entry.traditional})`,
+			subtitle: entry.pinyin_marks,
+			content: entry.english.join('; '),
+			active: false,
+			_entry: entry,
+		}))
+	);
 
-		// Update search history
-		const previousEntry = searchHistory.map((entry) => entry.word_id).indexOf(word.word_id);
-		if (previousEntry >= 0) {
-			searchHistory.splice(previousEntry, 1);
-			historyPosition -= 1;
+	function doSearch(text: string, clearable: boolean): void {
+		if (text) {
+			highlightActive = false;
+			search.doSearch(text);
+		} else if (clearable) {
+			highlightActive = false;
+			search.doSearch('');
 		}
-		searchHistory.push(word);
-		historyPosition += 1;
+	}
+
+	const historyBack = (): void => {
+		search.historyBack();
+		highlightActive = false;
 	};
-	const handleEnter = () => {
+
+	const historyForward = (): void => {
+		search.historyForward();
+		highlightActive = false;
+	};
+
+	const switchLang = (): void => {
+		const input = document.getElementById('search') as HTMLInputElement | null;
+		search.switchLang(input?.value ?? '');
+	};
+
+	const selectElement = (index: number): void => {
+		const container = document.querySelector('.search-results');
+		if (!container) {
+			return;
+		}
+		const elements = container.getElementsByClassName('sy-list-preview-item-container');
+		if (elements[index]) {
+			(elements[index] as HTMLElement).click();
+		}
+	};
+
+	const getActiveWordResultIndex = (): number => {
+		if (!search.activeWord) {
+			return -1;
+		}
+		return searchResults.findIndex((result) => result._entry.hash === search.activeWord?.hash);
+	};
+
+	let replayedWordHash = $state<string | undefined>(undefined);
+	$effect(() => {
+		const activeWordHash = search.activeWord?.hash;
+		if (!activeWordHash) {
+			replayedWordHash = undefined;
+			return;
+		}
+		if (replayedWordHash === activeWordHash) {
+			return;
+		}
+		const resultIndex = getActiveWordResultIndex();
+		if (resultIndex < 0) {
+			return;
+		}
+		replayedWordHash = activeWordHash;
+		tick()
+			.then(() => {
+				selectElement(resultIndex);
+				return undefined;
+			})
+			.catch(() => {});
+	});
+
+	const handleSelection = (data: { value: { _entry: SearchEntry } }): void => {
+		const word = data.value._entry;
+		if (!word) {
+			return;
+		}
+		replayedWordHash = word.hash;
+		search.setActiveWord(word);
+		search.pushHistory(word);
+		highlightActive = true;
+	};
+
+	const handleEnter = (): void => {
 		selectElement(0);
 	};
-	const handleLink = (word) => {
-		document.getElementById('search').value = word;
-		query(word, true, 0);
+
+	const handleLink = (word: string): void => {
+		const input = document.getElementById('search') as HTMLInputElement | null;
+		if (input) {
+			input.value = word;
+		}
+		doSearch(word, true);
+		tick()
+			.then(() => {
+				selectElement(0);
+				return undefined;
+			})
+			.catch(() => {});
 	};
-	window.bookmarkManager
-		.getLists()
-		.then((lists) => {
-			bookmarks = lists;
-			return undefined;
-		})
-		.catch((e) => {
-			handleError(
-				'There was an error fetching word lists. Check the log for more details.',
-				e
-			);
-		});
 </script>
 
 <div class="search-page-container">
 	<div
 		class="search-bar-container"
 		class:search-bar-container--transparency={enableTransparency}
+		class:search-bar-container--ipad={isIPadDevice}
 		data-testid="search-bar-container"
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
-		<SyButton
-			style="ghost"
-			size="large"
-			disabled={searchHistory[historyPosition - 1] === undefined}
-			onclick={historyBack}
-		>
+		<SyButton style="ghost" size="large" disabled={!search.canGoBack} onclick={historyBack}>
 			<ChevronLeft size="20" />
 		</SyButton>
 		<SyButton
 			style="ghost"
 			size="large"
-			disabled={searchHistory[historyPosition + 1] === undefined}
+			disabled={!search.canGoForward}
 			onclick={historyForward}
 		>
 			<ChevronRight size="20" />
 		</SyButton>
 		<SyButton style="ghost" size="large" onclick={() => switchLang()}>
-			{searchLang}
+			{search.searchLang}
 		</SyButton>
 		<SyTextInput
 			spellcheck="false"
@@ -184,13 +156,13 @@
 			placeholder="Search..."
 			id="search"
 			transparency={enableTransparency}
-			onchange={(value) => query(value, true)}
-			onkeyup={(value) => query(value, false)}
+			onchange={(value) => doSearch(value, true)}
+			onkeyup={(value) => doSearch(value, false)}
 			onenter={handleEnter}
 		/>
 	</div>
 	<div class="search-content-container">
-		<div class="search-results" data-elastic>
+		<div class="search-results" data-elastic use:scrollRestore={'search-results'}>
 			<SyList
 				style="preview"
 				values={searchResults}
@@ -199,7 +171,11 @@
 			/>
 		</div>
 		<div class="dictionary-content">
-			<DictionaryContent word={activeWord} lists={bookmarks} onlink={handleLink} />
+			<DictionaryContent
+				word={search.activeWord}
+				lists={search.bookmarks}
+				onlink={handleLink}
+			/>
 		</div>
 	</div>
 </div>
@@ -223,13 +199,17 @@
 	.search-bar-container--transparency {
 		background-color: var(--sy-color--white--transparency);
 	}
+	.search-bar-container--ipad {
+		padding-top: var(--sy-space--large);
+		padding-bottom: var(--sy-space--large);
+	}
 	.search-content-container {
 		display: flex;
 	}
 	.search-results {
 		display: flex;
 		flex: 2;
-		z-index: var(--sy-index--base);
+		z-index: var(--sy-z-index--base);
 		flex-direction: column;
 		background-color: var(--sy-color--white);
 		height: calc(100vh - 83px);

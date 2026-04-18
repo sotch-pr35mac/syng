@@ -1,6 +1,7 @@
 <script>
 	import { Check, Brush, Plus } from 'lucide-svelte';
 	import { handleError, telemetry } from '../../utils/';
+	import { isMobile } from '../../utils/device.js';
 	import SyButton from '../SyButton/SyButton.svelte';
 	import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
 	import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
@@ -11,6 +12,9 @@
 	import EntryTopline from './EntryTopline.svelte';
 	import MeasureWord from './MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { bookmarksStore } from '../../stores/bookmarks.svelte.js';
+	import { NATIVE_COMMANDS } from '../../types/nativeCommands.js';
+	import { DROPDOWN_POSITIONS } from '../../types/dropdown.js';
 
 	/* Background Color Prop */
 	/* Possible Values */
@@ -30,7 +34,7 @@
 	let memberLists = $state([]);
 
 	const updateListMembership = () => {
-		window.bookmarkManager
+		bookmarksStore
 			.inList(word.hash)
 			.then((lists) => {
 				memberLists = lists;
@@ -50,7 +54,7 @@
 			});
 	};
 	const _modifyListMembership = (fnName, list, word) => {
-		window.bookmarkManager[fnName](list, word)
+		bookmarksStore[fnName](list, word)
 			.then(() => {
 				updateListMembership();
 				return undefined;
@@ -121,17 +125,23 @@
 			tooltip: 'Write Characters',
 			action: () => {
 				telemetry.trackEvent('character_window.opened', {}).catch(() => {});
-				invoke('open_character_window', {
-					word: {
-						traditional: word.traditional,
-						simplified: word.simplified,
-					},
-				}).catch((e) => {
-					handleError(
-						'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
-						e
-					);
-				});
+				// isMobile() includes iPad — both iPhone and iPad navigate in-app
+				// rather than opening the separate character window (desktop only).
+				if (isMobile()) {
+					window.location.hash = '#/characters';
+				} else {
+					invoke(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
+						word: {
+							traditional: word.traditional,
+							simplified: word.simplified,
+						},
+					}).catch((e) => {
+						handleError(
+							'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
+							e
+						);
+					});
+				}
 			},
 		},
 		/*
@@ -153,7 +163,7 @@
 		const DEBOUNCE_MS = 500;
 		saveNotesDebounce = setTimeout(() => {
 			const notes = document.getElementById('dictionary-content--notes').value.trim();
-			window.bookmarkManager
+			bookmarksStore
 				.updateProperty(cachedWord.hash, 'notes', notes)
 				.then(() => {
 					cachedWord.notes = notes;
@@ -198,7 +208,7 @@
 						<SyDropdown
 							values={action.dropdown}
 							onselection={handleMembershipModification}
-							position="right"
+							position={DROPDOWN_POSITIONS.RIGHT}
 						>
 							<SyButton
 								grouped="true"
@@ -218,7 +228,7 @@
 					{:else}
 						<SyButton
 							grouped="true"
-							classes={['sy-tooltip--container']}
+							classes={['sy-tooltip--container', ...(action.classes ?? [])]}
 							onclick={action.action}
 						>
 							<action.component size="18" />
@@ -253,7 +263,9 @@
 				<h2 class="dictionary-content--section-title">Notes</h2>
 				<textarea
 					placeholder="No Notes"
-					class="dictionary-content--notes"
+					class="dictionary-content--notes {isMobile()
+						? 'dictionary-content--notes--mobile'
+						: ''}"
 					id="dictionary-content--notes"
 					oninput={saveNotes}>{word.notes}</textarea
 				>
@@ -288,15 +300,22 @@
 		color: var(--sy-color--grey-4);
 	}
 	.dictionary-content--notes {
+		display: block;
 		background-color: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
 		border: var(--sy-border);
+		box-sizing: border-box;
 		padding: var(--sy-space--extra-large);
 		margin: var(--sy-space--extra-large);
 		font-size: var(--sy-font--size);
 		color: var(--sy-color--black);
 		height: auto;
-		/* Full width subtracting the margin on it and its parent to achieve a cross-compatible `-webkit-fill-available` effect */
-		width: calc(95% - calc(var(--sy-space--extra-large) + var(--sy-space--extra-large)));
+		width: calc(100% - calc(var(--sy-space--extra-large) + var(--sy-space--extra-large)));
+	}
+	.dictionary-content--notes--mobile {
+		margin: var(--sy-mobile-space--medium) 0;
+		width: 100%;
+		border: var(--sy-mobile-surface-border);
+		box-shadow: none;
 	}
 </style>

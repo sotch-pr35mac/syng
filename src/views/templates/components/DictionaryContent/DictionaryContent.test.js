@@ -19,6 +19,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve()),
 }));
 
+vi.mock('@tauri-apps/plugin-os', () => ({
+	platform: () => 'macos',
+	version: () => Promise.resolve('15.0'),
+}));
+
 const TEST_WORD = {
 	simplified: 'A',
 	traditional: 'B',
