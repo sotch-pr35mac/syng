@@ -5,8 +5,10 @@
 pub mod character;
 mod main;
 
+#[cfg(desktop)]
 use tauri::Manager;
 
+#[cfg(desktop)]
 pub use character::open_character_window;
 
 /// Sets up all application windows.

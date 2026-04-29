@@ -1,132 +1,81 @@
 <script>
-	import { ChevronDown, FolderDown, Plus, Trash2, FolderUp } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
 	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
 	import SyButton from '../components/SyButton/SyButton.svelte';
-	import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
-	import SimpleTextDropdownItem from '../components/SyDropdown/SimpleTextDropdownItem.svelte';
 	import SyDropdown from '../components/SyDropdown/SyDropdown.svelte';
-	import TextWithIconDropdownItem from '../components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import SyList from '../components/SyList/SyList.svelte';
 	import SyModal from '../components/SyModal/SyModal.svelte';
 	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
-	import { handleError, resolveNameConflict, telemetry } from '../utils/';
-	import { invoke } from '@tauri-apps/api/core';
+	import { onMount, tick } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
+	import {
+		bookmarksRoute,
+		CREATE_NEW_LIST_ID,
+		DEFAULT_BOOKMARKS_LIST,
+	} from '../composables/bookmarks.svelte.js';
+	import { isIPad } from '../utils/device.js';
 
 	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 
-	// Set the active list
-	// Syng expects there to always be a list called 'Bookmarks'
-	let activeList = $state('Bookmarks');
-	let activeWord = $state(undefined);
+	const activeList = $derived(bookmarksRoute.activeList);
+	const activeWord = $derived(bookmarksRoute.activeWord);
+	const lists = $derived(bookmarksRoute.lists);
+	const dropdownList = $derived(bookmarksRoute.dropdownList);
+	const wordList = $derived(bookmarksRoute.wordList);
 
-	// Get the word lists
-	let lists = $state([]); // The list of word lists
-	let dropdownList = $state([]); // The list of dropdown items, including the list of word lists.
-	const createDropdownList = (list) => {
-		return [
-			...list
-				.map((listName) => {
-					return {
-						text: listName,
-						id: listName,
-						component: SimpleTextDropdownItem,
-					};
-				})
-				.sort((a, b) => a.text.localeCompare(b.text)),
-			...[
-				{
-					component: DividerDropdownItem,
-				},
-				{
-					text: 'Create New',
-					id: 'create-new',
-					component: TextWithIconDropdownItem,
-					icon: Plus,
-					color: 'blue',
-					hover: 'green',
-				},
-			],
-		];
+	// SyList tracks its selected item via click events internally, so the only way to
+	// restore a persisted selection is to programmatically click the corresponding element.
+	const selectWordElement = (index) => {
+		const container = document.querySelector('.bookmarks--word-listing');
+		if (!container) {
+			return;
+		}
+		const elements = container.getElementsByClassName('sy-list-preview-item-container');
+		if (elements[index]) {
+			elements[index].click();
+		}
 	};
-	const updateLists = (cb) => {
-		window.bookmarkManager
-			.getLists()
-			.then((wordLists) => {
-				lists = wordLists;
-				dropdownList = createDropdownList(wordLists);
-				cb();
+	const replayActiveWordSelection = () => {
+		if (!activeWord) {
+			return;
+		}
+		const activeWordIndex = bookmarksRoute.words.findIndex(
+			(word) => word.hash === activeWord.hash
+		);
+		if (activeWordIndex < 0) {
+			return;
+		}
+		tick()
+			.then(() => {
+				selectWordElement(activeWordIndex);
 				return undefined;
 			})
-			.catch((e) => {
-				handleError(
-					'There was an error fetching word lists. Check the logs for more details.',
-					e
-				);
-			});
+			.catch(() => {});
 	};
-	updateLists(() => undefined);
 
-	// Get the words for the active list
-	let words = [];
-	let wordList = $state([]);
-	const getWordList = (items) => {
-		highlightActive = false;
-		return items.map((item) => {
-			return {
-				headline:
-					item.traditional === item.simplified
-						? item.simplified
-						: `${item.simplified} (${item.traditional})`,
-				subtitle: item.pinyin_marks,
-				content: item.english.join('; '),
-				active: false,
-			};
-		});
-	};
-	const updateListContent = (cb) => {
-		window.bookmarkManager
-			.getListContent(activeList)
-			.then((activeListWords) => {
-				words = activeListWords;
-				wordList = getWordList(activeListWords);
-				cb();
-				return undefined;
-			})
-			.catch((e) => {
-				handleError(
-					'There was an error fetching the word list content. Check the logs for more details.',
-					e
-				);
-			});
-	};
-	updateListContent(() => undefined);
+	onMount(() => {
+		bookmarksRoute
+			.updateListContent()
+			.then(replayActiveWordSelection)
+			.catch(() => {});
+	});
 
 	// Handle active list selection
-	const updateActiveList = (nextList) => {
-		activeList = nextList;
-		updateListContent(() => undefined);
-	};
 	const handleListSelection = (id) => {
-		if (id !== 'create-new') {
-			updateActiveList(id);
-		} else {
+		if (id === CREATE_NEW_LIST_ID) {
 			createNewModalVisible = true;
+			return;
 		}
+		highlightActive = false;
+		bookmarksRoute
+			.setActiveList(id)
+			.then(replayActiveWordSelection)
+			.catch(() => {});
 	};
 
 	// Create New Modal
-	// Set the create list placeholder text
-	const createNewPlaceholders = [
-		'HSK 1',
-		'Week 3 Vocab',
-		'Internet Slang',
-		'Idioms',
-		'Chapter 7',
-	];
-	const restrictedListNames = ['create-new', 'Bookmarks'];
-	const getNewPlaceholder = () =>
-		createNewPlaceholders.slice(Math.random() * createNewPlaceholders.length)[0];
 	let createNewModalVisible = $state(false);
 	let createNewButtonDisabled = $state(false);
 	const closeNewModal = () => {
@@ -137,133 +86,43 @@
 	const createNewList = () => {
 		createNewButtonDisabled = true;
 		const newListName = document.getElementById('create-new-list-input').value.trim();
-		if (!newListName || restrictedListNames.includes(newListName)) {
-			handleError(`Cannot create new list with name ${newListName}.`);
-			closeNewModal();
-			return;
-		}
-
-		window.bookmarkManager
+		bookmarksRoute
 			.createList(newListName)
 			.then(() => {
-				telemetry.trackEvent('list.created', {}).catch(() => {});
-				updateLists(() => {
-					closeNewModal();
-				});
+				closeNewModal();
 				return undefined;
 			})
-			.catch((e) => {
-				handleError(
-					`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-					e
-				);
-				closeNewModal();
-			});
+			.catch(() => {});
 	};
 
 	// Word Selection
 	const handleSelection = (data) => {
-		activeWord = words[data.index];
+		bookmarksRoute.selectWord(data);
 		highlightActive = true;
 	};
 	let highlightActive = $state(true);
 
 	// Actions
-	let disableDeleteButton = false;
+	let disableDeleteButton = $state(false);
 	const deleteActiveList = () => {
 		disableDeleteButton = true;
-		window.__TAURI__.dialog
-			.ask(`Are you sure you want to delete ${activeList}?`, 'Delete List')
-			.then((confirmed) => {
-				if (confirmed) {
-					return window.bookmarkManager
-						.deleteList(activeList)
-						.then(() => {
-							telemetry.trackEvent('list.deleted', {}).catch(() => {});
-							updateActiveList('Bookmarks');
-							updateLists(() => {
-								disableDeleteButton = false;
-							});
-							return undefined;
-						})
-						.catch((e) => {
-							handleError(
-								`There was an unexpected error deleting the list ${activeList}. Please check the log for more details.`,
-								e
-							);
-							disableDeleteButton = false;
-						});
-				} else {
-					disableDeleteButton = false;
-					return undefined;
+		bookmarksRoute
+			.confirmDeleteActiveList()
+			.then((deleted) => {
+				if (deleted) {
+					highlightActive = false;
 				}
+				disableDeleteButton = false;
+				return undefined;
 			})
-			.catch((e) => {
-				handleError(
-					`There was an unexpected error while attempting to delete the list ${activeList}. Check the log for more details.`,
-					e
-				);
+			.catch(() => {
 				disableDeleteButton = false;
 			});
 	};
-	const exportActiveList = () => {
-		invoke('export_list_data', { name: activeList, data: words })
-			.then(() => {
-				telemetry.trackEvent('list.exported', {}).catch(() => {});
-				return undefined;
-			})
-			.catch((e) => {
-				handleError(
-					'There was an error exporting your list. Check the log for more details.',
-					e
-				);
-			});
-	};
-	const importList = () => {
-		invoke('import_list_data')
-			.then((importArchive) => {
-				if (importArchive) {
-					const listName = resolveNameConflict(importArchive.meta.name, lists);
-					return window.bookmarkManager
-						.createList(listName)
-						.then(() => {
-							// List imports from Syng v1 occationally come with duplicated entries where the last entry in the list
-							// is the most up to date. Here we deduplicate the list preserving the last instance of a duplicate.
-							const entries = importArchive.entries.reduceRight(
-								(acc, cur) =>
-									acc.find((entry) => entry.hash === cur.hash)
-										? acc
-										: [...acc, cur],
-								[]
-							);
-							const bulkImport = entries.map((entry) =>
-								window.bookmarkManager.addToList(listName, entry)
-							);
-							return Promise.all(bulkImport);
-						})
-						.then(() => {
-							telemetry.trackEvent('list.imported', {}).catch(() => {});
-							updateLists(() => undefined);
-							return undefined;
-						})
-						.catch((e) => {
-							handleError(
-								'There was an error importing the list. Check the log for more details.',
-								e
-							);
-						});
-				}
-				return undefined;
-			})
-			.catch((e) => {
-				handleError(
-					'There was an error importing the list. Check the log for more details.',
-					e
-				);
-			});
-	};
+	const exportActiveList = () => bookmarksRoute.exportActiveList();
+	const importList = () => bookmarksRoute.importList();
 
-	const actions = [
+	const actions = $derived([
 		{
 			icon: FolderDown,
 			action: importList,
@@ -282,19 +141,26 @@
 			icon: Trash2,
 			action: deleteActiveList,
 			tooltip: 'Delete',
-			exclude: ['Bookmarks'],
+			exclude: [DEFAULT_BOOKMARKS_LIST],
 			disabled: disableDeleteButton,
 			hover: 'red',
 		},
-	];
+	]);
 </script>
 
 <div class="bookmarks--container">
-	<div class="bookmarks--header" data-tauri-drag-region={isMacos ? true : undefined}>
+	<div
+		class="bookmarks--header"
+		class:bookmarks--header--ipad={isIPadDevice}
+		data-tauri-drag-region={isMacos ? true : undefined}
+	>
 		<SyDropdown values={dropdownList} onselection={handleListSelection}>
-			<SyButton size="large" style="ghost" center={true}>
-				{activeList}&nbsp;<ChevronDown size="20" />
-			</SyButton>
+			{#snippet children(open)}
+				<SyButton size="large" style="ghost" center={true}>
+					{activeList}&nbsp;
+					{#if open}<ChevronUp size="20" />{:else}<ChevronDown size="20" />{/if}
+				</SyButton>
+			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
 			{#each actions as action (action.tooltip)}
@@ -318,7 +184,11 @@
 		</div>
 	</div>
 	<div class="bookmarks--content">
-		<div class="bookmarks--word-listing" data-elastic>
+		<div
+			class="bookmarks--word-listing"
+			data-elastic
+			use:scrollRestore={'bookmarks-word-listing'}
+		>
 			<SyList
 				style="preview"
 				values={wordList}
@@ -337,7 +207,7 @@
 				<p>What would you like to call this list?</p>
 				<SyTextInput
 					size="large"
-					placeholder={`ex. ${getNewPlaceholder()}`}
+					placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 					id="create-new-list-input"
 				/>
 			</div>
@@ -374,6 +244,10 @@
 		align-items: center;
 		justify-content: space-between;
 	}
+	.bookmarks--header--ipad {
+		padding-top: var(--sy-space--large);
+		padding-bottom: var(--sy-space--large);
+	}
 	.bookmarks--header--actions {
 		display: flex;
 		flex-direction: row;
@@ -384,6 +258,8 @@
 	}
 	.bookmarks--content {
 		display: flex;
+		flex: 1;
+		min-height: 0;
 	}
 	.bookmarks--word-listing {
 		display: flex;
@@ -391,7 +267,7 @@
 		z-index: var(--sy-z-index--base);
 		flex-direction: column;
 		background-color: var(--sy-color--white);
-		height: calc(100vh - 83px);
+		height: 100%;
 		overflow-y: scroll;
 		overflow-x: hidden;
 	}
@@ -405,7 +281,7 @@
 		display: flex;
 		flex: 9;
 		box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-		height: calc(100vh - 83px);
+		height: 100%;
 		z-index: var(--sy-z-index--base-1);
 	}
 </style>

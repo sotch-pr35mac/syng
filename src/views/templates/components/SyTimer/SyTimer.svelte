@@ -89,7 +89,8 @@
 		}, 16);
 	}
 
-	function handleClick() {
+	function handleClick(event) {
+		event.stopPropagation();
 		if (isPaused) {
 			resume();
 		} else {
@@ -125,7 +126,7 @@
 	class="timer"
 	style="width: {size}px; height: {size}px;"
 	onclick={handleClick}
-	onkeydown={(e) => e.key === ' ' && handleClick()}
+	onkeydown={(e) => e.key === ' ' && handleClick(e)}
 	onmouseenter={() => (hovering = true)}
 	onmouseleave={() => (hovering = false)}
 	role="button"
@@ -133,25 +134,18 @@
 	aria-label={isPaused ? 'Resume timer' : 'Pause timer'}
 >
 	{#if isPaused}
-		{#if hovering}
-			<svg viewBox="0 0 40 40">
-				<path d="M15 12L29 20L15 28V12Z" fill={darkGrey} />
-			</svg>
-		{:else}
-			<svg viewBox="0 0 40 40">
-				<rect x="12" y="12" width="6" height="16" fill={darkGrey} rx="1" />
-				<rect x="22" y="12" width="6" height="16" fill={darkGrey} rx="1" />
-			</svg>
-		{/if}
+		<svg viewBox="0 0 40 40">
+			<path d="M15 12L29 20L15 28V12Z" fill={darkGrey} />
+		</svg>
+	{:else if hovering}
+		<svg viewBox="0 0 40 40">
+			<rect x="13" y="13" width="5" height="14" fill={darkGrey} rx="1" />
+			<rect x="22" y="13" width="5" height="14" fill={darkGrey} rx="1" />
+		</svg>
 	{:else}
 		<svg viewBox="0 0 40 40">
-			{#if hovering}
-				<rect x="12" y="12" width="6" height="16" fill={darkGrey} rx="1" />
-				<rect x="22" y="12" width="6" height="16" fill={darkGrey} rx="1" />
-			{:else}
-				<circle cx="20" cy="20" r="16" fill={getProgressColor(progress)} />
-				<path d={pathD} fill={lightGrey} />
-			{/if}
+			<circle cx="20" cy="20" r="16" fill={getProgressColor(progress)} />
+			<path d={pathD} fill={lightGrey} />
 		</svg>
 	{/if}
 </div>

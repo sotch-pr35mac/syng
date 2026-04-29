@@ -21,7 +21,7 @@
 				return undefined;
 			})
 			.catch((e) => {
-				console.error('Error getting version:', e);
+				handleError('Error getting version.', e, { silent: true });
 			});
 	}
 

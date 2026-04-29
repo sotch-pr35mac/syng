@@ -2,6 +2,7 @@
 //!
 //! This module handles the main application window setup and event handling.
 
+#[cfg(any(desktop, debug_assertions))]
 use tauri::Manager;
 
 #[cfg(target_os = "macos")]
@@ -13,8 +14,11 @@ use crate::platform::{WindowExt, WINDOW_CONTROL_PAD_X, WINDOW_CONTROL_PAD_Y};
 /// - macOS traffic light positioning
 /// - Window resize behavior (redraws traffic lights on macOS)
 /// - DevTools in debug mode
-pub fn setup(app: &tauri::App) {
-    let main_window = app.get_webview_window("main").unwrap();
+pub fn setup(#[allow(unused_variables)] app: &tauri::App) {
+    #[cfg(any(desktop, debug_assertions))]
+    let Some(main_window) = app.get_webview_window("main") else {
+        return;
+    };
 
     #[cfg(target_os = "macos")]
     {

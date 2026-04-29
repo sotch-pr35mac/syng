@@ -4,6 +4,7 @@
 	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from './components/SyButton/SyButton.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { handleError } from './utils/error.js';
 
 	// Constants
 	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
@@ -70,7 +71,7 @@
 				return undefined;
 			})
 			.catch((error) => {
-				console.error('Error loading characters:', error);
+				handleError('Error loading characters.', error, { silent: true });
 			});
 	};
 	const animateCharacter = (index, is_initial_call) => {

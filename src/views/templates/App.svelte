@@ -16,6 +16,7 @@
 	import { runStartupActions, handleError, installPendingUpdate, telemetry } from './utils';
 	import Flashcards from './routes/Study/Flashcards.svelte';
 	import Quiz from './routes/Study/Quiz.svelte';
+	import MobileCharacters from './routes/mobile/MobileCharacters.svelte';
 
 	// Run the startup script
 	runStartupActions();
@@ -76,6 +77,7 @@
 		'/help': Help,
 		'/settings': Settings,
 		'/chat': Chat,
+		'/characters': MobileCharacters,
 		'*': NotFound,
 	};
 
@@ -90,6 +92,7 @@
 		'/help': 'help',
 		'/settings': 'settings',
 		'/chat': 'chat',
+		'/characters': 'characters',
 	};
 </script>
 

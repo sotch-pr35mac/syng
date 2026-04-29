@@ -1,6 +1,7 @@
 <script>
 	import { X } from 'lucide-svelte';
 	import SyButton from '../SyButton/SyButton.svelte';
+	import { isMobile } from '../../utils/device.js';
 
 	/* Visible Prop */
 
@@ -17,10 +18,11 @@
 
 	/** @type {Props} */
 	const { visible = false, title = '', body, footer, onclose = () => {} } = $props();
+	const mobile = isMobile();
 </script>
 
 <div class="sy-modal--container" class:sy-modal--active={visible}>
-	<div class="sy-modal--content">
+	<div class="sy-modal--content" class:sy-modal--content--mobile={mobile}>
 		<div class="sy-modal--header">
 			<h2 class="sy-modal--title">{title}</h2>
 			<SyButton style="ghost" onclick={onclose}>
@@ -59,11 +61,20 @@
 	}
 	.sy-modal--content {
 		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
 		background-color: var(--sy-color--white);
 		box-shadow: var(--sy-shadow--active);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space--large);
 		z-index: var(--sy-z-index--top-1);
+	}
+	.sy-modal--content--mobile {
+		width: calc(100vw - (var(--sy-mobile-space--medium) * 6));
+		max-width: 420px;
+		box-shadow: var(--sy-mobile-overlay-shadow);
+		border: var(--sy-mobile-surface-border);
 	}
 	.sy-modal--header {
 		display: flex;

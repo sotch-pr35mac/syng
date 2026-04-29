@@ -53,6 +53,11 @@
 	 * @property {() => void} [onclick] - Click handler
 	 */
 
+	import { isMobile } from '../../utils/device.js';
+
+	// Optimized for mobile: 44px minimum touch target, larger small-size font.
+	const mobile = isMobile();
+
 	/** @type {Props} */
 	const {
 		style = 'filled',
@@ -78,6 +83,7 @@
 				color ? `sy-button--color-${color}` : '',
 				hover ? `sy-button--hover-${hover}` : '',
 				grouped ? 'sy-button--grouped' : '',
+				mobile ? 'sy-button--mobile' : '',
 			])
 			.join(' ');
 	};
@@ -107,11 +113,17 @@
 		box-shadow: var(--sy-shadow);
 		background-color: var(--sy-color--white);
 	}
-	.sy-button--filled:hover {
+	@media (hover: hover) {
+		.sy-button--filled:hover {
+			box-shadow: var(--sy-shadow--active);
+			background-color: var(--sy-color--grey-2);
+			transition-property: background-color, box-shadow;
+			transition-duration: var(--sy-transition-duration);
+		}
+	}
+	.sy-button--filled:active {
 		box-shadow: var(--sy-shadow--active);
 		background-color: var(--sy-color--grey-2);
-		transition-property: background-color, box-shadow;
-		transition-duration: var(--sy-transition-duration);
 	}
 	.sy-button--filled:disabled {
 		color: var(--sy-color--grey-5);
@@ -119,13 +131,18 @@
 	.sy-button--ghost {
 		background: none;
 	}
-	.sy-button--ghost:hover {
+	.sy-button--ghost:active {
 		color: var(--sy-color--blue);
-		transition-property: color;
-		transition-duration: var(--sy-transition-duration);
 	}
-	.sy-button--ghost:hover:disabled {
-		color: var(--sy-color--grey-5);
+	@media (hover: hover) {
+		.sy-button--ghost:hover {
+			color: var(--sy-color--blue);
+			transition-property: color;
+			transition-duration: var(--sy-transition-duration);
+		}
+		.sy-button--ghost:hover:disabled {
+			color: var(--sy-color--grey-5);
+		}
 	}
 	.sy-button--small {
 		font-size: 10px;
@@ -159,21 +176,46 @@
 	.sy-button--color-yellow {
 		color: var(--sy-color--yellow);
 	}
-	.sy-button--hover-green:hover {
-		color: var(--sy-color--green);
-	}
-	.sy-button--hover-blue:hover {
-		color: var(--sy-color--blue);
-	}
-	.sy-button--hover-red:hover {
-		color: var(--sy-color--red);
-	}
-	.sy-button--hover-yellow:hover {
-		color: var(--sy-color--yellow);
+	@media (hover: hover) {
+		.sy-button--hover-green:hover {
+			color: var(--sy-color--green);
+		}
+		.sy-button--hover-blue:hover {
+			color: var(--sy-color--blue);
+		}
+		.sy-button--hover-red:hover {
+			color: var(--sy-color--red);
+		}
+		.sy-button--hover-yellow:hover {
+			color: var(--sy-color--yellow);
+		}
 	}
 	.sy-button--center {
 		display: flex;
 		justify-content: center;
 		align-items: center;
+	}
+	.sy-button--mobile {
+		min-height: var(--sy-mobile-touch-target);
+		min-width: var(--sy-mobile-touch-target);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.sy-button--mobile.sy-button--filled {
+		border: var(--sy-mobile-surface-border);
+		box-shadow: none;
+	}
+	.sy-button--mobile.sy-button--filled:active {
+		background-color: var(--sy-mobile-state-pressed);
+		box-shadow: none;
+	}
+	@media (hover: hover) {
+		.sy-button--mobile.sy-button--filled:hover {
+			box-shadow: none;
+		}
+	}
+	.sy-button--mobile.sy-button--small {
+		font-size: 13px;
 	}
 </style>

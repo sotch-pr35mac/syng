@@ -17,6 +17,14 @@ start:
 	npm run build
 	cargo tauri dev
 
+start-ios:
+	npm run build
+	cd src/native && cargo tauri ios dev --config tauri.mobile.conf.json
+
+start-android:
+	npm run build
+	cd src/native && cargo tauri android dev --config tauri.mobile.conf.json
+
 lint:
 	cd src/native && cargo fmt --check
 	npm run format:check

@@ -1,0 +1,17 @@
+{
+  "bundle": {
+    "targets": [],
+    "createUpdaterArtifacts": false
+  },
+  "plugins": {
+    "updater": null
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "url": "index.html"
+      }
+    ]
+  }
+}

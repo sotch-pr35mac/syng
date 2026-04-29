@@ -4,6 +4,8 @@
  * An instance of BookmarkManager class is created from a desired pouchdb.
  * After initialization the bookmarks are ready to be read and written.
  */
+import { handleError } from './error.js';
+
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {
 	lists: [],
@@ -381,7 +383,9 @@ export class BookmarkManager {
 					return undefined;
 				})
 				.catch((e) => {
-					console.error(e);
+					handleError('There was an error fetching a bookmark by hash.', e, {
+						silent: true,
+					});
 					resolve(undefined);
 				});
 		});

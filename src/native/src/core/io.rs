@@ -1,9 +1,10 @@
 use super::dictionary::find_best_match;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
-use std::fs;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
 use tauri_plugin_dialog::DialogExt;
+use tauri_plugin_fs::{FsExt, OpenOptions};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub enum BookmarksExportVersion {
@@ -135,14 +136,6 @@ pub async fn export_list_data(
         .set_file_name(format!("{}.syli", &name))
         .blocking_save_file();
     if let Some(file_path) = file_path {
-        let path = match file_path {
-            tauri_plugin_dialog::FilePath::Path(p) => p,
-            tauri_plugin_dialog::FilePath::Url(_) => {
-                return Err(
-                    "URL-based file paths are not supported for file operations".to_string()
-                );
-            }
-        };
         let export = BookmarksExport {
             meta: BookmarksExportMeta {
                 name,
@@ -152,7 +145,14 @@ pub async fn export_list_data(
         };
         let export_data = serde_json::to_string(&export)
             .map_err(|err| format!("Could not prepare data for export: {}", err))?;
-        fs::write(&path, export_data)
+
+        let mut open_options = OpenOptions::new();
+        open_options.write(true).create(true).truncate(true);
+        let mut file = app
+            .fs()
+            .open(file_path, open_options)
+            .map_err(|err| format!("Could not open the export file: {}", err))?;
+        file.write_all(export_data.as_bytes())
             .map_err(|err| format!("Could not write export to the specified file: {}", err))?;
     }
 
@@ -169,23 +169,14 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
         .blocking_pick_file();
 
     if let Some(file_path) = file_path {
-        let path_buf = match file_path {
-            tauri_plugin_dialog::FilePath::Path(p) => p,
-            tauri_plugin_dialog::FilePath::Url(_) => {
-                return Err(
-                    "URL-based file paths are not supported for file operations".to_string()
-                );
-            }
-        };
-        let path = path_buf
-            .to_str()
-            .ok_or("Unsupported file path")?
-            .to_string();
-        let extension = path
-            .rfind('.')
-            .map(|i| &path[i + 1..])
+        let file_path_display = file_path.to_string();
+        let extension = file_path_display
+            .rsplit_once('.')
+            .map(|(_, extension)| extension)
             .ok_or("Unsupported file type")?;
-        let file = fs::read_to_string(&path_buf)
+        let file = app
+            .fs()
+            .read_to_string(file_path)
             .map_err(|err| format!("Failed to read from file: {}", err))?;
         return match extension {
             "sld" => {

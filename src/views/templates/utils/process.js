@@ -1,11 +1,12 @@
-import { getMatches } from '@tauri-apps/plugin-cli';
+import { handleError } from './error.js';
 
 const getArgs = async () => {
 	try {
+		const { getMatches } = await import('@tauri-apps/plugin-cli');
 		const matches = await getMatches();
 		return matches.subcommand?.name === 'run' ? matches.subcommand.matches.args : matches.args;
 	} catch (e) {
-		console.error(e);
+		handleError('There was an error reading process arguments.', e, { silent: true });
 		return {};
 	}
 };

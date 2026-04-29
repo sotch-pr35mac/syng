@@ -5,8 +5,14 @@
 	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '../../utils/telemetry.js';
 	import { handleError } from '../../utils/error.js';
 
+	interface Props {
+		variant?: 'desktop' | 'mobile';
+	}
+
 	const TELEMETRY_REFRESH_INTERVAL_MS = 5000;
 	const MAX_DISPLAY_EVENTS = 50;
+
+	const { variant = 'desktop' }: Props = $props();
 
 	let prefs = $state<TelemetryPrefs>({
 		enabled: true,
@@ -43,7 +49,9 @@
 
 	const setPref = async (key: string, value: boolean) => {
 		prefs = { ...prefs, [key]: value };
-		await telemetry.setPref(key, value).catch((e) => console.error('Failed to set pref:', e));
+		await telemetry
+			.setPref(key, value)
+			.catch((e) => handleError('Failed to set telemetry preference.', e, { silent: true }));
 	};
 
 	const formatTimestamp = (ms: number) => {
@@ -67,7 +75,7 @@
 	};
 </script>
 
-<div class="telemetry--container">
+<div class="telemetry--container" class:telemetry--container--mobile={variant === 'mobile'}>
 	<div class="telemetry--disclosure">
 		<p class="telemetry--disclosure-text">
 			We hate creepy data collection, and you should too! That's why Syng's telemetry service
@@ -283,5 +291,47 @@
 		max-height: 200px;
 		white-space: pre-wrap;
 		word-break: break-all;
+	}
+
+	.telemetry--container--mobile {
+		gap: calc(var(--sy-mobile-space--extra-small) * 5);
+		overflow: visible;
+		min-height: 0;
+	}
+
+	.telemetry--container--mobile .telemetry--disclosure {
+		padding: var(--sy-mobile-space--medium);
+	}
+
+	.telemetry--container--mobile .telemetry--disclosure-text,
+	.telemetry--container--mobile .telemetry--setting-description,
+	.telemetry--container--mobile .telemetry--preview-subtitle {
+		font-size: var(--sy-font-size--mobile-small);
+	}
+
+	.telemetry--container--mobile .telemetry--setting {
+		gap: var(--sy-mobile-space--medium);
+	}
+
+	.telemetry--container--mobile .telemetry--setting-label {
+		font-size: var(--sy-font-size--mobile-medium);
+	}
+
+	.telemetry--container--mobile .telemetry--categories {
+		gap: calc(var(--sy-mobile-space--extra-small) * 5);
+		padding-left: var(--sy-mobile-space--medium);
+	}
+
+	.telemetry--container--mobile .telemetry--preview-title {
+		font-size: var(--sy-font-size--mobile-medium);
+	}
+
+	.telemetry--container--mobile :global(.sy-collapsible-list--header) {
+		gap: calc(var(--sy-mobile-space--extra-small) * 3);
+		padding: var(--sy-mobile-space--medium);
+	}
+
+	.telemetry--container--mobile .telemetry--event-time {
+		display: none;
 	}
 </style>

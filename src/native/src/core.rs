@@ -8,6 +8,11 @@ pub mod io;
 pub mod quiz;
 pub mod telemetry;
 
+#[tauri::command]
+pub fn is_dev_build() -> bool {
+    cfg!(debug_assertions)
+}
+
 // Re-export commonly used items for convenience
 pub use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,

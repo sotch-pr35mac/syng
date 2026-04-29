@@ -1,5 +1,6 @@
 <script>
 	import ChineseCharacters from './ChineseCharacters.svelte';
+	import { isMobile } from '../../utils/device.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -16,11 +17,20 @@
 		data-testid="chinese-characters"
 	>
 		<ChineseCharacters characters={word.simplified} tones={word.tone_marks}></ChineseCharacters>
-		{#if word.simplified !== word.traditional}
+		{#if word.simplified !== word.traditional && !isMobile()}
 			&nbsp;(<ChineseCharacters characters={word.traditional} tones={word.tone_marks}
 			></ChineseCharacters>)
 		{/if}
 	</h1>
+	{#if word.simplified !== word.traditional && isMobile()}
+		<h1
+			class="chinese-characters--character-container chinese-characters--character chinese-characters--traditional"
+			data-testid="chinese-characters-traditional"
+		>
+			(<ChineseCharacters characters={word.traditional} tones={word.tone_marks}
+			></ChineseCharacters>)
+		</h1>
+	{/if}
 	<div>
 		<h3 class="chinese-characters--pinyin-container sy-text--selectable">
 			{word.pinyin_marks}
@@ -47,5 +57,8 @@
 	.chinese-characters--character {
 		font-size: 3em;
 		font-weight: 300;
+	}
+	.chinese-characters--traditional {
+		margin-top: 0;
 	}
 </style>

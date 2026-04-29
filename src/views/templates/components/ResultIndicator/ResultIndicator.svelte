@@ -2,6 +2,7 @@
 	import { fade, slide } from 'svelte/transition';
 	import { Check, X } from 'lucide-svelte';
 	import SyTimer from '../SyTimer/SyTimer.svelte';
+	import { QUIZ_RESULT_DISPLAY_TIME } from '../../composables/study.js';
 
 	/* Is Correct Prop */
 	/* Possible Values */
@@ -23,7 +24,9 @@
 	 * @property {boolean} [show] - false
 	 * @property {any} [onComplete] - Callback function when the timer completes
 	 * @property {string} [chosenAnswer] - The answer that was chosen by the user
-	 * @property {any} timer - Timer component reference for external control (bindable)
+	 * @property {any} [timer] - Timer component reference for external control (bindable)
+	 * @property {'x' | 'y'} [slideAxis] - Axis used for the slide transition
+	 * @property {boolean} [timerVisible] - Render the built-in result countdown timer
 	 */
 
 	/* eslint-disable prefer-const -- timer uses $bindable() which requires let for the entire destructuring */
@@ -34,16 +37,20 @@
 		onComplete = () => {},
 		chosenAnswer = '',
 		timer = $bindable(),
+		slideAxis = 'x',
+		timerVisible = true,
 	} = $props();
 	/* eslint-enable prefer-const */
-
-	const RESULT_DISPLAY_TIME = 10;
 </script>
 
 {#if show}
 	<div class="result-container">
 		<!-- Result badge with slide animation -->
-		<div class="result-indicator" in:slide|global={{ duration: 250, axis: 'x' }}>
+		<div
+			class="result-indicator"
+			in:slide|global={{ duration: 250, axis: slideAxis }}
+			out:slide|global={{ duration: 250, axis: slideAxis }}
+		>
 			<div class="indicator-content">
 				{#if isCorrect}
 					<div class="icon-container" class:correct={isCorrect}>
@@ -61,17 +68,19 @@
 		</div>
 
 		<!-- Timer with fade animation -->
-		<div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
-			<!-- eslint-disable no-magic-numbers -->
-			<SyTimer
-				bind:this={timer}
-				duration={RESULT_DISPLAY_TIME}
-				size={32}
-				autoStart={true}
-				oncomplete={onComplete}
-			/>
-			<!-- eslint-enable no-magic-numbers -->
-		</div>
+		{#if timerVisible}
+			<div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
+				<!-- eslint-disable no-magic-numbers -->
+				<SyTimer
+					bind:this={timer}
+					duration={QUIZ_RESULT_DISPLAY_TIME}
+					size={32}
+					autoStart={true}
+					oncomplete={onComplete}
+				/>
+				<!-- eslint-enable no-magic-numbers -->
+			</div>
+		{/if}
 	</div>
 {/if}
 
@@ -112,7 +121,7 @@
 		color: var(--sy-color--white);
 	}
 	.text {
-		font-size: 14px;
+		font-size: var(--sy-font-size--result-caption);
 		font-family: var(--sy-font-family);
 	}
 	.answer-text {
