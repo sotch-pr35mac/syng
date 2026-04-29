@@ -8,6 +8,7 @@ import {
 	bookmarksActiveWordStore,
 } from '@/stores/bookmarksRoute.svelte.js';
 import { mobileBookmarksSnapStore } from '@/stores/mobileBookmarks.svelte.js';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 const FIRST_TONE = 1;
 const SECOND_TONE = 2;
@@ -89,7 +90,7 @@ function mockBookmarkManager() {
 }
 
 beforeEach(async () => {
-	window.bookmarkManager = mockBookmarkManager();
+	setBookmarkManagerForTest(mockBookmarkManager());
 	window.__TAURI__ = { dialog: { ask: vi.fn(() => Promise.resolve(false)) } };
 	bookmarksActiveListStore.set('Bookmarks');
 	bookmarksActiveWordStore.set(undefined);

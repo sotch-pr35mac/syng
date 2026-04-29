@@ -15,6 +15,8 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { getPreferenceManager } from '@/utils/appServices.js';
+	import { updateStore } from '@/stores/update.svelte.js';
 
 	const primaryNavigation = [
 		{
@@ -76,7 +78,7 @@
 	const isIPadDevice = isIPad();
 	let enableBetaFeatures = $state(false);
 	let trafficLightMargin = $state(isMacos || isIPadDevice);
-	let updateAvailable = $state(false);
+	const updateAvailable = $derived(updateStore.updateAvailable);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
 	onMount(() => {
@@ -97,28 +99,17 @@
 				});
 		}
 
-		// Seed from window in case the startup update check already finished
-		if (window.updateStatusAvailable) {
-			updateAvailable = window.updateAvailable || false;
-		}
-
-		const onUpdateCheckComplete = (e) => {
-			updateAvailable = e.detail.updateAvailable;
-		};
-		document.addEventListener('update-check-complete', onUpdateCheckComplete);
-
 		return () => {
 			if (unlisten) {
 				unlisten();
 			}
-			document.removeEventListener('update-check-complete', onUpdateCheckComplete);
 		};
 	});
 
-	window.preferenceManager
+	getPreferenceManager()
 		.waitForInit()
 		.then(() => {
-			enableBetaFeatures = window.preferenceManager.get('beta');
+			enableBetaFeatures = getPreferenceManager().get('beta');
 			return undefined;
 		})
 		.catch((err) => {

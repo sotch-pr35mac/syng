@@ -13,6 +13,7 @@ import {
 } from '@/stores/flashcards.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { quizRoute } from '@/composables/quiz.svelte.js';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -163,7 +164,7 @@ beforeEach(async () => {
 		finished: Promise.resolve(),
 		onfinish: null,
 	}));
-	window.bookmarkManager = mockBookmarkManager();
+	setBookmarkManagerForTest(mockBookmarkManager());
 	window.location.hash = '#/study';
 	studySubRouteStore.set(null);
 	flashcardsActiveListStore.set(null);

@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import Router from 'svelte-spa-router';
 	import Navigation from '@/components/Navigation/Navigation.svelte';
 	import SyToast from '@/components/SyToast/SyToast.svelte';
@@ -14,6 +13,7 @@
 	import Tools from '@/routes/Tools.svelte';
 	import { location } from 'svelte-spa-router';
 	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
+	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
@@ -22,11 +22,10 @@
 	runStartupActions();
 
 	let showUpdateToast = $state(false);
-	let toastMessage = $state('A new version of Syng is available.');
 
 	const buildToastMessage = () =>
-		window.updateVersion
-			? `Syng ${window.updateVersion} is available.`
+		updateStore.updateVersion
+			? `Syng ${updateStore.updateVersion} is available.`
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
@@ -36,24 +35,10 @@
 		}
 	});
 
-	onMount(() => {
-		// Seed from window in case the startup update check already finished before mount
-		if (window.updateStatusAvailable && window.updateAvailable) {
-			toastMessage = buildToastMessage();
+	$effect(() => {
+		if (updateStore.knownStatus && updateStore.updateAvailable) {
 			showUpdateToast = true;
 		}
-
-		const onUpdateCheckComplete = (e) => {
-			if (e.detail.updateAvailable) {
-				toastMessage = buildToastMessage();
-				showUpdateToast = true;
-			}
-		};
-		document.addEventListener('update-check-complete', onUpdateCheckComplete);
-
-		return () => {
-			document.removeEventListener('update-check-complete', onUpdateCheckComplete);
-		};
 	});
 
 	const handleUpdateAction = () => {
@@ -107,7 +92,7 @@
 
 <SyToast
 	visible={showUpdateToast}
-	message={toastMessage}
+	message={buildToastMessage()}
 	actionLabel="Update now"
 	corner="bottom-right"
 	onaction={handleUpdateAction}

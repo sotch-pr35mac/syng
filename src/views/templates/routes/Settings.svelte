@@ -15,6 +15,7 @@
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
+	import { getPreferenceManager } from '@/utils/appServices.js';
 
 	const isMacos = platform() === 'macos';
 
@@ -28,7 +29,7 @@
 			centerLabel: true,
 			component: SyToggle,
 			props: {
-				checked: window.preferenceManager.get('beta'),
+				checked: getPreferenceManager().get('beta'),
 				onchange: updateBetaPreference,
 			},
 		},

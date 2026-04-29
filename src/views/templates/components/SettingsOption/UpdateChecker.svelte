@@ -3,21 +3,21 @@
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { updateStore } from '@/stores/update.svelte.js';
+	import { getVersion } from '@tauri-apps/api/app';
 
-	let currentVersion = $state(window.version || '');
-	let updateVersion = $state(window.updateVersion || '');
-	let releaseNotes = $state(window.updateReleaseNotes || '');
-	let knownStatus = $state(window.updateStatusAvailable || false);
-	let updateAvailable = $state(window.updateAvailable || false);
+	const currentVersion = $derived(updateStore.currentVersion);
+	const updateVersion = $derived(updateStore.updateVersion);
+	const releaseNotes = $derived(updateStore.releaseNotes);
+	const knownStatus = $derived(updateStore.knownStatus);
+	const updateAvailable = $derived(updateStore.updateAvailable);
 	let checking = $state(false);
 	let updating = $state(false);
 
-	if (!window.version) {
-		window.__TAURI__.app
-			.getVersion()
+	if (!updateStore.currentVersion) {
+		getVersion()
 			.then((version) => {
-				currentVersion = version;
-				window.version = version;
+				updateStore.setCurrentVersion(version);
 				return undefined;
 			})
 			.catch((e) => {
@@ -28,31 +28,15 @@
 	const resetStatus = () => {
 		checking = false;
 		updating = false;
-		updateAvailable = false;
-		knownStatus = false;
-		updateVersion = '';
-		releaseNotes = '';
-		window.updateAvailable = false;
-		window.updateStatusAvailable = false;
-		window.updateVersion = '';
-		window.updateReleaseNotes = '';
-		window.pendingUpdate = null;
+		updateStore.resetStatus();
 	};
 
 	const updateStatus = () => {
 		checking = true;
 		updating = false;
 		checkForUpdate()
-			.then((update) => {
-				knownStatus = true;
+			.then(() => {
 				checking = false;
-				if (update) {
-					updateVersion = update.version;
-					releaseNotes = update.body || '';
-					updateAvailable = true;
-				} else {
-					updateAvailable = false;
-				}
 				return undefined;
 			})
 			.catch((e) => {

@@ -1,4 +1,5 @@
 export * from '@/utils/bookmarkManager.js';
+export * from '@/utils/appServices.js';
 export * from '@/utils/device.js';
 export * from '@/utils/telemetry.js';
 export * from '@/utils/color.js';

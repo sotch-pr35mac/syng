@@ -3,6 +3,7 @@ import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
 import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -33,10 +34,10 @@ const TEST_WORD = {
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
 
-global.bookmarkManager = mockBookmarkManager({
+setBookmarkManagerForTest(mockBookmarkManager({
 	words: [],
 	lists: ['Bookmarks'],
-});
+}));
 
 it('should display the definitions', async () => {
 	const { getByText } = render(DictionaryContent, {
