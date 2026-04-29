@@ -1,21 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import SyButton from '../../components/SyButton/SyButton.svelte';
-	import SyList from '../../components/SyList/SyList.svelte';
-	import SyTextInput from '../../components/SyTextInput/SyTextInput.svelte';
-	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
-	import SySnapSheet from '../../components/SySnapSheet/SySnapSheet.svelte';
-	import type { SyListPreviewValue } from '../../components/SyList/SyListPreview.types.js';
-	import { type SheetSnap } from '../../types/snapSheet.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
+	import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
+	import { type SheetSnap } from '@/types/snapSheet.js';
 	import { untrack } from 'svelte';
-	import { searchStore as search } from '../../composables/search.svelte.js';
-	import type { SearchEntry } from '../../types/search.js';
-	import { mobileCharacterWindowWordStore } from '../../stores/mobileCharacterWindowWord.svelte.js';
-	import {
-		mobileSearchQueryStore,
-		mobileSearchSnapStore,
-	} from '../../stores/mobileSearch.svelte.js';
-	import { scrollRestore } from '../../actions/scrollRestore.svelte.js';
+	import { searchStore as search } from '@/composables/search.svelte.js';
+	import type { SearchEntry } from '@/types/search.js';
+	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
+	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 
 	// sheetRef gives us access to collapse/openPartial/openFull on the snap sheet.
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);

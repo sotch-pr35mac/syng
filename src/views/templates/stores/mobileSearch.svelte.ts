@@ -1,5 +1,5 @@
-import type { SheetSnap } from '../types/snapSheet.js';
-import { createRouteState } from './routeState.svelte.js';
+import type { SheetSnap } from '@/types/snapSheet.js';
+import { createRouteState } from '@/stores/routeState.svelte.js';
 
 /**
  * App-lifetime UI state for MobileSearch. Both fields are cheap primitives — a string

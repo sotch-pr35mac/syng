@@ -2,16 +2,16 @@
 	import { onMount } from 'svelte';
 	import Router from 'svelte-spa-router';
 	import { location } from 'svelte-spa-router';
-	import MobileNavigation from './components/Navigation/MobileNavigation.svelte';
-	import MobileSearch from './routes/mobile/MobileSearch.svelte';
-	import MobileBookmarks from './routes/mobile/MobileBookmarks.svelte';
-	import MobileStudy from './routes/mobile/MobileStudy.svelte';
-	import MobileStudyFlashcards from './routes/mobile/MobileStudyFlashcards.svelte';
-	import MobileStudyQuiz from './routes/mobile/MobileStudyQuiz.svelte';
-	import MobileSettings from './routes/mobile/MobileSettings.svelte';
-	import MobileCharacters from './routes/mobile/MobileCharacters.svelte';
-	import NotFound from './routes/NotFound.svelte';
-	import { runStartupActions, telemetry } from './utils';
+	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
+	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
+	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
+	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
+	import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
+	import MobileStudyQuiz from '@/routes/mobile/MobileStudyQuiz.svelte';
+	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
+	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
+	import NotFound from '@/routes/NotFound.svelte';
+	import { runStartupActions, telemetry } from '@/utils';
 
 	runStartupActions();
 

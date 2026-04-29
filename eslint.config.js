@@ -115,5 +115,18 @@ export default [
 			// Correct parameter names in Promise constructors
 			'promise/param-names': 'error',
 		}
+	},
+	{
+		files: ['src/views/templates/**/*.{js,ts,svelte}', 'src/test/**/*.js'],
+		rules: {
+			'no-restricted-imports': ['error', {
+				patterns: [
+					{
+						group: ['./*', '../*'],
+						message: 'Use absolute imports with @/ or @test/ instead of relative paths.'
+					}
+				]
+			}]
+		}
 	}
 ];

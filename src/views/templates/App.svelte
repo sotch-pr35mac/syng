@@ -1,22 +1,22 @@
 <script>
 	import { onMount } from 'svelte';
 	import Router from 'svelte-spa-router';
-	import Navigation from './components/Navigation/Navigation.svelte';
-	import SyToast from './components/SyToast/SyToast.svelte';
-	import Bookmarks from './routes/Bookmarks.svelte';
-	import Chat from './routes/Chat.svelte';
-	import Help from './routes/Help.svelte';
-	import NotFound from './routes/NotFound.svelte';
-	import Reader from './routes/Reader.svelte';
-	import Search from './routes/Search.svelte';
-	import Settings from './routes/Settings.svelte';
-	import Study from './routes/Study.svelte';
-	import Tools from './routes/Tools.svelte';
+	import Navigation from '@/components/Navigation/Navigation.svelte';
+	import SyToast from '@/components/SyToast/SyToast.svelte';
+	import Bookmarks from '@/routes/Bookmarks.svelte';
+	import Chat from '@/routes/Chat.svelte';
+	import Help from '@/routes/Help.svelte';
+	import NotFound from '@/routes/NotFound.svelte';
+	import Reader from '@/routes/Reader.svelte';
+	import Search from '@/routes/Search.svelte';
+	import Settings from '@/routes/Settings.svelte';
+	import Study from '@/routes/Study.svelte';
+	import Tools from '@/routes/Tools.svelte';
 	import { location } from 'svelte-spa-router';
-	import { runStartupActions, handleError, installPendingUpdate, telemetry } from './utils';
-	import Flashcards from './routes/Study/Flashcards.svelte';
-	import Quiz from './routes/Study/Quiz.svelte';
-	import MobileCharacters from './routes/mobile/MobileCharacters.svelte';
+	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
+	import Flashcards from '@/routes/Study/Flashcards.svelte';
+	import Quiz from '@/routes/Study/Quiz.svelte';
+	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 
 	// Run the startup script
 	runStartupActions();

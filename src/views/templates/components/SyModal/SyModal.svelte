@@ -1,7 +1,7 @@
 <script>
 	import { X } from 'lucide-svelte';
-	import SyButton from '../SyButton/SyButton.svelte';
-	import { isMobile } from '../../utils/device.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { isMobile } from '@/utils/device.js';
 
 	/* Visible Prop */
 

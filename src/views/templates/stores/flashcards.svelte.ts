@@ -1,4 +1,4 @@
-import { createRouteState } from './routeState.svelte.js';
+import { createRouteState } from '@/stores/routeState.svelte.js';
 
 /**
  * App-lifetime UI state for the Flashcards route. Preserves the active list, card

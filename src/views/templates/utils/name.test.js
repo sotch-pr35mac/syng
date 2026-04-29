@@ -1,4 +1,4 @@
-import { resolveNameConflict } from './name.js';
+import { resolveNameConflict } from '@/utils/name.js';
 
 it('should return the name if it is not in the list', async () => {
 	const name = 'name';

@@ -1,4 +1,4 @@
-import { scrollRestore, clearScrollPositions } from './scrollRestore.svelte.js';
+import { scrollRestore, clearScrollPositions } from '@/actions/scrollRestore.svelte.js';
 
 const RESTORED_SCROLL_TOP = 200;
 const SAVED_SCROLL_TOP = 350;

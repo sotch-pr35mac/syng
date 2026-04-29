@@ -5,12 +5,12 @@ import {
 	mockBookmarkManager,
 	mockDictionary,
 	mockPreferenceManager,
-} from '../../../test/utils/unitTestUtils.js';
-import Search from './Search.svelte';
+} from '@test/utils/unitTestUtils.js';
+import Search from '@/routes/Search.svelte';
 
 // Mock must be defined inline because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		ChevronLeft: mockIcon,
 		ChevronRight: mockIcon,

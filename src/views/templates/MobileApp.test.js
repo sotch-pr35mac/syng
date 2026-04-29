@@ -1,18 +1,18 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MobileApp from './MobileApp.svelte';
-import { telemetry } from './utils';
+import MobileApp from '@/MobileApp.svelte';
+import { telemetry } from '@/utils';
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('./components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Settings: mockIcon,
 	};
 });
 
-vi.mock('./utils', async () => {
-	const actual = await vi.importActual('./utils');
+vi.mock('@/utils', async () => {
+	const actual = await vi.importActual('@/utils');
 	return {
 		...actual,
 		runStartupActions: vi.fn(),
@@ -22,29 +22,29 @@ vi.mock('./utils', async () => {
 	};
 });
 
-vi.mock('./routes/mobile/MobileSearch.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileSearch.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileBookmarks.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileBookmarks.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileStudy.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileStudy.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileStudyFlashcards.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileStudyFlashcards.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileStudyQuiz.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileStudyQuiz.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileSettings.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileSettings.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/mobile/MobileCharacters.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/mobile/MobileCharacters.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('./routes/NotFound.svelte', async () => ({
-	default: (await import('./components/__mocks__/RouteMock.svelte')).default,
+vi.mock('@/routes/NotFound.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 
 beforeEach(() => {

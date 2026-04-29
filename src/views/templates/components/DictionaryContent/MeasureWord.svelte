@@ -1,5 +1,5 @@
 <script>
-	import DictionaryLink from './DictionaryLink.svelte';
+	import DictionaryLink from '@/components/DictionaryContent/DictionaryLink.svelte';
 
 	/**
 	 * @typedef {Object} Props

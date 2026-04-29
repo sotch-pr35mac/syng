@@ -23,7 +23,7 @@
 	 * @property {(event: Event) => void} [onenter] - Enter key handler
 	 */
 
-	import { isMobile } from '../../utils/device.js';
+	import { isMobile } from '@/utils/device.js';
 
 	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
 	const mobile = isMobile();

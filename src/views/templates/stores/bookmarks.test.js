@@ -22,7 +22,7 @@ const buildManager = (overrides = {}) => ({
 
 beforeEach(async () => {
 	vi.resetModules();
-	({ bookmarksStore } = await import('./bookmarks.svelte.js'));
+	({ bookmarksStore } = await import('@/stores/bookmarks.svelte.js'));
 });
 
 it('should start with an empty lists array before refresh', () => {

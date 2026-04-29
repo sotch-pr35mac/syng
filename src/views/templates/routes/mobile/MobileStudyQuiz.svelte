@@ -3,19 +3,19 @@
 	import { querystring } from 'svelte-spa-router';
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import SyButton from '../../components/SyButton/SyButton.svelte';
-	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
-	import MobileTimer from '../../components/MobileTimer/MobileTimer.svelte';
-	import SyProgressLine from '../../components/SyProgressLine/SyProgressLine.svelte';
-	import ResultIndicator from '../../components/ResultIndicator/ResultIndicator.svelte';
-	import QuizResults from '../../components/QuizResults/QuizResults.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import MobileTimer from '@/components/MobileTimer/MobileTimer.svelte';
+	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';
+	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
+	import QuizResults from '@/components/QuizResults/QuizResults.svelte';
 	import {
 		CHARACTER_QUESTIONS,
 		EMPTY_QUIZ_MESSAGE,
 		LOADING_STUDY_MESSAGE,
 		QUIZ_RESULT_DISPLAY_TIME,
-	} from '../../composables/study.js';
-	import { quizRoute } from '../../composables/quiz.svelte.js';
+	} from '@/composables/study.js';
+	import { quizRoute } from '@/composables/quiz.svelte.js';
 
 	const RESULT_TOAST_DISPLAY_TIME = 3000;
 	const TIMER_SIZE = 44;

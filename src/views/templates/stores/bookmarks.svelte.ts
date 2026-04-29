@@ -1,5 +1,5 @@
-import type { SearchEntry } from '../types/search.js';
-import { handleError } from '../utils/error.js';
+import type { SearchEntry } from '@/types/search.js';
+import { handleError } from '@/utils/error.js';
 
 /**
  * A word entry as stored by BookmarkManager in the documents PouchDB. Extends SearchEntry

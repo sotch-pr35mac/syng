@@ -1,8 +1,8 @@
 <script>
-	import { handleError, checkForUpdate, installPendingUpdate } from '../../utils/';
+	import { handleError, checkForUpdate, installPendingUpdate } from '@/utils';
 	import { marked } from 'marked';
 	import DOMPurify from 'dompurify';
-	import SyButton from '../SyButton/SyButton.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 
 	let currentVersion = $state(window.version || '');
 	let updateVersion = $state(window.updateVersion || '');

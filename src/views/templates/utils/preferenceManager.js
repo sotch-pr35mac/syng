@@ -6,7 +6,7 @@
  * Initialization must occur as Syng prefers to operate over a cache of the preferences
  * from the db during the session.
  */
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 /*
  * Description: Construct a preference entry.

@@ -4,15 +4,15 @@ import {
 	resolveIsDevBuild,
 	updateBetaPreference,
 	updateToneColorsPreference,
-} from './settings.js';
-import { telemetry } from '../utils/telemetry.js';
+} from '@/composables/settings.js';
+import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
 }));
 
-vi.mock('../utils/telemetry.js', () => ({
+vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		trackEvent: vi.fn(() => Promise.resolve()),
 	},

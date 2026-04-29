@@ -11,9 +11,9 @@
 		GraduationCap,
 	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
-	import { handleError } from '../../utils/';
+	import { handleError } from '@/utils';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { isIPad } from '../../utils/device.js';
+	import { isIPad } from '@/utils/device.js';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 
 	const primaryNavigation = [

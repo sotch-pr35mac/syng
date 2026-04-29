@@ -1,4 +1,4 @@
-import { createRouteState } from './routeState.svelte.js';
+import { createRouteState } from '@/stores/routeState.svelte.js';
 
 const UPDATED_NUMBER = 42;
 

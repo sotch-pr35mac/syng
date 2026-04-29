@@ -53,7 +53,7 @@
 	 * @property {() => void} [onclick] - Click handler
 	 */
 
-	import { isMobile } from '../../utils/device.js';
+	import { isMobile } from '@/utils/device.js';
 
 	// Optimized for mobile: 44px minimum touch target, larger small-size font.
 	const mobile = isMobile();

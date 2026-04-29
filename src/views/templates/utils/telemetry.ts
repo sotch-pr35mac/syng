@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { version } from '@tauri-apps/plugin-os';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 export interface TelemetryPrefs {
 	enabled: boolean;

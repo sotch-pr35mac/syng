@@ -1,8 +1,8 @@
 <script>
 	import { fade, slide } from 'svelte/transition';
 	import { Check, X } from 'lucide-svelte';
-	import SyTimer from '../SyTimer/SyTimer.svelte';
-	import { QUIZ_RESULT_DISPLAY_TIME } from '../../composables/study.js';
+	import SyTimer from '@/components/SyTimer/SyTimer.svelte';
+	import { QUIZ_RESULT_DISPLAY_TIME } from '@/composables/study.js';
 
 	/* Is Correct Prop */
 	/* Possible Values */

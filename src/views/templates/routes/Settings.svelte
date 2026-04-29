@@ -1,20 +1,20 @@
 <script>
 	import { onMount } from 'svelte';
-	import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
-	import UpdateChecker from '../components/SettingsOption/UpdateChecker.svelte';
-	import TelemetrySettings from '../components/TelemetrySettings/TelemetrySettings.svelte';
-	import SyTab from '../components/SyTab/SyTab.svelte';
-	import SyToggle from '../components/SyToggle/SyToggle.svelte';
+	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
+	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
+	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { settingsActiveTabStore } from '../stores/settings.svelte.js';
-	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
+	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
 		isDevBuild,
 		resolveIsDevBuild,
 		updateBetaPreference,
 		updateToneColorsPreference,
-	} from '../composables/settings.js';
-	import { isIPad } from '../utils/device.js';
+	} from '@/composables/settings.js';
+	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
 

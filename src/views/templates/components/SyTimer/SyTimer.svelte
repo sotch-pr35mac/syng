@@ -1,7 +1,7 @@
 <script>
 	/* eslint-disable no-magic-numbers */
 	import { onMount, onDestroy } from 'svelte';
-	import { interpolateColor } from '../../utils/color';
+	import { interpolateColor } from '@/utils/color';
 
 	/* Duration Prop */
 

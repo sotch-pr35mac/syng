@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import SyToggle from '../SyToggle/SyToggle.svelte';
-	import SyCollapsibleList from '../SyCollapsibleList/SyCollapsibleList.svelte';
-	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '../../utils/telemetry.js';
-	import { handleError } from '../../utils/error.js';
+	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
+	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
+	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '@/utils/telemetry.js';
+	import { handleError } from '@/utils/error.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';

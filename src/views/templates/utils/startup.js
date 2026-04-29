@@ -6,21 +6,21 @@
  * something from an action that hasn't completed yet.
  */
 import elasticScroll from 'elastic-scroll-polyfill';
-import { BookmarkManager } from './bookmarkManager.js';
-import { bookmarksStore } from '../stores/bookmarks.svelte.js';
-import { handleError } from './error.js';
+import { BookmarkManager } from '@/utils/bookmarkManager.js';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { handleError } from '@/utils/error.js';
 import {
 	checkAndPerformMigration,
 	exportMigrationData,
 	setupShutdownHook,
-} from './migrationManager.js';
-import { PreferenceManager } from './preferenceManager.js';
-import { inDebugMode } from './process.js';
+} from '@/utils/migrationManager.js';
+import { PreferenceManager } from '@/utils/preferenceManager.js';
+import { inDebugMode } from '@/utils/process.js';
 import { invoke } from '@tauri-apps/api/core';
-import { checkForUpdate } from './updateManager.js';
-import { isMobile } from './device.js';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
-import { telemetry } from './telemetry.js';
+import { checkForUpdate } from '@/utils/updateManager.js';
+import { isMobile } from '@/utils/device.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { telemetry } from '@/utils/telemetry.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.

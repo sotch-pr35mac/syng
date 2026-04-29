@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 it('should alert the user with the error message', async () => {
 	global.alert = vi.fn();

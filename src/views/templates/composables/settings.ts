@@ -1,6 +1,6 @@
-import { telemetry } from '../utils/telemetry.js';
+import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 interface BuildEnv {
 	DEV?: boolean;

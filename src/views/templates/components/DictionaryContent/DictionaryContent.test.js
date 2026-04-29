@@ -1,12 +1,12 @@
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
-import DictionaryContent from './DictionaryContent.svelte';
+import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
+import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Plus: mockIcon,
 		Check: mockIcon,

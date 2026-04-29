@@ -1,4 +1,4 @@
-import type { BookmarkWordEntry } from '../stores/bookmarks.svelte.js';
+import type { BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
 
 export const PINYIN_QUESTIONS = 'Pinyin';
 export const ENGLISH_QUESTIONS = 'English';

@@ -1,20 +1,20 @@
 <script>
 	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
-	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
-	import SyButton from '../components/SyButton/SyButton.svelte';
-	import SyDropdown from '../components/SyDropdown/SyDropdown.svelte';
-	import SyList from '../components/SyList/SyList.svelte';
-	import SyModal from '../components/SyModal/SyModal.svelte';
-	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { onMount, tick } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
-	} from '../composables/bookmarks.svelte.js';
-	import { isIPad } from '../utils/device.js';
+	} from '@/composables/bookmarks.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();

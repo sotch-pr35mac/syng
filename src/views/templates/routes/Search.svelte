@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
-	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
-	import SyButton from '../components/SyButton/SyButton.svelte';
-	import SyList from '../components/SyList/SyList.svelte';
-	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { searchStore as search } from '../composables/search.svelte.js';
-	import type { SearchEntry } from '../types/search.js';
-	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
-	import { isIPad } from '../utils/device.js';
+	import { searchStore as search } from '@/composables/search.svelte.js';
+	import type { SearchEntry } from '@/types/search.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 
 	let highlightActive = $state(true);
 	const isMacos = platform() === 'macos';

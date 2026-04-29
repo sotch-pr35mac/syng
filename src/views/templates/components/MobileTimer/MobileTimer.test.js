@@ -1,9 +1,9 @@
 import { afterEach, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/svelte';
-import MobileTimer from './MobileTimer.svelte';
+import MobileTimer from '@/components/MobileTimer/MobileTimer.svelte';
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Pause: mockIcon,
 		Play: mockIcon,

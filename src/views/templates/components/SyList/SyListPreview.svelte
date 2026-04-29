@@ -1,9 +1,9 @@
 <script>
-	import { isIPad, isMobile } from '../../utils/device.js';
-	import SyTextInput from '../SyTextInput/SyTextInput.svelte';
-	import SyListPreviewItem from './SyListPreviewItem.svelte';
+	import { isIPad, isMobile } from '@/utils/device.js';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import SyListPreviewItem from '@/components/SyList/SyListPreviewItem.svelte';
 
-	/** @typedef {import('./SyListPreview.types.js').SyListPreviewValue} SyListPreviewValue */
+	/** @typedef {import('@/components/SyList/SyListPreview.types.js').SyListPreviewValue} SyListPreviewValue */
 
 	const id = Math.floor(Math.random() * 100);
 	const mobile = isMobile();

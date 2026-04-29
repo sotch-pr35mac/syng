@@ -12,7 +12,7 @@
 	 */
 
 	/** @type {Props} */
-	import { isMobile } from '../../utils/device.js';
+	import { isMobile } from '@/utils/device.js';
 
 	// Optimized for mobile: larger touch targets and row height.
 	const mobile = isMobile();

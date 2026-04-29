@@ -1,11 +1,11 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MobileSettings from './MobileSettings.svelte';
-import { settingsActiveTabStore } from '../../stores/settings.svelte.js';
-import { telemetry } from '../../utils/telemetry.js';
+import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
+import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { telemetry } from '@/utils/telemetry.js';
 
-vi.mock('../../utils/telemetry.js', () => ({
+vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		getPrefs: vi.fn(() =>
 			Promise.resolve({

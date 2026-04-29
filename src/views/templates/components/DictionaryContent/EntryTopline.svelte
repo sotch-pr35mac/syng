@@ -1,6 +1,6 @@
 <script>
-	import ChineseCharacters from './ChineseCharacters.svelte';
-	import { isMobile } from '../../utils/device.js';
+	import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.svelte';
+	import { isMobile } from '@/utils/device.js';
 
 	/**
 	 * @typedef {Object} Props

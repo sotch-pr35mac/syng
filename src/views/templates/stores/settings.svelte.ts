@@ -1,4 +1,4 @@
-import { createRouteState } from './routeState.svelte.js';
+import { createRouteState } from '@/stores/routeState.svelte.js';
 
 /**
  * App-lifetime UI state for the Settings route. Persists the active tab so returning

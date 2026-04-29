@@ -1,5 +1,5 @@
 <script>
-	import { isMobile } from '../../utils/device.js';
+	import { isMobile } from '@/utils/device.js';
 
 	/* Component Prop */
 	// The component to render as a list item

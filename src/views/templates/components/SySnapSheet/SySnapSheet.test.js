@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
-import SySnapSheet from './SySnapSheet.svelte';
-import { COLLAPSED_HEIGHT, FULL_HEIGHT_RATIO } from '../../types/snapSheet.js';
+import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
+import { COLLAPSED_HEIGHT, FULL_HEIGHT_RATIO } from '@/types/snapSheet.js';
 
 const PARTIAL_HEIGHT_RATIO = 0.38;
 const DRAG_START_Y = 700;

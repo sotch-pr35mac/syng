@@ -1,6 +1,6 @@
 <script>
-	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '../../types/dropdown.js';
-	import { isMobile } from '../../utils/device.js';
+	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '@/types/dropdown.js';
+	import { isMobile } from '@/utils/device.js';
 
 	/* Dropdown Values Prop */
 	// The values to be present in the dropdown list.
@@ -22,8 +22,8 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} [values] - ]
-	 * @property {import('../../types/dropdown.js').DropdownPosition} [position] - Left aligned to the dropdown trigger
-	 * @property {import('../../types/dropdown.js').DropdownDirection} [direction] - Direction the dropdown opens
+	 * @property {import('@/types/dropdown.js').DropdownPosition} [position] - Left aligned to the dropdown trigger
+	 * @property {import('@/types/dropdown.js').DropdownDirection} [direction] - Direction the dropdown opens
 	 * @property {boolean} [fixed] - Use fixed positioning to escape overflow:hidden containers
 	 * @property {import('svelte').Snippet<[boolean]>} [children] - Receives the open state as a parameter
 	 * @property {(id: any) => void} [onselection] - Selection handler

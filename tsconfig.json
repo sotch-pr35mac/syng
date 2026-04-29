@@ -12,11 +12,17 @@
 		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": false,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/views/templates/*"],
+			"@test/*": ["src/test/*"]
+		}
 	},
 	"include": [
 		"src/views/templates/**/*.ts",
 		"src/views/templates/**/*.svelte",
+		"src/test/**/*.js",
 		"vite.config.js"
 	],
 	"exclude": [

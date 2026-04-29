@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
-import { handleError } from '../utils/error.js';
-import { telemetry } from '../utils/telemetry.js';
-import { LANG_COMMANDS, SEARCH_LANGS, type SearchEntry, type SearchLang } from '../types/search.js';
-import { bookmarksStore } from '../stores/bookmarks.svelte.js';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
+import { handleError } from '@/utils/error.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { LANG_COMMANDS, SEARCH_LANGS, type SearchEntry, type SearchLang } from '@/types/search.js';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 const SEARCH_TRACK_DEBOUNCE_MS = 800;
 
