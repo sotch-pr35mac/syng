@@ -62,9 +62,7 @@ global.dictionary = mockDictionary('EN', [
 		measureWords: [{ simplified: 'MWA', traditional: 'MWA' }],
 	},
 ]);
-global.preferenceManager = mockPreferenceManager({
-	transparency: process.platform === 'darwin',
-});
+global.preferenceManager = mockPreferenceManager({});
 global.bookmarkManager = mockBookmarkManager({
 	words: [],
 	lists: ['Bookmarks'],

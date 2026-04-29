@@ -12,11 +12,8 @@
 	import { isIPad } from '../utils/device.js';
 
 	let highlightActive = $state(true);
-	const enableTransparency = false;
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
-	// Disabling transparency for now since it doesn't work in Tauri as well as in Electron
-	// enableTransparency = isMacos && window.preferenceManager.get('transparency');
 
 	const searchResults = $derived(
 		search.fullResults.map((entry) => ({
@@ -130,7 +127,6 @@
 <div class="search-page-container">
 	<div
 		class="search-bar-container"
-		class:search-bar-container--transparency={enableTransparency}
 		class:search-bar-container--ipad={isIPadDevice}
 		data-testid="search-bar-container"
 		data-tauri-drag-region={isMacos ? true : undefined}
@@ -155,7 +151,6 @@
 			size="large"
 			placeholder="Search..."
 			id="search"
-			transparency={enableTransparency}
 			onchange={(value) => doSearch(value, true)}
 			onkeyup={(value) => doSearch(value, false)}
 			onenter={handleEnter}
@@ -195,9 +190,6 @@
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
-	}
-	.search-bar-container--transparency {
-		background-color: var(--sy-color--white--transparency);
 	}
 	.search-bar-container--ipad {
 		padding-top: var(--sy-space--large);

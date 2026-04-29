@@ -276,7 +276,6 @@
 		flex-direction: column;
 		justify-content: center;
 	}
-	/* TODO: Move this to componenet before merging */
 	.dictionary-content {
 		display: flex;
 		flex: 9;

@@ -67,25 +67,6 @@
 			})
 			.catch(() => {});
 	});
-
-	/* Disabling transparency for the time being since Tauri handles it a bit differently than Electron */
-	/*
-if(isMacos) {
-	const macOSPreferences = [
-		{
-			label: 'Transparency',
-			centerLabel: true,
-			handler: e => window.preferenceManager.set('transparency', e.detail),
-			component: SyToggle,
-			props: {
-				checked: window.preferenceManager.get('transparency')
-			}
-		},
-	];
-
-	preferences = [...macOSPreferences, ...preferences];
-}
-*/
 </script>
 
 <div class="settings--container">

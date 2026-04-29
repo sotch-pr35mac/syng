@@ -75,7 +75,6 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	let enableBetaFeatures = $state(false);
-	let enableTransparency = $state(false);
 	let trafficLightMargin = $state(isMacos || isIPadDevice);
 	let updateAvailable = $state(false);
 
@@ -120,7 +119,6 @@
 		.waitForInit()
 		.then(() => {
 			enableBetaFeatures = window.preferenceManager.get('beta');
-			enableTransparency = isMacos && window.preferenceManager.get('transparency');
 			return undefined;
 		})
 		.catch((err) => {
@@ -131,7 +129,7 @@
 		});
 </script>
 
-<div class="navigation-container" class:navigation-container--transparency={enableTransparency}>
+<div class="navigation-container">
 	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
 		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
@@ -191,9 +189,6 @@
 		align-items: center;
 		justify-content: space-between;
 		box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
-	}
-	.navigation-container--transparency {
-		background-color: var(--sy-color--grey-2--transparency);
 	}
 	.navigation--primary-nav {
 		display: flex;

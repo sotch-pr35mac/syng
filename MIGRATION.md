@@ -6,7 +6,7 @@ This document describes the data migration system implemented to preserve user d
 
 When upgrading from Tauri 1 to Tauri 2, the WebView's data directory path changes. This means that data stored in IndexedDB (where PouchDB stores its data) becomes inaccessible after the upgrade. Users would lose their:
 
-- **Preferences** (tone colors, transparency settings, beta opt-in)
+- **Preferences** (tone colors, beta opt-in)
 - **Word Lists** (custom vocabulary lists they've created)
 - **Bookmarks** (saved words with notes)
 
@@ -63,7 +63,7 @@ Structure:
   "exportedAt": "2024-01-15T10:30:00.000Z",
   "databases": {
     "config": [
-      { "_id": "config", "_rev": "...", "transparency": {...}, "toneColors": {...} }
+      { "_id": "config", "_rev": "...", "toneColors": {...} }
     ],
     "wordLists": [
       { "_id": "abc123", "_rev": "...", "name": "Bookmarks" },
@@ -260,4 +260,3 @@ However, keeping it has minimal overhead and provides an ongoing backup mechanis
 | Version | Date | Changes |
 |---------|------|---------|
 | 1 | 2024 | Initial migration system for Tauri 1 → 2 upgrade |
-

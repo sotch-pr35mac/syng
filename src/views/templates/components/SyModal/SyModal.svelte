@@ -56,7 +56,7 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: var(--sy-color--black--transparency);
+		background-color: var(--sy-color--modal-overlay);
 		z-index: var(--sy-z-index--top-2);
 	}
 	.sy-modal--content {
