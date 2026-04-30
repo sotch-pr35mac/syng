@@ -4,6 +4,7 @@
 	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
+	import { listen } from '@tauri-apps/api/event';
 	import { handleError } from '@/utils/error.js';
 
 	// Constants
@@ -109,7 +110,7 @@
 	};
 
 	// Event Listeners
-	window.__TAURI__.event.listen('display-characters', (requestedWord) => {
+	listen('display-characters', (requestedWord) => {
 		word = requestedWord.payload;
 		loadAllCharacters(word[activeScript]);
 	});

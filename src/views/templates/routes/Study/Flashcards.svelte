@@ -3,13 +3,13 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { router } from 'svelte-spa-router';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 	const isMacos = platform() === 'macos';
-	const params = new URLSearchParams($querystring);
+	const params = new URLSearchParams(router.querystring);
 	const listFromUrl = params.get('list');
 	const lists = $derived(flashcardsRoute.lists);
 	const activeWord = $derived(flashcardsRoute.activeWord);

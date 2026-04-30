@@ -11,7 +11,7 @@
 	import Settings from '@/routes/Settings.svelte';
 	import Study from '@/routes/Study.svelte';
 	import Tools from '@/routes/Tools.svelte';
-	import { location } from 'svelte-spa-router';
+	import { router } from 'svelte-spa-router';
 	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
@@ -29,7 +29,7 @@
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
-		const screenName = routeScreenNames[$location];
+		const screenName = routeScreenNames[router.location];
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}

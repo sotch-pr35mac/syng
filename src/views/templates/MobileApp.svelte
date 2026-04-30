@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Router from 'svelte-spa-router';
-	import { location } from 'svelte-spa-router';
+	import { router } from 'svelte-spa-router';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
@@ -43,7 +43,7 @@
 	let viewportOffsetTop = $state(window.visualViewport?.offsetTop ?? 0);
 
 	$effect(() => {
-		const screenName = routeScreenNames[$location];
+		const screenName = routeScreenNames[router.location];
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}

@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { Plus } from 'lucide-svelte';
 import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
@@ -159,8 +160,7 @@ function deleteActiveList(): Promise<boolean> {
 }
 
 function confirmDeleteActiveList(): Promise<boolean> {
-	return window.__TAURI__.dialog
-		.ask(`Are you sure you want to delete ${activeList}?`, 'Delete List')
+	return ask(`Are you sure you want to delete ${activeList}?`, { title: 'Delete List' })
 		.then((confirmed: boolean) => {
 			if (confirmed) {
 				return deleteActiveList();

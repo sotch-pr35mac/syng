@@ -14,7 +14,7 @@
 		"fs:allow-exists",
 		"fs:allow-appdata-read-recursive",
 		"fs:allow-appdata-write-recursive",
-		{ "identifier": "fs:scope", "allow": ["*"] },
+		{ "identifier": "fs:scope", "allow": ["$APPDATA/**"] },
 		"fs:default",
 		"http:default",
 		"notification:default",

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ArrowRight, RotateCw, SquareStack, X } from 'lucide-svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { router } from 'svelte-spa-router';
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -20,7 +20,7 @@
 	const RESULT_TOAST_DISPLAY_TIME = 3000;
 	const TIMER_SIZE = 44;
 
-	const params = new URLSearchParams($querystring);
+	const params = new URLSearchParams(router.querystring);
 	const activeList = params.get('list');
 
 	let showResultToast = $state(false);
