@@ -1,9 +1,9 @@
-import App from './App.svelte';
-import MobileApp from './MobileApp.svelte';
-import CharacterWindow from './CharacterWindow.svelte';
+import App from '@/App.svelte';
+import MobileApp from '@/MobileApp.svelte';
+import CharacterWindow from '@/CharacterWindow.svelte';
 import { mount } from 'svelte';
-import { isMobile, isIPad } from './utils/device.js';
-import { handleError } from './utils/error.js';
+import { isMobile, isIPad } from '@/utils/device.js';
+import { handleError } from '@/utils/error.js';
 
 let app;
 

@@ -1,13 +1,13 @@
 <script>
 	import { onMount } from 'svelte';
-	import SyList from '../components/SyList/SyList.svelte';
-	import StudyListItem from '../components/StudyListItem/StudyListItem.svelte';
-	import { handleError } from '../utils';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
+	import { handleError } from '@/utils';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { bookmarksStore } from '../stores/bookmarks.svelte.js';
-	import { studySubRouteStore } from '../stores/studyRoute.svelte.js';
-	import { flashcardsActiveListStore } from '../stores/flashcards.svelte.js';
-	import { isIPad } from '../utils/device.js';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+	import { flashcardsActiveListStore } from '@/stores/flashcards.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();

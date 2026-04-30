@@ -1,5 +1,5 @@
 <script>
-	import SyButton from '../SyButton/SyButton.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { SquareStack, Award } from 'lucide-svelte';
 
 	/**

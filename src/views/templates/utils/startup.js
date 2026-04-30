@@ -6,21 +6,20 @@
  * something from an action that hasn't completed yet.
  */
 import elasticScroll from 'elastic-scroll-polyfill';
-import { BookmarkManager } from './bookmarkManager.js';
-import { bookmarksStore } from '../stores/bookmarks.svelte.js';
-import { handleError } from './error.js';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { handleError } from '@/utils/error.js';
 import {
 	checkAndPerformMigration,
 	exportMigrationData,
 	setupShutdownHook,
-} from './migrationManager.js';
-import { PreferenceManager } from './preferenceManager.js';
-import { inDebugMode } from './process.js';
+} from '@/utils/migrationManager.js';
+import { inDebugMode } from '@/utils/process.js';
 import { invoke } from '@tauri-apps/api/core';
-import { checkForUpdate } from './updateManager.js';
-import { isMobile } from './device.js';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
-import { telemetry } from './telemetry.js';
+import { checkForUpdate } from '@/utils/updateManager.js';
+import { isMobile } from '@/utils/device.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { createAppServices } from '@/utils/appServices.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -41,8 +40,7 @@ export const runStartupActions = () => {
 	const configDb = debugMode ? 'development_config' : 'config';
 	const listDb = debugMode ? 'development_word-lists' : 'word-lists';
 	const bookmarkDb = debugMode ? 'development_bookmarks' : 'bookmarks';
-	window.preferenceManager = new PreferenceManager(configDb);
-	window.bookmarkManager = new BookmarkManager(listDb, bookmarkDb);
+	const { preferenceManager, bookmarkManager } = createAppServices(configDb, listDb, bookmarkDb);
 
 	const startupActions = [
 		{
@@ -51,11 +49,11 @@ export const runStartupActions = () => {
 		},
 		{
 			name: 'init-preference-manager',
-			action: window.preferenceManager.init(),
+			action: preferenceManager.init(),
 		},
 		{
 			name: 'init-bookmark-manager',
-			action: window.bookmarkManager.init(),
+			action: bookmarkManager.init(),
 		},
 		{
 			name: 'init-telemetry',
@@ -63,7 +61,7 @@ export const runStartupActions = () => {
 		},
 	];
 	const initializeStyles = () => {
-		const colorSettings = window.preferenceManager.get('toneColors');
+		const colorSettings = preferenceManager.get('toneColors');
 		if (colorSettings.hasCustomColors) {
 			const globalStyles = document.querySelector(':root').style;
 			const toneColors = colorSettings.colors;
@@ -78,19 +76,19 @@ export const runStartupActions = () => {
 			// Migration: Check if we need to restore from a backup file
 			// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
 			try {
-				await checkAndPerformMigration(window.preferenceManager, window.bookmarkManager);
+				await checkAndPerformMigration(preferenceManager, bookmarkManager);
 			} catch (error) {
 				handleError('Migration check failed', error, { silent: true });
 			}
 
 			// Migration: Setup shutdown hook to save data when app closes
 			// This ensures fresh data is available for future migrations
-			await setupShutdownHook(window.preferenceManager, window.bookmarkManager);
+			await setupShutdownHook(preferenceManager, bookmarkManager);
 
 			// Migration: Also export a backup on startup as a safety net
 			// In case the app crashes before a clean shutdown
 			try {
-				await exportMigrationData(window.preferenceManager, window.bookmarkManager);
+				await exportMigrationData(preferenceManager, bookmarkManager);
 			} catch (error) {
 				handleError('Startup backup export failed', error, { silent: true });
 			}

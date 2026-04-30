@@ -5,8 +5,8 @@
 		COLLAPSED_HEIGHT,
 		PARTIAL_HEIGHT_RATIO,
 		FULL_HEIGHT_RATIO,
-	} from '../../types/snapSheet.js';
-	import type { SheetSnap } from '../../types/snapSheet.js';
+	} from '@/types/snapSheet.js';
+	import type { SheetSnap } from '@/types/snapSheet.js';
 
 	const getPartialHeight = () => Math.round(window.innerHeight * PARTIAL_HEIGHT_RATIO);
 	const getFullHeight = () => Math.round(window.innerHeight * FULL_HEIGHT_RATIO);

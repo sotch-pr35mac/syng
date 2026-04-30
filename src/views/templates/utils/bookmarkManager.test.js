@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { BookmarkManager } from './bookmarkManager.js';
+import { BookmarkManager } from '@/utils/bookmarkManager.js';
 
 // Mock the PouchDB API
 // eslint-disable-next-line no-magic-numbers

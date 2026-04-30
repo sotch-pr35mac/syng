@@ -1,6 +1,6 @@
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import SyCollapsibleList from './SyCollapsibleList.svelte';
+import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
 
 const ITEMS = [
 	{ id: '1', label: 'First' },

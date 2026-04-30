@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import StudyListItem from '../../components/StudyListItem/StudyListItem.svelte';
-	import { bookmarksStore } from '../../stores/bookmarks.svelte.js';
-	import { flashcardsActiveListStore } from '../../stores/flashcards.svelte.js';
-	import { studySubRouteStore } from '../../stores/studyRoute.svelte.js';
-	import { handleError } from '../../utils/index.js';
+	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { flashcardsActiveListStore } from '@/stores/flashcards.svelte.js';
+	import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+	import { handleError } from '@/utils/index.js';
 
 	let emptyLists = $state<string[]>([]);
 

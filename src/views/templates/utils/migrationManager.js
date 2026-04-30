@@ -18,7 +18,7 @@ import { appDataDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { platform } from '@tauri-apps/plugin-os';
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
 const MIGRATION_VERSION = 1;

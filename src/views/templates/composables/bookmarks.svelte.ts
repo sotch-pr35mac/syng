@@ -1,21 +1,21 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Plus } from 'lucide-svelte';
-import DividerDropdownItem from '../components/SyDropdown/DividerDropdownItem.svelte';
-import SimpleTextDropdownItem from '../components/SyDropdown/SimpleTextDropdownItem.svelte';
-import TextWithIconDropdownItem from '../components/SyDropdown/TextWithIconDropdownItem.svelte';
-import type { SyListPreviewValue } from '../components/SyList/SyListPreview.types.js';
+import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
+import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
+import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
+import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 import {
 	bookmarksStore,
 	type BookmarkWordEntry,
 	type BookmarkWordInput,
-} from '../stores/bookmarks.svelte.js';
+} from '@/stores/bookmarks.svelte.js';
 import {
 	bookmarksActiveListStore,
 	bookmarksActiveWordStore,
-} from '../stores/bookmarksRoute.svelte.js';
-import { mobileCharacterWindowWordStore } from '../stores/mobileCharacterWindowWord.svelte.js';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
-import { handleError, resolveNameConflict, telemetry } from '../utils/';
+} from '@/stores/bookmarksRoute.svelte.js';
+import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { handleError, resolveNameConflict, telemetry } from '@/utils';
 
 export const DEFAULT_BOOKMARKS_LIST = 'Bookmarks';
 export const CREATE_NEW_LIST_ID = 'create-new';

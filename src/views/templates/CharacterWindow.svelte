@@ -2,9 +2,9 @@
 	import HanziWriter from 'hanzi-writer';
 	import { tick } from 'svelte';
 	import { Pause, Play } from 'lucide-svelte';
-	import SyButton from './components/SyButton/SyButton.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { handleError } from './utils/error.js';
+	import { handleError } from '@/utils/error.js';
 
 	// Constants
 	const LIGHT_MODE_TEXT_COLOR = '#474C5A';

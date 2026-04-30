@@ -1,22 +1,19 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
-	import DictionaryContent from '../components/DictionaryContent/DictionaryContent.svelte';
-	import SyButton from '../components/SyButton/SyButton.svelte';
-	import SyList from '../components/SyList/SyList.svelte';
-	import SyTextInput from '../components/SyTextInput/SyTextInput.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { searchStore as search } from '../composables/search.svelte.js';
-	import type { SearchEntry } from '../types/search.js';
-	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
-	import { isIPad } from '../utils/device.js';
+	import { searchStore as search } from '@/composables/search.svelte.js';
+	import type { SearchEntry } from '@/types/search.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 
 	let highlightActive = $state(true);
-	const enableTransparency = false;
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
-	// Disabling transparency for now since it doesn't work in Tauri as well as in Electron
-	// enableTransparency = isMacos && window.preferenceManager.get('transparency');
 
 	const searchResults = $derived(
 		search.fullResults.map((entry) => ({
@@ -130,7 +127,6 @@
 <div class="search-page-container">
 	<div
 		class="search-bar-container"
-		class:search-bar-container--transparency={enableTransparency}
 		class:search-bar-container--ipad={isIPadDevice}
 		data-testid="search-bar-container"
 		data-tauri-drag-region={isMacos ? true : undefined}
@@ -155,7 +151,6 @@
 			size="large"
 			placeholder="Search..."
 			id="search"
-			transparency={enableTransparency}
 			onchange={(value) => doSearch(value, true)}
 			onkeyup={(value) => doSearch(value, false)}
 			onenter={handleEnter}
@@ -195,9 +190,6 @@
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
-	}
-	.search-bar-container--transparency {
-		background-color: var(--sy-color--white--transparency);
 	}
 	.search-bar-container--ipad {
 		padding-top: var(--sy-space--large);

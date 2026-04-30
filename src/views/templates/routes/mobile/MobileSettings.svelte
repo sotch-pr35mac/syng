@@ -1,9 +1,9 @@
 <script lang="ts">
-	import SyTab from '../../components/SyTab/SyTab.svelte';
-	import ToneColorPicker from '../../components/SettingsOption/ToneColorPicker.svelte';
-	import TelemetrySettings from '../../components/TelemetrySettings/TelemetrySettings.svelte';
-	import { settingsActiveTabStore } from '../../stores/settings.svelte.js';
-	import { updateToneColorsPreference } from '../../composables/settings.js';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
+	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+	import { updateToneColorsPreference } from '@/composables/settings.js';
 
 	type SettingsTab = 'general' | 'telemetry';
 

@@ -3,7 +3,7 @@
 		GOOD_SCORE_THRESHOLD,
 		OKAY_SCORE_THRESHOLD,
 		type IncorrectAnswer,
-	} from '../../composables/study.js';
+	} from '@/composables/study.js';
 
 	type Props = {
 		score?: number;

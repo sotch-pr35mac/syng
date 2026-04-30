@@ -1,7 +1,7 @@
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
-import SyTab from './SyTab.svelte';
+import SyTab from '@/components/SyTab/SyTab.svelte';
 
 it('should not have the active class by default', () => {
 	const { getByRole } = render(SyTab);

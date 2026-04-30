@@ -1,8 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
-import { bookmarksStore, type BookmarkWordEntry } from '../stores/bookmarks.svelte.js';
-import { studySubRouteStore } from '../stores/studyRoute.svelte.js';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
-import { handleError, telemetry } from '../utils/index.js';
+import { bookmarksStore, type BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
+import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { handleError, telemetry } from '@/utils/index.js';
 import {
 	CHARACTER_QUESTIONS,
 	DEFAULT_QUESTION_DURATION,
@@ -14,7 +14,7 @@ import {
 	type IncorrectAnswer,
 	type QuizQuestion,
 	type ScoreCard,
-} from './study.js';
+} from '@/composables/study.js';
 
 let quizActiveList = $state<string | null>(null);
 let quizQuestion = $state<QuizQuestion | undefined>(undefined);

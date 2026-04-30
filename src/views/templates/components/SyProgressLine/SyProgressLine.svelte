@@ -1,5 +1,5 @@
 <script>
-	import { interpolateColor } from '../../utils';
+	import { interpolateColor } from '@/utils';
 
 	/* Total Prop */
 

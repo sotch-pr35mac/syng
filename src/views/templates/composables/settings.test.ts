@@ -4,25 +4,29 @@ import {
 	resolveIsDevBuild,
 	updateBetaPreference,
 	updateToneColorsPreference,
-} from './settings.js';
-import { telemetry } from '../utils/telemetry.js';
+} from '@/composables/settings.js';
+import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
+import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
 }));
 
-vi.mock('../utils/telemetry.js', () => ({
+vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		trackEvent: vi.fn(() => Promise.resolve()),
 	},
 }));
 
+let preferenceManager;
+
 beforeEach(() => {
-	window.preferenceManager = {
+	preferenceManager = {
 		get: vi.fn(),
 		set: vi.fn(),
 	};
+	setPreferenceManagerForTest(preferenceManager);
 	vi.mocked(telemetry.trackEvent).mockClear();
 	vi.mocked(invoke).mockReset();
 });
@@ -48,7 +52,7 @@ it('resolves dev build state from the native build flag', async () => {
 it('updates the beta preference and tracks the settings event', () => {
 	updateBetaPreference(true);
 
-	expect(window.preferenceManager.set).toHaveBeenCalledWith('beta', true);
+	expect(preferenceManager.set).toHaveBeenCalledWith('beta', true);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', { setting: 'beta' });
 });
 
@@ -60,7 +64,7 @@ it('updates the tone colors preference and tracks the settings event', () => {
 
 	updateToneColorsPreference(colors);
 
-	expect(window.preferenceManager.set).toHaveBeenCalledWith('toneColors', colors);
+	expect(preferenceManager.set).toHaveBeenCalledWith('toneColors', colors);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'toneColors',
 	});

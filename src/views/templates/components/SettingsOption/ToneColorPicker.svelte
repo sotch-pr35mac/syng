@@ -1,4 +1,6 @@
 <script>
+	import { getPreferenceManager } from '@/utils/appServices.js';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {'desktop' | 'mobile'} [variant] - Visual density/layout variant
@@ -11,7 +13,7 @@
 	const styles = getComputedStyle(document.body);
 	const getRGB = (value) =>
 		value.substring(0, 2) === '--' ? styles.getPropertyValue(value) : value;
-	const colors = window.preferenceManager
+	const colors = getPreferenceManager()
 		.get('toneColors')
 		.colors.map((color) => getRGB(color).trim());
 	const tones = [

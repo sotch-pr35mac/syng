@@ -1,42 +1,27 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { updateStore } from '@/stores/update.svelte.js';
 
 /**
- * Checks for an available update, caches the result to window globals, and
- * dispatches the 'update-check-complete' custom event so any listening
- * component can react without polling.
+ * Checks for an available update and caches the result in the update store.
  *
  * Returns the update object if one is available, or null if up to date.
  * Errors are propagated to the caller.
  */
 export const checkForUpdate = (): Promise<Update | null> => {
 	return check().then((update) => {
-		if (update) {
-			window.updateVersion = update.version;
-			window.updateReleaseNotes = update.body || '';
-			window.updateStatusAvailable = true;
-			window.updateAvailable = true;
-			window.pendingUpdate = update;
-		} else {
-			window.updateAvailable = false;
-			window.updateStatusAvailable = true;
-		}
-		document.dispatchEvent(
-			new CustomEvent('update-check-complete', {
-				detail: { updateAvailable: !!update },
-			})
-		);
+		updateStore.setCheckResult(update);
 		return update;
 	});
 };
 
 /**
- * Downloads and installs window.pendingUpdate, then relaunches the app.
+ * Downloads and installs the pending update, then relaunches the app.
  * Rejects if there is no pending update.
  */
 export const installPendingUpdate = (): Promise<void> => {
-	if (!window.pendingUpdate) {
+	if (!updateStore.pendingUpdate) {
 		return Promise.reject(new Error('No pending update available.'));
 	}
-	return window.pendingUpdate.downloadAndInstall().then(() => relaunch());
+	return updateStore.pendingUpdate.downloadAndInstall().then(() => relaunch());
 };

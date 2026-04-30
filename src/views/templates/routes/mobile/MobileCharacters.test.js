@@ -1,8 +1,8 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MobileCharacters from './MobileCharacters.svelte';
-import { mobileCharacterWindowWordStore } from '../../stores/mobileCharacterWindowWord.svelte.js';
+import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
+import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 
 const hideCharacter = vi.fn();
 const animateCharacter = vi.fn(({ onComplete }) => onComplete?.());
@@ -11,7 +11,7 @@ const resumeAnimation = vi.fn();
 const TONE_FOUR = 4;
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../../components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		ChevronLeft: mockIcon,
 		Pause: mockIcon,

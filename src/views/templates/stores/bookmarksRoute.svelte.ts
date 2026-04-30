@@ -1,5 +1,5 @@
-import type { BookmarkWordEntry } from './bookmarks.svelte.js';
-import { createRouteState } from './routeState.svelte.js';
+import type { BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
+import { createRouteState } from '@/stores/routeState.svelte.js';
 
 /**
  * App-lifetime UI state for the Bookmarks route. Persists which list is active and

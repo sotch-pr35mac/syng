@@ -1,6 +1,6 @@
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import SyToggle from './SyToggle.svelte';
+import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 
 it('should have the uuid passed to it', async () => {
 	const { getByRole } = render(SyToggle, {

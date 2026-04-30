@@ -1,12 +1,13 @@
 import { beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager } from '../../../../test/utils/unitTestUtils.js';
-import MobileSearch from './MobileSearch.svelte';
-import { mobileSearchSnapStore } from '../../stores/mobileSearch.svelte.js';
+import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
+import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
+import { mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../../components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Check: mockIcon,
 		Brush: mockIcon,
@@ -48,11 +49,12 @@ vi.mock('@tauri-apps/api/core', () => ({
 	}),
 }));
 
-global.bookmarkManager = mockBookmarkManager({
+const bookmarkManager = mockBookmarkManager({
 	words: [],
 	lists: ['Bookmarks'],
 });
-global.bookmarkManager.waitForInit = () => Promise.resolve();
+bookmarkManager.waitForInit = () => Promise.resolve();
+setBookmarkManagerForTest(bookmarkManager);
 
 beforeEach(() => {
 	mobileSearchSnapStore.set('collapsed');

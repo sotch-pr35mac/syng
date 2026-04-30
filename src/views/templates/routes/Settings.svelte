@@ -1,20 +1,21 @@
 <script>
 	import { onMount } from 'svelte';
-	import ToneColorPicker from '../components/SettingsOption/ToneColorPicker.svelte';
-	import UpdateChecker from '../components/SettingsOption/UpdateChecker.svelte';
-	import TelemetrySettings from '../components/TelemetrySettings/TelemetrySettings.svelte';
-	import SyTab from '../components/SyTab/SyTab.svelte';
-	import SyToggle from '../components/SyToggle/SyToggle.svelte';
+	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
+	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
+	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { settingsActiveTabStore } from '../stores/settings.svelte.js';
-	import { scrollRestore } from '../actions/scrollRestore.svelte.js';
+	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
 		isDevBuild,
 		resolveIsDevBuild,
 		updateBetaPreference,
 		updateToneColorsPreference,
-	} from '../composables/settings.js';
-	import { isIPad } from '../utils/device.js';
+	} from '@/composables/settings.js';
+	import { isIPad } from '@/utils/device.js';
+	import { getPreferenceManager } from '@/utils/appServices.js';
 
 	const isMacos = platform() === 'macos';
 
@@ -28,7 +29,7 @@
 			centerLabel: true,
 			component: SyToggle,
 			props: {
-				checked: window.preferenceManager.get('beta'),
+				checked: getPreferenceManager().get('beta'),
 				onchange: updateBetaPreference,
 			},
 		},
@@ -67,25 +68,6 @@
 			})
 			.catch(() => {});
 	});
-
-	/* Disabling transparency for the time being since Tauri handles it a bit differently than Electron */
-	/*
-if(isMacos) {
-	const macOSPreferences = [
-		{
-			label: 'Transparency',
-			centerLabel: true,
-			handler: e => window.preferenceManager.set('transparency', e.detail),
-			component: SyToggle,
-			props: {
-				checked: window.preferenceManager.get('transparency')
-			}
-		},
-	];
-
-	preferences = [...macOSPreferences, ...preferences];
-}
-*/
 </script>
 
 <div class="settings--container">

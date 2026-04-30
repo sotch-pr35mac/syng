@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
-import DictionaryLink from './DictionaryLink.svelte';
+import DictionaryLink from '@/components/DictionaryContent/DictionaryLink.svelte';
 
 it('should be styled like a link', async () => {
 	const { getByTestId } = render(DictionaryLink, {

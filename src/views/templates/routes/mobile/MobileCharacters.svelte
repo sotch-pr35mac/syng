@@ -2,11 +2,11 @@
 	import { onMount, tick } from 'svelte';
 	import HanziWriter from 'hanzi-writer';
 	import { ChevronLeft, Pause, Play } from 'lucide-svelte';
-	import SyButton from '../../components/SyButton/SyButton.svelte';
-	import { mobileCharacterWindowWordStore } from '../../stores/mobileCharacterWindowWord.svelte.js';
-	import { swipeBack } from '../../actions/swipeBack.svelte.js';
-	import { isIPad } from '../../utils/device.js';
-	import { handleError } from '../../utils/error.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
+	import { swipeBack } from '@/actions/swipeBack.svelte.js';
+	import { isIPad } from '@/utils/device.js';
+	import { handleError } from '@/utils/error.js';
 
 	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
 	const LIGHT_MODE_OUTLINE_COLOR = '#DDDDDD';

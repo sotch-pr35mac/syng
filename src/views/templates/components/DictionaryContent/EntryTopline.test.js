@@ -1,4 +1,4 @@
-import EntryTopline from './EntryTopline.svelte';
+import EntryTopline from '@/components/DictionaryContent/EntryTopline.svelte';
 import { render } from '@testing-library/svelte';
 
 const TEST_WORD_1 = {

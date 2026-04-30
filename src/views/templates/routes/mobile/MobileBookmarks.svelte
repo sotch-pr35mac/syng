@@ -8,22 +8,22 @@
 		FolderUp,
 		Trash2,
 	} from 'lucide-svelte';
-	import SyButton from '../../components/SyButton/SyButton.svelte';
-	import SyList from '../../components/SyList/SyList.svelte';
-	import SyDropdown from '../../components/SyDropdown/SyDropdown.svelte';
-	import DictionaryContent from '../../components/DictionaryContent/DictionaryContent.svelte';
-	import SySnapSheet from '../../components/SySnapSheet/SySnapSheet.svelte';
-	import SyModal from '../../components/SyModal/SyModal.svelte';
-	import SyTextInput from '../../components/SyTextInput/SyTextInput.svelte';
-	import { type SheetSnap } from '../../types/snapSheet.js';
-	import { mobileBookmarksSnapStore } from '../../stores/mobileBookmarks.svelte.js';
-	import { scrollRestore } from '../../actions/scrollRestore.svelte.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
+	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import { type SheetSnap } from '@/types/snapSheet.js';
+	import { mobileBookmarksSnapStore } from '@/stores/mobileBookmarks.svelte.js';
+	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
-	} from '../../composables/bookmarks.svelte.js';
-	import { DROPDOWN_DIRECTIONS } from '../../types/dropdown.js';
+	} from '@/composables/bookmarks.svelte.js';
+	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
 
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	let currentSnap = $state<SheetSnap>(mobileBookmarksSnapStore.value);

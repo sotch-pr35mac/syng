@@ -1,5 +1,5 @@
 import { render } from '@testing-library/svelte';
-import MeasureWord from './MeasureWord.svelte';
+import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 
 const mockMeasureWordA = {
 	simplified: 'A',

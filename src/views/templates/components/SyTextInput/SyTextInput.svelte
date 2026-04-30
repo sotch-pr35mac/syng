@@ -9,15 +9,10 @@
 	// 'medium' - Medium text field (Default Value)
 	// 'large' - Large text field
 
-	/* Transparency Prop */
-	/* Possible Values */
-	// true - Element will be transparent
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [style] - 'standard' - Standard text box styling
 	 * @property {string} [size] - 'extra-large' - Extra large text field
-	 * @property {boolean} [transparency] - false - Element will have standard background
 	 * @property {string} [placeholder] - Placeholder Prop
 	 * @property {string} [type] - Type Prop
 	 * @property {any} id - ID Prop
@@ -28,7 +23,7 @@
 	 * @property {(event: Event) => void} [onenter] - Enter key handler
 	 */
 
-	import { isMobile } from '../../utils/device.js';
+	import { isMobile } from '@/utils/device.js';
 
 	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
 	const mobile = isMobile();
@@ -37,7 +32,6 @@
 	const {
 		style = 'standard',
 		size = 'medium',
-		transparency = false,
 		placeholder = '',
 		type = 'text',
 		id,
@@ -50,7 +44,6 @@
 	const getClasses = () => {
 		return [
 			'sy-text-input',
-			transparency ? 'sy-text-input--transparency' : '',
 			`sy-text-input--${style}`,
 			`sy-text-input--${size}`,
 			mobile ? 'sy-text-input--mobile' : '',
@@ -110,9 +103,6 @@
 	}
 	.sy-text-input--extra-large {
 		font-size: 18px;
-	}
-	.sy-text-input--transparency {
-		background-color: rgba(0, 0, 0, 0);
 	}
 	.sy-text-input--mobile {
 		font-size: var(--sy-font-size--mobile-large);

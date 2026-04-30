@@ -1,20 +1,20 @@
 <script>
 	import { Check, Brush, Plus } from 'lucide-svelte';
-	import { handleError, telemetry } from '../../utils/';
-	import { isMobile } from '../../utils/device.js';
-	import SyButton from '../SyButton/SyButton.svelte';
-	import SyButtonBar from '../SyButtonBar/SyButtonBar.svelte';
-	import SimpleTextDropdownItem from '../SyDropdown/SimpleTextDropdownItem.svelte';
-	import SyDropdown from '../SyDropdown/SyDropdown.svelte';
-	import TextWithIconDropdownItem from '../SyDropdown/TextWithIconDropdownItem.svelte';
-	import SyList from '../SyList/SyList.svelte';
-	import DefinitionItem from './DefinitionItem.svelte';
-	import EntryTopline from './EntryTopline.svelte';
-	import MeasureWord from './MeasureWord.svelte';
+	import { handleError, telemetry } from '@/utils';
+	import { isMobile } from '@/utils/device.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
+	import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
+	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
+	import SyList from '@/components/SyList/SyList.svelte';
+	import DefinitionItem from '@/components/DictionaryContent/DefinitionItem.svelte';
+	import EntryTopline from '@/components/DictionaryContent/EntryTopline.svelte';
+	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
-	import { bookmarksStore } from '../../stores/bookmarks.svelte.js';
-	import { NATIVE_COMMANDS } from '../../types/nativeCommands.js';
-	import { DROPDOWN_POSITIONS } from '../../types/dropdown.js';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 
 	/* Background Color Prop */
 	/* Possible Values */

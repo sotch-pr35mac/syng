@@ -1,4 +1,4 @@
-import { telemetry } from './telemetry.js';
+import { telemetry } from '@/utils/telemetry.js';
 
 /*
  * Description: Handle errors by alerting the user and logging additional information to the Chrome console

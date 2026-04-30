@@ -1,13 +1,13 @@
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri } from '../../test/utils/unitTestUtils.js';
-import CharacterWindow from './CharacterWindow.svelte';
+import { mockGlobalTauri } from '@test/utils/unitTestUtils.js';
+import CharacterWindow from '@/CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('./components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Play: mockIcon,
 		Pause: mockIcon,

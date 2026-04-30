@@ -1,11 +1,12 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MobileSettings from './MobileSettings.svelte';
-import { settingsActiveTabStore } from '../../stores/settings.svelte.js';
-import { telemetry } from '../../utils/telemetry.js';
+import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
+import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 
-vi.mock('../../utils/telemetry.js', () => ({
+vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		getPrefs: vi.fn(() =>
 			Promise.resolve({
@@ -26,10 +27,11 @@ const toneColors = {
 	hasCustomColors: false,
 	colors: ['#3366ff', '#ffcc00', '#ff3333', '#33aa66', '#777777'],
 };
+let preferenceManager;
 
 beforeEach(() => {
 	settingsActiveTabStore.set('general');
-	window.preferenceManager = {
+	preferenceManager = {
 		get: vi.fn((name) => {
 			if (name === 'toneColors') {
 				return toneColors;
@@ -38,6 +40,7 @@ beforeEach(() => {
 		}),
 		set: vi.fn(),
 	};
+	setPreferenceManagerForTest(preferenceManager);
 	vi.mocked(telemetry.getPrefs).mockClear();
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
@@ -59,7 +62,7 @@ it('updates tone colors through the shared settings handler', async () => {
 
 	await fireEvent.change(firstTone, { target: { value: '#111111' } });
 
-	expect(window.preferenceManager.set).toHaveBeenCalledWith('toneColors', {
+	expect(preferenceManager.set).toHaveBeenCalledWith('toneColors', {
 		hasCustomColors: true,
 		colors: ['#111111', '#ffcc00', '#ff3333', '#33aa66', '#777777'],
 	});

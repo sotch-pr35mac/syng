@@ -4,7 +4,7 @@
  * An instance of BookmarkManager class is created from a desired pouchdb.
  * After initialization the bookmarks are ready to be read and written.
  */
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {

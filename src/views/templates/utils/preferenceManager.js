@@ -6,7 +6,7 @@
  * Initialization must occur as Syng prefers to operate over a cache of the preferences
  * from the db during the session.
  */
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 /*
  * Description: Construct a preference entry.
@@ -51,7 +51,6 @@ export class PreferenceManager {
 					if (err.name === 'not_found') {
 						return {
 							_id: 'config',
-							transparency: createPreference(true, false),
 							beta: createPreference(true, false),
 							toneColors: createPreference(true, {
 								colors: [
@@ -111,7 +110,7 @@ export class PreferenceManager {
 	/*
 	 * Description: Get a given preference value from the cached preferences.
 	 * Param: property: String: The name of the preference to return the value for.
-	 * Return: Any: The value of the given preoperty. Could be any valid type.
+	 * Return: Any: The value of the given property. Could be any valid type.
 	 */
 	get(property) {
 		if (!this.initialized) {

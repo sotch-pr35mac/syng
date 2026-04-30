@@ -5,6 +5,10 @@ import { resolve } from 'path'
 export default defineConfig({
 	plugins: [svelte()],
 	resolve: {
+		alias: {
+			'@': resolve(import.meta.dirname, 'src/views/templates'),
+			'@test': resolve(import.meta.dirname, 'src/test')
+		},
 		// Force browser conditions for all resolution
 		conditions: ['browser', 'import', 'module', 'default']
 	},

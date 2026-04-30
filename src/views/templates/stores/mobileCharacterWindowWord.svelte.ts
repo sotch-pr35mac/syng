@@ -1,4 +1,4 @@
-import type { SearchEntry } from '../types/search.js';
+import type { SearchEntry } from '@/types/search.js';
 
 /**
  * App-lifetime store for the word currently displayed in the mobile character window

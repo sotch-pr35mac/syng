@@ -2,20 +2,21 @@ import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
-import MobileStudy from './MobileStudy.svelte';
-import MobileStudyFlashcards from './MobileStudyFlashcards.svelte';
-import MobileStudyQuiz from './MobileStudyQuiz.svelte';
-import { bookmarksStore } from '../../stores/bookmarks.svelte.js';
+import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
+import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
+import MobileStudyQuiz from '@/routes/mobile/MobileStudyQuiz.svelte';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	flashcardsActiveIndexStore,
 	flashcardsActiveListStore,
 	flashcardsShowDetailsStore,
-} from '../../stores/flashcards.svelte.js';
-import { studySubRouteStore } from '../../stores/studyRoute.svelte.js';
-import { quizRoute } from '../../composables/quiz.svelte.js';
+} from '@/stores/flashcards.svelte.js';
+import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { quizRoute } from '@/composables/quiz.svelte.js';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../../components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		ArrowLeft: mockIcon,
 		ArrowRight: mockIcon,
@@ -70,8 +71,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 	}),
 }));
 
-vi.mock('../../utils/index.js', async () => {
-	const actual = await vi.importActual('../../utils/index.js');
+vi.mock('@/utils/index.js', async () => {
+	const actual = await vi.importActual('@/utils/index.js');
 	return {
 		...actual,
 		telemetry: {
@@ -163,7 +164,7 @@ beforeEach(async () => {
 		finished: Promise.resolve(),
 		onfinish: null,
 	}));
-	window.bookmarkManager = mockBookmarkManager();
+	setBookmarkManagerForTest(mockBookmarkManager());
 	window.location.hash = '#/study';
 	studySubRouteStore.set(null);
 	flashcardsActiveListStore.set(null);

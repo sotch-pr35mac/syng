@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { X } from 'lucide-svelte';
-	import SyButton from '../SyButton/SyButton.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 
 	/* Visible Prop */
 

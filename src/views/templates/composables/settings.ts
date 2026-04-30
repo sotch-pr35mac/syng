@@ -1,6 +1,7 @@
-import { telemetry } from '../utils/telemetry.js';
+import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
-import { NATIVE_COMMANDS } from '../types/nativeCommands.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { getPreferenceManager } from '@/utils/appServices.js';
 
 interface BuildEnv {
 	DEV?: boolean;
@@ -26,11 +27,11 @@ export const resolveIsDevBuild = async (env: BuildEnv = currentBuildEnv()): Prom
 };
 
 export const updateBetaPreference = (checked: boolean): void => {
-	window.preferenceManager.set('beta', checked);
+	getPreferenceManager().set('beta', checked);
 	telemetry.trackEvent('settings.changed', { setting: 'beta' }).catch(() => {});
 };
 
 export const updateToneColorsPreference = (data: ToneColorsPreference): void => {
-	window.preferenceManager.set('toneColors', data);
+	getPreferenceManager().set('toneColors', data);
 	telemetry.trackEvent('settings.changed', { setting: 'toneColors' }).catch(() => {});
 };

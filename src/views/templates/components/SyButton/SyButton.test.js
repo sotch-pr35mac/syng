@@ -1,5 +1,5 @@
 import { render } from '@testing-library/svelte';
-import SyButton from './SyButton.svelte';
+import SyButton from '@/components/SyButton/SyButton.svelte';
 
 it('should use the correct default values', async () => {
 	const { getByTestId } = render(SyButton, {});

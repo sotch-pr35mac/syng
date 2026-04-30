@@ -11,10 +11,12 @@
 		GraduationCap,
 	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
-	import { handleError } from '../../utils/';
+	import { handleError } from '@/utils';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { isIPad } from '../../utils/device.js';
+	import { isIPad } from '@/utils/device.js';
 	import { getCurrentWindow } from '@tauri-apps/api/window';
+	import { getPreferenceManager } from '@/utils/appServices.js';
+	import { updateStore } from '@/stores/update.svelte.js';
 
 	const primaryNavigation = [
 		{
@@ -75,9 +77,8 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	let enableBetaFeatures = $state(false);
-	let enableTransparency = $state(false);
 	let trafficLightMargin = $state(isMacos || isIPadDevice);
-	let updateAvailable = $state(false);
+	const updateAvailable = $derived(updateStore.updateAvailable);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
 	onMount(() => {
@@ -98,29 +99,17 @@
 				});
 		}
 
-		// Seed from window in case the startup update check already finished
-		if (window.updateStatusAvailable) {
-			updateAvailable = window.updateAvailable || false;
-		}
-
-		const onUpdateCheckComplete = (e) => {
-			updateAvailable = e.detail.updateAvailable;
-		};
-		document.addEventListener('update-check-complete', onUpdateCheckComplete);
-
 		return () => {
 			if (unlisten) {
 				unlisten();
 			}
-			document.removeEventListener('update-check-complete', onUpdateCheckComplete);
 		};
 	});
 
-	window.preferenceManager
+	getPreferenceManager()
 		.waitForInit()
 		.then(() => {
-			enableBetaFeatures = window.preferenceManager.get('beta');
-			enableTransparency = isMacos && window.preferenceManager.get('transparency');
+			enableBetaFeatures = getPreferenceManager().get('beta');
 			return undefined;
 		})
 		.catch((err) => {
@@ -131,7 +120,7 @@
 		});
 </script>
 
-<div class="navigation-container" class:navigation-container--transparency={enableTransparency}>
+<div class="navigation-container">
 	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
 		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
@@ -191,9 +180,6 @@
 		align-items: center;
 		justify-content: space-between;
 		box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
-	}
-	.navigation-container--transparency {
-		background-color: var(--sy-color--grey-2--transparency);
 	}
 	.navigation--primary-nav {
 		display: flex;

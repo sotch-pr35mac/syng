@@ -1,11 +1,11 @@
-import { bookmarksStore, type BookmarkWordEntry } from '../stores/bookmarks.svelte.js';
+import { bookmarksStore, type BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
 import {
 	flashcardsActiveIndexStore,
 	flashcardsActiveListStore,
 	flashcardsShowDetailsStore,
-} from '../stores/flashcards.svelte.js';
-import { studySubRouteStore } from '../stores/studyRoute.svelte.js';
-import { handleError } from '../utils/index.js';
+} from '@/stores/flashcards.svelte.js';
+import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { handleError } from '@/utils/index.js';
 
 let flashcardsActiveList = $state<string | null>(flashcardsActiveListStore.value);
 let flashcardsActiveIndex = $state(flashcardsActiveIndexStore.value);

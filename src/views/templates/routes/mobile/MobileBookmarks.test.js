@@ -1,20 +1,21 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import MobileBookmarks from './MobileBookmarks.svelte';
-import { bookmarksStore } from '../../stores/bookmarks.svelte.js';
+import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	bookmarksActiveListStore,
 	bookmarksActiveWordStore,
-} from '../../stores/bookmarksRoute.svelte.js';
-import { mobileBookmarksSnapStore } from '../../stores/mobileBookmarks.svelte.js';
+} from '@/stores/bookmarksRoute.svelte.js';
+import { mobileBookmarksSnapStore } from '@/stores/mobileBookmarks.svelte.js';
+import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 const FIRST_TONE = 1;
 const SECOND_TONE = 2;
 const THIRD_TONE = 3;
 
 vi.mock('lucide-svelte', async () => {
-	const mockIcon = (await import('../../components/__mocks__/FeatherIcon.svelte')).default;
+	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Brush: mockIcon,
 		Check: mockIcon,
@@ -33,8 +34,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve(null)),
 }));
 
-vi.mock('../../utils/index.js', async () => {
-	const actual = await vi.importActual('../../utils/index.js');
+vi.mock('@/utils/index.js', async () => {
+	const actual = await vi.importActual('@/utils/index.js');
 	return {
 		...actual,
 		telemetry: {
@@ -89,7 +90,7 @@ function mockBookmarkManager() {
 }
 
 beforeEach(async () => {
-	window.bookmarkManager = mockBookmarkManager();
+	setBookmarkManagerForTest(mockBookmarkManager());
 	window.__TAURI__ = { dialog: { ask: vi.fn(() => Promise.resolve(false)) } };
 	bookmarksActiveListStore.set('Bookmarks');
 	bookmarksActiveWordStore.set(undefined);

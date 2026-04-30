@@ -1,5 +1,6 @@
-import type { SearchEntry } from '../types/search.js';
-import { handleError } from '../utils/error.js';
+import type { SearchEntry } from '@/types/search.js';
+import { getBookmarkManager } from '@/utils/appServices.js';
+import { handleError } from '@/utils/error.js';
 
 /**
  * A word entry as stored by BookmarkManager in the documents PouchDB. Extends SearchEntry
@@ -42,16 +43,15 @@ let lists = $state<string[]>([]);
 let initialized = $state(false);
 
 async function ensureManagerReady(): Promise<void> {
-	// window.bookmarkManager is constructed synchronously in runStartupActions, so it
-	// always exists by the time any view imports this module. waitForInit is still needed
-	// to ensure the PouchDB load has completed before we issue queries.
-	await window.bookmarkManager.waitForInit();
+	// The manager is constructed synchronously in runStartupActions. waitForInit is still
+	// needed to ensure the PouchDB load has completed before we issue queries.
+	await getBookmarkManager().waitForInit();
 }
 
 async function refresh(): Promise<void> {
 	try {
 		await ensureManagerReady();
-		lists = await window.bookmarkManager.getLists();
+		lists = await getBookmarkManager().getLists();
 		initialized = true;
 	} catch (error) {
 		handleError(
@@ -63,7 +63,7 @@ async function refresh(): Promise<void> {
 
 async function createList(name: string): Promise<void> {
 	await ensureManagerReady();
-	await window.bookmarkManager.createList(name);
+	await getBookmarkManager().createList(name);
 	if (!lists.includes(name)) {
 		lists = [...lists, name];
 	}
@@ -71,43 +71,43 @@ async function createList(name: string): Promise<void> {
 
 async function deleteList(name: string): Promise<void> {
 	await ensureManagerReady();
-	await window.bookmarkManager.deleteList(name);
+	await getBookmarkManager().deleteList(name);
 	lists = lists.filter((listName) => listName !== name);
 }
 
 async function addToList(listName: string, word: BookmarkWordInput): Promise<void> {
 	await ensureManagerReady();
-	await window.bookmarkManager.addToList(listName, word);
+	await getBookmarkManager().addToList(listName, word);
 }
 
 async function removeFromList(listName: string, word: BookmarkWordInput): Promise<void> {
 	await ensureManagerReady();
-	await window.bookmarkManager.removeFromList(listName, word);
+	await getBookmarkManager().removeFromList(listName, word);
 }
 
 async function updateProperty(hash: string, name: string, value: unknown): Promise<void> {
 	await ensureManagerReady();
-	await window.bookmarkManager.updateProperty(hash, name, value);
+	await getBookmarkManager().updateProperty(hash, name, value);
 }
 
 async function inList(hash: string): Promise<string[]> {
 	await ensureManagerReady();
-	return window.bookmarkManager.inList(hash);
+	return getBookmarkManager().inList(hash);
 }
 
 async function getContent(listName: string): Promise<BookmarkWordEntry[]> {
 	await ensureManagerReady();
-	return window.bookmarkManager.getListContent(listName);
+	return getBookmarkManager().getListContent(listName);
 }
 
 async function getEmptyLists(): Promise<string[]> {
 	await ensureManagerReady();
-	return window.bookmarkManager.getEmptyLists();
+	return getBookmarkManager().getEmptyLists();
 }
 
 async function getWordByHash(hash: string): Promise<BookmarkWordEntry | undefined> {
 	await ensureManagerReady();
-	return window.bookmarkManager.getWordByHash(hash);
+	return getBookmarkManager().getWordByHash(hash);
 }
 
 export const bookmarksStore = {

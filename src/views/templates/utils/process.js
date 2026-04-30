@@ -1,4 +1,4 @@
-import { handleError } from './error.js';
+import { handleError } from '@/utils/error.js';
 
 const getArgs = async () => {
 	try {

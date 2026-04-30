@@ -1,4 +1,4 @@
-import { NATIVE_COMMANDS } from './nativeCommands.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 export const SEARCH_LANGS = ['EN', 'PY', 'ZH'] as const;
 export type SearchLang = (typeof SEARCH_LANGS)[number];

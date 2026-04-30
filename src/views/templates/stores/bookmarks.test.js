@@ -4,6 +4,7 @@ import { vi, beforeEach } from 'vitest';
 // We achieve this with vi.resetModules() + dynamic import in beforeEach.
 
 let bookmarksStore;
+let setBookmarkManagerForTest;
 
 const buildManager = (overrides = {}) => ({
 	waitForInit: vi.fn(() => Promise.resolve()),
@@ -22,7 +23,8 @@ const buildManager = (overrides = {}) => ({
 
 beforeEach(async () => {
 	vi.resetModules();
-	({ bookmarksStore } = await import('./bookmarks.svelte.js'));
+	({ setBookmarkManagerForTest } = await import('@/utils/appServices.js'));
+	({ bookmarksStore } = await import('@/stores/bookmarks.svelte.js'));
 });
 
 it('should start with an empty lists array before refresh', () => {
@@ -31,7 +33,7 @@ it('should start with an empty lists array before refresh', () => {
 });
 
 it('refresh() should populate lists from the manager', async () => {
-	global.window = { bookmarkManager: buildManager() };
+	setBookmarkManagerForTest(buildManager());
 	await bookmarksStore.refresh();
 	expect(bookmarksStore.lists).toEqual(['Bookmarks', 'Test List']);
 });
@@ -40,7 +42,7 @@ it('createList() should call the manager and add the name to the store', async (
 	const manager = buildManager({
 		getLists: vi.fn(() => Promise.resolve(['Bookmarks'])),
 	});
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 	await bookmarksStore.refresh();
 
 	await bookmarksStore.createList('HSK 1');
@@ -52,7 +54,7 @@ it('createList() should not duplicate an existing name', async () => {
 	const manager = buildManager({
 		getLists: vi.fn(() => Promise.resolve(['Bookmarks', 'Existing'])),
 	});
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 	await bookmarksStore.refresh();
 
 	await bookmarksStore.createList('Existing');
@@ -62,7 +64,7 @@ it('createList() should not duplicate an existing name', async () => {
 
 it('deleteList() should call the manager and remove the name from the store', async () => {
 	const manager = buildManager();
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 	await bookmarksStore.refresh();
 
 	await bookmarksStore.deleteList('Test List');
@@ -72,7 +74,7 @@ it('deleteList() should call the manager and remove the name from the store', as
 
 it('addToList() should delegate straight through to the manager', async () => {
 	const manager = buildManager();
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 
 	const word = { hash: 'abc123' };
 	await bookmarksStore.addToList('Bookmarks', word);
@@ -81,7 +83,7 @@ it('addToList() should delegate straight through to the manager', async () => {
 
 it('removeFromList() should delegate straight through to the manager', async () => {
 	const manager = buildManager();
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 
 	const word = { hash: 'abc123' };
 	await bookmarksStore.removeFromList('Bookmarks', word);
@@ -91,7 +93,7 @@ it('removeFromList() should delegate straight through to the manager', async () 
 it('getContent() should delegate straight through to the manager', async () => {
 	const words = [{ hash: 'abc', simplified: '你好' }];
 	const manager = buildManager({ getListContent: vi.fn(() => Promise.resolve(words)) });
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 
 	const result = await bookmarksStore.getContent('Bookmarks');
 	expect(manager.getListContent).toHaveBeenCalledWith('Bookmarks');
@@ -100,7 +102,7 @@ it('getContent() should delegate straight through to the manager', async () => {
 
 it('should not remove other lists when deleteList() is called', async () => {
 	const manager = buildManager();
-	global.window = { bookmarkManager: manager };
+	setBookmarkManagerForTest(manager);
 	await bookmarksStore.refresh();
 
 	await bookmarksStore.deleteList('Test List');

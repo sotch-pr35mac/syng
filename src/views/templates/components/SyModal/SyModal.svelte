@@ -1,7 +1,7 @@
 <script>
 	import { X } from 'lucide-svelte';
-	import SyButton from '../SyButton/SyButton.svelte';
-	import { isMobile } from '../../utils/device.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { isMobile } from '@/utils/device.js';
 
 	/* Visible Prop */
 
@@ -56,7 +56,7 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background-color: var(--sy-color--black--transparency);
+		background-color: var(--sy-color--modal-overlay);
 		z-index: var(--sy-z-index--top-2);
 	}
 	.sy-modal--content {
