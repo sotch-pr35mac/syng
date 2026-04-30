@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ArrowLeft, ArrowRight, RotateCcw, RotateCw, X } from 'lucide-svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { querystring } from '@/stores/router.svelte.js';
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';

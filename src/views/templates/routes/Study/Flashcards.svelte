@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { querystring } from '@/stores/router.svelte.js';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';

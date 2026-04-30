@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Router from 'svelte-spa-router';
-	import { location } from 'svelte-spa-router';
+	import { location } from '@/stores/router.svelte.js';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';

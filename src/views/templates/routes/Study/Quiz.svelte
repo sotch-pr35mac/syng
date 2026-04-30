@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { querystring } from '@/stores/router.svelte.js';
 	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
 	import SyTimer from '@/components/SyTimer/SyTimer.svelte';
 	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';

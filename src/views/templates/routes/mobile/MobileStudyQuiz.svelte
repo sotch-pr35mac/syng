@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ArrowRight, RotateCw, SquareStack, X } from 'lucide-svelte';
-	import { querystring } from 'svelte-spa-router';
+	import { querystring } from '@/stores/router.svelte.js';
 	import { onDestroy, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
