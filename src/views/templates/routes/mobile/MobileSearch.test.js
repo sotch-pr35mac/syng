@@ -23,13 +23,23 @@ vi.mock('@tauri-apps/plugin-os', () => ({
 const QUERY_RESULTS = [
 	{
 		word_id: 1,
-		hash: 'xigua',
+		hash: 'duplicate-native-hash',
 		traditional: '西瓜',
 		simplified: '西瓜',
 		english: ['watermelon'],
 		pinyin_marks: 'xī guā',
 		tone_marks: [1, 1],
 		measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
+	},
+	{
+		word_id: 2,
+		hash: 'duplicate-native-hash',
+		traditional: '香蕉',
+		simplified: '香蕉',
+		english: ['banana'],
+		pinyin_marks: 'xiāng jiāo',
+		tone_marks: [1, 1],
+		measure_words: [],
 	},
 ];
 

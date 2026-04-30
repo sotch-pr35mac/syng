@@ -44,8 +44,8 @@
 	});
 
 	const searchResultItems: SearchResultPreviewItem[] = $derived(
-		search.fullResults.map((entry) => ({
-			key: entry.hash,
+		search.fullResults.map((entry, index) => ({
+			key: `${entry.word_id}:${index}`,
 			headline:
 				entry.simplified !== entry.traditional
 					? `${entry.simplified} (${entry.traditional})`
