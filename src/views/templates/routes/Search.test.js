@@ -7,10 +7,7 @@ import {
 	mockPreferenceManager,
 } from '@test/utils/unitTestUtils.js';
 import Search from '@/routes/Search.svelte';
-import {
-	setBookmarkManagerForTest,
-	setPreferenceManagerForTest,
-} from '@/utils/appServices.js';
+import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 
 // Mock must be defined inline because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -67,10 +64,12 @@ global.dictionary = mockDictionary('EN', [
 	},
 ]);
 setPreferenceManagerForTest(mockPreferenceManager({}));
-setBookmarkManagerForTest(mockBookmarkManager({
-	words: [],
-	lists: ['Bookmarks'],
-}));
+setBookmarkManagerForTest(
+	mockBookmarkManager({
+		words: [],
+		lists: ['Bookmarks'],
+	})
+);
 
 it('should update the language selection after entering text to the search bar', async () => {
 	const user = userEvent.setup();

@@ -34,10 +34,12 @@ const TEST_WORD = {
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
 
-setBookmarkManagerForTest(mockBookmarkManager({
-	words: [],
-	lists: ['Bookmarks'],
-}));
+setBookmarkManagerForTest(
+	mockBookmarkManager({
+		words: [],
+		lists: ['Bookmarks'],
+	})
+);
 
 it('should display the definitions', async () => {
 	const { getByText } = render(DictionaryContent, {
