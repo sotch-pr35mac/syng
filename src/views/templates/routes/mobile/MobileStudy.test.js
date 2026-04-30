@@ -209,6 +209,7 @@ it('restores mobile flashcards and clears restore state on exit', async () => {
 it('answers a mobile quiz question and shows final results', async () => {
 	const user = userEvent.setup();
 	window.location.hash = '#/study/quiz?list=Bookmarks';
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
 	const { findByText } = render(MobileStudyQuiz);
 
 	await user.click(await findByText('watermelon'));
@@ -220,6 +221,7 @@ it('answers a mobile quiz question and shows final results', async () => {
 
 it('does not start the mobile quiz timer when the list cannot generate questions', async () => {
 	window.location.hash = '#/study/quiz?list=Empty%20List';
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
 	const { findByText, queryByRole } = render(MobileStudyQuiz);
 
 	expect(await findByText('No Questions Available')).toBeTruthy();

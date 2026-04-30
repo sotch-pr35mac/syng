@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-	import { querystring } from '@/stores/router.svelte.js';
+	import { router } from 'svelte-spa-router';
 	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
 	import SyTimer from '@/components/SyTimer/SyTimer.svelte';
 	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';
@@ -14,7 +14,7 @@
 
 	const isMacos = platform() === 'macos';
 	let timerRef = $state(); // Reference to the timer component
-	const params = new URLSearchParams($querystring);
+	const params = new URLSearchParams(router.querystring);
 	const activeList = params.get('list');
 
 	const handleRetakeQuiz = () => {
