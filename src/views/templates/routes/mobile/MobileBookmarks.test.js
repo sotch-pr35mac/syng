@@ -34,6 +34,10 @@ vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve(null)),
 }));
 
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+	ask: vi.fn(() => Promise.resolve(false)),
+}));
+
 vi.mock('@/utils/index.js', async () => {
 	const actual = await vi.importActual('@/utils/index.js');
 	return {
@@ -91,7 +95,6 @@ function mockBookmarkManager() {
 
 beforeEach(async () => {
 	setBookmarkManagerForTest(mockBookmarkManager());
-	window.__TAURI__ = { dialog: { ask: vi.fn(() => Promise.resolve(false)) } };
 	bookmarksActiveListStore.set('Bookmarks');
 	bookmarksActiveWordStore.set(undefined);
 	mobileBookmarksSnapStore.set('partial');

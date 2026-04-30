@@ -55,17 +55,3 @@ export const mockBookmarkManager = store => {
 		}
 	};
 };
-
-export const mockGlobalTauri = options => {
-	return {
-		invoke: (fnName, value) => {
-			return Promise.resolve(options.invoke[fnName](value));
-		},
-		os: {
-			platform: () => Promise.resolve(options.platform || 'other')
-		},
-		event: {
-			listen: (e, cb) => wait(() => cb({ payload: options.events[e] }))
-		}
-	};
-};

@@ -172,14 +172,13 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
         let file_path_display = file_path.to_string();
         let extension = file_path_display
             .rsplit_once('.')
-            .map(|(_, extension)| extension)
-            .ok_or("Unsupported file type")?;
+            .map(|(_, extension)| extension);
         let file = app
             .fs()
             .read_to_string(file_path)
             .map_err(|err| format!("Failed to read from file: {}", err))?;
         return match extension {
-            "sld" => {
+            Some("sld") => {
                 let content: Vec<BookmarkEntry> = file
                     .split('\n')
                     .filter_map(|line| {
@@ -196,9 +195,35 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
                     entries: content,
                 }))
             }
-            "syli" => serde_json::from_str(&file)
+            Some("syli") => serde_json::from_str(&file)
                 .map_err(|err| format!("Could not read from file: {}", err)),
-            _ => Err("Unsupported file type".to_string()),
+            _ => {
+                // On Android, content URIs don't include file extensions.
+                // Try parsing as V2 (syli/JSON) first, then fall back to V1 (sld).
+                if let Ok(export) = serde_json::from_str::<BookmarksExport>(&file) {
+                    Ok(Some(export))
+                } else {
+                    let content: Vec<BookmarkEntry> = file
+                        .split('\n')
+                        .filter_map(|line| {
+                            serde_json::from_str::<V1BookmarkEntry>(line)
+                                .ok()
+                                .map(BookmarkEntry::from)
+                        })
+                        .collect();
+                    if content.is_empty() {
+                        Err("Unsupported file type".to_string())
+                    } else {
+                        Ok(Some(BookmarksExport {
+                            meta: BookmarksExportMeta {
+                                version: BookmarksExportVersion::V2,
+                                name: "Imported List".to_string(),
+                            },
+                            entries: content,
+                        }))
+                    }
+                }
+            }
         };
     }
 

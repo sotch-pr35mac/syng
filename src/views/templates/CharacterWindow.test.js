@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockGlobalTauri } from '@test/utils/unitTestUtils.js';
+import { wait } from '@test/utils/unitTestUtils.js';
 import CharacterWindow from '@/CharacterWindow.svelte';
 import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
 
@@ -38,13 +38,18 @@ const WORD = {
 	simplified: '你好',
 	traditional: '你好',
 };
+
+vi.mock('@tauri-apps/api/event', () => ({
+	listen: vi.fn((event, callback) => {
+		if (event === 'display-characters') {
+			wait(() => callback({ payload: WORD }));
+		}
+		return Promise.resolve(() => {});
+	}),
+}));
+
 const mockMatchMedia = vi.fn().mockReturnValue({
-	addEventListener: (e, cb) => undefined, // eslint-disable-line no-unused-vars
-});
-global.__TAURI__ = mockGlobalTauri({
-	events: {
-		'display-characters': WORD,
-	},
+	addEventListener: (event, callback) => undefined, // eslint-disable-line no-unused-vars
 });
 
 it('should highlight the tab that you click on', async () => {

@@ -27,7 +27,7 @@
 		{
 			"identifier": "fs:scope",
 			"allow": [
-				"*"
+				"$APPDATA/**"
 			]
 		},
 		"core:window:allow-create",
@@ -64,7 +64,6 @@
 		"core:window:allow-set-ignore-cursor-events",
 		"core:window:allow-start-dragging",
 		"core:webview:allow-print",
-		"shell:allow-execute",
 		"shell:allow-open",
 		"dialog:allow-open",
 		"dialog:allow-save",
