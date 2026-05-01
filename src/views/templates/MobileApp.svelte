@@ -11,6 +11,7 @@
 	import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
 	import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
 	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
+	import MobileTools from '@/routes/mobile/MobileTools.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
 	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
@@ -25,6 +26,7 @@
 		'/study': MobileStudy,
 		'/study/flashcards': MobileStudyFlashcards,
 		'/study/quiz': MobileStudyQuiz,
+		'/tools': MobileTools,
 		'/settings': MobileSettings,
 		'/characters': MobileCharacters,
 		'*': NotFound,
@@ -37,6 +39,7 @@
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',
 		'/study/quiz': 'quiz',
+		'/tools': 'tools',
 		'/settings': 'settings',
 		'/characters': 'characters',
 	};

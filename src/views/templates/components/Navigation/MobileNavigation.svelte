@@ -7,6 +7,7 @@
 		{ href: '#/read', path: /^\/read(\/.*)?/, label: 'Read' },
 		{ href: '#/bookmarks', path: '/bookmarks', label: 'Bookmarks' },
 		{ href: '#/study', path: /^\/study(\/.*)?/, label: 'Study' },
+		{ href: '#/tools', path: '/tools', label: 'Extras' },
 	];
 </script>
 
@@ -47,7 +48,7 @@
 	.mobile-nav__tabs {
 		grid-column: 2;
 		display: flex;
-		gap: var(--sy-space--large);
+		gap: var(--sy-mobile-space--large);
 		align-items: center;
 	}
 

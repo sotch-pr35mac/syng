@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { ChevronDown, ChevronRight, Copy, Info, Play } from 'lucide-svelte';
-	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
@@ -10,7 +9,6 @@
 	import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.svelte';
 	import ColorizedPinyin from '@/components/ColorizedText/ColorizedPinyin.svelte';
 	import ColorizedPinyinText from '@/components/ColorizedText/ColorizedPinyinText.svelte';
-	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
 	import {
 		segmentsToCharacterText,
@@ -20,11 +18,10 @@
 	import { handleError } from '@/utils/error.js';
 	import type { ToolName } from '@/types/tools.js';
 
-	const isMacos = platform() === 'macos';
 	const tabs: { name: ToolName; label: string }[] = [
-		{ name: 'pinyinify', label: 'Pinyinify' },
+		{ name: 'pinyinify', label: 'Pinyin' },
 		{ name: 'converter', label: 'Convert' },
-		{ name: 'colorize', label: 'Colorize' },
+		{ name: 'colorize', label: 'Color' },
 		{ name: 'prettify', label: 'Prettify' },
 	];
 	const PLACEHOLDER_ROTATION_MS = 2000;
@@ -105,11 +102,11 @@
 </script>
 
 {#snippet toolHeading(tool: ToolName, label: string, headingId: string)}
-	<div class="tools__tool-heading">
+	<div class="mobile-tools__tool-heading">
 		<h2 id={headingId}>{label}</h2>
 		<button
 			type="button"
-			class="tools__icon-button sy-tooltip--container"
+			class="mobile-tools__icon-button sy-tooltip--container"
 			aria-label={`Learn about ${label}`}
 			onclick={() => (infoTool = tool)}
 		>
@@ -118,7 +115,7 @@
 		</button>
 		<button
 			type="button"
-			class="tools__icon-button"
+			class="mobile-tools__icon-button"
 			aria-label={inputCollapsed[tool] ? `Expand ${label} input` : `Collapse ${label} input`}
 			onclick={() => toggleInput(tool)}
 		>
@@ -131,23 +128,25 @@
 	</div>
 {/snippet}
 
-<div class="tools">
-	<div class="tools__title" data-tauri-drag-region={isMacos ? true : undefined}>
-		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Extras</h1>
-	</div>
+<div class="mobile-tools">
+	<header class="mobile-tools__header">
+		<div class="mobile-tools__tabs" aria-label="Extras tools">
+			{#each tabs as tab (tab.name)}
+				<SyTab
+					variant="mobile"
+					active={activeTab === tab.name}
+					onclick={() => setActiveTab(tab.name)}
+				>
+					{tab.label}
+				</SyTab>
+			{/each}
+		</div>
+	</header>
 
-	<div class="tools__tabs" aria-label="Extras tools">
-		{#each tabs as tab (tab.name)}
-			<SyTab active={activeTab === tab.name} onclick={() => setActiveTab(tab.name)}>
-				{tab.label}
-			</SyTab>
-		{/each}
-	</div>
-
-	<div class="tools__content" use:scrollRestore={'tools-content'}>
+	<div class="mobile-tools__content">
 		{#if activeTab === 'pinyinify'}
-			<section class="tools__panel" aria-labelledby="pinyinify-heading">
-				{@render toolHeading('pinyinify', 'Pinyinify', 'pinyinify-heading')}
+			<section class="mobile-tools__panel" aria-labelledby="mobile-pinyinify-heading">
+				{@render toolHeading('pinyinify', 'Pinyinify', 'mobile-pinyinify-heading')}
 				{#if !inputCollapsed.pinyinify}
 					<textarea
 						aria-label="Pinyinify input"
@@ -156,31 +155,27 @@
 						oninput={(event) =>
 							toolsStore.setPinyinifyInput((event.currentTarget as HTMLTextAreaElement).value)}
 					></textarea>
-					<div class="tools__actions">
-						<SyButton onclick={toolsStore.doPinyinify} center>
-							<Play size="16" />
-							<span>Process</span>
-						</SyButton>
-					</div>
+					<SyButton onclick={toolsStore.doPinyinify} center>
+						<Play size="16" />
+						<span>Process</span>
+					</SyButton>
 				{/if}
-				<div class="tools__output" aria-label="Pinyinify output">
+				<div class="mobile-tools__output" aria-label="Pinyinify output">
 					<p>{pinyinifyText}</p>
 					<SyButton
 						style="ghost"
-						classes={['sy-tooltip--container']}
 						onclick={() => {
 							copyText(pinyinifyText);
 						}}
 						disabled={!pinyinifyText}
 					>
 						<Copy size="16" />
-						<div class="sy-tooltip--body sy-tooltip--body-bottom"><p>Copy</p></div>
 					</SyButton>
 				</div>
 			</section>
 		{:else if activeTab === 'converter'}
-			<section class="tools__panel" aria-labelledby="converter-heading">
-				{@render toolHeading('converter', 'Convert', 'converter-heading')}
+			<section class="mobile-tools__panel" aria-labelledby="mobile-converter-heading">
+				{@render toolHeading('converter', 'Convert', 'mobile-converter-heading')}
 				{#if !inputCollapsed.converter}
 					<textarea
 						aria-label="Converter input"
@@ -189,8 +184,8 @@
 						oninput={(event) =>
 							toolsStore.setConverterInput((event.currentTarget as HTMLTextAreaElement).value)}
 					></textarea>
-					<div class="tools__controls">
-						<SyButtonBar>
+					<div class="mobile-tools__controls">
+						<SyButtonBar size="small">
 							<SyButton
 								grouped
 								color={toolsStore.converterDirection === 'automatic' ? 'blue' : undefined}
@@ -203,18 +198,18 @@
 								color={toolsStore.converterDirection === 'to_simplified' ? 'blue' : undefined}
 								onclick={() => toolsStore.setConverterDirection('to_simplified')}
 							>
-								To Simplified
+								Simplified
 							</SyButton>
 							<SyButton
 								grouped
 								color={toolsStore.converterDirection === 'to_traditional' ? 'blue' : undefined}
 								onclick={() => toolsStore.setConverterDirection('to_traditional')}
 							>
-								To Traditional
+								Traditional
 							</SyButton>
 						</SyButtonBar>
 						{#if toolsStore.converterDecision}
-							<p class="tools__decision">{toolsStore.converterDecision}</p>
+							<p class="mobile-tools__decision">{toolsStore.converterDecision}</p>
 						{/if}
 						<SyButton onclick={toolsStore.doConvert} center>
 							<Play size="16" />
@@ -222,24 +217,22 @@
 						</SyButton>
 					</div>
 				{/if}
-				<div class="tools__output" aria-label="Converter output">
+				<div class="mobile-tools__output" aria-label="Converter output">
 					<p>{toolsStore.converterResult}</p>
 					<SyButton
 						style="ghost"
-						classes={['sy-tooltip--container']}
 						onclick={() => {
 							copyText(toolsStore.converterResult);
 						}}
 						disabled={!toolsStore.converterResult}
 					>
 						<Copy size="16" />
-						<div class="sy-tooltip--body sy-tooltip--body-bottom"><p>Copy</p></div>
 					</SyButton>
 				</div>
 			</section>
 		{:else if activeTab === 'colorize'}
-			<section class="tools__panel" aria-labelledby="colorize-heading">
-				{@render toolHeading('colorize', 'Colorize', 'colorize-heading')}
+			<section class="mobile-tools__panel" aria-labelledby="mobile-colorize-heading">
+				{@render toolHeading('colorize', 'Colorize', 'mobile-colorize-heading')}
 				{#if !inputCollapsed.colorize}
 					<textarea
 						aria-label="Colorize input"
@@ -248,14 +241,14 @@
 						oninput={(event) =>
 							toolsStore.setColorizeInput((event.currentTarget as HTMLTextAreaElement).value)}
 					></textarea>
-					<div class="tools__controls">
-						<SyButtonBar>
+					<div class="mobile-tools__controls">
+						<SyButtonBar size="small">
 							<SyButton
 								grouped
 								color={toolsStore.colorizeMode === 'automatic' ? 'blue' : undefined}
 								onclick={() => toolsStore.setColorizeMode('automatic')}
 							>
-								Automatic
+								Auto
 							</SyButton>
 							<SyButton
 								grouped
@@ -273,13 +266,13 @@
 							</SyButton>
 						</SyButtonBar>
 						{#if toolsStore.colorizeMode !== 'pinyin'}
-							<SyButtonBar>
+							<SyButtonBar size="small">
 								<SyButton
 									grouped
 									color={toolsStore.colorizeScript === 'automatic' ? 'blue' : undefined}
 									onclick={() => toolsStore.setColorizeScript('automatic')}
 								>
-									Automatic
+									Auto
 								</SyButton>
 								<SyButton
 									grouped
@@ -298,7 +291,7 @@
 							</SyButtonBar>
 						{/if}
 						{#if toolsStore.colorizeDecision}
-							<p class="tools__decision">{toolsStore.colorizeDecision}</p>
+							<p class="mobile-tools__decision">{toolsStore.colorizeDecision}</p>
 						{/if}
 						<SyButton onclick={toolsStore.doColorize} center>
 							<Play size="16" />
@@ -306,7 +299,7 @@
 						</SyButton>
 					</div>
 				{/if}
-				<div class="tools__output tools__output--large" aria-label="Colorize output">
+				<div class="mobile-tools__output mobile-tools__output--large" aria-label="Colorize output">
 					<p>
 						{#if colorizeModeForOutput === 'pinyin'}
 							{#if toolsStore.colorizeRawPinyin}
@@ -333,20 +326,18 @@
 					</p>
 					<SyButton
 						style="ghost"
-						classes={['sy-tooltip--container']}
 						onclick={() => {
 							copyText(colorizeText);
 						}}
 						disabled={!colorizeText}
 					>
 						<Copy size="16" />
-						<div class="sy-tooltip--body sy-tooltip--body-bottom"><p>Copy</p></div>
 					</SyButton>
 				</div>
 			</section>
 		{:else}
-			<section class="tools__panel" aria-labelledby="prettify-heading">
-				{@render toolHeading('prettify', 'Prettify', 'prettify-heading')}
+			<section class="mobile-tools__panel" aria-labelledby="mobile-prettify-heading">
+				{@render toolHeading('prettify', 'Prettify', 'mobile-prettify-heading')}
 				{#if !inputCollapsed.prettify}
 					<textarea
 						aria-label="Prettify input"
@@ -355,32 +346,32 @@
 						oninput={(event) =>
 							toolsStore.setPrettifyInput((event.currentTarget as HTMLTextAreaElement).value)}
 					></textarea>
-					<div class="tools__controls">
-						<SyButtonBar>
+					<div class="mobile-tools__controls">
+						<SyButtonBar size="small">
 							<SyButton
 								grouped
 								color={toolsStore.prettifyDirection === 'automatic' ? 'blue' : undefined}
 								onclick={() => toolsStore.setPrettifyDirection('automatic')}
 							>
-								Automatic
+								Auto
 							</SyButton>
 							<SyButton
 								grouped
 								color={toolsStore.prettifyDirection === 'to_marks' ? 'blue' : undefined}
 								onclick={() => toolsStore.setPrettifyDirection('to_marks')}
 							>
-								To Marks
+								Marks
 							</SyButton>
 							<SyButton
 								grouped
 								color={toolsStore.prettifyDirection === 'to_numbers' ? 'blue' : undefined}
 								onclick={() => toolsStore.setPrettifyDirection('to_numbers')}
 							>
-								To Numbers
+								Numbers
 							</SyButton>
 						</SyButtonBar>
 						{#if toolsStore.prettifyDecision}
-							<p class="tools__decision">{toolsStore.prettifyDecision}</p>
+							<p class="mobile-tools__decision">{toolsStore.prettifyDecision}</p>
 						{/if}
 						<SyButton onclick={toolsStore.doPrettify} center>
 							<Play size="16" />
@@ -388,18 +379,16 @@
 						</SyButton>
 					</div>
 				{/if}
-				<div class="tools__output" aria-label="Prettify output">
+				<div class="mobile-tools__output" aria-label="Prettify output">
 					<p>{toolsStore.prettifyResult}</p>
 					<SyButton
 						style="ghost"
-						classes={['sy-tooltip--container']}
 						onclick={() => {
 							copyText(toolsStore.prettifyResult);
 						}}
 						disabled={!toolsStore.prettifyResult}
 					>
 						<Copy size="16" />
-						<div class="sy-tooltip--body sy-tooltip--body-bottom"><p>Copy</p></div>
 					</SyButton>
 				</div>
 			</section>
@@ -417,119 +406,114 @@
 <SyModal title={activeInfo?.title ?? ''} visible={infoTool !== null} onclose={() => (infoTool = null)}>
 	{#snippet body()}
 		{#if activeInfo}
-			<p class="tools__info">{activeInfo.body}</p>
+			<p class="mobile-tools__info">{activeInfo.body}</p>
 		{/if}
 	{/snippet}
 </SyModal>
 
 <style>
-	.tools {
+	.mobile-tools {
 		display: flex;
 		flex-direction: column;
-		width: -webkit-fill-available;
-		overflow: hidden;
-		padding: 0 var(--sy-space--extra-large);
+		height: 100%;
 		background-color: var(--sy-color--white);
 	}
-	.tools__title {
-		padding: var(--sy-space--extra-large) var(--sy-space);
+	.mobile-tools__header {
+		flex-shrink: 0;
+		padding: calc(var(--sy-mobile-space--extra-small) * 5);
+		background-color: var(--sy-color--white);
+		border-bottom: var(--sy-mobile-surface-border);
 	}
-	.tools__tabs {
+	.mobile-tools__tabs {
 		display: flex;
-		gap: var(--sy-space--large);
-		padding: 0 var(--sy-space);
-		border-bottom: var(--sy-border);
-		margin-bottom: var(--sy-space--extra-large);
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-mobile-space--medium);
 	}
-	.tools__content {
+	.mobile-tools__content {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 0 var(--sy-space) var(--sy-space--extra-large);
+		padding: calc(var(--sy-mobile-space--extra-small) * 5);
 	}
-	.tools__panel {
+	.mobile-tools__panel {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--large);
-		width: 100%;
+		gap: var(--sy-mobile-space--large);
 	}
-	.tools__tool-heading {
+	.mobile-tools__tool-heading {
 		display: flex;
 		align-items: center;
-		gap: var(--sy-space);
+		gap: var(--sy-mobile-space--medium);
 	}
-	.tools__tool-heading h2 {
+	.mobile-tools__tool-heading h2 {
 		margin: 0;
-		font-size: var(--sy-font-size--large);
+		font-size: var(--sy-font-size--mobile-large);
+		font-weight: var(--sy-font-weight--bold);
 	}
-	.tools__icon-button {
+	.mobile-tools__icon-button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 28px;
-		height: 28px;
+		width: var(--sy-mobile-touch-target);
+		height: var(--sy-mobile-touch-target);
 		padding: 0;
 		border: 0;
 		background: transparent;
 		color: var(--sy-color--grey-5);
-		cursor: pointer;
 	}
-	.tools__icon-button:hover {
-		color: var(--sy-color--blue);
-	}
-	.tools__panel textarea {
+	.mobile-tools__panel textarea {
 		width: 100%;
 		box-sizing: border-box;
-		min-height: 150px;
-		resize: vertical;
-		padding: var(--sy-space--large);
-		border: var(--sy-border);
+		min-height: 132px;
+		padding: var(--sy-mobile-space--large);
+		border: var(--sy-mobile-surface-border);
 		border-radius: var(--sy-border-radius);
 		background-color: var(--sy-color--white);
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
-		font-size: var(--sy-font-size--medium);
-		line-height: 1.6;
+		font-size: 16px;
+		line-height: 1.5;
+		resize: vertical;
 	}
-	.tools__controls,
-	.tools__actions {
+	.mobile-tools__controls {
 		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: var(--sy-space);
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--sy-mobile-space--medium);
 	}
-	.tools__decision {
+	.mobile-tools__decision {
 		margin: 0;
 		color: var(--sy-color--grey-5);
-		font-size: var(--sy-font-size--small);
+		font-size: var(--sy-font-size--mobile-small);
+		line-height: 1.4;
 	}
-	.tools__output {
+	.mobile-tools__output {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
-		gap: var(--sy-space--large);
+		gap: var(--sy-mobile-space--medium);
 		align-items: start;
-		min-height: 96px;
-		padding: var(--sy-space--large);
-		border: var(--sy-border);
+		min-height: 88px;
+		padding: var(--sy-mobile-space--large);
+		border: var(--sy-mobile-surface-border);
 		border-radius: var(--sy-border-radius);
 		background-color: var(--sy-color--grey-2);
 	}
-	.tools__output--large {
-		font-size: var(--sy-font-size--large);
+	.mobile-tools__output--large {
+		font-size: var(--sy-font-size--mobile-large);
 	}
-	.tools__output p {
+	.mobile-tools__output p {
 		margin: 0;
 		white-space: pre-wrap;
 		word-break: break-word;
-		line-height: 1.6;
+		line-height: 1.5;
 	}
-	:global(.tools__controls .sy-button) {
+	:global(.mobile-tools .sy-button) {
 		display: inline-flex;
 		align-items: center;
-		gap: var(--sy-space);
+		gap: var(--sy-mobile-space--medium);
 	}
-	.tools__info {
-		max-width: 420px;
+	.mobile-tools__info {
 		margin: 0;
 		line-height: 1.5;
 	}

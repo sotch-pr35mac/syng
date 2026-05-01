@@ -55,7 +55,7 @@
 			link: 'tools',
 			icon: EllipsisVertical,
 			title: 'Extras',
-			beta: true,
+			beta: false,
 		},
 	];
 	const secondaryNavigation = [
