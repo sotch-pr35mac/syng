@@ -21,7 +21,6 @@
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import ReaderSurface from '@/reader/surfaces/ReaderSurface.svelte';
 	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
@@ -35,7 +34,6 @@
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const activeDocument = $derived(readerRoute.activeDocument);
-	const activePublicationState = $derived(readerRoute.activePublicationState);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	let gestureStartX = 0;
@@ -221,10 +219,6 @@
 
 		const targetPageIndex =
 			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
-		if (activePublicationState) {
-			await readerRoute.goToPage(targetPageIndex);
-			return;
-		}
 		const targetPage = readerRoute.getPage(targetPageIndex);
 		if (!targetPage || !currentPage) {
 			return;
@@ -297,7 +291,7 @@
 </script>
 
 <div class="mobile-reader">
-	{#if activeDocument && (currentPage || activePublicationState)}
+	{#if activeDocument && currentPage}
 		<div class="mobile-reader__reader-header">
 			<SyButton style="ghost" size="small" onclick={readerRoute.backToLibrary}>
 				<Library size="18" />
@@ -316,36 +310,112 @@
 			>
 				<ChevronLeft size="24" />
 			</button>
-			{#if activePublicationState}
-				<div class="mobile-reader__publication">
-					<ReaderSurface
-						resource={activePublicationState.resource}
-						settings={activePublicationState.settings}
-						onlookup={readerRoute.openLookupTarget}
-					/>
-				</div>
-			{:else if currentPage}
-				<span
-					bind:this={characterMeasureElement}
-					class="mobile-reader__measure-text"
-					aria-hidden="true"
-				>
-					{CHARACTER_MEASURE_SAMPLE}
-				</span>
-				<article
-					bind:this={pageElement}
-					class="mobile-reader__page mobile-reader__page--base"
-					class:mobile-reader__page--turning={turningPage}
-				>
-					{#each currentPage.blocks as block (block.id)}
+			<span
+				bind:this={characterMeasureElement}
+				class="mobile-reader__measure-text"
+				aria-hidden="true"
+			>
+				{CHARACTER_MEASURE_SAMPLE}
+			</span>
+			<article
+				bind:this={pageElement}
+				class="mobile-reader__page mobile-reader__page--base"
+				class:mobile-reader__page--turning={turningPage}
+			>
+				{#each currentPage.blocks as block (block.id)}
+					{#if block.layout_mode === 'atomic' && block.kind === 'table'}
+						{@const tableSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{#if tableSource?.extensions?.table}
+							<div
+								class="mobile-reader__block mobile-reader__block--table"
+								role="region"
+								aria-label="Table"
+							>
+								<table class="mobile-reader__data-table">
+									<tbody>
+										{#each tableSource.extensions.table.rows as row, rowIndex}
+											<tr>
+												{#each row.cells as cell, colIndex}
+													<td>
+														{#each readerRoute.getTableCellSegments(
+															tableSource.id,
+															rowIndex,
+															colIndex,
+															cell.text
+														) as segment, segIndex (segIndex)}
+															{#if segment.type === 'token'}
+																<button
+																	class="mobile-reader__token"
+																	class:mobile-reader__token--active={readerRoute.tokensMatchDictionarySelection(
+																		segment.token,
+																		readerRoute.dictionaryToken
+																	)}
+																	onclick={(event) => openToken(event, segment.token)}
+																>
+																	{segment.text}
+																</button>
+															{:else}
+																{segment.text}
+															{/if}
+														{/each}
+													</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/if}
+					{:else if block.layout_mode === 'atomic' && block.kind === 'image'}
+						{@const imageSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{#if imageSource?.extensions?.image?.inline_src}
+							<figure class="mobile-reader__block mobile-reader__figure">
+								<img
+									src={imageSource.extensions.image.inline_src}
+									alt={imageSource.text}
+									class="mobile-reader__inline-image"
+									width={imageSource.extensions.image.width ?? undefined}
+									height={imageSource.extensions.image.height ?? undefined}
+								/>
+							</figure>
+						{/if}
+					{:else}
+						{@const sourceBlock = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
 						<svelte:element
-							this={block.kind === 'heading' ? 'h2' : 'p'}
+							this={block.kind === 'heading'
+								? (`h${Math.min(6, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
+										| 'h1'
+										| 'h2'
+										| 'h3'
+										| 'h4'
+										| 'h5'
+										| 'h6')
+								: block.kind === 'blockquote'
+									? 'blockquote'
+									: block.kind === 'code_block'
+										? 'pre'
+										: 'p'}
 							class="mobile-reader__block"
+							class:mobile-reader__block--code={block.kind === 'code_block'}
+							class:mobile-reader__block--list={block.kind === 'list_item'}
+							class:mobile-reader__block--list-bullet={block.kind === 'list_item' &&
+								sourceBlock?.extensions?.list_item?.list_style !== 'ordered'}
+							class:mobile-reader__block--list-ordered={block.kind === 'list_item' &&
+								sourceBlock?.extensions?.list_item?.list_style === 'ordered'}
+							data-ordinal={block.kind === 'list_item' &&
+							sourceBlock?.extensions?.list_item?.list_style === 'ordered' &&
+							sourceBlock.extensions.list_item.ordinal != null
+								? String(sourceBlock.extensions.list_item.ordinal)
+								: undefined}
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
 									<button
 										class="mobile-reader__token"
+										class:mobile-reader__token--active={readerRoute.tokensMatchDictionarySelection(
+											segment.token,
+											readerRoute.dictionaryToken
+										)}
 										onclick={(event) => openToken(event, segment.token)}
 									>
 										{segment.text}
@@ -355,9 +425,9 @@
 								{/if}
 							{/each}
 						</svelte:element>
-					{/each}
-				</article>
-			{/if}
+					{/if}
+				{/each}
+			</article>
 			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
 				<div class="mobile-reader__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
@@ -728,15 +798,6 @@
 		color: var(--sy-color--black);
 	}
 
-	.mobile-reader__publication {
-		position: relative;
-		height: 100%;
-		background: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow);
-		overflow: hidden;
-	}
-
 	.mobile-reader__page--base {
 		position: relative;
 		z-index: 0;
@@ -799,10 +860,108 @@
 		margin: 0 0 1.25em;
 	}
 
+	.mobile-reader__block--table {
+		overflow-x: auto;
+		margin: 0 0 1.25em;
+	}
+
+	.mobile-reader__data-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95em;
+	}
+
+	.mobile-reader__data-table td {
+		border: 1px solid var(--sy-color--grey-2);
+		padding: 0.35em 0.45em;
+		vertical-align: top;
+	}
+
+	.mobile-reader__figure {
+		margin: 0 0 1.25em;
+		text-align: center;
+	}
+
+	.mobile-reader__inline-image {
+		max-width: 100%;
+		height: auto;
+		display: inline-block;
+	}
+
+	.mobile-reader__block--code {
+		font-family: ui-monospace, monospace;
+		font-size: 0.92em;
+	}
+
+	.mobile-reader__block--list-bullet {
+		position: relative;
+		padding-left: 1.15em;
+	}
+
+	.mobile-reader__block--list-bullet::before {
+		content: '•';
+		position: absolute;
+		left: 0;
+		top: 0;
+		color: var(--sy-color--grey-3);
+	}
+
+	.mobile-reader__block--list-ordered {
+		position: relative;
+		padding-left: 1.85em;
+	}
+
+	.mobile-reader__block--list-ordered::before {
+		content: attr(data-ordinal) '. ';
+		position: absolute;
+		left: 0;
+		top: 0;
+		min-width: 1.35em;
+		text-align: start;
+		color: var(--sy-color--grey-3);
+		font-variant-numeric: tabular-nums;
+	}
+
+	blockquote.mobile-reader__block {
+		white-space: normal;
+		margin: 0 0 1.1em;
+		padding: 0.35em 0 0.35em 1em;
+		border-left: 0.28em solid var(--sy-color--grey-2);
+		color: var(--sy-color--grey-4);
+		font-style: italic;
+	}
+
+	h1.mobile-reader__block,
+	h2.mobile-reader__block,
+	h3.mobile-reader__block,
+	h4.mobile-reader__block,
+	h5.mobile-reader__block,
+	h6.mobile-reader__block {
+		white-space: normal;
+		line-height: 1.35;
+		color: var(--sy-color--grey-4);
+		margin: 0 0 0.75em;
+	}
+
+	h1.mobile-reader__block {
+		font-size: 1.55rem;
+	}
+
 	h2.mobile-reader__block {
 		font-size: 1.28rem;
-		line-height: 1.5;
-		color: var(--sy-color--grey-4);
+	}
+
+	h3.mobile-reader__block {
+		font-size: 1.15rem;
+	}
+
+	h4.mobile-reader__block {
+		font-size: 1.05rem;
+	}
+
+	h5.mobile-reader__block,
+	h6.mobile-reader__block {
+		font-size: 1rem;
 	}
 
 	.mobile-reader__token {

@@ -24,6 +24,7 @@ const THIRD_PAGE_POSITION = 18;
 function buildDocument(text: string): ReaderDocument {
 	return {
 		_id: 'reader-1',
+		canonical_schema_version: 1,
 		title: 'Story',
 		file_name: 'story.txt',
 		source_type: 'plain_text',
@@ -87,8 +88,8 @@ it('segments dictionary tokens inside a sliced source block', () => {
 	const secondPageBlock = pages[1].blocks[0];
 
 	const segments = createReaderSegments(secondPageBlock, [
-		{ text: '三四五', start: 2, end: 5 },
-		{ text: '六七', start: 5, end: 7 },
+		{ text: '三四五', start: 2, end: 5, block_id: 'block-1' },
+		{ text: '六七', start: 5, end: 7, block_id: 'block-1' },
 	]);
 
 	expect(secondPageBlock.text).toBe('四五六');
@@ -96,4 +97,54 @@ it('segments dictionary tokens inside a sliced source block', () => {
 	expect(
 		segments.filter((segment) => segment.type === 'token').map((segment) => segment.text)
 	).toEqual(['四五', '六']);
+});
+
+it('places non-linear table blocks as atomic layout segments', () => {
+	const tableDocument: ReaderDocument = {
+		_id: 'reader-table',
+		canonical_schema_version: 1,
+		title: 'Table doc',
+		file_name: 't.html',
+		source_type: 'test',
+		mime_type: 'text/plain',
+		extractor_version: 1,
+		text: '',
+		blocks: [
+			{
+				id: 'table-1',
+				kind: 'table',
+				text: '[Table]',
+				participates_in_linear_text: false,
+				extensions: {
+					table: {
+						rows: [
+							{ cells: [{ text: '甲' }, { text: '乙' }] },
+							{ cells: [{ text: '丙' }, { text: '丁' }] },
+						],
+					},
+				},
+			},
+		],
+		imported_at: '2026-01-01T00:00:00.000Z',
+		updated_at: '2026-01-01T00:00:00.000Z',
+		reading_order: [{ href: 'text', type: 'text/plain', title: 'Table doc' }],
+		progress: {
+			resource_href: 'text',
+			position: 0,
+			total_progression: 0,
+			page_index: 0,
+			text_position: { start: 0, end: 0 },
+			text_quote: { exact: '', prefix: '', suffix: '' },
+			updated_at: '2026-01-01T00:00:00.000Z',
+		},
+	};
+
+	const pages = createReaderPages(tableDocument, compactLayout);
+
+	expect(pages.length).toBeGreaterThanOrEqual(1);
+	expect(pages[0].blocks.some((block) => block.layout_mode === 'atomic')).toBe(true);
+	const atomicBlock = pages[0].blocks.find((block) => block.layout_mode === 'atomic');
+	expect(atomicBlock?.kind).toBe('table');
+	const segments = createReaderSegments(atomicBlock!, []);
+	expect(segments[0]?.type).toBe('text');
 });

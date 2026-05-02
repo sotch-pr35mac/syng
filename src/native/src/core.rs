@@ -22,7 +22,7 @@ pub use io::{export_list_data, import_list_data};
 pub use quiz::{
     answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
 };
-pub use reader::{import_reader_document, tokenize_reader_text};
+pub use reader::{import_reader_document, prepare_reader_import, tokenize_reader_text};
 pub use telemetry::{
     telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
     telemetry_track_error, telemetry_track_event, telemetry_track_screen, TelemetryManager,

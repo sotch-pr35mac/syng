@@ -23,7 +23,6 @@
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import ReaderSurface from '@/reader/surfaces/ReaderSurface.svelte';
 	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
@@ -40,7 +39,6 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
-	const activePublicationState = $derived(readerRoute.activePublicationState);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	let editingLibrary = $state(false);
@@ -224,10 +222,6 @@
 
 		const targetPageIndex =
 			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
-		if (activePublicationState) {
-			await readerRoute.goToPage(targetPageIndex);
-			return;
-		}
 		const targetPage = readerRoute.getPage(targetPageIndex);
 		if (!targetPage || !currentPage) {
 			return;
@@ -316,7 +310,7 @@
 		</div>
 	</div>
 
-	{#if activeDocument && (currentPage || activePublicationState)}
+	{#if activeDocument && currentPage}
 		<main class="reader__stage">
 			<button
 				class="reader__page-turn reader__page-turn--previous"
@@ -326,40 +320,108 @@
 			>
 				<ChevronLeft size="28" />
 			</button>
-			{#if activePublicationState}
-				<div class="reader__publication">
-					<ReaderSurface
-						resource={activePublicationState.resource}
-						settings={activePublicationState.settings}
-						onlookup={readerRoute.openLookupTarget}
-					/>
-				</div>
-			{:else if currentPage}
-				<span
-					bind:this={characterMeasureElement}
-					class="reader__measure-text"
-					aria-hidden="true"
-				>
-					{CHARACTER_MEASURE_SAMPLE}
-				</span>
-				<article
-					bind:this={pageElement}
-					class="reader__page reader__page--base"
-					class:reader__page--turning={turningPage}
-				>
-					{#each currentPage.blocks as block (block.id)}
+			<span
+				bind:this={characterMeasureElement}
+				class="reader__measure-text"
+				aria-hidden="true"
+			>
+				{CHARACTER_MEASURE_SAMPLE}
+			</span>
+			<article
+				bind:this={pageElement}
+				class="reader__page reader__page--base"
+				class:reader__page--turning={turningPage}
+			>
+				{#each currentPage.blocks as block (block.id)}
+					{#if block.layout_mode === 'atomic' && block.kind === 'table'}
+						{@const tableSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{#if tableSource?.extensions?.table}
+							<div class="reader__block reader__block--table" role="region" aria-label="Table">
+								<table class="reader__data-table">
+									<tbody>
+										{#each tableSource.extensions.table.rows as row, rowIndex}
+											<tr>
+												{#each row.cells as cell, colIndex}
+													<td>
+														{#each readerRoute.getTableCellSegments(
+															tableSource.id,
+															rowIndex,
+															colIndex,
+															cell.text
+														) as segment, segIndex (segIndex)}
+															{#if segment.type === 'token'}
+																<button
+																	class="reader__token"
+																	class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+																		segment.token,
+																		readerRoute.dictionaryToken
+																	)}
+																	onclick={(event) => openToken(event, segment.token)}
+																>
+																	{segment.text}
+																</button>
+															{:else}
+																{segment.text}
+															{/if}
+														{/each}
+													</td>
+												{/each}
+											</tr>
+										{/each}
+									</tbody>
+								</table>
+							</div>
+						{/if}
+					{:else if block.layout_mode === 'atomic' && block.kind === 'image'}
+						{@const imageSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{#if imageSource?.extensions?.image?.inline_src}
+							<figure class="reader__block reader__figure">
+								<img
+									src={imageSource.extensions.image.inline_src}
+									alt={imageSource.text}
+									class="reader__inline-image"
+									width={imageSource.extensions.image.width ?? undefined}
+									height={imageSource.extensions.image.height ?? undefined}
+								/>
+							</figure>
+						{/if}
+					{:else}
+						{@const sourceBlock = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
 						<svelte:element
-							this={block.kind === 'heading' ? 'h2' : 'p'}
+							this={block.kind === 'heading'
+								? (`h${Math.min(6, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
+										| 'h1'
+										| 'h2'
+										| 'h3'
+										| 'h4'
+										| 'h5'
+										| 'h6')
+								: block.kind === 'blockquote'
+									? 'blockquote'
+									: block.kind === 'code_block'
+										? 'pre'
+										: 'p'}
 							class="reader__block"
+							class:reader__block--code={block.kind === 'code_block'}
+							class:reader__block--list={block.kind === 'list_item'}
+							class:reader__block--list-bullet={block.kind === 'list_item' &&
+								sourceBlock?.extensions?.list_item?.list_style !== 'ordered'}
+							class:reader__block--list-ordered={block.kind === 'list_item' &&
+								sourceBlock?.extensions?.list_item?.list_style === 'ordered'}
+							data-ordinal={block.kind === 'list_item' &&
+							sourceBlock?.extensions?.list_item?.list_style === 'ordered' &&
+							sourceBlock.extensions.list_item.ordinal != null
+								? String(sourceBlock.extensions.list_item.ordinal)
+								: undefined}
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
 									<button
 										class="reader__token"
-										class:reader__token--active={readerRoute.dictionaryToken
-											?.start === segment.token?.start &&
-											readerRoute.dictionaryToken?.text ===
-												segment.token?.text}
+										class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+											segment.token,
+											readerRoute.dictionaryToken
+										)}
 										onclick={(event) => openToken(event, segment.token)}
 									>
 										{segment.text}
@@ -369,9 +431,9 @@
 								{/if}
 							{/each}
 						</svelte:element>
-					{/each}
-				</article>
-			{/if}
+					{/if}
+				{/each}
+			</article>
 			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
 				<div class="reader__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
@@ -749,16 +811,6 @@
 		color: var(--sy-color--black);
 	}
 
-	.reader__publication {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		background: var(--sy-color--white);
-		box-shadow: var(--sy-shadow);
-		border-radius: var(--sy-border-radius);
-		overflow: hidden;
-	}
-
 	.reader__page--base {
 		position: relative;
 		z-index: 0;
@@ -845,10 +897,108 @@
 		margin: 0 0 1.4em;
 	}
 
+	.reader__block--table {
+		overflow-x: auto;
+		margin: 0 0 1.4em;
+	}
+
+	.reader__data-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.95em;
+	}
+
+	.reader__data-table td {
+		border: 1px solid var(--sy-color--grey-2);
+		padding: 0.35em 0.45em;
+		vertical-align: top;
+	}
+
+	.reader__figure {
+		margin: 0 0 1.4em;
+		text-align: center;
+	}
+
+	.reader__inline-image {
+		max-width: 100%;
+		height: auto;
+		display: inline-block;
+	}
+
+	.reader__block--code {
+		font-family: ui-monospace, monospace;
+		font-size: 0.92em;
+	}
+
+	.reader__block--list-bullet {
+		position: relative;
+		padding-left: 1.15em;
+	}
+
+	.reader__block--list-bullet::before {
+		content: '•';
+		position: absolute;
+		left: 0;
+		top: 0;
+		color: var(--sy-color--grey-3);
+	}
+
+	.reader__block--list-ordered {
+		position: relative;
+		padding-left: 1.85em;
+	}
+
+	.reader__block--list-ordered::before {
+		content: attr(data-ordinal) '. ';
+		position: absolute;
+		left: 0;
+		top: 0;
+		min-width: 1.35em;
+		text-align: start;
+		color: var(--sy-color--grey-3);
+		font-variant-numeric: tabular-nums;
+	}
+
+	blockquote.reader__block {
+		white-space: normal;
+		margin: 0 0 1.2em;
+		padding: 0.35em 0 0.35em 1em;
+		border-left: 0.28em solid var(--sy-color--grey-2);
+		color: var(--sy-color--grey-4);
+		font-style: italic;
+	}
+
+	h1.reader__block,
+	h2.reader__block,
+	h3.reader__block,
+	h4.reader__block,
+	h5.reader__block,
+	h6.reader__block {
+		white-space: normal;
+		line-height: 1.35;
+		color: var(--sy-color--grey-4);
+		margin: 0 0 0.75em;
+	}
+
+	h1.reader__block {
+		font-size: 1.65rem;
+	}
+
 	h2.reader__block {
 		font-size: 1.35rem;
-		line-height: 1.5;
-		color: var(--sy-color--grey-4);
+	}
+
+	h3.reader__block {
+		font-size: 1.2rem;
+	}
+
+	h4.reader__block {
+		font-size: 1.1rem;
+	}
+
+	h5.reader__block,
+	h6.reader__block {
+		font-size: 1.05rem;
 	}
 
 	.reader__token {

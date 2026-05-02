@@ -83,6 +83,7 @@ global.PouchDB = class {
 };
 
 const importPayload = {
+	canonical_schema_version: 1,
 	title: 'Story',
 	file_name: 'story.txt',
 	source_type: 'plain_text',
@@ -122,6 +123,7 @@ it('creates and lists reader documents', async () => {
 	expect(documents[0].reading_order).toEqual([
 		{ href: 'text', type: 'text/plain', title: 'Story' },
 	]);
+	expect(documents[0].canonical_schema_version).toBe(1);
 });
 
 it('updates document progress', async () => {
@@ -165,6 +167,33 @@ it('stores and loads binary source attachments', async () => {
 	expect(document.reading_order).toEqual([
 		{ href: 'source', type: 'application/pdf', title: 'PDF' },
 	]);
+});
+
+it('stores asset attachments after the source attachment', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const sourceData = new Uint8Array(SOURCE_BYTES);
+	const assetBytes = new Uint8Array([9, 9, 1]);
+	const document = await manager.createDocument({
+		...importPayload,
+		title: 'EPUB',
+		file_name: 'book.epub',
+		source_type: 'epub',
+		mime_type: 'application/epub+zip',
+		source_data: sourceData,
+		asset_attachments: [
+			{
+				asset_id: 'cover.png',
+				mime_type: 'image/png',
+				data: assetBytes,
+			},
+		],
+	});
+
+	const loadedAsset = await manager.getAssetData(document._id, 'cover.png');
+
+	expect(loadedAsset).toBeInstanceOf(ArrayBuffer);
+	expect(Array.from(new Uint8Array(loadedAsset))).toEqual([9, 9, 1]);
 });
 
 it('updates document metadata', async () => {

@@ -30,6 +30,7 @@ export const NATIVE_COMMANDS = {
 	},
 	READER: {
 		IMPORT_DOCUMENT: 'import_reader_document',
+		PREPARE_IMPORT: 'prepare_reader_import',
 		TOKENIZE_TEXT: 'tokenize_reader_text',
 	},
 	WINDOW: {

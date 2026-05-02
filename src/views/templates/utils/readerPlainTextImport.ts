@@ -37,6 +37,13 @@ function inferBlockKind(text: string): string {
 		: 'paragraph';
 }
 
+function createBlockId(): string {
+	if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+		return crypto.randomUUID();
+	}
+	return `block-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function pushTextBlock(
 	blocks: ReaderContentBlock[],
 	startOffset: number,
@@ -45,15 +52,17 @@ function pushTextBlock(
 ): void {
 	const text = lines.join('\n');
 	blocks.push({
-		id: `block-${blocks.length}`,
+		id: createBlockId(),
 		kind: inferBlockKind(text),
 		text,
 		start_offset: startOffset,
 		end_offset: endOffset,
+		participates_in_linear_text: true,
 	});
 }
 
-function extractTextBlocks(text: string): ReaderContentBlock[] {
+/** Build canonical paragraph/heading blocks from normalized plain text (UTF-16 offsets). */
+export function extractReaderBlocksFromPlainText(text: string): ReaderContentBlock[] {
 	const blocks: ReaderContentBlock[] = [];
 	let blockStart: number | undefined;
 	let blockLines: string[] = [];
@@ -88,11 +97,12 @@ function extractTextBlocks(text: string): ReaderContentBlock[] {
 
 	if (!blocks.length && text.trim().length === 0) {
 		blocks.push({
-			id: 'block-0',
+			id: createBlockId(),
 			kind: 'paragraph',
 			text: '',
 			start_offset: 0,
 			end_offset: text.length,
+			participates_in_linear_text: true,
 		});
 	}
 
@@ -131,13 +141,14 @@ export function createPlainTextReaderImportPayload(
 	const normalizedTitle = title.trim() || 'Untitled';
 	const text = normalizeLineEndings(rawText);
 	return {
+		canonical_schema_version: 1,
 		title: normalizedTitle,
 		file_name: options.fileName ?? createClipboardFileName(normalizedTitle),
 		source_type: options.sourceType ?? 'plain_text',
 		mime_type: options.mimeType ?? 'text/plain',
 		extractor_version: TEXT_EXTRACTOR_VERSION,
 		text,
-		blocks: extractTextBlocks(text),
+		blocks: extractReaderBlocksFromPlainText(text),
 		color: normalizeReaderDocumentColor(options.color),
 		source_url: options.sourceUrl,
 	};

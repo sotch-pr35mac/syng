@@ -19,22 +19,23 @@ it('creates a plain text reader import payload from pasted text', () => {
 		color: '#ffffff',
 		text: 'Title\n\n你好今天的天气还好。\nSecond line.',
 	});
-	expect(payload.blocks).toEqual([
-		{
-			id: 'block-0',
-			kind: 'heading',
-			text: 'Title',
-			start_offset: 0,
-			end_offset: 6,
-		},
-		{
-			id: 'block-1',
-			kind: 'paragraph',
-			text: '你好今天的天气还好。\nSecond line.',
-			start_offset: 7,
-			end_offset: 30,
-		},
-	]);
+	expect(payload.blocks).toHaveLength(2);
+	expect(payload.blocks[0]).toMatchObject({
+		kind: 'heading',
+		text: 'Title',
+		start_offset: 0,
+		end_offset: 6,
+		participates_in_linear_text: true,
+	});
+	expect(payload.blocks[1]).toMatchObject({
+		kind: 'paragraph',
+		text: '你好今天的天气还好。\nSecond line.',
+		start_offset: 7,
+		end_offset: 30,
+		participates_in_linear_text: true,
+	});
+	expect(payload.blocks[0].id).toMatch(/^[0-9a-f-]{36}$/i);
+	expect(payload.blocks[1].id).toMatch(/^[0-9a-f-]{36}$/i);
 });
 
 it('keeps closing punctuation from making quoted sentences look like headings', () => {

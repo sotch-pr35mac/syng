@@ -46,10 +46,18 @@
 		const neededVertical = DESKTOP_HEIGHT_PX + DESKTOP_OFFSET_PX;
 		const neededHorizontal = DESKTOP_WIDTH_PX + DESKTOP_OFFSET_PX;
 
-		if (spaceBelow >= neededVertical) return 'below';
-		if (spaceAbove >= neededVertical) return 'above';
-		if (spaceRight >= neededHorizontal) return 'right';
-		if (spaceLeft >= neededHorizontal) return 'left';
+		if (spaceBelow >= neededVertical) {
+			return 'below';
+		}
+		if (spaceAbove >= neededVertical) {
+			return 'above';
+		}
+		if (spaceRight >= neededHorizontal) {
+			return 'right';
+		}
+		if (spaceLeft >= neededHorizontal) {
+			return 'left';
+		}
 		return spaceBelow >= spaceAbove ? 'below' : 'above';
 	});
 

@@ -29,6 +29,11 @@ tauri-plugin-process = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-cli = "2"
+sha2 = "0.11.0"
+base64 = "0.22.1"
+html2text = "0.17.1"
+epub = "2.1.5"
+pdf-extract = "0.10.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.3"

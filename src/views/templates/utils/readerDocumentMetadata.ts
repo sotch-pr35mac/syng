@@ -30,6 +30,7 @@ export function applyReaderImportMetadata(
 	const normalizedTitle = title.trim() || importPayload.title || 'Untitled';
 	return {
 		...importPayload,
+		canonical_schema_version: importPayload.canonical_schema_version ?? 1,
 		title: normalizedTitle,
 		color: normalizeReaderDocumentColor(color),
 	};

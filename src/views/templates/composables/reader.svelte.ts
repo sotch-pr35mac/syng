@@ -8,18 +8,19 @@ import type {
 	ReaderImportPayload,
 	ReaderLocator,
 	ReaderToken,
-	NormalizedReaderLocator,
-	ReaderLookupTarget,
 } from '@/types/reader.js';
 import type { SearchEntry } from '@/types/search.js';
 import { handleError, telemetry } from '@/utils';
 import { applyReaderImportMetadata } from '@/utils/readerDocumentMetadata.js';
+import {
+	ensureReaderDocumentForRendering,
+	getTableExtension,
+	isTableBlock,
+	tableCellTokenKey,
+} from '@/utils/readerDocumentCanonical.js';
 import { pickReaderImportFile } from '@/utils/readerFileImport.js';
 import { createPlainTextReaderImportPayload } from '@/utils/readerPlainTextImport.js';
 import { createWebpageReaderImportPayload } from '@/utils/readerWebpageImport.js';
-import { openReaderPublication } from '@/reader/publication/index.js';
-import { ReaderSession, type ReaderSessionState } from '@/reader/session/readerSession.js';
-import { DEFAULT_READER_SETTINGS } from '@/reader/settings/defaults.js';
 import {
 	createReaderPages,
 	createReaderSegments,
@@ -33,8 +34,6 @@ import {
 const TEXT_CONTEXT_LENGTH = 32;
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
-let activePublicationSession = $state<ReaderSession | undefined>(undefined);
-let activePublicationState = $state<ReaderSessionState | undefined>(undefined);
 let pageIndex = $state(0);
 let pages = $state<ReaderPage[]>([]);
 let pageLayout = $state<ReaderPageLayout | undefined>(undefined);
@@ -47,7 +46,11 @@ let dictionaryToken = $state<ReaderToken | undefined>(undefined);
 let dictionaryAnchor = $state<DOMRect | undefined>(undefined);
 let lastPageTurnDirection = $state<'next' | 'previous' | undefined>(undefined);
 
-function alignTokens(text: string, tokenTexts: string[]): ReaderToken[] {
+function participatesInLinearText(block: ReaderContentBlock): boolean {
+	return block.participates_in_linear_text !== false;
+}
+
+function alignTokens(text: string, tokenTexts: string[], blockId: string): ReaderToken[] {
 	const tokens: ReaderToken[] = [];
 	let cursor = 0;
 	for (const tokenText of tokenTexts) {
@@ -56,17 +59,36 @@ function alignTokens(text: string, tokenTexts: string[]): ReaderToken[] {
 			continue;
 		}
 		const end = start + tokenText.length;
-		tokens.push({ text: tokenText, start, end });
+		tokens.push({ text: tokenText, start, end, block_id: blockId });
 		cursor = end;
 	}
 	return tokens;
 }
 
 async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> {
+	if (!participatesInLinearText(block)) {
+		return [];
+	}
 	const tokenTexts = await invoke<string[]>(NATIVE_COMMANDS.READER.TOKENIZE_TEXT, {
 		text: block.text,
 	});
-	return alignTokens(block.text, tokenTexts);
+	return alignTokens(block.text, tokenTexts, block.id);
+}
+
+async function tokenizeTableCell(
+	blockId: string,
+	row: number,
+	col: number,
+	text: string
+): Promise<ReaderToken[]> {
+	const tokenTexts = await invoke<string[]>(NATIVE_COMMANDS.READER.TOKENIZE_TEXT, {
+		text,
+	});
+	const base = alignTokens(text, tokenTexts, blockId);
+	return base.map((token) => ({
+		...token,
+		table_cell: { row, col },
+	}));
 }
 
 function createLocator(page: ReaderPage): ReaderLocator {
@@ -104,93 +126,8 @@ function getPageIndexForLocator(document: ReaderDocument, documentPages: ReaderP
 	return findPageIndexForPosition(documentPages, position);
 }
 
-function isPublicationDocument(document: ReaderDocument): boolean {
-	return document.source_type !== 'plain_text';
-}
-
-function toPublicationLocator(document: ReaderDocument): NormalizedReaderLocator | undefined {
-	const resourceHref = document.progress?.resource_href;
-	if (!resourceHref) {
-		return undefined;
-	}
-	if (document.source_type === 'pdf') {
-		return {
-			type: 'pdf',
-			resourceHref,
-			pageIndex: document.progress.page_index ?? 0,
-			progression: document.progress.total_progression ?? 0,
-			updatedAt: document.progress.updated_at,
-		};
-	}
-	return {
-		type: 'reflowable',
-		resourceHref,
-		progression: document.progress.total_progression ?? 0,
-		updatedAt: document.progress.updated_at,
-	};
-}
-
-function createPublicationProgress(state: ReaderSessionState): ReaderLocator {
-	const resourceIndex = state.publication.readingOrder.findIndex(
-		(item) => item.href === state.locator.resourceHref
-	);
-	const safeResourceIndex = Math.max(0, resourceIndex);
-	const totalResources = Math.max(1, state.publication.readingOrder.length);
-	const totalProgression =
-		totalResources === 1
-			? Math.max(0, Math.min(1, state.locator.progression))
-			: Math.max(0, Math.min(1, safeResourceIndex / Math.max(1, totalResources - 1)));
-	const now = new Date().toISOString();
-	return {
-		resource_href: state.locator.resourceHref,
-		position: 0,
-		total_progression: totalProgression,
-		page_index: safeResourceIndex,
-		text_position: {
-			start: 0,
-			end: 0,
-		},
-		text_quote: {
-			exact: '',
-			prefix: '',
-			suffix: '',
-		},
-		updated_at: now,
-	};
-}
-
-async function loadPublicationDocument(document: ReaderDocument): Promise<ReaderSessionState> {
-	const sourceData = await readerDocumentsStore.getSourceData(document._id);
-	const publication = await openReaderPublication({
-		id: document._id,
-		title: document.title,
-		fileName: document.file_name,
-		mimeType: document.mime_type,
-		sourceUrl: document.source_url,
-		importedAt: document.imported_at,
-		text: document.source_html ? undefined : document.text,
-		html: document.source_html,
-		data: sourceData,
-	});
-	const session = new ReaderSession(publication, DEFAULT_READER_SETTINGS, toPublicationLocator(document));
-	activePublicationSession = session;
-	activePublicationState = session.state;
-	return activePublicationState;
-}
-
 async function saveCurrentProgress(): Promise<void> {
 	if (!activeDocument || !pages[pageIndex]) {
-		if (activeDocument && activePublicationState) {
-			try {
-				activeDocument = await readerDocumentsStore.updateProgress(
-					activeDocument._id,
-					createPublicationProgress(activePublicationState)
-				);
-				telemetry.trackEvent('reader.position_saved', {}).catch(() => {});
-			} catch (error) {
-				handleError('There was an error saving reader progress.', error);
-			}
-		}
 		return;
 	}
 	const locator = createLocator(pages[pageIndex]);
@@ -203,40 +140,16 @@ async function saveCurrentProgress(): Promise<void> {
 }
 
 async function openDocument(document: ReaderDocument): Promise<void> {
-	activeDocument = document;
-	activePublicationSession = undefined;
-	activePublicationState = undefined;
+	activeDocument = ensureReaderDocumentForRendering(document);
 	tokenMap = {};
 	lastPageTurnDirection = undefined;
 	closeDictionary();
-	if (isPublicationDocument(document)) {
-		try {
-			await loadPublicationDocument(document);
-			pageIndex =
-				activePublicationState?.locator.type === 'pdf'
-					? activePublicationState.locator.pageIndex
-					: Math.max(
-							0,
-							activePublicationState?.publication.readingOrder.findIndex(
-								(item) => item.href === activePublicationState?.locator.resourceHref
-							) ?? 0
-						);
-			pages = [];
-		} catch (error) {
-			activeDocument = undefined;
-			activePublicationSession = undefined;
-			activePublicationState = undefined;
-			handleError('There was an error opening the reader document.', error);
-			return;
-		}
-	} else {
-		pages = createReaderPages(document, pageLayout);
-		pageIndex = getPageIndexForLocator(document, pages);
-		await preparePageTokens();
-	}
+	pages = createReaderPages(activeDocument, pageLayout);
+	pageIndex = getPageIndexForLocator(activeDocument, pages);
+	await preparePageTokens();
 	telemetry
 		.trackEvent('reader.document_opened', {
-			source_type: document.source_type,
+			source_type: activeDocument.source_type,
 		})
 		.catch(() => {});
 }
@@ -292,7 +205,7 @@ async function importWebpageDocument(
 	sourceUrl: string
 ): Promise<void> {
 	await importReaderPayload(
-		createWebpageReaderImportPayload(title, html, sourceUrl, color),
+		await createWebpageReaderImportPayload(title, html, sourceUrl, color),
 		title,
 		color
 	);
@@ -333,8 +246,6 @@ async function deleteDocument(document: ReaderDocument): Promise<boolean> {
 		await readerDocumentsStore.deleteDocument(document._id);
 		if (activeDocument?._id === document._id) {
 			activeDocument = undefined;
-			activePublicationSession = undefined;
-			activePublicationState = undefined;
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -373,8 +284,6 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 		);
 		if (activeDocument && documents.some((document) => document._id === activeDocument?._id)) {
 			activeDocument = undefined;
-			activePublicationSession = undefined;
-			activePublicationState = undefined;
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -410,44 +319,43 @@ async function preparePageTokens(): Promise<void> {
 		.map((blockId) => sourceBlocksById.get(blockId))
 		.filter((block): block is ReaderContentBlock => Boolean(block));
 
-	if (!missingBlocks.length) {
-		return;
+	const cellEntries: Array<readonly [string, ReaderToken[]]> = [];
+	for (const block of missingBlocks) {
+		if (!isTableBlock(block)) {
+			continue;
+		}
+		const table = getTableExtension(block);
+		if (!table) {
+			continue;
+		}
+		for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex += 1) {
+			const row = table.rows[rowIndex]!;
+			for (let colIndex = 0; colIndex < row.cells.length; colIndex += 1) {
+				const key = tableCellTokenKey(block.id, rowIndex, colIndex);
+				if (tokenMap[key]) {
+					continue;
+				}
+				const cellText = row.cells[colIndex]!.text;
+				cellEntries.push([key, await tokenizeTableCell(block.id, rowIndex, colIndex, cellText)]);
+			}
+		}
 	}
 
-	const entries = await Promise.all(
-		missingBlocks.map(async (block) => [block.id, await tokenizeBlock(block)] as const)
+	const flowEntries = await Promise.all(
+		missingBlocks
+			.filter((block) => participatesInLinearText(block))
+			.map(async (block) => [block.id, await tokenizeBlock(block)] as const)
 	);
-	tokenMap = {
+
+	const nextTokenMap = {
 		...tokenMap,
-		...Object.fromEntries(entries),
+		...Object.fromEntries(flowEntries),
+		...Object.fromEntries(cellEntries),
 	};
+	tokenMap = nextTokenMap;
 }
 
 async function goToPage(nextPageIndex: number): Promise<void> {
-	if (activeDocument && activePublicationSession && activePublicationState) {
-		const targetResource = activePublicationState.publication.readingOrder[nextPageIndex];
-		if (!targetResource) {
-			return;
-		}
-		const direction = nextPageIndex > pageIndex ? 'next' : 'previous';
-		lastPageTurnDirection = direction;
-		pageIndex = nextPageIndex;
-		activePublicationState = activePublicationSession.goTo({
-			type: activePublicationState.publication.format === 'pdf' ? 'pdf' : 'reflowable',
-			resourceHref: targetResource.href,
-			pageIndex: nextPageIndex,
-			progression: 0,
-			updatedAt: new Date().toISOString(),
-		} as NormalizedReaderLocator);
-		closeDictionary();
-		await saveCurrentProgress();
-		telemetry
-			.trackEvent('reader.page_changed', {
-				direction,
-			})
-			.catch(() => {});
-		return;
-	}
 	if (!activeDocument || !pages[nextPageIndex]) {
 		return;
 	}
@@ -494,7 +402,7 @@ async function setPageLayout(layout: ReaderPageLayout): Promise<void> {
 	const currentPosition = pages[pageIndex]?.start ?? activeDocument?.progress?.position ?? 0;
 	pageLayout = normalizedLayout;
 
-	if (!activeDocument || activePublicationState) {
+	if (!activeDocument) {
 		return;
 	}
 
@@ -508,9 +416,75 @@ function getPage(pageNumber: number): ReaderPage | undefined {
 	return pages[pageNumber];
 }
 
-function getBlockSegments(block: ReaderPageBlock): ReaderSegment[] {
-	const blockTokens = tokenMap[block.sourceBlockId] ?? [];
-	return createReaderSegments(block, blockTokens);
+function buildTableSegments(tableBlock: ReaderContentBlock): ReaderSegment[] {
+	const table = getTableExtension(tableBlock);
+	if (!table) {
+		return [{ type: 'text', text: tableBlock.text || '\u00a0' }];
+	}
+	const segments: ReaderSegment[] = [];
+	for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex += 1) {
+		const row = table.rows[rowIndex]!;
+		for (let colIndex = 0; colIndex < row.cells.length; colIndex += 1) {
+			const cell = row.cells[colIndex]!;
+			const key = tableCellTokenKey(tableBlock.id, rowIndex, colIndex);
+			const cellTokens = tokenMap[key] ?? [];
+			const syntheticBlock: ReaderPageBlock = {
+				id: key,
+				sourceBlockId: tableBlock.id,
+				kind: 'paragraph',
+				text: cell.text,
+				sourceText: cell.text,
+				sourceStart: 0,
+				sourceEnd: cell.text.length,
+				start_offset: 0,
+				end_offset: cell.text.length,
+				layout_mode: 'flow',
+			};
+			segments.push(...createReaderSegments(syntheticBlock, cellTokens));
+			if (colIndex < row.cells.length - 1) {
+				segments.push({ type: 'text', text: '\t' });
+			}
+		}
+		if (rowIndex < table.rows.length - 1) {
+			segments.push({ type: 'text', text: '\n' });
+		}
+	}
+	return segments.length ? segments : [{ type: 'text', text: tableBlock.text || '\u00a0' }];
+}
+
+function getBlockSegments(pageBlock: ReaderPageBlock): ReaderSegment[] {
+	if (!activeDocument) {
+		return createReaderSegments(pageBlock, []);
+	}
+	if (pageBlock.layout_mode === 'atomic' && pageBlock.kind === 'table') {
+		const source = activeDocument.blocks.find((block) => block.id === pageBlock.sourceBlockId);
+		if (source && isTableBlock(source)) {
+			return buildTableSegments(source);
+		}
+	}
+	return createReaderSegments(pageBlock, tokenMap[pageBlock.sourceBlockId] ?? []);
+}
+
+function getTableCellSegments(
+	tableBlockId: string,
+	rowIndex: number,
+	colIndex: number,
+	cellText: string
+): ReaderSegment[] {
+	const key = tableCellTokenKey(tableBlockId, rowIndex, colIndex);
+	const syntheticBlock: ReaderPageBlock = {
+		id: key,
+		sourceBlockId: tableBlockId,
+		kind: 'paragraph',
+		text: cellText,
+		sourceText: cellText,
+		sourceStart: 0,
+		sourceEnd: cellText.length,
+		start_offset: 0,
+		end_offset: cellText.length,
+		layout_mode: 'flow',
+	};
+	return createReaderSegments(syntheticBlock, tokenMap[key] ?? []);
 }
 
 async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<void> {
@@ -526,29 +500,6 @@ async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<voi
 		dictionaryWord = dictionaryResults[dictionaryResultIndex];
 		dictionaryToken = token;
 		dictionaryAnchor = anchor;
-		telemetry.trackEvent('reader.dictionary_opened', {}).catch(() => {});
-	} catch (error) {
-		handleError('There was an error opening the dictionary popover.', error);
-	}
-}
-
-async function openLookupTarget(target: ReaderLookupTarget): Promise<void> {
-	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text: target.text,
-		});
-		const exactMatchIndex = results.findIndex(
-			(result) => result.simplified === target.text || result.traditional === target.text
-		);
-		dictionaryResults = results;
-		dictionaryResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
-		dictionaryWord = dictionaryResults[dictionaryResultIndex];
-		dictionaryToken = {
-			text: target.text,
-			start: target.offset ?? 0,
-			end: (target.offset ?? 0) + target.text.length,
-		};
-		dictionaryAnchor = target.anchor;
 		telemetry.trackEvent('reader.dictionary_opened', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error opening the dictionary popover.', error);
@@ -574,12 +525,34 @@ function closeDictionary(): void {
 function backToLibrary(): void {
 	saveCurrentProgress().catch(() => {});
 	activeDocument = undefined;
-	activePublicationSession = undefined;
-	activePublicationState = undefined;
 	pageIndex = 0;
 	pages = [];
 	lastPageTurnDirection = undefined;
 	closeDictionary();
+}
+
+function tokensMatchDictionarySelection(
+	token: ReaderToken | undefined,
+	selected: ReaderToken | undefined
+): boolean {
+	if (!token || !selected) {
+		return false;
+	}
+	if (token.text !== selected.text || token.start !== selected.start || token.end !== selected.end) {
+		return false;
+	}
+	if (token.block_id !== selected.block_id) {
+		return false;
+	}
+	const tokenCell = token.table_cell;
+	const selectedCell = selected.table_cell;
+	if (Boolean(tokenCell) !== Boolean(selectedCell)) {
+		return false;
+	}
+	if (tokenCell && selectedCell) {
+		return tokenCell.row === selectedCell.row && tokenCell.col === selectedCell.col;
+	}
+	return true;
 }
 
 export const readerRoute = {
@@ -588,9 +561,6 @@ export const readerRoute = {
 	},
 	get activeDocument(): ReaderDocument | undefined {
 		return activeDocument;
-	},
-	get activePublicationState(): ReaderSessionState | undefined {
-		return activePublicationState;
 	},
 	get currentPage(): ReaderPage | undefined {
 		return pages[pageIndex];
@@ -605,16 +575,16 @@ export const readerRoute = {
 		return pageIndex;
 	},
 	get pageCount(): number {
-		return activePublicationState?.publication.readingOrder.length ?? pages.length;
+		return pages.length;
 	},
 	get importing(): boolean {
 		return importing;
 	},
 	get canGoPrevious(): boolean {
-		return activePublicationState?.canGoBackward ?? pageIndex > 0;
+		return pageIndex > 0;
 	},
 	get canGoNext(): boolean {
-		return activePublicationState?.canGoForward ?? pageIndex < pages.length - 1;
+		return pageIndex < pages.length - 1;
 	},
 	get dictionaryWord(): SearchEntry | undefined {
 		return dictionaryWord;
@@ -634,6 +604,7 @@ export const readerRoute = {
 	get lastPageTurnDirection(): 'next' | 'previous' | undefined {
 		return lastPageTurnDirection;
 	},
+	tokensMatchDictionarySelection,
 	refresh: readerDocumentsStore.refresh,
 	pickImportDocument,
 	importReaderPayload,
@@ -649,8 +620,8 @@ export const readerRoute = {
 	getPage,
 	setPageLayout,
 	getBlockSegments,
+	getTableCellSegments,
 	openDictionary,
-	openLookupTarget,
 	selectDictionaryResult,
 	closeDictionary,
 	backToLibrary,

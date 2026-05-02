@@ -1,4 +1,9 @@
-import type { ReaderContentBlock, ReaderDocument, ReaderToken } from '@/types/reader.js';
+import type {
+	ReaderContentBlock,
+	ReaderDocument,
+	ReaderTableExtension,
+	ReaderToken,
+} from '@/types/reader.js';
 
 const DEFAULT_CONTENT_WIDTH = 760;
 const DEFAULT_CONTENT_HEIGHT = 920;
@@ -8,6 +13,8 @@ const DEFAULT_BLOCK_GAP = 28;
 const DEFAULT_HEADING_LINE_HEIGHT = 30;
 const DEFAULT_HEADING_GAP = 28;
 const HEADING_CHARACTER_WIDTH_SCALE = 0.9;
+const TABLE_ROW_HEIGHT_SCALE = 1.0;
+const IMAGE_FALLBACK_HEIGHT_EM = 8;
 
 export interface ReaderPageLayout {
 	contentWidth: number;
@@ -20,6 +27,8 @@ export interface ReaderPageLayout {
 	averageCharacterWidth?: number;
 }
 
+export type ReaderPageBlockLayoutMode = 'flow' | 'atomic';
+
 export interface ReaderPageBlock {
 	id: string;
 	sourceBlockId: string;
@@ -30,6 +39,8 @@ export interface ReaderPageBlock {
 	sourceEnd: number;
 	start_offset: number;
 	end_offset: number;
+	/** Flow slices participate in line wrapping; atomic is one box (table / image). */
+	layout_mode?: ReaderPageBlockLayoutMode;
 }
 
 export interface ReaderPage {
@@ -54,6 +65,15 @@ interface PaginationState {
 	pages: ReaderPage[];
 	pageBlocks: ReaderPageBlock[];
 	usedHeight: number;
+	lastLinearTextEnd: number;
+}
+
+function participatesInLinearText(block: ReaderContentBlock): boolean {
+	return block.participates_in_linear_text !== false;
+}
+
+function blockBaseOffset(block: ReaderContentBlock): number {
+	return block.start_offset ?? 0;
 }
 
 function normalizeLayout(layout: ReaderPageLayout | undefined): ReaderPageLayout {
@@ -91,6 +111,34 @@ function getBlockGap(layout: ReaderPageLayout, kind: ReaderContentBlock['kind'])
 	return kind === 'heading' ? layout.headingGap : layout.blockGap;
 }
 
+function estimateTableHeight(
+	block: ReaderContentBlock,
+	layout: ReaderPageLayout
+): number {
+	const table = block.extensions?.table as ReaderTableExtension | undefined;
+	const rowCount = table?.rows?.length ?? 1;
+	const rowHeight = layout.lineHeight * TABLE_ROW_HEIGHT_SCALE;
+	return Math.max(rowHeight, rowCount * rowHeight);
+}
+
+function estimateImageHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
+	const heightPx = block.extensions?.image?.height;
+	if (typeof heightPx === 'number' && heightPx > 0) {
+		return Math.min(layout.contentHeight, heightPx);
+	}
+	return layout.fontSize * IMAGE_FALLBACK_HEIGHT_EM;
+}
+
+function estimateAtomicBlockHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
+	if (block.kind === 'table') {
+		return estimateTableHeight(block, layout);
+	}
+	if (block.kind === 'image') {
+		return estimateImageHeight(block, layout);
+	}
+	return layout.lineHeight * 2;
+}
+
 function createLineSlices(text: string, charactersPerLine: number): LineSlice[] {
 	const slices: LineSlice[] = [];
 	let segmentStart = 0;
@@ -119,14 +167,16 @@ function appendPageBlock(
 	sourceStart: number,
 	sourceEnd: number
 ): void {
+	const baseOffset = blockBaseOffset(sourceBlock);
 	const previousBlock = pageBlocks[pageBlocks.length - 1];
 
 	if (
+		previousBlock?.layout_mode !== 'atomic' &&
 		previousBlock?.sourceBlockId === sourceBlock.id &&
 		previousBlock.sourceEnd === sourceStart
 	) {
 		previousBlock.sourceEnd = sourceEnd;
-		previousBlock.end_offset = sourceBlock.start_offset + sourceEnd;
+		previousBlock.end_offset = baseOffset + sourceEnd;
 		previousBlock.text = sourceBlock.text.slice(previousBlock.sourceStart, sourceEnd);
 		previousBlock.id = `${sourceBlock.id}:${previousBlock.sourceStart}:${sourceEnd}`;
 		return;
@@ -140,8 +190,29 @@ function appendPageBlock(
 		sourceText: sourceBlock.text,
 		sourceStart,
 		sourceEnd,
-		start_offset: sourceBlock.start_offset + sourceStart,
-		end_offset: sourceBlock.start_offset + sourceEnd,
+		start_offset: baseOffset + sourceStart,
+		end_offset: baseOffset + sourceEnd,
+		layout_mode: 'flow',
+	});
+}
+
+function appendAtomicPageBlock(
+	pageBlocks: ReaderPageBlock[],
+	sourceBlock: ReaderContentBlock,
+	anchorOffset: number
+): void {
+	pageBlocks.push({
+		id: `${sourceBlock.id}:atomic`,
+		sourceBlockId: sourceBlock.id,
+		kind: sourceBlock.kind,
+		text: sourceBlock.text,
+		sourceText: sourceBlock.text,
+		sourceStart: 0,
+		sourceEnd: sourceBlock.text.length,
+		start_offset: anchorOffset,
+		/** Exclusive upper bound so half-open locator ranges work when the page is atomic-only. */
+		end_offset: anchorOffset + 1,
+		layout_mode: 'atomic',
 	});
 }
 
@@ -150,10 +221,17 @@ function pushCurrentPage(state: PaginationState): void {
 		return;
 	}
 
+	const pageStart = state.pageBlocks.length
+		? Math.min(...state.pageBlocks.map((block) => block.start_offset))
+		: state.lastLinearTextEnd;
+	const pageEnd = state.pageBlocks.length
+		? Math.max(...state.pageBlocks.map((block) => block.end_offset))
+		: state.lastLinearTextEnd + 1;
+
 	state.pages.push({
 		index: state.pages.length,
-		start: state.pageBlocks[0].start_offset,
-		end: state.pageBlocks[state.pageBlocks.length - 1].end_offset,
+		start: pageStart,
+		end: pageEnd,
 		blocks: state.pageBlocks,
 	});
 	state.pageBlocks = [];
@@ -173,12 +251,30 @@ export function createReaderPages(
 		pages: [],
 		pageBlocks: [],
 		usedHeight: 0,
+		lastLinearTextEnd: 0,
 	};
 
 	for (const sourceBlock of document.blocks) {
+		const blockGap = getBlockGap(normalizedLayout, sourceBlock.kind);
+
+		if (!participatesInLinearText(sourceBlock)) {
+			const atomicHeight = estimateAtomicBlockHeight(sourceBlock, normalizedLayout);
+			const atomicDoesNotFit =
+				state.pageBlocks.length > 0 &&
+				state.usedHeight + atomicHeight > normalizedLayout.contentHeight;
+
+			if (atomicDoesNotFit) {
+				pushCurrentPage(state);
+			}
+
+			appendAtomicPageBlock(state.pageBlocks, sourceBlock, state.lastLinearTextEnd);
+			state.usedHeight += atomicHeight;
+			state.usedHeight += blockGap;
+			continue;
+		}
+
 		const charactersPerLine = getCharacterCapacity(normalizedLayout, sourceBlock.kind);
 		const lineHeight = getBlockLineHeight(normalizedLayout, sourceBlock.kind);
-		const blockGap = getBlockGap(normalizedLayout, sourceBlock.kind);
 		const lineSlices = createLineSlices(sourceBlock.text, charactersPerLine);
 
 		for (const lineSlice of lineSlices) {
@@ -194,13 +290,16 @@ export function createReaderPages(
 			state.usedHeight += lineHeight;
 		}
 
+		const blockEnd =
+			sourceBlock.end_offset ?? blockBaseOffset(sourceBlock) + sourceBlock.text.length;
+		state.lastLinearTextEnd = Math.max(state.lastLinearTextEnd, blockEnd);
 		state.usedHeight += blockGap;
 	}
 
 	pushCurrentPage(state);
 
 	if (!state.pages.length) {
-		const startOffset = document.blocks[0]?.start_offset ?? 0;
+		const startOffset = document.blocks[0] ? blockBaseOffset(document.blocks[0]) : 0;
 		return [
 			{
 				index: 0,
@@ -225,6 +324,10 @@ export function createReaderSegments(
 	block: ReaderPageBlock,
 	sourceTokens: ReaderToken[]
 ): ReaderSegment[] {
+	if (block.layout_mode === 'atomic') {
+		return [{ type: 'text', text: block.text || '\u00a0' }];
+	}
+
 	const visibleTokens = sourceTokens.filter(
 		(token) => token.end > block.sourceStart && token.start < block.sourceEnd
 	);
@@ -247,8 +350,10 @@ export function createReaderSegments(
 			text: block.text.slice(tokenStart, tokenEnd),
 			token: {
 				text: sourceToken.text,
-				start: tokenStart,
-				end: tokenEnd,
+				start: sourceToken.start,
+				end: sourceToken.end,
+				block_id: sourceToken.block_id ?? block.sourceBlockId,
+				table_cell: sourceToken.table_cell,
 			},
 		});
 		cursor = tokenEnd;

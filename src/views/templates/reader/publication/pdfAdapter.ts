@@ -1,5 +1,5 @@
 import type { ReaderPublication, ReaderReadingOrderItem, ReaderResource } from '@/reader/types.js';
-import { configurePdfJsWorker } from '@/reader/pdfjsWorker.js';
+import { configurePdfJsWorker, getPdfJsDocumentInitOptions } from '@/reader/pdfjsWorker.js';
 import {
 	createDefaultCapabilities,
 	createDefaultMetadata,
@@ -32,7 +32,10 @@ export const pdfPublicationAdapter: ReaderFormatAdapter = {
 
 		const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
 		configurePdfJsWorker(GlobalWorkerOptions);
-		const pdf = await getDocument({ data: asArrayBuffer(input.data) }).promise;
+		const pdf = await getDocument({
+			data: asArrayBuffer(input.data),
+			...getPdfJsDocumentInitOptions(),
+		}).promise;
 		const metadata = await pdf.getMetadata().catch(() => undefined);
 		const infoTitle =
 			metadata && 'info' in metadata && metadata.info && 'Title' in metadata.info

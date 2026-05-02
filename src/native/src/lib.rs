@@ -12,7 +12,8 @@ mod windows;
 
 use core::{
     answer_question, classify, export_list_data, get_incorrect_questions, get_next_question,
-    import_list_data, import_reader_document, init_dictionary, is_dev_build, query,
+    import_list_data, import_reader_document, init_dictionary, is_dev_build, prepare_reader_import,
+    query,
     query_by_chinese, query_by_english, query_by_pinyin, score_quiz, start_quiz,
     telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
     telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_reader_text,
@@ -76,6 +77,7 @@ pub fn run() {
             export_list_data,
             import_list_data,
             import_reader_document,
+            prepare_reader_import,
             tokenize_reader_text,
             start_quiz,
             get_next_question,
@@ -104,6 +106,7 @@ pub fn run() {
             export_list_data,
             import_list_data,
             import_reader_document,
+            prepare_reader_import,
             tokenize_reader_text,
             start_quiz,
             get_next_question,
