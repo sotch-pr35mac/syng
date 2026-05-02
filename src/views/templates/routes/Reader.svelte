@@ -246,7 +246,7 @@
 				aria-label="Previous page"
 				onclick={() => turnPage('previous')}
 			>
-				<ChevronLeft size="44" />
+				<ChevronLeft size="28" />
 			</button>
 			<span
 				bind:this={characterMeasureElement}
@@ -269,6 +269,7 @@
 							{#if segment.type === 'token'}
 								<button
 									class="reader__token"
+									class:reader__token--active={readerRoute.dictionaryToken?.start === segment.token?.start && readerRoute.dictionaryToken?.text === segment.token?.text}
 									onclick={(event) => openToken(event, segment.token)}
 								>
 									{segment.text}
@@ -299,7 +300,7 @@
 				aria-label="Next page"
 				onclick={() => turnPage('next')}
 			>
-				<ChevronRight size="44" />
+				<ChevronRight size="28" />
 			</button>
 			<div class="reader__page-count">
 				{readerRoute.pageIndex + 1} / {readerRoute.pageCount}
@@ -507,12 +508,12 @@
 
 	.reader__stage {
 		--reader-stage-padding: clamp(16px, 2vw, 28px);
-		--reader-edge-turn-width: clamp(96px, 12vw, 176px);
+		--reader-chevron-width: clamp(32px, 3vw, 44px);
 
 		position: relative;
 		flex: 1;
 		min-height: 0;
-		padding: var(--reader-stage-padding);
+		padding: var(--reader-stage-padding) var(--reader-chevron-width);
 		box-sizing: border-box;
 		overflow: hidden;
 	}
@@ -544,11 +545,13 @@
 
 	.reader__page-curl {
 		position: absolute;
-		inset: var(--reader-stage-padding);
+		top: var(--reader-stage-padding);
+		bottom: var(--reader-stage-padding);
+		left: var(--reader-chevron-width);
+		right: var(--reader-chevron-width);
 		z-index: var(--sy-z-index--base);
-		width: calc(100% - (var(--reader-stage-padding) * 2));
-		height: calc(100% - (var(--reader-stage-padding) * 2));
 		border-radius: var(--sy-border-radius);
+		box-shadow: var(--sy-shadow);
 		pointer-events: none;
 	}
 
@@ -570,38 +573,27 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: var(--reader-edge-turn-width);
+		width: var(--reader-chevron-width);
 		border: 0;
 		border-radius: 0;
 		background: transparent;
 		color: var(--sy-color--grey-4);
 		cursor: pointer;
-		opacity: 0;
-		transform: translateX(var(--reader-chevron-offset, 0));
-		transition:
-			opacity var(--sy-transition-duration),
-			transform var(--sy-transition-duration),
-			background var(--sy-transition-duration);
+		opacity: 0.4;
+		transition: opacity var(--sy-transition-duration);
 	}
 
 	.reader__page-turn--previous {
-		--reader-chevron-offset: -12px;
-
 		left: 0;
-		background: linear-gradient(90deg, rgb(255 255 255 / 62%), transparent);
 	}
 
 	.reader__page-turn--next {
-		--reader-chevron-offset: 12px;
-
 		right: 0;
-		background: linear-gradient(270deg, rgb(255 255 255 / 62%), transparent);
 	}
 
 	.reader__page-turn:not(:disabled):hover,
 	.reader__page-turn:not(:disabled):focus-visible {
 		opacity: 1;
-		transform: translateX(0);
 	}
 
 	.reader__page-turn:disabled {
@@ -612,8 +604,8 @@
 	.reader__page-count {
 		position: absolute;
 		z-index: calc(var(--sy-z-index--base) + 1);
-		right: clamp(28px, 3vw, 44px);
-		bottom: clamp(22px, 3vw, 36px);
+		right: calc(var(--reader-chevron-width) + 12px);
+		bottom: calc(var(--reader-stage-padding) + 8px);
 		padding: var(--sy-space) var(--sy-space--large);
 		border-radius: var(--sy-border-radius);
 		background: rgb(255 255 255 / 84%);
@@ -646,7 +638,8 @@
 		border-bottom: 1px solid transparent;
 	}
 
-	.reader__token:hover {
+	.reader__token:hover,
+	.reader__token--active {
 		color: var(--sy-color--blue);
 		border-bottom-color: var(--sy-color--blue);
 	}

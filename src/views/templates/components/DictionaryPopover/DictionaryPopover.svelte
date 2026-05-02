@@ -5,6 +5,8 @@
 	import type { SearchEntry } from '@/types/search.js';
 	import { isMobile } from '@/utils/device.js';
 
+	type PopoverPlacement = 'below' | 'above' | 'right' | 'left';
+
 	const {
 		word = undefined,
 		results = [],
@@ -25,22 +27,119 @@
 
 	const mobile = isMobile();
 	const DESKTOP_WIDTH_PX = 420;
+	const DESKTOP_HEIGHT_PX = 380;
 	const DESKTOP_GUTTER_PX = 16;
-	const DESKTOP_OFFSET_PX = 12;
+	const DESKTOP_OFFSET_PX = 10;
+	let popoverElement = $state<HTMLElement | undefined>(undefined);
+
 	const visible = $derived(Boolean(word));
+	const showDots = $derived(results.length <= 8);
+
+	const placement = $derived.by((): PopoverPlacement => {
+		if (!anchor || mobile) {
+			return 'below';
+		}
+		const spaceBelow = window.innerHeight - anchor.bottom - DESKTOP_GUTTER_PX;
+		const spaceAbove = anchor.top - DESKTOP_GUTTER_PX;
+		const spaceRight = window.innerWidth - anchor.right - DESKTOP_GUTTER_PX;
+		const spaceLeft = anchor.left - DESKTOP_GUTTER_PX;
+		const neededVertical = DESKTOP_HEIGHT_PX + DESKTOP_OFFSET_PX;
+		const neededHorizontal = DESKTOP_WIDTH_PX + DESKTOP_OFFSET_PX;
+
+		if (spaceBelow >= neededVertical) return 'below';
+		if (spaceAbove >= neededVertical) return 'above';
+		if (spaceRight >= neededHorizontal) return 'right';
+		if (spaceLeft >= neededHorizontal) return 'left';
+		return spaceBelow >= spaceAbove ? 'below' : 'above';
+	});
+
+	function clampHorizontal(value: number): number {
+		return Math.min(
+			window.innerWidth - DESKTOP_WIDTH_PX - DESKTOP_GUTTER_PX,
+			Math.max(DESKTOP_GUTTER_PX, value)
+		);
+	}
+
+	function clampVertical(value: number): number {
+		return Math.min(
+			window.innerHeight - DESKTOP_HEIGHT_PX - DESKTOP_GUTTER_PX,
+			Math.max(DESKTOP_GUTTER_PX, value)
+		);
+	}
+
 	const style = $derived.by(() => {
 		if (!anchor || mobile) {
 			return '';
 		}
-		const left = Math.min(
-			window.innerWidth - DESKTOP_WIDTH_PX - DESKTOP_GUTTER_PX,
-			Math.max(DESKTOP_GUTTER_PX, anchor.left + anchor.width / 2 - DESKTOP_WIDTH_PX / 2)
-		);
-		const top =
-			anchor.bottom + DESKTOP_OFFSET_PX + DESKTOP_WIDTH_PX > window.innerHeight
-				? Math.max(DESKTOP_GUTTER_PX, anchor.top - DESKTOP_WIDTH_PX - DESKTOP_OFFSET_PX)
-				: anchor.bottom + DESKTOP_OFFSET_PX;
-		return `left:${left}px; top:${top}px; width:${DESKTOP_WIDTH_PX}px;`;
+		const anchorCenterX = anchor.left + anchor.width / 2;
+		const anchorCenterY = anchor.top + anchor.height / 2;
+		let popLeft: number;
+		let popTop: number;
+		let originX: string;
+		let originY: string;
+		const customProps: string[] = [];
+
+		switch (placement) {
+			case 'below':
+				popLeft = clampHorizontal(anchorCenterX - DESKTOP_WIDTH_PX / 2);
+				popTop = anchor.bottom + DESKTOP_OFFSET_PX;
+				customProps.push(`--popover-arrow-x:${anchorCenterX - popLeft}px`);
+				originX = `${anchorCenterX - popLeft}px`;
+				originY = '0';
+				break;
+			case 'above':
+				popLeft = clampHorizontal(anchorCenterX - DESKTOP_WIDTH_PX / 2);
+				popTop = Math.max(DESKTOP_GUTTER_PX, anchor.top - DESKTOP_HEIGHT_PX - DESKTOP_OFFSET_PX);
+				customProps.push(`--popover-arrow-x:${anchorCenterX - popLeft}px`);
+				originX = `${anchorCenterX - popLeft}px`;
+				originY = '100%';
+				break;
+			case 'right':
+				popLeft = anchor.right + DESKTOP_OFFSET_PX;
+				popTop = clampVertical(anchorCenterY - DESKTOP_HEIGHT_PX / 2);
+				customProps.push(`--popover-arrow-y:${anchorCenterY - popTop}px`);
+				originX = '0';
+				originY = `${anchorCenterY - popTop}px`;
+				break;
+			case 'left':
+				popLeft = Math.max(DESKTOP_GUTTER_PX, anchor.left - DESKTOP_WIDTH_PX - DESKTOP_OFFSET_PX);
+				popTop = clampVertical(anchorCenterY - DESKTOP_HEIGHT_PX / 2);
+				customProps.push(`--popover-arrow-y:${anchorCenterY - popTop}px`);
+				originX = '100%';
+				originY = `${anchorCenterY - popTop}px`;
+				break;
+		}
+
+		return [
+			`left:${popLeft}px`,
+			`top:${popTop}px`,
+			`width:${DESKTOP_WIDTH_PX}px`,
+			`height:${DESKTOP_HEIGHT_PX}px`,
+			`transform-origin:${originX} ${originY}`,
+			...customProps,
+		].join(';');
+	});
+
+	$effect(() => {
+		if (!visible || !popoverElement) {
+			return undefined;
+		}
+		let removed = false;
+		const handleOutsideClick = (event: MouseEvent) => {
+			if (popoverElement && !event.composedPath().includes(popoverElement)) {
+				onclose();
+			}
+		};
+		const timer = setTimeout(() => {
+			if (!removed) {
+				document.addEventListener('click', handleOutsideClick, { capture: true });
+			}
+		}, 0);
+		return () => {
+			removed = true;
+			clearTimeout(timer);
+			document.removeEventListener('click', handleOutsideClick, { capture: true });
+		};
 	});
 
 	function getResultLabel(result: SearchEntry): string {
@@ -53,9 +152,16 @@
 </script>
 
 {#if visible}
-	<button class="dictionary-popover__backdrop" aria-label="Close dictionary" onclick={onclose}>
-	</button>
-	<div class="dictionary-popover" class:dictionary-popover--mobile={mobile} {style}>
+	<div
+		bind:this={popoverElement}
+		class="dictionary-popover"
+		class:dictionary-popover--mobile={mobile}
+		class:dictionary-popover--below={placement === 'below'}
+		class:dictionary-popover--above={placement === 'above'}
+		class:dictionary-popover--right={placement === 'right'}
+		class:dictionary-popover--left={placement === 'left'}
+		{style}
+	>
 		<div class="dictionary-popover__header">
 			<span class="dictionary-popover__title">Dictionary</span>
 			<SyButton style="ghost" size="small" onclick={onclose}>
@@ -63,7 +169,7 @@
 			</SyButton>
 		</div>
 		{#if results.length > 1}
-			<div class="dictionary-popover__results" aria-label="Dictionary results">
+			<div class="dictionary-popover__results-nav" aria-label="Dictionary results">
 				<SyButton
 					style="ghost"
 					size="small"
@@ -72,17 +178,22 @@
 				>
 					<ChevronLeft size="16" />
 				</SyButton>
-				<div class="dictionary-popover__result-tabs">
-					{#each results as result, index (`${result.hash}-${index}`)}
-						<button
-							class="dictionary-popover__result-tab"
-							class:dictionary-popover__result-tab--active={index === resultIndex}
-							onclick={() => onselect(index)}
-						>
-							<span>{getResultLabel(result)}</span>
-							<small>{result.english[0]}</small>
-						</button>
-					{/each}
+				<div class="dictionary-popover__result-indicator">
+					<span class="dictionary-popover__result-label">
+						{getResultLabel(results[resultIndex])} ({resultIndex + 1} of {results.length})
+					</span>
+					{#if showDots}
+						<div class="dictionary-popover__result-dots">
+							{#each results as _, dotIndex (dotIndex)}
+								<button
+									class="dictionary-popover__result-dot"
+									class:dictionary-popover__result-dot--active={dotIndex === resultIndex}
+									onclick={() => onselect(dotIndex)}
+									aria-label="Result {dotIndex + 1}"
+								></button>
+							{/each}
+						</div>
+					{/if}
 				</div>
 				<SyButton
 					style="ghost"
@@ -101,17 +212,64 @@
 {/if}
 
 <style>
+	@keyframes popover-enter {
+		from {
+			opacity: 0;
+			transform: scale(0.85);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
 	.dictionary-popover {
 		position: fixed;
-		max-height: min(620px, calc(100vh - 32px));
 		background: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-mobile-overlay-shadow);
+		box-shadow:
+			0 8px 32px rgb(0 0 0 / 18%),
+			0 2px 8px rgb(0 0 0 / 12%);
 		border: var(--sy-mobile-surface-border);
-		overflow: hidden;
 		z-index: var(--sy-z-index--top-3);
 		display: flex;
 		flex-direction: column;
+		animation: popover-enter 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+	}
+
+	.dictionary-popover::before {
+		content: '';
+		position: absolute;
+		border: 8px solid transparent;
+		pointer-events: none;
+	}
+
+	.dictionary-popover--below::before {
+		top: -16px;
+		left: var(--popover-arrow-x, 50%);
+		transform: translateX(-50%);
+		border-bottom-color: var(--sy-color--white);
+	}
+
+	.dictionary-popover--above::before {
+		bottom: -16px;
+		left: var(--popover-arrow-x, 50%);
+		transform: translateX(-50%);
+		border-top-color: var(--sy-color--white);
+	}
+
+	.dictionary-popover--right::before {
+		left: -16px;
+		top: var(--popover-arrow-y, 50%);
+		transform: translateY(-50%);
+		border-right-color: var(--sy-color--white);
+	}
+
+	.dictionary-popover--left::before {
+		right: -16px;
+		top: var(--popover-arrow-y, 50%);
+		transform: translateY(-50%);
+		border-left-color: var(--sy-color--white);
 	}
 
 	.dictionary-popover--mobile {
@@ -119,8 +277,14 @@
 		right: 0;
 		bottom: 0;
 		width: auto;
+		height: auto;
 		max-height: 72vh;
 		border-radius: var(--sy-mobile-space--extra-large) var(--sy-mobile-space--extra-large) 0 0;
+		animation: none;
+	}
+
+	.dictionary-popover--mobile::before {
+		display: none;
 	}
 
 	.dictionary-popover__header {
@@ -138,67 +302,60 @@
 		color: var(--sy-color--grey-4);
 	}
 
-	.dictionary-popover__results {
-		display: grid;
-		grid-template-columns: 36px minmax(0, 1fr) 36px;
+	.dictionary-popover__results-nav {
+		display: flex;
 		align-items: center;
 		gap: var(--sy-space);
-		padding: var(--sy-space);
+		padding: var(--sy-space) var(--sy-space--large);
 		border-bottom: var(--sy-border);
 		background: var(--sy-color--grey-1);
+		flex-shrink: 0;
 	}
 
-	.dictionary-popover__result-tabs {
-		display: flex;
-		gap: var(--sy-space);
-		overflow-x: auto;
+	.dictionary-popover__result-indicator {
+		flex: 1;
 		min-width: 0;
-	}
-
-	.dictionary-popover__result-tab {
 		display: flex;
 		flex-direction: column;
-		align-items: flex-start;
-		min-width: 136px;
-		max-width: 180px;
-		padding: var(--sy-space);
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		background: var(--sy-color--white);
-		color: var(--sy-color--grey-4);
+		align-items: center;
+		gap: var(--sy-space--small);
+	}
+
+	.dictionary-popover__result-label {
 		font-family: var(--sy-font-family);
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.dictionary-popover__result-tab--active {
-		border-color: var(--sy-color--blue);
-		color: var(--sy-color--blue);
-	}
-
-	.dictionary-popover__result-tab span,
-	.dictionary-popover__result-tab small {
-		max-width: 100%;
+		font-size: 0.85rem;
+		color: var(--sy-color--grey-4);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		max-width: 100%;
+		text-align: center;
 	}
 
-	.dictionary-popover__result-tab small {
-		margin-top: var(--sy-space--extra-small);
-		color: var(--sy-color--grey-3);
+	.dictionary-popover__result-dots {
+		display: flex;
+		gap: var(--sy-space);
+		justify-content: center;
+	}
+
+	.dictionary-popover__result-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		border: 0;
+		padding: 0;
+		background: var(--sy-color--grey-5, #ccc);
+		cursor: pointer;
+		transition: background var(--sy-transition-duration);
+	}
+
+	.dictionary-popover__result-dot--active {
+		background: var(--sy-color--blue);
 	}
 
 	.dictionary-popover__content {
 		overflow-y: auto;
 		min-height: 0;
-	}
-
-	.dictionary-popover__backdrop {
-		position: fixed;
-		inset: 0;
-		border: 0;
-		background: transparent;
-		z-index: var(--sy-z-index--top-2);
+		flex: 1;
 	}
 </style>
