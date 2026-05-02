@@ -180,6 +180,48 @@ export function buildReaderDocumentFromHtmlString(
 	return { text, blocks };
 }
 
+function buildImageBlock(
+	imageElement: HTMLImageElement,
+	imageBaseUrl: string | undefined
+): ReaderContentBlock {
+	const rawSource = pickBestRawImageSource(imageElement);
+	const source = resolveImageSourceUrl(rawSource, imageBaseUrl);
+	const altText = normalizeWhitespace(imageElement.getAttribute('alt') ?? '') || 'Image';
+	const mimeMatch = source.match(/^data:([^;,]+)/i);
+	const mimeType = mimeMatch?.[1]?.trim() || 'application/octet-stream';
+	const width =
+		imageElement.width > 0
+			? imageElement.width
+			: parseDimension(imageElement.getAttribute('width'));
+	const height =
+		imageElement.height > 0
+			? imageElement.height
+			: parseDimension(imageElement.getAttribute('height'));
+	return {
+		id: newBlockId(),
+		kind: 'image',
+		text: altText,
+		participates_in_linear_text: false,
+		extensions: {
+			image: {
+				asset_id: newBlockId(),
+				mime_type: mimeType,
+				width,
+				height,
+				inline_src: source || undefined,
+			},
+		},
+	};
+}
+
+function textContentExcludingImages(element: HTMLElement): string {
+	const clone = element.cloneNode(true) as HTMLElement;
+	for (const imageNode of clone.querySelectorAll('img')) {
+		imageNode.remove();
+	}
+	return clone.textContent ?? '';
+}
+
 function walkRootToBlocks(
 	root: HTMLElement,
 	options?: ReaderHtmlToCanonicalOptions
@@ -214,35 +256,7 @@ function walkRootToBlocks(
 		}
 
 		if (tag === 'IMG') {
-			const imageElement = element as HTMLImageElement;
-			const rawSource = pickBestRawImageSource(imageElement);
-			const source = resolveImageSourceUrl(rawSource, imageBaseUrl);
-			const altText = normalizeWhitespace(imageElement.getAttribute('alt') ?? '') || 'Image';
-			const mimeMatch = source.match(/^data:([^;,]+)/i);
-			const mimeType = mimeMatch?.[1]?.trim() || 'application/octet-stream';
-			const width =
-				imageElement.width > 0
-					? imageElement.width
-					: parseDimension(imageElement.getAttribute('width'));
-			const height =
-				imageElement.height > 0
-					? imageElement.height
-					: parseDimension(imageElement.getAttribute('height'));
-			blocks.push({
-				id: newBlockId(),
-				kind: 'image',
-				text: altText,
-				participates_in_linear_text: false,
-				extensions: {
-					image: {
-						asset_id: newBlockId(),
-						mime_type: mimeType,
-						width,
-						height,
-						inline_src: source || undefined,
-					},
-				},
-			});
+			blocks.push(buildImageBlock(element as HTMLImageElement, imageBaseUrl));
 			return;
 		}
 
@@ -299,7 +313,15 @@ function walkRootToBlocks(
 		}
 
 		if (tag === 'P' || tag === 'PRE') {
-			const displayText = normalizeWhitespace(element.textContent ?? '');
+			const descendantImages = element.querySelectorAll('img');
+			for (const descendantImage of descendantImages) {
+				blocks.push(buildImageBlock(descendantImage as HTMLImageElement, imageBaseUrl));
+			}
+			const displayText = normalizeWhitespace(
+				descendantImages.length > 0
+					? textContentExcludingImages(element)
+					: (element.textContent ?? '')
+			);
 			if (!displayText) {
 				return;
 			}
@@ -313,7 +335,15 @@ function walkRootToBlocks(
 		}
 
 		if (tag === 'BLOCKQUOTE') {
-			const displayText = normalizeWhitespace(element.textContent ?? '');
+			const descendantImages = element.querySelectorAll('img');
+			for (const descendantImage of descendantImages) {
+				blocks.push(buildImageBlock(descendantImage as HTMLImageElement, imageBaseUrl));
+			}
+			const displayText = normalizeWhitespace(
+				descendantImages.length > 0
+					? textContentExcludingImages(element)
+					: (element.textContent ?? '')
+			);
 			if (!displayText) {
 				return;
 			}

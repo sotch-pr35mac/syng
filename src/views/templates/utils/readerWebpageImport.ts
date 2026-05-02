@@ -7,7 +7,8 @@ import { sanitizeReflowableReaderHtml } from '@/utils/readerHtmlSanitize.js';
 const WEBPAGE_SOURCE_TYPE = 'webpage';
 const WEBPAGE_MIME_TYPE = 'text/html';
 const MAX_INLINED_IMAGE_BYTES = 4 * 1024 * 1024;
-const EMBED_IMAGE_CONCURRENCY = 4;
+const EMBED_IMAGE_CONCURRENCY = 10;
+const IMAGE_FETCH_TIMEOUT_MS = 8_000;
 
 function normalizeWebpageUrl(rawUrl: string): string {
 	const trimmedUrl = rawUrl.trim();
@@ -68,12 +69,15 @@ function inferImageMimeFromMagicBytes(bytes: Uint8Array): string | undefined {
 }
 
 async function fetchRemoteImageAsDataUrl(imageUrl: string): Promise<string | undefined> {
+	const controller = new AbortController();
+	const timeoutId = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
 	try {
 		const response = await fetch(imageUrl, {
 			method: 'GET',
 			headers: {
 				Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
 			},
+			signal: controller.signal,
 		});
 		if (!response.ok) {
 			return undefined;
@@ -98,6 +102,8 @@ async function fetchRemoteImageAsDataUrl(imageUrl: string): Promise<string | und
 		return arrayBufferToDataUrl(buffer, mimeType);
 	} catch {
 		return undefined;
+	} finally {
+		clearTimeout(timeoutId);
 	}
 }
 
