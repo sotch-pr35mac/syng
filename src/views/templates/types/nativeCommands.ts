@@ -28,6 +28,10 @@ export const NATIVE_COMMANDS = {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
 	},
+	READER: {
+		IMPORT_DOCUMENT: 'import_reader_document',
+		TOKENIZE_TEXT: 'tokenize_reader_text',
+	},
 	WINDOW: {
 		OPEN_CHARACTER_WINDOW: 'open_character_window',
 	},

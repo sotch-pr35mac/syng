@@ -2,7 +2,6 @@
 	import { onMount, tick } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		BookOpen,
 		CheckCircle2,
 		ChevronLeft,
 		ChevronRight,
@@ -11,7 +10,6 @@
 		Library,
 		Trash2,
 	} from 'lucide-svelte';
-	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
@@ -19,20 +17,19 @@
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
 	import type { ReaderDocument, ReaderToken } from '@/types/reader.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
-	import { isIPad } from '@/utils/device.js';
 
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
-	const DEFAULT_PAGE_FONT_SIZE = 20;
-	const BODY_BLOCK_GAP_EM = 1.4;
-	const HEADING_FONT_SCALE = 1.35;
+	const DEFAULT_PAGE_FONT_SIZE = 19;
+	const BODY_BLOCK_GAP_EM = 1.25;
+	const HEADING_FONT_SCALE = 1.28;
 	const HEADING_LINE_HEIGHT = 1.5;
-	const PAGE_CURL_DURATION_MS = 760;
+	const PAGE_CURL_DURATION_MS = 720;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
-	const isMacos = platform() === 'macos';
-	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
+	let gestureStartX = 0;
+	let gestureStartY = 0;
 	let editingLibrary = $state(false);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
@@ -196,79 +193,72 @@
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
 	}
+
+	function onPointerDown(event: PointerEvent): void {
+		gestureStartX = event.clientX;
+		gestureStartY = event.clientY;
+	}
+
+	function onPointerUp(event: PointerEvent): void {
+		if (turningPage) {
+			return;
+		}
+		const deltaX = event.clientX - gestureStartX;
+		const deltaY = event.clientY - gestureStartY;
+		const MIN_SWIPE_DISTANCE = 70;
+		const MAX_VERTICAL_DRIFT = 60;
+		if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE || Math.abs(deltaY) > MAX_VERTICAL_DRIFT) {
+			return;
+		}
+		if (deltaX < 0) {
+			turnPage('next');
+		} else {
+			turnPage('previous');
+		}
+	}
 </script>
 
-<div class="reader">
-	<div
-		class="reader__header"
-		class:reader__header--ipad={isIPadDevice}
-		data-tauri-drag-region={isMacos ? true : undefined}
-	>
-		<div class="reader__title-row">
-			{#if activeDocument}
-				<BookOpen size="22" />
-				<h1>{activeDocument.title}</h1>
-			{:else}
-				<Library size="22" />
-				<h1>Library</h1>
-			{/if}
-		</div>
-		<div class="reader__header-actions">
-			{#if activeDocument}
-				<SyButton style="ghost" size="large" onclick={readerRoute.backToLibrary}>
-					Library
-				</SyButton>
-			{:else}
-				{#if editingLibrary}
-					<SyButton
-						style="ghost"
-						size="large"
-						hover="red"
-						disabled={!selectedDocuments.length}
-						onclick={deleteSelectedDocuments}
-					>
-						<Trash2 size="18" />
-						Delete
-					</SyButton>
-				{/if}
-				<SyButton style="ghost" size="large" onclick={toggleEditing}>
-					{editingLibrary ? 'Done' : 'Edit'}
-				</SyButton>
-			{/if}
-		</div>
-	</div>
-
+<div class="mobile-reader">
 	{#if activeDocument && currentPage}
-		<main class="reader__stage">
+		<div class="mobile-reader__reader-header">
+			<SyButton style="ghost" size="small" onclick={readerRoute.backToLibrary}>
+				<Library size="18" />
+			</SyButton>
+			<span class="mobile-reader__document-title">{activeDocument.title}</span>
+			<span class="mobile-reader__page-count">
+				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
+			</span>
+		</div>
+		<main class="mobile-reader__stage" onpointerdown={onPointerDown} onpointerup={onPointerUp}>
 			<button
-				class="reader__page-turn reader__page-turn--previous"
+				class="mobile-reader__page-turn mobile-reader__page-turn--previous"
 				disabled={!readerRoute.canGoPrevious || turningPage}
 				aria-label="Previous page"
 				onclick={() => turnPage('previous')}
 			>
-				<ChevronLeft size="44" />
+				<ChevronLeft size="24" />
 			</button>
 			<span
 				bind:this={characterMeasureElement}
-				class="reader__measure-text"
+				class="mobile-reader__measure-text"
 				aria-hidden="true"
 			>
 				{CHARACTER_MEASURE_SAMPLE}
 			</span>
 			<article
 				bind:this={pageElement}
-				class="reader__page reader__page--base"
-				class:reader__page--turning={turningPage}
+				class="mobile-reader__page mobile-reader__page--base"
+				class:mobile-reader__page--turning={turningPage}
 			>
 				{#each currentPage.blocks as block (block.id)}
 					<svelte:element
 						this={block.kind === 'heading' ? 'h2' : 'p'}
-						class="reader__block"
+						class="mobile-reader__block"
 					>
 						{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 							{#if segment.type === 'token'}
 								<button
-									class="reader__token"
+									class="mobile-reader__token"
 									onclick={(event) => openToken(event, segment.token)}
 								>
 									{segment.text}
@@ -281,7 +271,7 @@
 				{/each}
 			</article>
 			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
-				<div class="reader__page-curl" aria-hidden="true">
+				<div class="mobile-reader__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
 						currentImage={currentPageImage}
 						targetImage={targetPageImage}
@@ -294,61 +284,71 @@
 				</div>
 			{/if}
 			<button
-				class="reader__page-turn reader__page-turn--next"
+				class="mobile-reader__page-turn mobile-reader__page-turn--next"
 				disabled={!readerRoute.canGoNext || turningPage}
 				aria-label="Next page"
 				onclick={() => turnPage('next')}
 			>
-				<ChevronRight size="44" />
+				<ChevronRight size="24" />
 			</button>
-			<div class="reader__page-count">
-				{readerRoute.pageIndex + 1} / {readerRoute.pageCount}
-			</div>
 		</main>
 	{:else}
-		<main class="reader__library">
-			<div class="reader__library-grid">
+		<div class="mobile-reader__library-header">
+			<span>Library</span>
+			<div class="mobile-reader__library-actions">
+				{#if editingLibrary}
+					<SyButton
+						style="ghost"
+						size="small"
+						hover="red"
+						disabled={!selectedDocuments.length}
+						onclick={deleteSelectedDocuments}
+					>
+						<Trash2 size="18" />
+					</SyButton>
+				{/if}
+				<SyButton style="ghost" size="small" onclick={toggleEditing}>
+					{editingLibrary ? 'Done' : 'Edit'}
+				</SyButton>
+			</div>
+		</div>
+		<main class="mobile-reader__library">
+			<div class="mobile-reader__library-grid">
 				<button
-					class="reader__book-card reader__book-card--import"
+					class="mobile-reader__book mobile-reader__book--import"
 					disabled={readerRoute.importing || editingLibrary}
 					onclick={readerRoute.importDocument}
 				>
-					<div class="reader__book-cover">
-						<FilePlus2 size="32" />
-						<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span>
-					</div>
+					<FilePlus2 size="26" />
+					<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span>
 				</button>
 				{#each documents as document (document._id)}
 					<div
-						class="reader__book-card"
-						class:reader__book-card--selected={selectedDocumentIds.has(document._id)}
+						class="mobile-reader__book"
+						class:mobile-reader__book--selected={selectedDocumentIds.has(document._id)}
 						onclick={() => handleDocumentCardClick(document)}
 						onkeyup={(event) => handleDocumentCardKey(event, document)}
 						role="button"
 						tabindex="0"
 					>
-						<div class="reader__book-cover">
-							{#if editingLibrary}
-								<span class="reader__selection-indicator">
-									{#if selectedDocumentIds.has(document._id)}
-										<CheckCircle2 size="22" />
-									{:else}
-										<Circle size="22" />
-									{/if}
-								</span>
-							{/if}
-							<span class="reader__book-title">{document.title}</span>
-							<span class="reader__book-meta">{document.file_name}</span>
-							<span class="reader__book-progress">
-								{Math.round((document.progress?.total_progression ?? 0) * 100)}%
+						{#if editingLibrary}
+							<span class="mobile-reader__selection-indicator">
+								{#if selectedDocumentIds.has(document._id)}
+									<CheckCircle2 size="22" />
+								{:else}
+									<Circle size="22" />
+								{/if}
 							</span>
-						</div>
+						{/if}
+						<span class="mobile-reader__book-name">{document.title}</span>
+						<span class="mobile-reader__book-meta">
+							{Math.round((document.progress?.total_progression ?? 0) * 100)}% · {document.file_name}
+						</span>
 					</div>
 				{/each}
 			</div>
 			{#if !documents.length}
-				<div class="reader__empty">
-					<BookOpen size="42" />
+				<div class="mobile-reader__empty">
 					<p>Your reading library is empty</p>
 				</div>
 			{/if}
@@ -367,274 +367,240 @@
 />
 
 <style>
-	.reader {
-		display: flex;
-		flex-direction: column;
-		height: 100vh;
-		width: 100%;
-		background: var(--sy-color--grey-2);
+	.mobile-reader {
+		position: relative;
+		height: 100%;
+		overflow: hidden;
+		background-color: var(--sy-color--grey-2);
+		font-family: var(--sy-font-family);
 	}
 
-	.reader__header {
+	.mobile-reader__library-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--sy-space--extra-large) var(--sy-space--large);
-		background-color: var(--sy-color--white);
-		box-shadow: var(--sy-box-shadow);
-		z-index: var(--sy-z-index--base-2);
+		height: 54px;
+		padding: 0 var(--sy-mobile-space--large);
+		background: var(--sy-color--white);
+		border-bottom: var(--sy-mobile-surface-border);
+		box-sizing: border-box;
+		color: var(--sy-color--grey-4);
+		font-weight: var(--sy-font-weight--medium);
 	}
 
-	.reader__header--ipad {
-		padding-top: var(--sy-space--large);
-		padding-bottom: var(--sy-space--large);
-	}
-
-	.reader__title-row,
-	.reader__header-actions {
+	.mobile-reader__library-actions {
 		display: flex;
 		align-items: center;
-		gap: var(--sy-space--large);
-		min-width: 0;
-		color: var(--sy-color--grey-4);
 	}
 
-	.reader__title-row h1 {
-		margin: 0;
-		font-size: 1.4rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.reader__library {
-		flex: 1;
-		min-height: 0;
+	.mobile-reader__library {
+		height: calc(100% - 54px);
 		overflow-y: auto;
-		padding: clamp(24px, 4vw, 56px);
 		box-sizing: border-box;
+		padding: var(--sy-mobile-space--large);
+		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom));
 	}
 
-	.reader__library-grid {
+	.mobile-reader__library-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-		gap: clamp(18px, 3vw, 34px);
-		align-items: start;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--sy-mobile-space--large);
 	}
 
-	.reader__book-card {
+	.mobile-reader__book {
 		position: relative;
-		display: block;
-		width: 100%;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
 		aspect-ratio: 2 / 3;
-		border: 0;
-		padding: 0;
-		background: transparent;
+		padding: var(--sy-mobile-space--medium);
+		border: var(--sy-mobile-surface-border);
+		border-radius: var(--sy-border-radius);
+		background:
+			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 10px, transparent 10px),
+			var(--sy-color--white);
+		box-shadow: var(--sy-shadow);
+		box-sizing: border-box;
+		color: var(--sy-color--grey-4);
 		font-family: var(--sy-font-family);
 		text-align: left;
 		cursor: pointer;
 	}
 
-	.reader__book-card:focus-visible {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 4px;
-	}
-
-	.reader__book-card:disabled {
-		cursor: not-allowed;
-		opacity: 0.7;
-	}
-
-	.reader__book-cover {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-end;
-		height: 100%;
-		padding: var(--sy-space--large);
-		box-sizing: border-box;
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		background:
-			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-			var(--sy-color--white);
-		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--grey-4);
-		transition:
-			box-shadow var(--sy-transition-duration),
-			transform var(--sy-transition-duration),
-			border-color var(--sy-transition-duration);
-	}
-
-	.reader__book-card:hover .reader__book-cover,
-	.reader__book-card--selected .reader__book-cover {
-		border-color: var(--sy-color--blue);
-		box-shadow: var(--sy-shadow--active);
-		transform: translateY(-2px);
-	}
-
-	.reader__book-card--import .reader__book-cover {
+	.mobile-reader__book--import {
 		align-items: center;
 		justify-content: center;
-		gap: var(--sy-space--large);
+		gap: var(--sy-mobile-space--medium);
 		color: var(--sy-color--blue);
 		text-align: center;
 	}
 
-	.reader__selection-indicator {
+	.mobile-reader__book--selected {
+		border-color: var(--sy-color--blue);
+	}
+
+	.mobile-reader__book:disabled {
+		opacity: 0.7;
+	}
+
+	.mobile-reader__selection-indicator {
 		position: absolute;
-		top: var(--sy-space--large);
-		right: var(--sy-space--large);
+		top: var(--sy-mobile-space--medium);
+		right: var(--sy-mobile-space--medium);
 		color: var(--sy-color--blue);
 	}
 
-	.reader__book-title {
-		font-size: 1rem;
+	.mobile-reader__book-name,
+	.mobile-reader__book-meta,
+	.mobile-reader__document-title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.mobile-reader__book-name {
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		line-clamp: 3;
+		color: var(--sy-color--grey-4);
+		font-size: var(--sy-font-size--mobile-large);
 		font-weight: var(--sy-font-weight--medium);
-		line-height: 1.3;
+		line-height: 1.25;
 		overflow-wrap: anywhere;
 	}
 
-	.reader__book-meta,
-	.reader__book-progress {
-		margin-top: var(--sy-space--small);
-		font-size: 0.78rem;
+	.mobile-reader__book-meta {
+		margin-top: var(--sy-mobile-space--extra-small);
 		color: var(--sy-color--grey-3);
-		overflow: hidden;
-		text-overflow: ellipsis;
+		font-size: var(--sy-font-size--mobile-small);
 		white-space: nowrap;
 	}
 
-	.reader__stage {
-		--reader-stage-padding: clamp(16px, 2vw, 28px);
-		--reader-edge-turn-width: clamp(96px, 12vw, 176px);
-
-		position: relative;
-		flex: 1;
-		min-height: 0;
-		padding: var(--reader-stage-padding);
-		box-sizing: border-box;
-		overflow: hidden;
+	.mobile-reader__empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 180px;
+		color: var(--sy-color--grey-4);
 	}
 
-	.reader__page {
-		width: 100%;
+	.mobile-reader__reader-header {
+		display: grid;
+		grid-template-columns: 52px 1fr 52px;
+		align-items: center;
+		height: 54px;
+		background: var(--sy-color--white);
+		border-bottom: var(--sy-border);
+	}
+
+	.mobile-reader__document-title {
+		justify-self: center;
+		max-width: 100%;
+		color: var(--sy-color--grey-4);
+		font-weight: var(--sy-font-weight--medium);
+		white-space: nowrap;
+	}
+
+	.mobile-reader__page-count {
+		justify-self: center;
+		color: var(--sy-color--grey-3);
+		font-size: var(--sy-font-size--mobile-small);
+	}
+
+	.mobile-reader__stage {
+		--mobile-reader-stage-padding: var(--sy-mobile-space--medium);
+
+		position: relative;
+		height: calc(100% - 54px);
+		padding: var(--mobile-reader-stage-padding);
+		box-sizing: border-box;
+		overflow: hidden;
+		touch-action: pan-y;
+	}
+
+	.mobile-reader__page {
 		height: 100%;
 		margin: 0;
-		padding: clamp(44px, 6vw, 96px);
+		padding: calc(var(--sy-mobile-space--medium) * 3);
 		background: var(--sy-color--white);
-		box-shadow: var(--sy-shadow);
 		border-radius: var(--sy-border-radius);
+		box-shadow: var(--sy-shadow);
 		overflow: hidden;
 		box-sizing: border-box;
-		font-family: var(--sy-font-family);
-		font-size: 1.24rem;
+		font-size: 1.18rem;
 		line-height: 2;
 		color: var(--sy-color--black);
 	}
 
-	.reader__page--base {
+	.mobile-reader__page--base {
 		position: relative;
 		z-index: 0;
 	}
 
-	.reader__page--turning {
+	.mobile-reader__page--turning {
 		opacity: 0;
 	}
 
-	.reader__page-curl {
+	.mobile-reader__page-curl {
 		position: absolute;
-		inset: var(--reader-stage-padding);
+		inset: var(--mobile-reader-stage-padding);
 		z-index: var(--sy-z-index--base);
-		width: calc(100% - (var(--reader-stage-padding) * 2));
-		height: calc(100% - (var(--reader-stage-padding) * 2));
+		width: calc(100% - (var(--mobile-reader-stage-padding) * 2));
+		height: calc(100% - (var(--mobile-reader-stage-padding) * 2));
 		border-radius: var(--sy-border-radius);
 		pointer-events: none;
 	}
 
-	.reader__measure-text {
+	.mobile-reader__measure-text {
 		position: absolute;
 		visibility: hidden;
 		pointer-events: none;
-		font-family: var(--sy-font-family);
-		font-size: 1.24rem;
+		font-size: 1.18rem;
 		line-height: 1;
 		white-space: nowrap;
 	}
 
-	.reader__page-turn {
+	.mobile-reader__page-turn {
 		position: absolute;
-		top: var(--reader-stage-padding);
-		bottom: var(--reader-stage-padding);
+		top: 50%;
 		z-index: calc(var(--sy-z-index--base) + 1);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: var(--reader-edge-turn-width);
+		width: 42px;
+		height: 30%;
 		border: 0;
-		border-radius: 0;
-		background: transparent;
-		color: var(--sy-color--grey-4);
-		cursor: pointer;
-		opacity: 0;
-		transform: translateX(var(--reader-chevron-offset, 0));
-		transition:
-			opacity var(--sy-transition-duration),
-			transform var(--sy-transition-duration),
-			background var(--sy-transition-duration);
-	}
-
-	.reader__page-turn--previous {
-		--reader-chevron-offset: -12px;
-
-		left: 0;
-		background: linear-gradient(90deg, rgb(255 255 255 / 62%), transparent);
-	}
-
-	.reader__page-turn--next {
-		--reader-chevron-offset: 12px;
-
-		right: 0;
-		background: linear-gradient(270deg, rgb(255 255 255 / 62%), transparent);
-	}
-
-	.reader__page-turn:not(:disabled):hover,
-	.reader__page-turn:not(:disabled):focus-visible {
-		opacity: 1;
-		transform: translateX(0);
-	}
-
-	.reader__page-turn:disabled {
-		opacity: 0;
-		cursor: not-allowed;
-	}
-
-	.reader__page-count {
-		position: absolute;
-		z-index: calc(var(--sy-z-index--base) + 1);
-		right: clamp(28px, 3vw, 44px);
-		bottom: clamp(22px, 3vw, 36px);
-		padding: var(--sy-space) var(--sy-space--large);
 		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 84%);
+		background: rgb(255 255 255 / 76%);
 		color: var(--sy-color--grey-4);
-		font-family: var(--sy-font-family);
-		font-size: 0.86rem;
 		box-shadow: var(--sy-shadow);
+		transform: translateY(-50%);
 	}
 
-	.reader__block {
+	.mobile-reader__page-turn--previous {
+		left: var(--sy-mobile-space--medium);
+	}
+
+	.mobile-reader__page-turn--next {
+		right: var(--sy-mobile-space--medium);
+	}
+
+	.mobile-reader__page-turn:disabled {
+		opacity: 0.25;
+	}
+
+	.mobile-reader__block {
 		white-space: pre-wrap;
-		margin: 0 0 1.4em;
+		margin: 0 0 1.25em;
 	}
 
-	h2.reader__block {
-		font-size: 1.35rem;
+	h2.mobile-reader__block {
+		font-size: 1.28rem;
 		line-height: 1.5;
 		color: var(--sy-color--grey-4);
 	}
 
-	.reader__token {
+	.mobile-reader__token {
 		display: inline;
 		border: 0;
 		padding: 0;
@@ -642,23 +608,9 @@
 		background: transparent;
 		color: inherit;
 		font: inherit;
-		cursor: pointer;
-		border-bottom: 1px solid transparent;
 	}
 
-	.reader__token:hover {
+	.mobile-reader__token:active {
 		color: var(--sy-color--blue);
-		border-bottom-color: var(--sy-color--blue);
-	}
-
-	.reader__empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--sy-space--large);
-		min-height: 240px;
-		color: var(--sy-color--grey-4);
-		font-family: var(--sy-font-family);
 	}
 </style>

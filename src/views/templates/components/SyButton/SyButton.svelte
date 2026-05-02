@@ -50,7 +50,7 @@
 	 * @property {boolean} [center] - false
 	 * @property {any} [classes] - A list of classes
 	 * @property {import('svelte').Snippet} [children]
-	 * @property {() => void} [onclick] - Click handler
+	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
 	 */
 
 	import { isMobile } from '@/utils/device.js';

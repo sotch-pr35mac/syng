@@ -1,0 +1,99 @@
+import { expect, it } from 'vitest';
+import {
+	createReaderPages,
+	createReaderSegments,
+	findPageIndexForPosition,
+	type ReaderPageLayout,
+} from '@/utils/readerPagination.js';
+import type { ReaderDocument } from '@/types/reader.js';
+
+const compactLayout: ReaderPageLayout = {
+	contentWidth: 40,
+	contentHeight: 20,
+	fontSize: 10,
+	lineHeight: 10,
+	blockGap: 0,
+	headingLineHeight: 10,
+	headingGap: 0,
+	averageCharacterWidth: 10,
+};
+const EXPECTED_PAGE_COUNT = 3;
+const SECOND_PAGE_POSITION = 9;
+const THIRD_PAGE_POSITION = 18;
+
+function buildDocument(text: string): ReaderDocument {
+	return {
+		_id: 'reader-1',
+		title: 'Story',
+		file_name: 'story.txt',
+		source_type: 'plain_text',
+		mime_type: 'text/plain',
+		extractor_version: 1,
+		text,
+		blocks: [
+			{
+				id: 'block-1',
+				kind: 'paragraph',
+				text,
+				start_offset: 0,
+				end_offset: text.length,
+			},
+		],
+		imported_at: '2026-01-01T00:00:00.000Z',
+		updated_at: '2026-01-01T00:00:00.000Z',
+		reading_order: [{ href: 'text', type: 'text/plain', title: 'Story' }],
+		progress: {
+			resource_href: 'text',
+			position: 0,
+			total_progression: 0,
+			page_index: 0,
+			text_position: { start: 0, end: 0 },
+			text_quote: { exact: '', prefix: '', suffix: '' },
+			updated_at: '2026-01-01T00:00:00.000Z',
+		},
+	};
+}
+
+it('splits a long paragraph into viewport-sized page slices', () => {
+	const document = buildDocument('abcdefghijklmnopqrst');
+
+	const pages = createReaderPages(document, compactLayout);
+
+	expect(pages).toHaveLength(EXPECTED_PAGE_COUNT);
+	expect(pages[0].blocks[0].text).toBe('abcdefgh');
+	expect(pages[1].blocks[0].text).toBe('ijklmnop');
+	expect(pages[2].blocks[0].text).toBe('qrst');
+	expect(pages.flatMap((page) => page.blocks.map((block) => block.text)).join('')).toBe(
+		document.text
+	);
+});
+
+it('restores progress by text position instead of saved page count', () => {
+	const document = buildDocument('abcdefghijklmnopqrst');
+	const pages = createReaderPages(document, compactLayout);
+
+	expect(findPageIndexForPosition(pages, 0)).toBe(0);
+	expect(findPageIndexForPosition(pages, SECOND_PAGE_POSITION)).toBe(1);
+	expect(findPageIndexForPosition(pages, THIRD_PAGE_POSITION)).toBe(2);
+});
+
+it('segments dictionary tokens inside a sliced source block', () => {
+	const document = buildDocument('一二三四五六七八');
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 30,
+		contentHeight: 10,
+	});
+	const secondPageBlock = pages[1].blocks[0];
+
+	const segments = createReaderSegments(secondPageBlock, [
+		{ text: '三四五', start: 2, end: 5 },
+		{ text: '六七', start: 5, end: 7 },
+	]);
+
+	expect(secondPageBlock.text).toBe('四五六');
+	expect(segments.map((segment) => segment.text).join('')).toBe(secondPageBlock.text);
+	expect(
+		segments.filter((segment) => segment.type === 'token').map((segment) => segment.text)
+	).toEqual(['四五', '六']);
+});

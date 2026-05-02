@@ -29,7 +29,7 @@
 			link: 'read',
 			icon: BookOpen,
 			title: 'Read',
-			beta: true,
+			beta: false,
 		},
 		{
 			link: 'bookmarks',

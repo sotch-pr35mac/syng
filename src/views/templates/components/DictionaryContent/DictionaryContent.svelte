@@ -25,11 +25,12 @@
 	 * @property {any} word - Word Prop
 	 * @property {any} [lists] - Lists Prop
 	 * @property {string} [backgroundColor] - 'white' - White Background
+	 * @property {boolean} [fixedActions] - Render action dropdowns with fixed positioning
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
 	 */
 
 	/** @type {Props} */
-	const { word, lists = [], backgroundColor = 'grey', onlink } = $props();
+	const { word, lists = [], backgroundColor = 'grey', fixedActions = false, onlink } = $props();
 
 	let memberLists = $state([]);
 
@@ -209,6 +210,7 @@
 							values={action.dropdown}
 							onselection={handleMembershipModification}
 							position={DROPDOWN_POSITIONS.RIGHT}
+							fixed={fixedActions}
 						>
 							<SyButton
 								grouped="true"

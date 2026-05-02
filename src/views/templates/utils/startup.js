@@ -7,6 +7,7 @@
  */
 import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { handleError } from '@/utils/error.js';
 import {
 	checkAndPerformMigration,
@@ -40,7 +41,13 @@ export const runStartupActions = () => {
 	const configDb = debugMode ? 'development_config' : 'config';
 	const listDb = debugMode ? 'development_word-lists' : 'word-lists';
 	const bookmarkDb = debugMode ? 'development_bookmarks' : 'bookmarks';
-	const { preferenceManager, bookmarkManager } = createAppServices(configDb, listDb, bookmarkDb);
+	const readerDocumentDb = debugMode ? 'development_reader-documents' : 'reader-documents';
+	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
+		configDb,
+		listDb,
+		bookmarkDb,
+		readerDocumentDb
+	);
 
 	const startupActions = [
 		{
@@ -54,6 +61,10 @@ export const runStartupActions = () => {
 		{
 			name: 'init-bookmark-manager',
 			action: bookmarkManager.init(),
+		},
+		{
+			name: 'init-reader-document-manager',
+			action: readerDocumentManager.init(),
 		},
 		{
 			name: 'init-telemetry',
@@ -102,6 +113,11 @@ export const runStartupActions = () => {
 			// and will update when this resolves.
 			bookmarksStore.refresh().catch((error) => {
 				handleError('Initial bookmarks store load failed', error, { silent: true });
+			});
+			readerDocumentsStore.refresh().catch((error) => {
+				handleError('Initial reader document store load failed', error, {
+					silent: true,
+				});
 			});
 
 			// Non-blocking update check — results are cached to window and broadcast

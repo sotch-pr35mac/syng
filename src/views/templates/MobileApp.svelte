@@ -4,6 +4,7 @@
 	import { router } from 'svelte-spa-router';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
+	import MobileReader from '@/routes/mobile/MobileReader.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
 	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
 	import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
@@ -17,6 +18,7 @@
 
 	const routes = {
 		'/': MobileSearch,
+		'/read': MobileReader,
 		'/bookmarks': MobileBookmarks,
 		'/study': MobileStudy,
 		'/study/flashcards': MobileStudyFlashcards,
@@ -28,6 +30,7 @@
 
 	const routeScreenNames: Record<string, string> = {
 		'/': 'search',
+		'/read': 'reader',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',

@@ -25,6 +25,9 @@ vi.mock('@/utils', async () => {
 vi.mock('@/routes/mobile/MobileSearch.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
+vi.mock('@/routes/mobile/MobileReader.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
+}));
 vi.mock('@/routes/mobile/MobileBookmarks.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
@@ -60,6 +63,9 @@ it('tracks screen views for mobile route changes', async () => {
 
 	await user.click(getByText('Bookmarks'));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('bookmarks'));
+
+	await user.click(getByText('Read'));
+	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('reader'));
 
 	await user.click(getByText('Study'));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));
