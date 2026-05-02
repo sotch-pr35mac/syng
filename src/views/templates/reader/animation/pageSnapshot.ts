@@ -135,11 +135,12 @@ function drawPageText(
 		const blockGap = block.kind === 'heading' ? style.headingGap : style.bodyGap;
 		setCanvasFont(context, textStyle);
 
+		const halfLeading = (textStyle.lineHeight - textStyle.fontSize) / 2;
 		for (const line of wrapText(context, block.text, contentWidth)) {
 			if (cursorY + textStyle.lineHeight > contentBottom) {
 				return;
 			}
-			context.fillText(line, style.paddingLeft, cursorY);
+			context.fillText(line, style.paddingLeft, cursorY + halfLeading);
 			cursorY += textStyle.lineHeight;
 		}
 

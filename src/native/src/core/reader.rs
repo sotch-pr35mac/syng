@@ -162,8 +162,11 @@ fn push_text_block(
 
 fn infer_block_kind(text: &str) -> String {
     let trimmed = text.trim();
+    let inner = trimmed.trim_end_matches([
+        '"', '\'', '”', '’', '」', '』', '》', '〉', '】', '〗', ')', ']', '）', '］',
+    ]);
     let word_count = trimmed.split_whitespace().count();
-    if !trimmed.ends_with(['.', '!', '?', '。', '！', '？']) && word_count > 0 && word_count <= 12 {
+    if !inner.ends_with(['.', '!', '?', '。', '！', '？']) && word_count > 0 && word_count <= 12 {
         "heading".to_string()
     } else {
         "paragraph".to_string()
@@ -195,5 +198,17 @@ mod tests {
         let tokens = tokenize_reader_text("你好今天的天气还好。".to_string());
         assert!(tokens.contains(&"你好".to_string()));
         assert!(tokens.contains(&"今天".to_string()));
+    }
+
+    #[test]
+    fn classifies_chinese_paragraph_ending_with_closing_quote_as_paragraph() {
+        let payload = extract_plain_text_document(
+            "Sample".to_string(),
+            "sample.txt".to_string(),
+            "他笑着说：“这条巷子里的人平时看起来都很忙，但不代表他们没有心。”".to_string(),
+        );
+
+        assert_eq!(payload.blocks.len(), 1);
+        assert_eq!(payload.blocks[0].kind, "paragraph");
     }
 }
