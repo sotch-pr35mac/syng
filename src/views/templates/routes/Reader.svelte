@@ -11,7 +11,10 @@
 		FilePlus2,
 		Globe2,
 		Library,
+		Minus,
+		Palette,
 		Pencil,
+		Plus,
 		Trash2,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
@@ -21,10 +24,18 @@
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
 	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
+	import {
+		getReaderColorTheme,
+		READER_COLOR_THEMES,
+		READER_FONT_SIZE_MAX_PERCENT,
+		READER_FONT_SIZE_MIN_PERCENT,
+	} from '@/reader/settings/defaults.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
 	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
+	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 	import { isIPad } from '@/utils/device.js';
 
@@ -41,6 +52,31 @@
 	const activeDocument = $derived(readerRoute.activeDocument);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
+	const readerSettings = $derived(readerSettingsStore.settings);
+	const activeReaderTheme = $derived(getReaderColorTheme(readerSettings.colorTheme));
+	const canDecreaseFontSize = $derived(
+		readerSettings.fontSizePercent > READER_FONT_SIZE_MIN_PERCENT
+	);
+	const canIncreaseFontSize = $derived(
+		readerSettings.fontSizePercent < READER_FONT_SIZE_MAX_PERCENT
+	);
+	const readerThemeStyle = $derived(
+		[
+			`--reader-page-background: ${readerSettings.backgroundColor}`,
+			`--reader-page-text: ${readerSettings.textColor}`,
+			`--reader-link-color: ${readerSettings.linkColor}`,
+			`--reader-selection-background: ${readerSettings.selectionBackgroundColor}`,
+			`--reader-selection-text: ${readerSettings.selectionTextColor}`,
+			`--reader-stage-background: ${activeReaderTheme.stageBackgroundColor}`,
+			`--reader-muted-text: ${activeReaderTheme.mutedTextColor}`,
+			`--reader-border-color: ${activeReaderTheme.borderColor}`,
+			`--reader-control-background: ${activeReaderTheme.controlBackgroundColor}`,
+			`--reader-control-text: ${activeReaderTheme.controlTextColor}`,
+			`--reader-font-family: ${readerSettings.fontFamily}`,
+			`--reader-page-font-size: ${(DEFAULT_PAGE_FONT_SIZE * readerSettings.fontSizePercent) / 100}px`,
+			`--reader-page-line-height: ${readerSettings.lineHeight}`,
+		].join(';')
+	);
 	let editingLibrary = $state(false);
 	let clipboardImportModalVisible = $state(false);
 	let webpageImportModalVisible = $state(false);
@@ -60,6 +96,7 @@
 
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
+		readerSettingsStore.loadSettings().catch(() => {});
 	});
 
 	$effect(() => {
@@ -76,6 +113,14 @@
 		return () => {
 			resizeObserver.disconnect();
 		};
+	});
+
+	$effect(() => {
+		readerSettings.fontSizePercent;
+		readerSettings.lineHeight;
+		if (pageElement) {
+			updatePageLayout().catch(() => {});
+		}
 	});
 
 	function openToken(event: MouseEvent, token: ReaderToken | undefined): void {
@@ -178,6 +223,10 @@
 		}
 	}
 
+	function setReaderTheme(theme: ReaderColorThemeId): void {
+		readerSettingsStore.applyColorTheme(theme);
+	}
+
 	function parsePixelValue(value: string, fallback: number): number {
 		const parsedValue = Number.parseFloat(value);
 		return Number.isFinite(parsedValue) ? parsedValue : fallback;
@@ -270,7 +319,7 @@
 	}
 </script>
 
-<div class="reader">
+<div class="reader" style={activeDocument ? readerThemeStyle : ''}>
 	<div
 		class="reader__header"
 		class:reader__header--ipad={isIPadDevice}
@@ -287,6 +336,55 @@
 		</div>
 		<div class="reader__header-actions">
 			{#if activeDocument}
+				<div class="reader__settings" aria-label="Reader settings">
+					<div class="reader__theme-controls" aria-label="Reader theme">
+						{#each READER_COLOR_THEMES as theme (theme.id)}
+							<button
+								type="button"
+								class="reader__theme-button"
+								class:reader__theme-button--active={readerSettings.colorTheme === theme.id}
+								aria-label={`Use ${theme.label} reader theme`}
+								aria-pressed={readerSettings.colorTheme === theme.id}
+								title={theme.label}
+								onclick={() => setReaderTheme(theme.id)}
+							>
+								<span
+									class="reader__theme-swatch"
+									style={`background:${theme.backgroundColor};color:${theme.textColor};`}
+									aria-hidden="true"
+								>
+									<Palette size="14" />
+								</span>
+								<span>{theme.label}</span>
+							</button>
+						{/each}
+					</div>
+					<div class="reader__font-controls" aria-label="Reader font size">
+						<button
+							type="button"
+							class="reader__font-button"
+							disabled={!canDecreaseFontSize}
+							aria-label="Decrease reader font size"
+							onclick={readerSettingsStore.decreaseFontSize}
+						>
+							<Minus size="16" />
+							<span>A</span>
+						</button>
+						<span class="reader__font-size-value" aria-label="Reader font size">
+							{readerSettings.fontSizePercent}%
+						</span>
+						<button
+							type="button"
+							class="reader__font-button"
+							disabled={!canIncreaseFontSize}
+							aria-label="Increase reader font size"
+							onclick={readerSettingsStore.increaseFontSize}
+						>
+							<Plus size="16" />
+							<span>A</span>
+						</button>
+					</div>
+				</div>
 				<SyButton style="ghost" size="large" onclick={readerRoute.backToLibrary}>
 					Library
 				</SyButton>
@@ -339,9 +437,9 @@
 							<div class="reader__block reader__block--table" role="region" aria-label="Table">
 								<table class="reader__data-table">
 									<tbody>
-										{#each tableSource.extensions.table.rows as row, rowIndex}
+										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
-												{#each row.cells as cell, colIndex}
+												{#each row.cells as cell, colIndex (colIndex)}
 													<td>
 														{#each readerRoute.getTableCellSegments(
 															tableSource.id,
@@ -410,7 +508,8 @@
 								sourceBlock?.extensions?.list_item?.list_style === 'ordered'}
 							data-ordinal={block.kind === 'list_item' &&
 							sourceBlock?.extensions?.list_item?.list_style === 'ordered' &&
-							sourceBlock.extensions.list_item.ordinal != null
+							sourceBlock.extensions.list_item.ordinal !== null &&
+							sourceBlock.extensions.list_item.ordinal !== undefined
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
 						>
@@ -594,7 +693,7 @@
 		flex-direction: column;
 		height: 100vh;
 		width: 100%;
-		background: var(--sy-color--grey-2);
+		background: var(--reader-stage-background, var(--sy-color--grey-2));
 	}
 
 	.reader__header {
@@ -621,12 +720,96 @@
 		color: var(--sy-color--grey-4);
 	}
 
+	.reader__header-actions {
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+
 	.reader__title-row h1 {
 		margin: 0;
 		font-size: 1.4rem;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.reader__settings {
+		display: flex;
+		align-items: center;
+		gap: var(--sy-space--large);
+		color: var(--reader-control-text, var(--sy-color--grey-4));
+	}
+
+	.reader__theme-controls,
+	.reader__font-controls {
+		display: inline-flex;
+		align-items: center;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: var(--sy-border-radius);
+		background: var(--reader-control-background, rgb(255 255 255 / 84%));
+		box-shadow: var(--sy-shadow);
+		overflow: hidden;
+	}
+
+	.reader__theme-button,
+	.reader__font-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space);
+		min-height: 34px;
+		border: 0;
+		border-right: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		padding: var(--sy-space) var(--sy-space--large);
+		background: transparent;
+		color: inherit;
+		font-family: var(--sy-font-family);
+		font-size: 0.82rem;
+		cursor: pointer;
+	}
+
+	.reader__theme-button:last-child,
+	.reader__font-button:last-child {
+		border-right: 0;
+	}
+
+	.reader__theme-button:hover,
+	.reader__theme-button--active,
+	.reader__font-button:hover:not(:disabled) {
+		color: var(--reader-link-color, var(--sy-color--blue));
+		background: rgb(128 128 128 / 12%);
+	}
+
+	.reader__theme-button:focus-visible,
+	.reader__font-button:focus-visible {
+		outline: 2px solid var(--reader-link-color, var(--sy-color--blue));
+		outline-offset: -2px;
+	}
+
+	.reader__theme-button:disabled,
+	.reader__font-button:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+
+	.reader__theme-swatch {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: 50%;
+		box-sizing: border-box;
+	}
+
+	.reader__font-size-value {
+		min-width: 48px;
+		padding: 0 var(--sy-space--large);
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		font-family: var(--sy-font-family);
+		font-size: 0.82rem;
+		text-align: center;
 	}
 
 	.reader__library {
@@ -793,6 +976,7 @@
 		padding: var(--reader-stage-padding) var(--reader-chevron-width);
 		box-sizing: border-box;
 		overflow: hidden;
+		background: var(--reader-stage-background, var(--sy-color--grey-2));
 	}
 
 	.reader__page {
@@ -800,15 +984,21 @@
 		height: 100%;
 		margin: 0;
 		padding: clamp(44px, 6vw, 96px);
-		background: var(--sy-color--white);
+		background: var(--reader-page-background, var(--sy-color--white));
 		box-shadow: var(--sy-shadow);
 		border-radius: var(--sy-border-radius);
 		overflow: hidden;
 		box-sizing: border-box;
-		font-family: var(--sy-font-family);
-		font-size: 1.24rem;
-		line-height: 2;
-		color: var(--sy-color--black);
+		font-family: var(--reader-font-family, var(--sy-font-family));
+		font-size: var(--reader-page-font-size, 1.24rem);
+		line-height: var(--reader-page-line-height, 2);
+		color: var(--reader-page-text, var(--sy-color--black));
+	}
+
+	.reader__page::selection,
+	.reader__page *::selection {
+		background: var(--reader-selection-background, #dbeafe);
+		color: var(--reader-selection-text, #111827);
 	}
 
 	.reader__page--base {
@@ -836,8 +1026,8 @@
 		position: absolute;
 		visibility: hidden;
 		pointer-events: none;
-		font-family: var(--sy-font-family);
-		font-size: 1.24rem;
+		font-family: var(--reader-font-family, var(--sy-font-family));
+		font-size: var(--reader-page-font-size, 1.24rem);
 		line-height: 1;
 		white-space: nowrap;
 	}
@@ -854,7 +1044,7 @@
 		border: 0;
 		border-radius: 0;
 		background: transparent;
-		color: var(--sy-color--grey-4);
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
 		cursor: pointer;
 		opacity: 0.4;
 		transition: opacity var(--sy-transition-duration);
@@ -885,8 +1075,8 @@
 		bottom: calc(var(--reader-stage-padding) + 8px);
 		padding: var(--sy-space) var(--sy-space--large);
 		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 84%);
-		color: var(--sy-color--grey-4);
+		background: var(--reader-control-background, rgb(255 255 255 / 84%));
+		color: var(--reader-control-text, var(--sy-color--grey-4));
 		font-family: var(--sy-font-family);
 		font-size: 0.86rem;
 		box-shadow: var(--sy-shadow);
@@ -909,7 +1099,7 @@
 	}
 
 	.reader__data-table td {
-		border: 1px solid var(--sy-color--grey-2);
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
 		padding: 0.35em 0.45em;
 		vertical-align: top;
 	}
@@ -940,7 +1130,7 @@
 		position: absolute;
 		left: 0;
 		top: 0;
-		color: var(--sy-color--grey-3);
+		color: var(--reader-muted-text, var(--sy-color--grey-3));
 	}
 
 	.reader__block--list-ordered {
@@ -955,7 +1145,7 @@
 		top: 0;
 		min-width: 1.35em;
 		text-align: start;
-		color: var(--sy-color--grey-3);
+		color: var(--reader-muted-text, var(--sy-color--grey-3));
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -963,8 +1153,8 @@
 		white-space: normal;
 		margin: 0 0 1.2em;
 		padding: 0.35em 0 0.35em 1em;
-		border-left: 0.28em solid var(--sy-color--grey-2);
-		color: var(--sy-color--grey-4);
+		border-left: 0.28em solid var(--reader-border-color, var(--sy-color--grey-2));
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
 		font-style: italic;
 	}
 
@@ -976,29 +1166,29 @@
 	h6.reader__block {
 		white-space: normal;
 		line-height: 1.35;
-		color: var(--sy-color--grey-4);
+		color: var(--reader-page-text, var(--sy-color--grey-4));
 		margin: 0 0 0.75em;
 	}
 
 	h1.reader__block {
-		font-size: 1.65rem;
+		font-size: 1.35em;
 	}
 
 	h2.reader__block {
-		font-size: 1.35rem;
+		font-size: 1.2em;
 	}
 
 	h3.reader__block {
-		font-size: 1.2rem;
+		font-size: 1.1em;
 	}
 
 	h4.reader__block {
-		font-size: 1.1rem;
+		font-size: 1.05em;
 	}
 
 	h5.reader__block,
 	h6.reader__block {
-		font-size: 1.05rem;
+		font-size: 1em;
 	}
 
 	.reader__token {
@@ -1015,8 +1205,8 @@
 
 	.reader__token:hover,
 	.reader__token--active {
-		color: var(--sy-color--blue);
-		border-bottom-color: var(--sy-color--blue);
+		color: var(--reader-link-color, var(--sy-color--blue));
+		border-bottom-color: var(--reader-link-color, var(--sy-color--blue));
 	}
 
 	.reader__empty {

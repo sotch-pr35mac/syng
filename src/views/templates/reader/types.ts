@@ -2,6 +2,8 @@ export type ReaderFormat = 'text' | 'webpage' | 'epub' | 'pdf';
 
 export type ReaderResourceKind = 'reflowable-document' | 'fixed-page' | 'asset' | 'navigation';
 
+export type ReaderColorThemeId = 'light' | 'sepia' | 'dark';
+
 export interface ReaderPublicationMetadata {
 	title: string;
 	author?: string;
@@ -103,6 +105,7 @@ export type ReaderLocator =
 
 export interface ReaderThemeSettings {
 	view: 'paged' | 'scroll';
+	colorTheme: ReaderColorThemeId;
 	fontFamily: string;
 	fontSizePercent: number;
 	lineHeight: number;

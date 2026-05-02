@@ -10,7 +10,10 @@
 		FilePlus2,
 		Globe2,
 		Library,
+		Minus,
+		Palette,
 		Pencil,
+		Plus,
 		Trash2,
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -19,10 +22,18 @@
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
 	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
+	import {
+		getReaderColorTheme,
+		READER_COLOR_THEMES,
+		READER_FONT_SIZE_MAX_PERCENT,
+		READER_FONT_SIZE_MIN_PERCENT,
+	} from '@/reader/settings/defaults.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
 	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
+	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
@@ -36,6 +47,31 @@
 	const activeDocument = $derived(readerRoute.activeDocument);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
+	const readerSettings = $derived(readerSettingsStore.settings);
+	const activeReaderTheme = $derived(getReaderColorTheme(readerSettings.colorTheme));
+	const canDecreaseFontSize = $derived(
+		readerSettings.fontSizePercent > READER_FONT_SIZE_MIN_PERCENT
+	);
+	const canIncreaseFontSize = $derived(
+		readerSettings.fontSizePercent < READER_FONT_SIZE_MAX_PERCENT
+	);
+	const readerThemeStyle = $derived(
+		[
+			`--reader-page-background: ${readerSettings.backgroundColor}`,
+			`--reader-page-text: ${readerSettings.textColor}`,
+			`--reader-link-color: ${readerSettings.linkColor}`,
+			`--reader-selection-background: ${readerSettings.selectionBackgroundColor}`,
+			`--reader-selection-text: ${readerSettings.selectionTextColor}`,
+			`--reader-stage-background: ${activeReaderTheme.stageBackgroundColor}`,
+			`--reader-muted-text: ${activeReaderTheme.mutedTextColor}`,
+			`--reader-border-color: ${activeReaderTheme.borderColor}`,
+			`--reader-control-background: ${activeReaderTheme.controlBackgroundColor}`,
+			`--reader-control-text: ${activeReaderTheme.controlTextColor}`,
+			`--reader-font-family: ${readerSettings.fontFamily}`,
+			`--reader-page-font-size: ${(DEFAULT_PAGE_FONT_SIZE * readerSettings.fontSizePercent) / 100}px`,
+			`--reader-page-line-height: ${readerSettings.lineHeight}`,
+		].join(';')
+	);
 	let gestureStartX = 0;
 	let gestureStartY = 0;
 	let editingLibrary = $state(false);
@@ -57,6 +93,7 @@
 
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
+		readerSettingsStore.loadSettings().catch(() => {});
 	});
 
 	$effect(() => {
@@ -73,6 +110,14 @@
 		return () => {
 			resizeObserver.disconnect();
 		};
+	});
+
+	$effect(() => {
+		readerSettings.fontSizePercent;
+		readerSettings.lineHeight;
+		if (pageElement) {
+			updatePageLayout().catch(() => {});
+		}
 	});
 
 	function openToken(event: MouseEvent, token: ReaderToken | undefined): void {
@@ -173,6 +218,10 @@
 			selectedDocumentIds.clear();
 			editingLibrary = false;
 		}
+	}
+
+	function setReaderTheme(theme: ReaderColorThemeId): void {
+		readerSettingsStore.applyColorTheme(theme);
 	}
 
 	function parsePixelValue(value: string, fallback: number): number {
@@ -290,7 +339,7 @@
 	}
 </script>
 
-<div class="mobile-reader">
+<div class="mobile-reader" style={activeDocument ? readerThemeStyle : ''}>
 	{#if activeDocument && currentPage}
 		<div class="mobile-reader__reader-header">
 			<SyButton style="ghost" size="small" onclick={readerRoute.backToLibrary}>
@@ -300,6 +349,54 @@
 			<span class="mobile-reader__page-count">
 				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
 			</span>
+		</div>
+		<div class="mobile-reader__settings-bar" aria-label="Reader settings">
+			<div class="mobile-reader__theme-controls" aria-label="Reader theme">
+				{#each READER_COLOR_THEMES as theme (theme.id)}
+					<button
+						type="button"
+						class="mobile-reader__theme-button"
+						class:mobile-reader__theme-button--active={readerSettings.colorTheme === theme.id}
+						aria-label={`Use ${theme.label} reader theme`}
+						aria-pressed={readerSettings.colorTheme === theme.id}
+						title={theme.label}
+						onclick={() => setReaderTheme(theme.id)}
+					>
+						<span
+							class="mobile-reader__theme-swatch"
+							style={`background:${theme.backgroundColor};color:${theme.textColor};`}
+							aria-hidden="true"
+						>
+							<Palette size="13" />
+						</span>
+					</button>
+				{/each}
+			</div>
+			<div class="mobile-reader__font-controls" aria-label="Reader font size">
+				<button
+					type="button"
+					class="mobile-reader__font-button"
+					disabled={!canDecreaseFontSize}
+					aria-label="Decrease reader font size"
+					onclick={readerSettingsStore.decreaseFontSize}
+				>
+					<Minus size="15" />
+					<span>A</span>
+				</button>
+				<span class="mobile-reader__font-size-value" aria-label="Reader font size">
+					{readerSettings.fontSizePercent}%
+				</span>
+				<button
+					type="button"
+					class="mobile-reader__font-button"
+					disabled={!canIncreaseFontSize}
+					aria-label="Increase reader font size"
+					onclick={readerSettingsStore.increaseFontSize}
+				>
+					<Plus size="15" />
+					<span>A</span>
+				</button>
+			</div>
 		</div>
 		<main class="mobile-reader__stage" onpointerdown={onPointerDown} onpointerup={onPointerUp}>
 			<button
@@ -333,9 +430,9 @@
 							>
 								<table class="mobile-reader__data-table">
 									<tbody>
-										{#each tableSource.extensions.table.rows as row, rowIndex}
+										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
-												{#each row.cells as cell, colIndex}
+												{#each row.cells as cell, colIndex (colIndex)}
 													<td>
 														{#each readerRoute.getTableCellSegments(
 															tableSource.id,
@@ -404,7 +501,8 @@
 								sourceBlock?.extensions?.list_item?.list_style === 'ordered'}
 							data-ordinal={block.kind === 'list_item' &&
 							sourceBlock?.extensions?.list_item?.list_style === 'ordered' &&
-							sourceBlock.extensions.list_item.ordinal != null
+							sourceBlock.extensions.list_item.ordinal !== null &&
+							sourceBlock.extensions.list_item.ordinal !== undefined
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
 						>
@@ -592,7 +690,7 @@
 		position: relative;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--reader-stage-background, var(--sy-color--grey-2));
 		font-family: var(--sy-font-family);
 	}
 
@@ -759,6 +857,82 @@
 		border-bottom: var(--sy-border);
 	}
 
+	.mobile-reader__settings-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sy-mobile-space--medium);
+		height: 50px;
+		padding: var(--sy-mobile-space--small) var(--sy-mobile-space--medium);
+		background: var(--reader-stage-background, var(--sy-color--grey-2));
+		border-bottom: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		box-sizing: border-box;
+		color: var(--reader-control-text, var(--sy-color--grey-4));
+	}
+
+	.mobile-reader__theme-controls,
+	.mobile-reader__font-controls {
+		display: inline-flex;
+		align-items: center;
+		min-width: 0;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: var(--sy-border-radius);
+		background: var(--reader-control-background, rgb(255 255 255 / 84%));
+		overflow: hidden;
+	}
+
+	.mobile-reader__theme-button,
+	.mobile-reader__font-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-mobile-space--extra-small);
+		min-width: 38px;
+		height: 38px;
+		border: 0;
+		border-right: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		padding: 0 var(--sy-mobile-space--medium);
+		background: transparent;
+		color: inherit;
+		font-family: var(--sy-font-family);
+		font-size: var(--sy-font-size--mobile-small);
+	}
+
+	.mobile-reader__theme-button:last-child,
+	.mobile-reader__font-button:last-child {
+		border-right: 0;
+	}
+
+	.mobile-reader__theme-button--active,
+	.mobile-reader__theme-button:active,
+	.mobile-reader__font-button:active:not(:disabled) {
+		color: var(--reader-link-color, var(--sy-color--blue));
+		background: rgb(128 128 128 / 14%);
+	}
+
+	.mobile-reader__theme-button:disabled,
+	.mobile-reader__font-button:disabled {
+		opacity: 0.45;
+	}
+
+	.mobile-reader__theme-swatch {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 22px;
+		height: 22px;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: 50%;
+		box-sizing: border-box;
+	}
+
+	.mobile-reader__font-size-value {
+		min-width: 42px;
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		font-size: var(--sy-font-size--mobile-small);
+		text-align: center;
+	}
+
 	.mobile-reader__document-title {
 		justify-self: center;
 		max-width: 100%;
@@ -777,25 +951,33 @@
 		--mobile-reader-stage-padding: var(--sy-mobile-space--medium);
 
 		position: relative;
-		height: calc(100% - 54px);
+		height: calc(100% - 104px);
 		padding: var(--mobile-reader-stage-padding);
 		box-sizing: border-box;
 		overflow: hidden;
 		touch-action: pan-y;
+		background: var(--reader-stage-background, var(--sy-color--grey-2));
 	}
 
 	.mobile-reader__page {
 		height: 100%;
 		margin: 0;
 		padding: calc(var(--sy-mobile-space--medium) * 3);
-		background: var(--sy-color--white);
+		background: var(--reader-page-background, var(--sy-color--white));
 		border-radius: var(--sy-border-radius);
 		box-shadow: var(--sy-shadow);
 		overflow: hidden;
 		box-sizing: border-box;
-		font-size: 1.18rem;
-		line-height: 2;
-		color: var(--sy-color--black);
+		font-family: var(--reader-font-family, var(--sy-font-family));
+		font-size: var(--reader-page-font-size, 1.18rem);
+		line-height: var(--reader-page-line-height, 2);
+		color: var(--reader-page-text, var(--sy-color--black));
+	}
+
+	.mobile-reader__page::selection,
+	.mobile-reader__page *::selection {
+		background: var(--reader-selection-background, #dbeafe);
+		color: var(--reader-selection-text, #111827);
 	}
 
 	.mobile-reader__page--base {
@@ -821,7 +1003,8 @@
 		position: absolute;
 		visibility: hidden;
 		pointer-events: none;
-		font-size: 1.18rem;
+		font-family: var(--reader-font-family, var(--sy-font-family));
+		font-size: var(--reader-page-font-size, 1.18rem);
 		line-height: 1;
 		white-space: nowrap;
 	}
@@ -837,8 +1020,8 @@
 		height: 30%;
 		border: 0;
 		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 76%);
-		color: var(--sy-color--grey-4);
+		background: var(--reader-control-background, rgb(255 255 255 / 76%));
+		color: var(--reader-control-text, var(--sy-color--grey-4));
 		box-shadow: var(--sy-shadow);
 		transform: translateY(-50%);
 	}
@@ -872,7 +1055,7 @@
 	}
 
 	.mobile-reader__data-table td {
-		border: 1px solid var(--sy-color--grey-2);
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
 		padding: 0.35em 0.45em;
 		vertical-align: top;
 	}
@@ -903,7 +1086,7 @@
 		position: absolute;
 		left: 0;
 		top: 0;
-		color: var(--sy-color--grey-3);
+		color: var(--reader-muted-text, var(--sy-color--grey-3));
 	}
 
 	.mobile-reader__block--list-ordered {
@@ -918,7 +1101,7 @@
 		top: 0;
 		min-width: 1.35em;
 		text-align: start;
-		color: var(--sy-color--grey-3);
+		color: var(--reader-muted-text, var(--sy-color--grey-3));
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -926,8 +1109,8 @@
 		white-space: normal;
 		margin: 0 0 1.1em;
 		padding: 0.35em 0 0.35em 1em;
-		border-left: 0.28em solid var(--sy-color--grey-2);
-		color: var(--sy-color--grey-4);
+		border-left: 0.28em solid var(--reader-border-color, var(--sy-color--grey-2));
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
 		font-style: italic;
 	}
 
@@ -939,29 +1122,29 @@
 	h6.mobile-reader__block {
 		white-space: normal;
 		line-height: 1.35;
-		color: var(--sy-color--grey-4);
+		color: var(--reader-page-text, var(--sy-color--grey-4));
 		margin: 0 0 0.75em;
 	}
 
 	h1.mobile-reader__block {
-		font-size: 1.55rem;
+		font-size: 1.32em;
 	}
 
 	h2.mobile-reader__block {
-		font-size: 1.28rem;
+		font-size: 1.18em;
 	}
 
 	h3.mobile-reader__block {
-		font-size: 1.15rem;
+		font-size: 1.08em;
 	}
 
 	h4.mobile-reader__block {
-		font-size: 1.05rem;
+		font-size: 1.03em;
 	}
 
 	h5.mobile-reader__block,
 	h6.mobile-reader__block {
-		font-size: 1rem;
+		font-size: 1em;
 	}
 
 	.mobile-reader__token {
@@ -975,6 +1158,6 @@
 	}
 
 	.mobile-reader__token:active {
-		color: var(--sy-color--blue);
+		color: var(--reader-link-color, var(--sy-color--blue));
 	}
 </style>

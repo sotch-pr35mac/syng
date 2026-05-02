@@ -1,5 +1,6 @@
 export type {
 	ReaderCapabilities,
+	ReaderColorThemeId,
 	ReaderFormat,
 	ReaderLocator as NormalizedReaderLocator,
 	ReaderLookupTarget,

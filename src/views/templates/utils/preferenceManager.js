@@ -7,6 +7,7 @@
  * from the db during the session.
  */
 import { handleError } from '@/utils/error.js';
+import { DEFAULT_READER_SETTINGS } from '@/reader/settings/defaults.js';
 
 /*
  * Description: Construct a preference entry.
@@ -22,6 +23,35 @@ const createPreference = (restart, value) => {
 		requiresRestart: restart,
 		value: value,
 	};
+};
+
+const createDefaultPreferences = () => ({
+	_id: 'config',
+	beta: createPreference(true, false),
+	toneColors: createPreference(true, {
+		colors: [
+			'--sy-color--blue-3',
+			'--sy-color--yellow-1',
+			'--sy-color--red-1',
+			'--sy-color--green-3',
+			'--sy-color--grey-4',
+		],
+		hasCustomColors: false,
+	}),
+	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
+});
+
+const backfillPreferences = (configuration) => {
+	const defaults = createDefaultPreferences();
+	for (const [key, preference] of Object.entries(defaults)) {
+		if (key === '_id') {
+			continue;
+		}
+		if (!configuration[key]) {
+			configuration[key] = preference;
+		}
+	}
+	return configuration;
 };
 
 export class PreferenceManager {
@@ -49,20 +79,7 @@ export class PreferenceManager {
 				.get('config')
 				.catch((err) => {
 					if (err.name === 'not_found') {
-						return {
-							_id: 'config',
-							beta: createPreference(true, false),
-							toneColors: createPreference(true, {
-								colors: [
-									'--sy-color--blue-3',
-									'--sy-color--yellow-1',
-									'--sy-color--red-1',
-									'--sy-color--green-3',
-									'--sy-color--grey-4',
-								],
-								hasCustomColors: false,
-							}),
-						};
+						return createDefaultPreferences();
 					} else {
 						console.error(err);
 						reject(
@@ -72,7 +89,7 @@ export class PreferenceManager {
 					}
 				})
 				.then((configuration) => {
-					this._config = configuration;
+					this._config = backfillPreferences(configuration);
 					this.initialized = true;
 					resolve();
 					return undefined;
