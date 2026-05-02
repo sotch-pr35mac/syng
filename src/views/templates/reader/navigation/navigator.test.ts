@@ -55,3 +55,57 @@ it('restores the closest resource from an existing locator', () => {
 
 	expect(navigator.state.resource.href).toBe('chapter-2');
 });
+
+const pdfPublication: ReaderPublication = {
+	id: 'pdf-1',
+	format: 'pdf',
+	metadata: { title: 'Sample' },
+	source: {
+		id: 'pdf-source',
+		format: 'pdf',
+		importedAt: '2026-01-01T00:00:00.000Z',
+		extractorVersion: 1,
+	},
+	readingOrder: [
+		{ href: 'pdf/page-1', type: 'application/pdf' },
+		{ href: 'pdf/page-2', type: 'application/pdf' },
+		{ href: 'pdf/page-3', type: 'application/pdf' },
+	],
+	resources: [
+		{ href: 'pdf/page-1', type: 'application/pdf', kind: 'fixed-page', data: new ArrayBuffer(0) },
+		{ href: 'pdf/page-2', type: 'application/pdf', kind: 'fixed-page', data: new ArrayBuffer(0) },
+		{ href: 'pdf/page-3', type: 'application/pdf', kind: 'fixed-page', data: new ArrayBuffer(0) },
+	],
+	capabilities: {
+		reflowable: false,
+		fixedLayout: true,
+		hasTextLayer: true,
+		supportsDictionaryLookup: true,
+		supportsThemes: false,
+		supportsPageCurl: true,
+	},
+};
+
+it('restores PDF page from locator when stored resource href is legacy "source"', () => {
+	const navigator = new ReaderNavigator(pdfPublication, {
+		type: 'pdf',
+		resourceHref: 'source',
+		pageIndex: 2,
+		progression: 0,
+		updatedAt: '2026-01-01T00:00:00.000Z',
+	});
+
+	expect(navigator.state.resource.href).toBe('pdf/page-3');
+});
+
+it('prefers matching PDF resource href over page index when both are present', () => {
+	const navigator = new ReaderNavigator(pdfPublication, {
+		type: 'pdf',
+		resourceHref: 'pdf/page-1',
+		pageIndex: 2,
+		progression: 0,
+		updatedAt: '2026-01-01T00:00:00.000Z',
+	});
+
+	expect(navigator.state.resource.href).toBe('pdf/page-1');
+});

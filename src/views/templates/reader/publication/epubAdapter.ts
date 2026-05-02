@@ -1,5 +1,5 @@
 import { strFromU8, unzipSync } from 'fflate';
-import DOMPurify from 'dompurify';
+import { sanitizeReflowableReaderHtml } from '@/utils/readerHtmlSanitize.js';
 import type { ReaderPublication, ReaderReadingOrderItem, ReaderResource } from '@/reader/types.js';
 import {
 	createDefaultCapabilities,
@@ -135,10 +135,7 @@ function createHtmlResource(
 	}
 
 	const content = document.body.innerHTML || document.documentElement.innerHTML;
-	return DOMPurify.sanitize(content, {
-		USE_PROFILES: { html: true },
-		ADD_TAGS: ['style'],
-	});
+	return sanitizeReflowableReaderHtml(content, { allowStyleTag: true });
 }
 
 function getPackagePath(files: Record<string, Uint8Array>): string {

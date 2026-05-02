@@ -95,6 +95,8 @@
 
 	.reader-surface :global(a) {
 		color: var(--reader-link-color, #1f6feb);
+		pointer-events: none;
+		cursor: inherit;
 	}
 
 	.reader-surface ::selection {

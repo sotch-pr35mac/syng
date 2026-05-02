@@ -1,6 +1,7 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { Readability } from '@mozilla/readability';
 import type { ReaderImportPayload } from '@/types/reader.js';
+import { sanitizeReflowableReaderHtml } from '@/utils/readerHtmlSanitize.js';
 
 const WEBPAGE_SOURCE_TYPE = 'webpage';
 const WEBPAGE_MIME_TYPE = 'text/html';
@@ -73,6 +74,6 @@ export function createWebpageReaderImportPayload(
 		blocks: [],
 		color,
 		source_url: sourceUrl,
-		source_html: html,
+		source_html: sanitizeReflowableReaderHtml(html),
 	};
 }

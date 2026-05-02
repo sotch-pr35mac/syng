@@ -1,6 +1,7 @@
 import type { ReaderLookupTarget } from '@/reader/types.js';
 
 const WORD_BOUNDARY_PATTERN = /[\s，。！？、；：,.!?;:()[\]{}"“”‘’]/u;
+const HAN_SCRIPT_PATTERN = /\p{Script=Han}/u;
 
 function findTextNodeAtPoint(root: Document | ShadowRoot, x: number, y: number): Range | undefined {
 	const position = document.caretPositionFromPoint?.(x, y);
@@ -29,6 +30,31 @@ function findTextNodeAtPoint(root: Document | ShadowRoot, x: number, y: number):
 	return range;
 }
 
+function getGraphemeRangeAtOffset(
+	text: string,
+	offset: number
+): { start: number; end: number } | undefined {
+	if (!text.length || offset < 0 || offset > text.length) {
+		return undefined;
+	}
+	if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+		const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+		for (const segment of segmenter.segment(text)) {
+			const segmentEnd = segment.index + segment.segment.length;
+			if (offset >= segment.index && offset < segmentEnd) {
+				return { start: segment.index, end: segmentEnd };
+			}
+		}
+	}
+	const codePoint = text.codePointAt(offset);
+	if (codePoint === undefined) {
+		return undefined;
+	}
+	const supplementaryPlaneStart = 0x10000;
+	const codeUnitLength = codePoint >= supplementaryPlaneStart ? 2 : 1;
+	return { start: offset, end: Math.min(text.length, offset + codeUnitLength) };
+}
+
 function expandRangeToToken(range: Range): Range | undefined {
 	const node = range.startContainer;
 	if (node.nodeType !== Node.TEXT_NODE || !node.textContent) {
@@ -44,6 +70,19 @@ function expandRangeToToken(range: Range): Range | undefined {
 	}
 	while (end < text.length && !WORD_BOUNDARY_PATTERN.test(text[end])) {
 		end += 1;
+	}
+
+	if (start === end) {
+		return undefined;
+	}
+
+	const candidate = text.slice(start, end);
+	if (candidate.length > 1 && HAN_SCRIPT_PATTERN.test(candidate)) {
+		const graphemeRange = getGraphemeRangeAtOffset(text, range.startOffset);
+		if (graphemeRange) {
+			start = graphemeRange.start;
+			end = graphemeRange.end;
+		}
 	}
 
 	if (start === end) {

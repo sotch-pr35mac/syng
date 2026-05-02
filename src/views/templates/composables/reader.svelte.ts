@@ -172,14 +172,7 @@ async function loadPublicationDocument(document: ReaderDocument): Promise<Reader
 		html: document.source_html,
 		data: sourceData,
 	});
-	const session = new ReaderSession(
-		publication,
-		{
-			...DEFAULT_READER_SETTINGS,
-			view: publication.capabilities.reflowable ? 'scroll' : DEFAULT_READER_SETTINGS.view,
-		},
-		toPublicationLocator(document)
-	);
+	const session = new ReaderSession(publication, DEFAULT_READER_SETTINGS, toPublicationLocator(document));
 	activePublicationSession = session;
 	activePublicationState = session.state;
 	return activePublicationState;

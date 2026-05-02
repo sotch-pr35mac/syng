@@ -14,7 +14,7 @@ export class ReaderNavigator {
 
 	constructor(publication: ReaderPublication, locator?: ReaderLocator) {
 		this.publication = publication;
-		this.#resourceIndex = this.#resolveResourceIndex(locator?.resourceHref);
+		this.#resourceIndex = this.#resolveInitialResourceIndex(locator);
 	}
 
 	get state(): ReaderNavigationState {
@@ -43,7 +43,11 @@ export class ReaderNavigator {
 	}
 
 	goTo(locator: ReaderLocator): ReaderNavigationState {
-		this.#resourceIndex = this.#resolveResourceIndex(locator.resourceHref);
+		if (this.publication.format === 'pdf' && locator.type === 'pdf') {
+			this.#resourceIndex = this.#resolvePdfResourceIndex(locator);
+		} else {
+			this.#resourceIndex = this.#resolveResourceIndex(locator.resourceHref);
+		}
 		return this.state;
 	}
 
@@ -65,6 +69,28 @@ export class ReaderNavigator {
 			progression,
 			updatedAt: new Date().toISOString(),
 		};
+	}
+
+	#resolvePdfResourceIndex(locator: Extract<ReaderLocator, { type: 'pdf' }>): number {
+		const hrefIndex = this.publication.readingOrder.findIndex(
+			(item) => item.href === locator.resourceHref
+		);
+		if (hrefIndex >= 0) {
+			return hrefIndex;
+		}
+		const maxIndex = Math.max(0, this.publication.readingOrder.length - 1);
+		const pageIndex = locator.pageIndex;
+		if (Number.isFinite(pageIndex)) {
+			return Math.max(0, Math.min(Math.floor(pageIndex), maxIndex));
+		}
+		return 0;
+	}
+
+	#resolveInitialResourceIndex(locator?: ReaderLocator): number {
+		if (this.publication.format === 'pdf' && locator?.type === 'pdf') {
+			return this.#resolvePdfResourceIndex(locator);
+		}
+		return this.#resolveResourceIndex(locator?.resourceHref);
 	}
 
 	#resolveResourceIndex(resourceHref: string | undefined): number {

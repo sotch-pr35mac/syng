@@ -1,6 +1,6 @@
 import { Readability } from '@mozilla/readability';
-import DOMPurify from 'dompurify';
 import type { ReaderPublication } from '@/reader/types.js';
+import { sanitizeReflowableReaderHtml } from '@/utils/readerHtmlSanitize.js';
 import {
 	createDefaultCapabilities,
 	createDefaultMetadata,
@@ -36,9 +36,7 @@ export const webpagePublicationAdapter: ReaderFormatAdapter = {
 	},
 	async open(input: ReaderAdapterInput): Promise<ReaderPublication> {
 		const article = extractReadableArticle(input.html ?? '', input.sourceUrl);
-		const sanitizedHtml = DOMPurify.sanitize(article.content, {
-			USE_PROFILES: { html: true },
-		});
+		const sanitizedHtml = sanitizeReflowableReaderHtml(article.content);
 
 		return {
 			id: input.id,

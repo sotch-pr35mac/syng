@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { configurePdfJsWorker } from '@/reader/pdfjsWorker.js';
 	import { getLookupTargetFromPoint } from '@/reader/lookup/dictionaryLookup.js';
 	import type {
 		ReaderLookupTarget,
@@ -62,10 +63,7 @@
 		}
 		const currentRender = (renderVersion += 1);
 		const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-		GlobalWorkerOptions.workerSrc = new URL(
-			'pdfjs-dist/build/pdf.worker.mjs',
-			import.meta.url
-		).toString();
+		configurePdfJsWorker(GlobalWorkerOptions);
 		const pdf = await getDocument({ data: asArrayBuffer(resource.data) }).promise;
 		const page = await pdf.getPage((resource.pageIndex ?? 0) + 1);
 		if (currentRender !== renderVersion) {
