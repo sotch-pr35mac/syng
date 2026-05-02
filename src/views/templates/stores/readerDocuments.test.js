@@ -10,6 +10,7 @@ const document = {
 	source_type: 'plain_text',
 	mime_type: 'text/plain',
 	extractor_version: 1,
+	color: '#ffffff',
 	text: '你好',
 	blocks: [],
 	imported_at: '2026-01-01T00:00:00.000Z',
@@ -34,7 +35,11 @@ const buildManager = (overrides = {}) => ({
 	updateProgress: vi.fn(() =>
 		Promise.resolve({ ...document, progress: { ...document.progress, page_index: 1 } })
 	),
+	updateMetadata: vi.fn(() =>
+		Promise.resolve({ ...document, title: 'Renamed', color: '#91d7b4' })
+	),
 	getDocument: vi.fn(() => Promise.resolve(document)),
+	getSourceData: vi.fn(() => Promise.resolve(new ArrayBuffer(0))),
 	...overrides,
 });
 
@@ -83,4 +88,22 @@ it('deleteDocument() should remove a document from the cache', async () => {
 
 	expect(manager.deleteDocument).toHaveBeenCalledWith('reader-1');
 	expect(readerDocumentsStore.documents).toEqual([]);
+});
+
+it('updateMetadata() should update the cached document', async () => {
+	const manager = buildManager();
+	setReaderDocumentManagerForTest(manager);
+	await readerDocumentsStore.refresh();
+
+	const result = await readerDocumentsStore.updateMetadata('reader-1', {
+		title: 'Renamed',
+		color: '#91d7b4',
+	});
+
+	expect(manager.updateMetadata).toHaveBeenCalledWith('reader-1', {
+		title: 'Renamed',
+		color: '#91d7b4',
+	});
+	expect(result.title).toBe('Renamed');
+	expect(readerDocumentsStore.documents[0].title).toBe('Renamed');
 });

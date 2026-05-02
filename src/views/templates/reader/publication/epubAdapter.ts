@@ -26,6 +26,19 @@ function copyArrayBuffer(data: Uint8Array): ArrayBuffer {
 	return copy.buffer;
 }
 
+function bytesToBase64(data: Uint8Array): string {
+	let binary = '';
+	const chunkSize = 0x8000;
+	for (let index = 0; index < data.length; index += chunkSize) {
+		binary += String.fromCharCode(...data.subarray(index, index + chunkSize));
+	}
+	return btoa(binary);
+}
+
+function createDataUrl(data: Uint8Array, type: string): string {
+	return `data:${type};base64,${bytesToBase64(data)}`;
+}
+
 function getXmlText(document: Document, selector: string): string | undefined {
 	return document.querySelector(selector)?.textContent?.trim();
 }
@@ -35,6 +48,97 @@ function joinPath(basePath: string, href: string): string {
 		return href;
 	}
 	return `${basePath.replace(/\/$/, '')}/${href.replace(/^\//, '')}`;
+}
+
+function resolveEpubPath(basePath: string, href: string): string {
+	if (/^(?:[a-z]+:|#)/i.test(href)) {
+		return href;
+	}
+	const [path, suffix = ''] = href.split(/(?=[#?])/);
+	const combinedPath = joinPath(basePath, path);
+	const segments: string[] = [];
+	for (const segment of combinedPath.split('/')) {
+		if (!segment || segment === '.') {
+			continue;
+		}
+		if (segment === '..') {
+			segments.pop();
+			continue;
+		}
+		segments.push(segment);
+	}
+	return `${segments.join('/')}${suffix}`;
+}
+
+function rewriteCssUrls(
+	css: string,
+	basePath: string,
+	files: Record<string, Uint8Array>,
+	manifestByHref: Map<string, EpubManifestItem>
+): string {
+	return css.replace(/url\((['"]?)([^'")]+)\1\)/g, (match, quote, href) => {
+		const resourcePath = resolveEpubPath(basePath, href);
+		const manifestItem = manifestByHref.get(resourcePath);
+		const data = files[resourcePath];
+		if (!manifestItem || !data) {
+			return match;
+		}
+		return `url(${quote}${createDataUrl(data, manifestItem.type)}${quote})`;
+	});
+}
+
+function createHtmlResource(
+	files: Record<string, Uint8Array>,
+	href: string,
+	manifestByHref: Map<string, EpubManifestItem>
+): string | undefined {
+	const data = files[href];
+	if (!data) {
+		return undefined;
+	}
+	const basePath = href.split('/').slice(0, -1).join('/');
+	const document = new DOMParser().parseFromString(strFromU8(data), 'text/html');
+
+	for (const link of Array.from(document.querySelectorAll('link[rel~="stylesheet"][href]'))) {
+		const stylesheetHref = resolveEpubPath(basePath, link.getAttribute('href') ?? '');
+		const stylesheetItem = manifestByHref.get(stylesheetHref);
+		const stylesheetData = files[stylesheetHref];
+		if (!stylesheetItem || !stylesheetData) {
+			continue;
+		}
+		const style = document.createElement('style');
+		style.textContent = rewriteCssUrls(
+			strFromU8(stylesheetData),
+			stylesheetHref.split('/').slice(0, -1).join('/'),
+			files,
+			manifestByHref
+		);
+		link.replaceWith(style);
+	}
+
+	for (const style of Array.from(document.querySelectorAll('style'))) {
+		style.textContent = rewriteCssUrls(
+			style.textContent ?? '',
+			basePath,
+			files,
+			manifestByHref
+		);
+	}
+
+	for (const element of Array.from(document.querySelectorAll('[src]'))) {
+		const sourcePath = resolveEpubPath(basePath, element.getAttribute('src') ?? '');
+		const manifestItem = manifestByHref.get(sourcePath);
+		const sourceData = files[sourcePath];
+		if (manifestItem && sourceData) {
+			element.setAttribute('src', createDataUrl(sourceData, manifestItem.type));
+		}
+	}
+
+	const content = document.body.innerHTML || document.documentElement.innerHTML;
+	return DOMPurify.sanitize(content, {
+		USE_PROFILES: { html: true },
+		ADD_TAGS: ['style'],
+	});
 }
 
 function getPackagePath(files: Record<string, Uint8Array>): string {
@@ -93,6 +197,9 @@ function createResources(
 	packageBasePath: string,
 	readingOrderHrefs: Set<string>
 ): ReaderResource[] {
+	const manifestByHref = new Map(
+		Array.from(manifest.values()).map((item) => [joinPath(packageBasePath, item.href), item])
+	);
 	return Array.from(manifest.values()).map((item) => {
 		const href = joinPath(packageBasePath, item.href);
 		const data = files[href];
@@ -101,10 +208,7 @@ function createResources(
 			href,
 			type: item.type,
 			kind: readingOrderHrefs.has(href) && isHtml ? 'reflowable-document' : 'asset',
-			html:
-				isHtml && data
-					? DOMPurify.sanitize(strFromU8(data), { USE_PROFILES: { html: true } })
-					: undefined,
+			html: isHtml ? createHtmlResource(files, href, manifestByHref) : undefined,
 			data: !isHtml && data ? copyArrayBuffer(data) : undefined,
 			properties: item.properties ? { properties: item.properties } : undefined,
 		};

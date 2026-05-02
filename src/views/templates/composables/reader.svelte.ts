@@ -8,9 +8,18 @@ import type {
 	ReaderImportPayload,
 	ReaderLocator,
 	ReaderToken,
+	NormalizedReaderLocator,
+	ReaderLookupTarget,
 } from '@/types/reader.js';
 import type { SearchEntry } from '@/types/search.js';
 import { handleError, telemetry } from '@/utils';
+import { applyReaderImportMetadata } from '@/utils/readerDocumentMetadata.js';
+import { pickReaderImportFile } from '@/utils/readerFileImport.js';
+import { createPlainTextReaderImportPayload } from '@/utils/readerPlainTextImport.js';
+import { createWebpageReaderImportPayload } from '@/utils/readerWebpageImport.js';
+import { openReaderPublication } from '@/reader/publication/index.js';
+import { ReaderSession, type ReaderSessionState } from '@/reader/session/readerSession.js';
+import { DEFAULT_READER_SETTINGS } from '@/reader/settings/defaults.js';
 import {
 	createReaderPages,
 	createReaderSegments,
@@ -24,6 +33,8 @@ import {
 const TEXT_CONTEXT_LENGTH = 32;
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
+let activePublicationSession = $state<ReaderSession | undefined>(undefined);
+let activePublicationState = $state<ReaderSessionState | undefined>(undefined);
 let pageIndex = $state(0);
 let pages = $state<ReaderPage[]>([]);
 let pageLayout = $state<ReaderPageLayout | undefined>(undefined);
@@ -73,7 +84,7 @@ function createLocator(page: ReaderPage): ReaderLocator {
 	return {
 		resource_href: 'text',
 		position: page.start,
-		total_progression: documentText.length ? page.start / documentText.length : 0,
+		total_progression: documentText.length ? Math.min(1, page.start / documentText.length) : 0,
 		page_index: page.index,
 		text_position: {
 			start: page.start,
@@ -93,8 +104,100 @@ function getPageIndexForLocator(document: ReaderDocument, documentPages: ReaderP
 	return findPageIndexForPosition(documentPages, position);
 }
 
+function isPublicationDocument(document: ReaderDocument): boolean {
+	return document.source_type !== 'plain_text';
+}
+
+function toPublicationLocator(document: ReaderDocument): NormalizedReaderLocator | undefined {
+	const resourceHref = document.progress?.resource_href;
+	if (!resourceHref) {
+		return undefined;
+	}
+	if (document.source_type === 'pdf') {
+		return {
+			type: 'pdf',
+			resourceHref,
+			pageIndex: document.progress.page_index ?? 0,
+			progression: document.progress.total_progression ?? 0,
+			updatedAt: document.progress.updated_at,
+		};
+	}
+	return {
+		type: 'reflowable',
+		resourceHref,
+		progression: document.progress.total_progression ?? 0,
+		updatedAt: document.progress.updated_at,
+	};
+}
+
+function createPublicationProgress(state: ReaderSessionState): ReaderLocator {
+	const resourceIndex = state.publication.readingOrder.findIndex(
+		(item) => item.href === state.locator.resourceHref
+	);
+	const safeResourceIndex = Math.max(0, resourceIndex);
+	const totalResources = Math.max(1, state.publication.readingOrder.length);
+	const totalProgression =
+		totalResources === 1
+			? Math.max(0, Math.min(1, state.locator.progression))
+			: Math.max(0, Math.min(1, safeResourceIndex / Math.max(1, totalResources - 1)));
+	const now = new Date().toISOString();
+	return {
+		resource_href: state.locator.resourceHref,
+		position: 0,
+		total_progression: totalProgression,
+		page_index: safeResourceIndex,
+		text_position: {
+			start: 0,
+			end: 0,
+		},
+		text_quote: {
+			exact: '',
+			prefix: '',
+			suffix: '',
+		},
+		updated_at: now,
+	};
+}
+
+async function loadPublicationDocument(document: ReaderDocument): Promise<ReaderSessionState> {
+	const sourceData = await readerDocumentsStore.getSourceData(document._id);
+	const publication = await openReaderPublication({
+		id: document._id,
+		title: document.title,
+		fileName: document.file_name,
+		mimeType: document.mime_type,
+		sourceUrl: document.source_url,
+		importedAt: document.imported_at,
+		text: document.source_html ? undefined : document.text,
+		html: document.source_html,
+		data: sourceData,
+	});
+	const session = new ReaderSession(
+		publication,
+		{
+			...DEFAULT_READER_SETTINGS,
+			view: publication.capabilities.reflowable ? 'scroll' : DEFAULT_READER_SETTINGS.view,
+		},
+		toPublicationLocator(document)
+	);
+	activePublicationSession = session;
+	activePublicationState = session.state;
+	return activePublicationState;
+}
+
 async function saveCurrentProgress(): Promise<void> {
 	if (!activeDocument || !pages[pageIndex]) {
+		if (activeDocument && activePublicationState) {
+			try {
+				activeDocument = await readerDocumentsStore.updateProgress(
+					activeDocument._id,
+					createPublicationProgress(activePublicationState)
+				);
+				telemetry.trackEvent('reader.position_saved', {}).catch(() => {});
+			} catch (error) {
+				handleError('There was an error saving reader progress.', error);
+			}
+		}
 		return;
 	}
 	const locator = createLocator(pages[pageIndex]);
@@ -108,29 +211,65 @@ async function saveCurrentProgress(): Promise<void> {
 
 async function openDocument(document: ReaderDocument): Promise<void> {
 	activeDocument = document;
+	activePublicationSession = undefined;
+	activePublicationState = undefined;
 	tokenMap = {};
-	pages = createReaderPages(document, pageLayout);
-	pageIndex = getPageIndexForLocator(document, pages);
 	lastPageTurnDirection = undefined;
 	closeDictionary();
+	if (isPublicationDocument(document)) {
+		try {
+			await loadPublicationDocument(document);
+			pageIndex =
+				activePublicationState?.locator.type === 'pdf'
+					? activePublicationState.locator.pageIndex
+					: Math.max(
+							0,
+							activePublicationState?.publication.readingOrder.findIndex(
+								(item) => item.href === activePublicationState?.locator.resourceHref
+							) ?? 0
+						);
+			pages = [];
+		} catch (error) {
+			activeDocument = undefined;
+			activePublicationSession = undefined;
+			activePublicationState = undefined;
+			handleError('There was an error opening the reader document.', error);
+			return;
+		}
+	} else {
+		pages = createReaderPages(document, pageLayout);
+		pageIndex = getPageIndexForLocator(document, pages);
+		await preparePageTokens();
+	}
 	telemetry
 		.trackEvent('reader.document_opened', {
 			source_type: document.source_type,
 		})
 		.catch(() => {});
-	await preparePageTokens();
 }
 
-async function importDocument(): Promise<void> {
+async function pickImportDocument(): Promise<ReaderImportPayload | undefined> {
 	importing = true;
 	try {
-		const importPayload = await invoke<ReaderImportPayload | null>(
-			NATIVE_COMMANDS.READER.IMPORT_DOCUMENT
+		return await pickReaderImportFile();
+	} catch (error) {
+		handleError('There was an error importing the reader document.', error);
+		return undefined;
+	} finally {
+		importing = false;
+	}
+}
+
+async function importReaderPayload(
+	importPayload: ReaderImportPayload,
+	title: string,
+	color: string
+): Promise<void> {
+	importing = true;
+	try {
+		const document = await readerDocumentsStore.importDocument(
+			applyReaderImportMetadata(importPayload, title, color)
 		);
-		if (!importPayload) {
-			return;
-		}
-		const document = await readerDocumentsStore.importDocument(importPayload);
 		telemetry
 			.trackEvent('reader.document_imported', {
 				source_type: document.source_type,
@@ -142,6 +281,50 @@ async function importDocument(): Promise<void> {
 		handleError('There was an error importing the reader document.', error);
 	} finally {
 		importing = false;
+	}
+}
+
+async function importPlainTextDocument(title: string, text: string, color: string): Promise<void> {
+	await importReaderPayload(
+		createPlainTextReaderImportPayload(title, text, { color }),
+		title,
+		color
+	);
+}
+
+async function importWebpageDocument(
+	title: string,
+	html: string,
+	color: string,
+	sourceUrl: string
+): Promise<void> {
+	await importReaderPayload(
+		createWebpageReaderImportPayload(title, html, sourceUrl, color),
+		title,
+		color
+	);
+}
+
+async function updateDocumentMetadata(
+	document: ReaderDocument,
+	title: string,
+	color: string
+): Promise<void> {
+	try {
+		const updatedDocument = await readerDocumentsStore.updateMetadata(document._id, {
+			title,
+			color,
+		});
+		if (activeDocument?._id === updatedDocument._id) {
+			activeDocument = updatedDocument;
+		}
+		telemetry
+			.trackEvent('reader.document_metadata_updated', {
+				source_type: updatedDocument.source_type,
+			})
+			.catch(() => {});
+	} catch (error) {
+		handleError('There was an error saving reader document details.', error);
 	}
 }
 
@@ -157,6 +340,8 @@ async function deleteDocument(document: ReaderDocument): Promise<boolean> {
 		await readerDocumentsStore.deleteDocument(document._id);
 		if (activeDocument?._id === document._id) {
 			activeDocument = undefined;
+			activePublicationSession = undefined;
+			activePublicationState = undefined;
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -195,6 +380,8 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 		);
 		if (activeDocument && documents.some((document) => document._id === activeDocument?._id)) {
 			activeDocument = undefined;
+			activePublicationSession = undefined;
+			activePublicationState = undefined;
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -244,6 +431,30 @@ async function preparePageTokens(): Promise<void> {
 }
 
 async function goToPage(nextPageIndex: number): Promise<void> {
+	if (activeDocument && activePublicationSession && activePublicationState) {
+		const targetResource = activePublicationState.publication.readingOrder[nextPageIndex];
+		if (!targetResource) {
+			return;
+		}
+		const direction = nextPageIndex > pageIndex ? 'next' : 'previous';
+		lastPageTurnDirection = direction;
+		pageIndex = nextPageIndex;
+		activePublicationState = activePublicationSession.goTo({
+			type: activePublicationState.publication.format === 'pdf' ? 'pdf' : 'reflowable',
+			resourceHref: targetResource.href,
+			pageIndex: nextPageIndex,
+			progression: 0,
+			updatedAt: new Date().toISOString(),
+		} as NormalizedReaderLocator);
+		closeDictionary();
+		await saveCurrentProgress();
+		telemetry
+			.trackEvent('reader.page_changed', {
+				direction,
+			})
+			.catch(() => {});
+		return;
+	}
 	if (!activeDocument || !pages[nextPageIndex]) {
 		return;
 	}
@@ -290,7 +501,7 @@ async function setPageLayout(layout: ReaderPageLayout): Promise<void> {
 	const currentPosition = pages[pageIndex]?.start ?? activeDocument?.progress?.position ?? 0;
 	pageLayout = normalizedLayout;
 
-	if (!activeDocument) {
+	if (!activeDocument || activePublicationState) {
 		return;
 	}
 
@@ -328,6 +539,29 @@ async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<voi
 	}
 }
 
+async function openLookupTarget(target: ReaderLookupTarget): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text: target.text,
+		});
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === target.text || result.traditional === target.text
+		);
+		dictionaryResults = results;
+		dictionaryResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		dictionaryWord = dictionaryResults[dictionaryResultIndex];
+		dictionaryToken = {
+			text: target.text,
+			start: target.offset ?? 0,
+			end: (target.offset ?? 0) + target.text.length,
+		};
+		dictionaryAnchor = target.anchor;
+		telemetry.trackEvent('reader.dictionary_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error opening the dictionary popover.', error);
+	}
+}
+
 function selectDictionaryResult(index: number): void {
 	if (!dictionaryResults[index]) {
 		return;
@@ -347,6 +581,8 @@ function closeDictionary(): void {
 function backToLibrary(): void {
 	saveCurrentProgress().catch(() => {});
 	activeDocument = undefined;
+	activePublicationSession = undefined;
+	activePublicationState = undefined;
 	pageIndex = 0;
 	pages = [];
 	lastPageTurnDirection = undefined;
@@ -359,6 +595,9 @@ export const readerRoute = {
 	},
 	get activeDocument(): ReaderDocument | undefined {
 		return activeDocument;
+	},
+	get activePublicationState(): ReaderSessionState | undefined {
+		return activePublicationState;
 	},
 	get currentPage(): ReaderPage | undefined {
 		return pages[pageIndex];
@@ -373,16 +612,16 @@ export const readerRoute = {
 		return pageIndex;
 	},
 	get pageCount(): number {
-		return pages.length;
+		return activePublicationState?.publication.readingOrder.length ?? pages.length;
 	},
 	get importing(): boolean {
 		return importing;
 	},
 	get canGoPrevious(): boolean {
-		return pageIndex > 0;
+		return activePublicationState?.canGoBackward ?? pageIndex > 0;
 	},
 	get canGoNext(): boolean {
-		return pageIndex < pages.length - 1;
+		return activePublicationState?.canGoForward ?? pageIndex < pages.length - 1;
 	},
 	get dictionaryWord(): SearchEntry | undefined {
 		return dictionaryWord;
@@ -403,7 +642,11 @@ export const readerRoute = {
 		return lastPageTurnDirection;
 	},
 	refresh: readerDocumentsStore.refresh,
-	importDocument,
+	pickImportDocument,
+	importReaderPayload,
+	importPlainTextDocument,
+	importWebpageDocument,
+	updateDocumentMetadata,
 	openDocument,
 	deleteDocument,
 	deleteDocuments,
@@ -414,6 +657,7 @@ export const readerRoute = {
 	setPageLayout,
 	getBlockSegments,
 	openDictionary,
+	openLookupTarget,
 	selectDictionaryResult,
 	closeDictionary,
 	backToLibrary,

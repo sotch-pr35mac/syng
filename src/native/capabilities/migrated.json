@@ -70,7 +70,13 @@
 		"dialog:allow-message",
 		"dialog:allow-ask",
 		"dialog:allow-confirm",
-		"http:default",
+		{
+			"identifier": "http:default",
+			"allow": [
+				{ "url": "https://*" },
+				{ "url": "http://*" }
+			]
+		},
 		"notification:default",
 		"global-shortcut:allow-is-registered",
 		"global-shortcut:allow-register",

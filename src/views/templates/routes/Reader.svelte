@@ -7,18 +7,26 @@
 		ChevronLeft,
 		ChevronRight,
 		Circle,
+		ClipboardPaste,
 		FilePlus2,
+		Globe2,
 		Library,
+		Pencil,
 		Trash2,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
+	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
+	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import type { ReaderDocument, ReaderToken } from '@/types/reader.js';
+	import ReaderSurface from '@/reader/surfaces/ReaderSurface.svelte';
+	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 	import { isIPad } from '@/utils/device.js';
 
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
@@ -27,13 +35,19 @@
 	const HEADING_FONT_SCALE = 1.35;
 	const HEADING_LINE_HEIGHT = 1.5;
 	const PAGE_CURL_DURATION_MS = 760;
+	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
+	const activePublicationState = $derived(readerRoute.activePublicationState);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	let editingLibrary = $state(false);
+	let clipboardImportModalVisible = $state(false);
+	let webpageImportModalVisible = $state(false);
+	let pendingImportPayload = $state<ReaderImportPayload | undefined>(undefined);
+	let editingDocument = $state<ReaderDocument | undefined>(undefined);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
 	let turningPage = $state(false);
@@ -78,6 +92,58 @@
 		selectedDocumentIds.clear();
 	}
 
+	function openClipboardImportModal(): void {
+		clipboardImportModalVisible = true;
+	}
+
+	function closeClipboardImportModal(): void {
+		clipboardImportModalVisible = false;
+	}
+
+	function openWebpageImportModal(): void {
+		webpageImportModalVisible = true;
+	}
+
+	function closeWebpageImportModal(): void {
+		webpageImportModalVisible = false;
+	}
+
+	async function openFileImportDetails(): Promise<void> {
+		const importPayload = await readerRoute.pickImportDocument();
+		if (importPayload) {
+			pendingImportPayload = importPayload;
+		}
+	}
+
+	function closeFileImportDetails(): void {
+		pendingImportPayload = undefined;
+	}
+
+	async function importPendingDocument(title: string, color: string): Promise<void> {
+		if (!pendingImportPayload) {
+			return;
+		}
+		await readerRoute.importReaderPayload(pendingImportPayload, title, color);
+		pendingImportPayload = undefined;
+	}
+
+	function openDocumentDetails(event: MouseEvent, document: ReaderDocument): void {
+		event.stopPropagation();
+		editingDocument = document;
+	}
+
+	function closeDocumentDetails(): void {
+		editingDocument = undefined;
+	}
+
+	async function saveDocumentDetails(title: string, color: string): Promise<void> {
+		if (!editingDocument) {
+			return;
+		}
+		await readerRoute.updateDocumentMetadata(editingDocument, title, color);
+		editingDocument = undefined;
+	}
+
 	function toggleDocumentSelection(document: ReaderDocument): void {
 		if (selectedDocumentIds.has(document._id)) {
 			selectedDocumentIds.delete(document._id);
@@ -99,6 +165,11 @@
 			event.preventDefault();
 			handleDocumentCardClick(document);
 		}
+	}
+
+	function getDocumentProgressPercent(document: ReaderDocument): number {
+		const progression = document.progress?.total_progression ?? 0;
+		return Math.round(Math.max(0, Math.min(1, progression)) * PERCENTAGE_SCALE);
 	}
 
 	async function deleteSelectedDocuments(): Promise<void> {
@@ -153,6 +224,10 @@
 
 		const targetPageIndex =
 			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
+		if (activePublicationState) {
+			await readerRoute.goToPage(targetPageIndex);
+			return;
+		}
 		const targetPage = readerRoute.getPage(targetPageIndex);
 		if (!targetPage || !currentPage) {
 			return;
@@ -167,7 +242,10 @@
 				return;
 			}
 
-			currentPageImage = createReaderPageSnapshot(currentPage, pageElement).source.toDataURL();
+			currentPageImage = createReaderPageSnapshot(
+				currentPage,
+				pageElement
+			).source.toDataURL();
 			targetPageImage = createReaderPageSnapshot(targetPage, pageElement).source.toDataURL();
 			pendingTargetPageIndex = targetPageIndex;
 			turningPageDirection = direction;
@@ -238,7 +316,7 @@
 		</div>
 	</div>
 
-	{#if activeDocument && currentPage}
+	{#if activeDocument && (currentPage || activePublicationState)}
 		<main class="reader__stage">
 			<button
 				class="reader__page-turn reader__page-turn--previous"
@@ -248,39 +326,52 @@
 			>
 				<ChevronLeft size="28" />
 			</button>
-			<span
-				bind:this={characterMeasureElement}
-				class="reader__measure-text"
-				aria-hidden="true"
-			>
-				{CHARACTER_MEASURE_SAMPLE}
-			</span>
-			<article
-				bind:this={pageElement}
-				class="reader__page reader__page--base"
-				class:reader__page--turning={turningPage}
-			>
-				{#each currentPage.blocks as block (block.id)}
-					<svelte:element
-						this={block.kind === 'heading' ? 'h2' : 'p'}
-						class="reader__block"
-					>
-						{#each readerRoute.getBlockSegments(block) as segment, index (index)}
-							{#if segment.type === 'token'}
-								<button
-									class="reader__token"
-									class:reader__token--active={readerRoute.dictionaryToken?.start === segment.token?.start && readerRoute.dictionaryToken?.text === segment.token?.text}
-									onclick={(event) => openToken(event, segment.token)}
-								>
+			{#if activePublicationState}
+				<div class="reader__publication">
+					<ReaderSurface
+						resource={activePublicationState.resource}
+						settings={activePublicationState.settings}
+						onlookup={readerRoute.openLookupTarget}
+					/>
+				</div>
+			{:else if currentPage}
+				<span
+					bind:this={characterMeasureElement}
+					class="reader__measure-text"
+					aria-hidden="true"
+				>
+					{CHARACTER_MEASURE_SAMPLE}
+				</span>
+				<article
+					bind:this={pageElement}
+					class="reader__page reader__page--base"
+					class:reader__page--turning={turningPage}
+				>
+					{#each currentPage.blocks as block (block.id)}
+						<svelte:element
+							this={block.kind === 'heading' ? 'h2' : 'p'}
+							class="reader__block"
+						>
+							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
+								{#if segment.type === 'token'}
+									<button
+										class="reader__token"
+										class:reader__token--active={readerRoute.dictionaryToken
+											?.start === segment.token?.start &&
+											readerRoute.dictionaryToken?.text ===
+												segment.token?.text}
+										onclick={(event) => openToken(event, segment.token)}
+									>
+										{segment.text}
+									</button>
+								{:else}
 									{segment.text}
-								</button>
-							{:else}
-								{segment.text}
-							{/if}
-						{/each}
-					</svelte:element>
-				{/each}
-			</article>
+								{/if}
+							{/each}
+						</svelte:element>
+					{/each}
+				</article>
+			{/if}
 			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
 				<div class="reader__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
@@ -309,20 +400,44 @@
 	{:else}
 		<main class="reader__library">
 			<div class="reader__library-grid">
-				<button
-					class="reader__book-card reader__book-card--import"
-					disabled={readerRoute.importing || editingLibrary}
-					onclick={readerRoute.importDocument}
-				>
-					<div class="reader__book-cover">
-						<FilePlus2 size="32" />
-						<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span>
-					</div>
-				</button>
+				<div class="reader__import-stack">
+					<button
+						class="reader__book-card reader__book-card--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openClipboardImportModal}
+					>
+						<div class="reader__book-cover">
+							<ClipboardPaste size="20" />
+							<span>Import From Clipboard</span>
+						</div>
+					</button>
+					<button
+						class="reader__book-card reader__book-card--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openWebpageImportModal}
+					>
+						<div class="reader__book-cover">
+							<Globe2 size="20" />
+							<span>Import From Webpage</span>
+						</div>
+					</button>
+					<button
+						class="reader__book-card reader__book-card--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openFileImportDetails}
+					>
+						<div class="reader__book-cover">
+							<FilePlus2 size="20" />
+							<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span
+							>
+						</div>
+					</button>
+				</div>
 				{#each documents as document (document._id)}
 					<div
 						class="reader__book-card"
 						class:reader__book-card--selected={selectedDocumentIds.has(document._id)}
+						style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
 						onclick={() => handleDocumentCardClick(document)}
 						onkeyup={(event) => handleDocumentCardKey(event, document)}
 						role="button"
@@ -337,11 +452,19 @@
 										<Circle size="22" />
 									{/if}
 								</span>
+								<button
+									class="reader__metadata-button"
+									type="button"
+									aria-label={`Edit ${document.title}`}
+									onclick={(event) => openDocumentDetails(event, document)}
+								>
+									<Pencil size="16" />
+								</button>
 							{/if}
 							<span class="reader__book-title">{document.title}</span>
 							<span class="reader__book-meta">{document.file_name}</span>
 							<span class="reader__book-progress">
-								{Math.round((document.progress?.total_progression ?? 0) * 100)}%
+								{getDocumentProgressPercent(document)}%
 							</span>
 						</div>
 					</div>
@@ -365,6 +488,42 @@
 	anchor={readerRoute.dictionaryAnchor}
 	onselect={readerRoute.selectDictionaryResult}
 	onclose={readerRoute.closeDictionary}
+/>
+
+<ReaderClipboardImportModal
+	visible={clipboardImportModalVisible}
+	importing={readerRoute.importing}
+	onclose={closeClipboardImportModal}
+	onimport={readerRoute.importPlainTextDocument}
+/>
+
+<ReaderWebpageImportModal
+	visible={webpageImportModalVisible}
+	importing={readerRoute.importing}
+	onclose={closeWebpageImportModal}
+	onimport={readerRoute.importWebpageDocument}
+/>
+
+<ReaderDocumentMetadataModal
+	visible={Boolean(pendingImportPayload)}
+	title="Import Document"
+	initialTitle={pendingImportPayload?.title ?? ''}
+	initialColor={pendingImportPayload?.color}
+	confirmLabel="Import"
+	busy={readerRoute.importing}
+	onclose={closeFileImportDetails}
+	onsave={importPendingDocument}
+/>
+
+<ReaderDocumentMetadataModal
+	visible={Boolean(editingDocument)}
+	title="Edit Document"
+	initialTitle={editingDocument?.title ?? ''}
+	initialColor={editingDocument?.color}
+	confirmLabel="Save"
+	busy={readerRoute.importing}
+	onclose={closeDocumentDetails}
+	onsave={saveDocumentDetails}
 />
 
 <style>
@@ -436,6 +595,18 @@
 		cursor: pointer;
 	}
 
+	.reader__import-stack {
+		display: grid;
+		grid-template-rows: repeat(3, 1fr);
+		gap: var(--sy-space);
+		aspect-ratio: 2 / 3;
+	}
+
+	.reader__import-stack .reader__book-card {
+		height: 100%;
+		aspect-ratio: auto;
+	}
+
 	.reader__book-card:focus-visible {
 		outline: 2px solid var(--sy-color--blue);
 		outline-offset: 4px;
@@ -458,7 +629,7 @@
 		border-radius: var(--sy-border-radius);
 		background:
 			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-			var(--sy-color--white);
+			var(--reader-book-color, var(--sy-color--white));
 		box-shadow: var(--sy-shadow);
 		color: var(--sy-color--grey-4);
 		transition:
@@ -477,8 +648,17 @@
 	.reader__book-card--import .reader__book-cover {
 		align-items: center;
 		justify-content: center;
-		gap: var(--sy-space--large);
+		gap: var(--sy-space);
 		color: var(--sy-color--blue);
+		font-size: 0.82rem;
+		line-height: 1.2;
+		padding: var(--sy-space);
+		text-align: center;
+	}
+
+	.reader__book-card:not(.reader__book-card--import) .reader__book-cover {
+		align-items: center;
+		justify-content: center;
 		text-align: center;
 	}
 
@@ -489,7 +669,34 @@
 		color: var(--sy-color--blue);
 	}
 
+	.reader__metadata-button {
+		position: absolute;
+		top: var(--sy-space--large);
+		left: var(--sy-space--large);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 30px;
+		border: var(--sy-border);
+		border-radius: var(--sy-border-radius);
+		background: rgb(255 255 255 / 86%);
+		color: var(--sy-color--grey-4);
+		box-shadow: var(--sy-shadow);
+		cursor: pointer;
+	}
+
+	.reader__metadata-button:hover,
+	.reader__metadata-button:focus-visible {
+		color: var(--sy-color--blue);
+	}
+
 	.reader__book-title {
+		max-width: 100%;
+		padding: var(--sy-space--small) var(--sy-space);
+		border-radius: var(--sy-border-radius);
+		background: rgb(255 255 255 / 78%);
+		color: var(--sy-color--black);
 		font-size: 1rem;
 		font-weight: var(--sy-font-weight--medium);
 		line-height: 1.3;
@@ -498,12 +705,20 @@
 
 	.reader__book-meta,
 	.reader__book-progress {
+		position: absolute;
+		left: var(--sy-space--large);
+		right: var(--sy-space--large);
+		bottom: var(--sy-space--large);
 		margin-top: var(--sy-space--small);
 		font-size: 0.78rem;
-		color: var(--sy-color--grey-3);
+		color: var(--sy-color--grey-5);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.reader__book-meta {
+		bottom: calc(var(--sy-space--large) + 1.2rem);
 	}
 
 	.reader__stage {
@@ -532,6 +747,16 @@
 		font-size: 1.24rem;
 		line-height: 2;
 		color: var(--sy-color--black);
+	}
+
+	.reader__publication {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		background: var(--sy-color--white);
+		box-shadow: var(--sy-shadow);
+		border-radius: var(--sy-border-radius);
+		overflow: hidden;
 	}
 
 	.reader__page--base {

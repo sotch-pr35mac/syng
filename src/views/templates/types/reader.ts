@@ -29,6 +29,10 @@ export interface ReaderImportPayload {
 	extractor_version: number;
 	text: string;
 	blocks: ReaderContentBlock[];
+	color?: string;
+	source_url?: string;
+	source_html?: string;
+	source_data?: ArrayBuffer | Uint8Array;
 }
 
 export interface ReaderTextPosition {

@@ -55,7 +55,12 @@
 	}
 </script>
 
-<article bind:this={surfaceElement} class="reader-surface" onpointerup={handlePointerUp}>
+<article
+	bind:this={surfaceElement}
+	class="reader-surface"
+	class:reader-surface--scroll={settings.view === 'scroll'}
+	onpointerup={handlePointerUp}
+>
 	{#if resource.html}
 		<!-- Sanitized by the publication adapter before it reaches this surface. -->
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -81,6 +86,11 @@
 		font-size: var(--reader-font-size, 100%);
 		line-height: var(--reader-line-height, 1.8);
 		writing-mode: var(--reader-writing-mode, horizontal-tb);
+	}
+
+	.reader-surface--scroll {
+		overflow: auto;
+		column-count: 1;
 	}
 
 	.reader-surface :global(a) {

@@ -6,17 +6,25 @@
 		ChevronLeft,
 		ChevronRight,
 		Circle,
+		ClipboardPaste,
 		FilePlus2,
+		Globe2,
 		Library,
+		Pencil,
 		Trash2,
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
+	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
+	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import type { ReaderDocument, ReaderToken } from '@/types/reader.js';
+	import ReaderSurface from '@/reader/surfaces/ReaderSurface.svelte';
+	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
 	const DEFAULT_PAGE_FONT_SIZE = 19;
@@ -24,13 +32,19 @@
 	const HEADING_FONT_SCALE = 1.28;
 	const HEADING_LINE_HEIGHT = 1.5;
 	const PAGE_CURL_DURATION_MS = 720;
+	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const activeDocument = $derived(readerRoute.activeDocument);
+	const activePublicationState = $derived(readerRoute.activePublicationState);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	let gestureStartX = 0;
 	let gestureStartY = 0;
 	let editingLibrary = $state(false);
+	let clipboardImportModalVisible = $state(false);
+	let webpageImportModalVisible = $state(false);
+	let pendingImportPayload = $state<ReaderImportPayload | undefined>(undefined);
+	let editingDocument = $state<ReaderDocument | undefined>(undefined);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
 	let turningPage = $state(false);
@@ -75,6 +89,58 @@
 		selectedDocumentIds.clear();
 	}
 
+	function openClipboardImportModal(): void {
+		clipboardImportModalVisible = true;
+	}
+
+	function closeClipboardImportModal(): void {
+		clipboardImportModalVisible = false;
+	}
+
+	function openWebpageImportModal(): void {
+		webpageImportModalVisible = true;
+	}
+
+	function closeWebpageImportModal(): void {
+		webpageImportModalVisible = false;
+	}
+
+	async function openFileImportDetails(): Promise<void> {
+		const importPayload = await readerRoute.pickImportDocument();
+		if (importPayload) {
+			pendingImportPayload = importPayload;
+		}
+	}
+
+	function closeFileImportDetails(): void {
+		pendingImportPayload = undefined;
+	}
+
+	async function importPendingDocument(title: string, color: string): Promise<void> {
+		if (!pendingImportPayload) {
+			return;
+		}
+		await readerRoute.importReaderPayload(pendingImportPayload, title, color);
+		pendingImportPayload = undefined;
+	}
+
+	function openDocumentDetails(event: MouseEvent, document: ReaderDocument): void {
+		event.stopPropagation();
+		editingDocument = document;
+	}
+
+	function closeDocumentDetails(): void {
+		editingDocument = undefined;
+	}
+
+	async function saveDocumentDetails(title: string, color: string): Promise<void> {
+		if (!editingDocument) {
+			return;
+		}
+		await readerRoute.updateDocumentMetadata(editingDocument, title, color);
+		editingDocument = undefined;
+	}
+
 	function toggleDocumentSelection(document: ReaderDocument): void {
 		if (selectedDocumentIds.has(document._id)) {
 			selectedDocumentIds.delete(document._id);
@@ -96,6 +162,11 @@
 			event.preventDefault();
 			handleDocumentCardClick(document);
 		}
+	}
+
+	function getDocumentProgressPercent(document: ReaderDocument): number {
+		const progression = document.progress?.total_progression ?? 0;
+		return Math.round(Math.max(0, Math.min(1, progression)) * PERCENTAGE_SCALE);
 	}
 
 	async function deleteSelectedDocuments(): Promise<void> {
@@ -150,6 +221,10 @@
 
 		const targetPageIndex =
 			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
+		if (activePublicationState) {
+			await readerRoute.goToPage(targetPageIndex);
+			return;
+		}
 		const targetPage = readerRoute.getPage(targetPageIndex);
 		if (!targetPage || !currentPage) {
 			return;
@@ -164,7 +239,10 @@
 				return;
 			}
 
-			currentPageImage = createReaderPageSnapshot(currentPage, pageElement).source.toDataURL();
+			currentPageImage = createReaderPageSnapshot(
+				currentPage,
+				pageElement
+			).source.toDataURL();
 			targetPageImage = createReaderPageSnapshot(targetPage, pageElement).source.toDataURL();
 			pendingTargetPageIndex = targetPageIndex;
 			turningPageDirection = direction;
@@ -219,7 +297,7 @@
 </script>
 
 <div class="mobile-reader">
-	{#if activeDocument && currentPage}
+	{#if activeDocument && (currentPage || activePublicationState)}
 		<div class="mobile-reader__reader-header">
 			<SyButton style="ghost" size="small" onclick={readerRoute.backToLibrary}>
 				<Library size="18" />
@@ -238,38 +316,48 @@
 			>
 				<ChevronLeft size="24" />
 			</button>
-			<span
-				bind:this={characterMeasureElement}
-				class="mobile-reader__measure-text"
-				aria-hidden="true"
-			>
-				{CHARACTER_MEASURE_SAMPLE}
-			</span>
-			<article
-				bind:this={pageElement}
-				class="mobile-reader__page mobile-reader__page--base"
-				class:mobile-reader__page--turning={turningPage}
-			>
-				{#each currentPage.blocks as block (block.id)}
-					<svelte:element
-						this={block.kind === 'heading' ? 'h2' : 'p'}
-						class="mobile-reader__block"
-					>
-						{#each readerRoute.getBlockSegments(block) as segment, index (index)}
-							{#if segment.type === 'token'}
-								<button
-									class="mobile-reader__token"
-									onclick={(event) => openToken(event, segment.token)}
-								>
+			{#if activePublicationState}
+				<div class="mobile-reader__publication">
+					<ReaderSurface
+						resource={activePublicationState.resource}
+						settings={activePublicationState.settings}
+						onlookup={readerRoute.openLookupTarget}
+					/>
+				</div>
+			{:else if currentPage}
+				<span
+					bind:this={characterMeasureElement}
+					class="mobile-reader__measure-text"
+					aria-hidden="true"
+				>
+					{CHARACTER_MEASURE_SAMPLE}
+				</span>
+				<article
+					bind:this={pageElement}
+					class="mobile-reader__page mobile-reader__page--base"
+					class:mobile-reader__page--turning={turningPage}
+				>
+					{#each currentPage.blocks as block (block.id)}
+						<svelte:element
+							this={block.kind === 'heading' ? 'h2' : 'p'}
+							class="mobile-reader__block"
+						>
+							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
+								{#if segment.type === 'token'}
+									<button
+										class="mobile-reader__token"
+										onclick={(event) => openToken(event, segment.token)}
+									>
+										{segment.text}
+									</button>
+								{:else}
 									{segment.text}
-								</button>
-							{:else}
-								{segment.text}
-							{/if}
-						{/each}
-					</svelte:element>
-				{/each}
-			</article>
+								{/if}
+							{/each}
+						</svelte:element>
+					{/each}
+				</article>
+			{/if}
 			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
 				<div class="mobile-reader__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
@@ -314,18 +402,37 @@
 		</div>
 		<main class="mobile-reader__library">
 			<div class="mobile-reader__library-grid">
-				<button
-					class="mobile-reader__book mobile-reader__book--import"
-					disabled={readerRoute.importing || editingLibrary}
-					onclick={readerRoute.importDocument}
-				>
-					<FilePlus2 size="26" />
-					<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span>
-				</button>
+				<div class="mobile-reader__import-stack">
+					<button
+						class="mobile-reader__book mobile-reader__book--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openClipboardImportModal}
+					>
+						<ClipboardPaste size="18" />
+						<span>Import From Clipboard</span>
+					</button>
+					<button
+						class="mobile-reader__book mobile-reader__book--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openWebpageImportModal}
+					>
+						<Globe2 size="18" />
+						<span>Import From Webpage</span>
+					</button>
+					<button
+						class="mobile-reader__book mobile-reader__book--import"
+						disabled={readerRoute.importing || editingLibrary}
+						onclick={openFileImportDetails}
+					>
+						<FilePlus2 size="18" />
+						<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span>
+					</button>
+				</div>
 				{#each documents as document (document._id)}
 					<div
 						class="mobile-reader__book"
 						class:mobile-reader__book--selected={selectedDocumentIds.has(document._id)}
+						style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
 						onclick={() => handleDocumentCardClick(document)}
 						onkeyup={(event) => handleDocumentCardKey(event, document)}
 						role="button"
@@ -339,10 +446,18 @@
 									<Circle size="22" />
 								{/if}
 							</span>
+							<button
+								class="mobile-reader__metadata-button"
+								type="button"
+								aria-label={`Edit ${document.title}`}
+								onclick={(event) => openDocumentDetails(event, document)}
+							>
+								<Pencil size="15" />
+							</button>
 						{/if}
 						<span class="mobile-reader__book-name">{document.title}</span>
 						<span class="mobile-reader__book-meta">
-							{Math.round((document.progress?.total_progression ?? 0) * 100)}% · {document.file_name}
+							{getDocumentProgressPercent(document)}% · {document.file_name}
 						</span>
 					</div>
 				{/each}
@@ -364,6 +479,42 @@
 	anchor={readerRoute.dictionaryAnchor}
 	onselect={readerRoute.selectDictionaryResult}
 	onclose={readerRoute.closeDictionary}
+/>
+
+<ReaderClipboardImportModal
+	visible={clipboardImportModalVisible}
+	importing={readerRoute.importing}
+	onclose={closeClipboardImportModal}
+	onimport={readerRoute.importPlainTextDocument}
+/>
+
+<ReaderWebpageImportModal
+	visible={webpageImportModalVisible}
+	importing={readerRoute.importing}
+	onclose={closeWebpageImportModal}
+	onimport={readerRoute.importWebpageDocument}
+/>
+
+<ReaderDocumentMetadataModal
+	visible={Boolean(pendingImportPayload)}
+	title="Import Document"
+	initialTitle={pendingImportPayload?.title ?? ''}
+	initialColor={pendingImportPayload?.color}
+	confirmLabel="Import"
+	busy={readerRoute.importing}
+	onclose={closeFileImportDetails}
+	onsave={importPendingDocument}
+/>
+
+<ReaderDocumentMetadataModal
+	visible={Boolean(editingDocument)}
+	title="Edit Document"
+	initialTitle={editingDocument?.title ?? ''}
+	initialColor={editingDocument?.color}
+	confirmLabel="Save"
+	busy={readerRoute.importing}
+	onclose={closeDocumentDetails}
+	onsave={saveDocumentDetails}
 />
 
 <style>
@@ -418,7 +569,7 @@
 		border-radius: var(--sy-border-radius);
 		background:
 			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 10px, transparent 10px),
-			var(--sy-color--white);
+			var(--reader-book-color, var(--sy-color--white));
 		box-shadow: var(--sy-shadow);
 		box-sizing: border-box;
 		color: var(--sy-color--grey-4);
@@ -427,11 +578,32 @@
 		cursor: pointer;
 	}
 
+	.mobile-reader__import-stack {
+		display: grid;
+		grid-template-rows: repeat(3, 1fr);
+		gap: var(--sy-mobile-space--small);
+		aspect-ratio: 2 / 3;
+	}
+
+	.mobile-reader__import-stack .mobile-reader__book {
+		height: 100%;
+		aspect-ratio: auto;
+	}
+
 	.mobile-reader__book--import {
 		align-items: center;
 		justify-content: center;
-		gap: var(--sy-mobile-space--medium);
+		gap: var(--sy-mobile-space--extra-small);
 		color: var(--sy-color--blue);
+		font-size: var(--sy-font-size--mobile-small);
+		line-height: 1.15;
+		padding: var(--sy-mobile-space--small);
+		text-align: center;
+	}
+
+	.mobile-reader__book:not(.mobile-reader__book--import) {
+		align-items: center;
+		justify-content: center;
 		text-align: center;
 	}
 
@@ -450,6 +622,22 @@
 		color: var(--sy-color--blue);
 	}
 
+	.mobile-reader__metadata-button {
+		position: absolute;
+		top: var(--sy-mobile-space--medium);
+		left: var(--sy-mobile-space--medium);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 28px;
+		height: 28px;
+		border: var(--sy-mobile-surface-border);
+		border-radius: var(--sy-border-radius);
+		background: rgb(255 255 255 / 86%);
+		color: var(--sy-color--grey-4);
+		box-shadow: var(--sy-shadow);
+	}
+
 	.mobile-reader__book-name,
 	.mobile-reader__book-meta,
 	.mobile-reader__document-title {
@@ -462,7 +650,11 @@
 		-webkit-line-clamp: 3;
 		-webkit-box-orient: vertical;
 		line-clamp: 3;
-		color: var(--sy-color--grey-4);
+		max-width: 100%;
+		padding: var(--sy-mobile-space--extra-small) var(--sy-mobile-space--small);
+		border-radius: var(--sy-border-radius);
+		background: rgb(255 255 255 / 78%);
+		color: var(--sy-color--black);
 		font-size: var(--sy-font-size--mobile-large);
 		font-weight: var(--sy-font-weight--medium);
 		line-height: 1.25;
@@ -470,8 +662,12 @@
 	}
 
 	.mobile-reader__book-meta {
+		position: absolute;
+		left: var(--sy-mobile-space--medium);
+		right: var(--sy-mobile-space--medium);
+		bottom: var(--sy-mobile-space--medium);
 		margin-top: var(--sy-mobile-space--extra-small);
-		color: var(--sy-color--grey-3);
+		color: var(--sy-color--grey-5);
 		font-size: var(--sy-font-size--mobile-small);
 		white-space: nowrap;
 	}
@@ -530,6 +726,15 @@
 		font-size: 1.18rem;
 		line-height: 2;
 		color: var(--sy-color--black);
+	}
+
+	.mobile-reader__publication {
+		position: relative;
+		height: 100%;
+		background: var(--sy-color--white);
+		border-radius: var(--sy-border-radius);
+		box-shadow: var(--sy-shadow);
+		overflow: hidden;
 	}
 
 	.mobile-reader__page--base {

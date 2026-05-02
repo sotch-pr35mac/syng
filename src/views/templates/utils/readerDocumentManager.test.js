@@ -2,18 +2,30 @@ import { vi } from 'vitest';
 import { ReaderDocumentManager } from '@/utils/readerDocumentManager.js';
 
 const documentsByDb = {};
+const attachmentsByDb = {};
 const SAVED_POSITION = 5;
 const SAVED_POSITION_END = 8;
+const SOURCE_BYTE_ONE = 1;
+const SOURCE_BYTE_TWO = 2;
+const SOURCE_BYTE_THREE = 3;
+const SOURCE_BYTES = [SOURCE_BYTE_ONE, SOURCE_BYTE_TWO, SOURCE_BYTE_THREE];
 const getDocuments = (dbName) => {
 	if (!documentsByDb[dbName]) {
 		documentsByDb[dbName] = [];
 	}
 	return documentsByDb[dbName];
 };
+const getAttachments = (dbName) => {
+	if (!attachmentsByDb[dbName]) {
+		attachmentsByDb[dbName] = {};
+	}
+	return attachmentsByDb[dbName];
+};
 
 global.PouchDB = class {
 	constructor(dbName) {
 		const documents = getDocuments(dbName);
+		const attachments = getAttachments(dbName);
 
 		this.allDocs = vi.fn(() =>
 			Promise.resolve({
@@ -44,6 +56,22 @@ global.PouchDB = class {
 			}
 			return Promise.resolve(document);
 		});
+		this.putAttachment = vi.fn((id, name, rev, data) => {
+			attachments[`${id}:${name}`] = data;
+			const index = documents.findIndex((doc) => doc._id === id);
+			const nextRev = `${Number(rev ?? documents[index]?._rev ?? 1) + 1}`;
+			if (index >= 0) {
+				documents[index] = { ...documents[index], _rev: nextRev };
+			}
+			return Promise.resolve({ ok: true, id, rev: nextRev });
+		});
+		this.getAttachment = vi.fn((id, name) => {
+			const attachment = attachments[`${id}:${name}`];
+			if (!attachment) {
+				return Promise.reject({ status: 404 });
+			}
+			return Promise.resolve(attachment);
+		});
 		this.remove = vi.fn((document) => {
 			const index = documents.findIndex((doc) => doc._id === document._id);
 			if (index >= 0) {
@@ -60,6 +88,7 @@ const importPayload = {
 	source_type: 'plain_text',
 	mime_type: 'text/plain',
 	extractor_version: 1,
+	color: '#ffffff',
 	text: '你好今天的天气还好。',
 	blocks: [
 		{
@@ -75,6 +104,9 @@ const importPayload = {
 beforeEach(() => {
 	for (const dbName of Object.keys(documentsByDb)) {
 		delete documentsByDb[dbName];
+	}
+	for (const dbName of Object.keys(attachmentsByDb)) {
+		delete attachmentsByDb[dbName];
 	}
 });
 
@@ -109,6 +141,47 @@ it('updates document progress', async () => {
 
 	expect(updated.progress.position).toBe(SAVED_POSITION);
 	expect(updated.progress.page_index).toBe(1);
+});
+
+it('stores and loads binary source attachments', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const sourceData = new Uint8Array(SOURCE_BYTES);
+	const document = await manager.createDocument({
+		...importPayload,
+		title: 'PDF',
+		file_name: 'story.pdf',
+		source_type: 'pdf',
+		mime_type: 'application/pdf',
+		text: '',
+		blocks: [],
+		source_data: sourceData,
+	});
+
+	const loaded = await manager.getSourceData(document._id);
+
+	expect(loaded).toBeInstanceOf(ArrayBuffer);
+	expect(Array.from(new Uint8Array(loaded))).toEqual(SOURCE_BYTES);
+	expect(document.reading_order).toEqual([
+		{ href: 'source', type: 'application/pdf', title: 'PDF' },
+	]);
+});
+
+it('updates document metadata', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const document = await manager.createDocument(importPayload);
+
+	const updated = await manager.updateMetadata(document._id, {
+		title: 'New Story',
+		color: '#91d7b4',
+	});
+
+	expect(updated.title).toBe('New Story');
+	expect(updated.color).toBe('#91d7b4');
+	expect(updated.reading_order).toEqual([
+		{ href: 'text', type: 'text/plain', title: 'New Story' },
+	]);
 });
 
 it('removes reader documents', async () => {

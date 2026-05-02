@@ -1,5 +1,6 @@
 import type { ReaderDocument, ReaderImportPayload, ReaderLocator } from '@/types/reader.js';
 import { getReaderDocumentManager } from '@/utils/appServices.js';
+import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 import { handleError } from '@/utils/error.js';
 
 let documents = $state<ReaderDocument[]>([]);
@@ -42,9 +43,27 @@ async function updateProgress(id: string, progress: ReaderLocator): Promise<Read
 	return document;
 }
 
+async function updateMetadata(
+	id: string,
+	metadata: { title: string; color: string }
+): Promise<ReaderDocument> {
+	await ensureManagerReady();
+	const document = await getReaderDocumentManager().updateMetadata(id, {
+		title: metadata.title.trim() || 'Untitled',
+		color: normalizeReaderDocumentColor(metadata.color),
+	});
+	documents = documents.map((existing) => (existing._id === id ? document : existing));
+	return document;
+}
+
 async function getDocument(id: string): Promise<ReaderDocument | undefined> {
 	await ensureManagerReady();
 	return getReaderDocumentManager().getDocument(id);
+}
+
+async function getSourceData(id: string): Promise<ArrayBuffer | undefined> {
+	await ensureManagerReady();
+	return getReaderDocumentManager().getSourceData(id);
 }
 
 export const readerDocumentsStore = {
@@ -58,5 +77,7 @@ export const readerDocumentsStore = {
 	importDocument,
 	deleteDocument,
 	updateProgress,
+	updateMetadata,
 	getDocument,
+	getSourceData,
 };
