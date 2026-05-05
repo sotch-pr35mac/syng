@@ -42,6 +42,13 @@
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
+	type Props = {
+		params?: {
+			id?: string;
+		};
+	};
+
+	const { params = {} }: Props = $props();
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
 	const DEFAULT_PAGE_FONT_SIZE = 19;
 	const BODY_BLOCK_GAP_EM = 1.25;
@@ -53,6 +60,7 @@
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const activeDocument = $derived(readerRoute.activeDocument);
+	const routeDocumentId = $derived(params.id ? decodeURIComponent(params.id) : undefined);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
@@ -94,6 +102,8 @@
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
+	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
+	let routeLoadRequest = $state(0);
 	const selectedDocumentIds = new SvelteSet<string>();
 	const selectedDocuments = $derived(
 		documents.filter((document) => selectedDocumentIds.has(document._id))
@@ -109,6 +119,31 @@
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
+	});
+
+	$effect(() => {
+		const documentId = routeDocumentId;
+		if ((documentId ?? null) === lastRouteDocumentId) {
+			return;
+		}
+		lastRouteDocumentId = documentId ?? null;
+		routeLoadRequest += 1;
+		const requestId = routeLoadRequest;
+		editingLibrary = false;
+		selectedDocumentIds.clear();
+		if (!documentId) {
+			readerRoute.backToLibrary();
+			return;
+		}
+		readerRoute
+			.refresh()
+			.then(() => {
+				if (routeLoadRequest === requestId) {
+					return readerRoute.openDocumentById(documentId);
+				}
+				return undefined;
+			})
+			.catch(() => {});
 	});
 
 	$effect(() => {
@@ -199,6 +234,13 @@
 		pendingImportPayload = undefined;
 	}
 
+	function backToLibrary(): void {
+		editingLibrary = false;
+		selectedDocumentIds.clear();
+		readerRoute.backToLibrary();
+		window.location.hash = '#/read';
+	}
+
 	async function importPendingDocument(title: string, color: string): Promise<void> {
 		if (!pendingImportPayload) {
 			return;
@@ -237,7 +279,7 @@
 			toggleDocumentSelection(document);
 			return;
 		}
-		readerRoute.openDocument(document);
+		window.location.hash = `#/read/document/${encodeURIComponent(document._id)}`;
 	}
 
 	function handleDocumentCardKey(event: KeyboardEvent, document: ReaderDocument): void {
@@ -382,7 +424,7 @@
 <div class="mobile-reader" style={activeDocument ? readerThemeStyle : ''}>
 	{#if activeDocument && currentPage}
 		<div class="mobile-reader__reader-header">
-			<SyButton style="ghost" size="small" onclick={readerRoute.backToLibrary}>
+			<SyButton style="ghost" size="small" onclick={backToLibrary}>
 				<Library size="18" />
 			</SyButton>
 			<span class="mobile-reader__document-title">{activeDocument.title}</span>

@@ -9,26 +9,27 @@ use base64::Engine;
 use epub::doc::EpubDoc;
 use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Map};
+use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::cmp::Ordering;
 use std::io::Cursor;
 use std::ops::Deref;
-use std::panic::{catch_unwind, set_hook, take_hook, AssertUnwindSafe, UnwindSafe};
 use std::path::Path;
-use std::sync::Mutex;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_http::reqwest;
 use uuid::Uuid;
 
-const TEXT_EXTRACTOR_VERSION: u16 = 1;
-const EPUB_EXTRACTOR_VERSION: u16 = 2;
-const PDF_EXTRACTOR_VERSION: u16 = 3;
-const HTML_EXTRACTOR_VERSION: u16 = 2;
-static PDF_EXTRACT_PANIC_HOOK_LOCK: Mutex<()> = Mutex::new(());
+const TEXT_EXTRACTOR_VERSION: u8 = 1;
+const EPUB_EXTRACTOR_VERSION: u8 = 2;
+const PDF_EXTRACTOR_VERSION: u8 = 3;
+const HTML_EXTRACTOR_VERSION: u8 = 2;
+const TEXT_IMPORT_EXTENSIONS: &[&str] = &["txt", "text"];
+const EPUB_IMPORT_EXTENSIONS: &[&str] = &["epub"];
+const PDF_IMPORT_EXTENSIONS: &[&str] = &["pdf"];
+const HTML_IMPORT_EXTENSIONS: &[&str] = &["html", "htm"];
 
-fn default_canonical_schema_version() -> u16 {
+fn default_canonical_schema_version() -> u8 {
     1
 }
 
@@ -37,13 +38,106 @@ fn default_participates_in_linear_text() -> bool {
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+/// Inline style spans use UTF-16 offsets into their containing block text.
 pub struct ReaderInlineSpan {
     pub start: usize,
     pub end: usize,
     pub style: String,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
+/// Canonical per-block presentation hints inferred from HTML/CSS or PDF layout.
+pub struct ReaderBlockStyleExtension {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_indent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text_align: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub small_text: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub boxed: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub poem: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub centered: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vertical_writing_mode: Option<bool>,
+}
+
+impl ReaderBlockStyleExtension {
+    fn is_empty(&self) -> bool {
+        self.text_indent.is_none()
+            && self.text_align.is_none()
+            && self.small_text.is_none()
+            && self.note.is_none()
+            && self.boxed.is_none()
+            && self.poem.is_none()
+            && self.centered.is_none()
+            && self.vertical_writing_mode.is_none()
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+/// Ordered/bulleted list metadata that lets the renderer preserve nesting and ordinals.
+pub struct ReaderListItemExtension {
+    pub list_id: String,
+    pub nesting_depth: usize,
+    pub list_style: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ordinal: Option<i64>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+/// Canonical table cell text; dictionary tokenization is run from visible cell text only.
+pub struct ReaderTableCell {
+    pub text: String,
+    pub is_header: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spans: Option<Vec<ReaderInlineSpan>>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct ReaderTableRow {
+    pub cells: Vec<ReaderTableCell>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct ReaderTableExtension {
+    pub rows: Vec<ReaderTableRow>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct ReaderImageExtension {
+    pub asset_id: String,
+    pub mime_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inline_src: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
+/// Known extension envelope plus a flattened map for importer-specific metadata.
+pub struct ReaderBlockExtensions {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<ReaderTableExtension>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub image: Option<ReaderImageExtension>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub list_item: Option<ReaderListItemExtension>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub block_style: Option<ReaderBlockStyleExtension>,
+    #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
+    pub extra: Map<String, Value>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+/// Canonical render block. Linear blocks carry offsets into `ReaderImportPayload::text`;
+/// atomic blocks such as tables/images opt out and keep their visible text in extensions.
 pub struct ReaderContentBlock {
     pub id: String,
     pub kind: String,
@@ -61,18 +155,19 @@ pub struct ReaderContentBlock {
     #[serde(default)]
     pub spans: Option<Vec<ReaderInlineSpan>>,
     #[serde(default)]
-    pub extensions: Option<serde_json::Value>,
+    pub extensions: Option<ReaderBlockExtensions>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+/// Import payload sent over Tauri IPC after native file, HTML, webpage, or text extraction.
 pub struct ReaderImportPayload {
     #[serde(default = "default_canonical_schema_version")]
-    pub canonical_schema_version: u16,
+    pub canonical_schema_version: u8,
     pub title: String,
     pub file_name: String,
     pub source_type: String,
     pub mime_type: String,
-    pub extractor_version: u16,
+    pub extractor_version: u8,
     /// Full linear text for pagination and progress anchoring. Offsets in blocks point into this
     /// string using JavaScript UTF-16 code unit indices.
     pub text: String,
@@ -211,44 +306,44 @@ fn infer_text_align(element: ElementRef<'_>) -> Option<String> {
         })
 }
 
-fn block_style_extension(element: ElementRef<'_>) -> Option<serde_json::Value> {
+fn block_style_extension(element: ElementRef<'_>) -> Option<ReaderBlockExtensions> {
     let style = element.value().attr("style").unwrap_or("");
     let attr_text = attr_search_text(element);
-    let mut block_style = Map::new();
+    let mut block_style = ReaderBlockStyleExtension::default();
 
     if let Some(indent) = parse_style_value(style, "text-indent") {
-        block_style.insert("text_indent".to_string(), json!(indent));
+        block_style.text_indent = Some(indent);
     } else if contains_any(&attr_text, &["indent", "dropcap", "drop-cap"]) {
-        block_style.insert("text_indent".to_string(), json!("2em"));
+        block_style.text_indent = Some("2em".to_string());
     }
 
     if let Some(align) = infer_text_align(element) {
-        block_style.insert("text_align".to_string(), json!(align));
+        block_style.text_align = Some(align);
     }
 
     if contains_any(&attr_text, &["small", "footnote", "caption"])
         || element.value().name() == "small"
     {
-        block_style.insert("small_text".to_string(), json!(true));
+        block_style.small_text = Some(true);
     }
 
     if contains_any(
         &attr_text,
         &["note", "annotation", "aside", "sidebar", "tip"],
     ) {
-        block_style.insert("note".to_string(), json!(true));
+        block_style.note = Some(true);
     }
 
     if contains_any(&attr_text, &["box", "boxed", "toc"]) {
-        block_style.insert("boxed".to_string(), json!(true));
+        block_style.boxed = Some(true);
     }
 
     if contains_any(&attr_text, &["poem", "poetry", "verse"]) {
-        block_style.insert("poem".to_string(), json!(true));
+        block_style.poem = Some(true);
     }
 
     if contains_any(&attr_text, &["center", "text-center"]) {
-        block_style.insert("centered".to_string(), json!(true));
+        block_style.centered = Some(true);
     }
 
     let has_vertical_writing = contains_any(
@@ -265,29 +360,30 @@ fn block_style_extension(element: ElementRef<'_>) -> Option<serde_json::Value> {
             .unwrap_or(false)
     });
     if has_vertical_writing {
-        block_style.insert("vertical_writing_mode".to_string(), json!(true));
+        block_style.vertical_writing_mode = Some(true);
     }
 
     if block_style.is_empty() {
         None
     } else {
-        Some(json!({ "block_style": block_style }))
+        Some(ReaderBlockExtensions {
+            block_style: Some(block_style),
+            ..ReaderBlockExtensions::default()
+        })
     }
 }
 
 fn merge_extensions(
-    left: Option<serde_json::Value>,
-    right: Option<serde_json::Value>,
-) -> Option<serde_json::Value> {
+    left: Option<ReaderBlockExtensions>,
+    right: Option<ReaderBlockExtensions>,
+) -> Option<ReaderBlockExtensions> {
     match (left, right) {
         (Some(mut left_value), Some(right_value)) => {
-            if let (Some(left_object), Some(right_object)) =
-                (left_value.as_object_mut(), right_value.as_object())
-            {
-                for (key, value) in right_object {
-                    left_object.insert(key.clone(), value.clone());
-                }
-            }
+            left_value.table = right_value.table.or(left_value.table);
+            left_value.image = right_value.image.or(left_value.image);
+            left_value.list_item = right_value.list_item.or(left_value.list_item);
+            left_value.block_style = right_value.block_style.or(left_value.block_style);
+            left_value.extra.extend(right_value.extra);
             Some(left_value)
         }
         (Some(value), None) | (None, Some(value)) => Some(value),
@@ -485,7 +581,7 @@ fn append_linear_block(
     heading_level: Option<u8>,
     text_align: Option<String>,
     spans: Option<Vec<ReaderInlineSpan>>,
-    extensions: Option<serde_json::Value>,
+    extensions: Option<ReaderBlockExtensions>,
 ) {
     let trimmed = text.trim();
     if trimmed.is_empty() {
@@ -513,7 +609,7 @@ fn append_linear_block(
     });
 }
 
-fn table_extension(table: ElementRef<'_>) -> serde_json::Value {
+fn table_extension(table: ElementRef<'_>) -> ReaderBlockExtensions {
     let row_selector = parse_selector("tr");
     let cell_selector = parse_selector("th,td");
     let rows = table
@@ -521,42 +617,42 @@ fn table_extension(table: ElementRef<'_>) -> serde_json::Value {
         .map(|row| {
             let cells = row
                 .select(&cell_selector)
-                .map(|cell| {
-                    json!({
-                        "text": element_text(cell),
-                        "is_header": cell.value().name() == "th",
-                    })
+                .map(|cell| ReaderTableCell {
+                    text: element_text(cell),
+                    is_header: cell.value().name() == "th",
+                    spans: None,
                 })
                 .collect::<Vec<_>>();
-            json!({ "cells": cells })
+            ReaderTableRow { cells }
         })
-        .filter(|row| {
-            row.get("cells")
-                .and_then(|cells| cells.as_array())
-                .map(|cells| !cells.is_empty())
-                .unwrap_or(false)
-        })
+        .filter(|row| !row.cells.is_empty())
         .collect::<Vec<_>>();
 
-    json!({ "table": { "rows": rows } })
+    ReaderBlockExtensions {
+        table: Some(ReaderTableExtension { rows }),
+        ..ReaderBlockExtensions::default()
+    }
 }
 
-fn image_extension(image: ElementRef<'_>) -> Option<serde_json::Value> {
+fn image_extension(image: ElementRef<'_>) -> Option<ReaderBlockExtensions> {
     let src = first_attr(image, &["src", "data-src"])?;
     let alt = first_attr(image, &["alt", "title"]).unwrap_or_default();
     let width = first_attr(image, &["width"]).and_then(|value| value.parse::<u32>().ok());
     let height = first_attr(image, &["height"]).and_then(|value| value.parse::<u32>().ok());
 
-    Some(json!({
-        "image": {
-            "asset_id": Uuid::new_v4().to_string(),
-            "mime_type": "image/*",
-            "inline_src": src,
-            "width": width,
-            "height": height,
-        },
-        "alt": alt,
-    }))
+    let mut extra = Map::new();
+    extra.insert("alt".to_string(), Value::String(alt));
+    Some(ReaderBlockExtensions {
+        image: Some(ReaderImageExtension {
+            asset_id: Uuid::new_v4().to_string(),
+            mime_type: "image/*".to_string(),
+            inline_src: Some(src),
+            width,
+            height,
+        }),
+        extra,
+        ..ReaderBlockExtensions::default()
+    })
 }
 
 fn title_from_html(document: &Html) -> Option<String> {
@@ -681,14 +777,15 @@ fn html_to_blocks(html: &str) -> (String, Vec<ReaderContentBlock>, Option<String
                         start + previous_items
                     });
                 let block_text = element_text(element);
-                let list_extension = Some(json!({
-                    "list_item": {
-                        "list_id": list_id,
-                        "nesting_depth": nesting_depth,
-                        "list_style": list_style,
-                        "ordinal": ordinal,
-                    }
-                }));
+                let list_extension = Some(ReaderBlockExtensions {
+                    list_item: Some(ReaderListItemExtension {
+                        list_id,
+                        nesting_depth,
+                        list_style: list_style.to_string(),
+                        ordinal,
+                    }),
+                    ..ReaderBlockExtensions::default()
+                });
                 append_linear_block(
                     &mut blocks,
                     &mut text,
@@ -804,9 +901,9 @@ fn html_to_blocks(html: &str) -> (String, Vec<ReaderContentBlock>, Option<String
                 }
                 let kind = if style_extension
                     .as_ref()
-                    .and_then(|value| value.get("block_style"))
-                    .and_then(|value| value.get("note").or_else(|| value.get("boxed")))
-                    .is_some()
+                    .and_then(|value| value.block_style.as_ref())
+                    .map(|style| style.note == Some(true) || style.boxed == Some(true))
+                    .unwrap_or(false)
                 {
                     "aside"
                 } else {
@@ -925,52 +1022,23 @@ fn extract_epub_payload(
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PdfExtractionFailure {
     Unreadable(String),
-    UnsupportedEncoding,
 }
 
 #[cfg(test)]
 fn extract_pdf_pages_with<F>(extract: F) -> Result<Vec<String>, PdfExtractionFailure>
 where
-    F: FnOnce() -> Result<Vec<String>, pdf_extract::OutputError> + UnwindSafe,
+    F: FnOnce() -> Result<Vec<String>, pdf_extract::OutputError>,
 {
-    let _hook_guard = PDF_EXTRACT_PANIC_HOOK_LOCK
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    let previous_hook = take_hook();
-    set_hook(Box::new(|_| {}));
-    let result = catch_unwind(AssertUnwindSafe(extract));
-    set_hook(previous_hook);
-
-    match result {
-        Ok(Ok(pages)) => Ok(pages),
-        Ok(Err(error)) => Err(PdfExtractionFailure::Unreadable(format!(
-            "Could not read PDF: {}",
-            error
-        ))),
-        Err(_) => Err(PdfExtractionFailure::UnsupportedEncoding),
-    }
+    extract()
+        .map_err(|error| PdfExtractionFailure::Unreadable(format!("Could not read PDF: {}", error)))
 }
 
 fn extract_pdf_layout_with<F>(extract: F) -> Result<PdfLayoutDocument, PdfExtractionFailure>
 where
-    F: FnOnce() -> Result<PdfLayoutDocument, pdf_extract::OutputError> + UnwindSafe,
+    F: FnOnce() -> Result<PdfLayoutDocument, pdf_extract::OutputError>,
 {
-    let _hook_guard = PDF_EXTRACT_PANIC_HOOK_LOCK
-        .lock()
-        .unwrap_or_else(|poisoned| poisoned.into_inner());
-    let previous_hook = take_hook();
-    set_hook(Box::new(|_| {}));
-    let result = catch_unwind(AssertUnwindSafe(extract));
-    set_hook(previous_hook);
-
-    match result {
-        Ok(Ok(document)) => Ok(document),
-        Ok(Err(error)) => Err(PdfExtractionFailure::Unreadable(format!(
-            "Could not read PDF: {}",
-            error
-        ))),
-        Err(_) => Err(PdfExtractionFailure::UnsupportedEncoding),
-    }
+    extract()
+        .map_err(|error| PdfExtractionFailure::Unreadable(format!("Could not read PDF: {}", error)))
 }
 
 #[derive(Debug, Clone)]
@@ -1276,25 +1344,28 @@ fn classify_pdf_line(line: &PdfLine, body_font_size: f64, typical_left: f64) -> 
     }
 }
 
-fn pdf_role_extensions(role: &PdfLineRole) -> Option<serde_json::Value> {
-    let mut block_style = Map::new();
+fn pdf_role_extensions(role: &PdfLineRole) -> Option<ReaderBlockExtensions> {
+    let mut block_style = ReaderBlockStyleExtension::default();
     if let Some(text_indent) = &role.text_indent {
-        block_style.insert("text_indent".to_string(), json!(text_indent));
+        block_style.text_indent = Some(text_indent.clone());
     }
     if let Some(text_align) = &role.text_align {
-        block_style.insert("text_align".to_string(), json!(text_align));
+        block_style.text_align = Some(text_align.clone());
     }
     if role.small_text {
-        block_style.insert("small_text".to_string(), json!(true));
+        block_style.small_text = Some(true);
     }
     if role.centered {
-        block_style.insert("centered".to_string(), json!(true));
+        block_style.centered = Some(true);
     }
 
     if block_style.is_empty() {
         None
     } else {
-        Some(json!({ "block_style": block_style }))
+        Some(ReaderBlockExtensions {
+            block_style: Some(block_style),
+            ..ReaderBlockExtensions::default()
+        })
     }
 }
 
@@ -1397,14 +1468,13 @@ fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, lines: &[PdfLine])
             let cells = line
                 .segments
                 .iter()
-                .map(|segment| {
-                    json!({
-                        "text": segment.text,
-                        "is_header": row_index == 0,
-                    })
+                .map(|segment| ReaderTableCell {
+                    text: segment.text.clone(),
+                    is_header: row_index == 0,
+                    spans: None,
                 })
                 .collect::<Vec<_>>();
-            json!({ "cells": cells })
+            ReaderTableRow { cells }
         })
         .collect::<Vec<_>>();
     let table_text = lines
@@ -1429,7 +1499,10 @@ fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, lines: &[PdfLine])
         heading_level: None,
         text_align: None,
         spans: None,
-        extensions: Some(json!({ "table": { "rows": rows } })),
+        extensions: Some(ReaderBlockExtensions {
+            table: Some(ReaderTableExtension { rows }),
+            ..ReaderBlockExtensions::default()
+        }),
     });
 }
 
@@ -1654,14 +1727,6 @@ fn extract_pdf_payload(
 ) -> Result<ReaderImportPayload, String> {
     let document = match extract_pdf_layout_with(|| extract_pdf_layout_from_mem(bytes)) {
         Ok(document) => document,
-        Err(PdfExtractionFailure::UnsupportedEncoding) => {
-            return Ok(pdf_notice_payload(
-                file_name,
-                hash,
-                byte_len,
-                "This PDF uses text encoding that Syng cannot extract yet. The file was imported, but readable text is unavailable.",
-            ));
-        }
         Err(PdfExtractionFailure::Unreadable(error)) => return Err(error),
     };
     let (text, blocks) = pdf_layout_to_text_blocks(&document);
@@ -1769,7 +1834,7 @@ fn prepare_from_bytes(
     let hash = sha256_hex(bytes);
     let byte_len = bytes.len() as u64;
 
-    if extension == "txt" || extension == "text" || mime_lower == "text/plain" {
+    if TEXT_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/plain" {
         let raw_text =
             std::str::from_utf8(bytes).map_err(|_| "Text file must be valid UTF-8.".to_string())?;
         let mut payload = extract_plain_text_document(
@@ -1788,15 +1853,16 @@ fn prepare_from_bytes(
         return Err("Word (.docx) reader import is not supported yet.".to_string());
     }
 
-    if extension == "epub" || mime_lower == "application/epub+zip" {
+    if EPUB_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/epub+zip"
+    {
         return extract_epub_payload(bytes, file_name.to_string(), hash, byte_len);
     }
 
-    if extension == "pdf" || mime_lower == "application/pdf" {
+    if PDF_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/pdf" {
         return extract_pdf_payload(bytes, file_name.to_string(), hash, byte_len);
     }
 
-    if extension == "html" || extension == "htm" || mime_lower == "text/html" {
+    if HTML_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/html" {
         return extract_html_file_payload(bytes, file_name.to_string(), hash, byte_len);
     }
 
@@ -2198,7 +2264,7 @@ mod tests {
                 && block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("table"))
+                    .and_then(|value| value.table.as_ref())
                     .is_some()
         }));
         assert!(payload.blocks.iter().any(|block| {
@@ -2207,7 +2273,7 @@ mod tests {
                 && block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("image"))
+                    .and_then(|value| value.image.as_ref())
                     .is_some()
         }));
     }
@@ -2240,9 +2306,8 @@ mod tests {
                 && block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("block_style"))
-                    .and_then(|value| value.get("centered"))
-                    .and_then(|value| value.as_bool())
+                    .and_then(|value| value.block_style.as_ref())
+                    .and_then(|value| value.centered)
                     == Some(true)
         }));
         assert!(blocks.iter().any(|block| {
@@ -2251,9 +2316,8 @@ mod tests {
                 && block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("block_style"))
-                    .and_then(|value| value.get("boxed"))
-                    .and_then(|value| value.as_bool())
+                    .and_then(|value| value.block_style.as_ref())
+                    .and_then(|value| value.boxed)
                     == Some(true)
         }));
         assert!(blocks.iter().any(|block| block.kind == "thematic_break"));
@@ -2265,13 +2329,10 @@ mod tests {
                 && block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("table"))
-                    .and_then(|value| value.get("rows"))
-                    .and_then(|value| value.get(0))
-                    .and_then(|value| value.get("cells"))
-                    .and_then(|value| value.get(0))
-                    .and_then(|value| value.get("is_header"))
-                    .and_then(|value| value.as_bool())
+                    .and_then(|value| value.table.as_ref())
+                    .and_then(|value| value.rows.first())
+                    .and_then(|value| value.cells.first())
+                    .map(|value| value.is_header)
                     == Some(true)
         }));
         let ordinals = blocks
@@ -2281,9 +2342,8 @@ mod tests {
                 block
                     .extensions
                     .as_ref()
-                    .and_then(|value| value.get("list_item"))
-                    .and_then(|value| value.get("ordinal"))
-                    .and_then(|value| value.as_i64())
+                    .and_then(|value| value.list_item.as_ref())
+                    .and_then(|value| value.ordinal)
             })
             .collect::<Vec<_>>();
         assert_eq!(ordinals, vec![3, 4]);
@@ -2299,20 +2359,10 @@ mod tests {
             block
                 .extensions
                 .as_ref()
-                .and_then(|value| value.get("block_style"))
-                .and_then(|value| value.get("vertical_writing_mode"))
-                .and_then(|value| value.as_bool())
+                .and_then(|value| value.block_style.as_ref())
+                .and_then(|value| value.vertical_writing_mode)
                 == Some(true)
         }));
-    }
-
-    #[test]
-    fn pdf_extract_panic_returns_controlled_error() {
-        let result = extract_pdf_pages_with(|| -> Result<Vec<String>, pdf_extract::OutputError> {
-            panic!("UniGB-UCS2-H")
-        });
-
-        assert_eq!(result, Err(PdfExtractionFailure::UnsupportedEncoding));
     }
 
     #[test]
@@ -2510,9 +2560,8 @@ mod tests {
         assert_eq!(
             body.extensions
                 .as_ref()
-                .and_then(|value| value.get("block_style"))
-                .and_then(|value| value.get("text_indent"))
-                .and_then(|value| value.as_str()),
+                .and_then(|value| value.block_style.as_ref())
+                .and_then(|value| value.text_indent.as_deref()),
             Some("3.0em")
         );
 
@@ -2525,9 +2574,8 @@ mod tests {
             small
                 .extensions
                 .as_ref()
-                .and_then(|value| value.get("block_style"))
-                .and_then(|value| value.get("small_text"))
-                .and_then(|value| value.as_bool()),
+                .and_then(|value| value.block_style.as_ref())
+                .and_then(|value| value.small_text),
             Some(true)
         );
     }
@@ -2627,18 +2675,17 @@ mod tests {
         let rows = table
             .extensions
             .as_ref()
-            .and_then(|value| value.get("table"))
-            .and_then(|value| value.get("rows"))
-            .and_then(|value| value.as_array())
+            .and_then(|value| value.table.as_ref())
+            .map(|value| value.rows.as_slice())
             .expect("table rows");
         assert_eq!(rows.len(), 3);
-        assert_eq!(rows[0]["cells"][0]["text"].as_str(), Some("Word"));
-        assert_eq!(rows[0]["cells"][0]["is_header"].as_bool(), Some(true));
-        assert_eq!(rows[1]["cells"][0]["text"].as_str(), Some("shan"));
-        assert_eq!(rows[1]["cells"][1]["text"].as_str(), Some("shan"));
-        assert_eq!(rows[1]["cells"][2]["text"].as_str(), Some("mountain"));
-        assert_eq!(rows[2]["cells"][0]["text"].as_str(), Some("shui"));
-        assert_eq!(rows[2]["cells"][2]["text"].as_str(), Some("water"));
+        assert_eq!(rows[0].cells[0].text, "Word");
+        assert!(rows[0].cells[0].is_header);
+        assert_eq!(rows[1].cells[0].text, "shan");
+        assert_eq!(rows[1].cells[1].text, "shan");
+        assert_eq!(rows[1].cells[2].text, "mountain");
+        assert_eq!(rows[2].cells[0].text, "shui");
+        assert_eq!(rows[2].cells[2].text, "water");
     }
 
     #[test]
@@ -2704,13 +2751,12 @@ mod tests {
         let rows = blocks[0]
             .extensions
             .as_ref()
-            .and_then(|value| value.get("table"))
-            .and_then(|value| value.get("rows"))
-            .and_then(|value| value.as_array())
+            .and_then(|value| value.table.as_ref())
+            .map(|value| value.rows.as_slice())
             .expect("table rows");
-        assert_eq!(rows[0]["cells"][0]["text"].as_str(), Some("线索"));
-        assert_eq!(rows[1]["cells"][1]["text"].as_str(), Some("外婆家门口"));
-        assert_eq!(rows[3]["cells"][2]["text"].as_str(), Some("花期提前"));
+        assert_eq!(rows[0].cells[0].text, "线索");
+        assert_eq!(rows[1].cells[1].text, "外婆家门口");
+        assert_eq!(rows[3].cells[2].text, "花期提前");
     }
 
     #[test]

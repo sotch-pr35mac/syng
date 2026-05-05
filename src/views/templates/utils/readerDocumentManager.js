@@ -1,8 +1,12 @@
+// Progress anchors store a short exact/prefix/suffix quote so saved positions can
+// be reconciled even when pagination changes.
 const TEXT_CONTEXT_LENGTH = 32;
+// Reader row IDs are local PouchDB document IDs, not user-visible document IDs.
 const RANDOM_ID_RADIX = 36;
 const RANDOM_ID_END = 10;
 const NOT_FOUND_STATUS = 404;
 const SOURCE_ATTACHMENT_ID = 'source';
+// Imported EPUB/PDF image assets are stored as PouchDB attachments under this prefix.
 const READER_ASSET_PREFIX = 'assets/';
 
 const withReaderEnvelopeDefaults = (document) => {

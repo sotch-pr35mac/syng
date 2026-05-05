@@ -39,6 +39,13 @@
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 
+	type Props = {
+		params?: {
+			id?: string;
+		};
+	};
+
+	const { params = {} }: Props = $props();
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
 	const DEFAULT_PAGE_FONT_SIZE = 20;
 	const BODY_BLOCK_GAP_EM = 1.4;
@@ -52,6 +59,7 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
+	const routeDocumentId = $derived(params.id ? decodeURIComponent(params.id) : undefined);
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
@@ -91,6 +99,8 @@
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
+	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
+	let routeLoadRequest = $state(0);
 	const selectedDocumentIds = new SvelteSet<string>();
 	const selectedDocuments = $derived(
 		documents.filter((document) => selectedDocumentIds.has(document._id))
@@ -106,6 +116,31 @@
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
+	});
+
+	$effect(() => {
+		const documentId = routeDocumentId;
+		if ((documentId ?? null) === lastRouteDocumentId) {
+			return;
+		}
+		lastRouteDocumentId = documentId ?? null;
+		routeLoadRequest += 1;
+		const requestId = routeLoadRequest;
+		editingLibrary = false;
+		selectedDocumentIds.clear();
+		if (!documentId) {
+			readerRoute.backToLibrary();
+			return;
+		}
+		readerRoute
+			.refresh()
+			.then(() => {
+				if (routeLoadRequest === requestId) {
+					return readerRoute.openDocumentById(documentId);
+				}
+				return undefined;
+			})
+			.catch(() => {});
 	});
 
 	$effect(() => {
@@ -173,6 +208,7 @@
 		editingLibrary = false;
 		selectedDocumentIds.clear();
 		readerRoute.backToLibrary();
+		window.location.hash = '#/read';
 	}
 
 	function openClipboardImportModal(): void {
@@ -240,7 +276,7 @@
 			toggleDocumentSelection(document);
 			return;
 		}
-		readerRoute.openDocument(document);
+		window.location.hash = `#/read/document/${encodeURIComponent(document._id)}`;
 	}
 
 	function handleDocumentCardKey(event: KeyboardEvent, document: ReaderDocument): void {

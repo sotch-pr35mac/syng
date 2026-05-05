@@ -1,8 +1,7 @@
 <script lang="ts">
-	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import ReaderColorSwatches from '@/components/ReaderColorSwatches.svelte';
+	import ReaderMetadataFields from '@/components/ReaderMetadataFields.svelte';
+	import ReaderModalFooter from '@/components/ReaderModalFooter.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
-	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
 	import { inferPlainTextReaderTitle } from '@/utils/readerPlainTextImport.js';
 
@@ -64,24 +63,16 @@
 <SyModal title="Import From Clipboard" {visible} onclose={close}>
 	{#snippet body()}
 		<form class="reader-clipboard-import" id="reader-clipboard-import-form" onsubmit={submit}>
-			<label class="reader-clipboard-import__field">
-				<span>Title</span>
-				<SyTextInput
-					value={title}
-					id="reader-clipboard-import-title"
-					size="large"
-					autocomplete="off"
-					placeholder="Document title"
-					oninput={(value) => {
-						title = value;
-						titleEdited = true;
-					}}
-				/>
-			</label>
-			<div class="reader-clipboard-import__field">
-				<span>Color</span>
-				<ReaderColorSwatches value={color} onchange={(nextColor) => (color = nextColor)} />
-			</div>
+			<ReaderMetadataFields
+				idPrefix="reader-clipboard-import"
+				{title}
+				{color}
+				ontitleinput={(value) => {
+					title = value;
+					titleEdited = true;
+				}}
+				oncolorchange={(nextColor) => (color = nextColor)}
+			/>
 			<label class="reader-clipboard-import__field">
 				<span>Text</span>
 				<textarea
@@ -95,20 +86,19 @@
 		</form>
 	{/snippet}
 	{#snippet footer()}
-		<SyButton size="large" onclick={close}>Cancel</SyButton>
-		<SyButton
-			size="large"
-			color="green"
+		<ReaderModalFooter
 			disabled={!canImport}
-			onclick={() => {
+			confirmLabel="Import"
+			busyLabel="Importing..."
+			busy={importing || submitting}
+			oncancel={close}
+			onconfirm={() => {
 				const form = document.getElementById(
 					'reader-clipboard-import-form'
 				) as HTMLFormElement | null;
 				form?.requestSubmit();
 			}}
-		>
-			{importing || submitting ? 'Importing...' : 'Import'}
-		</SyButton>
+		/>
 	{/snippet}
 </SyModal>
 
@@ -118,7 +108,6 @@
 		flex-direction: column;
 		gap: var(--sy-space--large);
 		width: min(520px, 72vw);
-		font-family: var(--sy-font-family);
 	}
 
 	.reader-clipboard-import__field {
@@ -126,7 +115,6 @@
 		flex-direction: column;
 		gap: var(--sy-space);
 		color: var(--sy-color--grey-4);
-		font-size: 0.92rem;
 		font-weight: var(--sy-font-weight--medium);
 	}
 
@@ -138,7 +126,7 @@
 		box-sizing: border-box;
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
-		font-size: 16px;
+		font-size: var(--sy-font-size--medium);
 	}
 
 	.reader-clipboard-import__textarea {

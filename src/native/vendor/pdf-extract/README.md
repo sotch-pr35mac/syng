@@ -1,4 +1,9 @@
 ## pdf-extract
+
+This copy is vendored by Syng so reader imports can decode predefined CJK CID
+encodings used by Chinese PDFs, including `UniGB-UCS2-H`. Keep the patch in
+sync with upstream when the encoding support is released there.
+
 [![Build Status](https://github.com/jrmuizel/pdf-extract/actions/workflows/rust.yml/badge.svg)](https://github.com/jrmuizel/pdf-extract/actions)
 [![crates.io](https://img.shields.io/crates/v/pdf-extract.svg)](https://crates.io/crates/pdf-extract)
 [![Documentation](https://docs.rs/pdf-extract/badge.svg)](https://docs.rs/pdf-extract)

@@ -31,6 +31,7 @@ import {
 } from '@/utils/readerPagination.js';
 
 const TEXT_CONTEXT_LENGTH = 32;
+const DELETE_CONFIRMATION_NAME_LIMIT = 5;
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
@@ -143,12 +144,17 @@ function getPageIndexForLocator(document: ReaderDocument, documentPages: ReaderP
 }
 
 async function saveCurrentProgress(): Promise<void> {
-	if (!activeDocument || !pages[pageIndex]) {
+	const document = activeDocument;
+	const page = pages[pageIndex];
+	if (!document || !page) {
 		return;
 	}
-	const locator = createLocator(pages[pageIndex]);
+	const locator = createLocator(page);
 	try {
-		activeDocument = await readerDocumentsStore.updateProgress(activeDocument._id, locator);
+		const updatedDocument = await readerDocumentsStore.updateProgress(document._id, locator);
+		if (activeDocument?._id === document._id) {
+			activeDocument = updatedDocument;
+		}
 		telemetry.trackEvent('reader.position_saved', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error saving reader progress.', error);
@@ -220,12 +226,19 @@ async function importPlainTextDocument(title: string, text: string, color: strin
 	}
 }
 
-async function importWebpageDocument(title: string, url: string, color: string): Promise<void> {
+async function importWebpageDocument(
+	title: string,
+	url: string,
+	color: string,
+	preparedPayload?: ReaderImportPayload
+): Promise<void> {
 	try {
-		const importPayload = await invokePrepareReaderImport({
-			url,
-			title,
-		});
+		const importPayload =
+			preparedPayload ??
+			(await invokePrepareReaderImport({
+				url,
+				title,
+			}));
 		await importReaderPayload(importPayload, title || importPayload.title, color);
 	} catch (error) {
 		handleError('There was an error importing the webpage.', error);
@@ -289,8 +302,14 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 		return false;
 	}
 
+	const documentNames = documents
+		.slice(0, DELETE_CONFIRMATION_NAME_LIMIT)
+		.map((document) => `- ${document.title}`)
+		.join('\n');
+	const remainingCount = Math.max(0, documents.length - DELETE_CONFIRMATION_NAME_LIMIT);
+	const remainingText = remainingCount ? `\n- and ${remainingCount} more` : '';
 	const confirmed = await ask(
-		`Remove ${documents.length} document${documents.length === 1 ? '' : 's'} from your reading library?`,
+		`Remove ${documents.length} document${documents.length === 1 ? '' : 's'} from your reading library?\n\n${documentNames}${remainingText}`,
 		{
 			title: 'Remove Documents',
 		}
@@ -555,6 +574,20 @@ function backToLibrary(): void {
 	closeDictionary();
 }
 
+async function openDocumentById(documentId: string): Promise<void> {
+	const document = readerDocumentsStore.documents.find((candidate) => candidate._id === documentId);
+	if (document) {
+		await openDocument(document);
+		return;
+	}
+	const loadedDocument = await readerDocumentsStore.getDocument(documentId);
+	if (loadedDocument) {
+		await openDocument(loadedDocument);
+		return;
+	}
+	backToLibrary();
+}
+
 function tokensMatchDictionarySelection(
 	token: ReaderToken | undefined,
 	selected: ReaderToken | undefined
@@ -640,6 +673,7 @@ export const readerRoute = {
 	importWebpageDocument,
 	updateDocumentMetadata,
 	openDocument,
+	openDocumentById,
 	deleteDocument,
 	deleteDocuments,
 	nextPage,

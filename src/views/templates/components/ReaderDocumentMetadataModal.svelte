@@ -1,8 +1,7 @@
 <script lang="ts">
-	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import ReaderColorSwatches from '@/components/ReaderColorSwatches.svelte';
+	import ReaderMetadataFields from '@/components/ReaderMetadataFields.svelte';
+	import ReaderModalFooter from '@/components/ReaderModalFooter.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
-	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		normalizeReaderDocumentColor,
@@ -56,34 +55,27 @@
 <SyModal {title} {visible} {onclose}>
 	{#snippet body()}
 		<div class="reader-document-metadata">
-			<label class="reader-document-metadata__field">
-				<span>Title</span>
-				<SyTextInput
-					value={documentTitle}
-					id="reader-document-metadata-title"
-					size="large"
-					autocomplete="off"
-					placeholder="Document title"
-					oninput={(value) => {
-						documentTitle = value;
-					}}
-				/>
-			</label>
-			<div class="reader-document-metadata__field">
-				<span>Color</span>
-				<ReaderColorSwatches
-					value={documentColor}
-					allowCustom
-					onchange={(nextColor) => (documentColor = nextColor)}
-				/>
-			</div>
+			<ReaderMetadataFields
+				idPrefix="reader-document-metadata"
+				title={documentTitle}
+				color={documentColor}
+				allowCustomColor
+				ontitleinput={(value) => {
+					documentTitle = value;
+				}}
+				oncolorchange={(nextColor) => (documentColor = nextColor)}
+			/>
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<SyButton size="large" onclick={onclose}>Cancel</SyButton>
-		<SyButton size="large" color="green" disabled={!canSave} onclick={save}>
-			{busy || submitting ? 'Saving...' : confirmLabel}
-		</SyButton>
+		<ReaderModalFooter
+			disabled={!canSave}
+			{confirmLabel}
+			busyLabel="Saving..."
+			busy={busy || submitting}
+			oncancel={onclose}
+			onconfirm={save}
+		/>
 	{/snippet}
 </SyModal>
 
@@ -93,16 +85,6 @@
 		flex-direction: column;
 		gap: var(--sy-space--large);
 		width: min(420px, 68vw);
-		font-family: var(--sy-font-family);
-	}
-
-	.reader-document-metadata__field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space);
-		color: var(--sy-color--grey-4);
-		font-size: 0.92rem;
-		font-weight: var(--sy-font-weight--medium);
 	}
 
 	@media (max-width: 640px) {

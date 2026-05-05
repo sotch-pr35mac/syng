@@ -20,6 +20,8 @@ export type {
  * and `String.prototype.slice` used by pagination.
  */
 export type ReaderTextAlign = 'start' | 'end' | 'center' | 'justify';
+export type ReaderSchemaVersion = number;
+export type ReaderExtractorVersion = number;
 
 export type ReaderInlineSpanStyle =
 	| 'strong'
@@ -121,12 +123,12 @@ export interface ReaderAssetAttachmentInput {
 
 export interface ReaderImportPayload {
 	/** Defaults to 1 when missing (legacy documents). */
-	canonical_schema_version?: number;
+	canonical_schema_version?: ReaderSchemaVersion;
 	title: string;
 	file_name: string;
 	source_type: 'plain_text' | string;
 	mime_type: string;
-	extractor_version: number;
+	extractor_version: ReaderExtractorVersion;
 	text: string;
 	blocks: ReaderContentBlock[];
 	color?: string;

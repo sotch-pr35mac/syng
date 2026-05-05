@@ -19,6 +19,7 @@
 	const routes = {
 		'/': MobileSearch,
 		'/read': MobileReader,
+		'/read/document/:id': MobileReader,
 		'/bookmarks': MobileBookmarks,
 		'/study': MobileStudy,
 		'/study/flashcards': MobileStudyFlashcards,
@@ -46,11 +47,18 @@
 	let viewportOffsetTop = $state(window.visualViewport?.offsetTop ?? 0);
 
 	$effect(() => {
-		const screenName = routeScreenNames[router.location];
+		const screenName = getRouteScreenName(router.location);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}
 	});
+
+	function getRouteScreenName(location: string): string | undefined {
+		if (/^\/read\/document\/.+/.test(location)) {
+			return 'reader';
+		}
+		return routeScreenNames[location];
+	}
 
 	onMount(() => {
 		const viewport = window.visualViewport;

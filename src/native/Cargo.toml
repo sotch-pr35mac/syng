@@ -63,8 +63,12 @@ lto = true
 codegen-units = 1
 opt-level = 3
 strip = true
+panic = "abort"
 
 [patch.crates-io]
+# Syng vendors pdf-extract to support predefined CJK CID encodings used by
+# Chinese PDFs, including UniGB-UCS2-H, before those fixes are available
+# through the upstream crate.
 pdf-extract = { path = "vendor/pdf-extract" }
 
 [lib]

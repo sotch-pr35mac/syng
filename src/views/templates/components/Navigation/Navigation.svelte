@@ -27,6 +27,7 @@
 		},
 		{
 			link: 'read',
+			pattern: /\/read(\/.*)?/,
 			icon: BookOpen,
 			title: 'Read',
 			beta: false,

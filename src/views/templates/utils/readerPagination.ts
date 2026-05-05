@@ -2,7 +2,6 @@ import type {
 	ReaderContentBlock,
 	ReaderDocument,
 	ReaderBlockStyleExtension,
-	ReaderTableExtension,
 	ReaderToken,
 } from '@/types/reader.js';
 
@@ -113,7 +112,7 @@ function getBlockGap(layout: ReaderPageLayout, kind: ReaderContentBlock['kind'])
 }
 
 function estimateTableHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
-	const table = block.extensions?.table as ReaderTableExtension | undefined;
+	const table = block.extensions?.table;
 	const rowCount = table?.rows?.length ?? 1;
 	const rowHeight = layout.lineHeight * TABLE_ROW_HEIGHT_SCALE;
 	return Math.max(rowHeight, rowCount * rowHeight);
@@ -141,7 +140,7 @@ function estimateAtomicBlockHeight(block: ReaderContentBlock, layout: ReaderPage
 }
 
 function getBlockStyle(block: ReaderContentBlock): ReaderBlockStyleExtension | undefined {
-	return block.extensions?.block_style as ReaderBlockStyleExtension | undefined;
+	return block.extensions?.block_style;
 }
 
 function isUnsplittableFlowBlock(block: ReaderContentBlock): boolean {

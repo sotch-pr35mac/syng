@@ -12,5 +12,12 @@ it('should print additional information to the console', async () => {
 	global.console.error = vi.fn();
 	handleError('message', 'additional information');
 	expect(global.alert).toHaveBeenCalledWith('message');
-	expect(global.console.error).toHaveBeenCalledWith('additional information');
+	expect(global.console.error).toHaveBeenCalledWith(
+		'[handleError]',
+		'message',
+		'additional information'
+	);
+	expect(global.console.error).toHaveBeenCalledWith('[handleError] serialized', {
+		error_message: 'additional information',
+	});
 });

@@ -124,7 +124,7 @@
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: clamp(24px, 4vw, 56px);
+		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		box-sizing: border-box;
 	}
 

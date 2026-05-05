@@ -4,7 +4,7 @@
 
 	const tabs = [
 		{ href: '#/', path: '/', label: 'Search' },
-		{ href: '#/read', path: '/read', label: 'Read' },
+		{ href: '#/read', path: /^\/read(\/.*)?/, label: 'Read' },
 		{ href: '#/bookmarks', path: '/bookmarks', label: 'Bookmarks' },
 		{ href: '#/study', path: /^\/study(\/.*)?/, label: 'Study' },
 	];

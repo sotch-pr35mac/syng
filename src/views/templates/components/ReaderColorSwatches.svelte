@@ -31,6 +31,7 @@
 	{/each}
 </div>
 {#if allowCustom}
+	<!-- Native color input keeps custom document colors accessible without adding a bespoke picker. -->
 	<input
 		{value}
 		class="reader-color-swatches__custom"

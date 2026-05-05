@@ -30,10 +30,11 @@
 	const DESKTOP_HEIGHT_PX = 380;
 	const DESKTOP_GUTTER_PX = 16;
 	const DESKTOP_OFFSET_PX = 10;
+	const MAX_DOT_RESULTS = 8;
 	let popoverElement = $state<HTMLElement | undefined>(undefined);
 
 	const visible = $derived(Boolean(word));
-	const showDots = $derived(results.length <= 8);
+	const showDots = $derived(results.length <= MAX_DOT_RESULTS);
 
 	const placement = $derived.by((): PopoverPlacement => {
 		if (!anchor || mobile) {
@@ -75,7 +76,7 @@
 		);
 	}
 
-	const style = $derived.by(() => {
+	const getStyles = $derived.by(() => {
 		if (!anchor || mobile) {
 			return '';
 		}
@@ -168,7 +169,7 @@
 		class:dictionary-popover--above={placement === 'above'}
 		class:dictionary-popover--right={placement === 'right'}
 		class:dictionary-popover--left={placement === 'left'}
-		{style}
+		style={getStyles}
 	>
 		<div class="dictionary-popover__header">
 			<span class="dictionary-popover__title">Dictionary</span>
@@ -235,10 +236,8 @@
 		position: fixed;
 		background: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
-		box-shadow:
-			0 8px 32px rgb(0 0 0 / 18%),
-			0 2px 8px rgb(0 0 0 / 12%);
-		border: var(--sy-mobile-surface-border);
+		box-shadow: var(--sy-shadow--active);
+		border: var(--sy-border);
 		z-index: var(--sy-z-index--top-3);
 		display: flex;
 		flex-direction: column;

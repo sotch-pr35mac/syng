@@ -29,7 +29,7 @@
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
-		const screenName = routeScreenNames[router.location];
+		const screenName = getRouteScreenName(router.location);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}
@@ -54,6 +54,7 @@
 	const routes = {
 		'/': Search,
 		'/read': Reader,
+		'/read/document/:id': Reader,
 		'/bookmarks': Bookmarks,
 		'/study': Study,
 		'/study/flashcards': Flashcards,
@@ -78,6 +79,13 @@
 		'/settings': 'settings',
 		'/chat': 'chat',
 		'/characters': 'characters',
+	};
+
+	const getRouteScreenName = (location) => {
+		if (/^\/read\/document\/.+/.test(location)) {
+			return 'reader';
+		}
+		return routeScreenNames[location];
 	};
 </script>
 
