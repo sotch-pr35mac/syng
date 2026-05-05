@@ -30,7 +30,13 @@
 	} from '@/reader/settings/defaults.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
+	import type {
+		ReaderBlockStyleExtension,
+		ReaderContentBlock,
+		ReaderDocument,
+		ReaderImportPayload,
+		ReaderToken,
+	} from '@/types/reader.js';
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
@@ -41,6 +47,8 @@
 	const BODY_BLOCK_GAP_EM = 1.25;
 	const HEADING_FONT_SCALE = 1.28;
 	const HEADING_LINE_HEIGHT = 1.5;
+	const LIST_NESTING_INDENT_EM = 1.15;
+	const MAX_HEADING_LEVEL = 6;
 	const PAGE_CURL_DURATION_MS = 720;
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -90,6 +98,13 @@
 	const selectedDocuments = $derived(
 		documents.filter((document) => selectedDocumentIds.has(document._id))
 	);
+	const activeDocumentVerticalWriting = $derived(
+		Boolean(
+			activeDocument?.blocks.some(
+				(block) => getBlockStyle(block)?.vertical_writing_mode === true
+			)
+		)
+	);
 
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
@@ -125,6 +140,31 @@
 			return;
 		}
 		readerRoute.openDictionary(token, event.currentTarget.getBoundingClientRect());
+	}
+
+	function getBlockStyle(block: ReaderContentBlock | undefined): ReaderBlockStyleExtension {
+		return block?.extensions?.block_style ?? {};
+	}
+
+	function getBlockCssStyle(block: ReaderContentBlock | undefined): string | undefined {
+		const styles: string[] = [];
+		const blockStyle = getBlockStyle(block);
+		const listDepth = block?.extensions?.list_item?.nesting_depth;
+		if (typeof listDepth === 'number') {
+			styles.push(
+				`--reader-list-depth-offset: ${Math.max(0, listDepth) * LIST_NESTING_INDENT_EM}em`
+			);
+		}
+		if (blockStyle.text_align || block?.text_align) {
+			styles.push(`text-align: ${blockStyle.text_align ?? block?.text_align}`);
+		}
+		if (blockStyle.text_indent) {
+			styles.push(`text-indent: ${blockStyle.text_indent}`);
+		}
+		if (blockStyle.vertical_writing_mode) {
+			styles.push('writing-mode: vertical-rl');
+		}
+		return styles.length ? styles.join(';') : undefined;
 	}
 
 	function toggleEditing(): void {
@@ -356,7 +396,8 @@
 					<button
 						type="button"
 						class="mobile-reader__theme-button"
-						class:mobile-reader__theme-button--active={readerSettings.colorTheme === theme.id}
+						class:mobile-reader__theme-button--active={readerSettings.colorTheme ===
+							theme.id}
 						aria-label={`Use ${theme.label} reader theme`}
 						aria-pressed={readerSettings.colorTheme === theme.id}
 						title={theme.label}
@@ -418,10 +459,15 @@
 				bind:this={pageElement}
 				class="mobile-reader__page mobile-reader__page--base"
 				class:mobile-reader__page--turning={turningPage}
+				class:mobile-reader__page--vertical={activeDocumentVerticalWriting}
 			>
 				{#each currentPage.blocks as block (block.id)}
-					{#if block.layout_mode === 'atomic' && block.kind === 'table'}
-						{@const tableSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+					{#if block.layout_mode === 'atomic' && block.kind === 'thematic_break'}
+						<hr class="mobile-reader__block mobile-reader__thematic-break" />
+					{:else if block.layout_mode === 'atomic' && block.kind === 'table'}
+						{@const tableSource = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						{#if tableSource?.extensions?.table}
 							<div
 								class="mobile-reader__block mobile-reader__block--table"
@@ -433,13 +479,10 @@
 										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
 												{#each row.cells as cell, colIndex (colIndex)}
-													<td>
-														{#each readerRoute.getTableCellSegments(
-															tableSource.id,
-															rowIndex,
-															colIndex,
-															cell.text
-														) as segment, segIndex (segIndex)}
+													<svelte:element
+														this={cell.is_header ? 'th' : 'td'}
+													>
+														{#each readerRoute.getTableCellSegments(tableSource.id, rowIndex, colIndex, cell.text) as segment, segIndex (segIndex)}
 															{#if segment.type === 'token'}
 																<button
 																	class="mobile-reader__token"
@@ -447,7 +490,11 @@
 																		segment.token,
 																		readerRoute.dictionaryToken
 																	)}
-																	onclick={(event) => openToken(event, segment.token)}
+																	onclick={(event) =>
+																		openToken(
+																			event,
+																			segment.token
+																		)}
 																>
 																	{segment.text}
 																</button>
@@ -455,7 +502,7 @@
 																{segment.text}
 															{/if}
 														{/each}
-													</td>
+													</svelte:element>
 												{/each}
 											</tr>
 										{/each}
@@ -464,7 +511,9 @@
 							</div>
 						{/if}
 					{:else if block.layout_mode === 'atomic' && block.kind === 'image'}
-						{@const imageSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{@const imageSource = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						{#if imageSource?.extensions?.image?.inline_src}
 							<figure class="mobile-reader__block mobile-reader__figure">
 								<img
@@ -477,10 +526,12 @@
 							</figure>
 						{/if}
 					{:else}
-						{@const sourceBlock = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{@const sourceBlock = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						<svelte:element
 							this={block.kind === 'heading'
-								? (`h${Math.min(6, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
+								? (`h${Math.min(MAX_HEADING_LEVEL, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
 										| 'h1'
 										| 'h2'
 										| 'h3'
@@ -494,6 +545,22 @@
 										: 'p'}
 							class="mobile-reader__block"
 							class:mobile-reader__block--code={block.kind === 'code_block'}
+							class:mobile-reader__block--aside={block.kind === 'aside'}
+							class:mobile-reader__block--note={Boolean(
+								getBlockStyle(sourceBlock).note
+							)}
+							class:mobile-reader__block--boxed={Boolean(
+								getBlockStyle(sourceBlock).boxed
+							)}
+							class:mobile-reader__block--poem={Boolean(
+								getBlockStyle(sourceBlock).poem
+							)}
+							class:mobile-reader__block--small={Boolean(
+								getBlockStyle(sourceBlock).small_text
+							)}
+							class:mobile-reader__block--centered={Boolean(
+								getBlockStyle(sourceBlock).centered
+							)}
 							class:mobile-reader__block--list={block.kind === 'list_item'}
 							class:mobile-reader__block--list-bullet={block.kind === 'list_item' &&
 								sourceBlock?.extensions?.list_item?.list_style !== 'ordered'}
@@ -505,6 +572,7 @@
 							sourceBlock.extensions.list_item.ordinal !== undefined
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
+							style={getBlockCssStyle(sourceBlock)}
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
@@ -989,6 +1057,11 @@
 		opacity: 0;
 	}
 
+	.mobile-reader__page--vertical {
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+	}
+
 	.mobile-reader__page-curl {
 		position: absolute;
 		inset: var(--mobile-reader-stage-padding);
@@ -1043,6 +1116,38 @@
 		margin: 0 0 1.25em;
 	}
 
+	.mobile-reader__block--small {
+		font-size: 0.86em;
+	}
+
+	.mobile-reader__block--centered,
+	.mobile-reader__block--poem {
+		text-align: center;
+	}
+
+	.mobile-reader__block--aside,
+	.mobile-reader__block--note,
+	.mobile-reader__block--boxed {
+		padding: 0.75em 0.85em;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: var(--sy-border-radius);
+		background: rgb(128 128 128 / 8%);
+	}
+
+	.mobile-reader__block--poem {
+		width: max-content;
+		max-width: 100%;
+		margin-inline: auto;
+		white-space: pre-wrap;
+	}
+
+	.mobile-reader__thematic-break {
+		height: 1px;
+		border: 0;
+		margin: 1.1em 0 1.5em;
+		background: var(--reader-border-color, var(--sy-color--grey-2));
+	}
+
 	.mobile-reader__block--table {
 		overflow-x: auto;
 		margin: 0 0 1.25em;
@@ -1054,10 +1159,17 @@
 		font-size: 0.95em;
 	}
 
-	.mobile-reader__data-table td {
+	.mobile-reader__data-table td,
+	.mobile-reader__data-table th {
 		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
 		padding: 0.35em 0.45em;
 		vertical-align: top;
+	}
+
+	.mobile-reader__data-table th {
+		background: rgb(128 128 128 / 10%);
+		font-weight: var(--sy-font-weight--bold);
+		text-align: start;
 	}
 
 	.mobile-reader__figure {
@@ -1078,26 +1190,26 @@
 
 	.mobile-reader__block--list-bullet {
 		position: relative;
-		padding-left: 1.15em;
+		padding-left: calc(1.15em + var(--reader-list-depth-offset, 0em));
 	}
 
 	.mobile-reader__block--list-bullet::before {
 		content: '•';
 		position: absolute;
-		left: 0;
+		left: var(--reader-list-depth-offset, 0);
 		top: 0;
 		color: var(--reader-muted-text, var(--sy-color--grey-3));
 	}
 
 	.mobile-reader__block--list-ordered {
 		position: relative;
-		padding-left: 1.85em;
+		padding-left: calc(1.85em + var(--reader-list-depth-offset, 0em));
 	}
 
 	.mobile-reader__block--list-ordered::before {
 		content: attr(data-ordinal) '. ';
 		position: absolute;
-		left: 0;
+		left: var(--reader-list-depth-offset, 0);
 		top: 0;
 		min-width: 1.35em;
 		text-align: start;

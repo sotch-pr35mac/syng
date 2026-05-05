@@ -2,39 +2,10 @@ import type { ReaderContentBlock, ReaderImportPayload } from '@/types/reader.js'
 import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
 const TEXT_EXTRACTOR_VERSION = 1;
-const HEADING_WORD_LIMIT = 12;
 const FILE_NAME_STEM_LIMIT = 80;
-const CLOSING_PUNCTUATION = [
-	'"',
-	"'",
-	'”',
-	'’',
-	'」',
-	'』',
-	'》',
-	'〉',
-	'】',
-	'〗',
-	')',
-	']',
-	'）',
-	'］',
-];
 
 function normalizeLineEndings(text: string): string {
 	return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-}
-
-function inferBlockKind(text: string): string {
-	const trimmed = text.trim();
-	let inner = trimmed;
-	while (inner && CLOSING_PUNCTUATION.includes(inner.at(-1) ?? '')) {
-		inner = inner.slice(0, -1);
-	}
-	const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
-	return !/[.!?。！？]$/.test(inner) && wordCount > 0 && wordCount <= HEADING_WORD_LIMIT
-		? 'heading'
-		: 'paragraph';
 }
 
 function createBlockId(): string {
@@ -53,7 +24,7 @@ function pushTextBlock(
 	const text = lines.join('\n');
 	blocks.push({
 		id: createBlockId(),
-		kind: inferBlockKind(text),
+		kind: 'paragraph',
 		text,
 		start_offset: startOffset,
 		end_offset: endOffset,

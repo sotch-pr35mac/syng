@@ -19,8 +19,7 @@ import {
 	tableCellTokenKey,
 } from '@/utils/readerDocumentCanonical.js';
 import { pickReaderImportFile } from '@/utils/readerFileImport.js';
-import { createPlainTextReaderImportPayload } from '@/utils/readerPlainTextImport.js';
-import { createWebpageReaderImportPayload } from '@/utils/readerWebpageImport.js';
+import { invokePrepareReaderImport } from '@/utils/readerNativeImport.js';
 import {
 	createReaderPages,
 	createReaderSegments,
@@ -50,10 +49,21 @@ function participatesInLinearText(block: ReaderContentBlock): boolean {
 	return block.participates_in_linear_text !== false;
 }
 
-function alignTokens(text: string, tokenTexts: string[], blockId: string): ReaderToken[] {
+type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
+
+function alignTokens(
+	text: string,
+	tokenTexts: Array<string | NativeReaderToken>,
+	blockId: string
+): ReaderToken[] {
 	const tokens: ReaderToken[] = [];
 	let cursor = 0;
-	for (const tokenText of tokenTexts) {
+	for (const nativeToken of tokenTexts) {
+		if (typeof nativeToken !== 'string') {
+			tokens.push({ ...nativeToken, block_id: blockId });
+			continue;
+		}
+		const tokenText = nativeToken;
 		const start = text.indexOf(tokenText, cursor);
 		if (start < 0) {
 			continue;
@@ -69,9 +79,12 @@ async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> 
 	if (!participatesInLinearText(block)) {
 		return [];
 	}
-	const tokenTexts = await invoke<string[]>(NATIVE_COMMANDS.READER.TOKENIZE_TEXT, {
-		text: block.text,
-	});
+	const tokenTexts = await invoke<Array<string | NativeReaderToken>>(
+		NATIVE_COMMANDS.READER.TOKENIZE_TEXT,
+		{
+			text: block.text,
+		}
+	);
 	return alignTokens(block.text, tokenTexts, block.id);
 }
 
@@ -81,9 +94,12 @@ async function tokenizeTableCell(
 	col: number,
 	text: string
 ): Promise<ReaderToken[]> {
-	const tokenTexts = await invoke<string[]>(NATIVE_COMMANDS.READER.TOKENIZE_TEXT, {
-		text,
-	});
+	const tokenTexts = await invoke<Array<string | NativeReaderToken>>(
+		NATIVE_COMMANDS.READER.TOKENIZE_TEXT,
+		{
+			text,
+		}
+	);
 	const base = alignTokens(text, tokenTexts, blockId);
 	return base.map((token) => ({
 		...token,
@@ -191,24 +207,29 @@ async function importReaderPayload(
 }
 
 async function importPlainTextDocument(title: string, text: string, color: string): Promise<void> {
-	await importReaderPayload(
-		createPlainTextReaderImportPayload(title, text, { color }),
-		title,
-		color
-	);
+	try {
+		const importPayload = await invokePrepareReaderImport({
+			text,
+			title,
+			fileName: 'clipboard.txt',
+			mimeType: 'text/plain',
+		});
+		await importReaderPayload(importPayload, title || importPayload.title, color);
+	} catch (error) {
+		handleError('There was an error importing the reader document.', error);
+	}
 }
 
-async function importWebpageDocument(
-	title: string,
-	html: string,
-	color: string,
-	sourceUrl: string
-): Promise<void> {
-	await importReaderPayload(
-		await createWebpageReaderImportPayload(title, html, sourceUrl, color),
-		title,
-		color
-	);
+async function importWebpageDocument(title: string, url: string, color: string): Promise<void> {
+	try {
+		const importPayload = await invokePrepareReaderImport({
+			url,
+			title,
+		});
+		await importReaderPayload(importPayload, title || importPayload.title, color);
+	} catch (error) {
+		handleError('There was an error importing the webpage.', error);
+	}
 }
 
 async function updateDocumentMetadata(
@@ -336,7 +357,10 @@ async function preparePageTokens(): Promise<void> {
 					continue;
 				}
 				const cellText = row.cells[colIndex]!.text;
-				cellEntries.push([key, await tokenizeTableCell(block.id, rowIndex, colIndex, cellText)]);
+				cellEntries.push([
+					key,
+					await tokenizeTableCell(block.id, rowIndex, colIndex, cellText),
+				]);
 			}
 		}
 	}
@@ -538,7 +562,11 @@ function tokensMatchDictionarySelection(
 	if (!token || !selected) {
 		return false;
 	}
-	if (token.text !== selected.text || token.start !== selected.start || token.end !== selected.end) {
+	if (
+		token.text !== selected.text ||
+		token.start !== selected.start ||
+		token.end !== selected.end
+	) {
 		return false;
 	}
 	if (token.block_id !== selected.block_id) {

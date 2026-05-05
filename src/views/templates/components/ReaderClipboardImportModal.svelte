@@ -1,10 +1,9 @@
 <script lang="ts">
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import ReaderColorSwatches from '@/components/ReaderColorSwatches.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
-	import {
-		DEFAULT_READER_DOCUMENT_COLOR,
-		READER_DOCUMENT_COLORS,
-	} from '@/utils/readerDocumentMetadata.js';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
 	import { inferPlainTextReaderTitle } from '@/utils/readerPlainTextImport.js';
 
 	type Props = {
@@ -67,34 +66,21 @@
 		<form class="reader-clipboard-import" id="reader-clipboard-import-form" onsubmit={submit}>
 			<label class="reader-clipboard-import__field">
 				<span>Title</span>
-				<input
-					bind:value={title}
-					class="reader-clipboard-import__input"
-					type="text"
+				<SyTextInput
+					value={title}
+					id="reader-clipboard-import-title"
+					size="large"
 					autocomplete="off"
 					placeholder="Document title"
-					oninput={() => {
+					oninput={(value) => {
+						title = value;
 						titleEdited = true;
 					}}
 				/>
 			</label>
 			<div class="reader-clipboard-import__field">
 				<span>Color</span>
-				<div class="reader-clipboard-import__swatches">
-					{#each READER_DOCUMENT_COLORS as swatchColor (swatchColor)}
-						<button
-							class="reader-clipboard-import__swatch"
-							class:reader-clipboard-import__swatch--selected={color === swatchColor}
-							style:background-color={swatchColor}
-							type="button"
-							aria-label={`Use ${swatchColor}`}
-							aria-pressed={color === swatchColor}
-							onclick={() => {
-								color = swatchColor;
-							}}
-						></button>
-					{/each}
-				</div>
+				<ReaderColorSwatches value={color} onchange={(nextColor) => (color = nextColor)} />
 			</div>
 			<label class="reader-clipboard-import__field">
 				<span>Text</span>
@@ -144,7 +130,6 @@
 		font-weight: var(--sy-font-weight--medium);
 	}
 
-	.reader-clipboard-import__input,
 	.reader-clipboard-import__textarea {
 		border: var(--sy-border);
 		border-radius: var(--sy-border-radius);
@@ -162,33 +147,9 @@
 		line-height: 1.5;
 	}
 
-	.reader-clipboard-import__swatches {
-		display: grid;
-		grid-template-columns: repeat(8, 28px);
-		gap: var(--sy-space);
-	}
-
-	.reader-clipboard-import__swatch {
-		width: 28px;
-		height: 28px;
-		border: 1px solid rgb(0 0 0 / 16%);
-		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow);
-		cursor: pointer;
-	}
-
-	.reader-clipboard-import__swatch--selected {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 2px;
-	}
-
 	@media (max-width: 640px) {
 		.reader-clipboard-import {
 			width: 100%;
-		}
-
-		.reader-clipboard-import__swatches {
-			grid-template-columns: repeat(4, 28px);
 		}
 
 		.reader-clipboard-import__textarea {

@@ -3,17 +3,11 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		BookOpen,
-		CheckCircle2,
 		ChevronLeft,
 		ChevronRight,
-		Circle,
-		ClipboardPaste,
-		FilePlus2,
-		Globe2,
 		Library,
 		Minus,
 		Palette,
-		Pencil,
 		Plus,
 		Trash2,
 	} from 'lucide-svelte';
@@ -22,6 +16,7 @@
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
+	import ReaderLibrary from '@/components/ReaderLibrary.svelte';
 	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
@@ -32,11 +27,16 @@
 	} from '@/reader/settings/defaults.js';
 	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
 	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
-	import type { ReaderDocument, ReaderImportPayload, ReaderToken } from '@/types/reader.js';
+	import type {
+		ReaderBlockStyleExtension,
+		ReaderContentBlock,
+		ReaderDocument,
+		ReaderImportPayload,
+		ReaderToken,
+	} from '@/types/reader.js';
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
-	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 	import { isIPad } from '@/utils/device.js';
 
 	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
@@ -44,6 +44,8 @@
 	const BODY_BLOCK_GAP_EM = 1.4;
 	const HEADING_FONT_SCALE = 1.35;
 	const HEADING_LINE_HEIGHT = 1.5;
+	const LIST_NESTING_INDENT_EM = 1.25;
+	const MAX_HEADING_LEVEL = 6;
 	const PAGE_CURL_DURATION_MS = 760;
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
@@ -93,6 +95,13 @@
 	const selectedDocuments = $derived(
 		documents.filter((document) => selectedDocumentIds.has(document._id))
 	);
+	const activeDocumentVerticalWriting = $derived(
+		Boolean(
+			activeDocument?.blocks.some(
+				(block) => getBlockStyle(block)?.vertical_writing_mode === true
+			)
+		)
+	);
 
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
@@ -130,9 +139,40 @@
 		readerRoute.openDictionary(token, event.currentTarget.getBoundingClientRect());
 	}
 
+	function getBlockStyle(block: ReaderContentBlock | undefined): ReaderBlockStyleExtension {
+		return block?.extensions?.block_style ?? {};
+	}
+
+	function getBlockCssStyle(block: ReaderContentBlock | undefined): string | undefined {
+		const styles: string[] = [];
+		const blockStyle = getBlockStyle(block);
+		const listDepth = block?.extensions?.list_item?.nesting_depth;
+		if (typeof listDepth === 'number') {
+			styles.push(
+				`--reader-list-depth-offset: ${Math.max(0, listDepth) * LIST_NESTING_INDENT_EM}em`
+			);
+		}
+		if (blockStyle.text_align || block?.text_align) {
+			styles.push(`text-align: ${blockStyle.text_align ?? block?.text_align}`);
+		}
+		if (blockStyle.text_indent) {
+			styles.push(`text-indent: ${blockStyle.text_indent}`);
+		}
+		if (blockStyle.vertical_writing_mode) {
+			styles.push('writing-mode: vertical-rl');
+		}
+		return styles.length ? styles.join(';') : undefined;
+	}
+
 	function toggleEditing(): void {
 		editingLibrary = !editingLibrary;
 		selectedDocumentIds.clear();
+	}
+
+	function backToLibrary(): void {
+		editingLibrary = false;
+		selectedDocumentIds.clear();
+		readerRoute.backToLibrary();
 	}
 
 	function openClipboardImportModal(): void {
@@ -342,7 +382,8 @@
 							<button
 								type="button"
 								class="reader__theme-button"
-								class:reader__theme-button--active={readerSettings.colorTheme === theme.id}
+								class:reader__theme-button--active={readerSettings.colorTheme ===
+									theme.id}
 								aria-label={`Use ${theme.label} reader theme`}
 								aria-pressed={readerSettings.colorTheme === theme.id}
 								title={theme.label}
@@ -385,9 +426,7 @@
 						</button>
 					</div>
 				</div>
-				<SyButton style="ghost" size="large" onclick={readerRoute.backToLibrary}>
-					Library
-				</SyButton>
+				<SyButton style="ghost" size="large" onclick={backToLibrary}>Library</SyButton>
 			{:else}
 				{#if editingLibrary}
 					<SyButton
@@ -429,24 +468,30 @@
 				bind:this={pageElement}
 				class="reader__page reader__page--base"
 				class:reader__page--turning={turningPage}
+				class:reader__page--vertical={activeDocumentVerticalWriting}
 			>
 				{#each currentPage.blocks as block (block.id)}
-					{#if block.layout_mode === 'atomic' && block.kind === 'table'}
-						{@const tableSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+					{#if block.layout_mode === 'atomic' && block.kind === 'thematic_break'}
+						<hr class="reader__block reader__thematic-break" />
+					{:else if block.layout_mode === 'atomic' && block.kind === 'table'}
+						{@const tableSource = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						{#if tableSource?.extensions?.table}
-							<div class="reader__block reader__block--table" role="region" aria-label="Table">
+							<div
+								class="reader__block reader__block--table"
+								role="region"
+								aria-label="Table"
+							>
 								<table class="reader__data-table">
 									<tbody>
 										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
 												{#each row.cells as cell, colIndex (colIndex)}
-													<td>
-														{#each readerRoute.getTableCellSegments(
-															tableSource.id,
-															rowIndex,
-															colIndex,
-															cell.text
-														) as segment, segIndex (segIndex)}
+													<svelte:element
+														this={cell.is_header ? 'th' : 'td'}
+													>
+														{#each readerRoute.getTableCellSegments(tableSource.id, rowIndex, colIndex, cell.text) as segment, segIndex (segIndex)}
 															{#if segment.type === 'token'}
 																<button
 																	class="reader__token"
@@ -454,7 +499,11 @@
 																		segment.token,
 																		readerRoute.dictionaryToken
 																	)}
-																	onclick={(event) => openToken(event, segment.token)}
+																	onclick={(event) =>
+																		openToken(
+																			event,
+																			segment.token
+																		)}
 																>
 																	{segment.text}
 																</button>
@@ -462,7 +511,7 @@
 																{segment.text}
 															{/if}
 														{/each}
-													</td>
+													</svelte:element>
 												{/each}
 											</tr>
 										{/each}
@@ -471,7 +520,9 @@
 							</div>
 						{/if}
 					{:else if block.layout_mode === 'atomic' && block.kind === 'image'}
-						{@const imageSource = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{@const imageSource = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						{#if imageSource?.extensions?.image?.inline_src}
 							<figure class="reader__block reader__figure">
 								<img
@@ -484,10 +535,12 @@
 							</figure>
 						{/if}
 					{:else}
-						{@const sourceBlock = activeDocument.blocks.find((b) => b.id === block.sourceBlockId)}
+						{@const sourceBlock = activeDocument.blocks.find(
+							(b) => b.id === block.sourceBlockId
+						)}
 						<svelte:element
 							this={block.kind === 'heading'
-								? (`h${Math.min(6, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
+								? (`h${Math.min(MAX_HEADING_LEVEL, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
 										| 'h1'
 										| 'h2'
 										| 'h3'
@@ -501,6 +554,16 @@
 										: 'p'}
 							class="reader__block"
 							class:reader__block--code={block.kind === 'code_block'}
+							class:reader__block--aside={block.kind === 'aside'}
+							class:reader__block--note={Boolean(getBlockStyle(sourceBlock).note)}
+							class:reader__block--boxed={Boolean(getBlockStyle(sourceBlock).boxed)}
+							class:reader__block--poem={Boolean(getBlockStyle(sourceBlock).poem)}
+							class:reader__block--small={Boolean(
+								getBlockStyle(sourceBlock).small_text
+							)}
+							class:reader__block--centered={Boolean(
+								getBlockStyle(sourceBlock).centered
+							)}
 							class:reader__block--list={block.kind === 'list_item'}
 							class:reader__block--list-bullet={block.kind === 'list_item' &&
 								sourceBlock?.extensions?.list_item?.list_style !== 'ordered'}
@@ -512,6 +575,7 @@
 							sourceBlock.extensions.list_item.ordinal !== undefined
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
+							style={getBlockCssStyle(sourceBlock)}
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
@@ -559,85 +623,19 @@
 			</div>
 		</main>
 	{:else}
-		<main class="reader__library">
-			<div class="reader__library-grid">
-				<div class="reader__import-stack">
-					<button
-						class="reader__book-card reader__book-card--import"
-						disabled={readerRoute.importing || editingLibrary}
-						onclick={openClipboardImportModal}
-					>
-						<div class="reader__book-cover">
-							<ClipboardPaste size="20" />
-							<span>Import From Clipboard</span>
-						</div>
-					</button>
-					<button
-						class="reader__book-card reader__book-card--import"
-						disabled={readerRoute.importing || editingLibrary}
-						onclick={openWebpageImportModal}
-					>
-						<div class="reader__book-cover">
-							<Globe2 size="20" />
-							<span>Import From Webpage</span>
-						</div>
-					</button>
-					<button
-						class="reader__book-card reader__book-card--import"
-						disabled={readerRoute.importing || editingLibrary}
-						onclick={openFileImportDetails}
-					>
-						<div class="reader__book-cover">
-							<FilePlus2 size="20" />
-							<span>{readerRoute.importing ? 'Importing...' : 'Import Document'}</span
-							>
-						</div>
-					</button>
-				</div>
-				{#each documents as document (document._id)}
-					<div
-						class="reader__book-card"
-						class:reader__book-card--selected={selectedDocumentIds.has(document._id)}
-						style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
-						onclick={() => handleDocumentCardClick(document)}
-						onkeyup={(event) => handleDocumentCardKey(event, document)}
-						role="button"
-						tabindex="0"
-					>
-						<div class="reader__book-cover">
-							{#if editingLibrary}
-								<span class="reader__selection-indicator">
-									{#if selectedDocumentIds.has(document._id)}
-										<CheckCircle2 size="22" />
-									{:else}
-										<Circle size="22" />
-									{/if}
-								</span>
-								<button
-									class="reader__metadata-button"
-									type="button"
-									aria-label={`Edit ${document.title}`}
-									onclick={(event) => openDocumentDetails(event, document)}
-								>
-									<Pencil size="16" />
-								</button>
-							{/if}
-							<span class="reader__book-title">{document.title}</span>
-							<span class="reader__book-meta">{document.file_name}</span>
-							<span class="reader__book-progress">
-								{getDocumentProgressPercent(document)}%
-							</span>
-						</div>
-					</div>
-				{/each}
-			</div>
-			{#if !documents.length}
-				<div class="reader__empty">
-					<BookOpen size="42" />
-					<p>Your reading library is empty</p>
-				</div>
-			{/if}
-		</main>
+		<ReaderLibrary
+			{documents}
+			{editingLibrary}
+			importing={readerRoute.importing}
+			{selectedDocumentIds}
+			onopenClipboardImport={openClipboardImportModal}
+			onopenWebpageImport={openWebpageImportModal}
+			onopenFileImport={openFileImportDetails}
+			onopenDocumentDetails={openDocumentDetails}
+			oncardClick={handleDocumentCardClick}
+			oncardKey={handleDocumentCardKey}
+			getProgressPercent={getDocumentProgressPercent}
+		/>
 	{/if}
 </div>
 
@@ -812,160 +810,6 @@
 		text-align: center;
 	}
 
-	.reader__library {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
-		padding: clamp(24px, 4vw, 56px);
-		box-sizing: border-box;
-	}
-
-	.reader__library-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-		gap: clamp(18px, 3vw, 34px);
-		align-items: start;
-	}
-
-	.reader__book-card {
-		position: relative;
-		display: block;
-		width: 100%;
-		aspect-ratio: 2 / 3;
-		border: 0;
-		padding: 0;
-		background: transparent;
-		font-family: var(--sy-font-family);
-		text-align: left;
-		cursor: pointer;
-	}
-
-	.reader__import-stack {
-		display: grid;
-		grid-template-rows: repeat(3, 1fr);
-		gap: var(--sy-space);
-		aspect-ratio: 2 / 3;
-	}
-
-	.reader__import-stack .reader__book-card {
-		height: 100%;
-		aspect-ratio: auto;
-	}
-
-	.reader__book-card:focus-visible {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 4px;
-	}
-
-	.reader__book-card:disabled {
-		cursor: not-allowed;
-		opacity: 0.7;
-	}
-
-	.reader__book-cover {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-end;
-		height: 100%;
-		padding: var(--sy-space--large);
-		box-sizing: border-box;
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		background:
-			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-			var(--reader-book-color, var(--sy-color--white));
-		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--grey-4);
-		transition:
-			box-shadow var(--sy-transition-duration),
-			transform var(--sy-transition-duration),
-			border-color var(--sy-transition-duration);
-	}
-
-	.reader__book-card:hover .reader__book-cover,
-	.reader__book-card--selected .reader__book-cover {
-		border-color: var(--sy-color--blue);
-		box-shadow: var(--sy-shadow--active);
-		transform: translateY(-2px);
-	}
-
-	.reader__book-card--import .reader__book-cover {
-		align-items: center;
-		justify-content: center;
-		gap: var(--sy-space);
-		color: var(--sy-color--blue);
-		font-size: 0.82rem;
-		line-height: 1.2;
-		padding: var(--sy-space);
-		text-align: center;
-	}
-
-	.reader__book-card:not(.reader__book-card--import) .reader__book-cover {
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-	}
-
-	.reader__selection-indicator {
-		position: absolute;
-		top: var(--sy-space--large);
-		right: var(--sy-space--large);
-		color: var(--sy-color--blue);
-	}
-
-	.reader__metadata-button {
-		position: absolute;
-		top: var(--sy-space--large);
-		left: var(--sy-space--large);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 30px;
-		height: 30px;
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 86%);
-		color: var(--sy-color--grey-4);
-		box-shadow: var(--sy-shadow);
-		cursor: pointer;
-	}
-
-	.reader__metadata-button:hover,
-	.reader__metadata-button:focus-visible {
-		color: var(--sy-color--blue);
-	}
-
-	.reader__book-title {
-		max-width: 100%;
-		padding: var(--sy-space--small) var(--sy-space);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 78%);
-		color: var(--sy-color--black);
-		font-size: 1rem;
-		font-weight: var(--sy-font-weight--medium);
-		line-height: 1.3;
-		overflow-wrap: anywhere;
-	}
-
-	.reader__book-meta,
-	.reader__book-progress {
-		position: absolute;
-		left: var(--sy-space--large);
-		right: var(--sy-space--large);
-		bottom: var(--sy-space--large);
-		margin-top: var(--sy-space--small);
-		font-size: 0.78rem;
-		color: var(--sy-color--grey-5);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.reader__book-meta {
-		bottom: calc(var(--sy-space--large) + 1.2rem);
-	}
-
 	.reader__stage {
 		--reader-stage-padding: clamp(16px, 2vw, 28px);
 		--reader-chevron-width: clamp(32px, 3vw, 44px);
@@ -1008,6 +852,11 @@
 
 	.reader__page--turning {
 		opacity: 0;
+	}
+
+	.reader__page--vertical {
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
 	}
 
 	.reader__page-curl {
@@ -1087,6 +936,38 @@
 		margin: 0 0 1.4em;
 	}
 
+	.reader__block--small {
+		font-size: 0.86em;
+	}
+
+	.reader__block--centered,
+	.reader__block--poem {
+		text-align: center;
+	}
+
+	.reader__block--aside,
+	.reader__block--note,
+	.reader__block--boxed {
+		padding: 0.85em 1em;
+		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		border-radius: var(--sy-border-radius);
+		background: rgb(128 128 128 / 8%);
+	}
+
+	.reader__block--poem {
+		width: max-content;
+		max-width: 100%;
+		margin-inline: auto;
+		white-space: pre-wrap;
+	}
+
+	.reader__thematic-break {
+		height: 1px;
+		border: 0;
+		margin: 1.2em 0 1.8em;
+		background: var(--reader-border-color, var(--sy-color--grey-2));
+	}
+
 	.reader__block--table {
 		overflow-x: auto;
 		margin: 0 0 1.4em;
@@ -1098,10 +979,17 @@
 		font-size: 0.95em;
 	}
 
-	.reader__data-table td {
+	.reader__data-table td,
+	.reader__data-table th {
 		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
 		padding: 0.35em 0.45em;
 		vertical-align: top;
+	}
+
+	.reader__data-table th {
+		background: rgb(128 128 128 / 10%);
+		font-weight: var(--sy-font-weight--bold);
+		text-align: start;
 	}
 
 	.reader__figure {
@@ -1122,26 +1010,26 @@
 
 	.reader__block--list-bullet {
 		position: relative;
-		padding-left: 1.15em;
+		padding-left: calc(1.15em + var(--reader-list-depth-offset, 0em));
 	}
 
 	.reader__block--list-bullet::before {
 		content: '•';
 		position: absolute;
-		left: 0;
+		left: var(--reader-list-depth-offset, 0);
 		top: 0;
 		color: var(--reader-muted-text, var(--sy-color--grey-3));
 	}
 
 	.reader__block--list-ordered {
 		position: relative;
-		padding-left: 1.85em;
+		padding-left: calc(1.85em + var(--reader-list-depth-offset, 0em));
 	}
 
 	.reader__block--list-ordered::before {
 		content: attr(data-ordinal) '. ';
 		position: absolute;
-		left: 0;
+		left: var(--reader-list-depth-offset, 0);
 		top: 0;
 		min-width: 1.35em;
 		text-align: start;
@@ -1207,16 +1095,5 @@
 	.reader__token--active {
 		color: var(--reader-link-color, var(--sy-color--blue));
 		border-bottom-color: var(--reader-link-color, var(--sy-color--blue));
-	}
-
-	.reader__empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--sy-space--large);
-		min-height: 240px;
-		color: var(--sy-color--grey-4);
-		font-family: var(--sy-font-family);
 	}
 </style>

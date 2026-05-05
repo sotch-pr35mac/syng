@@ -1,16 +1,9 @@
 {
 	"identifier": "migrated",
 	"description": "permissions that were migrated from v1",
-	"platforms": [
-		"macOS",
-		"windows",
-		"linux"
-	],
+	"platforms": ["macOS", "windows", "linux"],
 	"local": true,
-	"windows": [
-		"main",
-		"characters"
-	],
+	"windows": ["main", "characters"],
 	"permissions": [
 		"core:default",
 		"fs:allow-read-file",
@@ -26,9 +19,7 @@
 		"fs:allow-appdata-write-recursive",
 		{
 			"identifier": "fs:scope",
-			"allow": [
-				"$APPDATA/**"
-			]
+			"allow": ["$APPDATA/**"]
 		},
 		"core:window:allow-create",
 		"core:window:allow-center",
@@ -70,13 +61,6 @@
 		"dialog:allow-message",
 		"dialog:allow-ask",
 		"dialog:allow-confirm",
-		{
-			"identifier": "http:default",
-			"allow": [
-				{ "url": "https://*" },
-				{ "url": "http://*" }
-			]
-		},
 		"notification:default",
 		"global-shortcut:allow-is-registered",
 		"global-shortcut:allow-register",

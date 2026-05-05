@@ -9,7 +9,9 @@ export type PrepareReaderImportInvokeArgs = {
 	fileName?: string;
 	mimeType?: string;
 	html?: string;
+	text?: string;
 	title?: string;
+	url?: string;
 };
 
 function isTauriRuntime(): boolean {
@@ -23,5 +25,10 @@ export function canUseNativeReaderPrepareImport(): boolean {
 export async function invokePrepareReaderImport(
 	args: PrepareReaderImportInvokeArgs
 ): Promise<ReaderImportPayload> {
-	return await invoke<ReaderImportPayload>(NATIVE_COMMANDS.READER.PREPARE_IMPORT, args);
+	return await invoke<ReaderImportPayload>(NATIVE_COMMANDS.READER.PREPARE_IMPORT, { args });
+}
+
+/** Opens the native picker and returns the canonical Rust reader import payload. */
+export async function invokeImportReaderDocument(): Promise<ReaderImportPayload | undefined> {
+	return await invoke<ReaderImportPayload | undefined>(NATIVE_COMMANDS.READER.IMPORT_DOCUMENT);
 }

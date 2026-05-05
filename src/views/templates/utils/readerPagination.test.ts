@@ -148,3 +148,70 @@ it('places non-linear table blocks as atomic layout segments', () => {
 	const segments = createReaderSegments(atomicBlock!, []);
 	expect(segments[0]?.type).toBe('text');
 });
+
+it('keeps thematic breaks and boxed blocks stable during pagination', () => {
+	const document = buildDocument('');
+	document.blocks = [
+		{
+			id: 'box-1',
+			kind: 'aside',
+			text: 'abcdefghijkl',
+			start_offset: 0,
+			end_offset: 12,
+			extensions: {
+				block_style: {
+					boxed: true,
+				},
+			},
+		},
+		{
+			id: 'rule-1',
+			kind: 'thematic_break',
+			text: '',
+			participates_in_linear_text: false,
+		},
+	];
+	document.text = 'abcdefghijkl';
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 30,
+		contentHeight: 20,
+	});
+
+	expect(pages[0].blocks[0]).toMatchObject({
+		sourceBlockId: 'box-1',
+		text: 'abcdefghijkl',
+		layout_mode: 'flow',
+	});
+	const thematicBlock = pages
+		.flatMap((page) => page.blocks)
+		.find((block) => block.sourceBlockId === 'rule-1');
+	expect(thematicBlock).toMatchObject({
+		kind: 'thematic_break',
+		layout_mode: 'atomic',
+	});
+});
+
+it('segments ruby-safe visible text without pronunciation tokens', () => {
+	const pageBlock = {
+		id: 'ruby-1:0:2',
+		sourceBlockId: 'ruby-1',
+		kind: 'paragraph',
+		text: '漢字',
+		sourceText: '漢字',
+		sourceStart: 0,
+		sourceEnd: 2,
+		start_offset: 0,
+		end_offset: 2,
+		layout_mode: 'flow' as const,
+	};
+
+	const segments = createReaderSegments(pageBlock, [
+		{ text: '漢', start: 0, end: 1, block_id: 'ruby-1' },
+		{ text: '字', start: 1, end: 2, block_id: 'ruby-1' },
+	]);
+
+	expect(segments.map((segment) => segment.text).join('')).toBe('漢字');
+	expect(segments.map((segment) => segment.token?.text).filter(Boolean)).not.toContain('han');
+});

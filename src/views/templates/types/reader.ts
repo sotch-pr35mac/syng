@@ -40,6 +40,7 @@ export interface ReaderInlineSpan {
 
 export interface ReaderTableCell {
 	text: string;
+	is_header?: boolean;
 	spans?: ReaderInlineSpan[];
 }
 
@@ -67,11 +68,23 @@ export interface ReaderListItemExtension {
 	ordinal?: number;
 }
 
+export interface ReaderBlockStyleExtension {
+	text_indent?: string;
+	text_align?: ReaderTextAlign;
+	small_text?: boolean;
+	note?: boolean;
+	boxed?: boolean;
+	poem?: boolean;
+	centered?: boolean;
+	vertical_writing_mode?: boolean;
+}
+
 /** Per-block metadata (tables, images, list structure, importer hints). */
 export type ReaderBlockExtensions = {
 	table?: ReaderTableExtension;
 	image?: ReaderImageExtension;
 	list_item?: ReaderListItemExtension;
+	block_style?: ReaderBlockStyleExtension;
 } & Record<string, unknown>;
 
 export interface ReaderContentBlock {

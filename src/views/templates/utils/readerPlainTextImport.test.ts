@@ -21,7 +21,7 @@ it('creates a plain text reader import payload from pasted text', () => {
 	});
 	expect(payload.blocks).toHaveLength(2);
 	expect(payload.blocks[0]).toMatchObject({
-		kind: 'heading',
+		kind: 'paragraph',
 		text: 'Title',
 		start_offset: 0,
 		end_offset: 6,

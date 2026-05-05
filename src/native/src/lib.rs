@@ -4,7 +4,7 @@
 )]
 
 mod core;
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "ios"))]
 mod menu;
 mod platform;
 mod utils;
@@ -13,13 +13,12 @@ mod windows;
 use core::{
     answer_question, classify, export_list_data, get_incorrect_questions, get_next_question,
     import_list_data, import_reader_document, init_dictionary, is_dev_build, prepare_reader_import,
-    query,
-    query_by_chinese, query_by_english, query_by_pinyin, score_quiz, start_quiz,
+    query, query_by_chinese, query_by_english, query_by_pinyin, score_quiz, start_quiz,
     telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
     telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_reader_text,
     QuizState, TelemetryManager,
 };
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
 #[cfg(desktop)]
 use windows::open_character_window;
@@ -46,7 +45,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            #[cfg(desktop)]
+            #[cfg(any(desktop, target_os = "ios"))]
             {
                 let app_menu = menu::create(app.handle())?;
                 app.set_menu(app_menu)?;
@@ -124,7 +123,7 @@ pub fn run() {
         ));
     }
 
-    #[cfg(desktop)]
+    #[cfg(any(desktop, target_os = "ios"))]
     {
         builder = builder.on_menu_event(|app, event| {
             menu::handle_event(app, &event);

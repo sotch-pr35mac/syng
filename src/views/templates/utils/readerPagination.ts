@@ -1,6 +1,7 @@
 import type {
 	ReaderContentBlock,
 	ReaderDocument,
+	ReaderBlockStyleExtension,
 	ReaderTableExtension,
 	ReaderToken,
 } from '@/types/reader.js';
@@ -111,10 +112,7 @@ function getBlockGap(layout: ReaderPageLayout, kind: ReaderContentBlock['kind'])
 	return kind === 'heading' ? layout.headingGap : layout.blockGap;
 }
 
-function estimateTableHeight(
-	block: ReaderContentBlock,
-	layout: ReaderPageLayout
-): number {
+function estimateTableHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
 	const table = block.extensions?.table as ReaderTableExtension | undefined;
 	const rowCount = table?.rows?.length ?? 1;
 	const rowHeight = layout.lineHeight * TABLE_ROW_HEIGHT_SCALE;
@@ -130,6 +128,9 @@ function estimateImageHeight(block: ReaderContentBlock, layout: ReaderPageLayout
 }
 
 function estimateAtomicBlockHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
+	if (block.kind === 'thematic_break') {
+		return layout.lineHeight;
+	}
 	if (block.kind === 'table') {
 		return estimateTableHeight(block, layout);
 	}
@@ -137,6 +138,15 @@ function estimateAtomicBlockHeight(block: ReaderContentBlock, layout: ReaderPage
 		return estimateImageHeight(block, layout);
 	}
 	return layout.lineHeight * 2;
+}
+
+function getBlockStyle(block: ReaderContentBlock): ReaderBlockStyleExtension | undefined {
+	return block.extensions?.block_style as ReaderBlockStyleExtension | undefined;
+}
+
+function isUnsplittableFlowBlock(block: ReaderContentBlock): boolean {
+	const style = getBlockStyle(block);
+	return Boolean(style?.note || style?.boxed || style?.poem);
 }
 
 function createLineSlices(text: string, charactersPerLine: number): LineSlice[] {
@@ -276,6 +286,25 @@ export function createReaderPages(
 		const charactersPerLine = getCharacterCapacity(normalizedLayout, sourceBlock.kind);
 		const lineHeight = getBlockLineHeight(normalizedLayout, sourceBlock.kind);
 		const lineSlices = createLineSlices(sourceBlock.text, charactersPerLine);
+
+		if (isUnsplittableFlowBlock(sourceBlock)) {
+			const blockHeight = Math.max(lineHeight, lineSlices.length * lineHeight);
+			const blockDoesNotFit =
+				state.pageBlocks.length > 0 &&
+				state.usedHeight + blockHeight > normalizedLayout.contentHeight;
+
+			if (blockDoesNotFit) {
+				pushCurrentPage(state);
+			}
+
+			appendPageBlock(state.pageBlocks, sourceBlock, 0, sourceBlock.text.length);
+			state.usedHeight += blockHeight;
+			const blockEnd =
+				sourceBlock.end_offset ?? blockBaseOffset(sourceBlock) + sourceBlock.text.length;
+			state.lastLinearTextEnd = Math.max(state.lastLinearTextEnd, blockEnd);
+			state.usedHeight += blockGap;
+			continue;
+		}
 
 		for (const lineSlice of lineSlices) {
 			const lineDoesNotFit =

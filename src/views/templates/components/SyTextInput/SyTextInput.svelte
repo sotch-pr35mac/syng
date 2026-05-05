@@ -14,7 +14,10 @@
 	 * @property {string} [style] - 'standard' - Standard text box styling
 	 * @property {string} [size] - 'extra-large' - Extra large text field
 	 * @property {string} [placeholder] - Placeholder Prop
+	 * @property {string} [value] - Controlled input value
 	 * @property {string} [type] - Type Prop
+	 * @property {string} [autocomplete] - Autocomplete Prop
+	 * @property {string} [inputmode] - Input mode Prop
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
 	 * @property {(value: string) => void} [onchange] - Change handler
@@ -33,7 +36,10 @@
 		style = 'standard',
 		size = 'medium',
 		placeholder = '',
+		value = '',
 		type = 'text',
+		autocomplete = undefined,
+		inputmode = undefined,
 		id,
 		spellcheck = undefined,
 		onchange = () => {},
@@ -63,7 +69,10 @@
 
 <input
 	{placeholder}
+	{value}
 	{type}
+	{autocomplete}
+	{inputmode}
 	class={getClasses()}
 	{id}
 	{spellcheck}

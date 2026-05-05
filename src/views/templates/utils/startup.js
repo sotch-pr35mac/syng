@@ -41,7 +41,7 @@ export const runStartupActions = () => {
 	const configDb = debugMode ? 'development_config' : 'config';
 	const listDb = debugMode ? 'development_word-lists' : 'word-lists';
 	const bookmarkDb = debugMode ? 'development_bookmarks' : 'bookmarks';
-	const readerDocumentDb = debugMode ? 'development_reader-documents' : 'reader-documents';
+	const readerDocumentDb = 'reader-documents';
 	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
 		configDb,
 		listDb,

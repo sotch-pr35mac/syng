@@ -1,22 +1,6 @@
 {
-  "identifier": "desktop-capability",
-  "platforms": [
-    "macOS",
-    "windows",
-    "linux"
-  ],
-  "windows": [
-    "main"
-  ],
-  "permissions": [
-    "global-shortcut:default",
-    "updater:default",
-    {
-      "identifier": "http:default",
-      "allow": [
-        { "url": "https://*" },
-        { "url": "http://*" }
-      ]
-    }
-  ]
+	"identifier": "desktop-capability",
+	"platforms": ["macOS", "windows", "linux"],
+	"windows": ["main"],
+	"permissions": ["global-shortcut:default", "updater:default"]
 }

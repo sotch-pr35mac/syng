@@ -1,9 +1,10 @@
 <script lang="ts">
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import ReaderColorSwatches from '@/components/ReaderColorSwatches.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
-		READER_DOCUMENT_COLORS,
 		normalizeReaderDocumentColor,
 	} from '@/utils/readerDocumentMetadata.js';
 
@@ -57,37 +58,23 @@
 		<div class="reader-document-metadata">
 			<label class="reader-document-metadata__field">
 				<span>Title</span>
-				<input
-					bind:value={documentTitle}
-					class="reader-document-metadata__input"
-					type="text"
+				<SyTextInput
+					value={documentTitle}
+					id="reader-document-metadata-title"
+					size="large"
 					autocomplete="off"
 					placeholder="Document title"
+					oninput={(value) => {
+						documentTitle = value;
+					}}
 				/>
 			</label>
 			<div class="reader-document-metadata__field">
 				<span>Color</span>
-				<div class="reader-document-metadata__swatches">
-					{#each READER_DOCUMENT_COLORS as color (color)}
-						<button
-							class="reader-document-metadata__swatch"
-							class:reader-document-metadata__swatch--selected={documentColor ===
-								color}
-							style:background-color={color}
-							type="button"
-							aria-label={`Use ${color}`}
-							aria-pressed={documentColor === color}
-							onclick={() => {
-								documentColor = color;
-							}}
-						></button>
-					{/each}
-				</div>
-				<input
-					bind:value={documentColor}
-					class="reader-document-metadata__color-input"
-					type="color"
-					aria-label="Custom color"
+				<ReaderColorSwatches
+					value={documentColor}
+					allowCustom
+					onchange={(nextColor) => (documentColor = nextColor)}
 				/>
 			</div>
 		</div>
@@ -118,52 +105,9 @@
 		font-weight: var(--sy-font-weight--medium);
 	}
 
-	.reader-document-metadata__input {
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		padding: var(--sy-space);
-		box-shadow: var(--sy-inner-shadow);
-		box-sizing: border-box;
-		color: var(--sy-color--black);
-		font-family: var(--sy-font-family);
-		font-size: 16px;
-	}
-
-	.reader-document-metadata__swatches {
-		display: grid;
-		grid-template-columns: repeat(8, 28px);
-		gap: var(--sy-space);
-	}
-
-	.reader-document-metadata__swatch {
-		width: 28px;
-		height: 28px;
-		border: 1px solid rgb(0 0 0 / 16%);
-		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow);
-		cursor: pointer;
-	}
-
-	.reader-document-metadata__swatch--selected {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 2px;
-	}
-
-	.reader-document-metadata__color-input {
-		width: 44px;
-		height: 32px;
-		border: 0;
-		padding: 0;
-		background: transparent;
-	}
-
 	@media (max-width: 640px) {
 		.reader-document-metadata {
 			width: 100%;
-		}
-
-		.reader-document-metadata__swatches {
-			grid-template-columns: repeat(4, 28px);
 		}
 	}
 </style>
