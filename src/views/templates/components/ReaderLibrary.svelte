@@ -1,7 +1,6 @@
 <script lang="ts">
 	import {
-		CheckCircle2,
-		Circle,
+		Check,
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
@@ -58,21 +57,24 @@
 				>
 					<div class="reader-library__book-cover">
 						{#if editingLibrary}
-							<span class="reader-library__selection-indicator">
+							<span
+								class="reader-library__selection-indicator"
+								class:reader-library__selection-indicator--selected={selectedDocumentIds.has(document._id)}
+							>
 								{#if selectedDocumentIds.has(document._id)}
-									<CheckCircle2 size="22" />
-								{:else}
-									<Circle size="22" />
+									<Check size="14" />
 								{/if}
 							</span>
-							<button
-								class="reader-library__metadata-button"
-								type="button"
+							<SyButton
+								style="filled"
+								shape="rectangle"
+								size="large"
+								classes={['reader-library__metadata-button']}
 								aria-label={`Edit ${document.title}`}
 								onclick={(event) => onopenDocumentDetails(event, document)}
 							>
-								<Pencil size="16" />
-							</button>
+								<Pencil size="14" />
+							</SyButton>
 						{/if}
 						<span class="reader-library__book-title">{document.title}</span>
 						<span class="reader-library__book-progress"
@@ -196,11 +198,18 @@
 		}
 	}
 
-	.reader-library__book-card:hover .reader-library__book-cover,
+	@media (hover: hover) {
+		.reader-library__book-card:hover .reader-library__book-cover {
+			box-shadow: var(--sy-shadow--active);
+			transform: translateY(-2px);
+			transition-property: box-shadow, transform;
+			transition-duration: var(--sy-transition-duration);
+		}
+	}
+
 	.reader-library__book-card--selected .reader-library__book-cover {
-		border-color: var(--sy-color--blue);
+		border-color: var(--sy-color--black);
 		box-shadow: var(--sy-shadow--active);
-		transform: translateY(-2px);
 	}
 
 	.reader-library__book-card .reader-library__book-cover {
@@ -213,29 +222,25 @@
 		position: absolute;
 		top: var(--sy-space--large);
 		right: var(--sy-space--large);
-		color: var(--sy-color--blue);
-	}
-
-	.reader-library__metadata-button {
-		position: absolute;
-		top: var(--sy-space--large);
-		left: var(--sy-space--large);
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 30px;
-		height: 30px;
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 86%);
-		color: var(--sy-color--grey-4);
-		box-shadow: var(--sy-shadow);
-		cursor: pointer;
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 2px solid var(--sy-color--black);
+		color: var(--sy-color--white);
+		background: transparent;
 	}
 
-	.reader-library__metadata-button:hover,
-	.reader-library__metadata-button:focus-visible {
-		color: var(--sy-color--blue);
+	.reader-library__selection-indicator--selected {
+		background: var(--sy-color--black);
+	}
+
+	:global(.reader-library__metadata-button) {
+		position: absolute !important;
+		top: var(--sy-space--large) !important;
+		left: var(--sy-space--large) !important;
 	}
 
 	.reader-library__book-title {
