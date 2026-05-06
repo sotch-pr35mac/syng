@@ -19,7 +19,12 @@ import {
 	tableCellTokenKey,
 } from '@/utils/readerDocumentCanonical.js';
 import { pickReaderImportFile } from '@/utils/readerFileImport.js';
-import { invokePrepareReaderImport } from '@/utils/readerNativeImport.js';
+import {
+	invokePrepareReaderImport,
+	LARGE_HTML_IMPORT_CANCELED_MESSAGE,
+	parseLargeHtmlImportError,
+	type PrepareReaderImportInvokeArgs,
+} from '@/utils/readerNativeImport.js';
 import {
 	createReaderPages,
 	createReaderSegments,
@@ -32,6 +37,7 @@ import {
 
 const TEXT_CONTEXT_LENGTH = 32;
 const DELETE_CONFIRMATION_NAME_LIMIT = 5;
+const BYTES_PER_MIB = Number('1048576');
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
@@ -226,6 +232,31 @@ async function importPlainTextDocument(title: string, text: string, color: strin
 	}
 }
 
+async function prepareReaderImportWithLargeHtmlConfirmation(
+	args: PrepareReaderImportInvokeArgs
+): Promise<ReaderImportPayload> {
+	try {
+		return await invokePrepareReaderImport(args);
+	} catch (error) {
+		const largeHtmlError = parseLargeHtmlImportError(error);
+		if (!largeHtmlError) {
+			throw error;
+		}
+		const receivedMib = Math.ceil(largeHtmlError.receivedBytes / BYTES_PER_MIB);
+		const confirmed = await ask(
+			`This webpage is about ${receivedMib} MiB before reader processing. Importing it may use significant memory and storage. Continue?`,
+			{ title: 'Import Large Webpage' }
+		);
+		if (!confirmed) {
+			throw new Error(LARGE_HTML_IMPORT_CANCELED_MESSAGE, { cause: error });
+		}
+		return invokePrepareReaderImport({
+			...args,
+			allowLargeHtml: true,
+		});
+	}
+}
+
 async function importWebpageDocument(
 	title: string,
 	url: string,
@@ -235,12 +266,15 @@ async function importWebpageDocument(
 	try {
 		const importPayload =
 			preparedPayload ??
-			(await invokePrepareReaderImport({
+			(await prepareReaderImportWithLargeHtmlConfirmation({
 				url,
 				title,
 			}));
 		await importReaderPayload(importPayload, title || importPayload.title, color);
 	} catch (error) {
+		if (error instanceof Error && error.message === LARGE_HTML_IMPORT_CANCELED_MESSAGE) {
+			return;
+		}
 		handleError('There was an error importing the webpage.', error);
 	}
 }
@@ -575,7 +609,9 @@ function backToLibrary(): void {
 }
 
 async function openDocumentById(documentId: string): Promise<void> {
-	const document = readerDocumentsStore.documents.find((candidate) => candidate._id === documentId);
+	const document = readerDocumentsStore.documents.find(
+		(candidate) => candidate._id === documentId
+	);
 	if (document) {
 		await openDocument(document);
 		return;

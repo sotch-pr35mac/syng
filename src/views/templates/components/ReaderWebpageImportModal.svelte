@@ -4,9 +4,15 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import { ask } from '@tauri-apps/plugin-dialog';
 	import type { ReaderImportPayload } from '@/types/reader.js';
 	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
-	import { invokePrepareReaderImport } from '@/utils/readerNativeImport.js';
+	import {
+		invokePrepareReaderImport,
+		LARGE_HTML_IMPORT_CANCELED_MESSAGE,
+		parseLargeHtmlImportError,
+		type PrepareReaderImportInvokeArgs,
+	} from '@/utils/readerNativeImport.js';
 
 	type Props = {
 		visible?: boolean;
@@ -28,6 +34,7 @@
 	}: Props = $props();
 
 	const PREVIEW_TEXT_LIMIT = 600;
+	const BYTES_PER_MIB = Number('1048576');
 	let url = $state('');
 	let title = $state('');
 	let color = $state(DEFAULT_READER_DOCUMENT_COLOR);
@@ -59,6 +66,31 @@
 		onclose();
 	}
 
+	async function prepareWithLargeHtmlConfirmation(
+		args: PrepareReaderImportInvokeArgs
+	): Promise<ReaderImportPayload> {
+		try {
+			return await invokePrepareReaderImport(args);
+		} catch (error) {
+			const largeHtmlError = parseLargeHtmlImportError(error);
+			if (!largeHtmlError) {
+				throw error;
+			}
+			const receivedMib = Math.ceil(largeHtmlError.receivedBytes / BYTES_PER_MIB);
+			const confirmed = await ask(
+				`This webpage is about ${receivedMib} MiB before reader processing. Importing it may use significant memory and storage. Continue?`,
+				{ title: 'Import Large Webpage' }
+			);
+			if (!confirmed) {
+				throw new Error(LARGE_HTML_IMPORT_CANCELED_MESSAGE, { cause: error });
+			}
+			return invokePrepareReaderImport({
+				...args,
+				allowLargeHtml: true,
+			});
+		}
+	}
+
 	async function fetchPreview(): Promise<void> {
 		if (!canFetch) {
 			return;
@@ -68,7 +100,7 @@
 		preparedPayload = undefined;
 		preparedUrl = '';
 		try {
-			const nextPayload = await invokePrepareReaderImport({
+			const nextPayload = await prepareWithLargeHtmlConfirmation({
 				url: url.trim(),
 				title: titleEdited ? title : undefined,
 			});
@@ -78,7 +110,12 @@
 				title = nextPayload.title;
 			}
 		} catch (error) {
-			fetchError = error instanceof Error ? error.message : 'Could not fetch webpage preview.';
+			if (error instanceof Error && error.message === LARGE_HTML_IMPORT_CANCELED_MESSAGE) {
+				fetchError = '';
+				return;
+			}
+			fetchError =
+				error instanceof Error ? error.message : 'Could not fetch webpage preview.';
 		} finally {
 			fetching = false;
 		}

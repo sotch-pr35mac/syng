@@ -66,6 +66,11 @@ async function getSourceData(id: string): Promise<ArrayBuffer | undefined> {
 	return getReaderDocumentManager().getSourceData(id);
 }
 
+async function getSourceHtml(id: string): Promise<string | undefined> {
+	await ensureManagerReady();
+	return getReaderDocumentManager().getSourceHtml(id);
+}
+
 export const readerDocumentsStore = {
 	get documents(): ReaderDocument[] {
 		return documents;
@@ -80,4 +85,5 @@ export const readerDocumentsStore = {
 	updateMetadata,
 	getDocument,
 	getSourceData,
+	getSourceHtml,
 };

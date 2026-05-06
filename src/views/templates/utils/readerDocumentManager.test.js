@@ -8,7 +8,9 @@ const SAVED_POSITION_END = 8;
 const SOURCE_BYTE_ONE = 1;
 const SOURCE_BYTE_TWO = 2;
 const SOURCE_BYTE_THREE = 3;
+const SOURCE_BYTE_NINE = 9;
 const SOURCE_BYTES = [SOURCE_BYTE_ONE, SOURCE_BYTE_TWO, SOURCE_BYTE_THREE];
+const SOURCE_HTML = '<html><body><p>Story</p></body></html>';
 const getDocuments = (dbName) => {
 	if (!documentsByDb[dbName]) {
 		documentsByDb[dbName] = [];
@@ -169,11 +171,63 @@ it('stores and loads binary source attachments', async () => {
 	]);
 });
 
+it('stores native number-array source attachments', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const document = await manager.createDocument({
+		...importPayload,
+		title: 'PDF',
+		file_name: 'story.pdf',
+		source_type: 'pdf',
+		mime_type: 'application/pdf',
+		text: '',
+		blocks: [],
+		source_data: SOURCE_BYTES,
+	});
+
+	const loaded = await manager.getSourceData(document._id);
+
+	expect(Array.from(new Uint8Array(loaded))).toEqual(SOURCE_BYTES);
+});
+
+it('stores source HTML as an attachment instead of inline document data', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const document = await manager.createDocument({
+		...importPayload,
+		title: 'Web',
+		file_name: 'webpage.html',
+		source_type: 'webpage',
+		mime_type: 'text/html',
+		source_html: SOURCE_HTML,
+	});
+
+	const storedDocument = getDocuments('test-reader-documents').find(
+		(candidate) => candidate._id === document._id
+	);
+	const loadedHtml = await manager.getSourceHtml(document._id);
+
+	expect(storedDocument.source_html).toBeUndefined();
+	expect(loadedHtml).toBe(SOURCE_HTML);
+});
+
+it('loads legacy inline source HTML when no attachment exists', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const document = await manager.createDocument(importPayload);
+	const storedDocument = getDocuments('test-reader-documents').find(
+		(candidate) => candidate._id === document._id
+	);
+	storedDocument.source_html = SOURCE_HTML;
+
+	await expect(manager.getSourceHtml(document._id)).resolves.toBe(SOURCE_HTML);
+});
+
 it('stores asset attachments after the source attachment', async () => {
 	const manager = new ReaderDocumentManager('test-reader-documents');
 	await manager.init();
 	const sourceData = new Uint8Array(SOURCE_BYTES);
-	const assetBytes = new Uint8Array([9, 9, 1]);
+	const assetBytes = new Uint8Array([SOURCE_BYTE_NINE, SOURCE_BYTE_NINE, SOURCE_BYTE_ONE]);
 	const document = await manager.createDocument({
 		...importPayload,
 		title: 'EPUB',
@@ -193,7 +247,11 @@ it('stores asset attachments after the source attachment', async () => {
 	const loadedAsset = await manager.getAssetData(document._id, 'cover.png');
 
 	expect(loadedAsset).toBeInstanceOf(ArrayBuffer);
-	expect(Array.from(new Uint8Array(loadedAsset))).toEqual([9, 9, 1]);
+	expect(Array.from(new Uint8Array(loadedAsset))).toEqual([
+		SOURCE_BYTE_NINE,
+		SOURCE_BYTE_NINE,
+		SOURCE_BYTE_ONE,
+	]);
 });
 
 it('updates document metadata', async () => {

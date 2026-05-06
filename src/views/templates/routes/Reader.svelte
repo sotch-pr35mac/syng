@@ -559,15 +559,21 @@
 						{@const imageSource = activeDocument.blocks.find(
 							(b) => b.id === block.sourceBlockId
 						)}
-						{#if imageSource?.extensions?.image?.inline_src}
+						{#if imageSource}
 							<figure class="reader__block reader__figure">
-								<img
-									src={imageSource.extensions.image.inline_src}
-									alt={imageSource.text}
-									class="reader__inline-image"
-									width={imageSource.extensions.image.width ?? undefined}
-									height={imageSource.extensions.image.height ?? undefined}
-								/>
+								{#if imageSource.extensions?.image?.inline_src}
+									<img
+										src={imageSource.extensions.image.inline_src}
+										alt={imageSource.text}
+										class="reader__inline-image"
+										width={imageSource.extensions.image.width ?? undefined}
+										height={imageSource.extensions.image.height ?? undefined}
+									/>
+								{:else if imageSource.text}
+									<figcaption class="reader__image-caption">
+										{imageSource.text}
+									</figcaption>
+								{/if}
 							</figure>
 						{/if}
 					{:else}
@@ -1037,6 +1043,12 @@
 		max-width: 100%;
 		height: auto;
 		display: inline-block;
+	}
+
+	.reader__image-caption {
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		font-size: 0.9em;
+		font-style: italic;
 	}
 
 	.reader__block--code {

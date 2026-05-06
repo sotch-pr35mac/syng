@@ -6,6 +6,7 @@ const RANDOM_ID_RADIX = 36;
 const RANDOM_ID_END = 10;
 const NOT_FOUND_STATUS = 404;
 const SOURCE_ATTACHMENT_ID = 'source';
+const SOURCE_HTML_ATTACHMENT_ID = 'source-html';
 // Imported EPUB/PDF image assets are stored as PouchDB attachments under this prefix.
 const READER_ASSET_PREFIX = 'assets/';
 
@@ -46,11 +47,15 @@ const createInitialProgress = (text = '', resourceHref = 'text') => {
 	};
 };
 
-const isBinarySource = (sourceData) => sourceData instanceof ArrayBuffer || sourceData?.byteLength;
+const isBinarySource = (sourceData) =>
+	sourceData instanceof ArrayBuffer || Array.isArray(sourceData) || sourceData?.byteLength;
 
 const toBlob = (sourceData, mimeType) => {
 	if (sourceData instanceof Blob) {
 		return sourceData;
+	}
+	if (Array.isArray(sourceData)) {
+		return new Blob([new Uint8Array(sourceData)], { type: mimeType });
 	}
 	return new Blob([sourceData], { type: mimeType });
 };
@@ -71,6 +76,23 @@ const toArrayBuffer = async (attachment) => {
 		return attachment.arrayBuffer();
 	}
 	return undefined;
+};
+
+const toText = async (attachment) => {
+	if (!attachment) {
+		return undefined;
+	}
+	if (typeof attachment === 'string') {
+		return attachment;
+	}
+	if (typeof attachment.text === 'function') {
+		return attachment.text();
+	}
+	const arrayBuffer = await toArrayBuffer(attachment);
+	if (!arrayBuffer) {
+		return undefined;
+	}
+	return new TextDecoder().decode(arrayBuffer);
 };
 
 export class ReaderDocumentManager {
@@ -109,7 +131,12 @@ export class ReaderDocumentManager {
 	createDocument(importPayload) {
 		const now = new Date().toISOString();
 		const documentId = createDocumentId();
-		const { source_data, asset_attachments = [], ...storedPayload } = importPayload;
+		const {
+			source_data,
+			source_html,
+			asset_attachments = [],
+			...storedPayload
+		} = importPayload;
 		const resourceHref = importPayload.source_type === 'plain_text' ? 'text' : 'source';
 		const document = {
 			_id: documentId,
@@ -148,6 +175,21 @@ export class ReaderDocumentManager {
 			);
 		};
 
+		const putSourceHtml = (startingRev) => {
+			if (!source_html) {
+				return Promise.resolve(startingRev);
+			}
+			return this._document_db
+				.putAttachment(
+					documentId,
+					SOURCE_HTML_ATTACHMENT_ID,
+					startingRev,
+					new Blob([source_html], { type: 'text/html' }),
+					'text/html'
+				)
+				.then((attachmentResult) => attachmentResult.rev);
+		};
+
 		return this._document_db
 			.put(document)
 			.then((result) => {
@@ -163,6 +205,10 @@ export class ReaderDocumentManager {
 						)
 						.then((attachmentResult) => {
 							revision = attachmentResult.rev;
+							return putSourceHtml(revision);
+						})
+						.then((htmlRev) => {
+							revision = htmlRev;
 							return putAssetChain(revision, asset_attachments);
 						})
 						.then((finalRev) => ({
@@ -170,10 +216,12 @@ export class ReaderDocumentManager {
 							_rev: finalRev,
 						}));
 				}
-				return putAssetChain(revision, asset_attachments).then((finalRev) => ({
-					...document,
-					_rev: finalRev,
-				}));
+				return putSourceHtml(revision)
+					.then((htmlRev) => putAssetChain(htmlRev, asset_attachments))
+					.then((finalRev) => ({
+						...document,
+						_rev: finalRev,
+					}));
 			})
 			.catch((e) => {
 				console.error(e);
@@ -219,6 +267,19 @@ export class ReaderDocumentManager {
 				}
 				console.error(e);
 				throw new Error('There was an error loading the reader document source.');
+			});
+	}
+
+	getSourceHtml(id) {
+		return this._document_db
+			.getAttachment(id, SOURCE_HTML_ATTACHMENT_ID)
+			.then((attachment) => toText(attachment))
+			.catch((e) => {
+				if (e.status === NOT_FOUND_STATUS) {
+					return this._document_db.get(id).then((document) => document.source_html);
+				}
+				console.error(e);
+				throw new Error('There was an error loading the reader document HTML source.');
 			});
 	}
 

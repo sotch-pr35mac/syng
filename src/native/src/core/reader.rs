@@ -13,8 +13,10 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::cmp::Ordering;
 use std::io::Cursor;
+use std::net::{IpAddr, ToSocketAddrs};
 use std::ops::Deref;
 use std::path::Path;
+use std::time::Duration;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_http::reqwest;
@@ -24,6 +26,12 @@ const TEXT_EXTRACTOR_VERSION: u8 = 1;
 const EPUB_EXTRACTOR_VERSION: u8 = 2;
 const PDF_EXTRACTOR_VERSION: u8 = 3;
 const HTML_EXTRACTOR_VERSION: u8 = 2;
+const WEBPAGE_CONNECT_TIMEOUT_SECONDS: u64 = 10;
+const WEBPAGE_REQUEST_TIMEOUT_SECONDS: u64 = 45;
+const WEBPAGE_REDIRECT_LIMIT: usize = 10;
+const WEBPAGE_LARGE_HTML_WARNING_BYTES: usize = 10 * 1024 * 1024;
+const WEBPAGE_MAX_HTML_BYTES: usize = 100 * 1024 * 1024;
+const LARGE_HTML_ERROR_CODE: &str = "reader_large_html_requires_confirmation";
 const TEXT_IMPORT_EXTENSIONS: &[&str] = &["txt", "text"];
 const EPUB_IMPORT_EXTENSIONS: &[&str] = &["epub"];
 const PDF_IMPORT_EXTENSIONS: &[&str] = &["pdf"];
@@ -180,6 +188,8 @@ pub struct ReaderImportPayload {
     pub source_url: Option<String>,
     #[serde(default)]
     pub source_html: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_data: Option<Vec<u8>>,
     #[serde(default)]
     pub import_app_version: Option<String>,
 }
@@ -204,6 +214,8 @@ pub struct PrepareReaderImportArgs {
     pub title: Option<String>,
     #[serde(default)]
     pub url: Option<String>,
+    #[serde(default)]
+    pub allow_large_html: bool,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
@@ -211,6 +223,11 @@ pub struct ReaderToken {
     pub text: String,
     pub start: usize,
     pub end: usize,
+}
+
+struct WebpageFetchResult {
+    html: String,
+    final_url: String,
 }
 
 fn sha256_hex(bytes: &[u8]) -> String {
@@ -267,6 +284,92 @@ fn attr_search_text(element: ElementRef<'_>) -> String {
 
 fn contains_any(value: &str, needles: &[&str]) -> bool {
     needles.iter().any(|needle| value.contains(needle))
+}
+
+fn is_blocked_ip(ip: IpAddr) -> bool {
+    match ip {
+        IpAddr::V4(ip) => {
+            ip.is_private()
+                || ip.is_loopback()
+                || ip.is_link_local()
+                || ip.is_multicast()
+                || ip.is_broadcast()
+                || ip.is_documentation()
+                || ip.is_unspecified()
+        }
+        IpAddr::V6(ip) => {
+            ip.is_loopback()
+                || ip.is_unspecified()
+                || ip.is_multicast()
+                || ip.is_unique_local()
+                || ip.is_unicast_link_local()
+        }
+    }
+}
+
+fn is_blocked_hostname(host: &str) -> bool {
+    let host = host.trim().trim_end_matches('.').to_lowercase();
+    host.is_empty()
+        || host == "localhost"
+        || host.ends_with(".localhost")
+        || host == "local"
+        || host.ends_with(".local")
+}
+
+fn validate_remote_url(url: &reqwest::Url, resolve_host: bool) -> Result<(), String> {
+    match url.scheme() {
+        "http" | "https" => {}
+        _ => return Err("Reader webpage import only supports http and https URLs.".to_string()),
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err("Reader webpage import URLs must not include credentials.".to_string());
+    }
+
+    let host = url
+        .host_str()
+        .ok_or_else(|| "Reader webpage import URL must include a host.".to_string())?;
+    if is_blocked_hostname(host) {
+        return Err("Reader webpage import does not allow local network URLs.".to_string());
+    }
+    let ip_host = host.trim_matches(|ch| ch == '[' || ch == ']');
+    if let Ok(ip) = ip_host.parse::<IpAddr>() {
+        if is_blocked_ip(ip) {
+            return Err("Reader webpage import does not allow local network URLs.".to_string());
+        }
+    }
+
+    if resolve_host {
+        let port = url.port_or_known_default().unwrap_or(443);
+        let addresses = (host, port)
+            .to_socket_addrs()
+            .map_err(|error| format!("Could not resolve webpage host: {}", error))?;
+        for address in addresses {
+            if is_blocked_ip(address.ip()) {
+                return Err("Reader webpage import does not allow local network URLs.".to_string());
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn safe_remote_image_src(src: &str, base_url: Option<&reqwest::Url>) -> Option<String> {
+    let parsed = reqwest::Url::parse(src)
+        .ok()
+        .or_else(|| base_url.and_then(|url| url.join(src).ok()))?;
+    validate_remote_url(&parsed, false).ok()?;
+    Some(parsed.to_string())
+}
+
+fn large_html_confirmation_error(received_bytes: usize) -> String {
+    serde_json::json!({
+        "code": LARGE_HTML_ERROR_CODE,
+        "receivedBytes": received_bytes,
+        "warningBytes": WEBPAGE_LARGE_HTML_WARNING_BYTES,
+        "maxBytes": WEBPAGE_MAX_HTML_BYTES,
+        "message": "This webpage is unusually large. Importing it may use significant memory and storage."
+    })
+    .to_string()
 }
 
 fn parse_style_value(style: &str, property: &str) -> Option<String> {
@@ -634,11 +737,15 @@ fn table_extension(table: ElementRef<'_>) -> ReaderBlockExtensions {
     }
 }
 
-fn image_extension(image: ElementRef<'_>) -> Option<ReaderBlockExtensions> {
+fn image_extension(
+    image: ElementRef<'_>,
+    base_url: Option<&reqwest::Url>,
+) -> Option<ReaderBlockExtensions> {
     let src = first_attr(image, &["src", "data-src"])?;
     let alt = first_attr(image, &["alt", "title"]).unwrap_or_default();
     let width = first_attr(image, &["width"]).and_then(|value| value.parse::<u32>().ok());
     let height = first_attr(image, &["height"]).and_then(|value| value.parse::<u32>().ok());
+    let safe_src = safe_remote_image_src(&src, base_url);
 
     let mut extra = Map::new();
     extra.insert("alt".to_string(), Value::String(alt));
@@ -646,7 +753,7 @@ fn image_extension(image: ElementRef<'_>) -> Option<ReaderBlockExtensions> {
         image: Some(ReaderImageExtension {
             asset_id: Uuid::new_v4().to_string(),
             mime_type: "image/*".to_string(),
-            inline_src: Some(src),
+            inline_src: safe_src,
             width,
             height,
         }),
@@ -670,7 +777,10 @@ fn title_from_html(document: &Html) -> Option<String> {
         })
 }
 
-fn html_to_blocks(html: &str) -> (String, Vec<ReaderContentBlock>, Option<String>) {
+fn html_to_blocks(
+    html: &str,
+    base_url: Option<&reqwest::Url>,
+) -> (String, Vec<ReaderContentBlock>, Option<String>) {
     let document = Html::parse_document(html);
     let title = title_from_html(&document);
     let selector = parse_selector(
@@ -848,7 +958,7 @@ fn html_to_blocks(html: &str) -> (String, Vec<ReaderContentBlock>, Option<String
                 if has_block_ancestor(element, &["table"]) {
                     continue;
                 }
-                if let Some(extensions) = image_extension(element) {
+                if let Some(extensions) = image_extension(element, base_url) {
                     let alt = first_attr(element, &["alt", "title"]).unwrap_or_default();
                     blocks.push(ReaderContentBlock {
                         id: Uuid::new_v4().to_string(),
@@ -969,7 +1079,7 @@ fn extract_epub_payload(
     let mut blocks = Vec::new();
     let mut html_title = None;
     for chapter_html in html_fragments {
-        let (chapter_text, mut chapter_blocks, chapter_title) = html_to_blocks(&chapter_html);
+        let (chapter_text, mut chapter_blocks, chapter_title) = html_to_blocks(&chapter_html, None);
         if html_title.is_none() {
             html_title = chapter_title;
         }
@@ -1015,6 +1125,7 @@ fn extract_epub_payload(
         source_byte_length: Some(byte_len),
         source_url: None,
         source_html: None,
+        source_data: None,
         import_app_version: None,
     })
 }
@@ -1715,6 +1826,7 @@ fn pdf_notice_payload(
         source_byte_length: Some(byte_len),
         source_url: None,
         source_html: None,
+        source_data: None,
         import_app_version: None,
     }
 }
@@ -1751,6 +1863,7 @@ fn extract_pdf_payload(
         source_byte_length: Some(byte_len),
         source_url: None,
         source_html: None,
+        source_data: None,
         import_app_version: None,
     })
 }
@@ -1762,7 +1875,7 @@ fn extract_html_file_payload(
     byte_len: u64,
 ) -> Result<ReaderImportPayload, String> {
     let html = std::str::from_utf8(bytes).map_err(|_| "HTML file must be UTF-8.".to_string())?;
-    let (text, blocks, html_title) = html_to_blocks(html);
+    let (text, blocks, html_title) = html_to_blocks(html, None);
     if text.trim().is_empty() && blocks.is_empty() {
         return Err("HTML file did not contain readable text.".to_string());
     }
@@ -1780,6 +1893,7 @@ fn extract_html_file_payload(
         source_byte_length: Some(byte_len),
         source_url: None,
         source_html: None,
+        source_data: None,
         import_app_version: None,
     })
 }
@@ -1789,7 +1903,10 @@ fn prepare_from_html(
     title_override: Option<&str>,
     source_url: Option<String>,
 ) -> Result<ReaderImportPayload, String> {
-    let (text, blocks, html_title) = html_to_blocks(html);
+    let parsed_source_url = source_url
+        .as_deref()
+        .and_then(|value| reqwest::Url::parse(value).ok());
+    let (text, blocks, html_title) = html_to_blocks(html, parsed_source_url.as_ref());
     if text.trim().is_empty() && blocks.is_empty() {
         return Err("HTML import did not contain readable text.".to_string());
     }
@@ -1812,6 +1929,7 @@ fn prepare_from_html(
         source_byte_length: None,
         source_url,
         source_html: Some(html.to_string()),
+        source_data: None,
         import_app_version: None,
     })
 }
@@ -1873,6 +1991,17 @@ fn prepare_from_bytes(
 
 #[tauri::command]
 pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImportPayload, String> {
+    if args
+        .path
+        .as_ref()
+        .map(|value| !value.trim().is_empty())
+        .unwrap_or(false)
+    {
+        return Err(
+            "Path import is only available through the native reader file picker.".to_string(),
+        );
+    }
+
     let url = args
         .url
         .as_ref()
@@ -1883,8 +2012,8 @@ pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImpo
         if args.source_base64.is_some() || args.path.is_some() || args.html.is_some() {
             return Err("URL import must not include path, sourceBase64, or html.".to_string());
         }
-        let html = fetch_webpage_html(url)?;
-        return prepare_from_html(&html, args.title.as_deref(), Some(url.to_string()));
+        let result = fetch_webpage_html(url, args.allow_large_html)?;
+        return prepare_from_html(&result.html, args.title.as_deref(), Some(result.final_url));
     }
 
     let html = args
@@ -1921,32 +2050,6 @@ pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImpo
         ));
     }
 
-    if let Some(path_str) = args
-        .path
-        .as_ref()
-        .map(|value| value.trim())
-        .filter(|value| !value.is_empty())
-    {
-        if args.source_base64.is_some() {
-            return Err("Provide either path or sourceBase64, not both.".to_string());
-        }
-        let bytes = std::fs::read(path_str)
-            .map_err(|error| format!("Failed to read import path {}: {}", path_str, error))?;
-        let file_name = args
-            .file_name
-            .as_ref()
-            .filter(|value| !value.is_empty())
-            .cloned()
-            .or_else(|| {
-                Path::new(path_str)
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .map(|name| name.to_string())
-            })
-            .ok_or_else(|| "Could not determine a file name for the import path.".to_string())?;
-        return prepare_from_bytes(&bytes, &file_name, args.mime_type.as_deref());
-    }
-
     let source_b64 = args
         .source_base64
         .as_ref()
@@ -1964,17 +2067,25 @@ pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImpo
     prepare_from_bytes(&decoded, file_name, args.mime_type.as_deref())
 }
 
-fn fetch_webpage_html(url: &str) -> Result<String, String> {
+fn fetch_webpage_html(url: &str, allow_large_html: bool) -> Result<WebpageFetchResult, String> {
     let parsed = reqwest::Url::parse(url).map_err(|error| format!("Invalid URL: {}", error))?;
-    match parsed.scheme() {
-        "http" | "https" => {}
-        _ => return Err("Reader webpage import only supports http and https URLs.".to_string()),
-    }
+    validate_remote_url(&parsed, true)?;
 
     tauri::async_runtime::block_on(async {
+        let redirect_policy = reqwest::redirect::Policy::custom(|attempt| {
+            if attempt.previous().len() >= WEBPAGE_REDIRECT_LIMIT {
+                return attempt.error("Reader webpage import followed too many redirects.");
+            }
+            match validate_remote_url(attempt.url(), true) {
+                Ok(()) => attempt.follow(),
+                Err(error) => attempt.error(error),
+            }
+        });
         let response = reqwest::Client::builder()
             .user_agent("Syng reader import")
-            .redirect(reqwest::redirect::Policy::limited(10))
+            .connect_timeout(Duration::from_secs(WEBPAGE_CONNECT_TIMEOUT_SECONDS))
+            .timeout(Duration::from_secs(WEBPAGE_REQUEST_TIMEOUT_SECONDS))
+            .redirect(redirect_policy)
             .build()
             .map_err(|error| format!("Could not create HTTP client: {}", error))?
             .get(parsed)
@@ -1986,14 +2097,45 @@ fn fetch_webpage_html(url: &str) -> Result<String, String> {
             return Err(format!("Webpage returned HTTP {}.", response.status()));
         }
 
-        let html = response
-            .text()
+        if let Some(content_length) = response.content_length() {
+            let content_length = content_length as usize;
+            if content_length > WEBPAGE_MAX_HTML_BYTES {
+                return Err(format!(
+                    "Webpage response is too large to import ({} bytes).",
+                    content_length
+                ));
+            }
+            if content_length > WEBPAGE_LARGE_HTML_WARNING_BYTES && !allow_large_html {
+                return Err(large_html_confirmation_error(content_length));
+            }
+        }
+
+        let final_url = response.url().to_string();
+        let mut bytes = Vec::new();
+        let mut response = response;
+        while let Some(chunk) = response
+            .chunk()
             .await
-            .map_err(|error| format!("Could not read webpage response: {}", error))?;
+            .map_err(|error| format!("Could not read webpage response: {}", error))?
+        {
+            let next_len = bytes.len() + chunk.len();
+            if next_len > WEBPAGE_MAX_HTML_BYTES {
+                return Err(format!(
+                    "Webpage response is too large to import (more than {} bytes).",
+                    WEBPAGE_MAX_HTML_BYTES
+                ));
+            }
+            if next_len > WEBPAGE_LARGE_HTML_WARNING_BYTES && !allow_large_html {
+                return Err(large_html_confirmation_error(next_len));
+            }
+            bytes.extend_from_slice(&chunk);
+        }
+
+        let html = String::from_utf8_lossy(&bytes).to_string();
         if html.trim().is_empty() {
             return Err("Webpage response was empty.".to_string());
         }
-        Ok(html)
+        Ok(WebpageFetchResult { html, final_url })
     })
 }
 
@@ -2028,7 +2170,9 @@ pub async fn import_reader_document(
         .read(file_path)
         .map_err(|err| format!("Failed to read the selected document: {}", err))?;
 
-    prepare_from_bytes(&bytes, &file_name, None).map(Some)
+    let mut payload = prepare_from_bytes(&bytes, &file_name, None)?;
+    payload.source_data = Some(bytes);
+    Ok(Some(payload))
 }
 
 #[tauri::command]
@@ -2075,6 +2219,7 @@ fn extract_plain_text_document(
         source_byte_length: None,
         source_url: None,
         source_html: None,
+        source_data: None,
         import_app_version: None,
     }
 }
@@ -2216,6 +2361,7 @@ mod tests {
             text: None,
             title: Some("T".to_string()),
             url: None,
+            allow_large_html: false,
         })
         .expect("html import");
 
@@ -2248,6 +2394,7 @@ mod tests {
             text: None,
             title: None,
             url: None,
+            allow_large_html: false,
         })
         .expect("html import");
 
@@ -2274,8 +2421,88 @@ mod tests {
                     .extensions
                     .as_ref()
                     .and_then(|value| value.image.as_ref())
-                    .is_some()
+                    .and_then(|value| value.inline_src.as_deref())
+                    == Some("https://example.com/image.png")
         }));
+    }
+
+    #[test]
+    fn html_import_strips_unsafe_image_sources() {
+        let base_url = reqwest::Url::parse("https://example.com/articles/story.html").unwrap();
+        let (_, blocks, _) = html_to_blocks(
+            r#"
+                <img src="/cover.png" alt="Cover">
+                <img src="file:///etc/passwd" alt="File">
+                <img src="http://127.0.0.1/track.png" alt="Local">
+            "#,
+            Some(&base_url),
+        );
+
+        let image_sources = blocks
+            .iter()
+            .filter(|block| block.kind == "image")
+            .map(|block| {
+                block
+                    .extensions
+                    .as_ref()
+                    .and_then(|value| value.image.as_ref())
+                    .and_then(|value| value.inline_src.as_deref())
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            image_sources,
+            vec![Some("https://example.com/cover.png"), None, None]
+        );
+    }
+
+    #[test]
+    fn webpage_url_validation_rejects_local_targets() {
+        for url in [
+            "http://localhost/article",
+            "http://127.0.0.1/article",
+            "http://[::1]/article",
+            "file:///tmp/article.html",
+            "https://user@example.com/article",
+        ] {
+            let parsed = reqwest::Url::parse(url).expect("parse url");
+            assert!(
+                validate_remote_url(&parsed, false).is_err(),
+                "expected {url} to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn large_html_error_is_structured_json() {
+        let error = large_html_confirmation_error(WEBPAGE_LARGE_HTML_WARNING_BYTES + 1);
+        let parsed: Value = serde_json::from_str(&error).expect("json error");
+
+        assert_eq!(parsed["code"], LARGE_HTML_ERROR_CODE);
+        assert_eq!(
+            parsed["receivedBytes"],
+            WEBPAGE_LARGE_HTML_WARNING_BYTES + 1
+        );
+    }
+
+    #[test]
+    fn html_import_preserves_image_alt_when_source_is_blocked() {
+        let (_, blocks, _) =
+            html_to_blocks(r#"<img src="file:///tmp/cover.png" alt="Cover">"#, None);
+
+        let image = blocks
+            .iter()
+            .find(|block| block.kind == "image")
+            .expect("image block");
+        assert_eq!(image.text, "Cover");
+        assert_eq!(
+            image
+                .extensions
+                .as_ref()
+                .and_then(|value| value.image.as_ref())
+                .and_then(|value| value.inline_src.as_ref()),
+            None
+        );
     }
 
     #[test]
@@ -2296,6 +2523,7 @@ mod tests {
                 </body>
             </html>
             "#,
+            None,
         );
 
         assert!(text.contains("漢 字"));
@@ -2353,6 +2581,7 @@ mod tests {
     fn html_import_marks_vertical_writing_mode() {
         let (_, blocks, _) = html_to_blocks(
             r#"<section style="writing-mode: vertical-rl"><p>直排文字</p></section>"#,
+            None,
         );
 
         assert!(blocks.iter().any(|block| {
@@ -2827,6 +3056,7 @@ mod tests {
             text: None,
             title: None,
             url: None,
+            allow_large_html: false,
         })
         .expect("txt import");
 
@@ -2835,12 +3065,12 @@ mod tests {
     }
 
     #[test]
-    fn prepare_reader_import_from_path_reads_utf8_text() {
+    fn prepare_reader_import_rejects_renderer_path_reads() {
         let temp = tempfile::tempdir().expect("tempdir");
         let file_path = temp.path().join("path-import.txt");
         std::fs::write(&file_path, "Line one\n\nLine two.").expect("write test file");
 
-        let payload = prepare_reader_import(PrepareReaderImportArgs {
+        let error = prepare_reader_import(PrepareReaderImportArgs {
             path: Some(file_path.to_string_lossy().to_string()),
             source_base64: None,
             file_name: Some("path-import.txt".to_string()),
@@ -2849,15 +3079,10 @@ mod tests {
             text: None,
             title: None,
             url: None,
+            allow_large_html: false,
         })
-        .expect("path import");
+        .expect_err("renderer path import should be rejected");
 
-        assert_eq!(payload.text, "Line one\n\nLine two.");
-        assert_eq!(
-            payload.source_sha256,
-            Some(sha256_hex(
-                std::fs::read(&file_path).expect("read back").as_slice()
-            ))
-        );
+        assert!(error.contains("native reader file picker"));
     }
 }

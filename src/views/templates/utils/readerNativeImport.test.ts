@@ -3,6 +3,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 import {
 	canUseNativeReaderPrepareImport,
 	invokePrepareReaderImport,
+	LARGE_HTML_IMPORT_ERROR_CODE,
+	parseLargeHtmlImportError,
 } from '@/utils/readerNativeImport.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
@@ -37,6 +39,7 @@ it('wraps prepare reader import args for the native command contract', async () 
 			text: '你好',
 			title: 'Clipboard',
 			fileName: 'clipboard.txt',
+			allowLargeHtml: true,
 		})
 	).resolves.toBe(payload);
 
@@ -45,6 +48,25 @@ it('wraps prepare reader import args for the native command contract', async () 
 			text: '你好',
 			title: 'Clipboard',
 			fileName: 'clipboard.txt',
+			allowLargeHtml: true,
 		},
+	});
+});
+
+it('parses native large HTML confirmation errors', () => {
+	const error = JSON.stringify({
+		code: LARGE_HTML_IMPORT_ERROR_CODE,
+		message: 'Large webpage',
+		receivedBytes: 12,
+		warningBytes: 10,
+		maxBytes: 100,
+	});
+
+	expect(parseLargeHtmlImportError(error)).toEqual({
+		code: LARGE_HTML_IMPORT_ERROR_CODE,
+		message: 'Large webpage',
+		receivedBytes: 12,
+		warningBytes: 10,
+		maxBytes: 100,
 	});
 });
