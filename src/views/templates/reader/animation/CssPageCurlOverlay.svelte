@@ -191,10 +191,11 @@
 		background:
 			radial-gradient(
 				ellipse at 30% 50%,
-				rgb(255 252 244) 0%,
-				rgb(238 230 213) 60%,
-				rgb(220 208 185) 100%
-			);
+				rgb(255 255 255 / 22%) 0%,
+				rgb(0 0 0 / 4%) 60%,
+				rgb(0 0 0 / 12%) 100%
+			),
+			var(--reader-page-background, var(--sy-color--white));
 		transform: rotateY(180deg);
 		animation-name: page-flip-face-back;
 	}
