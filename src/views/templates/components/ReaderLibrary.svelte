@@ -1,13 +1,14 @@
 <script lang="ts">
 	import {
-		BookOpen,
 		CheckCircle2,
 		Circle,
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
+		Library,
 		Pencil,
 	} from 'lucide-svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { ReaderDocument } from '@/types/reader.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
@@ -40,81 +41,83 @@
 	}: Props = $props();
 </script>
 
-<main class="reader-library">
-	<div class="reader-library__grid">
-		<div class="reader-library__import-stack">
-			<button
-				class="reader-library__book-card reader-library__book-card--import"
-				disabled={importing || editingLibrary}
-				onclick={onopenClipboardImport}
-			>
-				<div class="reader-library__book-cover">
-					<ClipboardPaste size="20" />
-					<span>Import From Clipboard</span>
+<main class="reader-library" class:reader-library--empty={!documents.length}>
+	{#if documents.length}
+		<div class="reader-library__grid">
+			{#each documents as document (document._id)}
+				<div
+					class="reader-library__book-card"
+					class:reader-library__book-card--selected={selectedDocumentIds.has(
+						document._id
+					)}
+					style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
+					onclick={() => oncardClick(document)}
+					onkeyup={(event) => oncardKey(event, document)}
+					role="button"
+					tabindex="0"
+				>
+					<div class="reader-library__book-cover">
+						{#if editingLibrary}
+							<span class="reader-library__selection-indicator">
+								{#if selectedDocumentIds.has(document._id)}
+									<CheckCircle2 size="22" />
+								{:else}
+									<Circle size="22" />
+								{/if}
+							</span>
+							<button
+								class="reader-library__metadata-button"
+								type="button"
+								aria-label={`Edit ${document.title}`}
+								onclick={(event) => onopenDocumentDetails(event, document)}
+							>
+								<Pencil size="16" />
+							</button>
+						{/if}
+						<span class="reader-library__book-title">{document.title}</span>
+						<span class="reader-library__book-meta">{document.file_name}</span>
+						<span class="reader-library__book-progress"
+							>{getProgressPercent(document)}%</span
+						>
+					</div>
 				</div>
-			</button>
-			<button
-				class="reader-library__book-card reader-library__book-card--import"
-				disabled={importing || editingLibrary}
-				onclick={onopenWebpageImport}
-			>
-				<div class="reader-library__book-cover">
-					<Globe2 size="20" />
-					<span>Import From Webpage</span>
-				</div>
-			</button>
-			<button
-				class="reader-library__book-card reader-library__book-card--import"
-				disabled={importing || editingLibrary}
-				onclick={onopenFileImport}
-			>
-				<div class="reader-library__book-cover">
+			{/each}
+		</div>
+	{:else}
+		<div class="reader-library__empty">
+			<div class="reader-library__empty-copy">
+				<Library size="42" />
+				<p>Your reading library is empty</p>
+			</div>
+			<div class="reader-library__empty-actions" aria-label="Import options">
+				<SyButton
+					size="large"
+					classes={['reader-library__empty-action']}
+					disabled={importing}
+					onclick={onopenFileImport}
+				>
 					<FilePlus2 size="20" />
 					<span>{importing ? 'Importing...' : 'Import Document'}</span>
-				</div>
-			</button>
-		</div>
-		{#each documents as document (document._id)}
-			<div
-				class="reader-library__book-card"
-				class:reader-library__book-card--selected={selectedDocumentIds.has(document._id)}
-				style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
-				onclick={() => oncardClick(document)}
-				onkeyup={(event) => oncardKey(event, document)}
-				role="button"
-				tabindex="0"
-			>
-				<div class="reader-library__book-cover">
-					{#if editingLibrary}
-						<span class="reader-library__selection-indicator">
-							{#if selectedDocumentIds.has(document._id)}
-								<CheckCircle2 size="22" />
-							{:else}
-								<Circle size="22" />
-							{/if}
-						</span>
-						<button
-							class="reader-library__metadata-button"
-							type="button"
-							aria-label={`Edit ${document.title}`}
-							onclick={(event) => onopenDocumentDetails(event, document)}
-						>
-							<Pencil size="16" />
-						</button>
-					{/if}
-					<span class="reader-library__book-title">{document.title}</span>
-					<span class="reader-library__book-meta">{document.file_name}</span>
-					<span class="reader-library__book-progress"
-						>{getProgressPercent(document)}%</span
-					>
-				</div>
+				</SyButton>
+				<SyButton
+					size="large"
+					classes={['reader-library__empty-action']}
+					disabled={importing}
+					onclick={onopenWebpageImport}
+				>
+					<Globe2 size="20" />
+					<span>Import From Webpage</span>
+				</SyButton>
+				<SyButton
+					size="large"
+					classes={['reader-library__empty-action']}
+					disabled={importing}
+					onclick={onopenClipboardImport}
+				>
+					<ClipboardPaste size="20" />
+					<span>Import From Clipboard</span>
+				</SyButton>
 			</div>
-		{/each}
-	</div>
-	{#if !documents.length}
-		<div class="reader-library__empty">
-			<BookOpen size="42" />
-			<p>Your reading library is empty</p>
 		</div>
 	{/if}
 </main>
@@ -126,6 +129,12 @@
 		overflow-y: auto;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		box-sizing: border-box;
+	}
+
+	.reader-library--empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.reader-library__grid {
@@ -146,18 +155,6 @@
 		font-family: var(--sy-font-family);
 		text-align: left;
 		cursor: pointer;
-	}
-
-	.reader-library__import-stack {
-		display: grid;
-		grid-template-rows: repeat(3, 1fr);
-		gap: var(--sy-space);
-		aspect-ratio: 2 / 3;
-	}
-
-	.reader-library__import-stack .reader-library__book-card {
-		height: 100%;
-		aspect-ratio: auto;
 	}
 
 	.reader-library__book-card:focus-visible {
@@ -182,13 +179,21 @@
 		border-radius: var(--sy-border-radius);
 		background:
 			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-			var(--reader-book-color, var(--sy-color--white));
+			color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #ffffff);
 		box-shadow: var(--sy-shadow);
 		color: var(--sy-color--grey-4);
 		transition:
 			box-shadow var(--sy-transition-duration),
 			transform var(--sy-transition-duration),
 			border-color var(--sy-transition-duration);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.reader-library__book-cover {
+			background:
+				linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
+				color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #000000);
+		}
 	}
 
 	.reader-library__book-card:hover .reader-library__book-cover,
@@ -198,18 +203,7 @@
 		transform: translateY(-2px);
 	}
 
-	.reader-library__book-card--import .reader-library__book-cover {
-		align-items: center;
-		justify-content: center;
-		gap: var(--sy-space);
-		color: var(--sy-color--blue);
-		font-size: 0.82rem;
-		line-height: 1.2;
-		padding: var(--sy-space);
-		text-align: center;
-	}
-
-	.reader-library__book-card:not(.reader-library__book-card--import) .reader-library__book-cover {
+	.reader-library__book-card .reader-library__book-cover {
 		align-items: center;
 		justify-content: center;
 		text-align: center;
@@ -278,9 +272,39 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: var(--sy-space);
-		padding: 12vh 0;
+		justify-content: center;
+		gap: var(--sy-space--extra-large);
+		width: 100%;
 		color: var(--sy-color--grey-4);
 		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+
+	.reader-library__empty-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sy-space--large);
+	}
+
+	.reader-library__empty p {
+		margin: 0;
+	}
+
+	.reader-library__empty-actions {
+		display: flex;
+		align-items: stretch;
+		justify-content: center;
+		gap: var(--sy-space--large);
+		max-width: 100%;
+		flex-wrap: wrap;
+	}
+
+	:global(.reader-library__empty-action) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space);
+		margin: 0;
 	}
 </style>

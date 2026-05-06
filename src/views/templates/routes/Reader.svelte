@@ -3,9 +3,13 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
 		BookOpen,
+		ChevronDown,
 		ChevronLeft,
 		ChevronRight,
-		Library,
+		ChevronUp,
+		ClipboardPaste,
+		FilePlus2,
+		Globe2,
 		Minus,
 		Palette,
 		Plus,
@@ -13,8 +17,11 @@
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
+	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
 	import ReaderLibrary from '@/components/ReaderLibrary.svelte';
 	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
@@ -37,6 +44,7 @@
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
+	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { isIPad } from '@/utils/device.js';
 
 	type Props = {
@@ -56,6 +64,31 @@
 	const PAGE_CURL_DURATION_MS = 760;
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+	const READER_IMPORT_ACTIONS = {
+		FILE: 'file',
+		WEBPAGE: 'webpage',
+		CLIPBOARD: 'clipboard',
+	} as const;
+	const readerImportDropdownValues = [
+		{
+			id: READER_IMPORT_ACTIONS.FILE,
+			text: 'Import Document',
+			icon: FilePlus2,
+			component: TextWithIconDropdownItem,
+		},
+		{
+			id: READER_IMPORT_ACTIONS.WEBPAGE,
+			text: 'Import From Webpage',
+			icon: Globe2,
+			component: TextWithIconDropdownItem,
+		},
+		{
+			id: READER_IMPORT_ACTIONS.CLIPBOARD,
+			text: 'Import From Clipboard',
+			icon: ClipboardPaste,
+			component: TextWithIconDropdownItem,
+		},
+	];
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
@@ -234,6 +267,20 @@
 		}
 	}
 
+	function handleImportSelection(id: string): void {
+		if (id === READER_IMPORT_ACTIONS.CLIPBOARD) {
+			openClipboardImportModal();
+			return;
+		}
+		if (id === READER_IMPORT_ACTIONS.WEBPAGE) {
+			openWebpageImportModal();
+			return;
+		}
+		if (id === READER_IMPORT_ACTIONS.FILE) {
+			void openFileImportDetails();
+		}
+	}
+
 	function closeFileImportDetails(): void {
 		pendingImportPayload = undefined;
 	}
@@ -406,8 +453,7 @@
 				<BookOpen size="22" />
 				<h1>{activeDocument.title}</h1>
 			{:else}
-				<Library size="22" />
-				<h1>Library</h1>
+				<h1 class="reader__library-title">Library</h1>
 			{/if}
 		</div>
 		<div class="reader__header-actions">
@@ -476,9 +522,31 @@
 						Delete
 					</SyButton>
 				{/if}
-				<SyButton style="ghost" size="large" onclick={toggleEditing}>
-					{editingLibrary ? 'Done' : 'Edit'}
-				</SyButton>
+				{#if editingLibrary || readerRoute.importing}
+					<SyButton style="ghost" size="large" center={true} disabled={true}>
+						{readerRoute.importing ? 'Importing...' : 'Import'}
+					</SyButton>
+				{:else}
+					<SyDropdown
+						values={readerImportDropdownValues}
+						position={DROPDOWN_POSITIONS.RIGHT}
+						onselection={handleImportSelection}
+					>
+						{#snippet children(open)}
+							<SyButton style="ghost" size="large" center={true}>
+								Import
+								{#if open}<ChevronUp size="20" />{:else}<ChevronDown
+										size="20"
+									/>{/if}
+							</SyButton>
+						{/snippet}
+					</SyDropdown>
+				{/if}
+				{#if editingLibrary || documents.length}
+					<SyButton style="ghost" size="large" onclick={toggleEditing}>
+						{editingLibrary ? 'Done' : 'Edit'}
+					</SyButton>
+				{/if}
 			{/if}
 		</div>
 	</div>
@@ -705,15 +773,13 @@
 	onimport={readerRoute.importWebpageDocument}
 />
 
-<ReaderDocumentMetadataModal
+<ReaderDocumentImportModal
 	visible={Boolean(pendingImportPayload)}
-	title="Import Document"
 	initialTitle={pendingImportPayload?.title ?? ''}
 	initialColor={pendingImportPayload?.color}
-	confirmLabel="Import"
-	busy={readerRoute.importing}
+	importing={readerRoute.importing}
 	onclose={closeFileImportDetails}
-	onsave={importPendingDocument}
+	onimport={importPendingDocument}
 />
 
 <ReaderDocumentMetadataModal
@@ -771,6 +837,12 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+
+	.reader__title-row .reader__library-title {
+		color: var(--sy-color--black);
+		font-size: var(--sy-font-size--large);
+		font-weight: var(--sy-font-weight--bold);
 	}
 
 	.reader__settings {

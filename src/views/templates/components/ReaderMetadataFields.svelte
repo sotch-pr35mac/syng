@@ -8,7 +8,6 @@
 		title: string;
 		color: string;
 		titlePlaceholder?: string;
-		allowCustomColor?: boolean;
 		ontitleinput?: (_title: string) => void;
 		oncolorchange?: (_color: string) => void;
 	};
@@ -18,7 +17,6 @@
 		title,
 		color = DEFAULT_READER_DOCUMENT_COLOR,
 		titlePlaceholder = 'Document title',
-		allowCustomColor = false,
 		ontitleinput = () => {},
 		oncolorchange = () => {},
 	}: Props = $props();
@@ -37,11 +35,7 @@
 </label>
 <div class="reader-metadata-field">
 	<span>Color</span>
-	<ReaderColorSwatches
-		value={color}
-		allowCustom={allowCustomColor}
-		onchange={oncolorchange}
-	/>
+	<ReaderColorSwatches value={color} onchange={oncolorchange} />
 </div>
 
 <style>
@@ -49,7 +43,8 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-color--black);
+		font-size: var(--sy-font-size--medium);
 		font-weight: var(--sy-font-weight--medium);
 	}
 </style>

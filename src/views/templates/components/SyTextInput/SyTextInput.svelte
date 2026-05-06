@@ -20,6 +20,7 @@
 	 * @property {string} [inputmode] - Input mode Prop
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
+	 * @property {any[]} [classes] - Additional class names
 	 * @property {(value: string) => void} [onchange] - Change handler
 	 * @property {(value: string) => void} [onkeyup] - Keyup handler
 	 * @property {(value: string) => void} [oninput] - Input handler
@@ -42,18 +43,21 @@
 		inputmode = undefined,
 		id,
 		spellcheck = undefined,
+		classes = [],
 		onchange = () => {},
 		onkeyup = () => {},
 		oninput = () => {},
 		onenter = () => {},
 	} = $props();
 	const getClasses = () => {
-		return [
-			'sy-text-input',
-			`sy-text-input--${style}`,
-			`sy-text-input--${size}`,
-			mobile ? 'sy-text-input--mobile' : '',
-		].join(' ');
+		return classes
+			.concat([
+				'sy-text-input',
+				`sy-text-input--${style}`,
+				`sy-text-input--${size}`,
+				mobile ? 'sy-text-input--mobile' : '',
+			])
+			.join(' ');
 	};
 	const handleKeyup = (event) => {
 		if (event.code === 'Enter') {

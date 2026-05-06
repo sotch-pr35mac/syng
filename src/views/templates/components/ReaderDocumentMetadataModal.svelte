@@ -59,7 +59,6 @@
 				idPrefix="reader-document-metadata"
 				title={documentTitle}
 				color={documentColor}
-				allowCustomColor
 				ontitleinput={(value) => {
 					documentTitle = value;
 				}}

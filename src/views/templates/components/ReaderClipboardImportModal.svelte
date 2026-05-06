@@ -1,7 +1,6 @@
 <script lang="ts">
-	import ReaderMetadataFields from '@/components/ReaderMetadataFields.svelte';
-	import ReaderModalFooter from '@/components/ReaderModalFooter.svelte';
-	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import ReaderClipboardImportBody from '@/components/ReaderClipboardImportBody.svelte';
+	import ReaderImportModal from '@/components/ReaderImportModal.svelte';
 	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
 	import { inferPlainTextReaderTitle } from '@/utils/readerPlainTextImport.js';
 
@@ -41,16 +40,14 @@
 		onclose();
 	}
 
-	function updateText(event: Event): void {
-		text =
-			event.currentTarget instanceof HTMLTextAreaElement ? event.currentTarget.value : text;
+	function updateText(nextText: string): void {
+		text = nextText;
 		if (!titleEdited) {
 			title = inferPlainTextReaderTitle(text);
 		}
 	}
 
-	async function submit(event: SubmitEvent): Promise<void> {
-		event.preventDefault();
+	async function submit(): Promise<void> {
 		if (!canImport) {
 			return;
 		}
@@ -60,88 +57,25 @@
 	}
 </script>
 
-<SyModal title="Import From Clipboard" {visible} onclose={close}>
+<ReaderImportModal
+	title="Import From Clipboard"
+	{visible}
+	disabled={!canImport}
+	busy={importing || submitting}
+	onclose={close}
+	onconfirm={submit}
+>
 	{#snippet body()}
-		<form class="reader-clipboard-import" id="reader-clipboard-import-form" onsubmit={submit}>
-			<ReaderMetadataFields
-				idPrefix="reader-clipboard-import"
-				{title}
-				{color}
-				ontitleinput={(value) => {
-					title = value;
-					titleEdited = true;
-				}}
-				oncolorchange={(nextColor) => (color = nextColor)}
-			/>
-			<label class="reader-clipboard-import__field">
-				<span>Text</span>
-				<textarea
-					value={text}
-					class="reader-clipboard-import__textarea"
-					placeholder="Paste text here"
-					rows="10"
-					oninput={updateText}
-				></textarea>
-			</label>
-		</form>
-	{/snippet}
-	{#snippet footer()}
-		<ReaderModalFooter
-			disabled={!canImport}
-			confirmLabel="Import"
-			busyLabel="Importing..."
-			busy={importing || submitting}
-			oncancel={close}
-			onconfirm={() => {
-				const form = document.getElementById(
-					'reader-clipboard-import-form'
-				) as HTMLFormElement | null;
-				form?.requestSubmit();
+		<ReaderClipboardImportBody
+			{title}
+			{text}
+			{color}
+			ontitleinput={(value) => {
+				title = value;
+				titleEdited = true;
 			}}
+			ontextinput={updateText}
+			oncolorchange={(nextColor) => (color = nextColor)}
 		/>
 	{/snippet}
-</SyModal>
-
-<style>
-	.reader-clipboard-import {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space--large);
-		width: min(520px, 72vw);
-	}
-
-	.reader-clipboard-import__field {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space);
-		color: var(--sy-color--grey-4);
-		font-weight: var(--sy-font-weight--medium);
-	}
-
-	.reader-clipboard-import__textarea {
-		border: var(--sy-border);
-		border-radius: var(--sy-border-radius);
-		padding: var(--sy-space);
-		box-shadow: var(--sy-inner-shadow);
-		box-sizing: border-box;
-		color: var(--sy-color--black);
-		font-family: var(--sy-font-family);
-		font-size: var(--sy-font-size--medium);
-	}
-
-	.reader-clipboard-import__textarea {
-		min-height: 220px;
-		resize: vertical;
-		line-height: 1.5;
-	}
-
-	@media (max-width: 640px) {
-		.reader-clipboard-import {
-			width: 100%;
-		}
-
-		.reader-clipboard-import__textarea {
-			min-height: 180px;
-		}
-	}
-</style>
+</ReaderImportModal>

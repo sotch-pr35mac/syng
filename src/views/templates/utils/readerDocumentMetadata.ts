@@ -2,15 +2,16 @@ import type { ReaderImportPayload } from '@/types/reader.js';
 
 export const DEFAULT_READER_DOCUMENT_COLOR = '#ffffff';
 
+// Sourced from theme.css color variables. Display is handled by CSS color-mix()
+// in ReaderColorSwatches and ReaderLibrary, so these hex values are only used
+// for storage and comparison. Keep in sync with theme.css if theme colors change.
 export const READER_DOCUMENT_COLORS = [
-	'#ffffff',
-	'#f5d36c',
-	'#91d7b4',
-	'#8fc7f4',
-	'#c9b6f2',
-	'#f2a6a6',
-	'#f2b36f',
-	'#b7c0cc',
+	'#ffffff', // white
+	'#76aff9', // --sy-color--blue-1
+	'#43b866', // --sy-color--green-3
+	'#e48e1c', // --sy-color--yellow-1
+	'#e43978', // --sy-color--red-1
+	'#8b6ed6', // lavender (no theme variable)
 ];
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
