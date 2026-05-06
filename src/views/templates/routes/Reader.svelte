@@ -12,12 +12,14 @@
 		Minus,
 		Palette,
 		Plus,
+		SlidersHorizontal,
 		Trash2,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
@@ -65,6 +67,7 @@
 	const PAGE_CURL_DURATION_MS = 760;
 	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+	const READER_SETTINGS_POPOVER_WIDTH_PX = 470;
 	const READER_IMPORT_ACTIONS = {
 		FILE: 'file',
 		WEBPAGE: 'webpage',
@@ -141,6 +144,9 @@
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
 	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
 	let routeLoadRequest = $state(0);
+	let readerSettingsPopoverVisible = $state(false);
+	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
+	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
 	const selectedDocumentIds = new SvelteSet<string>();
 	const selectedDocuments = $derived(
 		documents.filter((document) => selectedDocumentIds.has(document._id))
@@ -215,6 +221,13 @@
 		readerSettings.lineHeight;
 		if (pageElement) {
 			updatePageLayout().catch(() => {});
+		}
+	});
+
+	$effect(() => {
+		if (!activeDocument) {
+			readerSettingsPopoverVisible = false;
+			readerSettingsPopoverAnchor = undefined;
 		}
 	});
 
@@ -368,6 +381,19 @@
 		readerSettingsStore.applyColorTheme(theme);
 	}
 
+	function toggleReaderSettingsPopover(event: MouseEvent): void {
+		if (!(event.currentTarget instanceof HTMLElement)) {
+			return;
+		}
+		readerSettingsButtonElement = event.currentTarget;
+		readerSettingsPopoverAnchor = event.currentTarget.getBoundingClientRect();
+		readerSettingsPopoverVisible = !readerSettingsPopoverVisible;
+	}
+
+	function closeReaderSettingsPopover(): void {
+		readerSettingsPopoverVisible = false;
+	}
+
 	function parsePixelValue(value: string, fallback: number): number {
 		const parsedValue = Number.parseFloat(value);
 		return Number.isFinite(parsedValue) ? parsedValue : fallback;
@@ -478,74 +504,103 @@
 					<ChevronLeft size="20" />
 					Library
 				</SyButton>
+				<span class="reader__document-title">{activeDocument.title}</span>
 			{:else}
 				<h1 class="reader__library-title">Library</h1>
 			{/if}
 		</div>
 		<div class="reader__header-actions">
 			{#if activeDocument}
-				<div class="reader__settings" aria-label="Reader settings">
-					<SyButtonBar size="large" aria-label="Reader theme">
-						{#each READER_COLOR_THEMES as theme (theme.id)}
-							{@const resolvedTheme = getReaderColorTheme(
-								theme.id,
-								systemPrefersDark
-							)}
-							<SyButton
-								grouped={true}
-								center={true}
-								color={readerSettings.colorTheme === theme.id ? 'blue' : undefined}
-								aria-label={`Use ${theme.label} reader theme`}
-								aria-pressed={readerSettings.colorTheme === theme.id}
-								title={theme.label}
-								onclick={() => setReaderTheme(theme.id)}
-							>
-								<span class="reader__theme-button-content">
-									<span
-										class="reader__theme-swatch"
-										style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
-										aria-hidden="true"
+				<SyButton
+					style="ghost"
+					size="large"
+					center={true}
+					aria-label="Reader settings"
+					aria-pressed={readerSettingsPopoverVisible}
+					onclick={toggleReaderSettingsPopover}
+				>
+					<SlidersHorizontal size="20" />
+				</SyButton>
+				<SyPopover
+					visible={readerSettingsPopoverVisible}
+					anchor={readerSettingsPopoverAnchor}
+					ignoreElement={readerSettingsButtonElement}
+					horizontalAlign="end"
+					width={READER_SETTINGS_POPOVER_WIDTH_PX}
+					mobileTitle="Reader settings"
+					onclose={closeReaderSettingsPopover}
+				>
+					<div class="reader__settings-popover" aria-label="Reader settings">
+						<div class="reader__settings-section">
+							<span class="reader__settings-label">Theme</span>
+							<SyButtonBar size="large" aria-label="Reader theme">
+								{#each READER_COLOR_THEMES as theme (theme.id)}
+									{@const resolvedTheme = getReaderColorTheme(
+										theme.id,
+										systemPrefersDark
+									)}
+									<SyButton
+										grouped={true}
+										center={true}
+										color={readerSettings.colorTheme === theme.id
+											? 'blue'
+											: undefined}
+										aria-label={`Use ${theme.label} reader theme`}
+										aria-pressed={readerSettings.colorTheme === theme.id}
+										title={theme.label}
+										onclick={() => setReaderTheme(theme.id)}
 									>
-										<Palette size="14" />
-									</span>
-									<span>{theme.label}</span>
-								</span>
-							</SyButton>
-						{/each}
-					</SyButtonBar>
-					<SyButtonBar size="large" aria-label="Reader font size">
-						<SyButton
-							grouped={true}
-							center={true}
-							disabled={!canDecreaseFontSize}
-							aria-label="Decrease reader font size"
-							onclick={readerSettingsStore.decreaseFontSize}
-						>
-							<Minus size="16" />
-							<span>A</span>
-						</SyButton>
-						<SyButton
-							grouped={true}
-							center={true}
-							disabled={true}
-							disableHoverActions={true}
-							classes={['reader__font-size-value']}
-							aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
-						>
-							{readerSettings.fontSizePercent}%
-						</SyButton>
-						<SyButton
-							grouped={true}
-							center={true}
-							disabled={!canIncreaseFontSize}
-							aria-label="Increase reader font size"
-							onclick={readerSettingsStore.increaseFontSize}
-						>
-							<Plus size="16" />
-							<span>A</span>
-						</SyButton>
-					</SyButtonBar>
-				</div>
+										<span class="reader__theme-button-content">
+											<span
+												class="reader__theme-swatch"
+												style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
+												aria-hidden="true"
+											>
+												<Palette size="14" />
+											</span>
+											<span>{theme.label}</span>
+										</span>
+									</SyButton>
+								{/each}
+							</SyButtonBar>
+						</div>
+						<div class="reader__settings-section">
+							<span class="reader__settings-label">Text size</span>
+							<SyButtonBar size="large" aria-label="Reader font size">
+								<SyButton
+									grouped={true}
+									center={true}
+									disabled={!canDecreaseFontSize}
+									aria-label="Decrease reader font size"
+									onclick={readerSettingsStore.decreaseFontSize}
+								>
+									<Minus size="16" />
+									<span>A</span>
+								</SyButton>
+								<SyButton
+									grouped={true}
+									center={true}
+									disabled={true}
+									disableHoverActions={true}
+									classes={['reader__font-size-value']}
+									aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
+								>
+									{readerSettings.fontSizePercent}%
+								</SyButton>
+								<SyButton
+									grouped={true}
+									center={true}
+									disabled={!canIncreaseFontSize}
+									aria-label="Increase reader font size"
+									onclick={readerSettingsStore.increaseFontSize}
+								>
+									<Plus size="16" />
+									<span>A</span>
+								</SyButton>
+							</SyButtonBar>
+						</div>
+					</div>
+				</SyPopover>
 			{:else}
 				{#if editingLibrary}
 					<SyButton
@@ -888,10 +943,37 @@
 		font-weight: var(--sy-font-weight--bold);
 	}
 
-	.reader__settings {
+	.reader__document-title {
+		min-width: 0;
+		max-width: min(42vw, 520px);
+		color: var(--sy-color--black);
+		font-family: var(--sy-font-family);
+		font-size: var(--sy-font-size);
+		font-weight: var(--sy-font-weight--medium);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.reader__settings-popover {
 		display: flex;
-		align-items: center;
+		flex-direction: column;
 		gap: var(--sy-space--large);
+		padding: var(--sy-space--large);
+		box-sizing: border-box;
+		color: var(--sy-color--grey-4);
+	}
+
+	.reader__settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space);
+	}
+
+	.reader__settings-label {
+		font-family: var(--sy-font-family);
+		font-size: 0.78rem;
+		font-weight: var(--sy-font-weight--medium);
 		color: var(--sy-color--grey-4);
 	}
 
@@ -915,6 +997,7 @@
 
 	:global(.reader__font-size-value) {
 		min-width: 64px;
+		color: var(--sy-color--black);
 	}
 
 	.reader__stage {

@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { SearchEntry } from '@/types/search.js';
 	import { isMobile } from '@/utils/device.js';
-
-	type PopoverPlacement = 'below' | 'above' | 'right' | 'left';
 
 	const {
 		word = undefined,
@@ -28,128 +27,10 @@
 	const mobile = isMobile();
 	const DESKTOP_WIDTH_PX = 420;
 	const DESKTOP_HEIGHT_PX = 380;
-	const DESKTOP_GUTTER_PX = 16;
-	const DESKTOP_OFFSET_PX = 10;
 	const MAX_DOT_RESULTS = 8;
-	let popoverElement = $state<HTMLElement | undefined>(undefined);
 
 	const visible = $derived(Boolean(word));
 	const showDots = $derived(results.length <= MAX_DOT_RESULTS);
-
-	const placement = $derived.by((): PopoverPlacement => {
-		if (!anchor || mobile) {
-			return 'below';
-		}
-		const spaceBelow = window.innerHeight - anchor.bottom - DESKTOP_GUTTER_PX;
-		const spaceAbove = anchor.top - DESKTOP_GUTTER_PX;
-		const spaceRight = window.innerWidth - anchor.right - DESKTOP_GUTTER_PX;
-		const spaceLeft = anchor.left - DESKTOP_GUTTER_PX;
-		const neededVertical = DESKTOP_HEIGHT_PX + DESKTOP_OFFSET_PX;
-		const neededHorizontal = DESKTOP_WIDTH_PX + DESKTOP_OFFSET_PX;
-
-		if (spaceBelow >= neededVertical) {
-			return 'below';
-		}
-		if (spaceAbove >= neededVertical) {
-			return 'above';
-		}
-		if (spaceRight >= neededHorizontal) {
-			return 'right';
-		}
-		if (spaceLeft >= neededHorizontal) {
-			return 'left';
-		}
-		return spaceBelow >= spaceAbove ? 'below' : 'above';
-	});
-
-	function clampHorizontal(value: number): number {
-		return Math.min(
-			window.innerWidth - DESKTOP_WIDTH_PX - DESKTOP_GUTTER_PX,
-			Math.max(DESKTOP_GUTTER_PX, value)
-		);
-	}
-
-	function clampVertical(value: number): number {
-		return Math.min(
-			window.innerHeight - DESKTOP_HEIGHT_PX - DESKTOP_GUTTER_PX,
-			Math.max(DESKTOP_GUTTER_PX, value)
-		);
-	}
-
-	const getStyles = $derived.by(() => {
-		if (!anchor || mobile) {
-			return '';
-		}
-		const anchorCenterX = anchor.left + anchor.width / 2;
-		const anchorCenterY = anchor.top + anchor.height / 2;
-		let popLeft: number;
-		let popTop: number;
-		let originX: string;
-		let originY: string;
-		const customProps: string[] = [];
-
-		switch (placement) {
-			case 'below':
-				popLeft = clampHorizontal(anchorCenterX - DESKTOP_WIDTH_PX / 2);
-				popTop = anchor.bottom + DESKTOP_OFFSET_PX;
-				customProps.push(`--popover-arrow-x:${anchorCenterX - popLeft}px`);
-				originX = `${anchorCenterX - popLeft}px`;
-				originY = '0';
-				break;
-			case 'above':
-				popLeft = clampHorizontal(anchorCenterX - DESKTOP_WIDTH_PX / 2);
-				popTop = Math.max(DESKTOP_GUTTER_PX, anchor.top - DESKTOP_HEIGHT_PX - DESKTOP_OFFSET_PX);
-				customProps.push(`--popover-arrow-x:${anchorCenterX - popLeft}px`);
-				originX = `${anchorCenterX - popLeft}px`;
-				originY = '100%';
-				break;
-			case 'right':
-				popLeft = anchor.right + DESKTOP_OFFSET_PX;
-				popTop = clampVertical(anchorCenterY - DESKTOP_HEIGHT_PX / 2);
-				customProps.push(`--popover-arrow-y:${anchorCenterY - popTop}px`);
-				originX = '0';
-				originY = `${anchorCenterY - popTop}px`;
-				break;
-			case 'left':
-				popLeft = Math.max(DESKTOP_GUTTER_PX, anchor.left - DESKTOP_WIDTH_PX - DESKTOP_OFFSET_PX);
-				popTop = clampVertical(anchorCenterY - DESKTOP_HEIGHT_PX / 2);
-				customProps.push(`--popover-arrow-y:${anchorCenterY - popTop}px`);
-				originX = '100%';
-				originY = `${anchorCenterY - popTop}px`;
-				break;
-		}
-
-		return [
-			`left:${popLeft}px`,
-			`top:${popTop}px`,
-			`width:${DESKTOP_WIDTH_PX}px`,
-			`height:${DESKTOP_HEIGHT_PX}px`,
-			`transform-origin:${originX} ${originY}`,
-			...customProps,
-		].join(';');
-	});
-
-	$effect(() => {
-		if (!visible || !popoverElement) {
-			return undefined;
-		}
-		let removed = false;
-		const handleOutsideClick = (event: MouseEvent) => {
-			if (popoverElement && !event.composedPath().includes(popoverElement)) {
-				onclose();
-			}
-		};
-		const timer = setTimeout(() => {
-			if (!removed) {
-				document.addEventListener('click', handleOutsideClick, { capture: true });
-			}
-		}, 0);
-		return () => {
-			removed = true;
-			clearTimeout(timer);
-			document.removeEventListener('click', handleOutsideClick, { capture: true });
-		};
-	});
 
 	function getResultLabel(result: SearchEntry): string {
 		const headword =
@@ -160,23 +41,28 @@
 	}
 </script>
 
-{#if visible}
-	<div
-		bind:this={popoverElement}
-		class="dictionary-popover"
-		class:dictionary-popover--mobile={mobile}
-		class:dictionary-popover--below={placement === 'below'}
-		class:dictionary-popover--above={placement === 'above'}
-		class:dictionary-popover--right={placement === 'right'}
-		class:dictionary-popover--left={placement === 'left'}
-		style={getStyles}
-	>
-		<div class="dictionary-popover__header">
-			<span class="dictionary-popover__title">Dictionary</span>
-			<SyButton style="ghost" size="small" onclick={onclose}>
-				<X size="16" />
-			</SyButton>
-		</div>
+<SyPopover
+	{visible}
+	{anchor}
+	width={DESKTOP_WIDTH_PX}
+	height={DESKTOP_HEIGHT_PX}
+	mobileTitle="Dictionary"
+	{onclose}
+>
+	<div class="dictionary-popover__body">
+		{#if !mobile}
+			<div class="dictionary-popover__header">
+				<span class="dictionary-popover__title">Dictionary</span>
+				<SyButton
+					style="ghost"
+					size="small"
+					aria-label="Close dictionary"
+					onclick={onclose}
+				>
+					<X size="16" />
+				</SyButton>
+			</div>
+		{/if}
 		{#if results.length > 1}
 			<div class="dictionary-popover__results-nav" aria-label="Dictionary results">
 				<SyButton
@@ -196,7 +82,8 @@
 							{#each results as _, dotIndex (dotIndex)}
 								<button
 									class="dictionary-popover__result-dot"
-									class:dictionary-popover__result-dot--active={dotIndex === resultIndex}
+									class:dictionary-popover__result-dot--active={dotIndex ===
+										resultIndex}
 									onclick={() => onselect(dotIndex)}
 									aria-label="Result {dotIndex + 1}"
 								></button>
@@ -218,80 +105,14 @@
 			<DictionaryContent {word} {lists} backgroundColor="white" fixedActions={true} />
 		</div>
 	</div>
-{/if}
+</SyPopover>
 
 <style>
-	@keyframes popover-enter {
-		from {
-			opacity: 0;
-			transform: scale(0.85);
-		}
-		to {
-			opacity: 1;
-			transform: scale(1);
-		}
-	}
-
-	.dictionary-popover {
-		position: fixed;
-		background: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow--active);
-		border: var(--sy-border);
-		z-index: var(--sy-z-index--top-3);
+	.dictionary-popover__body {
 		display: flex;
 		flex-direction: column;
-		animation: popover-enter 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-	}
-
-	.dictionary-popover::before {
-		content: '';
-		position: absolute;
-		border: 8px solid transparent;
-		pointer-events: none;
-	}
-
-	.dictionary-popover--below::before {
-		top: -16px;
-		left: var(--popover-arrow-x, 50%);
-		transform: translateX(-50%);
-		border-bottom-color: var(--sy-color--white);
-	}
-
-	.dictionary-popover--above::before {
-		bottom: -16px;
-		left: var(--popover-arrow-x, 50%);
-		transform: translateX(-50%);
-		border-top-color: var(--sy-color--white);
-	}
-
-	.dictionary-popover--right::before {
-		left: -16px;
-		top: var(--popover-arrow-y, 50%);
-		transform: translateY(-50%);
-		border-right-color: var(--sy-color--white);
-	}
-
-	.dictionary-popover--left::before {
-		right: -16px;
-		top: var(--popover-arrow-y, 50%);
-		transform: translateY(-50%);
-		border-left-color: var(--sy-color--white);
-	}
-
-	.dictionary-popover--mobile {
-		left: 0;
-		right: 0;
-		bottom: 0;
-		width: auto;
-		height: auto;
-		max-height: 72vh;
-		border-radius: var(--sy-mobile-space--extra-large) var(--sy-mobile-space--extra-large) 0 0;
-		animation: none;
-	}
-
-	.dictionary-popover--mobile::before {
-		display: none;
+		height: 100%;
+		min-height: 0;
 	}
 
 	.dictionary-popover__header {

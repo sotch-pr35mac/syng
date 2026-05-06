@@ -13,6 +13,13 @@ it('should render at the collapsed height by default', () => {
 	expect(sheet.style.height).toBe(`${COLLAPSED_HEIGHT}px`);
 });
 
+it('should render at the initial snap height when provided', () => {
+	const { container } = render(SySnapSheet, { initialSnap: 'partial' });
+	const sheet = container.querySelector('.sy-snap-sheet');
+	const expectedHeight = Math.round(window.innerHeight * PARTIAL_HEIGHT_RATIO);
+	expect(sheet.style.height).toBe(`${expectedHeight}px`);
+});
+
 it('should render the drag handle with correct accessibility attributes', () => {
 	const { container } = render(SySnapSheet);
 	const handle = container.querySelector('.sy-snap-sheet__handle');
