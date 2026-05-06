@@ -75,7 +75,6 @@
 							</button>
 						{/if}
 						<span class="reader-library__book-title">{document.title}</span>
-						<span class="reader-library__book-meta">{document.file_name}</span>
 						<span class="reader-library__book-progress"
 							>{getProgressPercent(document)}%</span
 						>
@@ -174,6 +173,7 @@
 		justify-content: flex-end;
 		height: 100%;
 		padding: var(--sy-space--large);
+		padding-left: calc(var(--sy-space--large) + 12px);
 		box-sizing: border-box;
 		border: var(--sy-border);
 		border-radius: var(--sy-border-radius);
@@ -239,33 +239,41 @@
 	}
 
 	.reader-library__book-title {
-		max-width: 100%;
-		padding: var(--sy-space--small) var(--sy-space);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 78%);
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 50%;
+		transform: translateY(-50%);
+		padding: var(--sy-space--small) var(--sy-space) var(--sy-space--small)
+			calc(var(--sy-space) + 12px);
+		background: rgb(255 255 255 / 70%);
+		box-shadow: 0 3px 8px rgb(0 0 0 / 14%);
 		color: var(--sy-color--black);
-		font-size: 1rem;
+		font-size: var(--sy-font-size--large);
 		font-weight: var(--sy-font-weight--medium);
 		line-height: 1.3;
+		text-align: center;
 		overflow-wrap: anywhere;
 	}
 
-	.reader-library__book-meta,
+	@media (prefers-color-scheme: dark) {
+		.reader-library__book-title {
+			background: rgb(0 0 0 / 50%);
+		}
+	}
+
 	.reader-library__book-progress {
 		position: absolute;
-		left: var(--sy-space--large);
+		left: calc(var(--sy-space--large) + 12px);
 		right: var(--sy-space--large);
 		bottom: var(--sy-space--large);
 		margin-top: var(--sy-space--small);
 		font-size: 0.78rem;
-		color: var(--sy-color--grey-5);
+		text-align: center;
+		color: var(--sy-color--black);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-	}
-
-	.reader-library__book-meta {
-		bottom: calc(var(--sy-space--large) + 1.2rem);
 	}
 
 	.reader-library__empty {

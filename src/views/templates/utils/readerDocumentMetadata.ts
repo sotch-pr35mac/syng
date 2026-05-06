@@ -1,5 +1,6 @@
 import type { ReaderImportPayload } from '@/types/reader.js';
 
+export const READER_DOCUMENT_TITLE_MAX_LENGTH = 30;
 export const DEFAULT_READER_DOCUMENT_COLOR = '#ffffff';
 
 // Sourced from theme.css color variables. Display is handled by CSS color-mix()
@@ -28,7 +29,10 @@ export function applyReaderImportMetadata(
 	title: string,
 	color: string
 ): ReaderImportPayload {
-	const normalizedTitle = title.trim() || importPayload.title || 'Untitled';
+	const normalizedTitle = (title.trim() || importPayload.title || 'Untitled').slice(
+		0,
+		READER_DOCUMENT_TITLE_MAX_LENGTH
+	);
 	return {
 		...importPayload,
 		canonical_schema_version: importPayload.canonical_schema_version ?? 1,

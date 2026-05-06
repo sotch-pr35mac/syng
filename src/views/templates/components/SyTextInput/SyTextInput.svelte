@@ -21,7 +21,8 @@
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
 	 * @property {any[]} [classes] - Additional class names
-	 * @property {(value: string) => void} [onchange] - Change handler
+	 * @property {number} [maxlength] - Maximum character length
+ * @property {(value: string) => void} [onchange] - Change handler
 	 * @property {(value: string) => void} [onkeyup] - Keyup handler
 	 * @property {(value: string) => void} [oninput] - Input handler
 	 * @property {(event: Event) => void} [onenter] - Enter key handler
@@ -42,6 +43,7 @@
 		autocomplete = undefined,
 		inputmode = undefined,
 		id,
+		maxlength = undefined,
 		spellcheck = undefined,
 		classes = [],
 		onchange = () => {},
@@ -79,6 +81,7 @@
 	{inputmode}
 	class={getClasses()}
 	{id}
+	{maxlength}
 	{spellcheck}
 	onchange={(e) => onchange(e.currentTarget.value)}
 	oninput={handleInput}
