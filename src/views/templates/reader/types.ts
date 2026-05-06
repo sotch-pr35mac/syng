@@ -2,7 +2,7 @@ export type ReaderFormat = 'text' | 'webpage' | 'epub' | 'pdf';
 
 export type ReaderResourceKind = 'reflowable-document' | 'fixed-page' | 'asset' | 'navigation';
 
-export type ReaderColorThemeId = 'light' | 'sepia' | 'dark';
+export type ReaderColorThemeId = 'automatic' | 'light' | 'sepia' | 'dark';
 
 export interface ReaderPublicationMetadata {
 	title: string;

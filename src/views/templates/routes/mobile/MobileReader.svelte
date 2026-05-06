@@ -29,6 +29,7 @@
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
+		getReaderColorThemeSettings,
 		READER_COLOR_THEMES,
 		READER_FONT_SIZE_MAX_PERCENT,
 		READER_FONT_SIZE_MIN_PERCENT,
@@ -95,7 +96,13 @@
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
-	const activeReaderTheme = $derived(getReaderColorTheme(readerSettings.colorTheme));
+	let systemPrefersDark = $state(false);
+	const activeReaderTheme = $derived(
+		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
+	);
+	const activeReaderThemeSettings = $derived(
+		getReaderColorThemeSettings(readerSettings.colorTheme, systemPrefersDark)
+	);
 	const canDecreaseFontSize = $derived(
 		readerSettings.fontSizePercent > READER_FONT_SIZE_MIN_PERCENT
 	);
@@ -104,11 +111,11 @@
 	);
 	const readerThemeStyle = $derived(
 		[
-			`--reader-page-background: ${readerSettings.backgroundColor}`,
-			`--reader-page-text: ${readerSettings.textColor}`,
-			`--reader-link-color: ${readerSettings.linkColor}`,
-			`--reader-selection-background: ${readerSettings.selectionBackgroundColor}`,
-			`--reader-selection-text: ${readerSettings.selectionTextColor}`,
+			`--reader-page-background: ${activeReaderThemeSettings.backgroundColor}`,
+			`--reader-page-text: ${activeReaderThemeSettings.textColor}`,
+			`--reader-link-color: ${activeReaderThemeSettings.linkColor}`,
+			`--reader-selection-background: ${activeReaderThemeSettings.selectionBackgroundColor}`,
+			`--reader-selection-text: ${activeReaderThemeSettings.selectionTextColor}`,
 			`--reader-stage-background: ${activeReaderTheme.stageBackgroundColor}`,
 			`--reader-muted-text: ${activeReaderTheme.mutedTextColor}`,
 			`--reader-border-color: ${activeReaderTheme.borderColor}`,
@@ -150,6 +157,17 @@
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
+
+		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const updateSystemColorScheme = () => {
+			systemPrefersDark = colorSchemeQuery.matches;
+		};
+		updateSystemColorScheme();
+		colorSchemeQuery.addEventListener('change', updateSystemColorScheme);
+
+		return () => {
+			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
+		};
 	});
 
 	$effect(() => {
@@ -480,6 +498,7 @@
 		<div class="mobile-reader__settings-bar" aria-label="Reader settings">
 			<div class="mobile-reader__theme-controls" aria-label="Reader theme">
 				{#each READER_COLOR_THEMES as theme (theme.id)}
+					{@const resolvedTheme = getReaderColorTheme(theme.id, systemPrefersDark)}
 					<button
 						type="button"
 						class="mobile-reader__theme-button"
@@ -492,7 +511,7 @@
 					>
 						<span
 							class="mobile-reader__theme-swatch"
-							style={`background:${theme.backgroundColor};color:${theme.textColor};`}
+							style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
 							aria-hidden="true"
 						>
 							<Palette size="13" />

@@ -48,7 +48,12 @@
 	 * @property {any} [color] - 'yellow'
 	 * @property {any} [hover] - 'yellow'
 	 * @property {boolean} [center] - false
+	 * @property {boolean} [disableHoverActions] - false
 	 * @property {any} [classes] - A list of classes
+	 * @property {string} [type] - Native button type
+	 * @property {string} [aria-label] - Accessible label
+	 * @property {boolean | 'true' | 'false'} [aria-pressed] - Pressed state
+	 * @property {string} [title] - Native title
 	 * @property {import('svelte').Snippet} [children]
 	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
 	 */
@@ -68,9 +73,12 @@
 		color = undefined,
 		hover = undefined,
 		center = false,
+		disableHoverActions = false,
 		classes = [],
+		type = 'button',
 		children,
 		onclick = () => {},
+		...restProps
 	} = $props();
 	const getClasses = () => {
 		return classes
@@ -83,13 +91,14 @@
 				color ? `sy-button--color-${color}` : '',
 				hover ? `sy-button--hover-${hover}` : '',
 				grouped ? 'sy-button--grouped' : '',
+				disableHoverActions ? 'sy-button--hover-actions-disabled' : '',
 				mobile ? 'sy-button--mobile' : '',
 			])
 			.join(' ');
 	};
 </script>
 
-<button class={getClasses()} {onclick} {disabled} data-testid="sy-button">
+<button {...restProps} class={getClasses()} {type} {onclick} {disabled} data-testid="sy-button">
 	{@render children?.()}
 </button>
 
@@ -114,7 +123,7 @@
 		background-color: var(--sy-color--white);
 	}
 	@media (hover: hover) {
-		.sy-button--filled:hover {
+		.sy-button--filled:not(.sy-button--hover-actions-disabled):hover {
 			box-shadow: var(--sy-shadow--active);
 			background-color: var(--sy-color--grey-2);
 			transition-property: background-color, box-shadow;
@@ -135,7 +144,7 @@
 		color: var(--sy-color--blue);
 	}
 	@media (hover: hover) {
-		.sy-button--ghost:hover {
+		.sy-button--ghost:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-color--blue);
 			transition-property: color;
 			transition-duration: var(--sy-transition-duration);
@@ -177,16 +186,16 @@
 		color: var(--sy-color--yellow);
 	}
 	@media (hover: hover) {
-		.sy-button--hover-green:hover {
+		.sy-button--hover-green:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-color--green);
 		}
-		.sy-button--hover-blue:hover {
+		.sy-button--hover-blue:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-color--blue);
 		}
-		.sy-button--hover-red:hover {
+		.sy-button--hover-red:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-color--red);
 		}
-		.sy-button--hover-yellow:hover {
+		.sy-button--hover-yellow:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-color--yellow);
 		}
 	}
@@ -211,7 +220,7 @@
 		box-shadow: none;
 	}
 	@media (hover: hover) {
-		.sy-button--mobile.sy-button--filled:hover {
+		.sy-button--mobile.sy-button--filled:not(.sy-button--hover-actions-disabled):hover {
 			box-shadow: none;
 		}
 	}

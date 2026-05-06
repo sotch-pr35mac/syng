@@ -2,7 +2,6 @@
 	import { onMount, tick } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		BookOpen,
 		ChevronDown,
 		ChevronLeft,
 		ChevronRight,
@@ -17,6 +16,7 @@
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -28,6 +28,7 @@
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
+		getReaderColorThemeSettings,
 		READER_COLOR_THEMES,
 		READER_FONT_SIZE_MAX_PERCENT,
 		READER_FONT_SIZE_MIN_PERCENT,
@@ -96,7 +97,13 @@
 	const currentPage = $derived(readerRoute.currentPage);
 	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
-	const activeReaderTheme = $derived(getReaderColorTheme(readerSettings.colorTheme));
+	let systemPrefersDark = $state(false);
+	const activeReaderTheme = $derived(
+		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
+	);
+	const activeReaderThemeSettings = $derived(
+		getReaderColorThemeSettings(readerSettings.colorTheme, systemPrefersDark)
+	);
 	const canDecreaseFontSize = $derived(
 		readerSettings.fontSizePercent > READER_FONT_SIZE_MIN_PERCENT
 	);
@@ -105,11 +112,11 @@
 	);
 	const readerThemeStyle = $derived(
 		[
-			`--reader-page-background: ${readerSettings.backgroundColor}`,
-			`--reader-page-text: ${readerSettings.textColor}`,
-			`--reader-link-color: ${readerSettings.linkColor}`,
-			`--reader-selection-background: ${readerSettings.selectionBackgroundColor}`,
-			`--reader-selection-text: ${readerSettings.selectionTextColor}`,
+			`--reader-page-background: ${activeReaderThemeSettings.backgroundColor}`,
+			`--reader-page-text: ${activeReaderThemeSettings.textColor}`,
+			`--reader-link-color: ${activeReaderThemeSettings.linkColor}`,
+			`--reader-selection-background: ${activeReaderThemeSettings.selectionBackgroundColor}`,
+			`--reader-selection-text: ${activeReaderThemeSettings.selectionTextColor}`,
 			`--reader-stage-background: ${activeReaderTheme.stageBackgroundColor}`,
 			`--reader-muted-text: ${activeReaderTheme.mutedTextColor}`,
 			`--reader-border-color: ${activeReaderTheme.borderColor}`,
@@ -149,6 +156,17 @@
 	onMount(() => {
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
+
+		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const updateSystemColorScheme = () => {
+			systemPrefersDark = colorSchemeQuery.matches;
+		};
+		updateSystemColorScheme();
+		colorSchemeQuery.addEventListener('change', updateSystemColorScheme);
+
+		return () => {
+			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
+		};
 	});
 
 	$effect(() => {
@@ -450,8 +468,16 @@
 	>
 		<div class="reader__title-row">
 			{#if activeDocument}
-				<BookOpen size="22" />
-				<h1>{activeDocument.title}</h1>
+				<SyButton
+					style="ghost"
+					size="large"
+					center={true}
+					classes={['reader__library-back-button']}
+					onclick={backToLibrary}
+				>
+					<ChevronLeft size="20" />
+					Library
+				</SyButton>
 			{:else}
 				<h1 class="reader__library-title">Library</h1>
 			{/if}
@@ -459,56 +485,67 @@
 		<div class="reader__header-actions">
 			{#if activeDocument}
 				<div class="reader__settings" aria-label="Reader settings">
-					<div class="reader__theme-controls" aria-label="Reader theme">
+					<SyButtonBar size="large" aria-label="Reader theme">
 						{#each READER_COLOR_THEMES as theme (theme.id)}
-							<button
-								type="button"
-								class="reader__theme-button"
-								class:reader__theme-button--active={readerSettings.colorTheme ===
-									theme.id}
+							{@const resolvedTheme = getReaderColorTheme(
+								theme.id,
+								systemPrefersDark
+							)}
+							<SyButton
+								grouped={true}
+								center={true}
+								color={readerSettings.colorTheme === theme.id ? 'blue' : undefined}
 								aria-label={`Use ${theme.label} reader theme`}
 								aria-pressed={readerSettings.colorTheme === theme.id}
 								title={theme.label}
 								onclick={() => setReaderTheme(theme.id)}
 							>
-								<span
-									class="reader__theme-swatch"
-									style={`background:${theme.backgroundColor};color:${theme.textColor};`}
-									aria-hidden="true"
-								>
-									<Palette size="14" />
+								<span class="reader__theme-button-content">
+									<span
+										class="reader__theme-swatch"
+										style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
+										aria-hidden="true"
+									>
+										<Palette size="14" />
+									</span>
+									<span>{theme.label}</span>
 								</span>
-								<span>{theme.label}</span>
-							</button>
+							</SyButton>
 						{/each}
-					</div>
-					<div class="reader__font-controls" aria-label="Reader font size">
-						<button
-							type="button"
-							class="reader__font-button"
+					</SyButtonBar>
+					<SyButtonBar size="large" aria-label="Reader font size">
+						<SyButton
+							grouped={true}
+							center={true}
 							disabled={!canDecreaseFontSize}
 							aria-label="Decrease reader font size"
 							onclick={readerSettingsStore.decreaseFontSize}
 						>
 							<Minus size="16" />
 							<span>A</span>
-						</button>
-						<span class="reader__font-size-value" aria-label="Reader font size">
+						</SyButton>
+						<SyButton
+							grouped={true}
+							center={true}
+							disabled={true}
+							disableHoverActions={true}
+							classes={['reader__font-size-value']}
+							aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
+						>
 							{readerSettings.fontSizePercent}%
-						</span>
-						<button
-							type="button"
-							class="reader__font-button"
+						</SyButton>
+						<SyButton
+							grouped={true}
+							center={true}
 							disabled={!canIncreaseFontSize}
 							aria-label="Increase reader font size"
 							onclick={readerSettingsStore.increaseFontSize}
 						>
 							<Plus size="16" />
 							<span>A</span>
-						</button>
-					</div>
+						</SyButton>
+					</SyButtonBar>
 				</div>
-				<SyButton style="ghost" size="large" onclick={backToLibrary}>Library</SyButton>
 			{:else}
 				{#if editingLibrary}
 					<SyButton
@@ -831,6 +868,12 @@
 		justify-content: flex-end;
 	}
 
+	:global(.reader__library-back-button) {
+		gap: var(--sy-space);
+		margin: 0;
+		color: var(--sy-color--grey-4);
+	}
+
 	.reader__title-row h1 {
 		margin: 0;
 		font-size: 1.4rem;
@@ -849,59 +892,14 @@
 		display: flex;
 		align-items: center;
 		gap: var(--sy-space--large);
-		color: var(--reader-control-text, var(--sy-color--grey-4));
+		color: var(--sy-color--grey-4);
 	}
 
-	.reader__theme-controls,
-	.reader__font-controls {
+	.reader__theme-button-content {
 		display: inline-flex;
 		align-items: center;
-		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		border-radius: var(--sy-border-radius);
-		background: var(--reader-control-background, rgb(255 255 255 / 84%));
-		box-shadow: var(--sy-shadow);
-		overflow: hidden;
-	}
-
-	.reader__theme-button,
-	.reader__font-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
 		gap: var(--sy-space);
-		min-height: 34px;
-		border: 0;
-		border-right: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		padding: var(--sy-space) var(--sy-space--large);
-		background: transparent;
-		color: inherit;
-		font-family: var(--sy-font-family);
 		font-size: 0.82rem;
-		cursor: pointer;
-	}
-
-	.reader__theme-button:last-child,
-	.reader__font-button:last-child {
-		border-right: 0;
-	}
-
-	.reader__theme-button:hover,
-	.reader__theme-button--active,
-	.reader__font-button:hover:not(:disabled) {
-		color: var(--reader-link-color, var(--sy-color--blue));
-		background: rgb(128 128 128 / 12%);
-	}
-
-	.reader__theme-button:focus-visible,
-	.reader__font-button:focus-visible {
-		outline: 2px solid var(--reader-link-color, var(--sy-color--blue));
-		outline-offset: -2px;
-	}
-
-	.reader__theme-button:disabled,
-	.reader__font-button:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
 	}
 
 	.reader__theme-swatch {
@@ -915,13 +913,8 @@
 		box-sizing: border-box;
 	}
 
-	.reader__font-size-value {
-		min-width: 48px;
-		padding: 0 var(--sy-space--large);
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
-		font-family: var(--sy-font-family);
-		font-size: 0.82rem;
-		text-align: center;
+	:global(.reader__font-size-value) {
+		min-width: 64px;
 	}
 
 	.reader__stage {
