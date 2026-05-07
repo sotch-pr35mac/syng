@@ -14,6 +14,7 @@
 		anchor = undefined,
 		onselect = () => {},
 		onclose = () => {},
+		onlink = undefined,
 	}: {
 		word?: SearchEntry;
 		results?: SearchEntry[];
@@ -22,6 +23,7 @@
 		anchor?: DOMRect;
 		onselect?: (_index: number) => void;
 		onclose?: () => void;
+		onlink?: (_text: string) => void;
 	} = $props();
 
 	const mobile = isMobile();
@@ -102,6 +104,7 @@
 				backgroundColor="white"
 				fixedActions={true}
 				separateTraditionalCharacters={true}
+				{onlink}
 			/>
 		</div>
 	</div>

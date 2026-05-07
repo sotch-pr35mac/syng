@@ -757,6 +757,7 @@
 	anchor={readerRoute.dictionaryAnchor}
 	onselect={readerRoute.selectDictionaryResult}
 	onclose={readerRoute.closeDictionary}
+	onlink={readerRoute.lookupDictionaryWord}
 />
 
 <style>

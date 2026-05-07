@@ -692,6 +692,26 @@ function selectDictionaryResult(index: number): void {
 	dictionaryWord = dictionaryResults[index];
 }
 
+async function lookupDictionaryWord(text: string): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		dictionaryResults = results;
+		dictionaryResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		dictionaryWord = dictionaryResults[dictionaryResultIndex];
+		telemetry.trackEvent('reader.dictionary_link_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
 function closeDictionary(): void {
 	dictionaryResults = [];
 	dictionaryResultIndex = 0;
@@ -827,6 +847,7 @@ export const readerRoute = {
 	getBlockSegments,
 	getTableCellSegments,
 	openDictionary,
+	lookupDictionaryWord,
 	selectDictionaryResult,
 	closeDictionary,
 	backToLibrary,
