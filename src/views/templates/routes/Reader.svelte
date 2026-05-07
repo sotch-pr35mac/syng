@@ -699,20 +699,47 @@
 													>
 														{#each readerRoute.getTableCellSegments(tableSource.id, rowIndex, colIndex, cell.text) as segment, segIndex (segIndex)}
 															{#if segment.type === 'token'}
-																<button
-																	class="reader__token"
-																	class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-																		segment.token,
-																		readerRoute.dictionaryToken
-																	)}
-																	onclick={(event) =>
-																		openToken(
-																			event,
-																			segment.token
+																{#if segment.annotation}
+																	<ruby class="reader__ruby">
+																		<button
+																			class="reader__token"
+																			class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+																				segment.token,
+																				readerRoute.dictionaryToken
+																			)}
+																			onclick={(event) =>
+																				openToken(
+																					event,
+																					segment.token
+																				)}
+																		>
+																			{segment.text}
+																		</button>
+																		<rt>{segment.annotation}</rt
+																		>
+																	</ruby>
+																{:else}
+																	<button
+																		class="reader__token"
+																		class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+																			segment.token,
+																			readerRoute.dictionaryToken
 																		)}
-																>
-																	{segment.text}
-																</button>
+																		onclick={(event) =>
+																			openToken(
+																				event,
+																				segment.token
+																			)}
+																	>
+																		{segment.text}
+																	</button>
+																{/if}
+															{:else if segment.annotation}
+																<ruby class="reader__ruby">
+																	{segment.text}<rt
+																		>{segment.annotation}</rt
+																	>
+																</ruby>
 															{:else}
 																{segment.text}
 															{/if}
@@ -791,16 +818,36 @@
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
-									<button
-										class="reader__token"
-										class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-											segment.token,
-											readerRoute.dictionaryToken
-										)}
-										onclick={(event) => openToken(event, segment.token)}
-									>
-										{segment.text}
-									</button>
+									{#if segment.annotation}
+										<ruby class="reader__ruby">
+											<button
+												class="reader__token"
+												class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+													segment.token,
+													readerRoute.dictionaryToken
+												)}
+												onclick={(event) => openToken(event, segment.token)}
+											>
+												{segment.text}
+											</button>
+											<rt>{segment.annotation}</rt>
+										</ruby>
+									{:else}
+										<button
+											class="reader__token"
+											class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
+												segment.token,
+												readerRoute.dictionaryToken
+											)}
+											onclick={(event) => openToken(event, segment.token)}
+										>
+											{segment.text}
+										</button>
+									{/if}
+								{:else if segment.annotation}
+									<ruby class="reader__ruby">
+										{segment.text}<rt>{segment.annotation}</rt>
+									</ruby>
 								{:else}
 									{segment.text}
 								{/if}
@@ -1305,5 +1352,12 @@
 	.reader__token--active {
 		color: var(--reader-link-color, var(--sy-color--blue));
 		border-bottom-color: var(--reader-link-color, var(--sy-color--blue));
+	}
+
+	.reader__ruby rt {
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		font-size: 0.52em;
+		font-weight: 500;
+		line-height: 1;
 	}
 </style>

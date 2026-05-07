@@ -521,7 +521,7 @@ function buildTableSegments(tableBlock: ReaderContentBlock): ReaderSegment[] {
 				end_offset: cell.text.length,
 				layout_mode: 'flow',
 			};
-			segments.push(...createReaderSegments(syntheticBlock, cellTokens));
+			segments.push(...createReaderSegments(syntheticBlock, cellTokens, cell.spans ?? []));
 			if (colIndex < row.cells.length - 1) {
 				segments.push({ type: 'text', text: '\t' });
 			}
@@ -543,7 +543,12 @@ function getBlockSegments(pageBlock: ReaderPageBlock): ReaderSegment[] {
 			return buildTableSegments(source);
 		}
 	}
-	return createReaderSegments(pageBlock, tokenMap[pageBlock.sourceBlockId] ?? []);
+	const sourceBlock = activeDocument.blocks.find((block) => block.id === pageBlock.sourceBlockId);
+	return createReaderSegments(
+		pageBlock,
+		tokenMap[pageBlock.sourceBlockId] ?? [],
+		sourceBlock?.spans ?? []
+	);
 }
 
 function getTableCellSegments(
@@ -565,7 +570,9 @@ function getTableCellSegments(
 		end_offset: cellText.length,
 		layout_mode: 'flow',
 	};
-	return createReaderSegments(syntheticBlock, tokenMap[key] ?? []);
+	const sourceBlock = activeDocument?.blocks.find((block) => block.id === tableBlockId);
+	const cellSpans = sourceBlock?.extensions?.table?.rows[rowIndex]?.cells[colIndex]?.spans ?? [];
+	return createReaderSegments(syntheticBlock, tokenMap[key] ?? [], cellSpans);
 }
 
 async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<void> {

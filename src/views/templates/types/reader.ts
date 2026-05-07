@@ -38,6 +38,7 @@ export interface ReaderInlineSpan {
 	start: number;
 	end: number;
 	style: ReaderInlineSpanStyle;
+	annotation?: string;
 }
 
 export interface ReaderTableCell {

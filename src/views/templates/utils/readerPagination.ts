@@ -2,6 +2,7 @@ import type {
 	ReaderContentBlock,
 	ReaderDocument,
 	ReaderBlockStyleExtension,
+	ReaderInlineSpan,
 	ReaderToken,
 } from '@/types/reader.js';
 
@@ -54,6 +55,7 @@ export interface ReaderSegment {
 	type: 'text' | 'token';
 	text: string;
 	token?: ReaderToken;
+	annotation?: string;
 }
 
 interface LineSlice {
@@ -350,7 +352,8 @@ export function findPageIndexForPosition(pages: ReaderPage[], position: number):
 
 export function createReaderSegments(
 	block: ReaderPageBlock,
-	sourceTokens: ReaderToken[]
+	sourceTokens: ReaderToken[],
+	sourceSpans: ReaderInlineSpan[] = []
 ): ReaderSegment[] {
 	if (block.layout_mode === 'atomic') {
 		return [{ type: 'text', text: block.text || '\u00a0' }];
@@ -359,39 +362,63 @@ export function createReaderSegments(
 	const visibleTokens = sourceTokens.filter(
 		(token) => token.end > block.sourceStart && token.start < block.sourceEnd
 	);
+	const rubySpans = sourceSpans.filter(
+		(span) =>
+			span.style === 'ruby' &&
+			typeof span.annotation === 'string' &&
+			span.annotation.trim() &&
+			span.end > block.sourceStart &&
+			span.start < block.sourceEnd
+	);
+	const boundaries = new Set<number>([0, block.text.length]);
+	for (const token of visibleTokens) {
+		boundaries.add(Math.max(token.start, block.sourceStart) - block.sourceStart);
+		boundaries.add(Math.min(token.end, block.sourceEnd) - block.sourceStart);
+	}
+	for (const span of rubySpans) {
+		boundaries.add(Math.max(span.start, block.sourceStart) - block.sourceStart);
+		boundaries.add(Math.min(span.end, block.sourceEnd) - block.sourceStart);
+	}
+	const sortedBoundaries = [...boundaries].sort((a, b) => a - b);
 	const segments: ReaderSegment[] = [];
-	let cursor = 0;
 
-	for (const sourceToken of visibleTokens) {
-		const tokenStart = Math.max(sourceToken.start, block.sourceStart) - block.sourceStart;
-		const tokenEnd = Math.min(sourceToken.end, block.sourceEnd) - block.sourceStart;
-
-		if (tokenStart > cursor) {
-			segments.push({
-				type: 'text',
-				text: block.text.slice(cursor, tokenStart),
-			});
+	for (let index = 0; index < sortedBoundaries.length - 1; index += 1) {
+		const start = sortedBoundaries[index]!;
+		const end = sortedBoundaries[index + 1]!;
+		if (end <= start) {
+			continue;
 		}
 
-		segments.push({
-			type: 'token',
-			text: block.text.slice(tokenStart, tokenEnd),
-			token: {
-				text: sourceToken.text,
-				start: sourceToken.start,
-				end: sourceToken.end,
-				block_id: sourceToken.block_id ?? block.sourceBlockId,
-				table_cell: sourceToken.table_cell,
-			},
-		});
-		cursor = tokenEnd;
-	}
+		const absoluteStart = block.sourceStart + start;
+		const absoluteEnd = block.sourceStart + end;
+		const sourceToken = visibleTokens.find(
+			(token) => token.start < absoluteEnd && token.end > absoluteStart
+		);
+		const rubySpan = rubySpans.find(
+			(span) => span.start <= absoluteStart && span.end >= absoluteEnd
+		);
+		const text = block.text.slice(start, end);
 
-	if (cursor < block.text.length) {
-		segments.push({
-			type: 'text',
-			text: block.text.slice(cursor),
-		});
+		if (sourceToken) {
+			segments.push({
+				type: 'token',
+				text,
+				annotation: rubySpan?.annotation,
+				token: {
+					text: sourceToken.text,
+					start: sourceToken.start,
+					end: sourceToken.end,
+					block_id: sourceToken.block_id ?? block.sourceBlockId,
+					table_cell: sourceToken.table_cell,
+				},
+			});
+		} else {
+			segments.push({
+				type: 'text',
+				text,
+				annotation: rubySpan?.annotation,
+			});
+		}
 	}
 
 	return segments.length ? segments : [{ type: 'text', text: block.text }];

@@ -207,11 +207,17 @@ it('segments ruby-safe visible text without pronunciation tokens', () => {
 		layout_mode: 'flow' as const,
 	};
 
-	const segments = createReaderSegments(pageBlock, [
-		{ text: '漢', start: 0, end: 1, block_id: 'ruby-1' },
-		{ text: '字', start: 1, end: 2, block_id: 'ruby-1' },
-	]);
+	const segments = createReaderSegments(
+		pageBlock,
+		[
+			{ text: '漢', start: 0, end: 1, block_id: 'ruby-1' },
+			{ text: '字', start: 1, end: 2, block_id: 'ruby-1' },
+		],
+		[{ start: 0, end: 1, style: 'ruby', annotation: 'han' }]
+	);
 
 	expect(segments.map((segment) => segment.text).join('')).toBe('漢字');
 	expect(segments.map((segment) => segment.token?.text).filter(Boolean)).not.toContain('han');
+	expect(segments[0].annotation).toBe('han');
+	expect(segments[1].annotation).toBeUndefined();
 });

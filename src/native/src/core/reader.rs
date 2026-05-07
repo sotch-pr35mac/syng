@@ -6,6 +6,7 @@
 
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine;
+use encoding_rs::{BIG5, GBK, UTF_16BE, UTF_16LE, UTF_8};
 use epub::doc::EpubDoc;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader as XmlReader;
@@ -14,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::io::{Cursor, Read};
 use std::net::{IpAddr, ToSocketAddrs};
 use std::ops::Deref;
@@ -29,6 +31,7 @@ const EPUB_EXTRACTOR_VERSION: u8 = 2;
 const PDF_EXTRACTOR_VERSION: u8 = 3;
 const HTML_EXTRACTOR_VERSION: u8 = 2;
 const DOCX_EXTRACTOR_VERSION: u8 = 1;
+const RTF_EXTRACTOR_VERSION: u8 = 1;
 const WEBPAGE_CONNECT_TIMEOUT_SECONDS: u64 = 10;
 const WEBPAGE_REQUEST_TIMEOUT_SECONDS: u64 = 45;
 const WEBPAGE_REDIRECT_LIMIT: usize = 10;
@@ -40,6 +43,7 @@ const EPUB_IMPORT_EXTENSIONS: &[&str] = &["epub"];
 const PDF_IMPORT_EXTENSIONS: &[&str] = &["pdf"];
 const HTML_IMPORT_EXTENSIONS: &[&str] = &["html", "htm"];
 const DOCX_IMPORT_EXTENSIONS: &[&str] = &["docx"];
+const RTF_IMPORT_EXTENSIONS: &[&str] = &["rtf"];
 
 fn default_canonical_schema_version() -> u8 {
     1
@@ -55,6 +59,8 @@ pub struct ReaderInlineSpan {
     pub start: usize,
     pub end: usize,
     pub style: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub annotation: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq, Default)]
@@ -254,6 +260,92 @@ fn utf16_len(text: &str) -> usize {
 
 fn collapse_whitespace(text: &str) -> String {
     text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn decode_with_encoding(bytes: &[u8], label: &str) -> Option<String> {
+    let encoding = match label.trim().to_ascii_lowercase().as_str() {
+        "utf-8" | "utf8" => UTF_8,
+        "utf-16le" => UTF_16LE,
+        "utf-16be" => UTF_16BE,
+        "gb18030" | "gbk" | "gb2312" | "x-gbk" => GBK,
+        "big5" | "big-5" | "big5-hkscs" => BIG5,
+        _ => return None,
+    };
+    let (decoded, _, had_errors) = encoding.decode(bytes);
+    if had_errors && encoding == UTF_8 {
+        return None;
+    }
+    Some(decoded.into_owned())
+}
+
+fn decode_bom_text(bytes: &[u8]) -> Option<String> {
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        return decode_with_encoding(&bytes[3..], "utf-8");
+    }
+    if bytes.starts_with(&[0xFF, 0xFE]) {
+        return decode_with_encoding(&bytes[2..], "utf-16le");
+    }
+    if bytes.starts_with(&[0xFE, 0xFF]) {
+        return decode_with_encoding(&bytes[2..], "utf-16be");
+    }
+    None
+}
+
+fn decoded_text_score(value: &str) -> i32 {
+    let replacement_penalty = value.chars().filter(|ch| *ch == '\u{fffd}').count() as i32 * 20;
+    let cjk_score = value
+        .chars()
+        .filter(|ch| matches!(*ch as u32, 0x3400..=0x9fff | 0xf900..=0xfaff))
+        .count() as i32
+        * 2;
+    let control_penalty = value
+        .chars()
+        .filter(|ch| ch.is_control() && !matches!(*ch, '\n' | '\r' | '\t'))
+        .count() as i32
+        * 4;
+    cjk_score - replacement_penalty - control_penalty
+}
+
+fn decode_reader_text(bytes: &[u8], declared_charset: Option<&str>) -> Result<String, String> {
+    if let Some(decoded) = decode_bom_text(bytes) {
+        return Ok(decoded);
+    }
+    if let Some(charset) = declared_charset {
+        if let Some(decoded) = decode_with_encoding(bytes, charset) {
+            return Ok(decoded);
+        }
+    }
+    if let Ok(value) = std::str::from_utf8(bytes) {
+        return Ok(value.to_string());
+    }
+
+    let (gbk, _, _) = GBK.decode(bytes);
+    let gbk = gbk.into_owned();
+    let (big5, _, _) = BIG5.decode(bytes);
+    let big5 = big5.into_owned();
+    let decoded = if decoded_text_score(&big5) > decoded_text_score(&gbk) {
+        big5
+    } else {
+        gbk
+    };
+    (!decoded.trim().is_empty())
+        .then_some(decoded)
+        .ok_or_else(|| "Text file could not be decoded as UTF-8, GBK, or Big5.".to_string())
+}
+
+fn html_declared_charset(bytes: &[u8]) -> Option<String> {
+    let prefix = String::from_utf8_lossy(&bytes[..bytes.len().min(4096)]).to_ascii_lowercase();
+    let charset_index = prefix.find("charset")?;
+    let after_charset = &prefix[charset_index + "charset".len()..];
+    let equals_index = after_charset.find('=')?;
+    let value = after_charset[equals_index + 1..].trim_start();
+    let value = value.trim_start_matches(['"', '\'']);
+    let charset = value
+        .split(|ch: char| ch == '"' || ch == '\'' || ch == ';' || ch == '>' || ch.is_whitespace())
+        .next()
+        .unwrap_or_default()
+        .trim();
+    (!charset.is_empty()).then(|| charset.to_string())
 }
 
 fn first_attr(element: ElementRef<'_>, names: &[&str]) -> Option<String> {
@@ -646,7 +738,7 @@ fn inline_spans_for_block(
     element: ElementRef<'_>,
     block_text: &str,
 ) -> Option<Vec<ReaderInlineSpan>> {
-    let selector = parse_selector("strong,b,em,i,code");
+    let selector = parse_selector("strong,b,em,i,code,ruby");
     let mut spans = Vec::new();
     let mut search_cursor = 0;
 
@@ -655,6 +747,7 @@ fn inline_spans_for_block(
             "strong" | "b" => "strong",
             "em" | "i" => "emphasis",
             "code" => "code",
+            "ruby" => "ruby",
             _ => continue,
         };
         let span_text = element_visible_text(inline);
@@ -668,6 +761,11 @@ fn inline_spans_for_block(
                 start: utf16_len(&block_text[..byte_start]),
                 end: utf16_len(&block_text[..byte_end]),
                 style: style.to_string(),
+                annotation: if style == "ruby" {
+                    ruby_annotation(inline)
+                } else {
+                    None
+                },
             });
             search_cursor = byte_end;
         }
@@ -678,6 +776,18 @@ fn inline_spans_for_block(
     } else {
         Some(spans)
     }
+}
+
+fn ruby_annotation(element: ElementRef<'_>) -> Option<String> {
+    let selector = parse_selector("rt");
+    let annotation = element
+        .select(&selector)
+        .map(|rt| rt.text().collect::<Vec<_>>().join(""))
+        .map(|value| collapse_whitespace(&value))
+        .filter(|value| !value.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    (!annotation.is_empty()).then_some(annotation)
 }
 
 fn append_linear_block(
@@ -724,10 +834,13 @@ fn table_extension(table: ElementRef<'_>) -> ReaderBlockExtensions {
         .map(|row| {
             let cells = row
                 .select(&cell_selector)
-                .map(|cell| ReaderTableCell {
-                    text: element_text(cell),
-                    is_header: cell.value().name() == "th",
-                    spans: None,
+                .map(|cell| {
+                    let text = element_text(cell);
+                    ReaderTableCell {
+                        spans: inline_spans_for_block(cell, &text),
+                        text,
+                        is_header: cell.value().name() == "th",
+                    }
                 })
                 .collect::<Vec<_>>();
             ReaderTableRow { cells }
@@ -938,6 +1051,7 @@ fn html_to_blocks(
                         start: 0,
                         end: utf16_len(&code_text),
                         style: "code".to_string(),
+                        annotation: None,
                     }]),
                     block_style_extension(element),
                 );
@@ -1067,6 +1181,8 @@ struct DocxParagraphStyle {
     text_align: Option<String>,
     list_id: Option<String>,
     list_depth: usize,
+    list_style: Option<String>,
+    ordinal: Option<i64>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -1089,6 +1205,7 @@ impl DocxParagraphBuilder {
                 start,
                 end,
                 style: style.to_string(),
+                annotation: None,
             });
         }
     }
@@ -1137,6 +1254,7 @@ impl DocxTableCellBuilder {
                 start: span.start + offset,
                 end: span.end + offset,
                 style: span.style,
+                annotation: span.annotation,
             }));
     }
 
@@ -1233,11 +1351,112 @@ fn docx_paragraph_extensions(style: &DocxParagraphStyle) -> Option<ReaderBlockEx
         list_item: Some(ReaderListItemExtension {
             list_id: format!("docx-list-{list_id}"),
             nesting_depth: style.list_depth,
-            list_style: "bullet".to_string(),
-            ordinal: None,
+            list_style: style
+                .list_style
+                .clone()
+                .unwrap_or_else(|| "bullet".to_string()),
+            ordinal: style.ordinal,
         }),
         ..ReaderBlockExtensions::default()
     })
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DocxNumberingLevel {
+    list_style: String,
+    start: i64,
+}
+
+type DocxNumberingMap = HashMap<(String, usize), DocxNumberingLevel>;
+
+fn parse_docx_numbering(xml: &str) -> DocxNumberingMap {
+    let mut reader = XmlReader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut abstract_levels: HashMap<(String, usize), DocxNumberingLevel> = HashMap::new();
+    let mut num_to_abstract: HashMap<String, String> = HashMap::new();
+    let mut current_abstract: Option<String> = None;
+    let mut current_num: Option<String> = None;
+    let mut current_level: Option<usize> = None;
+    let mut current_level_data: Option<DocxNumberingLevel> = None;
+
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(start)) | Ok(Event::Empty(start)) => {
+                let name = xml_local_name(start.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"abstractNum" => current_abstract = xml_attr_value(&start, b"abstractNumId"),
+                    b"num" => current_num = xml_attr_value(&start, b"numId"),
+                    b"lvl" if current_abstract.is_some() => {
+                        current_level = xml_attr_value(&start, b"ilvl")
+                            .and_then(|value| value.parse::<usize>().ok());
+                        current_level_data = Some(DocxNumberingLevel {
+                            list_style: "ordered".to_string(),
+                            start: 1,
+                        });
+                    }
+                    b"numFmt" if current_level_data.is_some() => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(level) = current_level_data.as_mut() {
+                                level.list_style = if value == "bullet" {
+                                    "bullet".to_string()
+                                } else {
+                                    "ordered".to_string()
+                                };
+                            }
+                        }
+                    }
+                    b"start" if current_level_data.is_some() => {
+                        if let Some(value) =
+                            xml_attr_value(&start, b"val").and_then(|value| value.parse().ok())
+                        {
+                            if let Some(level) = current_level_data.as_mut() {
+                                level.start = value;
+                            }
+                        }
+                    }
+                    b"abstractNumId" if current_num.is_some() => {
+                        if let (Some(num_id), Some(abstract_id)) =
+                            (current_num.clone(), xml_attr_value(&start, b"val"))
+                        {
+                            num_to_abstract.insert(num_id, abstract_id);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Ok(Event::End(end)) => {
+                let name = xml_local_name(end.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"lvl" => {
+                        if let (Some(abstract_id), Some(level), Some(level_data)) = (
+                            current_abstract.clone(),
+                            current_level.take(),
+                            current_level_data.take(),
+                        ) {
+                            abstract_levels.insert((abstract_id, level), level_data);
+                        }
+                    }
+                    b"abstractNum" => current_abstract = None,
+                    b"num" => current_num = None,
+                    _ => {}
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            _ => {}
+        }
+    }
+
+    num_to_abstract
+        .into_iter()
+        .flat_map(|(num_id, abstract_id)| {
+            abstract_levels
+                .iter()
+                .filter_map(move |((level_abstract_id, level), data)| {
+                    (level_abstract_id == &abstract_id)
+                        .then(|| ((num_id.clone(), *level), data.clone()))
+                })
+        })
+        .collect()
 }
 
 fn append_docx_paragraph(
@@ -1314,7 +1533,10 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
     None
 }
 
-fn parse_docx_document(xml: &str) -> Result<(String, Vec<ReaderContentBlock>), String> {
+fn parse_docx_document(
+    xml: &str,
+    numbering: &DocxNumberingMap,
+) -> Result<(String, Vec<ReaderContentBlock>), String> {
     let mut reader = XmlReader::from_str(xml);
     reader.config_mut().trim_text(false);
     let mut linear_text = String::new();
@@ -1328,6 +1550,7 @@ fn parse_docx_document(xml: &str) -> Result<(String, Vec<ReaderContentBlock>), S
     let mut current_rows: Vec<ReaderTableRow> = Vec::new();
     let mut current_cells: Vec<ReaderTableCell> = Vec::new();
     let mut current_cell: Option<DocxTableCellBuilder> = None;
+    let mut list_ordinals: HashMap<(String, usize), i64> = HashMap::new();
 
     loop {
         match reader
@@ -1482,6 +1705,8 @@ fn parse_docx_document(xml: &str) -> Result<(String, Vec<ReaderContentBlock>), S
                         if let Some(paragraph) =
                             paragraph.take().and_then(DocxParagraphBuilder::finish)
                         {
+                            let paragraph =
+                                apply_docx_numbering(paragraph, numbering, &mut list_ordinals);
                             if let Some(cell) = current_cell.as_mut() {
                                 cell.push_paragraph(paragraph);
                             } else {
@@ -1535,6 +1760,27 @@ fn parse_docx_document(xml: &str) -> Result<(String, Vec<ReaderContentBlock>), S
     Ok((linear_text, blocks))
 }
 
+fn apply_docx_numbering(
+    mut paragraph: DocxParagraph,
+    numbering: &DocxNumberingMap,
+    ordinals: &mut HashMap<(String, usize), i64>,
+) -> DocxParagraph {
+    let Some(list_id) = paragraph.style.list_id.clone() else {
+        return paragraph;
+    };
+    let depth = paragraph.style.list_depth;
+    if let Some(level) = numbering.get(&(list_id.clone(), depth)) {
+        paragraph.style.list_style = Some(level.list_style.clone());
+        if level.list_style == "ordered" {
+            let key = (list_id, depth);
+            let next = ordinals.get(&key).copied().unwrap_or(level.start);
+            paragraph.style.ordinal = Some(next);
+            ordinals.insert(key, next + 1);
+        }
+    }
+    paragraph
+}
+
 fn extract_docx_payload(
     bytes: &[u8],
     file_name: String,
@@ -1559,8 +1805,17 @@ fn extract_docx_payload(
             file.read_to_string(&mut xml).ok()?;
             parse_docx_core_title(&xml)
         });
+    let numbering = archive
+        .by_name("word/numbering.xml")
+        .ok()
+        .and_then(|mut file| {
+            let mut xml = String::new();
+            file.read_to_string(&mut xml).ok()?;
+            Some(parse_docx_numbering(&xml))
+        })
+        .unwrap_or_default();
 
-    let (text, blocks) = parse_docx_document(&document_xml)?;
+    let (text, blocks) = parse_docx_document(&document_xml, &numbering)?;
     if text.trim().is_empty() && blocks.is_empty() {
         return Err("Word document did not contain readable text.".to_string());
     }
@@ -1573,6 +1828,595 @@ fn extract_docx_payload(
         mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             .to_string(),
         extractor_version: DOCX_EXTRACTOR_VERSION,
+        text,
+        blocks,
+        source_sha256: Some(hash),
+        source_byte_length: Some(byte_len),
+        source_url: None,
+        source_html: None,
+        source_data: None,
+        import_app_version: None,
+    })
+}
+
+#[derive(Debug, Clone, Default)]
+struct RtfTextStyle {
+    strong: bool,
+    emphasis: bool,
+    underline: bool,
+    strikethrough: bool,
+    subscript: bool,
+    superscript: bool,
+    text_align: Option<String>,
+    uc_skip: usize,
+    ansi_codepage: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct RtfParagraphBuilder {
+    text: String,
+    spans: Vec<ReaderInlineSpan>,
+    text_align: Option<String>,
+}
+
+impl RtfParagraphBuilder {
+    fn push_text(&mut self, value: &str, style: &RtfTextStyle) {
+        if value.is_empty() {
+            return;
+        }
+        if self.text_align.is_none() {
+            self.text_align = style.text_align.clone();
+        }
+        let start = utf16_len(&self.text);
+        self.text.push_str(value);
+        let end = utf16_len(&self.text);
+        for style_name in rtf_style_names(style) {
+            self.spans.push(ReaderInlineSpan {
+                start,
+                end,
+                style: style_name.to_string(),
+                annotation: None,
+            });
+        }
+    }
+
+    fn finish(self) -> Option<RtfParagraph> {
+        let text = normalize_line_endings(&self.text)
+            .lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+        if text.is_empty() {
+            return None;
+        }
+        let text_utf16_len = utf16_len(&text);
+        let spans = self
+            .spans
+            .into_iter()
+            .filter(|span| span.start < span.end && span.end <= text_utf16_len)
+            .collect::<Vec<_>>();
+        Some(RtfParagraph {
+            text,
+            spans,
+            text_align: self.text_align,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+struct RtfParagraph {
+    text: String,
+    spans: Vec<ReaderInlineSpan>,
+    text_align: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct RtfTableBuilder {
+    cells: Vec<ReaderTableCell>,
+    rows: Vec<ReaderTableRow>,
+}
+
+impl RtfTableBuilder {
+    fn push_cell(&mut self, paragraph: &mut RtfParagraphBuilder) {
+        if let Some(cell) = std::mem::take(paragraph).finish() {
+            self.cells.push(ReaderTableCell {
+                text: cell.text,
+                is_header: false,
+                spans: if cell.spans.is_empty() {
+                    None
+                } else {
+                    Some(cell.spans)
+                },
+            });
+        }
+    }
+
+    fn push_row(&mut self, paragraph: &mut RtfParagraphBuilder) {
+        self.push_cell(paragraph);
+        if !self.cells.is_empty() {
+            self.rows.push(ReaderTableRow {
+                cells: std::mem::take(&mut self.cells),
+            });
+        }
+    }
+
+    fn finish(&mut self) -> Option<ReaderContentBlock> {
+        if self.rows.is_empty() {
+            return None;
+        }
+        let rows = std::mem::take(&mut self.rows);
+        Some(ReaderContentBlock {
+            id: Uuid::new_v4().to_string(),
+            kind: "table".to_string(),
+            text: docx_table_text(&rows),
+            start_offset: None,
+            end_offset: None,
+            participates_in_linear_text: false,
+            heading_level: None,
+            text_align: None,
+            spans: None,
+            extensions: Some(ReaderBlockExtensions {
+                table: Some(ReaderTableExtension { rows }),
+                ..ReaderBlockExtensions::default()
+            }),
+        })
+    }
+}
+
+fn rtf_style_names(style: &RtfTextStyle) -> Vec<&'static str> {
+    let mut names = Vec::new();
+    if style.strong {
+        names.push("strong");
+    }
+    if style.emphasis {
+        names.push("emphasis");
+    }
+    if style.underline {
+        names.push("underline");
+    }
+    if style.strikethrough {
+        names.push("strikethrough");
+    }
+    if style.subscript {
+        names.push("subscript");
+    }
+    if style.superscript {
+        names.push("superscript");
+    }
+    names
+}
+
+fn rtf_hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
+}
+
+fn rtf_codepage_label(value: i32) -> Option<&'static str> {
+    match value {
+        65001 => Some("utf-8"),
+        936 | 54936 => Some("gbk"),
+        950 => Some("big5"),
+        _ => None,
+    }
+}
+
+fn rtf_decode_hex_bytes(values: &[u8], style: &RtfTextStyle) -> String {
+    if let Some(label) = style.ansi_codepage.as_deref() {
+        if let Some(decoded) = decode_with_encoding(values, label) {
+            return decoded;
+        }
+    }
+    // Latin-1 is a lossless single-byte fallback for bytes that do not arrive through \u escapes.
+    values.iter().map(|value| char::from(*value)).collect()
+}
+
+fn rtf_unicode_char(value: i32) -> Option<char> {
+    let unit = if value < 0 {
+        (value + 65_536) as u16
+    } else {
+        value as u16
+    };
+    char::from_u32(unit as u32)
+}
+
+fn rtf_destination_should_skip(control: &str) -> bool {
+    matches!(
+        control,
+        "fonttbl"
+            | "colortbl"
+            | "stylesheet"
+            | "info"
+            | "pict"
+            | "object"
+            | "objdata"
+            | "themedata"
+            | "datastore"
+            | "xmlnstbl"
+            | "generator"
+            | "filetbl"
+            | "listtable"
+            | "listoverridetable"
+            | "rsidtbl"
+            | "latentstyles"
+            | "mmathPr"
+            | "nonshppict"
+            | "shp"
+            | "shptxt"
+            | "annotation"
+            | "header"
+            | "footer"
+            | "headerl"
+            | "headerr"
+            | "headerf"
+            | "footerl"
+            | "footerr"
+            | "footerf"
+            | "footnote"
+            | "endnote"
+            | "private"
+    )
+}
+
+fn append_rtf_paragraph(
+    blocks: &mut Vec<ReaderContentBlock>,
+    linear_text: &mut String,
+    paragraph: &mut RtfParagraphBuilder,
+) {
+    if let Some(paragraph) = std::mem::take(paragraph).finish() {
+        append_linear_block(
+            blocks,
+            linear_text,
+            "paragraph",
+            paragraph.text,
+            None,
+            paragraph.text_align,
+            if paragraph.spans.is_empty() {
+                None
+            } else {
+                Some(paragraph.spans)
+            },
+            None,
+        );
+    }
+}
+
+fn apply_rtf_control(
+    control: &str,
+    parameter: Option<i32>,
+    style: &mut RtfTextStyle,
+    paragraph: &mut RtfParagraphBuilder,
+    blocks: &mut Vec<ReaderContentBlock>,
+    linear_text: &mut String,
+    table: &mut RtfTableBuilder,
+    in_table: &mut bool,
+) -> Option<usize> {
+    match control {
+        "b" => style.strong = parameter.unwrap_or(1) != 0,
+        "i" => style.emphasis = parameter.unwrap_or(1) != 0,
+        "ul" | "ulw" | "uld" | "uldash" | "uldashd" | "uldashdd" | "uldb" | "ulth" | "ulwave" => {
+            style.underline = parameter.unwrap_or(1) != 0
+        }
+        "ulnone" => style.underline = false,
+        "strike" | "striked" => style.strikethrough = parameter.unwrap_or(1) != 0,
+        "sub" => {
+            style.subscript = true;
+            style.superscript = false;
+        }
+        "super" => {
+            style.superscript = true;
+            style.subscript = false;
+        }
+        "nosupersub" => {
+            style.subscript = false;
+            style.superscript = false;
+        }
+        "plain" => {
+            let uc_skip = style.uc_skip;
+            *style = RtfTextStyle {
+                uc_skip,
+                ..RtfTextStyle::default()
+            };
+        }
+        "pard" => style.text_align = None,
+        "qc" => style.text_align = Some("center".to_string()),
+        "qr" => style.text_align = Some("end".to_string()),
+        "qj" => style.text_align = Some("justify".to_string()),
+        "ql" => style.text_align = None,
+        "trowd" => {
+            if let Some(block) = table.finish() {
+                blocks.push(block);
+            }
+            *in_table = true;
+        }
+        "intbl" => *in_table = true,
+        "cell" => {
+            *in_table = true;
+            table.push_cell(paragraph);
+        }
+        "row" => {
+            *in_table = true;
+            table.push_row(paragraph);
+            if let Some(block) = table.finish() {
+                blocks.push(block);
+            }
+            *in_table = false;
+        }
+        "par" | "sect" | "page" => {
+            if *in_table {
+                paragraph.push_text("\n", style);
+            } else {
+                if let Some(block) = table.finish() {
+                    blocks.push(block);
+                }
+                append_rtf_paragraph(blocks, linear_text, paragraph);
+            }
+        }
+        "line" => paragraph.push_text("\n", style),
+        "tab" => paragraph.push_text("\t", style),
+        "emdash" => paragraph.push_text("—", style),
+        "endash" => paragraph.push_text("–", style),
+        "bullet" => paragraph.push_text("•", style),
+        "lquote" | "rquote" => paragraph.push_text("'", style),
+        "ldblquote" | "rdblquote" => paragraph.push_text("\"", style),
+        "u" => {
+            if let Some(value) = parameter {
+                if let Some(ch) = rtf_unicode_char(value) {
+                    paragraph.push_text(&ch.to_string(), style);
+                }
+                return Some(style.uc_skip);
+            }
+        }
+        "uc" => {
+            if let Some(value) = parameter {
+                style.uc_skip = value.max(0) as usize;
+            }
+        }
+        "ansicpg" => {
+            if let Some(value) = parameter {
+                style.ansi_codepage = rtf_codepage_label(value).map(str::to_string);
+            }
+        }
+        _ => {}
+    }
+    None
+}
+
+fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), String> {
+    if !input.trim_start().starts_with("{\\rtf") {
+        return Err("RTF file did not start with a valid RTF header.".to_string());
+    }
+
+    let bytes = input.as_bytes();
+    let mut index = 0usize;
+    let mut depth = 0usize;
+    let mut styles = vec![RtfTextStyle {
+        uc_skip: 1,
+        ..RtfTextStyle::default()
+    }];
+    let mut paragraph = RtfParagraphBuilder::default();
+    let mut table = RtfTableBuilder::default();
+    let mut in_table = false;
+    let mut linear_text = String::new();
+    let mut blocks = Vec::new();
+    let mut skip_depth: Option<usize> = None;
+    let mut ignorable_current_group = false;
+    let mut unicode_fallback_remaining = 0usize;
+
+    while index < bytes.len() {
+        let byte = bytes[index];
+
+        if unicode_fallback_remaining > 0 {
+            if byte == b'\\' && index + 1 < bytes.len() && bytes[index + 1] == b'\'' {
+                index = (index + 4).min(bytes.len());
+            } else {
+                index += 1;
+            }
+            unicode_fallback_remaining -= 1;
+            continue;
+        }
+
+        if let Some(active_skip_depth) = skip_depth {
+            match byte {
+                b'{' => {
+                    depth += 1;
+                    index += 1;
+                }
+                b'}' => {
+                    if depth == active_skip_depth {
+                        skip_depth = None;
+                    }
+                    depth = depth.saturating_sub(1);
+                    styles.pop();
+                    if styles.is_empty() {
+                        styles.push(RtfTextStyle {
+                            uc_skip: 1,
+                            ..RtfTextStyle::default()
+                        });
+                    }
+                    index += 1;
+                }
+                _ => index += 1,
+            }
+            continue;
+        }
+
+        match byte {
+            b'{' => {
+                depth += 1;
+                styles.push(styles.last().cloned().unwrap_or_default());
+                ignorable_current_group = false;
+                index += 1;
+            }
+            b'}' => {
+                depth = depth.saturating_sub(1);
+                styles.pop();
+                if styles.is_empty() {
+                    styles.push(RtfTextStyle {
+                        uc_skip: 1,
+                        ..RtfTextStyle::default()
+                    });
+                }
+                index += 1;
+            }
+            b'\\' => {
+                index += 1;
+                if index >= bytes.len() {
+                    break;
+                }
+                match bytes[index] {
+                    b'\\' | b'{' | b'}' => {
+                        let ch = bytes[index] as char;
+                        if let Some(style) = styles.last() {
+                            paragraph.push_text(&ch.to_string(), style);
+                        }
+                        index += 1;
+                    }
+                    b'*' => {
+                        ignorable_current_group = true;
+                        index += 1;
+                    }
+                    b'\'' => {
+                        if index + 2 < bytes.len() {
+                            let mut hex_bytes = Vec::new();
+                            while index + 2 < bytes.len() && bytes[index] == b'\'' {
+                                let (Some(high), Some(low)) = (
+                                    rtf_hex_value(bytes[index + 1]),
+                                    rtf_hex_value(bytes[index + 2]),
+                                ) else {
+                                    break;
+                                };
+                                hex_bytes.push((high << 4) | low);
+                                index += 3;
+                                if !(index + 3 < bytes.len()
+                                    && bytes[index] == b'\\'
+                                    && bytes[index + 1] == b'\'')
+                                {
+                                    break;
+                                }
+                                index += 1;
+                            }
+                            if !hex_bytes.is_empty() {
+                                let ch = styles
+                                    .last()
+                                    .map(|style| rtf_decode_hex_bytes(&hex_bytes, style))
+                                    .unwrap_or_else(|| {
+                                        hex_bytes.iter().map(|byte| char::from(*byte)).collect()
+                                    });
+                                if let Some(style) = styles.last() {
+                                    paragraph.push_text(&ch, style);
+                                }
+                            } else {
+                                index += 1;
+                            }
+                        } else {
+                            index += 1;
+                        }
+                    }
+                    b'\n' | b'\r' => index += 1,
+                    control_start if control_start.is_ascii_alphabetic() => {
+                        let control_start_index = index;
+                        while index < bytes.len() && bytes[index].is_ascii_alphabetic() {
+                            index += 1;
+                        }
+                        let control = std::str::from_utf8(&bytes[control_start_index..index])
+                            .map_err(|error| {
+                                format!("Could not read RTF control word: {}", error)
+                            })?;
+
+                        let mut negative = false;
+                        if index < bytes.len() && bytes[index] == b'-' {
+                            negative = true;
+                            index += 1;
+                        }
+                        let parameter_start = index;
+                        while index < bytes.len() && bytes[index].is_ascii_digit() {
+                            index += 1;
+                        }
+                        let parameter = if index > parameter_start {
+                            let parsed = std::str::from_utf8(&bytes[parameter_start..index])
+                                .ok()
+                                .and_then(|value| value.parse::<i32>().ok());
+                            parsed.map(|value| if negative { -value } else { value })
+                        } else {
+                            None
+                        };
+
+                        if index < bytes.len() && bytes[index] == b' ' {
+                            index += 1;
+                        }
+
+                        if rtf_destination_should_skip(control)
+                            || (ignorable_current_group && control != "rtf")
+                        {
+                            skip_depth = Some(depth);
+                            continue;
+                        }
+
+                        let skip_count = if let Some(style) = styles.last_mut() {
+                            apply_rtf_control(
+                                control,
+                                parameter,
+                                style,
+                                &mut paragraph,
+                                &mut blocks,
+                                &mut linear_text,
+                                &mut table,
+                                &mut in_table,
+                            )
+                        } else {
+                            None
+                        };
+                        unicode_fallback_remaining = skip_count.unwrap_or(0);
+                        ignorable_current_group = false;
+                    }
+                    _ => index += 1,
+                }
+            }
+            b'\n' | b'\r' => index += 1,
+            _ => {
+                let ch = byte as char;
+                if let Some(style) = styles.last() {
+                    paragraph.push_text(&ch.to_string(), style);
+                }
+                index += 1;
+            }
+        }
+    }
+
+    if in_table {
+        table.push_row(&mut paragraph);
+    }
+    if let Some(block) = table.finish() {
+        blocks.push(block);
+    }
+    append_rtf_paragraph(&mut blocks, &mut linear_text, &mut paragraph);
+    Ok((linear_text, blocks))
+}
+
+fn extract_rtf_payload(
+    bytes: &[u8],
+    file_name: String,
+    hash: String,
+    byte_len: u64,
+) -> Result<ReaderImportPayload, String> {
+    let raw = decode_reader_text(bytes, None)?;
+    let (text, blocks) = parse_rtf_document(&raw)?;
+    if text.trim().is_empty() && blocks.is_empty() {
+        return Err("RTF document did not contain readable text.".to_string());
+    }
+
+    Ok(ReaderImportPayload {
+        canonical_schema_version: default_canonical_schema_version(),
+        title: title_from_file_stem(&file_name),
+        file_name,
+        source_type: "rtf".to_string(),
+        mime_type: "application/rtf".to_string(),
+        extractor_version: RTF_EXTRACTOR_VERSION,
         text,
         blocks,
         source_sha256: Some(hash),
@@ -2411,8 +3255,8 @@ fn extract_html_file_payload(
     hash: String,
     byte_len: u64,
 ) -> Result<ReaderImportPayload, String> {
-    let html = std::str::from_utf8(bytes).map_err(|_| "HTML file must be UTF-8.".to_string())?;
-    let (text, blocks, html_title) = html_to_blocks(html, None);
+    let html = decode_reader_text(bytes, html_declared_charset(bytes).as_deref())?;
+    let (text, blocks, html_title) = html_to_blocks(&html, None);
     if text.trim().is_empty() && blocks.is_empty() {
         return Err("HTML file did not contain readable text.".to_string());
     }
@@ -2429,7 +3273,7 @@ fn extract_html_file_payload(
         source_sha256: Some(hash),
         source_byte_length: Some(byte_len),
         source_url: None,
-        source_html: None,
+        source_html: Some(html),
         source_data: None,
         import_app_version: None,
     })
@@ -2490,12 +3334,11 @@ fn prepare_from_bytes(
     let byte_len = bytes.len() as u64;
 
     if TEXT_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/plain" {
-        let raw_text =
-            std::str::from_utf8(bytes).map_err(|_| "Text file must be valid UTF-8.".to_string())?;
+        let raw_text = decode_reader_text(bytes, None)?;
         let mut payload = extract_plain_text_document(
             title_from_file_stem(file_name),
             file_name.to_string(),
-            raw_text.to_string(),
+            raw_text,
         );
         payload.source_sha256 = Some(hash);
         payload.source_byte_length = Some(byte_len);
@@ -2506,6 +3349,13 @@ fn prepare_from_bytes(
         || mime_lower == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     {
         return extract_docx_payload(bytes, file_name.to_string(), hash, byte_len);
+    }
+
+    if RTF_IMPORT_EXTENSIONS.contains(&extension.as_str())
+        || mime_lower == "application/rtf"
+        || mime_lower == "text/rtf"
+    {
+        return extract_rtf_payload(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if EPUB_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/epub+zip"
@@ -2686,7 +3536,7 @@ pub async fn import_reader_document(
         .set_title("Import Reading Document")
         .add_filter(
             "Reader documents",
-            &["txt", "text", "epub", "pdf", "html", "htm", "docx"],
+            &["txt", "text", "epub", "pdf", "html", "htm", "docx", "rtf"],
         )
         .blocking_pick_file();
 
@@ -2852,6 +3702,14 @@ mod tests {
     use zip::write::SimpleFileOptions;
 
     fn build_test_docx(document_xml: &str, core_xml: Option<&str>) -> Vec<u8> {
+        build_test_docx_with_numbering(document_xml, core_xml, None)
+    }
+
+    fn build_test_docx_with_numbering(
+        document_xml: &str,
+        core_xml: Option<&str>,
+        numbering_xml: Option<&str>,
+    ) -> Vec<u8> {
         let mut bytes = Cursor::new(Vec::new());
         {
             let mut writer = zip::ZipWriter::new(&mut bytes);
@@ -2875,6 +3733,14 @@ mod tests {
                     .start_file("docProps/core.xml", options)
                     .expect("core");
                 writer.write_all(core_xml.as_bytes()).expect("write core");
+            }
+            if let Some(numbering_xml) = numbering_xml {
+                writer
+                    .start_file("word/numbering.xml", options)
+                    .expect("numbering");
+                writer
+                    .write_all(numbering_xml.as_bytes())
+                    .expect("write numbering");
             }
             writer.finish().expect("finish docx");
         }
@@ -3036,6 +3902,128 @@ mod tests {
     }
 
     #[test]
+    fn docx_import_resolves_numbering_xml_list_styles() {
+        let bytes = build_test_docx_with_numbering(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+                <w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="9"/></w:numPr></w:pPr><w:r><w:t>第一项</w:t></w:r></w:p>
+                <w:p><w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="10"/></w:numPr></w:pPr><w:r><w:t>项目符号</w:t></w:r></w:p>
+            </w:body></w:document>"#,
+            None,
+            Some(
+                r#"<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                    <w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:start w:val="3"/><w:numFmt w:val="decimal"/></w:lvl></w:abstractNum>
+                    <w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/></w:lvl></w:abstractNum>
+                    <w:num w:numId="9"><w:abstractNumId w:val="1"/></w:num>
+                    <w:num w:numId="10"><w:abstractNumId w:val="2"/></w:num>
+                </w:numbering>"#,
+            ),
+        );
+
+        let payload = extract_docx_payload(
+            &bytes,
+            "numbered.docx".to_string(),
+            sha256_hex(&bytes),
+            bytes.len() as u64,
+        )
+        .expect("docx import");
+
+        let first = payload.blocks[0]
+            .extensions
+            .as_ref()
+            .and_then(|extensions| extensions.list_item.as_ref())
+            .expect("ordered item");
+        assert_eq!(first.list_style, "ordered");
+        assert_eq!(first.ordinal, Some(3));
+        let second = payload.blocks[1]
+            .extensions
+            .as_ref()
+            .and_then(|extensions| extensions.list_item.as_ref())
+            .expect("bullet item");
+        assert_eq!(second.list_style, "bullet");
+        assert_eq!(second.ordinal, None);
+    }
+
+    #[test]
+    fn rtf_import_preserves_paragraphs_alignment_unicode_and_inline_styles() {
+        let bytes = br#"{\rtf1\ansi\uc1
+{\fonttbl{\f0 Helvetica;}}
+{\info{\title Hidden metadata}}
+\pard\qc\b Title\b0\par
+\pard Plain \i italic \i0 and \ul underlined \ulnone text.\par
+\pard Unicode: \u20320?\u22909?\par
+}"#;
+
+        let payload = extract_rtf_payload(
+            bytes,
+            "sample.rtf".to_string(),
+            sha256_hex(bytes),
+            bytes.len() as u64,
+        )
+        .expect("rtf import");
+
+        assert_eq!(payload.title, "sample");
+        assert_eq!(payload.source_type, "rtf");
+        assert_eq!(payload.mime_type, "application/rtf");
+        assert_eq!(payload.blocks.len(), 3);
+        assert_eq!(payload.blocks[0].text, "Title");
+        assert_eq!(payload.blocks[0].text_align.as_deref(), Some("center"));
+        assert!(payload.blocks[0]
+            .spans
+            .as_ref()
+            .expect("title spans")
+            .iter()
+            .any(|span| span.style == "strong"));
+        assert_eq!(payload.blocks[1].text, "Plain italic and underlined text.");
+        assert!(payload.blocks[1]
+            .spans
+            .as_ref()
+            .expect("body spans")
+            .iter()
+            .any(|span| span.style == "emphasis"));
+        assert!(payload.blocks[1]
+            .spans
+            .as_ref()
+            .expect("body spans")
+            .iter()
+            .any(|span| span.style == "underline"));
+        assert_eq!(payload.blocks[2].text, "Unicode: 你好");
+        assert!(!payload.text.contains("Helvetica"));
+        assert!(!payload.text.contains("Hidden metadata"));
+    }
+
+    #[test]
+    fn prepare_reader_import_accepts_rtf_mime_type() {
+        let bytes = br"{\rtf1\ansi Hello\par}";
+        let payload = prepare_from_bytes(bytes, "sample.bin", Some("text/rtf"))
+            .expect("rtf import from mime");
+
+        assert_eq!(payload.source_type, "rtf");
+        assert_eq!(payload.text, "Hello");
+    }
+
+    #[test]
+    fn rtf_import_preserves_basic_tables_and_legacy_chinese_codepage() {
+        let bytes = br"{\rtf1\ansi\ansicpg936\trowd\intbl \'b4\'ca\cell \'d2\'e5\cell\row}";
+        let payload = extract_rtf_payload(
+            bytes,
+            "table.rtf".to_string(),
+            sha256_hex(bytes),
+            bytes.len() as u64,
+        )
+        .expect("rtf import");
+
+        let table = payload
+            .blocks
+            .iter()
+            .find(|block| block.kind == "table")
+            .and_then(|block| block.extensions.as_ref())
+            .and_then(|extensions| extensions.table.as_ref())
+            .expect("table rows");
+        assert_eq!(table.rows[0].cells[0].text, "词");
+        assert_eq!(table.rows[0].cells[1].text, "义");
+    }
+
+    #[test]
     fn html_import_preserves_structural_blocks() {
         let payload = prepare_reader_import(PrepareReaderImportArgs {
             path: None,
@@ -3088,6 +4076,25 @@ mod tests {
                     .and_then(|value| value.inline_src.as_deref())
                     == Some("https://example.com/image.png")
         }));
+    }
+
+    #[test]
+    fn text_and_html_import_decode_legacy_chinese_encodings_and_ruby() {
+        let gbk_text = b"\xc4\xe3\xba\xc3";
+        let text_payload = prepare_from_bytes(gbk_text, "sample.txt", Some("text/plain"))
+            .expect("gbk text import");
+        assert_eq!(text_payload.text, "你好");
+
+        let big5_html = b"<meta charset=\"big5\"><p><ruby>\xba~<rt>han</rt></ruby></p>";
+        let html_payload = prepare_from_bytes(big5_html, "sample.html", Some("text/html"))
+            .expect("big5 html import");
+        assert_eq!(html_payload.text, "漢");
+        let ruby_span = html_payload.blocks[0]
+            .spans
+            .as_ref()
+            .and_then(|spans| spans.iter().find(|span| span.style == "ruby"))
+            .expect("ruby span");
+        assert_eq!(ruby_span.annotation.as_deref(), Some("han"));
     }
 
     #[test]
@@ -3192,6 +4199,17 @@ mod tests {
 
         assert!(text.contains("漢 字"));
         assert!(!text.contains("han"));
+        assert!(blocks.iter().any(|block| {
+            block
+                .spans
+                .as_ref()
+                .map(|spans| {
+                    spans.iter().any(|span| {
+                        span.style == "ruby" && span.annotation.as_deref() == Some("han")
+                    })
+                })
+                .unwrap_or(false)
+        }));
         assert!(blocks.iter().any(|block| {
             block.kind == "paragraph"
                 && block.text == "副标题"
