@@ -374,7 +374,23 @@
 	}
 
 	function setReaderTheme(theme: ReaderColorThemeId): void {
+		if (readerSettings.colorTheme !== theme) {
+			readerRoute.trackThemeChanged(theme);
+		}
 		readerSettingsStore.applyColorTheme(theme);
+	}
+
+	function changeReaderFontSize(direction: 'increase' | 'decrease'): void {
+		const previousFontSize = readerSettings.fontSizePercent;
+		if (direction === 'increase') {
+			readerSettingsStore.increaseFontSize();
+		} else {
+			readerSettingsStore.decreaseFontSize();
+		}
+		const nextFontSize = readerSettingsStore.settings.fontSizePercent;
+		if (nextFontSize !== previousFontSize) {
+			readerRoute.trackLayoutChanged('font_size_percent', nextFontSize, direction);
+		}
 	}
 
 	function parsePixelValue(value: string, fallback: number): number {
@@ -533,7 +549,7 @@
 					class="mobile-reader__font-button"
 					disabled={!canDecreaseFontSize}
 					aria-label="Decrease reader font size"
-					onclick={readerSettingsStore.decreaseFontSize}
+					onclick={() => changeReaderFontSize('decrease')}
 				>
 					<Minus size="15" />
 					<span>A</span>
@@ -546,7 +562,7 @@
 					class="mobile-reader__font-button"
 					disabled={!canIncreaseFontSize}
 					aria-label="Increase reader font size"
-					onclick={readerSettingsStore.increaseFontSize}
+					onclick={() => changeReaderFontSize('increase')}
 				>
 					<Plus size="15" />
 					<span>A</span>

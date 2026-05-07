@@ -214,7 +214,23 @@
 	}
 
 	function setReaderTheme(theme: ReaderColorThemeId): void {
+		if (readerSettings.colorTheme !== theme) {
+			readerRoute.trackThemeChanged(theme);
+		}
 		readerSettingsStore.applyColorTheme(theme);
+	}
+
+	function changeReaderFontSize(direction: 'increase' | 'decrease'): void {
+		const previousFontSize = readerSettings.fontSizePercent;
+		if (direction === 'increase') {
+			readerSettingsStore.increaseFontSize();
+		} else {
+			readerSettingsStore.decreaseFontSize();
+		}
+		const nextFontSize = readerSettingsStore.settings.fontSizePercent;
+		if (nextFontSize !== previousFontSize) {
+			readerRoute.trackLayoutChanged('font_size_percent', nextFontSize, direction);
+		}
 	}
 
 	function toggleReaderSettingsPopover(event: MouseEvent): void {
@@ -404,7 +420,7 @@
 								center={true}
 								disabled={!canDecreaseFontSize}
 								aria-label="Decrease reader font size"
-								onclick={readerSettingsStore.decreaseFontSize}
+								onclick={() => changeReaderFontSize('decrease')}
 							>
 								<Minus size="16" />
 								<span>A</span>
@@ -424,7 +440,7 @@
 								center={true}
 								disabled={!canIncreaseFontSize}
 								aria-label="Increase reader font size"
-								onclick={readerSettingsStore.increaseFontSize}
+								onclick={() => changeReaderFontSize('increase')}
 							>
 								<Plus size="16" />
 								<span>A</span>

@@ -124,6 +124,7 @@
 	}
 
 	function openSupportedDocumentsModal(): void {
+		readerRoute.trackSupportedDocumentsOpened();
 		supportedDocumentsModalVisible = true;
 	}
 

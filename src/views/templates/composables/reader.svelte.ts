@@ -59,6 +59,24 @@ function participatesInLinearText(block: ReaderContentBlock): boolean {
 
 type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
 
+function getTelemetryErrorName(error: unknown): string {
+	return error instanceof Error ? error.name : typeof error;
+}
+
+function trackImportFailed(
+	sourceType: string,
+	stage: 'prepare' | 'pick' | 'save',
+	error: unknown
+): void {
+	telemetry
+		.trackEvent('reader.document_import_failed', {
+			source_type: sourceType,
+			stage,
+			error_name: getTelemetryErrorName(error),
+		})
+		.catch(() => {});
+}
+
 function alignTokens(
 	text: string,
 	tokenTexts: Array<string | NativeReaderToken>,
@@ -189,6 +207,7 @@ async function pickImportDocument(): Promise<ReaderImportPayload | undefined> {
 	try {
 		return await pickReaderImportFile();
 	} catch (error) {
+		trackImportFailed('file', 'pick', error);
 		handleError('There was an error importing the reader document.', error);
 		return undefined;
 	} finally {
@@ -214,6 +233,7 @@ async function importReaderPayload(
 			.catch(() => {});
 		await openDocument(document);
 	} catch (error) {
+		trackImportFailed(importPayload.source_type, 'save', error);
 		handleError('There was an error importing the reader document.', error);
 	} finally {
 		importing = false;
@@ -230,6 +250,7 @@ async function importPlainTextDocument(title: string, text: string, color: strin
 		});
 		await importReaderPayload(importPayload, title || importPayload.title, color);
 	} catch (error) {
+		trackImportFailed('plain_text', 'prepare', error);
 		handleError('There was an error importing the reader document.', error);
 	}
 }
@@ -277,8 +298,31 @@ async function importWebpageDocument(
 		if (error instanceof Error && error.message === LARGE_HTML_IMPORT_CANCELED_MESSAGE) {
 			return;
 		}
+		trackImportFailed('webpage', 'prepare', error);
 		handleError('There was an error importing the webpage.', error);
 	}
+}
+
+function trackSupportedDocumentsOpened(): void {
+	telemetry.trackEvent('reader.supported_documents_opened', {}).catch(() => {});
+}
+
+function trackThemeChanged(theme: string): void {
+	telemetry.trackEvent('reader.theme_changed', { theme }).catch(() => {});
+}
+
+function trackLayoutChanged(
+	setting: string,
+	value: number,
+	direction?: 'increase' | 'decrease'
+): void {
+	telemetry
+		.trackEvent('reader.layout_changed', {
+			setting,
+			value,
+			...(direction ? { direction } : {}),
+		})
+		.catch(() => {});
 }
 
 async function updateDocumentMetadata(
@@ -719,6 +763,9 @@ export const readerRoute = {
 	importReaderPayload,
 	importPlainTextDocument,
 	importWebpageDocument,
+	trackSupportedDocumentsOpened,
+	trackThemeChanged,
+	trackLayoutChanged,
 	updateDocumentMetadata,
 	openDocument,
 	openDocumentById,
