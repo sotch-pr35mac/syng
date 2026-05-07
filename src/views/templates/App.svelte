@@ -6,7 +6,8 @@
 	import Chat from '@/routes/Chat.svelte';
 	import Help from '@/routes/Help.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
-	import Reader from '@/routes/Reader.svelte';
+	import ReaderLibrary from '@/routes/Reader/Library.svelte';
+	import ReaderDocument from '@/routes/Reader/Document.svelte';
 	import Search from '@/routes/Search.svelte';
 	import Settings from '@/routes/Settings.svelte';
 	import Study from '@/routes/Study.svelte';
@@ -53,8 +54,8 @@
 
 	const routes = {
 		'/': Search,
-		'/read': Reader,
-		'/read/document/:id': Reader,
+		'/read': ReaderLibrary,
+		'/read/document/:id': ReaderDocument,
 		'/bookmarks': Bookmarks,
 		'/study': Study,
 		'/study/flashcards': Flashcards,

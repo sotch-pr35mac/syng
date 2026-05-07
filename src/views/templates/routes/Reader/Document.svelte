@@ -1,35 +1,18 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		ChevronDown,
 		ChevronLeft,
 		ChevronRight,
-		ChevronUp,
-		ClipboardPaste,
-		FilePlus2,
-		Globe2,
-		Info,
 		Minus,
 		Palette,
 		Plus,
 		SlidersHorizontal,
-		Trash2,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
-	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
-	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
-	import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
-	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
-	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
-	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
-	import ReaderLibrary from '@/components/ReaderLibrary.svelte';
-	import ReaderSupportedDocumentsModal from '@/components/ReaderSupportedDocumentsModal.svelte';
-	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
@@ -43,15 +26,11 @@
 	import type {
 		ReaderBlockStyleExtension,
 		ReaderContentBlock,
-		ReaderDocument,
-		ReaderImportPayload,
 		ReaderToken,
 	} from '@/types/reader.js';
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
-	import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
-	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { isIPad } from '@/utils/device.js';
 
 	type Props = {
@@ -69,51 +48,13 @@
 	const LIST_NESTING_INDENT_EM = 1.25;
 	const MAX_HEADING_LEVEL = 6;
 	const PAGE_CURL_DURATION_MS = 760;
-	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const READER_SETTINGS_POPOVER_WIDTH_PX = 470;
-	const READER_IMPORT_ACTIONS = {
-		FILE: 'file',
-		WEBPAGE: 'webpage',
-		CLIPBOARD: 'clipboard',
-		SUPPORTED_DOCUMENTS: 'supported-documents',
-	} as const;
-	const readerImportDropdownValues = [
-		{
-			id: READER_IMPORT_ACTIONS.FILE,
-			text: 'Import Document',
-			icon: FilePlus2,
-			component: TextWithIconDropdownItem,
-		},
-		{
-			id: READER_IMPORT_ACTIONS.WEBPAGE,
-			text: 'Import from Webpage',
-			icon: Globe2,
-			component: TextWithIconDropdownItem,
-		},
-		{
-			id: READER_IMPORT_ACTIONS.CLIPBOARD,
-			text: 'Import from Clipboard',
-			icon: ClipboardPaste,
-			component: TextWithIconDropdownItem,
-		},
-		{
-			id: 'reader-import-divider',
-			component: DividerDropdownItem,
-		},
-		{
-			id: READER_IMPORT_ACTIONS.SUPPORTED_DOCUMENTS,
-			text: 'Supported Documents',
-			icon: Info,
-			component: TextWithIconDropdownItem,
-		},
-	];
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
 	const routeDocumentId = $derived(params.id ? decodeURIComponent(params.id) : undefined);
 	const currentPage = $derived(readerRoute.currentPage);
-	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
 	let systemPrefersDark = $state(false);
 	const activeReaderTheme = $derived(
@@ -145,12 +86,6 @@
 			`--reader-page-line-height: ${readerSettings.lineHeight}`,
 		].join(';')
 	);
-	let editingLibrary = $state(false);
-	let clipboardImportModalVisible = $state(false);
-	let webpageImportModalVisible = $state(false);
-	let supportedDocumentsModalVisible = $state(false);
-	let pendingImportPayload = $state<ReaderImportPayload | undefined>(undefined);
-	let editingDocument = $state<ReaderDocument | undefined>(undefined);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
 	let turningPage = $state(false);
@@ -163,10 +98,6 @@
 	let readerSettingsPopoverVisible = $state(false);
 	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
 	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
-	const selectedDocumentIds = new SvelteSet<string>();
-	const selectedDocuments = $derived(
-		documents.filter((document) => selectedDocumentIds.has(document._id))
-	);
 	const activeDocumentVerticalWriting = $derived(
 		Boolean(
 			activeDocument?.blocks.some(
@@ -199,17 +130,8 @@
 		lastRouteDocumentId = documentId ?? null;
 		routeLoadRequest += 1;
 		const requestId = routeLoadRequest;
-		editingLibrary = false;
-		selectedDocumentIds.clear();
 		if (!documentId) {
-			if (readerDocumentRouteStore.value) {
-				window.location.hash = `#/read/document/${encodeURIComponent(readerDocumentRouteStore.value)}`;
-				return;
-			}
-			if (activeDocument) {
-				window.location.hash = `#/read/document/${encodeURIComponent(activeDocument._id)}`;
-				return;
-			}
+			window.location.hash = '#/read';
 			return;
 		}
 		readerRoute
@@ -286,130 +208,9 @@
 		return styles.length ? styles.join(';') : undefined;
 	}
 
-	function toggleEditing(): void {
-		editingLibrary = !editingLibrary;
-		selectedDocumentIds.clear();
-	}
-
 	function backToLibrary(): void {
-		editingLibrary = false;
-		selectedDocumentIds.clear();
 		readerRoute.backToLibrary();
 		window.location.hash = '#/read';
-	}
-
-	function openClipboardImportModal(): void {
-		clipboardImportModalVisible = true;
-	}
-
-	function closeClipboardImportModal(): void {
-		clipboardImportModalVisible = false;
-	}
-
-	function openWebpageImportModal(): void {
-		webpageImportModalVisible = true;
-	}
-
-	function closeWebpageImportModal(): void {
-		webpageImportModalVisible = false;
-	}
-
-	function openSupportedDocumentsModal(): void {
-		supportedDocumentsModalVisible = true;
-	}
-
-	function closeSupportedDocumentsModal(): void {
-		supportedDocumentsModalVisible = false;
-	}
-
-	async function openFileImportDetails(): Promise<void> {
-		const importPayload = await readerRoute.pickImportDocument();
-		if (importPayload) {
-			pendingImportPayload = importPayload;
-		}
-	}
-
-	function handleImportSelection(id: string): void {
-		if (id === READER_IMPORT_ACTIONS.CLIPBOARD) {
-			openClipboardImportModal();
-			return;
-		}
-		if (id === READER_IMPORT_ACTIONS.WEBPAGE) {
-			openWebpageImportModal();
-			return;
-		}
-		if (id === READER_IMPORT_ACTIONS.FILE) {
-			void openFileImportDetails();
-			return;
-		}
-		if (id === READER_IMPORT_ACTIONS.SUPPORTED_DOCUMENTS) {
-			openSupportedDocumentsModal();
-		}
-	}
-
-	function closeFileImportDetails(): void {
-		pendingImportPayload = undefined;
-	}
-
-	async function importPendingDocument(title: string, color: string): Promise<void> {
-		if (!pendingImportPayload) {
-			return;
-		}
-		await readerRoute.importReaderPayload(pendingImportPayload, title, color);
-		pendingImportPayload = undefined;
-	}
-
-	function openDocumentDetails(event: MouseEvent, document: ReaderDocument): void {
-		event.stopPropagation();
-		editingDocument = document;
-	}
-
-	function closeDocumentDetails(): void {
-		editingDocument = undefined;
-	}
-
-	async function saveDocumentDetails(title: string, color: string): Promise<void> {
-		if (!editingDocument) {
-			return;
-		}
-		await readerRoute.updateDocumentMetadata(editingDocument, title, color);
-		editingDocument = undefined;
-	}
-
-	function toggleDocumentSelection(document: ReaderDocument): void {
-		if (selectedDocumentIds.has(document._id)) {
-			selectedDocumentIds.delete(document._id);
-		} else {
-			selectedDocumentIds.add(document._id);
-		}
-	}
-
-	function handleDocumentCardClick(document: ReaderDocument): void {
-		if (editingLibrary) {
-			toggleDocumentSelection(document);
-			return;
-		}
-		window.location.hash = `#/read/document/${encodeURIComponent(document._id)}`;
-	}
-
-	function handleDocumentCardKey(event: KeyboardEvent, document: ReaderDocument): void {
-		if (event.key === 'Enter' || event.key === ' ') {
-			event.preventDefault();
-			handleDocumentCardClick(document);
-		}
-	}
-
-	function getDocumentProgressPercent(document: ReaderDocument): number {
-		const progression = document.progress?.total_progression ?? 0;
-		return Math.round(Math.max(0, Math.min(1, progression)) * PERCENTAGE_SCALE);
-	}
-
-	async function deleteSelectedDocuments(): Promise<void> {
-		const removed = await readerRoute.deleteDocuments(selectedDocuments);
-		if (removed) {
-			selectedDocumentIds.clear();
-			editingLibrary = false;
-		}
 	}
 
 	function setReaderTheme(theme: ReaderColorThemeId): void {
@@ -528,155 +329,110 @@
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<div class="reader__title-row">
-			{#if activeDocument}
-				<SyButton
-					style="ghost"
-					size="large"
-					center={true}
-					classes={['reader__library-back-button']}
-					onclick={backToLibrary}
-				>
-					<ChevronLeft size="20" />
-					Library
-				</SyButton>
-				<span class="reader__document-title">{activeDocument.title}</span>
-			{:else}
-				<h1 class="reader__library-title">Library</h1>
-			{/if}
+			<SyButton
+				style="ghost"
+				size="large"
+				center={true}
+				classes={['reader__library-back-button']}
+				onclick={backToLibrary}
+			>
+				<ChevronLeft size="20" />
+				Library
+			</SyButton>
+			<span class="reader__document-title">{activeDocument?.title ?? 'Reader'}</span>
 		</div>
 		<div class="reader__header-actions">
-			{#if activeDocument}
-				<SyButton
-					style="ghost"
-					size="large"
-					center={true}
-					aria-label="Reader settings"
-					aria-pressed={readerSettingsPopoverVisible}
-					onclick={toggleReaderSettingsPopover}
-				>
-					<SlidersHorizontal size="20" />
-				</SyButton>
-				<SyPopover
-					visible={readerSettingsPopoverVisible}
-					anchor={readerSettingsPopoverAnchor}
-					ignoreElement={readerSettingsButtonElement}
-					horizontalAlign="end"
-					width={READER_SETTINGS_POPOVER_WIDTH_PX}
-					mobileTitle="Reader settings"
-					onclose={closeReaderSettingsPopover}
-				>
-					<div class="reader__settings-popover" aria-label="Reader settings">
-						<div class="reader__settings-section">
-							<span class="reader__settings-label">Theme</span>
-							<SyButtonBar size="large" aria-label="Reader theme">
-								{#each READER_COLOR_THEMES as theme (theme.id)}
-									{@const resolvedTheme = getReaderColorTheme(
-										theme.id,
-										systemPrefersDark
-									)}
-									<SyButton
-										grouped={true}
-										center={true}
-										color={readerSettings.colorTheme === theme.id
-											? 'blue'
-											: undefined}
-										aria-label={`Use ${theme.label} reader theme`}
-										aria-pressed={readerSettings.colorTheme === theme.id}
-										title={theme.label}
-										onclick={() => setReaderTheme(theme.id)}
-									>
-										<span class="reader__theme-button-content">
-											<span
-												class="reader__theme-swatch"
-												style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
-												aria-hidden="true"
-											>
-												<Palette size="14" />
-											</span>
-											<span>{theme.label}</span>
+			<SyButton
+				style="ghost"
+				size="large"
+				center={true}
+				disabled={!activeDocument}
+				aria-label="Reader settings"
+				aria-pressed={readerSettingsPopoverVisible}
+				onclick={toggleReaderSettingsPopover}
+			>
+				<SlidersHorizontal size="20" />
+			</SyButton>
+			<SyPopover
+				visible={readerSettingsPopoverVisible}
+				anchor={readerSettingsPopoverAnchor}
+				ignoreElement={readerSettingsButtonElement}
+				horizontalAlign="end"
+				width={READER_SETTINGS_POPOVER_WIDTH_PX}
+				mobileTitle="Reader settings"
+				onclose={closeReaderSettingsPopover}
+			>
+				<div class="reader__settings-popover" aria-label="Reader settings">
+					<div class="reader__settings-section">
+						<span class="reader__settings-label">Theme</span>
+						<SyButtonBar size="large" aria-label="Reader theme">
+							{#each READER_COLOR_THEMES as theme (theme.id)}
+								{@const resolvedTheme = getReaderColorTheme(
+									theme.id,
+									systemPrefersDark
+								)}
+								<SyButton
+									grouped={true}
+									center={true}
+									color={readerSettings.colorTheme === theme.id
+										? 'blue'
+										: undefined}
+									aria-label={`Use ${theme.label} reader theme`}
+									aria-pressed={readerSettings.colorTheme === theme.id}
+									title={theme.label}
+									onclick={() => setReaderTheme(theme.id)}
+								>
+									<span class="reader__theme-button-content">
+										<span
+											class="reader__theme-swatch"
+											style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
+											aria-hidden="true"
+										>
+											<Palette size="14" />
 										</span>
-									</SyButton>
-								{/each}
-							</SyButtonBar>
-						</div>
-						<div class="reader__settings-section">
-							<span class="reader__settings-label">Text size</span>
-							<SyButtonBar size="large" aria-label="Reader font size">
-								<SyButton
-									grouped={true}
-									center={true}
-									disabled={!canDecreaseFontSize}
-									aria-label="Decrease reader font size"
-									onclick={readerSettingsStore.decreaseFontSize}
-								>
-									<Minus size="16" />
-									<span>A</span>
+										<span>{theme.label}</span>
+									</span>
 								</SyButton>
-								<SyButton
-									grouped={true}
-									center={true}
-									disabled={true}
-									disableHoverActions={true}
-									classes={['reader__font-size-value']}
-									aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
-								>
-									{readerSettings.fontSizePercent}%
-								</SyButton>
-								<SyButton
-									grouped={true}
-									center={true}
-									disabled={!canIncreaseFontSize}
-									aria-label="Increase reader font size"
-									onclick={readerSettingsStore.increaseFontSize}
-								>
-									<Plus size="16" />
-									<span>A</span>
-								</SyButton>
-							</SyButtonBar>
-						</div>
+							{/each}
+						</SyButtonBar>
 					</div>
-				</SyPopover>
-			{:else}
-				{#if editingLibrary}
-					<SyButton
-						style="ghost"
-						size="large"
-						center={true}
-						classes={['reader__delete-button']}
-						hover="red"
-						disabled={!selectedDocuments.length}
-						onclick={deleteSelectedDocuments}
-					>
-						<Trash2 size="18" />
-						Delete
-					</SyButton>
-				{/if}
-				{#if editingLibrary || readerRoute.importing}
-					<SyButton style="ghost" size="large" center={true} disabled={true}>
-						{readerRoute.importing ? 'Importing...' : 'Import'}
-					</SyButton>
-				{:else}
-					<SyDropdown
-						values={readerImportDropdownValues}
-						position={DROPDOWN_POSITIONS.RIGHT}
-						onselection={handleImportSelection}
-					>
-						{#snippet children(open)}
-							<SyButton style="ghost" size="large" center={true}>
-								Import
-								{#if open}<ChevronUp size="20" />{:else}<ChevronDown
-										size="20"
-									/>{/if}
+					<div class="reader__settings-section">
+						<span class="reader__settings-label">Text size</span>
+						<SyButtonBar size="large" aria-label="Reader font size">
+							<SyButton
+								grouped={true}
+								center={true}
+								disabled={!canDecreaseFontSize}
+								aria-label="Decrease reader font size"
+								onclick={readerSettingsStore.decreaseFontSize}
+							>
+								<Minus size="16" />
+								<span>A</span>
 							</SyButton>
-						{/snippet}
-					</SyDropdown>
-				{/if}
-				{#if editingLibrary || documents.length}
-					<SyButton style="ghost" size="large" onclick={toggleEditing}>
-						{editingLibrary ? 'Done' : 'Edit'}
-					</SyButton>
-				{/if}
-			{/if}
+							<SyButton
+								grouped={true}
+								center={true}
+								disabled={true}
+								disableHoverActions={true}
+								classes={['reader__font-size-value']}
+								aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
+							>
+								{readerSettings.fontSizePercent}%
+							</SyButton>
+							<SyButton
+								grouped={true}
+								center={true}
+								disabled={!canIncreaseFontSize}
+								aria-label="Increase reader font size"
+								onclick={readerSettingsStore.increaseFontSize}
+							>
+								<Plus size="16" />
+								<span>A</span>
+							</SyButton>
+						</SyButtonBar>
+					</div>
+				</div>
+			</SyPopover>
 		</div>
 	</div>
 
@@ -909,19 +665,9 @@
 			</div>
 		</main>
 	{:else}
-		<ReaderLibrary
-			{documents}
-			{editingLibrary}
-			importing={readerRoute.importing}
-			{selectedDocumentIds}
-			onopenClipboardImport={openClipboardImportModal}
-			onopenWebpageImport={openWebpageImportModal}
-			onopenFileImport={openFileImportDetails}
-			onopenDocumentDetails={openDocumentDetails}
-			oncardClick={handleDocumentCardClick}
-			oncardKey={handleDocumentCardKey}
-			getProgressPercent={getDocumentProgressPercent}
-		/>
+		<main class="reader__stage reader__stage--empty">
+			<span>Loading document...</span>
+		</main>
 	{/if}
 </div>
 
@@ -933,45 +679,6 @@
 	anchor={readerRoute.dictionaryAnchor}
 	onselect={readerRoute.selectDictionaryResult}
 	onclose={readerRoute.closeDictionary}
-/>
-
-<ReaderClipboardImportModal
-	visible={clipboardImportModalVisible}
-	importing={readerRoute.importing}
-	onclose={closeClipboardImportModal}
-	onimport={readerRoute.importPlainTextDocument}
-/>
-
-<ReaderWebpageImportModal
-	visible={webpageImportModalVisible}
-	importing={readerRoute.importing}
-	onclose={closeWebpageImportModal}
-	onimport={readerRoute.importWebpageDocument}
-/>
-
-<ReaderSupportedDocumentsModal
-	visible={supportedDocumentsModalVisible}
-	onclose={closeSupportedDocumentsModal}
-/>
-
-<ReaderDocumentImportModal
-	visible={Boolean(pendingImportPayload)}
-	initialTitle={pendingImportPayload?.title ?? ''}
-	initialColor={pendingImportPayload?.color}
-	importing={readerRoute.importing}
-	onclose={closeFileImportDetails}
-	onimport={importPendingDocument}
-/>
-
-<ReaderDocumentMetadataModal
-	visible={Boolean(editingDocument)}
-	title="Edit Document"
-	initialTitle={editingDocument?.title ?? ''}
-	initialColor={editingDocument?.color}
-	confirmLabel="Save"
-	busy={readerRoute.importing}
-	onclose={closeDocumentDetails}
-	onsave={saveDocumentDetails}
 />
 
 <style>
@@ -1016,24 +723,6 @@
 		gap: var(--sy-space);
 		margin: 0;
 		color: var(--sy-color--grey-4);
-	}
-
-	:global(.reader__delete-button) {
-		gap: var(--sy-space);
-	}
-
-	.reader__title-row h1 {
-		margin: 0;
-		font-size: 1.4rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.reader__title-row .reader__library-title {
-		color: var(--sy-color--black);
-		font-size: var(--sy-font-size--large);
-		font-weight: var(--sy-font-weight--bold);
 	}
 
 	.reader__document-title {
@@ -1104,6 +793,14 @@
 		box-sizing: border-box;
 		overflow: hidden;
 		background: var(--reader-stage-background, var(--sy-color--grey-2));
+	}
+
+	.reader__stage--empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		font-family: var(--sy-font-family);
 	}
 
 	.reader__page {
