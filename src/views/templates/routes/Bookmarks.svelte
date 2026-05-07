@@ -1,6 +1,7 @@
 <script>
 	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
@@ -122,6 +123,16 @@
 	const exportActiveList = () => bookmarksRoute.exportActiveList();
 	const importList = () => bookmarksRoute.importList();
 
+	let lastClickRect = $state(new DOMRect());
+	const captureClickPosition = (event) => {
+		if (event.target instanceof HTMLElement) {
+			lastClickRect = event.target.getBoundingClientRect();
+		}
+	};
+	const handleDictionaryLink = (text) => {
+		bookmarksRoute.openPopoverDictionary(text, lastClickRect);
+	};
+
 	const actions = $derived([
 		{
 			icon: FolderDown,
@@ -197,8 +208,9 @@
 				filterable={true}
 			/>
 		</div>
-		<div class="dictionary-content">
-			<DictionaryContent word={activeWord} {lists} />
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="dictionary-content" onclickcapture={captureClickPosition}>
+			<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 		</div>
 	</div>
 	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>
@@ -225,6 +237,16 @@
 			</SyButton>
 		{/snippet}
 	</SyModal>
+	<DictionaryPopover
+		word={bookmarksRoute.popoverWord}
+		results={bookmarksRoute.popoverResults}
+		resultIndex={bookmarksRoute.popoverResultIndex}
+		lists={bookmarksRoute.lists}
+		anchor={bookmarksRoute.popoverAnchor}
+		onselect={bookmarksRoute.selectPopoverResult}
+		onclose={bookmarksRoute.closePopoverDictionary}
+		onlink={bookmarksRoute.lookupPopoverWord}
+	/>
 </div>
 
 <style>

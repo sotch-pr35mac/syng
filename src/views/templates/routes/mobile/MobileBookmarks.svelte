@@ -12,6 +12,7 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
@@ -106,6 +107,16 @@
 		}
 	}
 
+	let lastClickRect = $state(new DOMRect());
+	function captureClickPosition(event: MouseEvent): void {
+		if (event.target instanceof HTMLElement) {
+			lastClickRect = event.target.getBoundingClientRect();
+		}
+	}
+	function handleDictionaryLink(text: string): void {
+		bookmarksRoute.openPopoverDictionary(text, lastClickRect);
+	}
+
 	// Overflow menu
 	let overflowOpen = $state(false);
 	let overflowAnchorElement = $state<HTMLElement | undefined>(undefined);
@@ -192,8 +203,9 @@
 <div class="mobile-bookmarks">
 	<div class="mobile-bookmarks__content" use:scrollRestore={'mobile-bookmarks-content'}>
 		{#if activeWord}
-			<div class="mobile-bookmarks__dict-wrapper">
-				<DictionaryContent word={activeWord} {lists} />
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="mobile-bookmarks__dict-wrapper" onclickcapture={captureClickPosition}>
+				<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 			</div>
 		{:else}
 			<div class="mobile-bookmarks__empty">
@@ -286,6 +298,17 @@
 		</SyButton>
 	{/snippet}
 </SyModal>
+
+<DictionaryPopover
+	word={bookmarksRoute.popoverWord}
+	results={bookmarksRoute.popoverResults}
+	resultIndex={bookmarksRoute.popoverResultIndex}
+	lists={bookmarksRoute.lists}
+	anchor={bookmarksRoute.popoverAnchor}
+	onselect={bookmarksRoute.selectPopoverResult}
+	onclose={bookmarksRoute.closePopoverDictionary}
+	onlink={bookmarksRoute.lookupPopoverWord}
+/>
 
 <style>
 	.mobile-bookmarks {
