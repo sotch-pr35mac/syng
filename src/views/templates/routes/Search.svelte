@@ -2,6 +2,7 @@
 	import { tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
@@ -109,19 +110,15 @@
 		selectElement(0);
 	};
 
-	const handleLink = (word: string): void => {
-		const input = document.getElementById('search') as HTMLInputElement | null;
-		if (input) {
-			input.value = word;
+	let lastClickRect = $state(new DOMRect());
+	function captureClickPosition(event: MouseEvent): void {
+		if (event.target instanceof HTMLElement) {
+			lastClickRect = event.target.getBoundingClientRect();
 		}
-		doSearch(word, true);
-		tick()
-			.then(() => {
-				selectElement(0);
-				return undefined;
-			})
-			.catch(() => {});
-	};
+	}
+	function handleDictionaryLink(text: string): void {
+		search.openPopoverDictionary(text, lastClickRect);
+	}
 </script>
 
 <div class="search-page-container">
@@ -165,14 +162,25 @@
 				onselection={handleSelection}
 			/>
 		</div>
-		<div class="dictionary-content">
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="dictionary-content" onclickcapture={captureClickPosition}>
 			<DictionaryContent
 				word={search.activeWord}
 				lists={search.bookmarks}
-				onlink={handleLink}
+				onlink={handleDictionaryLink}
 			/>
 		</div>
 	</div>
+	<DictionaryPopover
+		word={search.popoverWord}
+		results={search.popoverResults}
+		resultIndex={search.popoverResultIndex}
+		lists={search.bookmarks}
+		anchor={search.popoverAnchor}
+		onselect={search.selectPopoverResult}
+		onclose={search.closePopoverDictionary}
+		onlink={search.lookupPopoverWord}
+	/>
 </div>
 
 <style>

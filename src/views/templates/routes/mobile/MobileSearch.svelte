@@ -4,6 +4,7 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 	import { type SheetSnap } from '@/types/snapSheet.js';
@@ -82,11 +83,14 @@
 		sheetRef?.collapse();
 	}
 
-	function handleLink(word: string): void {
-		searchQuery = word;
-		mobileSearchQueryStore.set(word);
-		search.doSearch(word);
-		sheetRef?.openPartial();
+	let lastClickRect = $state(new DOMRect());
+	function captureClickPosition(event: MouseEvent): void {
+		if (event.target instanceof HTMLElement) {
+			lastClickRect = event.target.getBoundingClientRect();
+		}
+	}
+	function handleDictionaryLink(text: string): void {
+		search.openPopoverDictionary(text, lastClickRect);
 	}
 
 	function handleSearch(value: string): void {
@@ -109,11 +113,12 @@
 <div class="mobile-search">
 	<div class="mobile-search__content" use:scrollRestore={'mobile-search-content'}>
 		{#if search.activeWord}
-			<div class="mobile-search__dict-wrapper">
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div class="mobile-search__dict-wrapper" onclickcapture={captureClickPosition}>
 				<DictionaryContent
 					word={search.activeWord}
 					lists={search.bookmarks}
-					onlink={handleLink}
+					onlink={handleDictionaryLink}
 				/>
 			</div>
 		{:else}
@@ -144,6 +149,17 @@
 		</div>
 	</SySnapSheet>
 </div>
+
+<DictionaryPopover
+	word={search.popoverWord}
+	results={search.popoverResults}
+	resultIndex={search.popoverResultIndex}
+	lists={search.bookmarks}
+	anchor={search.popoverAnchor}
+	onselect={search.selectPopoverResult}
+	onclose={search.closePopoverDictionary}
+	onlink={search.lookupPopoverWord}
+/>
 
 <style>
 	.mobile-search {

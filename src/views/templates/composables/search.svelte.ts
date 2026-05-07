@@ -17,6 +17,10 @@ let activeWord = $state<SearchEntry | undefined>(undefined);
 let searchTrackDebounce: ReturnType<typeof setTimeout>;
 const searchHistory = $state<SearchEntry[]>([]);
 let historyPosition = $state(-1);
+let popoverResults = $state<SearchEntry[]>([]);
+let popoverResultIndex = $state(0);
+let popoverWord = $state<SearchEntry | undefined>(undefined);
+let popoverAnchor = $state<DOMRect | undefined>(undefined);
 
 /** Classifies the input language and queries the dictionary, updating fullResults and searchLang. */
 function doSearch(text: string): void {
@@ -97,6 +101,59 @@ function historyForward(): void {
 	activeWord = searchHistory[historyPosition];
 }
 
+async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+		popoverAnchor = anchor;
+		telemetry.trackEvent('search.dictionary_link_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+async function lookupPopoverWord(text: string): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+		telemetry.trackEvent('search.dictionary_link_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+function selectPopoverResult(index: number): void {
+	popoverResultIndex = index;
+	popoverWord = popoverResults[index];
+}
+
+function closePopoverDictionary(): void {
+	popoverWord = undefined;
+	popoverResults = [];
+	popoverResultIndex = 0;
+	popoverAnchor = undefined;
+}
+
 /**
  * Singleton search store. Both desktop Search and MobileSearch consume this same instance
  * so state is preserved across navigation for the lifetime of the app session.
@@ -122,6 +179,18 @@ export const searchStore = {
 	get canGoForward(): boolean {
 		return searchHistory[historyPosition + 1] !== undefined;
 	},
+	get popoverWord(): SearchEntry | undefined {
+		return popoverWord;
+	},
+	get popoverResults(): SearchEntry[] {
+		return popoverResults;
+	},
+	get popoverResultIndex(): number {
+		return popoverResultIndex;
+	},
+	get popoverAnchor(): DOMRect | undefined {
+		return popoverAnchor;
+	},
 	doSearch,
 	doSearchWithLang,
 	switchLang,
@@ -130,4 +199,8 @@ export const searchStore = {
 	pushHistory,
 	historyBack,
 	historyForward,
+	openPopoverDictionary,
+	lookupPopoverWord,
+	selectPopoverResult,
+	closePopoverDictionary,
 };
