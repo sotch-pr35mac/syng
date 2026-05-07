@@ -5054,6 +5054,7 @@ dependencies = [
  "objc2-app-kit",
  "objc2-foundation",
  "pdf-extract",
+ "quick-xml 0.39.2",
  "rand 0.9.4",
  "rusqlite",
  "scraper",
@@ -5076,6 +5077,7 @@ dependencies = [
  "tauri-plugin-updater",
  "tempfile",
  "uuid",
+ "zip 3.0.0",
 ]
 
 [[package]]

@@ -7,12 +7,14 @@
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine;
 use epub::doc::EpubDoc;
+use quick_xml::events::{BytesStart, Event};
+use quick_xml::Reader as XmlReader;
 use scraper::{ElementRef, Html, Selector};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::cmp::Ordering;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::net::{IpAddr, ToSocketAddrs};
 use std::ops::Deref;
 use std::path::Path;
@@ -26,6 +28,7 @@ const TEXT_EXTRACTOR_VERSION: u8 = 1;
 const EPUB_EXTRACTOR_VERSION: u8 = 2;
 const PDF_EXTRACTOR_VERSION: u8 = 3;
 const HTML_EXTRACTOR_VERSION: u8 = 2;
+const DOCX_EXTRACTOR_VERSION: u8 = 1;
 const WEBPAGE_CONNECT_TIMEOUT_SECONDS: u64 = 10;
 const WEBPAGE_REQUEST_TIMEOUT_SECONDS: u64 = 45;
 const WEBPAGE_REDIRECT_LIMIT: usize = 10;
@@ -36,6 +39,7 @@ const TEXT_IMPORT_EXTENSIONS: &[&str] = &["txt", "text"];
 const EPUB_IMPORT_EXTENSIONS: &[&str] = &["epub"];
 const PDF_IMPORT_EXTENSIONS: &[&str] = &["pdf"];
 const HTML_IMPORT_EXTENSIONS: &[&str] = &["html", "htm"];
+const DOCX_IMPORT_EXTENSIONS: &[&str] = &["docx"];
 
 fn default_canonical_schema_version() -> u8 {
     1
@@ -1047,6 +1051,539 @@ fn html_to_blocks(
     (text, blocks, title)
 }
 
+#[derive(Debug, Clone, Default)]
+struct DocxRunStyle {
+    strong: bool,
+    emphasis: bool,
+    underline: bool,
+    strikethrough: bool,
+    subscript: bool,
+    superscript: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+struct DocxParagraphStyle {
+    heading_level: Option<u8>,
+    text_align: Option<String>,
+    list_id: Option<String>,
+    list_depth: usize,
+}
+
+#[derive(Debug, Clone, Default)]
+struct DocxParagraphBuilder {
+    text: String,
+    spans: Vec<ReaderInlineSpan>,
+    style: DocxParagraphStyle,
+}
+
+impl DocxParagraphBuilder {
+    fn push_text(&mut self, value: &str, run_style: &DocxRunStyle) {
+        if value.is_empty() {
+            return;
+        }
+        let start = utf16_len(&self.text);
+        self.text.push_str(value);
+        let end = utf16_len(&self.text);
+        for style in docx_run_style_names(run_style) {
+            self.spans.push(ReaderInlineSpan {
+                start,
+                end,
+                style: style.to_string(),
+            });
+        }
+    }
+
+    fn finish(self) -> Option<DocxParagraph> {
+        let text = normalize_docx_text(&self.text);
+        if text.is_empty() {
+            return None;
+        }
+        let text_utf16_len = utf16_len(&text);
+        let spans = self
+            .spans
+            .into_iter()
+            .filter(|span| span.start < span.end && span.end <= text_utf16_len)
+            .collect::<Vec<_>>();
+        Some(DocxParagraph {
+            text,
+            spans,
+            style: self.style,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+struct DocxParagraph {
+    text: String,
+    spans: Vec<ReaderInlineSpan>,
+    style: DocxParagraphStyle,
+}
+
+#[derive(Debug, Clone, Default)]
+struct DocxTableCellBuilder {
+    text: String,
+    spans: Vec<ReaderInlineSpan>,
+}
+
+impl DocxTableCellBuilder {
+    fn push_paragraph(&mut self, paragraph: DocxParagraph) {
+        if !self.text.is_empty() {
+            self.text.push('\n');
+        }
+        let offset = utf16_len(&self.text);
+        self.text.push_str(&paragraph.text);
+        self.spans
+            .extend(paragraph.spans.into_iter().map(|span| ReaderInlineSpan {
+                start: span.start + offset,
+                end: span.end + offset,
+                style: span.style,
+            }));
+    }
+
+    fn finish(self) -> Option<ReaderTableCell> {
+        let text = self.text.trim().to_string();
+        if text.is_empty() {
+            return None;
+        }
+        Some(ReaderTableCell {
+            text,
+            is_header: false,
+            spans: if self.spans.is_empty() {
+                None
+            } else {
+                Some(self.spans)
+            },
+        })
+    }
+}
+
+fn docx_run_style_names(style: &DocxRunStyle) -> Vec<&'static str> {
+    let mut names = Vec::new();
+    if style.strong {
+        names.push("strong");
+    }
+    if style.emphasis {
+        names.push("emphasis");
+    }
+    if style.underline {
+        names.push("underline");
+    }
+    if style.strikethrough {
+        names.push("strikethrough");
+    }
+    if style.subscript {
+        names.push("subscript");
+    }
+    if style.superscript {
+        names.push("superscript");
+    }
+    names
+}
+
+fn normalize_docx_text(text: &str) -> String {
+    normalize_line_endings(text)
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn xml_local_name(name: &[u8]) -> &[u8] {
+    name.rsplit(|byte| *byte == b':').next().unwrap_or(name)
+}
+
+fn xml_attr_value(start: &BytesStart<'_>, local_name: &[u8]) -> Option<String> {
+    start
+        .attributes()
+        .with_checks(false)
+        .filter_map(Result::ok)
+        .find(|attr| xml_local_name(attr.key.as_ref()) == local_name)
+        .and_then(|attr| {
+            String::from_utf8(attr.value.as_ref().to_vec())
+                .ok()
+                .map(|value| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+}
+
+fn docx_heading_level(value: &str) -> Option<u8> {
+    let lower = value.to_lowercase();
+    if lower == "title" {
+        return Some(1);
+    }
+    lower
+        .strip_prefix("heading")
+        .or_else(|| lower.strip_prefix("h"))
+        .and_then(|suffix| suffix.parse::<u8>().ok())
+        .filter(|level| (1..=6).contains(level))
+}
+
+fn docx_text_align(value: &str) -> Option<String> {
+    match value {
+        "center" => Some("center".to_string()),
+        "right" | "end" => Some("end".to_string()),
+        "both" | "distribute" => Some("justify".to_string()),
+        _ => None,
+    }
+}
+
+fn docx_paragraph_extensions(style: &DocxParagraphStyle) -> Option<ReaderBlockExtensions> {
+    style.list_id.as_ref().map(|list_id| ReaderBlockExtensions {
+        list_item: Some(ReaderListItemExtension {
+            list_id: format!("docx-list-{list_id}"),
+            nesting_depth: style.list_depth,
+            list_style: "bullet".to_string(),
+            ordinal: None,
+        }),
+        ..ReaderBlockExtensions::default()
+    })
+}
+
+fn append_docx_paragraph(
+    blocks: &mut Vec<ReaderContentBlock>,
+    linear_text: &mut String,
+    paragraph: DocxParagraph,
+) {
+    let kind = if paragraph.style.list_id.is_some() {
+        "list_item"
+    } else if paragraph.style.heading_level.is_some() {
+        "heading"
+    } else {
+        "paragraph"
+    };
+    append_linear_block(
+        blocks,
+        linear_text,
+        kind,
+        paragraph.text,
+        paragraph.style.heading_level,
+        paragraph.style.text_align.clone(),
+        if paragraph.spans.is_empty() {
+            None
+        } else {
+            Some(paragraph.spans)
+        },
+        docx_paragraph_extensions(&paragraph.style),
+    );
+}
+
+fn docx_table_text(rows: &[ReaderTableRow]) -> String {
+    rows.iter()
+        .map(|row| {
+            row.cells
+                .iter()
+                .map(|cell| cell.text.as_str())
+                .collect::<Vec<_>>()
+                .join("\t")
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn parse_docx_core_title(xml: &str) -> Option<String> {
+    let mut reader = XmlReader::from_str(xml);
+    reader.config_mut().trim_text(true);
+    let mut inside_title = false;
+
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(start)) => {
+                if xml_local_name(start.name().as_ref()) == b"title" {
+                    inside_title = true;
+                }
+            }
+            Ok(Event::Text(text)) if inside_title => {
+                return text
+                    .xml_content()
+                    .ok()
+                    .map(|value| value.trim().to_string())
+                    .filter(|value| !value.is_empty());
+            }
+            Ok(Event::End(end)) => {
+                if xml_local_name(end.name().as_ref()) == b"title" {
+                    inside_title = false;
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(_) => break,
+            _ => {}
+        }
+    }
+
+    None
+}
+
+fn parse_docx_document(xml: &str) -> Result<(String, Vec<ReaderContentBlock>), String> {
+    let mut reader = XmlReader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut linear_text = String::new();
+    let mut blocks = Vec::new();
+    let mut paragraph: Option<DocxParagraphBuilder> = None;
+    let mut run_style = DocxRunStyle::default();
+    let mut inside_paragraph_properties = false;
+    let mut inside_run_properties = false;
+    let mut inside_text = false;
+    let mut table_depth = 0usize;
+    let mut current_rows: Vec<ReaderTableRow> = Vec::new();
+    let mut current_cells: Vec<ReaderTableCell> = Vec::new();
+    let mut current_cell: Option<DocxTableCellBuilder> = None;
+
+    loop {
+        match reader
+            .read_event()
+            .map_err(|error| format!("Could not parse Word document XML: {}", error))?
+        {
+            Event::Start(start) => {
+                let name = xml_local_name(start.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"tbl" => {
+                        table_depth += 1;
+                        if table_depth == 1 {
+                            current_rows.clear();
+                        }
+                    }
+                    b"tr" if table_depth == 1 => current_cells.clear(),
+                    b"tc" if table_depth == 1 => {
+                        current_cell = Some(DocxTableCellBuilder::default())
+                    }
+                    b"p" => paragraph = Some(DocxParagraphBuilder::default()),
+                    b"pPr" => inside_paragraph_properties = true,
+                    b"r" => run_style = DocxRunStyle::default(),
+                    b"rPr" => inside_run_properties = true,
+                    b"t" => inside_text = true,
+                    b"pStyle" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(level) = docx_heading_level(&value) {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.heading_level = Some(level);
+                                }
+                            }
+                        }
+                    }
+                    b"jc" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(align) = docx_text_align(&value) {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.text_align = Some(align);
+                                }
+                            }
+                        }
+                    }
+                    b"numId" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(paragraph) = paragraph.as_mut() {
+                                paragraph.style.list_id = Some(value);
+                            }
+                        }
+                    }
+                    b"ilvl" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Ok(depth) = value.parse::<usize>() {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.list_depth = depth;
+                                }
+                            }
+                        }
+                    }
+                    b"b" if inside_run_properties => run_style.strong = true,
+                    b"i" if inside_run_properties => run_style.emphasis = true,
+                    b"u" if inside_run_properties => run_style.underline = true,
+                    b"strike" | b"dstrike" if inside_run_properties => {
+                        run_style.strikethrough = true;
+                    }
+                    b"vertAlign" if inside_run_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            run_style.subscript = value == "subscript";
+                            run_style.superscript = value == "superscript";
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Event::Empty(start) => {
+                let name = xml_local_name(start.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"pStyle" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(level) = docx_heading_level(&value) {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.heading_level = Some(level);
+                                }
+                            }
+                        }
+                    }
+                    b"jc" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(align) = docx_text_align(&value) {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.text_align = Some(align);
+                                }
+                            }
+                        }
+                    }
+                    b"numId" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Some(paragraph) = paragraph.as_mut() {
+                                paragraph.style.list_id = Some(value);
+                            }
+                        }
+                    }
+                    b"ilvl" if inside_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            if let Ok(depth) = value.parse::<usize>() {
+                                if let Some(paragraph) = paragraph.as_mut() {
+                                    paragraph.style.list_depth = depth;
+                                }
+                            }
+                        }
+                    }
+                    b"b" if inside_run_properties => run_style.strong = true,
+                    b"i" if inside_run_properties => run_style.emphasis = true,
+                    b"u" if inside_run_properties => run_style.underline = true,
+                    b"strike" | b"dstrike" if inside_run_properties => {
+                        run_style.strikethrough = true;
+                    }
+                    b"vertAlign" if inside_run_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            run_style.subscript = value == "subscript";
+                            run_style.superscript = value == "superscript";
+                        }
+                    }
+                    b"tab" => {
+                        if let Some(paragraph) = paragraph.as_mut() {
+                            paragraph.push_text("\t", &run_style);
+                        }
+                    }
+                    b"br" | b"cr" => {
+                        if let Some(paragraph) = paragraph.as_mut() {
+                            paragraph.push_text("\n", &run_style);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Event::Text(text) if inside_text => {
+                if let Some(paragraph) = paragraph.as_mut() {
+                    let value = text.xml_content().map_err(|error| {
+                        format!("Could not decode Word document text: {}", error)
+                    })?;
+                    paragraph.push_text(&value, &run_style);
+                }
+            }
+            Event::End(end) => {
+                let name = xml_local_name(end.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"t" => inside_text = false,
+                    b"rPr" => inside_run_properties = false,
+                    b"pPr" => inside_paragraph_properties = false,
+                    b"r" => run_style = DocxRunStyle::default(),
+                    b"p" => {
+                        if let Some(paragraph) =
+                            paragraph.take().and_then(DocxParagraphBuilder::finish)
+                        {
+                            if let Some(cell) = current_cell.as_mut() {
+                                cell.push_paragraph(paragraph);
+                            } else {
+                                append_docx_paragraph(&mut blocks, &mut linear_text, paragraph);
+                            }
+                        }
+                    }
+                    b"tc" if table_depth == 1 => {
+                        if let Some(cell) =
+                            current_cell.take().and_then(DocxTableCellBuilder::finish)
+                        {
+                            current_cells.push(cell);
+                        }
+                    }
+                    b"tr" if table_depth == 1 => {
+                        if !current_cells.is_empty() {
+                            current_rows.push(ReaderTableRow {
+                                cells: std::mem::take(&mut current_cells),
+                            });
+                        }
+                    }
+                    b"tbl" => {
+                        if table_depth == 1 && !current_rows.is_empty() {
+                            let rows = std::mem::take(&mut current_rows);
+                            blocks.push(ReaderContentBlock {
+                                id: Uuid::new_v4().to_string(),
+                                kind: "table".to_string(),
+                                text: docx_table_text(&rows),
+                                start_offset: None,
+                                end_offset: None,
+                                participates_in_linear_text: false,
+                                heading_level: None,
+                                text_align: None,
+                                spans: None,
+                                extensions: Some(ReaderBlockExtensions {
+                                    table: Some(ReaderTableExtension { rows }),
+                                    ..ReaderBlockExtensions::default()
+                                }),
+                            });
+                        }
+                        table_depth = table_depth.saturating_sub(1);
+                    }
+                    _ => {}
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+    }
+
+    Ok((linear_text, blocks))
+}
+
+fn extract_docx_payload(
+    bytes: &[u8],
+    file_name: String,
+    hash: String,
+    byte_len: u64,
+) -> Result<ReaderImportPayload, String> {
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|error| format!("Could not open Word document archive: {}", error))?;
+
+    let mut document_xml = String::new();
+    archive
+        .by_name("word/document.xml")
+        .map_err(|_| "Word document is missing word/document.xml.".to_string())?
+        .read_to_string(&mut document_xml)
+        .map_err(|error| format!("Could not read Word document XML: {}", error))?;
+
+    let core_title = archive
+        .by_name("docProps/core.xml")
+        .ok()
+        .and_then(|mut file| {
+            let mut xml = String::new();
+            file.read_to_string(&mut xml).ok()?;
+            parse_docx_core_title(&xml)
+        });
+
+    let (text, blocks) = parse_docx_document(&document_xml)?;
+    if text.trim().is_empty() && blocks.is_empty() {
+        return Err("Word document did not contain readable text.".to_string());
+    }
+
+    Ok(ReaderImportPayload {
+        canonical_schema_version: default_canonical_schema_version(),
+        title: core_title.unwrap_or_else(|| title_from_file_stem(&file_name)),
+        file_name,
+        source_type: "docx".to_string(),
+        mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            .to_string(),
+        extractor_version: DOCX_EXTRACTOR_VERSION,
+        text,
+        blocks,
+        source_sha256: Some(hash),
+        source_byte_length: Some(byte_len),
+        source_url: None,
+        source_html: None,
+        source_data: None,
+        import_app_version: None,
+    })
+}
+
 fn extract_epub_payload(
     bytes: &[u8],
     file_name: String,
@@ -1965,10 +2502,10 @@ fn prepare_from_bytes(
         return Ok(payload);
     }
 
-    if extension == "docx"
+    if DOCX_IMPORT_EXTENSIONS.contains(&extension.as_str())
         || mime_lower == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     {
-        return Err("Word (.docx) reader import is not supported yet.".to_string());
+        return extract_docx_payload(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if EPUB_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/epub+zip"
@@ -2149,7 +2686,7 @@ pub async fn import_reader_document(
         .set_title("Import Reading Document")
         .add_filter(
             "Reader documents",
-            &["txt", "text", "epub", "pdf", "html", "htm"],
+            &["txt", "text", "epub", "pdf", "html", "htm", "docx"],
         )
         .blocking_pick_file();
 
@@ -2311,6 +2848,38 @@ fn push_text_block(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+    use zip::write::SimpleFileOptions;
+
+    fn build_test_docx(document_xml: &str, core_xml: Option<&str>) -> Vec<u8> {
+        let mut bytes = Cursor::new(Vec::new());
+        {
+            let mut writer = zip::ZipWriter::new(&mut bytes);
+            let options = SimpleFileOptions::default();
+            writer
+                .start_file("[Content_Types].xml", options)
+                .expect("content types");
+            writer
+                .write_all(
+                    br#"<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>"#,
+                )
+                .expect("write content types");
+            writer
+                .start_file("word/document.xml", options)
+                .expect("document");
+            writer
+                .write_all(document_xml.as_bytes())
+                .expect("write document");
+            if let Some(core_xml) = core_xml {
+                writer
+                    .start_file("docProps/core.xml", options)
+                    .expect("core");
+                writer.write_all(core_xml.as_bytes()).expect("write core");
+            }
+            writer.finish().expect("finish docx");
+        }
+        bytes.into_inner()
+    }
 
     #[test]
     fn extracts_plain_text_blocks_and_normalizes_line_endings() {
@@ -2369,6 +2938,101 @@ mod tests {
         assert!(payload.text.contains("Alpha"));
         assert!(payload.text.contains("Beta"));
         assert_eq!(payload.source_type, "webpage");
+    }
+
+    #[test]
+    fn docx_import_preserves_document_structure_and_inline_styles() {
+        let bytes = build_test_docx(
+            r#"<?xml version="1.0" encoding="UTF-8"?>
+            <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                <w:body>
+                    <w:p>
+                        <w:pPr><w:pStyle w:val="Heading1"/></w:pPr>
+                        <w:r><w:t>第一章</w:t></w:r>
+                    </w:p>
+                    <w:p>
+                        <w:r><w:t>普通文本和</w:t></w:r>
+                        <w:r><w:rPr><w:b/><w:i/></w:rPr><w:t>重点</w:t></w:r>
+                    </w:p>
+                    <w:p>
+                        <w:pPr><w:numPr><w:ilvl w:val="1"/><w:numId w:val="7"/></w:numPr></w:pPr>
+                        <w:r><w:t>列表项</w:t></w:r>
+                    </w:p>
+                    <w:tbl>
+                        <w:tr>
+                            <w:tc><w:p><w:r><w:t>词</w:t></w:r></w:p></w:tc>
+                            <w:tc><w:p><w:r><w:t>你好</w:t></w:r></w:p></w:tc>
+                        </w:tr>
+                    </w:tbl>
+                </w:body>
+            </w:document>"#,
+            Some(
+                r#"<?xml version="1.0" encoding="UTF-8"?>
+                <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:title>测试文档</dc:title>
+                </cp:coreProperties>"#,
+            ),
+        );
+
+        let payload = extract_docx_payload(
+            &bytes,
+            "sample.docx".to_string(),
+            sha256_hex(&bytes),
+            bytes.len() as u64,
+        )
+        .expect("docx import");
+
+        assert_eq!(payload.title, "测试文档");
+        assert_eq!(payload.source_type, "docx");
+        assert_eq!(
+            payload.mime_type,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
+        assert_eq!(payload.blocks[0].kind, "heading");
+        assert_eq!(payload.blocks[0].heading_level, Some(1));
+        assert_eq!(payload.blocks[1].text, "普通文本和重点");
+        assert!(payload.blocks[1]
+            .spans
+            .as_ref()
+            .expect("inline spans")
+            .iter()
+            .any(|span| span.style == "strong"));
+        assert_eq!(payload.blocks[2].kind, "list_item");
+        assert_eq!(
+            payload.blocks[2]
+                .extensions
+                .as_ref()
+                .and_then(|extensions| extensions.list_item.as_ref())
+                .map(|list_item| list_item.nesting_depth),
+            Some(1)
+        );
+        assert_eq!(payload.blocks[3].kind, "table");
+        assert_eq!(
+            payload.blocks[3]
+                .extensions
+                .as_ref()
+                .and_then(|extensions| extensions.table.as_ref())
+                .map(|table| table.rows[0].cells[1].text.as_str()),
+            Some("你好")
+        );
+    }
+
+    #[test]
+    fn prepare_reader_import_accepts_docx_mime_type() {
+        let bytes = build_test_docx(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>你好</w:t></w:r></w:p></w:body></w:document>"#,
+            None,
+        );
+
+        let payload = prepare_from_bytes(
+            &bytes,
+            "sample.bin",
+            Some("application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        )
+        .expect("docx import from mime");
+
+        assert_eq!(payload.source_type, "docx");
+        assert_eq!(payload.text, "你好");
     }
 
     #[test]
