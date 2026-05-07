@@ -5,10 +5,11 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} [word] - Word Prop
+	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 */
 
 	/** @type {Props} */
-	const { word = {} } = $props();
+	const { word = {}, separateTraditionalCharacters = isMobile() } = $props();
 </script>
 
 <div class="chinese-characters--container">
@@ -17,12 +18,12 @@
 		data-testid="chinese-characters"
 	>
 		<ChineseCharacters characters={word.simplified} tones={word.tone_marks}></ChineseCharacters>
-		{#if word.simplified !== word.traditional && !isMobile()}
+		{#if word.simplified !== word.traditional && !separateTraditionalCharacters}
 			&nbsp;(<ChineseCharacters characters={word.traditional} tones={word.tone_marks}
 			></ChineseCharacters>)
 		{/if}
 	</h1>
-	{#if word.simplified !== word.traditional && isMobile()}
+	{#if word.simplified !== word.traditional && separateTraditionalCharacters}
 		<h1
 			class="chinese-characters--character-container chinese-characters--character chinese-characters--traditional"
 			data-testid="chinese-characters-traditional"

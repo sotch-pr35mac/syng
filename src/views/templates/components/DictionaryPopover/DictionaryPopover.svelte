@@ -102,7 +102,13 @@
 			</div>
 		{/if}
 		<div class="dictionary-popover__content">
-			<DictionaryContent {word} {lists} backgroundColor="white" fixedActions={true} />
+			<DictionaryContent
+				{word}
+				{lists}
+				backgroundColor="white"
+				fixedActions={true}
+				separateTraditionalCharacters={true}
+			/>
 		</div>
 	</div>
 </SyPopover>

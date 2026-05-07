@@ -26,11 +26,19 @@
 	 * @property {any} [lists] - Lists Prop
 	 * @property {string} [backgroundColor] - 'white' - White Background
 	 * @property {boolean} [fixedActions] - Render action dropdowns with fixed positioning
+	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
 	 */
 
 	/** @type {Props} */
-	const { word, lists = [], backgroundColor = 'grey', fixedActions = false, onlink } = $props();
+	const {
+		word,
+		lists = [],
+		backgroundColor = 'grey',
+		fixedActions = false,
+		separateTraditionalCharacters,
+		onlink,
+	} = $props();
 
 	let memberLists = $state([]);
 
@@ -202,7 +210,7 @@
 <div class={getContainerClasses()}>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
-			<EntryTopline {word} />
+			<EntryTopline {word} {separateTraditionalCharacters} />
 			<SyButtonBar>
 				{#each actions as action, index (index)}
 					{#if action.dropdown}
