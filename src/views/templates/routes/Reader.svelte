@@ -614,6 +614,8 @@
 					<SyButton
 						style="ghost"
 						size="large"
+						center={true}
+						classes={['reader__delete-button']}
 						hover="red"
 						disabled={!selectedDocuments.length}
 						onclick={deleteSelectedDocuments}
@@ -935,6 +937,10 @@
 		gap: var(--sy-space);
 		margin: 0;
 		color: var(--sy-color--grey-4);
+	}
+
+	:global(.reader__delete-button) {
+		gap: var(--sy-space);
 	}
 
 	.reader__title-row h1 {
