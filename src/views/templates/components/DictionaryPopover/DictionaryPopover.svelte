@@ -30,15 +30,7 @@
 	const MAX_DOT_RESULTS = 8;
 
 	const visible = $derived(Boolean(word));
-	const showDots = $derived(results.length <= MAX_DOT_RESULTS);
-
-	function getResultLabel(result: SearchEntry): string {
-		const headword =
-			result.simplified === result.traditional
-				? result.simplified
-				: `${result.simplified} / ${result.traditional}`;
-		return `${headword} ${result.pinyin_marks}`;
-	}
+	const showDots = $derived(!mobile && results.length <= MAX_DOT_RESULTS);
 </script>
 
 <SyPopover
@@ -68,6 +60,7 @@
 				<SyButton
 					style="ghost"
 					size="small"
+					aria-label="Previous dictionary result"
 					disabled={resultIndex <= 0}
 					onclick={() => onselect(resultIndex - 1)}
 				>
@@ -75,7 +68,7 @@
 				</SyButton>
 				<div class="dictionary-popover__result-indicator">
 					<span class="dictionary-popover__result-label">
-						{getResultLabel(results[resultIndex])} ({resultIndex + 1} of {results.length})
+						Result {resultIndex + 1} of {results.length}
 					</span>
 					{#if showDots}
 						<div class="dictionary-popover__result-dots">
@@ -94,6 +87,7 @@
 				<SyButton
 					style="ghost"
 					size="small"
+					aria-label="Next dictionary result"
 					disabled={resultIndex >= results.length - 1}
 					onclick={() => onselect(resultIndex + 1)}
 				>
@@ -142,7 +136,7 @@
 		gap: var(--sy-space);
 		padding: var(--sy-space) var(--sy-space--large);
 		border-bottom: var(--sy-border);
-		background: var(--sy-color--grey-1);
+		background: var(--sy-color--white);
 		flex-shrink: 0;
 	}
 
@@ -157,7 +151,7 @@
 
 	.dictionary-popover__result-label {
 		font-family: var(--sy-font-family);
-		font-size: 0.85rem;
+		font-size: var(--sy-font-size--small);
 		color: var(--sy-color--grey-4);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -178,7 +172,7 @@
 		border-radius: 50%;
 		border: 0;
 		padding: 0;
-		background: var(--sy-color--grey-5, #ccc);
+		background: var(--sy-color--grey-5);
 		cursor: pointer;
 		transition: background var(--sy-transition-duration);
 	}
