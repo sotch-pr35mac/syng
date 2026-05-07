@@ -1369,6 +1369,14 @@ struct DocxNumberingLevel {
 
 type DocxNumberingMap = HashMap<(String, usize), DocxNumberingLevel>;
 
+#[derive(Debug, Clone, Default)]
+struct DocxStyleDefinition {
+    style: DocxParagraphStyle,
+    based_on: Option<String>,
+}
+
+type DocxStyleMap = HashMap<String, DocxParagraphStyle>;
+
 fn parse_docx_numbering(xml: &str) -> DocxNumberingMap {
     let mut reader = XmlReader::from_str(xml);
     reader.config_mut().trim_text(false);
@@ -1459,6 +1467,145 @@ fn parse_docx_numbering(xml: &str) -> DocxNumberingMap {
         .collect()
 }
 
+fn apply_docx_paragraph_style(
+    paragraph_style: &mut DocxParagraphStyle,
+    style: &DocxParagraphStyle,
+) {
+    if paragraph_style.heading_level.is_none() {
+        paragraph_style.heading_level = style.heading_level;
+    }
+    if paragraph_style.text_align.is_none() {
+        paragraph_style.text_align = style.text_align.clone();
+    }
+    if paragraph_style.list_id.is_none() {
+        paragraph_style.list_id = style.list_id.clone();
+        paragraph_style.list_depth = style.list_depth;
+        paragraph_style.list_style = style.list_style.clone();
+    }
+}
+
+fn merge_docx_style(base: &DocxParagraphStyle, child: &DocxParagraphStyle) -> DocxParagraphStyle {
+    let mut merged = base.clone();
+    if child.heading_level.is_some() {
+        merged.heading_level = child.heading_level;
+    }
+    if child.text_align.is_some() {
+        merged.text_align = child.text_align.clone();
+    }
+    if child.list_id.is_some() {
+        merged.list_id = child.list_id.clone();
+        merged.list_depth = child.list_depth;
+        merged.list_style = child.list_style.clone();
+    }
+    merged
+}
+
+fn resolve_docx_style(
+    style_id: &str,
+    definitions: &HashMap<String, DocxStyleDefinition>,
+    resolving: &mut Vec<String>,
+) -> Option<DocxParagraphStyle> {
+    if resolving.iter().any(|value| value == style_id) {
+        return definitions
+            .get(style_id)
+            .map(|definition| definition.style.clone());
+    }
+    let definition = definitions.get(style_id)?;
+    resolving.push(style_id.to_string());
+    let resolved = definition
+        .based_on
+        .as_ref()
+        .and_then(|base_id| resolve_docx_style(base_id, definitions, resolving))
+        .map(|base| merge_docx_style(&base, &definition.style))
+        .unwrap_or_else(|| definition.style.clone());
+    resolving.pop();
+    Some(resolved)
+}
+
+fn parse_docx_styles(xml: &str, numbering: &DocxNumberingMap) -> DocxStyleMap {
+    let mut reader = XmlReader::from_str(xml);
+    reader.config_mut().trim_text(false);
+    let mut definitions: HashMap<String, DocxStyleDefinition> = HashMap::new();
+    let mut current_style_id: Option<String> = None;
+    let mut current_style_type: Option<String> = None;
+    let mut current_definition = DocxStyleDefinition::default();
+    let mut inside_style_paragraph_properties = false;
+
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(start)) | Ok(Event::Empty(start)) => {
+                let name = xml_local_name(start.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"style" => {
+                        current_style_id = xml_attr_value(&start, b"styleId");
+                        current_style_type = xml_attr_value(&start, b"type");
+                        current_definition = DocxStyleDefinition::default();
+                    }
+                    b"basedOn" if current_style_id.is_some() => {
+                        current_definition.based_on = xml_attr_value(&start, b"val");
+                    }
+                    b"pPr" if current_style_id.is_some() => {
+                        inside_style_paragraph_properties = true;
+                    }
+                    b"pStyle" if inside_style_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            current_definition.style.heading_level = docx_heading_level(&value);
+                        }
+                    }
+                    b"jc" if inside_style_paragraph_properties => {
+                        if let Some(value) = xml_attr_value(&start, b"val") {
+                            current_definition.style.text_align = docx_text_align(&value);
+                        }
+                    }
+                    b"numId" if inside_style_paragraph_properties => {
+                        current_definition.style.list_id = xml_attr_value(&start, b"val");
+                    }
+                    b"ilvl" if inside_style_paragraph_properties => {
+                        if let Some(depth) =
+                            xml_attr_value(&start, b"val").and_then(|value| value.parse().ok())
+                        {
+                            current_definition.style.list_depth = depth;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            Ok(Event::End(end)) => {
+                let name = xml_local_name(end.name().as_ref()).to_vec();
+                match name.as_slice() {
+                    b"pPr" => inside_style_paragraph_properties = false,
+                    b"style" => {
+                        if current_style_type.as_deref().unwrap_or("paragraph") == "paragraph" {
+                            if let Some(style_id) = current_style_id.take() {
+                                definitions.insert(style_id, current_definition.clone());
+                            }
+                        }
+                        current_style_type = None;
+                        current_definition = DocxStyleDefinition::default();
+                    }
+                    _ => {}
+                }
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            _ => {}
+        }
+    }
+
+    definitions
+        .keys()
+        .filter_map(|style_id| {
+            let mut resolving = Vec::new();
+            let mut style = resolve_docx_style(style_id, &definitions, &mut resolving)?;
+            if let Some(list_id) = style.list_id.clone() {
+                if let Some(level) = numbering.get(&(list_id, style.list_depth)) {
+                    style.list_style = Some(level.list_style.clone());
+                }
+            }
+            Some((style_id.clone(), style))
+        })
+        .collect()
+}
+
 fn append_docx_paragraph(
     blocks: &mut Vec<ReaderContentBlock>,
     linear_text: &mut String,
@@ -1536,6 +1683,7 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
 fn parse_docx_document(
     xml: &str,
     numbering: &DocxNumberingMap,
+    styles: &DocxStyleMap,
 ) -> Result<(String, Vec<ReaderContentBlock>), String> {
     let mut reader = XmlReader::from_str(xml);
     reader.config_mut().trim_text(false);
@@ -1577,8 +1725,11 @@ fn parse_docx_document(
                     b"t" => inside_text = true,
                     b"pStyle" if inside_paragraph_properties => {
                         if let Some(value) = xml_attr_value(&start, b"val") {
-                            if let Some(level) = docx_heading_level(&value) {
-                                if let Some(paragraph) = paragraph.as_mut() {
+                            if let Some(paragraph) = paragraph.as_mut() {
+                                if let Some(style) = styles.get(&value) {
+                                    apply_docx_paragraph_style(&mut paragraph.style, style);
+                                }
+                                if let Some(level) = docx_heading_level(&value) {
                                     paragraph.style.heading_level = Some(level);
                                 }
                             }
@@ -1629,8 +1780,11 @@ fn parse_docx_document(
                 match name.as_slice() {
                     b"pStyle" if inside_paragraph_properties => {
                         if let Some(value) = xml_attr_value(&start, b"val") {
-                            if let Some(level) = docx_heading_level(&value) {
-                                if let Some(paragraph) = paragraph.as_mut() {
+                            if let Some(paragraph) = paragraph.as_mut() {
+                                if let Some(style) = styles.get(&value) {
+                                    apply_docx_paragraph_style(&mut paragraph.style, style);
+                                }
+                                if let Some(level) = docx_heading_level(&value) {
                                     paragraph.style.heading_level = Some(level);
                                 }
                             }
@@ -1814,8 +1968,17 @@ fn extract_docx_payload(
             Some(parse_docx_numbering(&xml))
         })
         .unwrap_or_default();
+    let styles = archive
+        .by_name("word/styles.xml")
+        .ok()
+        .and_then(|mut file| {
+            let mut xml = String::new();
+            file.read_to_string(&mut xml).ok()?;
+            Some(parse_docx_styles(&xml, &numbering))
+        })
+        .unwrap_or_default();
 
-    let (text, blocks) = parse_docx_document(&document_xml, &numbering)?;
+    let (text, blocks) = parse_docx_document(&document_xml, &numbering, &styles)?;
     if text.trim().is_empty() && blocks.is_empty() {
         return Err("Word document did not contain readable text.".to_string());
     }
@@ -3710,6 +3873,24 @@ mod tests {
         core_xml: Option<&str>,
         numbering_xml: Option<&str>,
     ) -> Vec<u8> {
+        build_test_docx_with_parts(document_xml, core_xml, numbering_xml, None)
+    }
+
+    fn build_test_docx_with_styles(
+        document_xml: &str,
+        core_xml: Option<&str>,
+        numbering_xml: Option<&str>,
+        styles_xml: Option<&str>,
+    ) -> Vec<u8> {
+        build_test_docx_with_parts(document_xml, core_xml, numbering_xml, styles_xml)
+    }
+
+    fn build_test_docx_with_parts(
+        document_xml: &str,
+        core_xml: Option<&str>,
+        numbering_xml: Option<&str>,
+        styles_xml: Option<&str>,
+    ) -> Vec<u8> {
         let mut bytes = Cursor::new(Vec::new());
         {
             let mut writer = zip::ZipWriter::new(&mut bytes);
@@ -3741,6 +3922,14 @@ mod tests {
                 writer
                     .write_all(numbering_xml.as_bytes())
                     .expect("write numbering");
+            }
+            if let Some(styles_xml) = styles_xml {
+                writer
+                    .start_file("word/styles.xml", options)
+                    .expect("styles");
+                writer
+                    .write_all(styles_xml.as_bytes())
+                    .expect("write styles");
             }
             writer.finish().expect("finish docx");
         }
@@ -3941,6 +4130,64 @@ mod tests {
             .expect("bullet item");
         assert_eq!(second.list_style, "bullet");
         assert_eq!(second.ordinal, None);
+    }
+
+    #[test]
+    fn docx_import_resolves_list_numbering_from_paragraph_styles() {
+        let bytes = build_test_docx_with_styles(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>
+                <w:p><w:pPr><w:pStyle w:val="BulletedStyle"/></w:pPr><w:r><w:t>Styled bullet</w:t></w:r></w:p>
+                <w:p><w:pPr><w:pStyle w:val="ChildBulletStyle"/></w:pPr><w:r><w:t>Inherited bullet</w:t></w:r></w:p>
+                <w:p><w:pPr><w:pStyle w:val="NumberedStyle"/></w:pPr><w:r><w:t>Styled number</w:t></w:r></w:p>
+            </w:body></w:document>"#,
+            None,
+            Some(
+                r#"<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                    <w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"><w:numFmt w:val="bullet"/></w:lvl></w:abstractNum>
+                    <w:abstractNum w:abstractNumId="2"><w:lvl w:ilvl="0"><w:start w:val="5"/><w:numFmt w:val="decimal"/></w:lvl></w:abstractNum>
+                    <w:num w:numId="20"><w:abstractNumId w:val="1"/></w:num>
+                    <w:num w:numId="21"><w:abstractNumId w:val="2"/></w:num>
+                </w:numbering>"#,
+            ),
+            Some(
+                r#"<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+                    <w:style w:type="paragraph" w:styleId="BulletedStyle">
+                        <w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="20"/></w:numPr></w:pPr>
+                    </w:style>
+                    <w:style w:type="paragraph" w:styleId="ChildBulletStyle">
+                        <w:basedOn w:val="BulletedStyle"/>
+                    </w:style>
+                    <w:style w:type="paragraph" w:styleId="NumberedStyle">
+                        <w:pPr><w:numPr><w:ilvl w:val="0"/><w:numId w:val="21"/></w:numPr></w:pPr>
+                    </w:style>
+                </w:styles>"#,
+            ),
+        );
+
+        let payload = extract_docx_payload(
+            &bytes,
+            "styled-lists.docx".to_string(),
+            sha256_hex(&bytes),
+            bytes.len() as u64,
+        )
+        .expect("docx import");
+
+        let list_items = payload
+            .blocks
+            .iter()
+            .map(|block| {
+                block
+                    .extensions
+                    .as_ref()
+                    .and_then(|extensions| extensions.list_item.as_ref())
+                    .expect("list item")
+            })
+            .collect::<Vec<_>>();
+        assert!(payload.blocks.iter().all(|block| block.kind == "list_item"));
+        assert_eq!(list_items[0].list_style, "bullet");
+        assert_eq!(list_items[1].list_style, "bullet");
+        assert_eq!(list_items[2].list_style, "ordered");
+        assert_eq!(list_items[2].ordinal, Some(5));
     }
 
     #[test]
