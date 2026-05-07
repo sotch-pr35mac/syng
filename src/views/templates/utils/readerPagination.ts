@@ -14,8 +14,10 @@ const DEFAULT_BLOCK_GAP = 28;
 const DEFAULT_HEADING_LINE_HEIGHT = 30;
 const DEFAULT_HEADING_GAP = 28;
 const HEADING_CHARACTER_WIDTH_SCALE = 0.9;
-const TABLE_ROW_HEIGHT_SCALE = 1.0;
-const IMAGE_FALLBACK_HEIGHT_EM = 8;
+const TABLE_ROW_HEIGHT_SCALE = 1.25;
+export const READER_IMAGE_MAX_WIDTH_RATIO = 0.7;
+export const READER_IMAGE_MAX_HEIGHT_RATIO = 0.65;
+export const READER_TABLE_MAX_HEIGHT_RATIO = 0.75;
 
 export interface ReaderPageLayout {
 	contentWidth: number;
@@ -26,6 +28,7 @@ export interface ReaderPageLayout {
 	headingLineHeight: number;
 	headingGap: number;
 	averageCharacterWidth?: number;
+	measuredAtomicBlockHeights?: Record<string, number>;
 }
 
 export type ReaderPageBlockLayoutMode = 'flow' | 'atomic';
@@ -79,6 +82,12 @@ function blockBaseOffset(block: ReaderContentBlock): number {
 }
 
 function normalizeLayout(layout: ReaderPageLayout | undefined): ReaderPageLayout {
+	const measuredAtomicBlockHeights = Object.fromEntries(
+		Object.entries(layout?.measuredAtomicBlockHeights ?? {}).filter(
+			([, height]) => Number.isFinite(height) && height > 0
+		)
+	);
+
 	return {
 		contentWidth: Math.max(1, layout?.contentWidth ?? DEFAULT_CONTENT_WIDTH),
 		contentHeight: Math.max(1, layout?.contentHeight ?? DEFAULT_CONTENT_HEIGHT),
@@ -91,6 +100,7 @@ function normalizeLayout(layout: ReaderPageLayout | undefined): ReaderPageLayout
 			1,
 			layout?.averageCharacterWidth ?? layout?.fontSize ?? DEFAULT_FONT_SIZE
 		),
+		measuredAtomicBlockHeights,
 	};
 }
 
@@ -116,19 +126,41 @@ function getBlockGap(layout: ReaderPageLayout, kind: ReaderContentBlock['kind'])
 function estimateTableHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
 	const table = block.extensions?.table;
 	const rowCount = table?.rows?.length ?? 1;
+	const maxHeight = layout.contentHeight * READER_TABLE_MAX_HEIGHT_RATIO;
 	const rowHeight = layout.lineHeight * TABLE_ROW_HEIGHT_SCALE;
-	return Math.max(rowHeight, rowCount * rowHeight);
+	const estimatedHeight = Math.max(rowHeight, rowCount * rowHeight);
+	return Math.min(maxHeight, estimatedHeight);
 }
 
 function estimateImageHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
+	const maxWidth = layout.contentWidth * READER_IMAGE_MAX_WIDTH_RATIO;
+	const maxHeight = layout.contentHeight * READER_IMAGE_MAX_HEIGHT_RATIO;
+	const widthPx = block.extensions?.image?.width;
 	const heightPx = block.extensions?.image?.height;
-	if (typeof heightPx === 'number' && heightPx > 0) {
-		return Math.min(layout.contentHeight, heightPx);
+
+	if (
+		typeof widthPx === 'number' &&
+		widthPx > 0 &&
+		typeof heightPx === 'number' &&
+		heightPx > 0
+	) {
+		const renderedWidth = Math.min(widthPx, maxWidth);
+		const scaledHeight = heightPx * (renderedWidth / widthPx);
+		return Math.min(maxHeight, scaledHeight);
 	}
-	return layout.fontSize * IMAGE_FALLBACK_HEIGHT_EM;
+
+	if (typeof heightPx === 'number' && heightPx > 0) {
+		return Math.min(maxHeight, heightPx);
+	}
+
+	return maxHeight;
 }
 
 function estimateAtomicBlockHeight(block: ReaderContentBlock, layout: ReaderPageLayout): number {
+	const measuredHeight = layout.measuredAtomicBlockHeights?.[block.id];
+	if (typeof measuredHeight === 'number' && measuredHeight > 0) {
+		return Math.min(layout.contentHeight, measuredHeight);
+	}
 	if (block.kind === 'thematic_break') {
 		return layout.lineHeight;
 	}

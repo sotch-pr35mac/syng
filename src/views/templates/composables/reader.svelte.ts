@@ -44,6 +44,7 @@ let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
 let pages = $state<ReaderPage[]>([]);
 let pageLayout = $state<ReaderPageLayout | undefined>(undefined);
+let measuredAtomicBlockHeights = $state<Record<string, number>>({});
 let importing = $state(false);
 let tokenMap = $state<Record<string, ReaderToken[]>>({});
 let dictionaryResults = $state<SearchEntry[]>([]);
@@ -168,6 +169,16 @@ function getPageIndexForLocator(document: ReaderDocument, documentPages: ReaderP
 	return findPageIndexForPosition(documentPages, position);
 }
 
+function createPagesForCurrentLayout(document: ReaderDocument): ReaderPage[] {
+	if (!pageLayout) {
+		return createReaderPages(document, undefined);
+	}
+	return createReaderPages(document, {
+		...pageLayout,
+		measuredAtomicBlockHeights,
+	});
+}
+
 async function saveCurrentProgress(): Promise<void> {
 	const document = activeDocument;
 	const page = pages[pageIndex];
@@ -190,9 +201,10 @@ async function openDocument(document: ReaderDocument): Promise<void> {
 	activeDocument = ensureReaderDocumentForRendering(document);
 	readerDocumentRouteStore.set(activeDocument._id);
 	tokenMap = {};
+	measuredAtomicBlockHeights = {};
 	lastPageTurnDirection = undefined;
 	closeDictionary();
-	pages = createReaderPages(activeDocument, pageLayout);
+	pages = createPagesForCurrentLayout(activeDocument);
 	pageIndex = getPageIndexForLocator(activeDocument, pages);
 	await preparePageTokens();
 	telemetry
@@ -363,6 +375,7 @@ async function deleteDocument(document: ReaderDocument): Promise<boolean> {
 			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
 			pages = [];
+			measuredAtomicBlockHeights = {};
 			lastPageTurnDirection = undefined;
 			closeDictionary();
 		}
@@ -408,6 +421,7 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
 			pages = [];
+			measuredAtomicBlockHeights = {};
 			lastPageTurnDirection = undefined;
 			closeDictionary();
 		}
@@ -526,12 +540,44 @@ async function setPageLayout(layout: ReaderPageLayout): Promise<void> {
 
 	const currentPosition = pages[pageIndex]?.start ?? activeDocument?.progress?.position ?? 0;
 	pageLayout = normalizedLayout;
+	measuredAtomicBlockHeights = {};
 
 	if (!activeDocument) {
 		return;
 	}
 
-	pages = createReaderPages(activeDocument, pageLayout);
+	pages = createPagesForCurrentLayout(activeDocument);
+	pageIndex = findPageIndexForPosition(pages, currentPosition);
+	closeDictionary();
+	await preparePageTokens();
+}
+
+async function updateMeasuredAtomicBlockHeights(
+	nextMeasurements: Record<string, number>
+): Promise<void> {
+	if (!activeDocument) {
+		return;
+	}
+
+	const roundedMeasurements = Object.fromEntries(
+		Object.entries(nextMeasurements)
+			.map(([blockId, height]) => [blockId, Math.ceil(height)] as const)
+			.filter(([, height]) => Number.isFinite(height) && height > 0)
+	);
+	const changedEntries = Object.entries(roundedMeasurements).filter(
+		([blockId, height]) => Math.abs((measuredAtomicBlockHeights[blockId] ?? 0) - height) > 1
+	);
+
+	if (!changedEntries.length) {
+		return;
+	}
+
+	const currentPosition = pages[pageIndex]?.start ?? activeDocument.progress?.position ?? 0;
+	measuredAtomicBlockHeights = {
+		...measuredAtomicBlockHeights,
+		...Object.fromEntries(changedEntries),
+	};
+	pages = createPagesForCurrentLayout(activeDocument);
 	pageIndex = findPageIndexForPosition(pages, currentPosition);
 	closeDictionary();
 	await preparePageTokens();
@@ -660,6 +706,7 @@ function backToLibrary(): void {
 	readerDocumentRouteStore.set(null);
 	pageIndex = 0;
 	pages = [];
+	measuredAtomicBlockHeights = {};
 	lastPageTurnDirection = undefined;
 	closeDictionary();
 }
@@ -776,6 +823,7 @@ export const readerRoute = {
 	goToPage,
 	getPage,
 	setPageLayout,
+	updateMeasuredAtomicBlockHeights,
 	getBlockSegments,
 	getTableCellSegments,
 	openDictionary,

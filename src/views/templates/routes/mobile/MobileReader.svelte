@@ -49,6 +49,10 @@
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
+	import {
+		READER_IMAGE_MAX_HEIGHT_RATIO,
+		READER_TABLE_MAX_HEIGHT_RATIO,
+	} from '@/utils/readerPagination.js';
 
 	type Props = {
 		params?: {
@@ -98,6 +102,7 @@
 	const documents = $derived(readerRoute.documents);
 	const readerSettings = $derived(readerSettingsStore.settings);
 	let systemPrefersDark = $state(false);
+	let pageContentHeight = $state(0);
 	const activeReaderTheme = $derived(
 		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
 	);
@@ -125,6 +130,8 @@
 			`--reader-font-family: ${readerSettings.fontFamily}`,
 			`--reader-page-font-size: ${(DEFAULT_PAGE_FONT_SIZE * readerSettings.fontSizePercent) / 100}px`,
 			`--reader-page-line-height: ${readerSettings.lineHeight}`,
+			`--reader-image-max-height: ${pageContentHeight ? `${pageContentHeight * READER_IMAGE_MAX_HEIGHT_RATIO}px` : 'none'}`,
+			`--reader-table-max-height: ${pageContentHeight ? `${pageContentHeight * READER_TABLE_MAX_HEIGHT_RATIO}px` : 'none'}`,
 		].join(';')
 	);
 	let gestureStartX = 0;
@@ -225,6 +232,13 @@
 		if (pageElement) {
 			updatePageLayout().catch(() => {});
 		}
+	});
+
+	$effect(() => {
+		currentPage;
+		pageElement;
+		pageContentHeight;
+		schedulePageOverflowCheck();
 	});
 
 	function openToken(event: MouseEvent, token: ReaderToken | undefined): void {
@@ -413,14 +427,16 @@
 		const paddingY =
 			parsePixelValue(pageStyles.paddingTop, 0) +
 			parsePixelValue(pageStyles.paddingBottom, 0);
+		const contentHeight = pageElement.clientHeight - paddingY;
 		const measuredCharacterWidth = characterMeasureElement
 			? characterMeasureElement.getBoundingClientRect().width /
 				CHARACTER_MEASURE_SAMPLE.length
 			: fontSize;
+		pageContentHeight = contentHeight;
 
 		await readerRoute.setPageLayout({
 			contentWidth: pageElement.clientWidth - paddingX,
-			contentHeight: pageElement.clientHeight - paddingY,
+			contentHeight,
 			fontSize,
 			lineHeight,
 			blockGap: fontSize * BODY_BLOCK_GAP_EM,
@@ -428,6 +444,44 @@
 			headingGap: fontSize * BODY_BLOCK_GAP_EM,
 			averageCharacterWidth: measuredCharacterWidth,
 		});
+	}
+
+	function schedulePageOverflowCheck(): void {
+		tick()
+			.then(() => checkPageOverflow())
+			.catch(() => {});
+	}
+
+	async function checkPageOverflow(): Promise<void> {
+		await tick();
+		if (!pageElement || turningPage) {
+			return;
+		}
+		if (pageElement.scrollHeight - pageElement.clientHeight <= 1) {
+			return;
+		}
+
+		const measuredBlocks = pageElement.querySelectorAll<HTMLElement>(
+			'[data-reader-atomic-block-id]'
+		);
+		const measurements = Object.fromEntries(
+			Array.from(measuredBlocks)
+				.map((element) => [
+					element.dataset.readerAtomicBlockId,
+					element.getBoundingClientRect().height,
+				])
+				.filter(
+					(entry): entry is [string, number] =>
+						typeof entry[0] === 'string' &&
+						typeof entry[1] === 'number' &&
+						Number.isFinite(entry[1]) &&
+						entry[1] > 0
+				)
+		);
+
+		if (Object.keys(measurements).length) {
+			await readerRoute.updateMeasuredAtomicBlockHeights(measurements);
+		}
 	}
 
 	async function turnPage(direction: 'next' | 'previous'): Promise<void> {
@@ -593,7 +647,10 @@
 			>
 				{#each currentPage.blocks as block (block.id)}
 					{#if block.layout_mode === 'atomic' && block.kind === 'thematic_break'}
-						<hr class="mobile-reader__block mobile-reader__thematic-break" />
+						<hr
+							class="mobile-reader__block mobile-reader__thematic-break"
+							data-reader-atomic-block-id={block.sourceBlockId}
+						/>
 					{:else if block.layout_mode === 'atomic' && block.kind === 'table'}
 						{@const tableSource = activeDocument.blocks.find(
 							(b) => b.id === block.sourceBlockId
@@ -603,6 +660,7 @@
 								class="mobile-reader__block mobile-reader__block--table"
 								role="region"
 								aria-label="Table"
+								data-reader-atomic-block-id={block.sourceBlockId}
 							>
 								<table class="mobile-reader__data-table">
 									<tbody>
@@ -645,7 +703,10 @@
 							(b) => b.id === block.sourceBlockId
 						)}
 						{#if imageSource}
-							<figure class="mobile-reader__block mobile-reader__figure">
+							<figure
+								class="mobile-reader__block mobile-reader__figure"
+								data-reader-atomic-block-id={block.sourceBlockId}
+							>
 								{#if imageSource.extensions?.image?.inline_src}
 									<img
 										src={imageSource.extensions.image.inline_src}
@@ -653,6 +714,7 @@
 										class="mobile-reader__inline-image"
 										width={imageSource.extensions.image.width ?? undefined}
 										height={imageSource.extensions.image.height ?? undefined}
+										onload={schedulePageOverflowCheck}
 									/>
 								{:else if imageSource.text}
 									<figcaption class="mobile-reader__image-caption">
@@ -1351,7 +1413,8 @@
 	}
 
 	.mobile-reader__block--table {
-		overflow-x: auto;
+		max-height: var(--reader-table-max-height, none);
+		overflow: auto;
 		margin: 0 0 1.25em;
 	}
 
@@ -1380,9 +1443,11 @@
 	}
 
 	.mobile-reader__inline-image {
-		max-width: 100%;
+		max-width: 70%;
+		max-height: var(--reader-image-max-height, none);
 		height: auto;
 		display: inline-block;
+		object-fit: contain;
 	}
 
 	.mobile-reader__image-caption {

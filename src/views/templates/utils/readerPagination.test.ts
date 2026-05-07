@@ -3,6 +3,8 @@ import {
 	createReaderPages,
 	createReaderSegments,
 	findPageIndexForPosition,
+	READER_IMAGE_MAX_HEIGHT_RATIO,
+	READER_IMAGE_MAX_WIDTH_RATIO,
 	type ReaderPageLayout,
 } from '@/utils/readerPagination.js';
 import type { ReaderDocument } from '@/types/reader.js';
@@ -147,6 +149,159 @@ it('places non-linear table blocks as atomic layout segments', () => {
 	expect(atomicBlock?.kind).toBe('table');
 	const segments = createReaderSegments(atomicBlock!, []);
 	expect(segments[0]?.type).toBe('text');
+});
+
+it('estimates landscape image height from the reader image width cap', () => {
+	const document = buildDocument('abcdefghij');
+	document.blocks = [
+		{
+			id: 'image-1',
+			kind: 'image',
+			text: 'Landscape',
+			participates_in_linear_text: false,
+			extensions: {
+				image: {
+					asset_id: 'landscape',
+					mime_type: 'image/png',
+					width: 1000,
+					height: 500,
+				},
+			},
+		},
+		{
+			id: 'block-1',
+			kind: 'paragraph',
+			text: document.text,
+			start_offset: 0,
+			end_offset: document.text.length,
+		},
+	];
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 100,
+		contentHeight: 50,
+	});
+
+	expect(READER_IMAGE_MAX_WIDTH_RATIO).toBe(0.7);
+	expect(pages).toHaveLength(1);
+	expect(pages[0].blocks.map((block) => block.sourceBlockId)).toEqual(['image-1', 'block-1']);
+});
+
+it('caps portrait image height against the reader content height', () => {
+	const document = buildDocument('abcdefghij');
+	document.blocks = [
+		{
+			id: 'image-1',
+			kind: 'image',
+			text: 'Portrait',
+			participates_in_linear_text: false,
+			extensions: {
+				image: {
+					asset_id: 'portrait',
+					mime_type: 'image/png',
+					width: 10,
+					height: 1000,
+				},
+			},
+		},
+		{
+			id: 'block-1',
+			kind: 'paragraph',
+			text: document.text,
+			start_offset: 0,
+			end_offset: document.text.length,
+		},
+	];
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 100,
+		contentHeight: 75,
+	});
+
+	expect(READER_IMAGE_MAX_HEIGHT_RATIO).toBe(0.65);
+	expect(pages).toHaveLength(1);
+	expect(pages[0].blocks.map((block) => block.sourceBlockId)).toEqual(['image-1', 'block-1']);
+});
+
+it('uses measured atomic heights when an image renders taller than its estimate', () => {
+	const document = buildDocument('abcdefghij');
+	document.blocks = [
+		{
+			id: 'image-1',
+			kind: 'image',
+			text: 'Measured image',
+			participates_in_linear_text: false,
+			extensions: {
+				image: {
+					asset_id: 'measured',
+					mime_type: 'image/png',
+					width: 1000,
+					height: 500,
+				},
+			},
+		},
+		{
+			id: 'block-1',
+			kind: 'paragraph',
+			text: document.text,
+			start_offset: 0,
+			end_offset: document.text.length,
+		},
+	];
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 100,
+		contentHeight: 70,
+		measuredAtomicBlockHeights: {
+			'image-1': 61,
+		},
+	});
+
+	expect(pages).toHaveLength(2);
+	expect(pages[0].blocks.map((block) => block.sourceBlockId)).toEqual(['image-1']);
+	expect(pages[1].blocks.map((block) => block.sourceBlockId)).toEqual(['block-1']);
+});
+
+it('moves tall tables to the next page when their estimate does not fit after text', () => {
+	const document = buildDocument('abcdefghijklmnopqrst');
+	document.blocks = [
+		{
+			id: 'block-1',
+			kind: 'paragraph',
+			text: document.text,
+			start_offset: 0,
+			end_offset: document.text.length,
+		},
+		{
+			id: 'table-1',
+			kind: 'table',
+			text: '[Table]',
+			participates_in_linear_text: false,
+			extensions: {
+				table: {
+					rows: [
+						{ cells: [{ text: '甲' }] },
+						{ cells: [{ text: '乙' }] },
+						{ cells: [{ text: '丙' }] },
+						{ cells: [{ text: '丁' }] },
+					],
+				},
+			},
+		},
+	];
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 100,
+		contentHeight: 55,
+	});
+
+	expect(pages).toHaveLength(2);
+	expect(pages[0].blocks.map((block) => block.sourceBlockId)).toEqual(['block-1']);
+	expect(pages[1].blocks.map((block) => block.sourceBlockId)).toEqual(['table-1']);
 });
 
 it('keeps thematic breaks and boxed blocks stable during pagination', () => {
