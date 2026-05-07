@@ -61,6 +61,7 @@
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space);
 		box-shadow: var(--sy-inner-shadow);
+		background-color: var(--sy-color--white);
 		box-sizing: border-box;
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
@@ -68,5 +69,9 @@
 		line-height: var(--sy-line-height--body);
 		margin: calc(var(--sy-space--small) + var(--sy-space--large))
 			calc(var(--sy-space--small) + var(--sy-space));
+	}
+
+	.reader-clipboard-import__textarea::placeholder {
+		color: var(--sy-color--grey-1);
 	}
 </style>
