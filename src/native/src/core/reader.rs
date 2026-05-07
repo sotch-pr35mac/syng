@@ -2832,6 +2832,12 @@ struct PdfLineSegment {
     x_max: f64,
 }
 
+#[derive(Debug, Clone)]
+struct PdfDetectedTableRun {
+    end: usize,
+    rows: Vec<Vec<String>>,
+}
+
 fn cmp_f64(left: f64, right: f64) -> Ordering {
     left.partial_cmp(&right).unwrap_or(Ordering::Equal)
 }
@@ -3074,15 +3080,18 @@ fn pdf_table_rows_compatible(
     candidate: &PdfLine,
     body_font_size: f64,
 ) -> bool {
-    if anchor.page_num != candidate.page_num
-        || anchor.segments.len() != candidate.segments.len()
+    if anchor.segments.len() != candidate.segments.len()
         || !is_pdf_table_candidate_line(candidate, body_font_size)
     {
         return false;
     }
 
-    let row_gap = candidate.y - previous.y;
-    if row_gap <= 0.0 || row_gap > body_font_size.max(previous.font_size).max(1.0) * 4.0 {
+    if candidate.page_num == previous.page_num {
+        let row_gap = candidate.y - previous.y;
+        if row_gap <= 0.0 || row_gap > body_font_size.max(previous.font_size).max(1.0) * 4.0 {
+            return false;
+        }
+    } else if candidate.page_num <= previous.page_num {
         return false;
     }
 
@@ -3094,37 +3103,118 @@ fn pdf_table_rows_compatible(
         .all(|(left, right)| (left.x_min - right.x_min).abs() <= column_tolerance)
 }
 
-fn detect_pdf_table_run(lines: &[PdfLine], start: usize, body_font_size: f64) -> Option<usize> {
+fn pdf_table_segment_column(
+    anchor: &PdfLine,
+    segment: &PdfLineSegment,
+    body_font_size: f64,
+) -> Option<usize> {
+    let column_tolerance = body_font_size.max(anchor.font_size).max(1.0) * 2.0;
+    anchor
+        .segments
+        .iter()
+        .enumerate()
+        .filter_map(|(index, column)| {
+            let distance = (column.x_min - segment.x_min).abs();
+            (distance <= column_tolerance).then_some((index, distance))
+        })
+        .min_by(|left, right| cmp_f64(left.1, right.1))
+        .map(|(index, _)| index)
+}
+
+fn is_pdf_table_continuation_line(
+    anchor: &PdfLine,
+    previous: &PdfLine,
+    candidate: &PdfLine,
+    body_font_size: f64,
+) -> bool {
+    if candidate.page_num != previous.page_num
+        || candidate.page_num != anchor.page_num
+        || candidate.segments.is_empty()
+        || candidate.segments.len() > anchor.segments.len()
+    {
+        return false;
+    }
+
+    let row_gap = candidate.y - previous.y;
+    if row_gap <= 0.0 || row_gap > body_font_size.max(previous.font_size).max(1.0) * 2.0 {
+        return false;
+    }
+
+    let boundary_tolerance = body_font_size.max(anchor.font_size).max(1.0) * 2.0;
+    if candidate.x_min < anchor.x_min - boundary_tolerance {
+        return false;
+    }
+
+    candidate
+        .segments
+        .iter()
+        .all(|segment| pdf_table_segment_column(anchor, segment, body_font_size).is_some())
+}
+
+fn detected_pdf_table_row_from_line(line: &PdfLine) -> Vec<String> {
+    line.segments
+        .iter()
+        .map(|segment| segment.text.clone())
+        .collect()
+}
+
+fn detect_pdf_table_run(
+    lines: &[PdfLine],
+    start: usize,
+    body_font_size: f64,
+) -> Option<PdfDetectedTableRun> {
     let anchor = lines.get(start)?;
     if !is_pdf_table_candidate_line(anchor, body_font_size) {
         return None;
     }
 
     let mut end = start + 1;
+    let mut rows = vec![detected_pdf_table_row_from_line(anchor)];
     while let (Some(previous), Some(candidate)) = (lines.get(end - 1), lines.get(end)) {
-        if !pdf_table_rows_compatible(anchor, previous, candidate, body_font_size) {
-            break;
+        if pdf_table_rows_compatible(anchor, previous, candidate, body_font_size) {
+            rows.push(detected_pdf_table_row_from_line(candidate));
+            end += 1;
+            continue;
         }
-        end += 1;
+
+        if is_pdf_table_continuation_line(anchor, previous, candidate, body_font_size) {
+            if let Some(row) = rows.last_mut() {
+                for segment in &candidate.segments {
+                    if let Some(column_index) =
+                        pdf_table_segment_column(anchor, segment, body_font_size)
+                    {
+                        if let Some(cell) = row.get_mut(column_index) {
+                            if !cell.is_empty() {
+                                cell.push('\n');
+                            }
+                            cell.push_str(&segment.text);
+                        }
+                    }
+                }
+            }
+            end += 1;
+            continue;
+        }
+
+        break;
     }
 
-    if end - start >= 2 {
-        Some(end)
+    if rows.len() >= 2 {
+        Some(PdfDetectedTableRun { end, rows })
     } else {
         None
     }
 }
 
-fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, lines: &[PdfLine]) {
-    let rows = lines
+fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, detected_rows: &[Vec<String>]) {
+    let rows = detected_rows
         .iter()
         .enumerate()
-        .map(|(row_index, line)| {
-            let cells = line
-                .segments
+        .map(|(row_index, row)| {
+            let cells = row
                 .iter()
-                .map(|segment| ReaderTableCell {
-                    text: segment.text.clone(),
+                .map(|cell| ReaderTableCell {
+                    text: cell.clone(),
                     is_header: row_index == 0,
                     spans: None,
                 })
@@ -3132,12 +3222,11 @@ fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, lines: &[PdfLine])
             ReaderTableRow { cells }
         })
         .collect::<Vec<_>>();
-    let table_text = lines
+    let table_text = detected_rows
         .iter()
-        .map(|line| {
-            line.segments
-                .iter()
-                .map(|segment| segment.text.as_str())
+        .map(|row| {
+            row.iter()
+                .map(String::as_str)
                 .collect::<Vec<_>>()
                 .join("\t")
         })
@@ -3258,7 +3347,7 @@ fn pdf_layout_to_text_blocks(document: &PdfLayoutDocument) -> (String, Vec<Reade
 
     let mut index = 0;
     while index < lines.len() {
-        if let Some(table_end) = detect_pdf_table_run(&lines, index, body_font_size) {
+        if let Some(table_run) = detect_pdf_table_run(&lines, index, body_font_size) {
             flush_active(
                 &mut text,
                 &mut blocks,
@@ -3266,9 +3355,9 @@ fn pdf_layout_to_text_blocks(document: &PdfLayoutDocument) -> (String, Vec<Reade
                 &mut active_role,
                 &mut active_start,
             );
-            push_pdf_table_block(&mut blocks, &lines[index..table_end]);
-            previous_line = lines.get(table_end - 1).cloned();
-            index = table_end;
+            push_pdf_table_block(&mut blocks, &table_run.rows);
+            previous_line = lines.get(table_run.end - 1).cloned();
+            index = table_run.end;
             continue;
         }
 
@@ -4902,10 +4991,11 @@ mod tests {
             ),
         ];
 
-        assert_eq!(detect_pdf_table_run(&lines, 0, 10.5), Some(4));
+        let table_run = detect_pdf_table_run(&lines, 0, 10.5).expect("table run");
+        assert_eq!(table_run.end, 4);
 
         let mut blocks = Vec::new();
-        push_pdf_table_block(&mut blocks, &lines);
+        push_pdf_table_block(&mut blocks, &table_run.rows);
         let rows = blocks[0]
             .extensions
             .as_ref()
@@ -4915,6 +5005,130 @@ mod tests {
         assert_eq!(rows[0].cells[0].text, "线索");
         assert_eq!(rows[1].cells[1].text, "外婆家门口");
         assert_eq!(rows[3].cells[2].text, "花期提前");
+    }
+
+    #[test]
+    fn pdf_table_detector_merges_wrapped_cell_lines() {
+        let segment = |text: &str, x_min: f64, x_max: f64| PdfLineSegment {
+            text: text.to_string(),
+            x_min,
+            x_max,
+        };
+        let line = |text: &str, y: f64, segments: Vec<PdfLineSegment>| PdfLine {
+            text: text.to_string(),
+            x_min: segments.first().map(|segment| segment.x_min).unwrap_or(0.0),
+            x_max: segments.last().map(|segment| segment.x_max).unwrap_or(0.0),
+            segments,
+            y,
+            font_size: 10.5,
+            page_num: 1,
+            page_width: 419.5,
+        };
+        let lines = vec![
+            line(
+                "词语 拼音 说明",
+                100.0,
+                vec![
+                    segment("词语", 50.0, 71.0),
+                    segment("拼音", 150.0, 171.0),
+                    segment("说明", 250.0, 271.0),
+                ],
+            ),
+            line(
+                "春风 chun1 feng1 第一段说明",
+                118.0,
+                vec![
+                    segment("春风", 50.0, 71.0),
+                    segment("chun1 feng1", 150.0, 205.0),
+                    segment("第一段说明", 250.0, 302.0),
+                ],
+            ),
+            line(
+                "第二段说明",
+                131.0,
+                vec![segment("第二段说明", 250.0, 302.0)],
+            ),
+            line(
+                "秋雨 qiu1 yu3 雨声渐近",
+                150.0,
+                vec![
+                    segment("秋雨", 50.0, 71.0),
+                    segment("qiu1 yu3", 150.0, 194.0),
+                    segment("雨声渐近", 250.0, 292.0),
+                ],
+            ),
+        ];
+
+        let table_run = detect_pdf_table_run(&lines, 0, 10.5).expect("table run");
+        assert_eq!(table_run.end, 4);
+        assert_eq!(table_run.rows.len(), 3);
+
+        let mut blocks = Vec::new();
+        push_pdf_table_block(&mut blocks, &table_run.rows);
+        let rows = blocks[0]
+            .extensions
+            .as_ref()
+            .and_then(|value| value.table.as_ref())
+            .map(|value| value.rows.as_slice())
+            .expect("table rows");
+        assert_eq!(rows[1].cells[2].text, "第一段说明\n第二段说明");
+        assert_eq!(rows[2].cells[0].text, "秋雨");
+    }
+
+    #[test]
+    fn pdf_table_detector_continues_across_page_breaks() {
+        let segment = |text: &str, x_min: f64, x_max: f64| PdfLineSegment {
+            text: text.to_string(),
+            x_min,
+            x_max,
+        };
+        let line = |text: &str, page_num: u32, y: f64, segments: Vec<PdfLineSegment>| PdfLine {
+            text: text.to_string(),
+            x_min: segments.first().map(|segment| segment.x_min).unwrap_or(0.0),
+            x_max: segments.last().map(|segment| segment.x_max).unwrap_or(0.0),
+            segments,
+            y,
+            font_size: 10.5,
+            page_num,
+            page_width: 419.5,
+        };
+        let lines = vec![
+            line(
+                "编号 词语 说明",
+                1,
+                720.0,
+                vec![
+                    segment("编号", 50.0, 71.0),
+                    segment("词语", 150.0, 171.0),
+                    segment("说明", 250.0, 271.0),
+                ],
+            ),
+            line(
+                "一 春风 第一页末",
+                1,
+                740.0,
+                vec![
+                    segment("一", 50.0, 60.0),
+                    segment("春风", 150.0, 171.0),
+                    segment("第一页末", 250.0, 292.0),
+                ],
+            ),
+            line(
+                "二 秋雨 第二页首",
+                2,
+                90.0,
+                vec![
+                    segment("二", 50.0, 60.0),
+                    segment("秋雨", 150.0, 171.0),
+                    segment("第二页首", 250.0, 292.0),
+                ],
+            ),
+        ];
+
+        let table_run = detect_pdf_table_run(&lines, 0, 10.5).expect("table run");
+        assert_eq!(table_run.end, 3);
+        assert_eq!(table_run.rows.len(), 3);
+        assert_eq!(table_run.rows[2][1], "秋雨");
     }
 
     #[test]
