@@ -1,13 +1,7 @@
 <script lang="ts">
-	import {
-		Check,
-		ClipboardPaste,
-		FilePlus2,
-		Globe2,
-		Library,
-		Pencil,
-	} from 'lucide-svelte';
+	import { Check, ClipboardPaste, FilePlus2, Globe2, Library, Pencil } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { READER_SUPPORTED_DOCUMENT_FORMAT_LABEL } from '@/reader/importSupport.js';
 	import type { ReaderDocument } from '@/types/reader.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
@@ -59,7 +53,9 @@
 						{#if editingLibrary}
 							<span
 								class="reader-library__selection-indicator"
-								class:reader-library__selection-indicator--selected={selectedDocumentIds.has(document._id)}
+								class:reader-library__selection-indicator--selected={selectedDocumentIds.has(
+									document._id
+								)}
 							>
 								{#if selectedDocumentIds.has(document._id)}
 									<Check size="14" />
@@ -91,15 +87,20 @@
 				<p>Your reading library is empty</p>
 			</div>
 			<div class="reader-library__empty-actions" aria-label="Import options">
-				<SyButton
-					size="large"
-					classes={['reader-library__empty-action']}
-					disabled={importing}
-					onclick={onopenFileImport}
-				>
-					<FilePlus2 size="20" />
-					<span>{importing ? 'Importing...' : 'Import Document'}</span>
-				</SyButton>
+				<div class="reader-library__empty-action-group">
+					<SyButton
+						size="large"
+						classes={['reader-library__empty-action']}
+						disabled={importing}
+						onclick={onopenFileImport}
+					>
+						<FilePlus2 size="20" />
+						<span>{importing ? 'Importing...' : 'Import Document'}</span>
+					</SyButton>
+					<span class="reader-library__empty-action-hint"
+						>{READER_SUPPORTED_DOCUMENT_FORMAT_LABEL}</span
+					>
+				</div>
 				<SyButton
 					size="large"
 					classes={['reader-library__empty-action']}
@@ -107,7 +108,7 @@
 					onclick={onopenWebpageImport}
 				>
 					<Globe2 size="20" />
-					<span>Import From Webpage</span>
+					<span>Import from Webpage</span>
 				</SyButton>
 				<SyButton
 					size="large"
@@ -116,7 +117,7 @@
 					onclick={onopenClipboardImport}
 				>
 					<ClipboardPaste size="20" />
-					<span>Import From Clipboard</span>
+					<span>Import from Clipboard</span>
 				</SyButton>
 			</div>
 		</div>
@@ -306,11 +307,18 @@
 
 	.reader-library__empty-actions {
 		display: flex;
-		align-items: stretch;
+		align-items: flex-start;
 		justify-content: center;
 		gap: var(--sy-space--large);
 		max-width: 100%;
 		flex-wrap: wrap;
+	}
+
+	.reader-library__empty-action-group {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sy-space);
 	}
 
 	:global(.reader-library__empty-action) {
@@ -319,5 +327,12 @@
 		justify-content: center;
 		gap: var(--sy-space);
 		margin: 0;
+	}
+
+	.reader-library__empty-action-hint {
+		max-width: 220px;
+		color: var(--sy-color--grey-4);
+		font-size: var(--sy-font-size--small);
+		line-height: 1.4;
 	}
 </style>

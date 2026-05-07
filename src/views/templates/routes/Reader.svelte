@@ -9,6 +9,7 @@
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
+		Info,
 		Minus,
 		Palette,
 		Plus,
@@ -21,11 +22,13 @@
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
+	import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
 	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
 	import ReaderLibrary from '@/components/ReaderLibrary.svelte';
+	import ReaderSupportedDocumentsModal from '@/components/ReaderSupportedDocumentsModal.svelte';
 	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
@@ -73,6 +76,7 @@
 		FILE: 'file',
 		WEBPAGE: 'webpage',
 		CLIPBOARD: 'clipboard',
+		SUPPORTED_DOCUMENTS: 'supported-documents',
 	} as const;
 	const readerImportDropdownValues = [
 		{
@@ -83,14 +87,24 @@
 		},
 		{
 			id: READER_IMPORT_ACTIONS.WEBPAGE,
-			text: 'Import From Webpage',
+			text: 'Import from Webpage',
 			icon: Globe2,
 			component: TextWithIconDropdownItem,
 		},
 		{
 			id: READER_IMPORT_ACTIONS.CLIPBOARD,
-			text: 'Import From Clipboard',
+			text: 'Import from Clipboard',
 			icon: ClipboardPaste,
+			component: TextWithIconDropdownItem,
+		},
+		{
+			id: 'reader-import-divider',
+			component: DividerDropdownItem,
+		},
+		{
+			id: READER_IMPORT_ACTIONS.SUPPORTED_DOCUMENTS,
+			text: 'Supported Documents',
+			icon: Info,
 			component: TextWithIconDropdownItem,
 		},
 	];
@@ -134,6 +148,7 @@
 	let editingLibrary = $state(false);
 	let clipboardImportModalVisible = $state(false);
 	let webpageImportModalVisible = $state(false);
+	let supportedDocumentsModalVisible = $state(false);
 	let pendingImportPayload = $state<ReaderImportPayload | undefined>(undefined);
 	let editingDocument = $state<ReaderDocument | undefined>(undefined);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
@@ -299,6 +314,14 @@
 		webpageImportModalVisible = false;
 	}
 
+	function openSupportedDocumentsModal(): void {
+		supportedDocumentsModalVisible = true;
+	}
+
+	function closeSupportedDocumentsModal(): void {
+		supportedDocumentsModalVisible = false;
+	}
+
 	async function openFileImportDetails(): Promise<void> {
 		const importPayload = await readerRoute.pickImportDocument();
 		if (importPayload) {
@@ -317,6 +340,10 @@
 		}
 		if (id === READER_IMPORT_ACTIONS.FILE) {
 			void openFileImportDetails();
+			return;
+		}
+		if (id === READER_IMPORT_ACTIONS.SUPPORTED_DOCUMENTS) {
+			openSupportedDocumentsModal();
 		}
 	}
 
@@ -920,6 +947,11 @@
 	importing={readerRoute.importing}
 	onclose={closeWebpageImportModal}
 	onimport={readerRoute.importWebpageDocument}
+/>
+
+<ReaderSupportedDocumentsModal
+	visible={supportedDocumentsModalVisible}
+	onclose={closeSupportedDocumentsModal}
 />
 
 <ReaderDocumentImportModal

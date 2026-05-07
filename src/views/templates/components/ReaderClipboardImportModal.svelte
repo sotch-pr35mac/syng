@@ -58,7 +58,7 @@
 </script>
 
 <ReaderImportModal
-	title="Import From Clipboard"
+	title="Import from Clipboard"
 	{visible}
 	disabled={!canImport}
 	busy={importing || submitting}

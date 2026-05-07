@@ -81,13 +81,13 @@
 		},
 		{
 			id: READER_IMPORT_ACTIONS.WEBPAGE,
-			text: 'Import From Webpage',
+			text: 'Import from Webpage',
 			icon: Globe2,
 			component: TextWithIconDropdownItem,
 		},
 		{
 			id: READER_IMPORT_ACTIONS.CLIPBOARD,
-			text: 'Import From Clipboard',
+			text: 'Import from Clipboard',
 			icon: ClipboardPaste,
 			component: TextWithIconDropdownItem,
 		},

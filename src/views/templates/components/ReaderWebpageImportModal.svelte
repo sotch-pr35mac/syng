@@ -134,7 +134,7 @@
 </script>
 
 <ReaderImportModal
-	title="Import From Webpage"
+	title="Import from Webpage"
 	{visible}
 	disabled={!canImport}
 	busy={importing || submitting}
