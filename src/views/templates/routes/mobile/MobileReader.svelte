@@ -45,6 +45,7 @@
 	} from '@/types/reader.js';
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
@@ -181,7 +182,14 @@
 		editingLibrary = false;
 		selectedDocumentIds.clear();
 		if (!documentId) {
-			readerRoute.backToLibrary();
+			if (readerDocumentRouteStore.value) {
+				window.location.hash = `#/read/document/${encodeURIComponent(readerDocumentRouteStore.value)}`;
+				return;
+			}
+			if (activeDocument) {
+				window.location.hash = `#/read/document/${encodeURIComponent(activeDocument._id)}`;
+				return;
+			}
 			return;
 		}
 		readerRoute

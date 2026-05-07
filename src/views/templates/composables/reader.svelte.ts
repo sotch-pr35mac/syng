@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
+import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type {
 	ReaderContentBlock,
@@ -169,6 +170,7 @@ async function saveCurrentProgress(): Promise<void> {
 
 async function openDocument(document: ReaderDocument): Promise<void> {
 	activeDocument = ensureReaderDocumentForRendering(document);
+	readerDocumentRouteStore.set(activeDocument._id);
 	tokenMap = {};
 	lastPageTurnDirection = undefined;
 	closeDictionary();
@@ -314,6 +316,7 @@ async function deleteDocument(document: ReaderDocument): Promise<boolean> {
 		await readerDocumentsStore.deleteDocument(document._id);
 		if (activeDocument?._id === document._id) {
 			activeDocument = undefined;
+			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -358,6 +361,7 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 		);
 		if (activeDocument && documents.some((document) => document._id === activeDocument?._id)) {
 			activeDocument = undefined;
+			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
 			pages = [];
 			lastPageTurnDirection = undefined;
@@ -602,6 +606,7 @@ function closeDictionary(): void {
 function backToLibrary(): void {
 	saveCurrentProgress().catch(() => {});
 	activeDocument = undefined;
+	readerDocumentRouteStore.set(null);
 	pageIndex = 0;
 	pages = [];
 	lastPageTurnDirection = undefined;
