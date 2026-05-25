@@ -1,4 +1,4 @@
-import type { ReaderImportPayload } from '@/types/reader.js';
+import type { ReaderImportPayload, ReaderSchemaVersion } from '@/types/reader.js';
 
 export const READER_DOCUMENT_TITLE_MAX_LENGTH = 30;
 export const DEFAULT_READER_DOCUMENT_COLOR = '#ffffff';
@@ -35,7 +35,7 @@ export function applyReaderImportMetadata(
 	);
 	return {
 		...importPayload,
-		canonical_schema_version: importPayload.canonical_schema_version ?? 1,
+		canonical_schema_version: importPayload.canonical_schema_version ?? (1 as ReaderSchemaVersion),
 		title: normalizedTitle,
 		color: normalizeReaderDocumentColor(color),
 	};

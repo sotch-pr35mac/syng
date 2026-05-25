@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { ensureReaderDocumentForRendering } from '@/utils/readerDocumentCanonical.js';
-import type { ReaderDocument } from '@/types/reader.js';
+import type { ReaderDocument, ReaderExtractorVersion } from '@/types/reader.js';
 
 function buildDocument(): ReaderDocument {
 	return {
@@ -9,7 +9,7 @@ function buildDocument(): ReaderDocument {
 		file_name: 'legacy.txt',
 		source_type: 'plain_text',
 		mime_type: 'text/plain',
-		extractor_version: 1,
+		extractor_version: 1 as ReaderExtractorVersion,
 		text: 'This text used to be upgraded into blocks.',
 		blocks: [],
 		imported_at: '2026-01-01T00:00:00.000Z',

@@ -1,7 +1,7 @@
-import type { ReaderContentBlock, ReaderDocument } from '@/types/reader.js';
+import type { ReaderContentBlock, ReaderDocument, ReaderSchemaVersion } from '@/types/reader.js';
 import type { ReaderTableExtension } from '@/types/reader.js';
 
-export const CURRENT_CANONICAL_SCHEMA_VERSION = 1;
+export const CURRENT_CANONICAL_SCHEMA_VERSION = 1 as ReaderSchemaVersion;
 
 function participatesInLinearText(block: ReaderContentBlock): boolean {
 	return block.participates_in_linear_text !== false;

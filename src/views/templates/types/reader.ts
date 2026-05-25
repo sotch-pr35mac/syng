@@ -20,8 +20,8 @@ export type {
  * and `String.prototype.slice` used by pagination.
  */
 export type ReaderTextAlign = 'start' | 'end' | 'center' | 'justify';
-export type ReaderSchemaVersion = number;
-export type ReaderExtractorVersion = number;
+export type ReaderSchemaVersion = number & { readonly __brand: 'ReaderSchemaVersion' };
+export type ReaderExtractorVersion = number & { readonly __brand: 'ReaderExtractorVersion' };
 
 export type ReaderInlineSpanStyle =
 	| 'strong'

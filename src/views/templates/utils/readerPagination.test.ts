@@ -7,7 +7,11 @@ import {
 	READER_IMAGE_MAX_WIDTH_RATIO,
 	type ReaderPageLayout,
 } from '@/utils/readerPagination.js';
-import type { ReaderDocument } from '@/types/reader.js';
+import type {
+	ReaderDocument,
+	ReaderExtractorVersion,
+	ReaderSchemaVersion,
+} from '@/types/reader.js';
 
 const compactLayout: ReaderPageLayout = {
 	contentWidth: 40,
@@ -26,12 +30,12 @@ const THIRD_PAGE_POSITION = 18;
 function buildDocument(text: string): ReaderDocument {
 	return {
 		_id: 'reader-1',
-		canonical_schema_version: 1,
+		canonical_schema_version: 1 as ReaderSchemaVersion,
 		title: 'Story',
 		file_name: 'story.txt',
 		source_type: 'plain_text',
 		mime_type: 'text/plain',
-		extractor_version: 1,
+		extractor_version: 1 as ReaderExtractorVersion,
 		text,
 		blocks: [
 			{
@@ -104,12 +108,12 @@ it('segments dictionary tokens inside a sliced source block', () => {
 it('places non-linear table blocks as atomic layout segments', () => {
 	const tableDocument: ReaderDocument = {
 		_id: 'reader-table',
-		canonical_schema_version: 1,
+		canonical_schema_version: 1 as ReaderSchemaVersion,
 		title: 'Table doc',
 		file_name: 't.html',
 		source_type: 'test',
 		mime_type: 'text/plain',
-		extractor_version: 1,
+		extractor_version: 1 as ReaderExtractorVersion,
 		text: '',
 		blocks: [
 			{

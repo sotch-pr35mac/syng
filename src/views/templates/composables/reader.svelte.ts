@@ -38,7 +38,7 @@ import {
 
 const TEXT_CONTEXT_LENGTH = 32;
 const DELETE_CONFIRMATION_NAME_LIMIT = 5;
-const BYTES_PER_MIB = Number('1048576');
+const BYTES_PER_MIB = 1024 * 1024;
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);

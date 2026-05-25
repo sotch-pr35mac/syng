@@ -14,6 +14,7 @@
 	import Tools from '@/routes/Tools.svelte';
 	import { router } from 'svelte-spa-router';
 	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
+	import { getRouteScreenName } from '@/utils/routeScreenName.js';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
@@ -30,7 +31,7 @@
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
-		const screenName = getRouteScreenName(router.location);
+		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}
@@ -70,7 +71,7 @@
 
 	const routeScreenNames = {
 		'/': 'search',
-		'/read': 'reader',
+		'/read': 'reader-library',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',
@@ -82,12 +83,6 @@
 		'/characters': 'characters',
 	};
 
-	const getRouteScreenName = (location) => {
-		if (/^\/read\/document\/.+/.test(location)) {
-			return 'reader';
-		}
-		return routeScreenNames[location];
-	};
 </script>
 
 <div class="app-container">

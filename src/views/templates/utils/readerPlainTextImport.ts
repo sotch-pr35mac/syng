@@ -1,7 +1,12 @@
-import type { ReaderContentBlock, ReaderImportPayload } from '@/types/reader.js';
+import type {
+	ReaderContentBlock,
+	ReaderExtractorVersion,
+	ReaderImportPayload,
+	ReaderSchemaVersion,
+} from '@/types/reader.js';
 import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
 
-const TEXT_EXTRACTOR_VERSION = 1;
+const TEXT_EXTRACTOR_VERSION = 1 as ReaderExtractorVersion;
 const FILE_NAME_STEM_LIMIT = 80;
 
 function normalizeLineEndings(text: string): string {
@@ -112,7 +117,7 @@ export function createPlainTextReaderImportPayload(
 	const normalizedTitle = title.trim() || 'Untitled';
 	const text = normalizeLineEndings(rawText);
 	return {
-		canonical_schema_version: 1,
+		canonical_schema_version: 1 as ReaderSchemaVersion,
 		title: normalizedTitle,
 		file_name: options.fileName ?? createClipboardFileName(normalizedTitle),
 		source_type: options.sourceType ?? 'plain_text',

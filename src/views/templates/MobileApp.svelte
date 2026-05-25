@@ -5,6 +5,7 @@
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
 	import MobileReader from '@/routes/mobile/MobileReader.svelte';
+	import MobileReaderDocument from '@/routes/mobile/MobileReaderDocument.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
 	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
 	import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
@@ -13,13 +14,14 @@
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
 	import { runStartupActions, telemetry } from '@/utils';
+	import { getRouteScreenName } from '@/utils/routeScreenName.js';
 
 	runStartupActions();
 
 	const routes = {
 		'/': MobileSearch,
 		'/read': MobileReader,
-		'/read/document/:id': MobileReader,
+		'/read/document/:id': MobileReaderDocument,
 		'/bookmarks': MobileBookmarks,
 		'/study': MobileStudy,
 		'/study/flashcards': MobileStudyFlashcards,
@@ -31,7 +33,7 @@
 
 	const routeScreenNames: Record<string, string> = {
 		'/': 'search',
-		'/read': 'reader',
+		'/read': 'reader-library',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',
@@ -47,18 +49,11 @@
 	let viewportOffsetTop = $state(window.visualViewport?.offsetTop ?? 0);
 
 	$effect(() => {
-		const screenName = getRouteScreenName(router.location);
+		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}
 	});
-
-	function getRouteScreenName(location: string): string | undefined {
-		if (/^\/read\/document\/.+/.test(location)) {
-			return 'reader';
-		}
-		return routeScreenNames[location];
-	}
 
 	onMount(() => {
 		const viewport = window.visualViewport;
