@@ -1,10 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import {
-		ChevronLeft,
-		ChevronRight,
-		SlidersHorizontal,
-	} from 'lucide-svelte';
+	import { ChevronLeft, SlidersHorizontal } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
@@ -461,14 +457,6 @@
 			</div>
 		</SyPopover>
 		<main class="mobile-reader-document__stage" onpointerdown={onPointerDown} onpointerup={onPointerUp}>
-			<button
-				class="mobile-reader-document__page-turn mobile-reader-document__page-turn--previous"
-				disabled={!readerRoute.canGoPrevious || turningPage}
-				aria-label="Previous page"
-				onclick={() => turnPage('previous')}
-			>
-				<ChevronLeft size="24" />
-			</button>
 			<span
 				bind:this={characterMeasureElement}
 				class="mobile-reader-document__measure-text"
@@ -643,14 +631,6 @@
 					/>
 				</div>
 			{/if}
-			<button
-				class="mobile-reader-document__page-turn mobile-reader-document__page-turn--next"
-				disabled={!readerRoute.canGoNext || turningPage}
-				aria-label="Next page"
-				onclick={() => turnPage('next')}
-			>
-				<ChevronRight size="24" />
-			</button>
 			<span class="mobile-reader-document__page-count">
 				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
 			</span>
@@ -811,36 +791,7 @@
 		white-space: nowrap;
 	}
 
-	.mobile-reader-document__page-turn {
-		position: absolute;
-		top: 50%;
-		z-index: calc(var(--sy-z-index--base) + 1);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 42px;
-		height: 30%;
-		border: 0;
-		border-radius: var(--sy-border-radius);
-		background: var(--reader-control-background, rgb(255 255 255 / 76%));
-		color: var(--reader-control-text, var(--sy-color--grey-4));
-		box-shadow: var(--sy-shadow);
-		transform: translateY(-50%);
-	}
-
-	.mobile-reader-document__page-turn--previous {
-		left: var(--sy-mobile-space--medium);
-	}
-
-	.mobile-reader-document__page-turn--next {
-		right: var(--sy-mobile-space--medium);
-	}
-
-	.mobile-reader-document__page-turn:disabled {
-		opacity: 0.25;
-	}
-
-	.mobile-reader-document__block {
+.mobile-reader-document__block {
 		white-space: pre-wrap;
 		margin: 0 0 1.25em;
 	}
