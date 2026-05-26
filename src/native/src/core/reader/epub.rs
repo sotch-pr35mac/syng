@@ -1,12 +1,36 @@
+//! EPUB import.
+//!
+//! Reads EPUB archives via the `epub` crate, iterates over spine chapters, and delegates
+//! HTML content extraction to [`html::html_to_blocks`]. Chapter offsets are adjusted so
+//! the final linear text is a single contiguous string with correct UTF-16 code unit offsets.
+
 use epub::doc::EpubDoc;
 use std::io::Cursor;
 
-use super::html::html_to_blocks;
-use super::{
-    default_canonical_schema_version, title_from_file_stem, utf16_len, ReaderImportPayload,
-    EPUB_EXTRACTOR_VERSION,
+use crate::core::reader::html::html_to_blocks;
+use crate::core::reader::{
+    default_canonical_schema_version, title_from_file_stem, utf16_len, FormatExtractor,
+    ReaderImportPayload, EPUB_EXTRACTOR_VERSION,
 };
 
+/// EPUB format extractor implementing [`FormatExtractor`].
+pub(crate) struct EpubFormat;
+
+impl FormatExtractor for EpubFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        extract_epub_payload(bytes, file_name, hash, byte_len)
+    }
+}
+
+/// Extracts a reader import payload from an EPUB file's raw bytes.
+///
+/// Iterates over every chapter in the EPUB spine, parses each as HTML, and concatenates
+/// the resulting text and blocks with adjusted UTF-16 offsets.
 pub(super) fn extract_epub_payload(
     bytes: &[u8],
     file_name: String,

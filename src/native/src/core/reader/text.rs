@@ -1,10 +1,41 @@
+//! Plain text import.
+//!
+//! Splits plain text into paragraph blocks separated by blank lines. Each block tracks
+//! UTF-16 code unit offsets into the source text for pagination and progress anchoring.
+
 use uuid::Uuid;
 
-use super::{
-    default_canonical_schema_version, utf16_len, ReaderContentBlock, ReaderImportPayload,
-    TEXT_EXTRACTOR_VERSION,
+use crate::core::reader::{
+    decode_reader_text, default_canonical_schema_version, title_from_file_stem, utf16_len,
+    FormatExtractor, ReaderContentBlock, ReaderImportPayload, TEXT_EXTRACTOR_VERSION,
 };
 
+/// Plain text format extractor implementing [`FormatExtractor`].
+pub(crate) struct PlainTextFormat;
+
+impl FormatExtractor for PlainTextFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        let raw_text = decode_reader_text(bytes, None)?;
+        let mut payload = extract_plain_text_document(
+            title_from_file_stem(&file_name),
+            file_name,
+            raw_text,
+        );
+        payload.source_sha256 = Some(hash);
+        payload.source_byte_length = Some(byte_len);
+        Ok(payload)
+    }
+}
+
+/// Creates a reader import payload from already-decoded plain text.
+///
+/// This lower-level function is used directly when text is provided without raw bytes
+/// (e.g. clipboard paste). For byte-based import, use [`PlainTextFormat::extract`].
 pub(super) fn extract_plain_text_document(
     title: String,
     file_name: String,
@@ -31,10 +62,12 @@ pub(super) fn extract_plain_text_document(
     }
 }
 
+/// Normalizes `\r\n` and `\r` line endings to `\n`.
 pub(super) fn normalize_line_endings(text: &str) -> String {
     text.replace("\r\n", "\n").replace('\r', "\n")
 }
 
+/// Infers a document title from the first non-empty line of plain text (up to 80 characters).
 pub(super) fn infer_plain_text_title(raw_text: &str) -> String {
     normalize_line_endings(raw_text)
         .lines()
@@ -45,6 +78,7 @@ pub(super) fn infer_plain_text_title(raw_text: &str) -> String {
         .unwrap_or_else(|| "Untitled".to_string())
 }
 
+/// Splits text into paragraph content blocks at blank-line boundaries with UTF-16 offsets.
 pub(super) fn extract_text_blocks(text: &str) -> Vec<ReaderContentBlock> {
     let mut blocks = Vec::new();
     let mut block_start: Option<usize> = None;

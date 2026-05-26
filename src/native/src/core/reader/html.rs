@@ -1,16 +1,23 @@
+//! HTML parsing and content block extraction.
+//!
+//! Converts HTML documents into canonical reader content blocks with UTF-16 offset tracking.
+//! Handles headings, paragraphs, lists, tables, images, and inline styles (`<strong>`, `<em>`,
+//! `<ruby>`, etc.). Used by both direct HTML file import and EPUB chapter extraction.
+
 use scraper::{ElementRef, Html, Selector};
 use serde_json::{Map, Value};
 use std::ops::Deref;
 use tauri_plugin_http::reqwest;
 use uuid::Uuid;
 
-use super::{
+use crate::core::reader::{
     collapse_whitespace, extract_text_blocks, normalize_line_endings, safe_remote_image_src,
     sha256_hex, utf16_len, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
     ReaderImageExtension, ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell,
     ReaderTableExtension, ReaderTableRow,
 };
 
+/// Sniffs the declared charset from the first 4 KiB of an HTML file's `<meta>` tags.
 pub(super) fn html_declared_charset(bytes: &[u8]) -> Option<String> {
     let prefix = String::from_utf8_lossy(&bytes[..bytes.len().min(4096)]).to_ascii_lowercase();
     let charset_index = prefix.find("charset")?;
@@ -382,6 +389,10 @@ fn ruby_annotation(element: ElementRef<'_>) -> Option<String> {
     (!annotation.is_empty()).then_some(annotation)
 }
 
+/// Appends a content block to the block list and its text to the running linear text buffer.
+///
+/// UTF-16 start/end offsets are computed from the current linear text length before and after
+/// appending, so callers must keep `linear_text` in sync with block emission.
 pub(super) fn append_linear_block(
     blocks: &mut Vec<ReaderContentBlock>,
     linear_text: &mut String,
@@ -486,6 +497,10 @@ fn title_from_html(document: &Html) -> Option<String> {
         })
 }
 
+/// Parses an HTML string into linear text, content blocks, and an optional document title.
+///
+/// Returns `(linear_text, blocks, title)`. The `base_url` is used to resolve relative image
+/// `src` attributes when present.
 pub(super) fn html_to_blocks(
     html: &str,
     base_url: Option<&reqwest::Url>,

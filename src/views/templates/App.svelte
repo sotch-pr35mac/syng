@@ -13,8 +13,7 @@
 	import Study from '@/routes/Study.svelte';
 	import Tools from '@/routes/Tools.svelte';
 	import { router } from 'svelte-spa-router';
-	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
-	import { getRouteScreenName } from '@/utils/routeScreenName.js';
+	import { runStartupActions, handleError, installPendingUpdate, telemetry, getRouteScreenName } from '@/utils';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
@@ -71,7 +70,7 @@
 
 	const routeScreenNames = {
 		'/': 'search',
-		'/read': 'reader-library',
+		'/read': 'library',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',

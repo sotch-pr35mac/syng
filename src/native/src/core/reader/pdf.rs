@@ -1,13 +1,33 @@
+//! PDF import.
+//!
+//! Extracts text from PDF files using glyph-level layout analysis. Groups glyphs into lines
+//! based on spatial proximity, detects paragraphs, headings, and tables from font size and
+//! column alignment, and produces canonical reader content blocks with UTF-16 offsets.
+
 use std::cmp::Ordering;
 
 use uuid::Uuid;
 
-use super::{
+use crate::core::reader::{
     default_canonical_schema_version, normalize_line_endings, title_from_file_stem,
-    utf16_len, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
-    ReaderImportPayload, ReaderTableCell, ReaderTableExtension, ReaderTableRow,
-    PDF_EXTRACTOR_VERSION,
+    utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderBlockStyleExtension,
+    ReaderContentBlock, ReaderImportPayload, ReaderTableCell, ReaderTableExtension,
+    ReaderTableRow, PDF_EXTRACTOR_VERSION,
 };
+
+/// PDF format extractor implementing [`FormatExtractor`].
+pub(crate) struct PdfFormat;
+
+impl FormatExtractor for PdfFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        extract_pdf_payload(bytes, file_name, hash, byte_len)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum PdfExtractionFailure {
@@ -15,6 +35,7 @@ pub(super) enum PdfExtractionFailure {
 }
 
 #[cfg(test)]
+/// Extracts per-page text strings using the provided extraction closure.
 pub(super) fn extract_pdf_pages_with<F>(extract: F) -> Result<Vec<String>, PdfExtractionFailure>
 where
     F: FnOnce() -> Result<Vec<String>, pdf_extract::OutputError>,
@@ -177,6 +198,7 @@ fn cmp_f64(left: f64, right: f64) -> Ordering {
     left.partial_cmp(&right).unwrap_or(Ordering::Equal)
 }
 
+/// Groups page glyphs into lines by clustering on vertical position and sorting horizontally.
 fn group_pdf_page_lines(page: &PdfLayoutPage) -> Vec<PdfLine> {
     let mut glyphs = page.glyphs.clone();
     glyphs.sort_by(|left, right| {
@@ -300,6 +322,7 @@ pub(super) struct PdfLineRole {
     pub(super) text_indent: Option<String>,
 }
 
+/// Classifies a PDF line as heading, centered, or body text based on font size and position.
 pub(super) fn classify_pdf_line(line: &PdfLine, body_font_size: f64, typical_left: f64) -> PdfLineRole {
     let font_ratio = line.font_size / body_font_size.max(1.0);
     let line_width = line.x_max - line.x_min;
@@ -493,6 +516,7 @@ fn detected_pdf_table_row_from_line(line: &PdfLine) -> Vec<String> {
         .collect()
 }
 
+/// Detects a contiguous run of lines that form a table based on consistent column alignment.
 pub(super) fn detect_pdf_table_run(
     lines: &[PdfLine],
     start: usize,
@@ -541,6 +565,7 @@ pub(super) fn detect_pdf_table_run(
     }
 }
 
+/// Converts detected table rows into a reader table content block and appends it.
 pub(super) fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, detected_rows: &[Vec<String>]) {
     let rows = detected_rows
         .iter()
@@ -608,6 +633,8 @@ fn join_pdf_continuation(previous: &mut String, next: &str) {
     }
 }
 
+/// Converts a layout document into linear text and content blocks, handling paragraph
+/// continuation across page boundaries and table detection.
 fn pdf_layout_to_text_blocks(document: &PdfLayoutDocument) -> (String, Vec<ReaderContentBlock>) {
     let mut lines = document
         .pages
@@ -799,6 +826,7 @@ pub(super) fn pdf_notice_payload(
     }
 }
 
+/// Extracts a reader import payload from a PDF file's raw bytes.
 pub(super) fn extract_pdf_payload(
     bytes: &[u8],
     file_name: String,

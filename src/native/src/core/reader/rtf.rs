@@ -1,12 +1,32 @@
+//! RTF (Rich Text Format) import.
+//!
+//! Parses RTF control words and groups to extract paragraphs, inline styles (bold, italic,
+//! underline, strikethrough), and tables into canonical reader content blocks. Handles
+//! character encoding negotiation including ANSI codepages and Unicode escape sequences.
+
 use uuid::Uuid;
 
-use super::{
+use crate::core::reader::{
     append_linear_block, decode_reader_text, decode_with_encoding,
     default_canonical_schema_version, docx_table_text, normalize_line_endings,
-    title_from_file_stem, utf16_len, ReaderBlockExtensions, ReaderContentBlock,
+    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderContentBlock,
     ReaderImportPayload, ReaderInlineSpan, ReaderTableCell, ReaderTableExtension, ReaderTableRow,
     RTF_EXTRACTOR_VERSION,
 };
+
+/// RTF (Rich Text Format) extractor implementing [`FormatExtractor`].
+pub(crate) struct RtfFormat;
+
+impl FormatExtractor for RtfFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        extract_rtf_payload(bytes, file_name, hash, byte_len)
+    }
+}
 
 #[derive(Debug, Clone, Default)]
 struct RtfTextStyle {
@@ -355,6 +375,11 @@ fn apply_rtf_control(
     None
 }
 
+/// Parses a decoded RTF string into linear text and content blocks.
+///
+/// Walks the RTF control word stream maintaining a style/group stack, emitting paragraphs
+/// and tables as they close. Codepage and Unicode control words are handled for correct
+/// character decoding.
 fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), String> {
     if !input.trim_start().starts_with("{\\rtf") {
         return Err("RTF file did not start with a valid RTF header.".to_string());
@@ -567,6 +592,7 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
     Ok((linear_text, blocks))
 }
 
+/// Extracts a reader import payload from an RTF file's raw bytes.
 pub(super) fn extract_rtf_payload(
     bytes: &[u8],
     file_name: String,

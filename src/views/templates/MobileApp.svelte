@@ -13,8 +13,7 @@
 	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
-	import { runStartupActions, telemetry } from '@/utils';
-	import { getRouteScreenName } from '@/utils/routeScreenName.js';
+	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
 
 	runStartupActions();
 
@@ -33,7 +32,7 @@
 
 	const routeScreenNames: Record<string, string> = {
 		'/': 'search',
-		'/read': 'reader-library',
+		'/read': 'library',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',

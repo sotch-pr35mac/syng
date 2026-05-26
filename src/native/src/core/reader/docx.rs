@@ -1,3 +1,10 @@
+//! DOCX (Office Open XML) import.
+//!
+//! Parses Word documents by reading the ZIP archive's `word/document.xml` and extracting
+//! paragraphs, headings, lists, tables, and inline styles into canonical reader content blocks.
+//! Numbering definitions from `word/numbering.xml` and paragraph styles from `word/styles.xml`
+//! are resolved to produce accurate list ordering and heading levels.
+
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader as XmlReader;
 use std::collections::HashMap;
@@ -5,13 +12,28 @@ use std::io::{Cursor, Read};
 use uuid::Uuid;
 use zip;
 
-use super::{
+use crate::core::reader::{
     append_linear_block, default_canonical_schema_version, normalize_line_endings,
-    title_from_file_stem, utf16_len, ReaderBlockExtensions, ReaderContentBlock,
+    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderContentBlock,
     ReaderImportPayload, ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell,
     ReaderTableExtension, ReaderTableRow, DOCX_EXTRACTOR_VERSION,
 };
 
+/// DOCX (Office Open XML) format extractor implementing [`FormatExtractor`].
+pub(crate) struct DocxFormat;
+
+impl FormatExtractor for DocxFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        extract_docx_payload(bytes, file_name, hash, byte_len)
+    }
+}
+
+/// Accumulated inline formatting state for the current XML run (`<w:r>`).
 #[derive(Debug, Clone, Default)]
 struct DocxRunStyle {
     strong: bool,
@@ -22,6 +44,7 @@ struct DocxRunStyle {
     superscript: bool,
 }
 
+/// Block-level style metadata resolved from `<w:pPr>` and style definitions.
 #[derive(Debug, Clone, Default)]
 struct DocxParagraphStyle {
     heading_level: Option<u8>,
@@ -32,6 +55,7 @@ struct DocxParagraphStyle {
     ordinal: Option<i64>,
 }
 
+/// Accumulates text and inline spans for a single paragraph during XML traversal.
 #[derive(Debug, Clone, Default)]
 struct DocxParagraphBuilder {
     text: String,
@@ -224,6 +248,7 @@ struct DocxStyleDefinition {
 
 type DocxStyleMap = HashMap<String, DocxParagraphStyle>;
 
+/// Parses `word/numbering.xml` to build a map from `(numId, ilvl)` to list style and start value.
 fn parse_docx_numbering(xml: &str) -> DocxNumberingMap {
     let mut reader = XmlReader::from_str(xml);
     reader.config_mut().trim_text(false);
@@ -369,6 +394,7 @@ fn resolve_docx_style(
     Some(resolved)
 }
 
+/// Parses `word/styles.xml` and resolves style inheritance chains (`basedOn`) into flat styles.
 fn parse_docx_styles(xml: &str, numbering: &DocxNumberingMap) -> DocxStyleMap {
     let mut reader = XmlReader::from_str(xml);
     reader.config_mut().trim_text(false);
@@ -481,6 +507,7 @@ fn append_docx_paragraph(
     );
 }
 
+/// Produces a tab/newline-delimited plain text representation of a table for linear text.
 pub(super) fn docx_table_text(rows: &[ReaderTableRow]) -> String {
     rows.iter()
         .map(|row| {
@@ -527,6 +554,7 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
     None
 }
 
+/// Walks `word/document.xml` producing linear text and content blocks.
 fn parse_docx_document(
     xml: &str,
     numbering: &DocxNumberingMap,
@@ -782,6 +810,7 @@ fn apply_docx_numbering(
     paragraph
 }
 
+/// Extracts a reader import payload from a DOCX file's raw bytes.
 pub(super) fn extract_docx_payload(
     bytes: &[u8],
     file_name: String,

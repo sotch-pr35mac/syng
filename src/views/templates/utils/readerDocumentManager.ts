@@ -1,3 +1,5 @@
+// Progress anchors store a short exact/prefix/suffix quote so saved positions can
+// be reconciled even when pagination changes.
 import type {
 	ReaderAssetAttachmentInput,
 	ReaderDocument,
@@ -12,6 +14,7 @@ const RANDOM_ID_END = 10;
 const NOT_FOUND_STATUS = 404;
 const SOURCE_ATTACHMENT_ID = 'source';
 const SOURCE_HTML_ATTACHMENT_ID = 'source-html';
+// Imported EPUB/PDF image assets are stored as PouchDB attachments under this prefix.
 const READER_ASSET_PREFIX = 'assets/';
 
 interface PouchDocument {

@@ -24,12 +24,21 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_http::reqwest;
 
-use docx::extract_docx_payload;
-use epub::extract_epub_payload;
+use docx::DocxFormat;
+use epub::EpubFormat;
 use html::{html_declared_charset, html_to_blocks};
+use pdf::PdfFormat;
+use rtf::RtfFormat;
+use text::{extract_plain_text_document, infer_plain_text_title, PlainTextFormat};
+
+#[cfg(test)]
+use docx::extract_docx_payload;
+#[cfg(test)]
+use epub::extract_epub_payload;
+#[cfg(test)]
 use pdf::extract_pdf_payload;
+#[cfg(test)]
 use rtf::extract_rtf_payload;
-use text::{extract_plain_text_document, infer_plain_text_title};
 
 use docx::docx_table_text;
 use html::append_linear_block;
@@ -53,6 +62,20 @@ const PDF_IMPORT_EXTENSIONS: &[&str] = &["pdf"];
 const HTML_IMPORT_EXTENSIONS: &[&str] = &["html", "htm"];
 const DOCX_IMPORT_EXTENSIONS: &[&str] = &["docx"];
 const RTF_IMPORT_EXTENSIONS: &[&str] = &["rtf"];
+
+/// A file format that can be imported into the reader.
+///
+/// Implementors extract structured content blocks and linear text from raw file bytes,
+/// producing a [`ReaderImportPayload`] ready for frontend consumption.
+pub(crate) trait FormatExtractor {
+    /// Extract a reader import payload from the raw bytes of a file.
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String>;
+}
 
 fn default_canonical_schema_version() -> u8 {
     1
@@ -458,6 +481,20 @@ fn extract_html_file_payload(
     })
 }
 
+/// HTML file binary format extractor.
+struct HtmlFileFormat;
+
+impl FormatExtractor for HtmlFileFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        extract_html_file_payload(bytes, file_name, hash, byte_len)
+    }
+}
+
 fn prepare_from_html(
     html: &str,
     title_override: Option<&str>,
@@ -513,41 +550,33 @@ fn prepare_from_bytes(
     let byte_len = bytes.len() as u64;
 
     if TEXT_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/plain" {
-        let raw_text = decode_reader_text(bytes, None)?;
-        let mut payload = extract_plain_text_document(
-            title_from_file_stem(file_name),
-            file_name.to_string(),
-            raw_text,
-        );
-        payload.source_sha256 = Some(hash);
-        payload.source_byte_length = Some(byte_len);
-        return Ok(payload);
+        return PlainTextFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if DOCX_IMPORT_EXTENSIONS.contains(&extension.as_str())
         || mime_lower == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     {
-        return extract_docx_payload(bytes, file_name.to_string(), hash, byte_len);
+        return DocxFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if RTF_IMPORT_EXTENSIONS.contains(&extension.as_str())
         || mime_lower == "application/rtf"
         || mime_lower == "text/rtf"
     {
-        return extract_rtf_payload(bytes, file_name.to_string(), hash, byte_len);
+        return RtfFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if EPUB_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/epub+zip"
     {
-        return extract_epub_payload(bytes, file_name.to_string(), hash, byte_len);
+        return EpubFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if PDF_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/pdf" {
-        return extract_pdf_payload(bytes, file_name.to_string(), hash, byte_len);
+        return PdfFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     if HTML_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/html" {
-        return extract_html_file_payload(bytes, file_name.to_string(), hash, byte_len);
+        return HtmlFileFormat::extract(bytes, file_name.to_string(), hash, byte_len);
     }
 
     Err(format!(
