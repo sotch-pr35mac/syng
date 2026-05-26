@@ -132,6 +132,5 @@
 		height: 100%;
 		opacity: 0;
 		cursor: pointer;
-		pointer-events: none;
 	}
 </style>
