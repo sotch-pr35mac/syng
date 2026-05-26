@@ -3,17 +3,17 @@
 	import {
 		ChevronLeft,
 		ChevronRight,
-		Minus,
-		Palette,
-		Plus,
+		SlidersHorizontal,
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
+	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
+	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
 		getReaderColorThemeSettings,
-		READER_COLOR_THEMES,
 		READER_FONT_SIZE_MAX_PERCENT,
 		READER_FONT_SIZE_MIN_PERCENT,
 	} from '@/reader/settings/defaults.js';
@@ -88,6 +88,9 @@
 			`--reader-table-max-height: ${pageContentHeight ? `${pageContentHeight * READER_TABLE_MAX_HEIGHT_RATIO}px` : 'none'}`,
 		].join(';')
 	);
+	let readerSettingsPopoverVisible = $state(false);
+	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
+	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
 	let gestureStartX = 0;
 	let gestureStartY = 0;
 	let pageElement = $state<HTMLElement | undefined>(undefined);
@@ -214,6 +217,19 @@
 			styles.push('writing-mode: vertical-rl');
 		}
 		return styles.length ? styles.join(';') : undefined;
+	}
+
+	function toggleReaderSettingsPopover(event: MouseEvent): void {
+		if (!(event.currentTarget instanceof HTMLElement)) {
+			return;
+		}
+		readerSettingsButtonElement = event.currentTarget;
+		readerSettingsPopoverAnchor = event.currentTarget.getBoundingClientRect();
+		readerSettingsPopoverVisible = !readerSettingsPopoverVisible;
+	}
+
+	function closeReaderSettingsPopover(): void {
+		readerSettingsPopoverVisible = false;
 	}
 
 	function backToLibrary(): void {
@@ -403,60 +419,49 @@
 				<ChevronLeft size="18" />
 			</SyButton>
 			<span class="mobile-reader-document__document-title">{activeDocument.title}</span>
-			<span class="mobile-reader-document__page-count">
-				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
-			</span>
-		</div>
-		<div class="mobile-reader-document__settings-bar" aria-label="Reader settings">
-			<div class="mobile-reader-document__theme-controls" aria-label="Reader theme">
-				{#each READER_COLOR_THEMES as theme (theme.id)}
-					{@const resolvedTheme = getReaderColorTheme(theme.id, systemPrefersDark)}
-					<button
-						type="button"
-						class="mobile-reader-document__theme-button"
-						class:mobile-reader-document__theme-button--active={readerSettings.colorTheme ===
-							theme.id}
-						aria-label={`Use ${theme.label} reader theme`}
-						aria-pressed={readerSettings.colorTheme === theme.id}
-						title={theme.label}
-						onclick={() => setReaderTheme(theme.id)}
-					>
-						<span
-							class="mobile-reader-document__theme-swatch"
-							style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
-							aria-hidden="true"
-						>
-							<Palette size="13" />
-						</span>
-					</button>
-				{/each}
-			</div>
-			<div class="mobile-reader-document__font-controls" aria-label="Reader font size">
-				<button
-					type="button"
-					class="mobile-reader-document__font-button"
-					disabled={!canDecreaseFontSize}
-					aria-label="Decrease reader font size"
-					onclick={() => changeReaderFontSize('decrease')}
-				>
-					<Minus size="15" />
-					<span>A</span>
-				</button>
-				<span class="mobile-reader-document__font-size-value" aria-label="Reader font size">
-					{readerSettings.fontSizePercent}%
+			<div class="mobile-reader-document__header-actions">
+				<span class="mobile-reader-document__page-count">
+					{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
 				</span>
-				<button
-					type="button"
-					class="mobile-reader-document__font-button"
-					disabled={!canIncreaseFontSize}
-					aria-label="Increase reader font size"
-					onclick={() => changeReaderFontSize('increase')}
+				<SyButton
+					style="ghost"
+					size="small"
+					aria-label="Reader settings"
+					aria-pressed={readerSettingsPopoverVisible}
+					onclick={toggleReaderSettingsPopover}
 				>
-					<Plus size="15" />
-					<span>A</span>
-				</button>
+					<SlidersHorizontal size="18" />
+				</SyButton>
 			</div>
 		</div>
+		<SyPopover
+			visible={readerSettingsPopoverVisible}
+			anchor={readerSettingsPopoverAnchor}
+			ignoreElement={readerSettingsButtonElement}
+			horizontalAlign="end"
+			mobileTitle="Reader settings"
+			onclose={closeReaderSettingsPopover}
+		>
+			<div class="mobile-reader-document__settings-popover" aria-label="Reader settings">
+				<div class="mobile-reader-document__settings-section">
+					<span class="mobile-reader-document__settings-label">Theme</span>
+					<ReaderThemeSelector
+						colorTheme={readerSettings.colorTheme}
+						{systemPrefersDark}
+						onchange={setReaderTheme}
+					/>
+				</div>
+				<div class="mobile-reader-document__settings-section">
+					<span class="mobile-reader-document__settings-label">Text size</span>
+					<ReaderTextSizeSelector
+						fontSizePercent={readerSettings.fontSizePercent}
+						canDecrease={canDecreaseFontSize}
+						canIncrease={canIncreaseFontSize}
+						onchange={changeReaderFontSize}
+					/>
+				</div>
+			</div>
+		</SyPopover>
 		<main class="mobile-reader-document__stage" onpointerdown={onPointerDown} onpointerup={onPointerUp}>
 			<button
 				class="mobile-reader-document__page-turn mobile-reader-document__page-turn--previous"
@@ -671,93 +676,48 @@
 	}
 
 	.mobile-reader-document__reader-header {
-		display: grid;
-		grid-template-columns: 52px 1fr 52px;
-		align-items: center;
-		height: 54px;
-		background: var(--sy-color--white);
-		border-bottom: var(--sy-border);
-	}
-
-	.mobile-reader-document__settings-bar {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: var(--sy-mobile-space--medium);
-		height: 50px;
-		padding: var(--sy-mobile-space--small) var(--sy-mobile-space--medium);
-		background: var(--reader-stage-background, var(--sy-color--grey-2));
-		border-bottom: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
+		gap: var(--sy-mobile-space--small);
+		height: 54px;
+		padding: 0 var(--sy-mobile-space--small);
+		background: var(--sy-color--white);
+		border-bottom: var(--sy-border);
 		box-sizing: border-box;
-		color: var(--reader-control-text, var(--sy-color--grey-4));
 	}
 
-	.mobile-reader-document__theme-controls,
-	.mobile-reader-document__font-controls {
-		display: inline-flex;
+	.mobile-reader-document__header-actions {
+		display: flex;
 		align-items: center;
-		min-width: 0;
-		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		border-radius: var(--sy-border-radius);
-		background: var(--reader-control-background, rgb(255 255 255 / 84%));
-		overflow: hidden;
+		gap: var(--sy-mobile-space--small);
+		flex-shrink: 0;
 	}
 
-	.mobile-reader-document__theme-button,
-	.mobile-reader-document__font-button {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--sy-mobile-space--extra-small);
-		min-width: 38px;
-		height: 38px;
-		border: 0;
-		border-right: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		padding: 0 var(--sy-mobile-space--medium);
-		background: transparent;
-		color: inherit;
+	.mobile-reader-document__settings-popover {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-mobile-space--large);
+		padding: var(--sy-mobile-space--large);
+		box-sizing: border-box;
+		color: var(--sy-color--grey-4);
+	}
+
+	.mobile-reader-document__settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-mobile-space--small);
+	}
+
+	.mobile-reader-document__settings-label {
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-small);
-	}
-
-	.mobile-reader-document__theme-button:last-child,
-	.mobile-reader-document__font-button:last-child {
-		border-right: 0;
-	}
-
-	.mobile-reader-document__theme-button--active,
-	.mobile-reader-document__theme-button:active,
-	.mobile-reader-document__font-button:active:not(:disabled) {
-		color: var(--reader-link-color, var(--sy-color--blue));
-		background: rgb(128 128 128 / 14%);
-	}
-
-	.mobile-reader-document__theme-button:disabled,
-	.mobile-reader-document__font-button:disabled {
-		opacity: 0.45;
-	}
-
-	.mobile-reader-document__theme-swatch {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 22px;
-		height: 22px;
-		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		border-radius: 50%;
-		box-sizing: border-box;
-	}
-
-	.mobile-reader-document__font-size-value {
-		min-width: 42px;
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
-		font-size: var(--sy-font-size--mobile-small);
-		text-align: center;
+		font-weight: var(--sy-font-weight--medium);
+		color: var(--sy-color--grey-4);
 	}
 
 	.mobile-reader-document__document-title {
-		justify-self: center;
-		max-width: 100%;
+		flex: 1;
+		min-width: 0;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		color: var(--sy-color--grey-4);
@@ -766,16 +726,16 @@
 	}
 
 	.mobile-reader-document__page-count {
-		justify-self: center;
 		color: var(--sy-color--grey-3);
 		font-size: var(--sy-font-size--mobile-small);
+		white-space: nowrap;
 	}
 
 	.mobile-reader-document__stage {
 		--mobile-reader-stage-padding: var(--sy-mobile-space--medium);
 
 		position: relative;
-		height: calc(100% - 104px);
+		height: calc(100% - 54px);
 		padding: var(--mobile-reader-stage-padding);
 		box-sizing: border-box;
 		overflow: hidden;

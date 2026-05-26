@@ -3,21 +3,18 @@
 	import {
 		ChevronLeft,
 		ChevronRight,
-		Minus,
-		Palette,
-		Plus,
 		SlidersHorizontal,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
+	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
+	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
 		getReaderColorThemeSettings,
-		READER_COLOR_THEMES,
 		READER_FONT_SIZE_MAX_PERCENT,
 		READER_FONT_SIZE_MIN_PERCENT,
 	} from '@/reader/settings/defaults.js';
@@ -435,71 +432,20 @@
 				<div class="reader__settings-popover" aria-label="Reader settings">
 					<div class="reader__settings-section">
 						<span class="reader__settings-label">Theme</span>
-						<SyButtonBar size="large" aria-label="Reader theme">
-							{#each READER_COLOR_THEMES as theme (theme.id)}
-								{@const resolvedTheme = getReaderColorTheme(
-									theme.id,
-									systemPrefersDark
-								)}
-								<SyButton
-									grouped={true}
-									center={true}
-									color={readerSettings.colorTheme === theme.id
-										? 'blue'
-										: undefined}
-									aria-label={`Use ${theme.label} reader theme`}
-									aria-pressed={readerSettings.colorTheme === theme.id}
-									title={theme.label}
-									onclick={() => setReaderTheme(theme.id)}
-								>
-									<span class="reader__theme-button-content">
-										<span
-											class="reader__theme-swatch"
-											style={`background:${resolvedTheme.backgroundColor};color:${resolvedTheme.textColor};`}
-											aria-hidden="true"
-										>
-											<Palette size="14" />
-										</span>
-										<span>{theme.label}</span>
-									</span>
-								</SyButton>
-							{/each}
-						</SyButtonBar>
+						<ReaderThemeSelector
+							colorTheme={readerSettings.colorTheme}
+							{systemPrefersDark}
+							onchange={setReaderTheme}
+						/>
 					</div>
 					<div class="reader__settings-section">
 						<span class="reader__settings-label">Text size</span>
-						<SyButtonBar size="large" aria-label="Reader font size">
-							<SyButton
-								grouped={true}
-								center={true}
-								disabled={!canDecreaseFontSize}
-								aria-label="Decrease reader font size"
-								onclick={() => changeReaderFontSize('decrease')}
-							>
-								<Minus size="16" />
-								<span>A</span>
-							</SyButton>
-							<SyButton
-								grouped={true}
-								center={true}
-								disabled={true}
-								disableHoverActions={true}
-								classes={['reader__font-size-value']}
-								aria-label={`Reader font size: ${readerSettings.fontSizePercent}%`}
-							>
-								{readerSettings.fontSizePercent}%
-							</SyButton>
-							<SyButton
-								grouped={true}
-								center={true}
-								disabled={!canIncreaseFontSize}
-								aria-label="Increase reader font size"
-								onclick={() => changeReaderFontSize('increase')}
-							>
-								<Plus size="16" />
-								<span>A</span>
-							</SyButton>
-						</SyButtonBar>
+						<ReaderTextSizeSelector
+							fontSizePercent={readerSettings.fontSizePercent}
+							canDecrease={canDecreaseFontSize}
+							canIncrease={canIncreaseFontSize}
+							onchange={changeReaderFontSize}
+						/>
 					</div>
 				</div>
 			</SyPopover>
@@ -836,29 +782,6 @@
 		font-size: 0.78rem;
 		font-weight: var(--sy-font-weight--medium);
 		color: var(--sy-color--grey-4);
-	}
-
-	.reader__theme-button-content {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sy-space);
-		font-size: 0.82rem;
-	}
-
-	.reader__theme-swatch {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border: 1px solid var(--reader-border-color, var(--sy-color--grey-2));
-		border-radius: 50%;
-		box-sizing: border-box;
-	}
-
-	:global(.reader__font-size-value) {
-		min-width: 64px;
-		color: var(--sy-color--black);
 	}
 
 	.reader__stage {
