@@ -28,7 +28,7 @@ it('backfills reader settings into existing preference documents', async () => {
 
 	expect(manager.get('readerSettings')).toEqual(
 		expect.objectContaining({
-			colorTheme: 'light',
+			colorTheme: 'automatic',
 			fontSizePercent: 100,
 			backgroundColor: '#ffffff',
 			textColor: '#171717',

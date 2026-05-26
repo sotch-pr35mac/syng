@@ -65,7 +65,7 @@ it('tracks screen views for mobile route changes', async () => {
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('bookmarks'));
 
 	await user.click(getByText('Read'));
-	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('reader'));
+	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('library'));
 
 	await user.click(getByText('Study'));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));
