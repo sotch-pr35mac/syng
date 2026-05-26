@@ -2,20 +2,18 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import {
-		CheckCircle2,
 		ChevronDown,
 		ChevronUp,
-		Circle,
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
 		Library,
-		Pencil,
 		Trash2,
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
+	import ReaderBookCard from '@/components/ReaderBookCard.svelte';
 	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
 	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
 	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
@@ -28,9 +26,6 @@
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
-	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
-
-	const PERCENTAGE_SCALE = 100;
 	const READER_IMPORT_ACTIONS = {
 		FILE: 'file',
 		WEBPAGE: 'webpage',
@@ -166,11 +161,6 @@
 		}
 	}
 
-	function getDocumentProgressPercent(document: ReaderDocument): number {
-		const progression = document.progress?.total_progression ?? 0;
-		return Math.round(Math.max(0, Math.min(1, progression)) * PERCENTAGE_SCALE);
-	}
-
 	async function deleteSelectedDocuments(): Promise<void> {
 		const removed = await readerRoute.deleteDocuments(selectedDocuments);
 		if (removed) {
@@ -229,39 +219,14 @@
 		{#if documents.length}
 			<div class="mobile-reader__library-grid">
 				{#each documents as document (document._id)}
-					<div
-						class="mobile-reader__book"
-						class:mobile-reader__book--selected={selectedDocumentIds.has(
-							document._id
-						)}
-						style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
+					<ReaderBookCard
+						{document}
+						editing={editingLibrary}
+						selected={selectedDocumentIds.has(document._id)}
 						onclick={() => handleDocumentCardClick(document)}
 						onkeyup={(event) => handleDocumentCardKey(event, document)}
-						role="button"
-						tabindex="0"
-					>
-						{#if editingLibrary}
-							<span class="mobile-reader__selection-indicator">
-								{#if selectedDocumentIds.has(document._id)}
-									<CheckCircle2 size="22" />
-								{:else}
-									<Circle size="22" />
-								{/if}
-							</span>
-							<button
-								class="mobile-reader__metadata-button"
-								type="button"
-								aria-label={`Edit ${document.title}`}
-								onclick={(event) => openDocumentDetails(event, document)}
-							>
-								<Pencil size="15" />
-							</button>
-						{/if}
-						<span class="mobile-reader__book-name">{document.title}</span>
-						<span class="mobile-reader__book-meta">
-							{getDocumentProgressPercent(document)}% · {document.file_name}
-						</span>
-					</div>
+						onedit={(event) => openDocumentDetails(event, document)}
+					/>
 				{/each}
 			</div>
 		{:else}
@@ -393,104 +358,6 @@
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--sy-mobile-space--large);
-	}
-
-	.mobile-reader__book {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-end;
-		aspect-ratio: 2 / 3;
-		padding: var(--sy-mobile-space--medium);
-		border: var(--sy-mobile-surface-border);
-		border-radius: var(--sy-border-radius);
-		background:
-			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 10px, transparent 10px),
-			color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #ffffff);
-		box-shadow: var(--sy-shadow);
-		box-sizing: border-box;
-		color: var(--sy-color--grey-4);
-		font-family: var(--sy-font-family);
-		text-align: left;
-		cursor: pointer;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.mobile-reader__book {
-			background:
-				linear-gradient(90deg, rgb(0 0 0 / 12%) 0 10px, transparent 10px),
-				color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #000000);
-		}
-	}
-
-	.mobile-reader__book {
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-	}
-
-	.mobile-reader__book--selected {
-		border-color: var(--sy-color--blue);
-	}
-
-	.mobile-reader__book:disabled {
-		opacity: 0.7;
-	}
-
-	.mobile-reader__selection-indicator {
-		position: absolute;
-		top: var(--sy-mobile-space--medium);
-		right: var(--sy-mobile-space--medium);
-		color: var(--sy-color--blue);
-	}
-
-	.mobile-reader__metadata-button {
-		position: absolute;
-		top: var(--sy-mobile-space--medium);
-		left: var(--sy-mobile-space--medium);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		border: var(--sy-mobile-surface-border);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 86%);
-		color: var(--sy-color--grey-4);
-		box-shadow: var(--sy-shadow);
-	}
-
-	.mobile-reader__book-name,
-	.mobile-reader__book-meta {
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.mobile-reader__book-name {
-		display: -webkit-box;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		line-clamp: 3;
-		max-width: 100%;
-		padding: var(--sy-mobile-space--extra-small) var(--sy-mobile-space--small);
-		border-radius: var(--sy-border-radius);
-		background: rgb(255 255 255 / 78%);
-		color: var(--sy-color--black);
-		font-size: var(--sy-font-size--mobile-large);
-		font-weight: var(--sy-font-weight--medium);
-		line-height: 1.25;
-		overflow-wrap: anywhere;
-	}
-
-	.mobile-reader__book-meta {
-		position: absolute;
-		left: var(--sy-mobile-space--medium);
-		right: var(--sy-mobile-space--medium);
-		bottom: var(--sy-mobile-space--medium);
-		margin-top: var(--sy-mobile-space--extra-small);
-		color: var(--sy-color--grey-5);
-		font-size: var(--sy-font-size--mobile-small);
-		white-space: nowrap;
 	}
 
 	.mobile-reader__empty {

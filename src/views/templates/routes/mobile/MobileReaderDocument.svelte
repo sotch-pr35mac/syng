@@ -3,7 +3,6 @@
 	import {
 		ChevronLeft,
 		ChevronRight,
-		Library,
 		Minus,
 		Palette,
 		Plus,
@@ -401,7 +400,7 @@
 	{#if activeDocument && currentPage}
 		<div class="mobile-reader-document__reader-header">
 			<SyButton style="ghost" size="small" onclick={backToLibrary}>
-				<Library size="18" />
+				<ChevronLeft size="18" />
 			</SyButton>
 			<span class="mobile-reader-document__document-title">{activeDocument.title}</span>
 			<span class="mobile-reader-document__page-count">
