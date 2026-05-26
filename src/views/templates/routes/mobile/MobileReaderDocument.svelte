@@ -11,6 +11,7 @@
 	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
+	import { isIos } from '@/utils/device.js';
 	import {
 		getReaderColorTheme,
 		getReaderColorThemeSettings,
@@ -420,9 +421,6 @@
 			</SyButton>
 			<span class="mobile-reader-document__document-title">{activeDocument.title}</span>
 			<div class="mobile-reader-document__header-actions">
-				<span class="mobile-reader-document__page-count">
-					{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
-				</span>
 				<SyButton
 					style="ghost"
 					size="small"
@@ -481,6 +479,7 @@
 			<article
 				bind:this={pageElement}
 				class="mobile-reader-document__page mobile-reader-document__page--base"
+				class:mobile-reader-document__page--ios={isIos()}
 				class:mobile-reader-document__page--turning={turningPage}
 				class:mobile-reader-document__page--vertical={activeDocumentVerticalWriting}
 			>
@@ -652,6 +651,9 @@
 			>
 				<ChevronRight size="24" />
 			</button>
+			<span class="mobile-reader-document__page-count">
+				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
+			</span>
 		</main>
 	{/if}
 </div>
@@ -726,7 +728,11 @@
 	}
 
 	.mobile-reader-document__page-count {
-		color: var(--sy-color--grey-3);
+		position: absolute;
+		bottom: var(--sy-mobile-space--large);
+		left: 50%;
+		transform: translateX(-50%);
+		color: var(--reader-muted-text, var(--sy-color--grey-3));
 		font-size: var(--sy-font-size--mobile-small);
 		white-space: nowrap;
 	}
@@ -762,6 +768,13 @@
 	.mobile-reader-document__page *::selection {
 		background: var(--reader-selection-background, #dbeafe);
 		color: var(--reader-selection-text, #111827);
+	}
+
+	.mobile-reader-document__page--ios {
+		--ios-border-radius: 62px;
+
+		border-radius: var(--sy-border-radius) var(--sy-border-radius)
+			var(--ios-border-radius) var(--ios-border-radius);
 	}
 
 	.mobile-reader-document__page--base {
