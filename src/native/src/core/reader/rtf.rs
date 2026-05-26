@@ -24,7 +24,28 @@ impl FormatExtractor for RtfFormat {
         hash: String,
         byte_len: u64,
     ) -> Result<ReaderImportPayload, String> {
-        extract_rtf_payload(bytes, file_name, hash, byte_len)
+        let raw = decode_reader_text(bytes, None)?;
+        let (text, blocks) = parse_rtf_document(&raw)?;
+        if text.trim().is_empty() && blocks.is_empty() {
+            return Err("RTF document did not contain readable text.".to_string());
+        }
+
+        Ok(ReaderImportPayload {
+            canonical_schema_version: default_canonical_schema_version(),
+            title: title_from_file_stem(&file_name),
+            file_name,
+            source_type: "rtf".to_string(),
+            mime_type: "application/rtf".to_string(),
+            extractor_version: RTF_EXTRACTOR_VERSION,
+            text,
+            blocks,
+            source_sha256: Some(hash),
+            source_byte_length: Some(byte_len),
+            source_url: None,
+            source_html: None,
+            source_data: None,
+            import_app_version: None,
+        })
     }
 }
 
@@ -592,33 +613,3 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
     Ok((linear_text, blocks))
 }
 
-/// Extracts a reader import payload from an RTF file's raw bytes.
-pub(super) fn extract_rtf_payload(
-    bytes: &[u8],
-    file_name: String,
-    hash: String,
-    byte_len: u64,
-) -> Result<ReaderImportPayload, String> {
-    let raw = decode_reader_text(bytes, None)?;
-    let (text, blocks) = parse_rtf_document(&raw)?;
-    if text.trim().is_empty() && blocks.is_empty() {
-        return Err("RTF document did not contain readable text.".to_string());
-    }
-
-    Ok(ReaderImportPayload {
-        canonical_schema_version: default_canonical_schema_version(),
-        title: title_from_file_stem(&file_name),
-        file_name,
-        source_type: "rtf".to_string(),
-        mime_type: "application/rtf".to_string(),
-        extractor_version: RTF_EXTRACTOR_VERSION,
-        text,
-        blocks,
-        source_sha256: Some(hash),
-        source_byte_length: Some(byte_len),
-        source_url: None,
-        source_html: None,
-        source_data: None,
-        import_app_version: None,
-    })
-}

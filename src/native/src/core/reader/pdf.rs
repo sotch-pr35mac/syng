@@ -25,7 +25,35 @@ impl FormatExtractor for PdfFormat {
         hash: String,
         byte_len: u64,
     ) -> Result<ReaderImportPayload, String> {
-        extract_pdf_payload(bytes, file_name, hash, byte_len)
+        let document = match extract_pdf_layout_with(|| extract_pdf_layout_from_mem(bytes)) {
+            Ok(document) => document,
+            Err(PdfExtractionFailure::Unreadable(error)) => return Err(error),
+        };
+        let (text, blocks) = pdf_layout_to_text_blocks(&document);
+        let (text, blocks) = if text.trim().is_empty() {
+            let notice =
+                "This PDF does not contain extractable text (it may be scanned or image-only).";
+            return Ok(pdf_notice_payload(file_name, hash, byte_len, notice));
+        } else {
+            (normalize_line_endings(&text), blocks)
+        };
+
+        Ok(ReaderImportPayload {
+            canonical_schema_version: default_canonical_schema_version(),
+            title: title_from_file_stem(&file_name),
+            file_name,
+            source_type: "pdf".to_string(),
+            mime_type: "application/pdf".to_string(),
+            extractor_version: PDF_EXTRACTOR_VERSION,
+            text,
+            blocks,
+            source_sha256: Some(hash),
+            source_byte_length: Some(byte_len),
+            source_url: None,
+            source_html: None,
+            source_data: None,
+            import_app_version: None,
+        })
     }
 }
 
@@ -826,40 +854,3 @@ pub(super) fn pdf_notice_payload(
     }
 }
 
-/// Extracts a reader import payload from a PDF file's raw bytes.
-pub(super) fn extract_pdf_payload(
-    bytes: &[u8],
-    file_name: String,
-    hash: String,
-    byte_len: u64,
-) -> Result<ReaderImportPayload, String> {
-    let document = match extract_pdf_layout_with(|| extract_pdf_layout_from_mem(bytes)) {
-        Ok(document) => document,
-        Err(PdfExtractionFailure::Unreadable(error)) => return Err(error),
-    };
-    let (text, blocks) = pdf_layout_to_text_blocks(&document);
-    let (text, blocks) = if text.trim().is_empty() {
-        let notice =
-            "This PDF does not contain extractable text (it may be scanned or image-only).";
-        return Ok(pdf_notice_payload(file_name, hash, byte_len, notice));
-    } else {
-        (normalize_line_endings(&text), blocks)
-    };
-
-    Ok(ReaderImportPayload {
-        canonical_schema_version: default_canonical_schema_version(),
-        title: title_from_file_stem(&file_name),
-        file_name,
-        source_type: "pdf".to_string(),
-        mime_type: "application/pdf".to_string(),
-        extractor_version: PDF_EXTRACTOR_VERSION,
-        text,
-        blocks,
-        source_sha256: Some(hash),
-        source_byte_length: Some(byte_len),
-        source_url: None,
-        source_html: None,
-        source_data: None,
-        import_app_version: None,
-    })
-}

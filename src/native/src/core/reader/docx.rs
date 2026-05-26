@@ -29,7 +29,65 @@ impl FormatExtractor for DocxFormat {
         hash: String,
         byte_len: u64,
     ) -> Result<ReaderImportPayload, String> {
-        extract_docx_payload(bytes, file_name, hash, byte_len)
+        let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
+            .map_err(|error| format!("Could not open Word document archive: {}", error))?;
+
+        let mut document_xml = String::new();
+        archive
+            .by_name("word/document.xml")
+            .map_err(|_| "Word document is missing word/document.xml.".to_string())?
+            .read_to_string(&mut document_xml)
+            .map_err(|error| format!("Could not read Word document XML: {}", error))?;
+
+        let core_title = archive
+            .by_name("docProps/core.xml")
+            .ok()
+            .and_then(|mut file| {
+                let mut xml = String::new();
+                file.read_to_string(&mut xml).ok()?;
+                parse_docx_core_title(&xml)
+            });
+        let numbering = archive
+            .by_name("word/numbering.xml")
+            .ok()
+            .and_then(|mut file| {
+                let mut xml = String::new();
+                file.read_to_string(&mut xml).ok()?;
+                Some(parse_docx_numbering(&xml))
+            })
+            .unwrap_or_default();
+        let styles = archive
+            .by_name("word/styles.xml")
+            .ok()
+            .and_then(|mut file| {
+                let mut xml = String::new();
+                file.read_to_string(&mut xml).ok()?;
+                Some(parse_docx_styles(&xml, &numbering))
+            })
+            .unwrap_or_default();
+
+        let (text, blocks) = parse_docx_document(&document_xml, &numbering, &styles)?;
+        if text.trim().is_empty() && blocks.is_empty() {
+            return Err("Word document did not contain readable text.".to_string());
+        }
+
+        Ok(ReaderImportPayload {
+            canonical_schema_version: default_canonical_schema_version(),
+            title: core_title.unwrap_or_else(|| title_from_file_stem(&file_name)),
+            file_name,
+            source_type: "docx".to_string(),
+            mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                .to_string(),
+            extractor_version: DOCX_EXTRACTOR_VERSION,
+            text,
+            blocks,
+            source_sha256: Some(hash),
+            source_byte_length: Some(byte_len),
+            source_url: None,
+            source_html: None,
+            source_data: None,
+            import_app_version: None,
+        })
     }
 }
 
@@ -810,70 +868,3 @@ fn apply_docx_numbering(
     paragraph
 }
 
-/// Extracts a reader import payload from a DOCX file's raw bytes.
-pub(super) fn extract_docx_payload(
-    bytes: &[u8],
-    file_name: String,
-    hash: String,
-    byte_len: u64,
-) -> Result<ReaderImportPayload, String> {
-    let mut archive = zip::ZipArchive::new(Cursor::new(bytes))
-        .map_err(|error| format!("Could not open Word document archive: {}", error))?;
-
-    let mut document_xml = String::new();
-    archive
-        .by_name("word/document.xml")
-        .map_err(|_| "Word document is missing word/document.xml.".to_string())?
-        .read_to_string(&mut document_xml)
-        .map_err(|error| format!("Could not read Word document XML: {}", error))?;
-
-    let core_title = archive
-        .by_name("docProps/core.xml")
-        .ok()
-        .and_then(|mut file| {
-            let mut xml = String::new();
-            file.read_to_string(&mut xml).ok()?;
-            parse_docx_core_title(&xml)
-        });
-    let numbering = archive
-        .by_name("word/numbering.xml")
-        .ok()
-        .and_then(|mut file| {
-            let mut xml = String::new();
-            file.read_to_string(&mut xml).ok()?;
-            Some(parse_docx_numbering(&xml))
-        })
-        .unwrap_or_default();
-    let styles = archive
-        .by_name("word/styles.xml")
-        .ok()
-        .and_then(|mut file| {
-            let mut xml = String::new();
-            file.read_to_string(&mut xml).ok()?;
-            Some(parse_docx_styles(&xml, &numbering))
-        })
-        .unwrap_or_default();
-
-    let (text, blocks) = parse_docx_document(&document_xml, &numbering, &styles)?;
-    if text.trim().is_empty() && blocks.is_empty() {
-        return Err("Word document did not contain readable text.".to_string());
-    }
-
-    Ok(ReaderImportPayload {
-        canonical_schema_version: default_canonical_schema_version(),
-        title: core_title.unwrap_or_else(|| title_from_file_stem(&file_name)),
-        file_name,
-        source_type: "docx".to_string(),
-        mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            .to_string(),
-        extractor_version: DOCX_EXTRACTOR_VERSION,
-        text,
-        blocks,
-        source_sha256: Some(hash),
-        source_byte_length: Some(byte_len),
-        source_url: None,
-        source_html: None,
-        source_data: None,
-        import_app_version: None,
-    })
-}

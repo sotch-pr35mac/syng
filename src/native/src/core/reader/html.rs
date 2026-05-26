@@ -11,11 +11,48 @@ use tauri_plugin_http::reqwest;
 use uuid::Uuid;
 
 use crate::core::reader::{
-    collapse_whitespace, extract_text_blocks, normalize_line_endings, safe_remote_image_src,
-    sha256_hex, utf16_len, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
-    ReaderImageExtension, ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell,
-    ReaderTableExtension, ReaderTableRow,
+    collapse_whitespace, decode_reader_text, default_canonical_schema_version,
+    extract_text_blocks, normalize_line_endings, safe_remote_image_src, sha256_hex,
+    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions,
+    ReaderBlockStyleExtension, ReaderContentBlock, ReaderImageExtension, ReaderImportPayload,
+    ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell, ReaderTableExtension,
+    ReaderTableRow, HTML_EXTRACTOR_VERSION,
 };
+
+/// HTML file format extractor implementing [`FormatExtractor`].
+pub(crate) struct HtmlFileFormat;
+
+impl FormatExtractor for HtmlFileFormat {
+    fn extract(
+        bytes: &[u8],
+        file_name: String,
+        hash: String,
+        byte_len: u64,
+    ) -> Result<ReaderImportPayload, String> {
+        let html = decode_reader_text(bytes, html_declared_charset(bytes).as_deref())?;
+        let (text, blocks, html_title) = html_to_blocks(&html, None);
+        if text.trim().is_empty() && blocks.is_empty() {
+            return Err("HTML file did not contain readable text.".to_string());
+        }
+
+        Ok(ReaderImportPayload {
+            canonical_schema_version: default_canonical_schema_version(),
+            title: html_title.unwrap_or_else(|| title_from_file_stem(&file_name)),
+            file_name,
+            source_type: "html".to_string(),
+            mime_type: "text/html".to_string(),
+            extractor_version: HTML_EXTRACTOR_VERSION,
+            text,
+            blocks,
+            source_sha256: Some(hash),
+            source_byte_length: Some(byte_len),
+            source_url: None,
+            source_html: Some(html),
+            source_data: None,
+            import_app_version: None,
+        })
+    }
+}
 
 /// Sniffs the declared charset from the first 4 KiB of an HTML file's `<meta>` tags.
 pub(super) fn html_declared_charset(bytes: &[u8]) -> Option<String> {

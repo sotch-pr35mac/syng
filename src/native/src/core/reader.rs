@@ -26,19 +26,11 @@ use tauri_plugin_http::reqwest;
 
 use docx::DocxFormat;
 use epub::EpubFormat;
-use html::{html_declared_charset, html_to_blocks};
+use html::HtmlFileFormat;
+use html::html_to_blocks;
 use pdf::PdfFormat;
 use rtf::RtfFormat;
 use text::{extract_plain_text_document, infer_plain_text_title, PlainTextFormat};
-
-#[cfg(test)]
-use docx::extract_docx_payload;
-#[cfg(test)]
-use epub::extract_epub_payload;
-#[cfg(test)]
-use pdf::extract_pdf_payload;
-#[cfg(test)]
-use rtf::extract_rtf_payload;
 
 use docx::docx_table_text;
 use html::append_linear_block;
@@ -449,50 +441,6 @@ fn large_html_confirmation_error(received_bytes: usize) -> String {
         "message": "This webpage is unusually large. Importing it may use significant memory and storage."
     })
     .to_string()
-}
-
-fn extract_html_file_payload(
-    bytes: &[u8],
-    file_name: String,
-    hash: String,
-    byte_len: u64,
-) -> Result<ReaderImportPayload, String> {
-    let html = decode_reader_text(bytes, html_declared_charset(bytes).as_deref())?;
-    let (text, blocks, html_title) = html_to_blocks(&html, None);
-    if text.trim().is_empty() && blocks.is_empty() {
-        return Err("HTML file did not contain readable text.".to_string());
-    }
-
-    Ok(ReaderImportPayload {
-        canonical_schema_version: default_canonical_schema_version(),
-        title: html_title.unwrap_or_else(|| title_from_file_stem(&file_name)),
-        file_name,
-        source_type: "html".to_string(),
-        mime_type: "text/html".to_string(),
-        extractor_version: HTML_EXTRACTOR_VERSION,
-        text,
-        blocks,
-        source_sha256: Some(hash),
-        source_byte_length: Some(byte_len),
-        source_url: None,
-        source_html: Some(html),
-        source_data: None,
-        import_app_version: None,
-    })
-}
-
-/// HTML file binary format extractor.
-struct HtmlFileFormat;
-
-impl FormatExtractor for HtmlFileFormat {
-    fn extract(
-        bytes: &[u8],
-        file_name: String,
-        hash: String,
-        byte_len: u64,
-    ) -> Result<ReaderImportPayload, String> {
-        extract_html_file_payload(bytes, file_name, hash, byte_len)
-    }
 }
 
 fn prepare_from_html(
@@ -968,7 +916,7 @@ mod tests {
             ),
         );
 
-        let payload = extract_docx_payload(
+        let payload = DocxFormat::extract(
             &bytes,
             "sample.docx".to_string(),
             sha256_hex(&bytes),
@@ -1047,7 +995,7 @@ mod tests {
             ),
         );
 
-        let payload = extract_docx_payload(
+        let payload = DocxFormat::extract(
             &bytes,
             "numbered.docx".to_string(),
             sha256_hex(&bytes),
@@ -1103,7 +1051,7 @@ mod tests {
             ),
         );
 
-        let payload = extract_docx_payload(
+        let payload = DocxFormat::extract(
             &bytes,
             "styled-lists.docx".to_string(),
             sha256_hex(&bytes),
@@ -1133,7 +1081,7 @@ mod tests {
     fn rtf_import_preserves_paragraphs_alignment_unicode_and_inline_styles() {
         let bytes = b"{\\rtf1\\ansi\\uc1\n{\\fonttbl{\\f0 Helvetica;}}\n{\\info{\\title Hidden metadata}}\n\\pard\\qc\\b Title\\b0\\par\n\\pard Plain \\i italic \\i0 and \\ul underlined \\ulnone text.\\par\n\\pard Unicode: \\u20320?\\u22909?\\par\n}";
 
-        let payload = extract_rtf_payload(
+        let payload = RtfFormat::extract(
             bytes,
             "sample.rtf".to_string(),
             sha256_hex(bytes),
@@ -1184,7 +1132,7 @@ mod tests {
     #[test]
     fn rtf_import_preserves_basic_tables_and_legacy_chinese_codepage() {
         let bytes = br"{\rtf1\ansi\ansicpg936\trowd\intbl \'b4\'ca\cell \'d2\'e5\cell\row}";
-        let payload = extract_rtf_payload(
+        let payload = RtfFormat::extract(
             bytes,
             "table.rtf".to_string(),
             sha256_hex(bytes),
@@ -1548,7 +1496,7 @@ mod tests {
         assert_eq!(pages.len(), 1);
         assert!(pages[0].contains(text), "{:?}", pages[0]);
 
-        let payload = extract_pdf_payload(
+        let payload = PdfFormat::extract(
             &bytes,
             "unigb.pdf".to_string(),
             sha256_hex(&bytes),
@@ -1625,7 +1573,7 @@ mod tests {
 
         let mut bytes = Vec::new();
         doc.save_to(&mut bytes).expect("write pdf");
-        let payload = extract_pdf_payload(
+        let payload = PdfFormat::extract(
             &bytes,
             "layout.pdf".to_string(),
             sha256_hex(&bytes),
@@ -1744,7 +1692,7 @@ mod tests {
 
         let mut bytes = Vec::new();
         doc.save_to(&mut bytes).expect("write pdf");
-        let payload = extract_pdf_payload(
+        let payload = PdfFormat::extract(
             &bytes,
             "table.pdf".to_string(),
             sha256_hex(&bytes),
