@@ -4,7 +4,7 @@
 )]
 
 mod core;
-#[cfg(any(desktop, target_os = "ios"))]
+#[cfg(desktop)]
 mod menu;
 mod platform;
 mod utils;
@@ -18,7 +18,7 @@ use core::{
     telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_reader_text,
     QuizState, TelemetryManager,
 };
-#[cfg(any(desktop, target_os = "ios"))]
+#[cfg(desktop)]
 use tauri::Manager;
 #[cfg(desktop)]
 use windows::open_character_window;
@@ -45,7 +45,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
-            #[cfg(any(desktop, target_os = "ios"))]
+            #[cfg(desktop)]
             {
                 let app_menu = menu::create(app.handle())?;
                 app.set_menu(app_menu)?;
@@ -123,7 +123,7 @@ pub fn run() {
         ));
     }
 
-    #[cfg(any(desktop, target_os = "ios"))]
+    #[cfg(desktop)]
     {
         builder = builder.on_menu_event(|app, event| {
             menu::handle_event(app, &event);
