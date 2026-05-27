@@ -199,50 +199,53 @@
 </script>
 
 <div class="mobile-reader">
-	<div class="mobile-reader__library-header">
-		<span class="mobile-reader__library-title">Library</span>
-		<div class="mobile-reader__library-actions">
-			{#if editingLibrary}
-				<SyButton
-					style="ghost"
-					size="small"
-					hover="red"
-					disabled={!selectedDocuments.length}
-					onclick={deleteSelectedDocuments}
-				>
-					<Trash2 size="18" />
-				</SyButton>
-			{/if}
-			{#if editingLibrary || readerRoute.importing}
-				<SyButton style="ghost" size="small" center={true} disabled={true}>
-					{readerRoute.importing ? 'Importing...' : 'Import'}
-				</SyButton>
-			{:else}
-				<SyDropdown
-					values={readerImportDropdownValues}
-					position={DROPDOWN_POSITIONS.RIGHT}
-					onselection={handleImportSelection}
-				>
-					{#snippet children(open)}
-						<SyButton style="ghost" size="small" center={true}>
-							Import
-							{#if open}<ChevronUp size="18" />{:else}<ChevronDown
-									size="18"
-								/>{/if}
-						</SyButton>
-					{/snippet}
-				</SyDropdown>
-			{/if}
-			{#if editingLibrary || documents.length}
-				<SyButton style="ghost" size="small" onclick={toggleEditing}>
-					{editingLibrary ? 'Done' : 'Edit'}
-				</SyButton>
-			{/if}
+	{#if documents.length || editingLibrary}
+		<div class="mobile-reader__library-header">
+			<span class="mobile-reader__library-title">Library</span>
+			<div class="mobile-reader__library-actions">
+				{#if editingLibrary}
+					<SyButton
+						style="ghost"
+						size="small"
+						hover="red"
+						disabled={!selectedDocuments.length}
+						onclick={deleteSelectedDocuments}
+					>
+						<Trash2 size="18" />
+					</SyButton>
+				{/if}
+				{#if editingLibrary || readerRoute.importing}
+					<SyButton style="ghost" size="small" center={true} disabled={true}>
+						{readerRoute.importing ? 'Importing...' : 'Import'}
+					</SyButton>
+				{:else}
+					<SyDropdown
+						values={readerImportDropdownValues}
+						position={DROPDOWN_POSITIONS.RIGHT}
+						onselection={handleImportSelection}
+					>
+						{#snippet children(open)}
+							<SyButton style="ghost" size="small" center={true}>
+								Import
+								{#if open}<ChevronUp size="18" />{:else}<ChevronDown
+										size="18"
+									/>{/if}
+							</SyButton>
+						{/snippet}
+					</SyDropdown>
+				{/if}
+				{#if editingLibrary || documents.length}
+					<SyButton style="ghost" size="small" onclick={toggleEditing}>
+						{editingLibrary ? 'Done' : 'Edit'}
+					</SyButton>
+				{/if}
+			</div>
 		</div>
-	</div>
+	{/if}
 	<main
 		class="mobile-reader__library"
 		class:mobile-reader__library--empty={!documents.length}
+		class:mobile-reader__library--full-height={!documents.length && !editingLibrary}
 	>
 		{#if documents.length}
 			<div class="mobile-reader__library-grid">
@@ -379,6 +382,10 @@
 		box-sizing: border-box;
 		padding: var(--sy-mobile-space--large);
 		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom));
+	}
+
+	.mobile-reader__library--full-height {
+		height: 100%;
 	}
 
 	.mobile-reader__library--empty {
