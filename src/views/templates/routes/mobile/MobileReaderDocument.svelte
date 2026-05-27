@@ -304,9 +304,6 @@
 		if (!pageElement || turningPage) {
 			return;
 		}
-		if (pageElement.scrollHeight - pageElement.clientHeight <= 1) {
-			return;
-		}
 
 		const measuredBlocks = pageElement.querySelectorAll<HTMLElement>(
 			'[data-reader-atomic-block-id]'
