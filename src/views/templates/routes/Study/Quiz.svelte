@@ -11,8 +11,10 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import { EMPTY_QUIZ_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { quizRoute } from '@/composables/quiz.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 	let timerRef = $state(); // Reference to the timer component
 	const params = new URLSearchParams(router.querystring);
 	const activeList = params.get('list');
@@ -99,7 +101,11 @@
 </script>
 
 <div class="quiz--container">
-	<div class="quiz--header" data-tauri-drag-region={isMacos ? true : undefined}>
+	<div
+		class="quiz--header"
+		class:quiz--header--ipad={isIPadDevice}
+		data-tauri-drag-region={isMacos ? true : undefined}
+	>
 		<div class="quiz--header--section">
 			{#each leftActions as action (action.label)}
 				<SyButton
@@ -226,6 +232,10 @@
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
 		justify-content: space-between;
+	}
+	.quiz--header--ipad {
+		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
+		padding-bottom: var(--sy-space--large);
 	}
 	.quiz--header--section {
 		display: flex;

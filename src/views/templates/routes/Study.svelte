@@ -83,7 +83,7 @@
 		padding: var(--sy-space--extra-large) var(--sy-space);
 	}
 	.study--title--ipad {
-		padding-top: var(--sy-space--large);
+		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
 		padding-bottom: var(--sy-space--large);
 	}
 	.study--empty {

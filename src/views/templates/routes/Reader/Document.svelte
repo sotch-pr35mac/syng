@@ -1,10 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import {
-		ChevronLeft,
-		ChevronRight,
-		SlidersHorizontal,
-	} from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
@@ -755,7 +751,7 @@
 	}
 
 	.reader__header--ipad {
-		padding-top: var(--sy-space--large);
+		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
 		padding-bottom: var(--sy-space--large);
 	}
 
