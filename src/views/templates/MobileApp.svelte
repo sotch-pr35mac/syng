@@ -4,12 +4,12 @@
 	import { router } from 'svelte-spa-router';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
-	import MobileReader from '@/routes/mobile/MobileReader.svelte';
-	import MobileReaderDocument from '@/routes/mobile/MobileReaderDocument.svelte';
+	import MobileReader from '@/routes/mobile/Reader/MobileReader.svelte';
+	import MobileReaderDocument from '@/routes/mobile/Reader/MobileReaderDocument.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
 	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
-	import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
-	import MobileStudyQuiz from '@/routes/mobile/MobileStudyQuiz.svelte';
+	import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
+	import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
 	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';

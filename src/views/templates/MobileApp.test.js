@@ -25,7 +25,7 @@ vi.mock('@/utils', async () => {
 vi.mock('@/routes/mobile/MobileSearch.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/routes/mobile/MobileReader.svelte', async () => ({
+vi.mock('@/routes/mobile/Reader/MobileReader.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/mobile/MobileBookmarks.svelte', async () => ({
@@ -34,10 +34,10 @@ vi.mock('@/routes/mobile/MobileBookmarks.svelte', async () => ({
 vi.mock('@/routes/mobile/MobileStudy.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/routes/mobile/MobileStudyFlashcards.svelte', async () => ({
+vi.mock('@/routes/mobile/Study/MobileStudyFlashcards.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/routes/mobile/MobileStudyQuiz.svelte', async () => ({
+vi.mock('@/routes/mobile/Study/MobileStudyQuiz.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/mobile/MobileSettings.svelte', async () => ({

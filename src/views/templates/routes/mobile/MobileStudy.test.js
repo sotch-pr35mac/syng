@@ -3,8 +3,8 @@ import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
-import MobileStudyFlashcards from '@/routes/mobile/MobileStudyFlashcards.svelte';
-import MobileStudyQuiz from '@/routes/mobile/MobileStudyQuiz.svelte';
+import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
+import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	flashcardsActiveIndexStore,
