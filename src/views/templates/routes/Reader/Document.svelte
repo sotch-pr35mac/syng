@@ -97,6 +97,8 @@
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
+	let gestureStartX = 0;
+	let gestureStartY = 0;
 	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
 	let routeLoadRequest = $state(0);
 	let readerSettingsPopoverVisible = $state(false);
@@ -384,6 +386,31 @@
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
 	}
+
+	function onPointerDown(event: PointerEvent): void {
+		gestureStartX = event.clientX;
+		gestureStartY = event.clientY;
+	}
+
+	function onPointerUp(event: PointerEvent): void {
+		// Only finger swipes turn pages; a trackpad cursor-drag or Apple Pencil on
+		// iPad keeps its normal behavior (e.g. selecting text).
+		if (turningPage || event.pointerType !== 'touch') {
+			return;
+		}
+		const deltaX = event.clientX - gestureStartX;
+		const deltaY = event.clientY - gestureStartY;
+		const MIN_SWIPE_DISTANCE = 70;
+		const MAX_VERTICAL_DRIFT = 60;
+		if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE || Math.abs(deltaY) > MAX_VERTICAL_DRIFT) {
+			return;
+		}
+		if (deltaX < 0) {
+			turnPage('next');
+		} else {
+			turnPage('previous');
+		}
+	}
 </script>
 
 <div class="reader" style={activeDocument ? readerThemeStyle : ''}>
@@ -450,7 +477,12 @@
 	</div>
 
 	{#if activeDocument && currentPage}
-		<main class="reader__stage">
+		<main
+			class="reader__stage"
+			class:reader__stage--ipad={isIPadDevice}
+			onpointerdown={isIPadDevice ? onPointerDown : undefined}
+			onpointerup={isIPadDevice ? onPointerUp : undefined}
+		>
 			<button
 				class="reader__page-turn reader__page-turn--previous"
 				disabled={!readerRoute.canGoPrevious || turningPage}
@@ -792,6 +824,13 @@
 		box-sizing: border-box;
 		overflow: hidden;
 		background: var(--reader-stage-background, var(--sy-color--grey-2));
+	}
+
+	.reader__stage--ipad {
+		/* Hand horizontal swipes to the page-turn handler instead of letting the
+		   webview treat them as back/forward navigation, while keeping vertical
+		   gestures for the system. */
+		touch-action: pan-y;
 	}
 
 	.reader__stage--empty {

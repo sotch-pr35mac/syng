@@ -4,7 +4,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import type { SheetSnap } from '@/types/snapSheet.js';
-	import { isMobile } from '@/utils/device.js';
+	import { isMobileLayout } from '@/utils/device.js';
 
 	type PopoverPlacement = 'below' | 'above' | 'right' | 'left';
 	type PopoverHorizontalAlign = 'center' | 'start' | 'end';
@@ -37,7 +37,7 @@
 		onclose?: () => void;
 	} = $props();
 
-	const mobile = isMobile();
+	const mobile = isMobileLayout();
 	let popoverElement = $state<HTMLElement | undefined>(undefined);
 	let measuredWidth = $state(0);
 	let measuredHeight = $state(0);

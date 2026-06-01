@@ -4,7 +4,7 @@
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { SearchEntry } from '@/types/search.js';
-	import { isMobile } from '@/utils/device.js';
+	import { isMobileLayout } from '@/utils/device.js';
 
 	const {
 		word = undefined,
@@ -26,7 +26,7 @@
 		onlink?: (_text: string) => void;
 	} = $props();
 
-	const mobile = isMobile();
+	const mobile = isMobileLayout();
 	const DESKTOP_WIDTH_PX = 420;
 	const DESKTOP_HEIGHT_PX = 380;
 	const MAX_DOT_RESULTS = 8;

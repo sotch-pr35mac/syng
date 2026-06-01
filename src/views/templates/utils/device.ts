@@ -22,3 +22,9 @@ export const isIPad = (): boolean =>
 	_platform === 'ios' &&
 	(/iPad/.test(navigator.userAgent) ||
 		(/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+
+// True when the device uses the mobile UI layout (phones and Android tablets).
+// iPads run iOS but use the desktop UI, so they are excluded here — this mirrors
+// the shell selection in app.js. Prefer this over isMobile() for layout decisions
+// (e.g. popover vs. bottom sheet) that should follow the desktop UI on iPad.
+export const isMobileLayout = (): boolean => isMobile() && !isIPad();
