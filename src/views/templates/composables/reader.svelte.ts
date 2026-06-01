@@ -41,6 +41,14 @@ const DELETE_CONFIRMATION_NAME_LIMIT = 5;
 const BYTES_PER_KIB = 1024;
 const BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB;
 
+function navigateToReaderDocument(documentId: string): void {
+	window.location.hash = `#/read/document/${encodeURIComponent(documentId)}`;
+}
+
+function navigateToReaderLibrary(): void {
+	window.location.hash = '#/read';
+}
+
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
 let pages = $state<ReaderPage[]>([]);
@@ -245,6 +253,7 @@ async function importReaderPayload(
 			})
 			.catch(() => {});
 		await openDocument(document);
+		navigateToReaderDocument(document._id);
 	} catch (error) {
 		trackImportFailed(importPayload.source_type, 'save', error);
 		handleError('There was an error importing the reader document.', error);
@@ -746,6 +755,7 @@ async function openDocumentById(documentId: string): Promise<void> {
 		return;
 	}
 	backToLibrary();
+	navigateToReaderLibrary();
 }
 
 function tokensMatchDictionarySelection(

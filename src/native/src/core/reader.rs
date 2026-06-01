@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use std::io::{Cursor, Read};
-use std::net::{IpAddr, ToSocketAddrs};
+use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 use std::path::Path;
 use std::time::Duration;
 use tauri::Manager;
@@ -359,18 +359,23 @@ fn decode_reader_text(bytes: &[u8], declared_charset: Option<&str>) -> Result<St
         .ok_or_else(|| "Text file could not be decoded as UTF-8, GBK, or Big5.".to_string())
 }
 
+fn is_blocked_ipv4(ip: Ipv4Addr) -> bool {
+    ip.is_private()
+        || ip.is_loopback()
+        || ip.is_link_local()
+        || ip.is_multicast()
+        || ip.is_broadcast()
+        || ip.is_documentation()
+        || ip.is_unspecified()
+}
+
 fn is_blocked_ip(ip: IpAddr) -> bool {
     match ip {
-        IpAddr::V4(ip) => {
-            ip.is_private()
-                || ip.is_loopback()
-                || ip.is_link_local()
-                || ip.is_multicast()
-                || ip.is_broadcast()
-                || ip.is_documentation()
-                || ip.is_unspecified()
-        }
+        IpAddr::V4(ip) => is_blocked_ipv4(ip),
         IpAddr::V6(ip) => {
+            if let Some(mapped_ip) = ip.to_ipv4_mapped() {
+                return is_blocked_ipv4(mapped_ip);
+            }
             ip.is_loopback()
                 || ip.is_unspecified()
                 || ip.is_multicast()
@@ -1361,6 +1366,9 @@ mod tests {
             "http://localhost/article",
             "http://127.0.0.1/article",
             "http://[::1]/article",
+            "http://[::ffff:127.0.0.1]/article",
+            "http://[::ffff:10.0.0.1]/article",
+            "http://[::ffff:169.254.1.1]/article",
             "file:///tmp/article.html",
             "https://user@example.com/article",
         ] {
@@ -1370,6 +1378,12 @@ mod tests {
                 "expected {url} to be rejected"
             );
         }
+    }
+
+    #[test]
+    fn webpage_url_validation_allows_public_targets() {
+        let parsed = reqwest::Url::parse("https://example.com/article").expect("parse url");
+        assert!(validate_remote_url(&parsed, false).is_ok());
     }
 
     #[test]

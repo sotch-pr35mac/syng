@@ -21,6 +21,9 @@ import { isMobile } from '@/utils/device.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
+import { getStartupDatabaseNames } from '@/utils/startupDatabases.js';
+
+export { getStartupDatabaseNames } from '@/utils/startupDatabases.js';
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -38,10 +41,7 @@ window.onload = () => {
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
 	const debugMode = inDebugMode();
-	const configDb = debugMode ? 'development_config' : 'config';
-	const listDb = debugMode ? 'development_word-lists' : 'word-lists';
-	const bookmarkDb = debugMode ? 'development_bookmarks' : 'bookmarks';
-	const readerDocumentDb = 'reader-documents';
+	const { configDb, listDb, bookmarkDb, readerDocumentDb } = getStartupDatabaseNames(debugMode);
 	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
 		configDb,
 		listDb,
