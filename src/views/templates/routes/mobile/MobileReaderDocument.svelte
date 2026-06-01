@@ -7,7 +7,7 @@
 	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
-	import { isIos } from '@/utils/device.js';
+	import { isAndroid, isIos } from '@/utils/device.js';
 	import {
 		getReaderColorTheme,
 		getReaderColorThemeSettings,
@@ -453,7 +453,12 @@
 				</div>
 			</div>
 		</SyPopover>
-		<main class="mobile-reader-document__stage" onpointerdown={onPointerDown} onpointerup={onPointerUp}>
+		<main
+			class="mobile-reader-document__stage"
+			class:mobile-reader-document__stage--android={isAndroid()}
+			onpointerdown={onPointerDown}
+			onpointerup={onPointerUp}
+		>
 			<span
 				bind:this={characterMeasureElement}
 				class="mobile-reader-document__measure-text"
@@ -465,6 +470,7 @@
 				bind:this={pageElement}
 				class="mobile-reader-document__page mobile-reader-document__page--base"
 				class:mobile-reader-document__page--ios={isIos()}
+				class:mobile-reader-document__page--android={isAndroid()}
 				class:mobile-reader-document__page--turning={turningPage}
 				class:mobile-reader-document__page--vertical={activeDocumentVerticalWriting}
 			>
@@ -752,6 +758,23 @@
 
 		border-radius: var(--sy-border-radius) var(--sy-border-radius)
 			var(--ios-border-radius) var(--ios-border-radius);
+	}
+
+	.mobile-reader-document__stage--android {
+		padding-bottom: calc(
+			var(--mobile-reader-stage-padding)
+				+ max(env(safe-area-inset-bottom), 24px)
+		);
+	}
+
+	.mobile-reader-document__stage--android .mobile-reader-document__page-count {
+		bottom: calc(
+			var(--sy-mobile-space--large) + max(env(safe-area-inset-bottom), 20px)
+		);
+	}
+
+	.mobile-reader-document__page--android {
+		padding-bottom: calc(var(--sy-mobile-space--medium) * 6);
 	}
 
 	.mobile-reader-document__page--base {

@@ -16,6 +16,8 @@ export const isMobile = (): boolean => _platform === 'ios' || _platform === 'and
 
 export const isIos = (): boolean => _platform === 'ios';
 
+export const isAndroid = (): boolean => _platform === 'android';
+
 export const isIPad = (): boolean =>
 	_platform === 'ios' &&
 	(/iPad/.test(navigator.userAgent) ||
