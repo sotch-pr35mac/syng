@@ -2,7 +2,7 @@
 	import ReaderClipboardImportBody from '@/components/ReaderClipboardImportBody.svelte';
 	import ReaderImportModal from '@/components/ReaderImportModal.svelte';
 	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
-	import { inferPlainTextReaderTitle } from '@/utils/readerPlainTextImport.js';
+	import { inferPlainTextReaderTitle } from '@/utils/readerImport.js';
 
 	type Props = {
 		visible?: boolean;

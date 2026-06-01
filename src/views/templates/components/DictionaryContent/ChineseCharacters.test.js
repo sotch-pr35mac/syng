@@ -4,7 +4,7 @@ import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.
 it('should render the correct color for each character', async () => {
 	const { getByText } = render(ChineseCharacters, {
 		characters: '妈痲吗蚂么',
-		tones: [1, 2, 3, 4, 5], // eslint-disable-line no-magic-numbers
+		tones: [1, 2, 3, 4, 5],
 	});
 
 	const firstTone = getByText('妈').className.split(' ');

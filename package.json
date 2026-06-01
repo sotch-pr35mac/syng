@@ -2,6 +2,7 @@
 	"name": "syng",
 	"version": "2.0.0",
 	"description": "An open source, cross platform, Chinese study app.",
+	"type": "module",
 	"scripts": {
 		"build": "vite build",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json",

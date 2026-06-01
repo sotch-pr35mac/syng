@@ -39,6 +39,7 @@
 				if (readerDocumentRouteStore.value) {
 					window.location.hash = `#/read/document/${encodeURIComponent(readerDocumentRouteStore.value)}`;
 				}
+				return undefined;
 			})
 			.catch(() => {});
 	});

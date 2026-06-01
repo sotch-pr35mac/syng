@@ -132,7 +132,7 @@
 					/>
 				{:else if quizRoute.showQuestionTimer}
 					<div class="question-timer--container">
-						<!-- eslint-disable no-magic-numbers -->
+						<!-- eslint-disable @typescript-eslint/no-magic-numbers -->
 						<SyTimer
 							duration={quizRoute.questionDuration}
 							autoStart={true}

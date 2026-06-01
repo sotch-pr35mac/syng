@@ -20,6 +20,7 @@ export type {
  * and `String.prototype.slice` used by pagination.
  */
 export type ReaderTextAlign = 'start' | 'end' | 'center' | 'justify';
+export type ReaderHeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 export type ReaderSchemaVersion = number & { readonly __brand: 'ReaderSchemaVersion' };
 export type ReaderExtractorVersion = number & { readonly __brand: 'ReaderExtractorVersion' };
 
@@ -109,7 +110,7 @@ export interface ReaderContentBlock {
 	 * Default true for backwards compatibility.
 	 */
 	participates_in_linear_text?: boolean;
-	heading_level?: 1 | 2 | 3 | 4 | 5 | 6;
+	heading_level?: ReaderHeadingLevel;
 	text_align?: ReaderTextAlign;
 	spans?: ReaderInlineSpan[];
 	extensions?: ReaderBlockExtensions;

@@ -113,7 +113,6 @@
 <div class="mobile-search">
 	<div class="mobile-search__content" use:scrollRestore={'mobile-search-content'}>
 		{#if search.activeWord}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="mobile-search__dict-wrapper" onclickcapture={captureClickPosition}>
 				<DictionaryContent
 					word={search.activeWord}

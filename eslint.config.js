@@ -128,5 +128,49 @@ export default [
 				]
 			}]
 		}
+	},
+	{
+		files: ['**/*.ts', '**/*.svelte'],
+		plugins: {
+			'@typescript-eslint': tseslint.plugin,
+		},
+		rules: {
+			// Use the TypeScript-aware versions of these rules so they understand
+			// type-only syntax (interface/type parameters, declaration merging, and
+			// numeric-literal types) instead of misfiring on it.
+			'no-unused-vars': 'off',
+			'@typescript-eslint/no-unused-vars': ['error', {
+				argsIgnorePattern: '^_',
+				varsIgnorePattern: '^_',
+				caughtErrorsIgnorePattern: '^_',
+			}],
+			'no-redeclare': 'off',
+			'@typescript-eslint/no-redeclare': 'error',
+			// TypeScript itself checks for undefined identifiers; the base rule
+			// false-positives on type-only references such as `BlobPart`.
+			'no-undef': 'off',
+			'no-magic-numbers': 'off',
+			'@typescript-eslint/no-magic-numbers': ['warn', {
+				ignore: [-1, 0, 1, 2, 100, 1000],
+				ignoreArrayIndexes: true,
+				ignoreDefaultValues: true,
+				enforceConst: true,
+				ignoreNumericLiteralTypes: true,
+				ignoreEnums: true,
+				ignoreTypeIndexes: true,
+			}],
+		}
+	},
+	{
+		// Tests pin literal values directly in assertions; extracting constants
+		// there would be circular, so allow magic numbers in test files.
+		files: ['**/*.test.{js,ts}'],
+		plugins: {
+			'@typescript-eslint': tseslint.plugin,
+		},
+		rules: {
+			'no-magic-numbers': 'off',
+			'@typescript-eslint/no-magic-numbers': 'off',
+		}
 	}
 ];

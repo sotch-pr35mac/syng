@@ -114,12 +114,9 @@
 		word = requestedWord.payload;
 		loadAllCharacters(word[activeScript]);
 	});
-	window
-		.matchMedia('(prefers-color-scheme: dark)')
-		// eslint-disable-next-line no-unused-vars
-		.addEventListener('change', (e) => {
-			loadAllCharacters(word[activeScript]);
-		});
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+		loadAllCharacters(word[activeScript]);
+	});
 </script>
 
 <div class="character-window-container">

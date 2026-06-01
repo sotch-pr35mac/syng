@@ -9,7 +9,7 @@
 		LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 		parseLargeHtmlImportError,
 		type PrepareReaderImportInvokeArgs,
-	} from '@/utils/readerNativeImport.js';
+	} from '@/utils/readerImport.js';
 
 	type Props = {
 		visible?: boolean;

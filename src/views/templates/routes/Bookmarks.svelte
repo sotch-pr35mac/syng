@@ -208,7 +208,6 @@
 				filterable={true}
 			/>
 		</div>
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="dictionary-content" onclickcapture={captureClickPosition}>
 			<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 		</div>

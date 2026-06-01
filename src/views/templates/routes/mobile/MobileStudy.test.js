@@ -107,7 +107,6 @@ const WORDS = [
 		simplified: '苹果',
 		english: ['apple'],
 		pinyin_marks: 'píng guǒ',
-		// eslint-disable-next-line no-magic-numbers
 		tone_marks: [2, 3],
 		measure_words: [],
 		lists: ['Bookmarks'],
@@ -136,7 +135,6 @@ const WORDS = [
 		simplified: '李子',
 		english: ['plum'],
 		pinyin_marks: 'lǐ zi',
-		// eslint-disable-next-line no-magic-numbers
 		tone_marks: [3, 5],
 		measure_words: [],
 		lists: ['Bookmarks'],

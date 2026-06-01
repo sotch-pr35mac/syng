@@ -203,7 +203,6 @@
 <div class="mobile-bookmarks">
 	<div class="mobile-bookmarks__content" use:scrollRestore={'mobile-bookmarks-content'}>
 		{#if activeWord}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<div class="mobile-bookmarks__dict-wrapper" onclickcapture={captureClickPosition}>
 				<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 			</div>

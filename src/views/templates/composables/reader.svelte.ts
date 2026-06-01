@@ -19,13 +19,13 @@ import {
 	isTableBlock,
 	tableCellTokenKey,
 } from '@/utils/readerDocumentCanonical.js';
-import { pickReaderImportFile } from '@/utils/readerFileImport.js';
 import {
+	invokeImportReaderDocument,
 	invokePrepareReaderImport,
 	LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 	parseLargeHtmlImportError,
 	type PrepareReaderImportInvokeArgs,
-} from '@/utils/readerNativeImport.js';
+} from '@/utils/readerImport.js';
 import {
 	createReaderPages,
 	createReaderSegments,
@@ -38,7 +38,8 @@ import {
 
 const TEXT_CONTEXT_LENGTH = 32;
 const DELETE_CONFIRMATION_NAME_LIMIT = 5;
-const BYTES_PER_MIB = 1024 * 1024;
+const BYTES_PER_KIB = 1024;
+const BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB;
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
@@ -217,7 +218,7 @@ async function openDocument(document: ReaderDocument): Promise<void> {
 async function pickImportDocument(): Promise<ReaderImportPayload | undefined> {
 	importing = true;
 	try {
-		return await pickReaderImportFile();
+		return await invokeImportReaderDocument();
 	} catch (error) {
 		trackImportFailed('file', 'pick', error);
 		handleError('There was an error importing the reader document.', error);

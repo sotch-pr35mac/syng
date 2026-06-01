@@ -2,7 +2,6 @@ import { vi } from 'vitest';
 import { BookmarkManager } from '@/utils/bookmarkManager.js';
 
 // Mock the PouchDB API
-// eslint-disable-next-line no-magic-numbers
 const getRandomNumber = () => Math.floor(Math.random() * 1000000);
 const getDocuments = (dbName) => {
 	switch (dbName) {

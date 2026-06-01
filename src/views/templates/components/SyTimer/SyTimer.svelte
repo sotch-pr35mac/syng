@@ -1,5 +1,5 @@
 <script>
-	/* eslint-disable no-magic-numbers */
+	/* eslint-disable @typescript-eslint/no-magic-numbers */
 	import { onMount, onDestroy } from 'svelte';
 	import { interpolateColor } from '@/utils/color';
 
@@ -119,7 +119,7 @@
 		const y = 20 + 16 * Math.sin(rad);
 		return angle >= 360 ? '' : `M 20 20 L 20 4 A 16 16 0 ${angle > 180 ? 1 : 0} 1 ${x} ${y} Z`;
 	});
-	/* eslint-enable no-magic-numbers */
+	/* eslint-enable @typescript-eslint/no-magic-numbers */
 </script>
 
 <div

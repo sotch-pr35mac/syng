@@ -40,7 +40,7 @@ interface PouchError {
 	message?: string;
 }
 
-interface PouchDB {
+interface PouchDatabase {
 	allDocs(options: { include_docs: boolean }): Promise<PouchAllDocsResult>;
 	get(id: string): Promise<PouchDocument>;
 	put(document: PouchDocument): Promise<PouchPutResult>;
@@ -55,30 +55,9 @@ interface PouchDB {
 	getAttachment(docId: string, attachmentId: string): Promise<Blob | ArrayBuffer | Uint8Array>;
 }
 
-declare const PouchDB: new (name: string) => PouchDB;
+declare const PouchDB: new (name: string) => PouchDatabase;
 
-interface ReaderProgress {
-	resource_href: string;
-	position: number;
-	total_progression: number;
-	page_index: number;
-	text_position: { start: number; end: number };
-	text_quote: { exact: string; prefix: string; suffix: string };
-	updated_at: string;
-}
-
-interface StoredReaderDocument extends PouchDocument {
-	canonical_schema_version?: ReaderSchemaVersion;
-	title: string;
-	file_name: string;
-	source_type: string;
-	mime_type: string;
-	imported_at: string;
-	updated_at: string;
-	reading_order: Array<{ href: string; type: string; title: string }>;
-	progress: ReaderProgress;
-	color?: string;
-	source_html?: string;
+interface StoredReaderDocument extends ReaderDocument {
 	[key: string]: unknown;
 }
 
@@ -103,7 +82,7 @@ const withReaderEnvelopeDefaults = (
 const createDocumentId = (): string =>
 	`reader:${Date.now()}:${Math.random().toString(RANDOM_ID_RADIX).slice(2, RANDOM_ID_END)}`;
 
-const createInitialProgress = (text = '', resourceHref = 'text'): ReaderProgress => {
+const createInitialProgress = (text = '', resourceHref = 'text'): ReaderLocator => {
 	const exact = text.slice(0, TEXT_CONTEXT_LENGTH);
 	const now = new Date().toISOString();
 	return {
@@ -138,7 +117,7 @@ const toBlob = (sourceData: ArrayBuffer | Uint8Array | number[] | Blob, mimeType
 	if (Array.isArray(sourceData)) {
 		return new Blob([new Uint8Array(sourceData)], { type: mimeType });
 	}
-	return new Blob([sourceData], { type: mimeType });
+	return new Blob([sourceData as BlobPart], { type: mimeType });
 };
 
 const toArrayBuffer = async (
@@ -182,7 +161,7 @@ const toText = async (
 
 export class ReaderDocumentManager {
 	initialized: boolean;
-	_document_db: PouchDB;
+	_document_db: PouchDatabase;
 
 	constructor(documentDb: string) {
 		this.initialized = false;
