@@ -17,9 +17,11 @@ use encoding_rs::{BIG5, GBK, UTF_16BE, UTF_16LE, UTF_8};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
+use std::io::{Cursor, Read};
 use std::net::{IpAddr, ToSocketAddrs};
 use std::path::Path;
 use std::time::Duration;
+use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_http::reqwest;
@@ -479,6 +481,113 @@ fn prepare_from_html(
     })
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ReaderFormat {
+    Text,
+    Docx,
+    Rtf,
+    Epub,
+    Pdf,
+    Html,
+}
+
+fn detect_reader_format(extension: &str, mime_lower: &str) -> Option<ReaderFormat> {
+    if TEXT_IMPORT_EXTENSIONS.contains(&extension) || mime_lower == "text/plain" {
+        return Some(ReaderFormat::Text);
+    }
+    if DOCX_IMPORT_EXTENSIONS.contains(&extension)
+        || mime_lower == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    {
+        return Some(ReaderFormat::Docx);
+    }
+    if RTF_IMPORT_EXTENSIONS.contains(&extension)
+        || mime_lower == "application/rtf"
+        || mime_lower == "text/rtf"
+    {
+        return Some(ReaderFormat::Rtf);
+    }
+    if EPUB_IMPORT_EXTENSIONS.contains(&extension) || mime_lower == "application/epub+zip" {
+        return Some(ReaderFormat::Epub);
+    }
+    if PDF_IMPORT_EXTENSIONS.contains(&extension) || mime_lower == "application/pdf" {
+        return Some(ReaderFormat::Pdf);
+    }
+    if HTML_IMPORT_EXTENSIONS.contains(&extension) || mime_lower == "text/html" {
+        return Some(ReaderFormat::Html);
+    }
+    None
+}
+
+/// Best-effort format detection from raw bytes. Used when neither file
+/// extension nor mime hint identify the format — for example, Android content
+/// URIs returned by the dialog plugin can hide the original file name and
+/// extension.
+fn sniff_reader_format(bytes: &[u8]) -> Option<ReaderFormat> {
+    if bytes.starts_with(b"%PDF") {
+        return Some(ReaderFormat::Pdf);
+    }
+    if bytes.starts_with(b"{\\rtf") {
+        return Some(ReaderFormat::Rtf);
+    }
+    if bytes.starts_with(b"PK\x03\x04") {
+        return sniff_zip_reader_format(bytes);
+    }
+    if bytes_look_like_html(bytes) {
+        return Some(ReaderFormat::Html);
+    }
+    if bytes_look_like_plain_text(bytes) {
+        return Some(ReaderFormat::Text);
+    }
+    None
+}
+
+fn sniff_zip_reader_format(bytes: &[u8]) -> Option<ReaderFormat> {
+    let mut archive = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
+    if let Ok(mut entry) = archive.by_name("mimetype") {
+        let mut content = String::new();
+        if entry.read_to_string(&mut content).is_ok()
+            && content.trim() == "application/epub+zip"
+        {
+            return Some(ReaderFormat::Epub);
+        }
+    }
+    if archive.by_name("META-INF/container.xml").is_ok() {
+        return Some(ReaderFormat::Epub);
+    }
+    if archive.by_name("word/document.xml").is_ok() {
+        return Some(ReaderFormat::Docx);
+    }
+    None
+}
+
+fn bytes_look_like_html(bytes: &[u8]) -> bool {
+    let prefix_len = bytes.len().min(1024);
+    let prefix = String::from_utf8_lossy(&bytes[..prefix_len]).to_lowercase();
+    let trimmed = prefix.trim_start();
+    trimmed.starts_with("<!doctype html")
+        || trimmed.starts_with("<html")
+        || trimmed.starts_with("<head")
+        || trimmed.starts_with("<body")
+}
+
+fn bytes_look_like_plain_text(bytes: &[u8]) -> bool {
+    if bytes.is_empty() {
+        return false;
+    }
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF])
+        || bytes.starts_with(&[0xFE, 0xFF])
+        || bytes.starts_with(&[0xFF, 0xFE])
+    {
+        return true;
+    }
+    let chunk_len = bytes.len().min(8192);
+    let chunk = &bytes[..chunk_len];
+    if chunk.iter().any(|&byte| byte == 0) {
+        return false;
+    }
+    std::str::from_utf8(chunk).is_ok()
+}
+
 fn prepare_from_bytes(
     bytes: &[u8],
     file_name: &str,
@@ -497,39 +606,32 @@ fn prepare_from_bytes(
     let hash = sha256_hex(bytes);
     let byte_len = bytes.len() as u64;
 
-    if TEXT_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/plain" {
-        return PlainTextFormat::extract(bytes, file_name.to_string(), hash, byte_len);
-    }
+    let format = detect_reader_format(extension.as_str(), mime_lower.as_str())
+        .or_else(|| sniff_reader_format(bytes));
 
-    if DOCX_IMPORT_EXTENSIONS.contains(&extension.as_str())
-        || mime_lower == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    {
-        return DocxFormat::extract(bytes, file_name.to_string(), hash, byte_len);
+    match format {
+        Some(ReaderFormat::Text) => {
+            PlainTextFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        Some(ReaderFormat::Docx) => {
+            DocxFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        Some(ReaderFormat::Rtf) => {
+            RtfFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        Some(ReaderFormat::Epub) => {
+            EpubFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        Some(ReaderFormat::Pdf) => {
+            PdfFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        Some(ReaderFormat::Html) => {
+            HtmlFileFormat::extract(bytes, file_name.to_string(), hash, byte_len)
+        }
+        None => Err(format!(
+            "Unsupported reader import type (extension {extension:?}, mime {mime_hint:?})."
+        )),
     }
-
-    if RTF_IMPORT_EXTENSIONS.contains(&extension.as_str())
-        || mime_lower == "application/rtf"
-        || mime_lower == "text/rtf"
-    {
-        return RtfFormat::extract(bytes, file_name.to_string(), hash, byte_len);
-    }
-
-    if EPUB_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/epub+zip"
-    {
-        return EpubFormat::extract(bytes, file_name.to_string(), hash, byte_len);
-    }
-
-    if PDF_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "application/pdf" {
-        return PdfFormat::extract(bytes, file_name.to_string(), hash, byte_len);
-    }
-
-    if HTML_IMPORT_EXTENSIONS.contains(&extension.as_str()) || mime_lower == "text/html" {
-        return HtmlFileFormat::extract(bytes, file_name.to_string(), hash, byte_len);
-    }
-
-    Err(format!(
-        "Unsupported reader import type (extension {extension:?}, mime {mime_hint:?})."
-    ))
 }
 
 #[tauri::command]
@@ -701,12 +803,15 @@ pub async fn import_reader_document(
     };
 
     let file_path_display = file_path.to_string();
-    let path = Path::new(&file_path_display);
-    let file_name = path
-        .file_name()
-        .and_then(|value| value.to_str())
-        .unwrap_or("Untitled.txt")
-        .to_string();
+    // On Android, the dialog returns a `content://` URI whose path components
+    // rarely include the original filename or extension. PathResolver::file_name
+    // queries the platform's ContentResolver for the display name in that case;
+    // on other platforms it falls back to Path::file_name.
+    let file_name = app
+        .path()
+        .file_name(&file_path_display)
+        .filter(|name| !name.is_empty())
+        .unwrap_or_else(|| "Untitled.txt".to_string());
 
     let bytes = app
         .fs()
@@ -2019,5 +2124,85 @@ mod tests {
         .expect_err("renderer path import should be rejected");
 
         assert!(error.contains("native reader file picker"));
+    }
+
+    fn build_minimal_epub_bytes() -> Vec<u8> {
+        let mut bytes = Cursor::new(Vec::new());
+        {
+            let mut writer = zip::ZipWriter::new(&mut bytes);
+            let stored = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+            writer.start_file("mimetype", stored).expect("mimetype");
+            writer
+                .write_all(b"application/epub+zip")
+                .expect("mimetype body");
+            let deflate = SimpleFileOptions::default();
+            writer
+                .start_file("META-INF/container.xml", deflate)
+                .expect("container");
+            writer
+                .write_all(b"<?xml version=\"1.0\"?><container/>")
+                .expect("container body");
+            writer.finish().expect("finish epub");
+        }
+        bytes.into_inner()
+    }
+
+    #[test]
+    fn sniffs_pdf_from_magic_bytes() {
+        let bytes = b"%PDF-1.5\n%not really a pdf";
+        assert_eq!(sniff_reader_format(bytes), Some(ReaderFormat::Pdf));
+    }
+
+    #[test]
+    fn sniffs_rtf_from_magic_bytes() {
+        let bytes = br"{\rtf1\ansi Hello}";
+        assert_eq!(sniff_reader_format(bytes), Some(ReaderFormat::Rtf));
+    }
+
+    #[test]
+    fn sniffs_docx_from_zip_contents() {
+        let bytes = build_test_docx(
+            r#"<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>hi</w:t></w:r></w:p></w:body></w:document>"#,
+            None,
+        );
+        assert_eq!(sniff_reader_format(&bytes), Some(ReaderFormat::Docx));
+    }
+
+    #[test]
+    fn sniffs_epub_from_zip_contents() {
+        let bytes = build_minimal_epub_bytes();
+        assert_eq!(sniff_reader_format(&bytes), Some(ReaderFormat::Epub));
+    }
+
+    #[test]
+    fn sniffs_html_from_doctype() {
+        let bytes = b"<!DOCTYPE html>\n<html><body><p>hi</p></body></html>";
+        assert_eq!(sniff_reader_format(bytes), Some(ReaderFormat::Html));
+    }
+
+    #[test]
+    fn sniffs_plain_text_as_fallback() {
+        let bytes = b"Hello there.\nJust a note.";
+        assert_eq!(sniff_reader_format(bytes), Some(ReaderFormat::Text));
+    }
+
+    #[test]
+    fn prepare_from_bytes_sniffs_when_file_name_has_no_extension() {
+        // Mimics an Android content URI segment with no extension or mime hint.
+        let payload = prepare_from_bytes(b"Hello there.\n\nSecond line.", "document%3A1234", None)
+            .expect("plain text should be detected from bytes");
+        assert_eq!(payload.source_type, "plain_text");
+        assert_eq!(payload.mime_type, "text/plain");
+    }
+
+    #[test]
+    fn prepare_from_bytes_sniffs_pdf_when_extension_missing() {
+        let bytes = b"%PDF-1.4\nnot a valid pdf body";
+        let error = prepare_from_bytes(bytes, "document%3A1234", None)
+            .expect_err("synthetic pdf bytes should fail to parse but route to PDF extractor");
+        assert!(
+            !error.contains("Unsupported reader import type"),
+            "expected sniffing to dispatch to the PDF extractor, got: {error}"
+        );
     }
 }
