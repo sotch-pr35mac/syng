@@ -21,11 +21,8 @@ impl FormatExtractor for PlainTextFormat {
         byte_len: u64,
     ) -> Result<ReaderImportPayload, String> {
         let raw_text = decode_reader_text(bytes, None)?;
-        let mut payload = extract_plain_text_document(
-            title_from_file_stem(&file_name),
-            file_name,
-            raw_text,
-        );
+        let mut payload =
+            extract_plain_text_document(title_from_file_stem(&file_name), file_name, raw_text);
         payload.source_sha256 = Some(hash);
         payload.source_byte_length = Some(byte_len);
         Ok(payload)

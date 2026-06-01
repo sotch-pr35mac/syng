@@ -28,8 +28,8 @@ use tauri_plugin_http::reqwest;
 
 use docx::DocxFormat;
 use epub::EpubFormat;
-use html::HtmlFileFormat;
 use html::html_to_blocks;
+use html::HtmlFileFormat;
 use pdf::PdfFormat;
 use rtf::RtfFormat;
 use text::{extract_plain_text_document, infer_plain_text_title, PlainTextFormat};
@@ -545,9 +545,7 @@ fn sniff_zip_reader_format(bytes: &[u8]) -> Option<ReaderFormat> {
     let mut archive = zip::ZipArchive::new(Cursor::new(bytes)).ok()?;
     if let Ok(mut entry) = archive.by_name("mimetype") {
         let mut content = String::new();
-        if entry.read_to_string(&mut content).is_ok()
-            && content.trim() == "application/epub+zip"
-        {
+        if entry.read_to_string(&mut content).is_ok() && content.trim() == "application/epub+zip" {
             return Some(ReaderFormat::Epub);
         }
     }
@@ -616,15 +614,11 @@ fn prepare_from_bytes(
         Some(ReaderFormat::Docx) => {
             DocxFormat::extract(bytes, file_name.to_string(), hash, byte_len)
         }
-        Some(ReaderFormat::Rtf) => {
-            RtfFormat::extract(bytes, file_name.to_string(), hash, byte_len)
-        }
+        Some(ReaderFormat::Rtf) => RtfFormat::extract(bytes, file_name.to_string(), hash, byte_len),
         Some(ReaderFormat::Epub) => {
             EpubFormat::extract(bytes, file_name.to_string(), hash, byte_len)
         }
-        Some(ReaderFormat::Pdf) => {
-            PdfFormat::extract(bytes, file_name.to_string(), hash, byte_len)
-        }
+        Some(ReaderFormat::Pdf) => PdfFormat::extract(bytes, file_name.to_string(), hash, byte_len),
         Some(ReaderFormat::Html) => {
             HtmlFileFormat::extract(bytes, file_name.to_string(), hash, byte_len)
         }
@@ -959,7 +953,8 @@ mod tests {
         let payload = extract_plain_text_document(
             "Sample".to_string(),
             "sample.txt".to_string(),
-            "他笑着说：\u{201c}这条巷子里的人平时看起来都很忙，但不代表他们没有心。\u{201d}".to_string(),
+            "他笑着说：\u{201c}这条巷子里的人平时看起来都很忙，但不代表他们没有心。\u{201d}"
+                .to_string(),
         );
 
         assert_eq!(payload.blocks.len(), 1);
@@ -2130,7 +2125,8 @@ mod tests {
         let mut bytes = Cursor::new(Vec::new());
         {
             let mut writer = zip::ZipWriter::new(&mut bytes);
-            let stored = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+            let stored =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
             writer.start_file("mimetype", stored).expect("mimetype");
             writer
                 .write_all(b"application/epub+zip")

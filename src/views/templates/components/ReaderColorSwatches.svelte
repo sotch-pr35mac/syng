@@ -9,16 +9,11 @@
 		onchange?: (_color: string) => void;
 	};
 
-	const {
-		value = DEFAULT_READER_DOCUMENT_COLOR,
-		onchange = () => {},
-	}: Props = $props();
+	const { value = DEFAULT_READER_DOCUMENT_COLOR, onchange = () => {} }: Props = $props();
 
 	let colorInputElement: HTMLInputElement | undefined = $state();
 
-	const isCustomColor = $derived(
-		!READER_DOCUMENT_COLORS.includes(value)
-	);
+	const isCustomColor = $derived(!READER_DOCUMENT_COLORS.includes(value));
 </script>
 
 <div class="reader-color-swatches">
@@ -34,27 +29,27 @@
 		></button>
 	{/each}
 	<button
-			class="reader-color-swatches__swatch reader-color-swatches__swatch--custom"
-			class:reader-color-swatches__swatch--selected={isCustomColor}
-			style:--swatch-color={isCustomColor ? value : undefined}
-			type="button"
-			aria-label="Custom color"
-			onclick={() => colorInputElement?.click()}
-		>
-			<input
-				bind:this={colorInputElement}
-				value={isCustomColor ? value : DEFAULT_READER_DOCUMENT_COLOR}
-				class="reader-color-swatches__custom-input"
-				type="color"
-				tabindex={-1}
-				aria-hidden="true"
-				oninput={(event) => {
-					if (event.currentTarget instanceof HTMLInputElement) {
-						onchange(event.currentTarget.value);
-					}
-				}}
-			/>
-		</button>
+		class="reader-color-swatches__swatch reader-color-swatches__swatch--custom"
+		class:reader-color-swatches__swatch--selected={isCustomColor}
+		style:--swatch-color={isCustomColor ? value : undefined}
+		type="button"
+		aria-label="Custom color"
+		onclick={() => colorInputElement?.click()}
+	>
+		<input
+			bind:this={colorInputElement}
+			value={isCustomColor ? value : DEFAULT_READER_DOCUMENT_COLOR}
+			class="reader-color-swatches__custom-input"
+			type="color"
+			tabindex={-1}
+			aria-hidden="true"
+			oninput={(event) => {
+				if (event.currentTarget instanceof HTMLInputElement) {
+					onchange(event.currentTarget.value);
+				}
+			}}
+		/>
+	</button>
 </div>
 
 <style>

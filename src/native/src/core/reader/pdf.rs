@@ -9,10 +9,10 @@ use std::cmp::Ordering;
 use uuid::Uuid;
 
 use crate::core::reader::{
-    default_canonical_schema_version, normalize_line_endings, title_from_file_stem,
-    utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderBlockStyleExtension,
-    ReaderContentBlock, ReaderImportPayload, ReaderTableCell, ReaderTableExtension,
-    ReaderTableRow, PDF_EXTRACTOR_VERSION,
+    default_canonical_schema_version, normalize_line_endings, title_from_file_stem, utf16_len,
+    FormatExtractor, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
+    ReaderImportPayload, ReaderTableCell, ReaderTableExtension, ReaderTableRow,
+    PDF_EXTRACTOR_VERSION,
 };
 
 /// PDF format extractor implementing [`FormatExtractor`].
@@ -351,7 +351,11 @@ pub(super) struct PdfLineRole {
 }
 
 /// Classifies a PDF line as heading, centered, or body text based on font size and position.
-pub(super) fn classify_pdf_line(line: &PdfLine, body_font_size: f64, typical_left: f64) -> PdfLineRole {
+pub(super) fn classify_pdf_line(
+    line: &PdfLine,
+    body_font_size: f64,
+    typical_left: f64,
+) -> PdfLineRole {
     let font_ratio = line.font_size / body_font_size.max(1.0);
     let line_width = line.x_max - line.x_min;
     let char_count = line.text.chars().count();
@@ -594,7 +598,10 @@ pub(super) fn detect_pdf_table_run(
 }
 
 /// Converts detected table rows into a reader table content block and appends it.
-pub(super) fn push_pdf_table_block(blocks: &mut Vec<ReaderContentBlock>, detected_rows: &[Vec<String>]) {
+pub(super) fn push_pdf_table_block(
+    blocks: &mut Vec<ReaderContentBlock>,
+    detected_rows: &[Vec<String>],
+) {
     let rows = detected_rows
         .iter()
         .enumerate()
@@ -853,4 +860,3 @@ pub(super) fn pdf_notice_payload(
         import_app_version: None,
     }
 }
-

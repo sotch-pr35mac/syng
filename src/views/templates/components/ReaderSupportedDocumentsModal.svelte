@@ -34,15 +34,9 @@
 					</li>
 					<li>EPUB imports focus on readable book text.</li>
 					<li>Please use Import from Webpage for online articles and pages.</li>
-					<li>
-						Imports preserve readable text and basic document structure.
-					</li>
-					<li>
-						Please use Import from Clipboard for unsupported documents.
-					</li>
-					<li>
-						Images may not display properly.
-					</li>
+					<li>Imports preserve readable text and basic document structure.</li>
+					<li>Please use Import from Clipboard for unsupported documents.</li>
+					<li>Images may not display properly.</li>
 				</ul>
 			</section>
 		</div>

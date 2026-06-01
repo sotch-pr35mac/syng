@@ -99,11 +99,7 @@ function setCanvasFont(context: CanvasRenderingContext2D, style: SnapshotTextSty
 	context.textBaseline = 'top';
 }
 
-function wrapText(
-	context: CanvasRenderingContext2D,
-	text: string,
-	maxWidth: number
-): string[] {
+function wrapText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
 	const lines: string[] = [];
 	for (const paragraph of text.split('\n')) {
 		let currentLine = '';

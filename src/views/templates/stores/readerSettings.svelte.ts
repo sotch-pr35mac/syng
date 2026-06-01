@@ -18,7 +18,8 @@ function isReaderColorThemeId(value: unknown): value is ReaderColorThemeId {
 }
 
 function clampFontSizePercent(value: unknown): number {
-	const numericValue = typeof value === 'number' ? value : DEFAULT_READER_SETTINGS.fontSizePercent;
+	const numericValue =
+		typeof value === 'number' ? value : DEFAULT_READER_SETTINGS.fontSizePercent;
 	if (!Number.isFinite(numericValue)) {
 		return DEFAULT_READER_SETTINGS.fontSizePercent;
 	}

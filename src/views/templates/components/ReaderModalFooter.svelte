@@ -23,6 +23,6 @@
 </script>
 
 <SyButton size="large" onclick={oncancel}>{cancelLabel}</SyButton>
-<SyButton size="large" color="green" disabled={disabled} onclick={onconfirm}>
+<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
 	{busy ? busyLabel : confirmLabel}
 </SyButton>

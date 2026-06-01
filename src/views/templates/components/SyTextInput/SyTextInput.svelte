@@ -22,7 +22,7 @@
 	 * @property {any} [spellcheck] - Spellcheck Prop
 	 * @property {any[]} [classes] - Additional class names
 	 * @property {number} [maxlength] - Maximum character length
- * @property {(value: string) => void} [onchange] - Change handler
+	 * @property {(value: string) => void} [onchange] - Change handler
 	 * @property {(value: string) => void} [onkeyup] - Keyup handler
 	 * @property {(value: string) => void} [oninput] - Input handler
 	 * @property {(event: Event) => void} [onenter] - Enter key handler

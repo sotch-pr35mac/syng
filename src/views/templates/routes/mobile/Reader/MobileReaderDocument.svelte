@@ -567,9 +567,11 @@
 								getBlockStyle(sourceBlock).centered
 							)}
 							class:mobile-reader-document__block--list={block.kind === 'list_item'}
-							class:mobile-reader-document__block--list-bullet={block.kind === 'list_item' &&
+							class:mobile-reader-document__block--list-bullet={block.kind ===
+								'list_item' &&
 								sourceBlock?.extensions?.list_item?.list_style !== 'ordered'}
-							class:mobile-reader-document__block--list-ordered={block.kind === 'list_item' &&
+							class:mobile-reader-document__block--list-ordered={block.kind ===
+								'list_item' &&
 								sourceBlock?.extensions?.list_item?.list_style === 'ordered'}
 							data-ordinal={block.kind === 'list_item' &&
 							sourceBlock?.extensions?.list_item?.list_style === 'ordered' &&
@@ -734,21 +736,18 @@
 	.mobile-reader-document__page--ios {
 		--ios-border-radius: 62px;
 
-		border-radius: var(--sy-border-radius) var(--sy-border-radius)
-			var(--ios-border-radius) var(--ios-border-radius);
+		border-radius: var(--sy-border-radius) var(--sy-border-radius) var(--ios-border-radius)
+			var(--ios-border-radius);
 	}
 
 	.mobile-reader-document__stage--android {
 		padding-bottom: calc(
-			var(--mobile-reader-stage-padding)
-				+ max(env(safe-area-inset-bottom), 24px)
+			var(--mobile-reader-stage-padding) + max(env(safe-area-inset-bottom), 24px)
 		);
 	}
 
 	.mobile-reader-document__stage--android .mobile-reader-document__page-count {
-		bottom: calc(
-			var(--sy-mobile-space--large) + max(env(safe-area-inset-bottom), 20px)
-		);
+		bottom: calc(var(--sy-mobile-space--large) + max(env(safe-area-inset-bottom), 20px));
 	}
 
 	.mobile-reader-document__page--android {
@@ -789,7 +788,7 @@
 		white-space: nowrap;
 	}
 
-.mobile-reader-document__block {
+	.mobile-reader-document__block {
 		white-space: pre-wrap;
 		margin: 0 0 1.25em;
 	}

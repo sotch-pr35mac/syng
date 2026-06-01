@@ -10,12 +10,7 @@
 		onchange?: (_direction: 'increase' | 'decrease') => void;
 	};
 
-	const {
-		fontSizePercent,
-		canDecrease = true,
-		canIncrease = true,
-		onchange,
-	}: Props = $props();
+	const { fontSizePercent, canDecrease = true, canIncrease = true, onchange }: Props = $props();
 </script>
 
 <SyButtonBar size="large" aria-label="Reader font size">

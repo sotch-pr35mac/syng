@@ -13,7 +13,13 @@
 	import Study from '@/routes/Study.svelte';
 	import Tools from '@/routes/Tools.svelte';
 	import { router } from 'svelte-spa-router';
-	import { runStartupActions, handleError, installPendingUpdate, telemetry, getRouteScreenName } from '@/utils';
+	import {
+		runStartupActions,
+		handleError,
+		installPendingUpdate,
+		telemetry,
+		getRouteScreenName,
+	} from '@/utils';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
@@ -81,7 +87,6 @@
 		'/chat': 'chat',
 		'/characters': 'characters',
 	};
-
 </script>
 
 <div class="app-container">

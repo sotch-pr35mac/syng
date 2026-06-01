@@ -35,7 +35,8 @@ export function applyReaderImportMetadata(
 	);
 	return {
 		...importPayload,
-		canonical_schema_version: importPayload.canonical_schema_version ?? (1 as ReaderSchemaVersion),
+		canonical_schema_version:
+			importPayload.canonical_schema_version ?? (1 as ReaderSchemaVersion),
 		title: normalizedTitle,
 		color: normalizeReaderDocumentColor(color),
 	};

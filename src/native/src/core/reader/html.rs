@@ -11,12 +11,11 @@ use tauri_plugin_http::reqwest;
 use uuid::Uuid;
 
 use crate::core::reader::{
-    collapse_whitespace, decode_reader_text, default_canonical_schema_version,
-    extract_text_blocks, normalize_line_endings, safe_remote_image_src, sha256_hex,
-    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions,
-    ReaderBlockStyleExtension, ReaderContentBlock, ReaderImageExtension, ReaderImportPayload,
-    ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell, ReaderTableExtension,
-    ReaderTableRow, HTML_EXTRACTOR_VERSION,
+    collapse_whitespace, decode_reader_text, default_canonical_schema_version, extract_text_blocks,
+    normalize_line_endings, safe_remote_image_src, sha256_hex, title_from_file_stem, utf16_len,
+    FormatExtractor, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
+    ReaderImageExtension, ReaderImportPayload, ReaderInlineSpan, ReaderListItemExtension,
+    ReaderTableCell, ReaderTableExtension, ReaderTableRow, HTML_EXTRACTOR_VERSION,
 };
 
 /// HTML file format extractor implementing [`FormatExtractor`].

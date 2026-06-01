@@ -867,4 +867,3 @@ fn apply_docx_numbering(
     }
     paragraph
 }
-

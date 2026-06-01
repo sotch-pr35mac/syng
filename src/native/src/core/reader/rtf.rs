@@ -612,4 +612,3 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
     append_rtf_paragraph(&mut blocks, &mut linear_text, &mut paragraph);
     Ok((linear_text, blocks))
 }
-

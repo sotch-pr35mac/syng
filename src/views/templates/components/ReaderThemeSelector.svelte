@@ -2,10 +2,7 @@
 	import { Palette } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
-	import {
-		getReaderColorTheme,
-		READER_COLOR_THEMES,
-	} from '@/reader/settings/defaults.js';
+	import { getReaderColorTheme, READER_COLOR_THEMES } from '@/reader/settings/defaults.js';
 	import type { ReaderColorThemeId } from '@/reader/types.js';
 
 	type Props = {
@@ -14,11 +11,7 @@
 		onchange?: (_theme: ReaderColorThemeId) => void;
 	};
 
-	const {
-		colorTheme,
-		systemPrefersDark = false,
-		onchange,
-	}: Props = $props();
+	const { colorTheme, systemPrefersDark = false, onchange }: Props = $props();
 </script>
 
 <SyButtonBar size="large" aria-label="Reader theme">

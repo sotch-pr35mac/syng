@@ -94,7 +94,10 @@ const withReaderEnvelopeDefaults = (
 	) {
 		return document as StoredReaderDocument;
 	}
-	return { ...document, canonical_schema_version: 1 as ReaderSchemaVersion } as StoredReaderDocument;
+	return {
+		...document,
+		canonical_schema_version: 1 as ReaderSchemaVersion,
+	} as StoredReaderDocument;
 };
 
 const createDocumentId = (): string =>
@@ -124,12 +127,11 @@ const createInitialProgress = (text = '', resourceHref = 'text'): ReaderProgress
 const isBinarySource = (
 	sourceData: ArrayBuffer | Uint8Array | number[] | Blob | undefined
 ): boolean =>
-	sourceData instanceof ArrayBuffer || Array.isArray(sourceData) || Boolean((sourceData as Uint8Array)?.byteLength);
+	sourceData instanceof ArrayBuffer ||
+	Array.isArray(sourceData) ||
+	Boolean((sourceData as Uint8Array)?.byteLength);
 
-const toBlob = (
-	sourceData: ArrayBuffer | Uint8Array | number[] | Blob,
-	mimeType: string
-): Blob => {
+const toBlob = (sourceData: ArrayBuffer | Uint8Array | number[] | Blob, mimeType: string): Blob => {
 	if (sourceData instanceof Blob) {
 		return sourceData;
 	}
@@ -366,7 +368,9 @@ export class ReaderDocumentManager {
 			.then((attachment) => toText(attachment))
 			.catch((error: PouchError) => {
 				if (error.status === NOT_FOUND_STATUS) {
-					return this._document_db.get(id).then((document) => document.source_html as string | undefined);
+					return this._document_db
+						.get(id)
+						.then((document) => document.source_html as string | undefined);
 				}
 				console.error(error);
 				throw new Error('There was an error loading the reader document HTML source.');
@@ -386,10 +390,7 @@ export class ReaderDocumentManager {
 			});
 	}
 
-	updateProgress(
-		id: string,
-		progress: ReaderLocator
-	): Promise<StoredReaderDocument> {
+	updateProgress(id: string, progress: ReaderLocator): Promise<StoredReaderDocument> {
 		return this._document_db
 			.get(id)
 			.then((document) => {
@@ -401,12 +402,10 @@ export class ReaderDocumentManager {
 						updated_at: new Date().toISOString(),
 					},
 				};
-				return this._document_db
-					.put(updatedDocument as PouchDocument)
-					.then((result) => ({
-						...updatedDocument,
-						_rev: result.rev,
-					})) as Promise<StoredReaderDocument>;
+				return this._document_db.put(updatedDocument as PouchDocument).then((result) => ({
+					...updatedDocument,
+					_rev: result.rev,
+				})) as Promise<StoredReaderDocument>;
 			})
 			.catch((error: unknown) => {
 				console.error(error);
@@ -421,7 +420,12 @@ export class ReaderDocumentManager {
 		return this._document_db
 			.get(id)
 			.then((document) => {
-				const readingOrder = (document.reading_order as Array<{ href: string; type: string; title: string }>) ?? [];
+				const readingOrder =
+					(document.reading_order as Array<{
+						href: string;
+						type: string;
+						title: string;
+					}>) ?? [];
 				const updatedDocument = {
 					...document,
 					title: metadata.title,
@@ -432,12 +436,10 @@ export class ReaderDocumentManager {
 						title: metadata.title,
 					})),
 				};
-				return this._document_db
-					.put(updatedDocument as PouchDocument)
-					.then((result) => ({
-						...updatedDocument,
-						_rev: result.rev,
-					})) as Promise<StoredReaderDocument>;
+				return this._document_db.put(updatedDocument as PouchDocument).then((result) => ({
+					...updatedDocument,
+					_rev: result.rev,
+				})) as Promise<StoredReaderDocument>;
 			})
 			.catch((error: unknown) => {
 				console.error(error);
