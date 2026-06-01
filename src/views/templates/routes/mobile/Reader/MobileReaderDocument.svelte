@@ -6,6 +6,7 @@
 	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
 	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import { readerPageSwipe } from '@/actions/readerPageSwipe.svelte.js';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import { isAndroid, isIos } from '@/utils/device.js';
 	import {
@@ -45,7 +46,6 @@
 	const LIST_NESTING_INDENT_EM = 1.15;
 	const MAX_HEADING_LEVEL = 6;
 	const PAGE_CURL_DURATION_MS = 720;
-	const PERCENTAGE_SCALE = 100;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
 	const activeDocument = $derived(readerRoute.activeDocument);
@@ -88,8 +88,6 @@
 	let readerSettingsPopoverVisible = $state(false);
 	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
 	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
-	let gestureStartX = 0;
-	let gestureStartY = 0;
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
 	let turningPage = $state(false);
@@ -97,6 +95,10 @@
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
+	const readerPageSwipeOptions = $derived({
+		enabled: !turningPage,
+		onTurnPage: turnPage,
+	});
 	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
 	let routeLoadRequest = $state(0);
 	const activeDocumentVerticalWriting = $derived(
@@ -381,29 +383,6 @@
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
 	}
-
-	function onPointerDown(event: PointerEvent): void {
-		gestureStartX = event.clientX;
-		gestureStartY = event.clientY;
-	}
-
-	function onPointerUp(event: PointerEvent): void {
-		if (turningPage) {
-			return;
-		}
-		const deltaX = event.clientX - gestureStartX;
-		const deltaY = event.clientY - gestureStartY;
-		const MIN_SWIPE_DISTANCE = 70;
-		const MAX_VERTICAL_DRIFT = 60;
-		if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE || Math.abs(deltaY) > MAX_VERTICAL_DRIFT) {
-			return;
-		}
-		if (deltaX < 0) {
-			turnPage('next');
-		} else {
-			turnPage('previous');
-		}
-	}
 </script>
 
 <div class="mobile-reader-document" style={activeDocument && currentPage ? readerThemeStyle : ''}>
@@ -456,8 +435,7 @@
 		<main
 			class="mobile-reader-document__stage"
 			class:mobile-reader-document__stage--android={isAndroid()}
-			onpointerdown={onPointerDown}
-			onpointerup={onPointerUp}
+			use:readerPageSwipe={readerPageSwipeOptions}
 		>
 			<span
 				bind:this={characterMeasureElement}

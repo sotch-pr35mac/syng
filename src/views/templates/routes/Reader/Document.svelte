@@ -7,6 +7,7 @@
 	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
 	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import { readerPageSwipe } from '@/actions/readerPageSwipe.svelte.js';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		getReaderColorTheme,
@@ -47,6 +48,7 @@
 	const PAGE_CURL_DURATION_MS = 760;
 	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 	const READER_SETTINGS_POPOVER_WIDTH_PX = 470;
+	const IPAD_READER_PAGE_SWIPE_POINTER_TYPES = ['touch'] as const;
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const activeDocument = $derived(readerRoute.activeDocument);
@@ -93,8 +95,11 @@
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
-	let gestureStartX = 0;
-	let gestureStartY = 0;
+	const readerPageSwipeOptions = $derived({
+		enabled: isIPadDevice && !turningPage,
+		acceptedPointerTypes: IPAD_READER_PAGE_SWIPE_POINTER_TYPES,
+		onTurnPage: turnPage,
+	});
 	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
 	let routeLoadRequest = $state(0);
 	let readerSettingsPopoverVisible = $state(false);
@@ -382,31 +387,6 @@
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
 	}
-
-	function onPointerDown(event: PointerEvent): void {
-		gestureStartX = event.clientX;
-		gestureStartY = event.clientY;
-	}
-
-	function onPointerUp(event: PointerEvent): void {
-		// Only finger swipes turn pages; a trackpad cursor-drag or Apple Pencil on
-		// iPad keeps its normal behavior (e.g. selecting text).
-		if (turningPage || event.pointerType !== 'touch') {
-			return;
-		}
-		const deltaX = event.clientX - gestureStartX;
-		const deltaY = event.clientY - gestureStartY;
-		const MIN_SWIPE_DISTANCE = 70;
-		const MAX_VERTICAL_DRIFT = 60;
-		if (Math.abs(deltaX) < MIN_SWIPE_DISTANCE || Math.abs(deltaY) > MAX_VERTICAL_DRIFT) {
-			return;
-		}
-		if (deltaX < 0) {
-			turnPage('next');
-		} else {
-			turnPage('previous');
-		}
-	}
 </script>
 
 <div class="reader" style={activeDocument ? readerThemeStyle : ''}>
@@ -476,8 +456,7 @@
 		<main
 			class="reader__stage"
 			class:reader__stage--ipad={isIPadDevice}
-			onpointerdown={isIPadDevice ? onPointerDown : undefined}
-			onpointerup={isIPadDevice ? onPointerUp : undefined}
+			use:readerPageSwipe={readerPageSwipeOptions}
 		>
 			<button
 				class="reader__page-turn reader__page-turn--previous"
