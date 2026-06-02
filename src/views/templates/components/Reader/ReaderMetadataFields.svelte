@@ -1,10 +1,10 @@
 <script lang="ts">
-	import ReaderColorSwatches from '@/components/ReaderColorSwatches.svelte';
+	import ReaderColorSwatches from '@/components/Reader/ReaderColorSwatches.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		READER_DOCUMENT_TITLE_MAX_LENGTH,
-	} from '@/utils/readerDocumentMetadata.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		idPrefix: string;

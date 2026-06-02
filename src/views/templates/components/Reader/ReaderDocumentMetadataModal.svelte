@@ -1,11 +1,10 @@
 <script lang="ts">
-	import ReaderMetadataFields from '@/components/ReaderMetadataFields.svelte';
-	import ReaderModalFooter from '@/components/ReaderModalFooter.svelte';
-	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import ReaderModalShell from '@/components/Reader/ReaderModalShell.svelte';
+	import ReaderMetadataFields from '@/components/Reader/ReaderMetadataFields.svelte';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		normalizeReaderDocumentColor,
-	} from '@/utils/readerDocumentMetadata.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		visible?: boolean;
@@ -52,43 +51,26 @@
 	}
 </script>
 
-<SyModal {title} {visible} {onclose}>
+<ReaderModalShell
+	{title}
+	{visible}
+	{confirmLabel}
+	busyLabel="Saving..."
+	disabled={!canSave}
+	busy={busy || submitting}
+	width="min(420px, 68vw)"
+	{onclose}
+	onconfirm={save}
+>
 	{#snippet body()}
-		<div class="reader-document-metadata">
-			<ReaderMetadataFields
-				idPrefix="reader-document-metadata"
-				title={documentTitle}
-				color={documentColor}
-				ontitleinput={(value) => {
-					documentTitle = value;
-				}}
-				oncolorchange={(nextColor) => (documentColor = nextColor)}
-			/>
-		</div>
-	{/snippet}
-	{#snippet footer()}
-		<ReaderModalFooter
-			disabled={!canSave}
-			{confirmLabel}
-			busyLabel="Saving..."
-			busy={busy || submitting}
-			oncancel={onclose}
-			onconfirm={save}
+		<ReaderMetadataFields
+			idPrefix="reader-document-metadata"
+			title={documentTitle}
+			color={documentColor}
+			ontitleinput={(value) => {
+				documentTitle = value;
+			}}
+			oncolorchange={(nextColor) => (documentColor = nextColor)}
 		/>
 	{/snippet}
-</SyModal>
-
-<style>
-	.reader-document-metadata {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space--large);
-		width: min(420px, 68vw);
-	}
-
-	@media (max-width: 640px) {
-		.reader-document-metadata {
-			width: 100%;
-		}
-	}
-</style>
+</ReaderModalShell>

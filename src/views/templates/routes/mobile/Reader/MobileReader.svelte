@@ -11,12 +11,12 @@
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
-	import ReaderBookCard from '@/components/ReaderBookCard.svelte';
-	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
-	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
-	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
-	import ReaderSupportedDocumentsModal from '@/components/ReaderSupportedDocumentsModal.svelte';
-	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
+	import ReaderBookCard from '@/components/Reader/ReaderBookCard.svelte';
+	import ReaderClipboardImportModal from '@/components/Reader/ReaderClipboardImportModal.svelte';
+	import ReaderDocumentImportModal from '@/components/Reader/ReaderDocumentImportModal.svelte';
+	import ReaderDocumentMetadataModal from '@/components/Reader/ReaderDocumentMetadataModal.svelte';
+	import ReaderSupportedDocumentsModal from '@/components/Reader/ReaderSupportedDocumentsModal.svelte';
+	import ReaderWebpageImportModal from '@/components/Reader/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		createReaderLibrary,

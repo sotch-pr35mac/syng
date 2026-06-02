@@ -1,4 +1,4 @@
-import type { ReaderColorThemeId, ReaderThemeSettings } from '@/reader/types.js';
+import type { ReaderColorThemeId, ReaderThemeSettings } from '@/types/reader.js';
 
 export interface ReaderColorTheme {
 	id: ReaderColorThemeId;

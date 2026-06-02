@@ -2,7 +2,7 @@
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		READER_DOCUMENT_COLORS,
-	} from '@/utils/readerDocumentMetadata.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		value?: string;

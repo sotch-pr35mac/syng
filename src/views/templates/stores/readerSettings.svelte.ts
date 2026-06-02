@@ -5,8 +5,8 @@ import {
 	READER_FONT_SIZE_MAX_PERCENT,
 	READER_FONT_SIZE_MIN_PERCENT,
 	READER_FONT_SIZE_STEP_PERCENT,
-} from '@/reader/settings/defaults.js';
-import type { ReaderColorThemeId, ReaderThemeSettings } from '@/reader/types.js';
+} from '@/utils/readerSettings.js';
+import type { ReaderColorThemeId, ReaderThemeSettings } from '@/types/reader.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 
 const READER_SETTINGS_PREFERENCE_KEY = 'readerSettings';

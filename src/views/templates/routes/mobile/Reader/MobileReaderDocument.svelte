@@ -3,8 +3,8 @@
 	import { ChevronLeft, SlidersHorizontal } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
-	import ReaderThemeSelector from '@/components/ReaderThemeSelector.svelte';
-	import ReaderTextSizeSelector from '@/components/ReaderTextSizeSelector.svelte';
+	import ReaderThemeSelector from '@/components/Reader/ReaderThemeSelector.svelte';
+	import ReaderTextSizeSelector from '@/components/Reader/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { readerPageSwipe } from '@/actions/readerPageSwipe.svelte.js';
 	import { readerRoute } from '@/composables/reader.svelte.js';
@@ -14,19 +14,19 @@
 		getReaderColorThemeSettings,
 		READER_FONT_SIZE_MAX_PERCENT,
 		READER_FONT_SIZE_MIN_PERCENT,
-	} from '@/reader/settings/defaults.js';
-	import CssPageCurlOverlay from '@/reader/animation/CssPageCurlOverlay.svelte';
-	import { createReaderPageSnapshot } from '@/reader/animation/pageSnapshot.js';
+	} from '@/utils/readerSettings.js';
+	import CssPageCurlOverlay from '@/components/Reader/CssPageCurlOverlay.svelte';
 	import type {
 		ReaderBlockStyleExtension,
+		ReaderColorThemeId,
 		ReaderContentBlock,
 		ReaderToken,
 	} from '@/types/reader.js';
-	import type { ReaderColorThemeId } from '@/reader/types.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 	import {
+		createReaderPageSnapshot,
 		READER_IMAGE_MAX_HEIGHT_RATIO,
 		READER_TABLE_MAX_HEIGHT_RATIO,
 	} from '@/utils/readerPagination.js';

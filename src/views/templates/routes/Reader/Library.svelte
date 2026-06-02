@@ -12,18 +12,18 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
-	import ReaderBookCard from '@/components/ReaderBookCard.svelte';
-	import ReaderClipboardImportModal from '@/components/ReaderClipboardImportModal.svelte';
-	import ReaderDocumentImportModal from '@/components/ReaderDocumentImportModal.svelte';
-	import ReaderDocumentMetadataModal from '@/components/ReaderDocumentMetadataModal.svelte';
-	import ReaderSupportedDocumentsModal from '@/components/ReaderSupportedDocumentsModal.svelte';
-	import ReaderWebpageImportModal from '@/components/ReaderWebpageImportModal.svelte';
+	import ReaderBookCard from '@/components/Reader/ReaderBookCard.svelte';
+	import ReaderClipboardImportModal from '@/components/Reader/ReaderClipboardImportModal.svelte';
+	import ReaderDocumentImportModal from '@/components/Reader/ReaderDocumentImportModal.svelte';
+	import ReaderDocumentMetadataModal from '@/components/Reader/ReaderDocumentMetadataModal.svelte';
+	import ReaderSupportedDocumentsModal from '@/components/Reader/ReaderSupportedDocumentsModal.svelte';
+	import ReaderWebpageImportModal from '@/components/Reader/ReaderWebpageImportModal.svelte';
 	import { readerRoute } from '@/composables/reader.svelte.js';
 	import {
 		createReaderLibrary,
 		readerImportDropdownValues,
 	} from '@/composables/readerLibrary.svelte.js';
-	import { READER_SUPPORTED_DOCUMENT_FORMAT_LABEL } from '@/reader/importSupport.js';
+	import { READER_SUPPORTED_DOCUMENT_FORMAT_LABEL } from '@/utils/readerDocument.js';
 	import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { isIPad } from '@/utils/device.js';

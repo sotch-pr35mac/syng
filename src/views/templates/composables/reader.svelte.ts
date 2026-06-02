@@ -12,20 +12,18 @@ import type {
 } from '@/types/reader.js';
 import type { SearchEntry } from '@/types/search.js';
 import { handleError, telemetry } from '@/utils';
-import { applyReaderImportMetadata } from '@/utils/readerDocumentMetadata.js';
 import {
+	applyReaderImportMetadata,
 	ensureReaderDocumentForRendering,
 	getTableExtension,
-	isTableBlock,
-	tableCellTokenKey,
-} from '@/utils/readerDocumentCanonical.js';
-import {
 	invokeImportReaderDocument,
 	invokePrepareReaderImport,
+	isTableBlock,
 	LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 	parseLargeHtmlImportError,
+	tableCellTokenKey,
 	type PrepareReaderImportInvokeArgs,
-} from '@/utils/readerImport.js';
+} from '@/utils/readerDocument.js';
 import {
 	createReaderPages,
 	createReaderSegments,

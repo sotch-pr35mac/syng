@@ -15,6 +15,7 @@
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
@@ -123,14 +124,9 @@
 	const exportActiveList = () => bookmarksRoute.exportActiveList();
 	const importList = () => bookmarksRoute.importList();
 
-	let lastClickRect = $state(new DOMRect());
-	const captureClickPosition = (event) => {
-		if (event.target instanceof HTMLElement) {
-			lastClickRect = event.target.getBoundingClientRect();
-		}
-	};
+	const clickTracker = createClickPositionTracker();
 	const handleDictionaryLink = (text) => {
-		bookmarksRoute.openPopoverDictionary(text, lastClickRect);
+		bookmarksRoute.openPopoverDictionary(text, clickTracker.lastClickRect);
 	};
 
 	const actions = $derived([
@@ -208,7 +204,7 @@
 				filterable={true}
 			/>
 		</div>
-		<div class="dictionary-content" onclickcapture={captureClickPosition}>
+		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 		</div>
 	</div>

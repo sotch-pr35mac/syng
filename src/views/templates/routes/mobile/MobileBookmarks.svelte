@@ -24,6 +24,7 @@
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
 
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
@@ -107,14 +108,9 @@
 		}
 	}
 
-	let lastClickRect = $state(new DOMRect());
-	function captureClickPosition(event: MouseEvent): void {
-		if (event.target instanceof HTMLElement) {
-			lastClickRect = event.target.getBoundingClientRect();
-		}
-	}
+	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(text: string): void {
-		bookmarksRoute.openPopoverDictionary(text, lastClickRect);
+		bookmarksRoute.openPopoverDictionary(text, clickTracker.lastClickRect);
 	}
 
 	// Overflow menu
@@ -203,7 +199,10 @@
 <div class="mobile-bookmarks">
 	<div class="mobile-bookmarks__content" use:scrollRestore={'mobile-bookmarks-content'}>
 		{#if activeWord}
-			<div class="mobile-bookmarks__dict-wrapper" onclickcapture={captureClickPosition}>
+			<div
+				class="mobile-bookmarks__dict-wrapper"
+				onclickcapture={clickTracker.captureClickPosition}
+			>
 				<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 			</div>
 		{:else}

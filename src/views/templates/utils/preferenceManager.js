@@ -7,7 +7,7 @@
  * from the db during the session.
  */
 import { handleError } from '@/utils/error.js';
-import { DEFAULT_READER_SETTINGS } from '@/reader/settings/defaults.js';
+import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 
 /*
  * Description: Construct a preference entry.

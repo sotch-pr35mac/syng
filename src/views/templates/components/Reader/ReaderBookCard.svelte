@@ -2,7 +2,7 @@
 	import { Check, Pencil } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { ReaderDocument } from '@/types/reader.js';
-	import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
+	import { normalizeReaderDocumentColor } from '@/utils/readerDocument.js';
 
 	const PERCENTAGE_SCALE = 100;
 

@@ -2,8 +2,8 @@
 	import { Palette } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
-	import { getReaderColorTheme, READER_COLOR_THEMES } from '@/reader/settings/defaults.js';
-	import type { ReaderColorThemeId } from '@/reader/types.js';
+	import { getReaderColorTheme, READER_COLOR_THEMES } from '@/utils/readerSettings.js';
+	import type { ReaderColorThemeId } from '@/types/reader.js';
 
 	type Props = {
 		colorTheme: ReaderColorThemeId;

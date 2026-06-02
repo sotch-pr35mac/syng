@@ -1,6 +1,6 @@
 import type { ReaderDocument, ReaderImportPayload, ReaderLocator } from '@/types/reader.js';
 import { getReaderDocumentManager } from '@/utils/appServices.js';
-import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
+import { normalizeReaderDocumentColor } from '@/utils/readerDocument.js';
 import { handleError } from '@/utils/error.js';
 
 let documents = $state<ReaderDocument[]>([]);

@@ -4,7 +4,7 @@
 	import {
 		READER_SUPPORTED_DOCUMENT_FORMAT_LABEL,
 		READER_SUPPORTED_TEXT_ENCODING_LABEL,
-	} from '@/reader/importSupport.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		visible?: boolean;

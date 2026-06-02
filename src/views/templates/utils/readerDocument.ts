@@ -1,12 +1,102 @@
 import { invoke } from '@tauri-apps/api/core';
 import type {
 	ReaderContentBlock,
+	ReaderDocument,
 	ReaderExtractorVersion,
 	ReaderImportPayload,
 	ReaderSchemaVersion,
+	ReaderTableExtension,
 } from '@/types/reader.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
-import { normalizeReaderDocumentColor } from '@/utils/readerDocumentMetadata.js';
+
+// --- Supported-format labels (import UI) ---
+
+export const READER_SUPPORTED_DOCUMENT_FORMAT_LABEL = 'TXT, EPUB, PDF, DOCX, RTF';
+
+export const READER_SUPPORTED_TEXT_ENCODING_LABEL = 'UTF-8, UTF-16, GBK/GB18030/GB2312, Big5';
+
+// --- Canonical document normalization ---
+
+export const CURRENT_CANONICAL_SCHEMA_VERSION = 1 as ReaderSchemaVersion;
+
+function participatesInLinearText(block: ReaderContentBlock): boolean {
+	return block.participates_in_linear_text !== false;
+}
+
+/**
+ * Ensures a document has canonical blocks for the single reader pipeline.
+ * First-version reader documents are expected to already contain canonical blocks.
+ */
+export function ensureReaderDocumentForRendering(document: ReaderDocument): ReaderDocument {
+	const canonicalVersion = document.canonical_schema_version ?? CURRENT_CANONICAL_SCHEMA_VERSION;
+
+	return {
+		...document,
+		canonical_schema_version: canonicalVersion,
+	};
+}
+
+export function isTableBlock(block: ReaderContentBlock): boolean {
+	return (
+		block.kind === 'table' &&
+		Boolean(block.extensions?.table) &&
+		!participatesInLinearText(block)
+	);
+}
+
+export function getTableExtension(block: ReaderContentBlock): ReaderTableExtension | undefined {
+	return block.extensions?.table;
+}
+
+export function tableCellTokenKey(blockId: string, row: number, col: number): string {
+	return `${blockId}::${row}::${col}`;
+}
+
+// --- Document metadata (title, color) ---
+
+export const READER_DOCUMENT_TITLE_MAX_LENGTH = 30;
+export const DEFAULT_READER_DOCUMENT_COLOR = '#ffffff';
+
+// Sourced from theme.css color variables. Display is handled by CSS color-mix()
+// in ReaderColorSwatches and ReaderLibrary, so these hex values are only used
+// for storage and comparison. Keep in sync with theme.css if theme colors change.
+export const READER_DOCUMENT_COLORS = [
+	'#ffffff', // white
+	'#76aff9', // --sy-color--blue-1
+	'#43b866', // --sy-color--green-3
+	'#e48e1c', // --sy-color--yellow-1
+	'#e43978', // --sy-color--red-1
+	'#8b6ed6', // lavender (no theme variable)
+];
+
+const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
+
+export function normalizeReaderDocumentColor(color: string | undefined): string {
+	const normalizedColor = color?.trim();
+	return normalizedColor && HEX_COLOR_PATTERN.test(normalizedColor)
+		? normalizedColor.toLowerCase()
+		: DEFAULT_READER_DOCUMENT_COLOR;
+}
+
+export function applyReaderImportMetadata(
+	importPayload: ReaderImportPayload,
+	title: string,
+	color: string
+): ReaderImportPayload {
+	const normalizedTitle = (title.trim() || importPayload.title || 'Untitled').slice(
+		0,
+		READER_DOCUMENT_TITLE_MAX_LENGTH
+	);
+	return {
+		...importPayload,
+		canonical_schema_version:
+			importPayload.canonical_schema_version ?? (1 as ReaderSchemaVersion),
+		title: normalizedTitle,
+		color: normalizeReaderDocumentColor(color),
+	};
+}
+
+// --- Native import bridge & plain-text import ---
 
 export type PrepareReaderImportInvokeArgs = {
 	sourceBase64?: string;

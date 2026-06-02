@@ -8,6 +8,7 @@
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { searchStore as search } from '@/composables/search.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
@@ -110,14 +111,9 @@
 		selectElement(0);
 	};
 
-	let lastClickRect = $state(new DOMRect());
-	function captureClickPosition(event: MouseEvent): void {
-		if (event.target instanceof HTMLElement) {
-			lastClickRect = event.target.getBoundingClientRect();
-		}
-	}
+	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(text: string): void {
-		search.openPopoverDictionary(text, lastClickRect);
+		search.openPopoverDictionary(text, clickTracker.lastClickRect);
 	}
 </script>
 
@@ -162,7 +158,7 @@
 				onselection={handleSelection}
 			/>
 		</div>
-		<div class="dictionary-content" onclickcapture={captureClickPosition}>
+		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
 				word={search.activeWord}
 				lists={search.bookmarks}

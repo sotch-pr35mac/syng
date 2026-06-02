@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import ReaderModalFooter from '@/components/ReaderModalFooter.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 
 	type Props = {
@@ -10,6 +10,8 @@
 		busy?: boolean;
 		confirmLabel?: string;
 		busyLabel?: string;
+		cancelLabel?: string;
+		width?: string;
 		onclose?: () => void;
 		onconfirm?: () => Promise<void> | void;
 		body?: Snippet;
@@ -22,6 +24,8 @@
 		busy = false,
 		confirmLabel = 'Import',
 		busyLabel = 'Importing...',
+		cancelLabel = 'Cancel',
+		width = 'var(--sy-reader-import-modal-width)',
 		onclose = () => {},
 		onconfirm = () => {},
 		body: bodySnippet,
@@ -30,28 +34,23 @@
 
 <SyModal {title} {visible} {onclose}>
 	{#snippet body()}
-		<div class="reader-import-modal__body">
+		<div class="reader-modal-shell__body" style={`width: ${width};`}>
 			{@render bodySnippet?.()}
 		</div>
 	{/snippet}
 	{#snippet footer()}
-		<ReaderModalFooter
-			{disabled}
-			{confirmLabel}
-			{busyLabel}
-			{busy}
-			oncancel={onclose}
-			{onconfirm}
-		/>
+		<SyButton size="large" onclick={onclose}>{cancelLabel}</SyButton>
+		<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
+			{busy ? busyLabel : confirmLabel}
+		</SyButton>
 	{/snippet}
 </SyModal>
 
 <style>
-	.reader-import-modal__body {
+	.reader-modal-shell__body {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--large);
-		width: var(--sy-reader-import-modal-width);
 		max-width: 100%;
 	}
 </style>

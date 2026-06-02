@@ -1,15 +1,17 @@
 <script lang="ts">
-	import ReaderImportModal from '@/components/ReaderImportModal.svelte';
-	import ReaderWebpageImportBody from '@/components/ReaderWebpageImportBody.svelte';
 	import { ask } from '@tauri-apps/plugin-dialog';
+	import ReaderModalShell from '@/components/Reader/ReaderModalShell.svelte';
+	import ReaderMetadataFields from '@/components/Reader/ReaderMetadataFields.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import type { ReaderImportPayload } from '@/types/reader.js';
-	import { DEFAULT_READER_DOCUMENT_COLOR } from '@/utils/readerDocumentMetadata.js';
 	import {
+		DEFAULT_READER_DOCUMENT_COLOR,
 		invokePrepareReaderImport,
 		LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 		parseLargeHtmlImportError,
 		type PrepareReaderImportInvokeArgs,
-	} from '@/utils/readerImport.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		visible?: boolean;
@@ -133,7 +135,7 @@
 	}
 </script>
 
-<ReaderImportModal
+<ReaderModalShell
 	title="Import from Webpage"
 	{visible}
 	disabled={!canImport}
@@ -142,25 +144,120 @@
 	onconfirm={submit}
 >
 	{#snippet body()}
-		<ReaderWebpageImportBody
-			{url}
+		<div class="reader-webpage-import__field">
+			<label for="reader-webpage-import-url">URL</label>
+			<div class="reader-webpage-import__url-row">
+				<SyTextInput
+					value={url}
+					id="reader-webpage-import-url"
+					size="large"
+					classes={['reader-webpage-import__url-input']}
+					type="text"
+					inputmode="url"
+					autocomplete="url"
+					placeholder="https://example.com/article"
+					oninput={(value) => {
+						url = value;
+						fetchError = '';
+					}}
+					onenter={fetchPreview}
+				/>
+				<SyButton
+					size="medium"
+					classes={['reader-webpage-import__fetch-button']}
+					disabled={!canFetch}
+					onclick={fetchPreview}
+				>
+					{fetching ? 'Fetching...' : 'Fetch Preview'}
+				</SyButton>
+			</div>
+		</div>
+		<ReaderMetadataFields
+			idPrefix="reader-webpage-import"
 			{title}
 			{color}
-			{fetching}
-			{canFetch}
-			{fetchError}
-			previewTitle={preparedPayload?.title}
-			{previewText}
-			onurlinput={(value) => {
-				url = value;
-				fetchError = '';
-			}}
 			ontitleinput={(value) => {
 				title = value;
 				titleEdited = true;
 			}}
 			oncolorchange={(nextColor) => (color = nextColor)}
-			onfetchpreview={fetchPreview}
 		/>
+		{#if fetchError}
+			<p class="reader-webpage-import__error">{fetchError}</p>
+		{/if}
+		{#if previewText}
+			<div class="reader-webpage-import__field">
+				<label for="reader-webpage-import-preview">Preview</label>
+				<section
+					class="reader-webpage-import__preview"
+					id="reader-webpage-import-preview"
+					aria-label="Webpage preview"
+				>
+					<h3>{preparedPayload?.title}</h3>
+					<p>{previewText}</p>
+				</section>
+			</div>
+		{/if}
 	{/snippet}
-</ReaderImportModal>
+</ReaderModalShell>
+
+<style>
+	.reader-webpage-import__field {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space);
+		color: var(--sy-color--black);
+		font-size: var(--sy-font-size--medium);
+		font-weight: var(--sy-font-weight--medium);
+	}
+
+	.reader-webpage-import__url-row {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sy-space--large);
+	}
+
+	:global(.reader-webpage-import__url-input) {
+		box-sizing: border-box;
+		flex: 1 1 var(--sy-space--none);
+		margin: var(--sy-space--none);
+	}
+
+	:global(.reader-webpage-import__fetch-button) {
+		margin: var(--sy-space--none);
+	}
+
+	.reader-webpage-import__error {
+		margin: var(--sy-space--none);
+		color: var(--sy-color--red);
+	}
+
+	.reader-webpage-import__preview {
+		max-height: var(--sy-reader-import-preview-max-height);
+		overflow: auto;
+		border: var(--sy-border);
+		border-radius: var(--sy-border-radius);
+		padding: var(--sy-space);
+		color: var(--sy-color--grey-4);
+		box-shadow: var(--sy-inner-shadow);
+		margin: calc(var(--sy-space--small) + var(--sy-space--large))
+			calc(var(--sy-space--small) + var(--sy-space));
+	}
+
+	.reader-webpage-import__preview h3,
+	.reader-webpage-import__preview p {
+		margin: var(--sy-space--none);
+	}
+
+	.reader-webpage-import__preview h3 {
+		margin-bottom: var(--sy-space);
+		color: var(--sy-color--black);
+		font-size: var(--sy-font-size--large);
+	}
+
+	.reader-webpage-import__preview p {
+		line-height: var(--sy-line-height--body);
+		white-space: pre-wrap;
+	}
+</style>

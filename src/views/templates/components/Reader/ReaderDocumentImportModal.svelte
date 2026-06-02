@@ -1,10 +1,10 @@
 <script lang="ts">
-	import ReaderDocumentImportBody from '@/components/ReaderDocumentImportBody.svelte';
-	import ReaderImportModal from '@/components/ReaderImportModal.svelte';
+	import ReaderModalShell from '@/components/Reader/ReaderModalShell.svelte';
+	import ReaderMetadataFields from '@/components/Reader/ReaderMetadataFields.svelte';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		normalizeReaderDocumentColor,
-	} from '@/utils/readerDocumentMetadata.js';
+	} from '@/utils/readerDocument.js';
 
 	type Props = {
 		visible?: boolean;
@@ -52,7 +52,7 @@
 	}
 </script>
 
-<ReaderImportModal
+<ReaderModalShell
 	title="Import Document"
 	{visible}
 	disabled={!canImport}
@@ -61,11 +61,12 @@
 	onconfirm={submit}
 >
 	{#snippet body()}
-		<ReaderDocumentImportBody
+		<ReaderMetadataFields
+			idPrefix="reader-document-import"
 			{title}
 			{color}
 			ontitleinput={(nextTitle) => (title = nextTitle)}
 			oncolorchange={(nextColor) => (color = nextColor)}
 		/>
 	{/snippet}
-</ReaderImportModal>
+</ReaderModalShell>

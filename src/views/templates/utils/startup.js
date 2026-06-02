@@ -21,9 +21,14 @@ import { isMobile } from '@/utils/device.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
-import { getStartupDatabaseNames } from '@/utils/startupDatabases.js';
 
-export { getStartupDatabaseNames } from '@/utils/startupDatabases.js';
+/** Pouch database names for the session, isolated by debug mode. */
+export const getStartupDatabaseNames = (debugMode) => ({
+	configDb: debugMode ? 'development_config' : 'config',
+	listDb: debugMode ? 'development_word-lists' : 'word-lists',
+	bookmarkDb: debugMode ? 'development_bookmarks' : 'bookmarks',
+	readerDocumentDb: debugMode ? 'development_reader-documents' : 'reader-documents',
+});
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
