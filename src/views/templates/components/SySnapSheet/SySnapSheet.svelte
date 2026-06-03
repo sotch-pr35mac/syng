@@ -19,10 +19,16 @@
 
 	const {
 		children,
+		initialSnap = 'collapsed',
 		onSnapChange,
-	}: { children?: Snippet; onSnapChange?: (_snap: SheetSnap) => void } = $props();
+	}: {
+		children?: Snippet;
+		initialSnap?: SheetSnap;
+		onSnapChange?: (_snap: SheetSnap) => void;
+	} = $props();
 
-	let snap = $state<SheetSnap>('collapsed');
+	const getInitialSnap = () => initialSnap;
+	let snap = $state<SheetSnap>(getInitialSnap());
 	let dragHeight = $state<number | null>(null);
 	let handleElement = $state<HTMLElement | undefined>(undefined);
 

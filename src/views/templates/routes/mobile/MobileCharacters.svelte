@@ -236,7 +236,7 @@
 	}
 
 	.mobile-characters__header--ipad {
-		padding-top: env(safe-area-inset-top, 0px);
+		padding-top: max(var(--sy-space), env(safe-area-inset-top, 0px));
 	}
 
 	.mobile-characters__nav {

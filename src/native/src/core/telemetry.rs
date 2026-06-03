@@ -16,7 +16,7 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, State};
@@ -89,7 +89,7 @@ fn now_unix_ms() -> i64 {
 
 /// Reads or generates the persistent anonymous device identifier.
 /// Stored as a plain-text UUID in the app-data directory.
-fn get_or_create_device_id(data_dir: &PathBuf) -> Result<String, String> {
+fn get_or_create_device_id(data_dir: &Path) -> Result<String, String> {
     let id_path = data_dir.join("syng_device_id.txt");
     if id_path.exists() {
         fs::read_to_string(&id_path)
@@ -103,7 +103,7 @@ fn get_or_create_device_id(data_dir: &PathBuf) -> Result<String, String> {
 }
 
 /// Loads telemetry opt-out preferences from a JSON sidecar file.
-fn load_prefs(data_dir: &PathBuf) -> TelemetryPrefs {
+fn load_prefs(data_dir: &Path) -> TelemetryPrefs {
     let prefs_path = data_dir.join("telemetry_prefs.json");
     fs::read_to_string(prefs_path)
         .ok()
@@ -111,7 +111,7 @@ fn load_prefs(data_dir: &PathBuf) -> TelemetryPrefs {
         .unwrap_or_default()
 }
 
-fn save_prefs(data_dir: &PathBuf, prefs: &TelemetryPrefs) -> Result<(), String> {
+fn save_prefs(data_dir: &Path, prefs: &TelemetryPrefs) -> Result<(), String> {
     let prefs_path = data_dir.join("telemetry_prefs.json");
     let json =
         serde_json::to_string(prefs).map_err(|e| format!("Failed to serialize prefs: {e}"))?;
@@ -119,7 +119,7 @@ fn save_prefs(data_dir: &PathBuf, prefs: &TelemetryPrefs) -> Result<(), String> 
 }
 
 /// Opens (or creates) the SQLite queue database and ensures the `events` table exists.
-fn open_db(data_dir: &PathBuf) -> Result<Connection, String> {
+fn open_db(data_dir: &Path) -> Result<Connection, String> {
     let db_path = data_dir.join("telemetry_queue.db");
     let conn =
         Connection::open(db_path).map_err(|e| format!("Failed to open telemetry DB: {e}"))?;

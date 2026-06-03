@@ -16,7 +16,6 @@
 		"fs:allow-appdata-write-recursive",
 		{ "identifier": "fs:scope", "allow": ["$APPDATA/**"] },
 		"fs:default",
-		"http:default",
 		"notification:default",
 		"os:allow-platform",
 		"os:allow-version",

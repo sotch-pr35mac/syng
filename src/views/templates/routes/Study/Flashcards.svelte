@@ -8,7 +8,9 @@
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
+	import { isIPad } from '@/utils/device.js';
 	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 	const params = new URLSearchParams(router.querystring);
 	const listFromUrl = params.get('list');
 	const lists = $derived(flashcardsRoute.lists);
@@ -52,7 +54,11 @@
 </script>
 
 <div class="flashcard--container">
-	<div class="flashcard--header" data-tauri-drag-region={isMacos ? true : undefined}>
+	<div
+		class="flashcard--header"
+		class:flashcard--header--ipad={isIPadDevice}
+		data-tauri-drag-region={isMacos ? true : undefined}
+	>
 		<div class="flashcard--header--section">
 			{#each leftActions as action (action.label)}
 				<SyButton
@@ -123,6 +129,10 @@
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
 		justify-content: space-between;
+	}
+	.flashcard--header--ipad {
+		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
+		padding-bottom: var(--sy-space--large);
 	}
 	.flashcard--header--section {
 		display: flex;

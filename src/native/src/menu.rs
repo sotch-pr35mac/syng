@@ -8,6 +8,22 @@ use tauri_plugin_opener::OpenerExt;
 
 /// Creates the application menu with Help submenu.
 pub fn create<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu<R>, tauri::Error> {
+    let edit_submenu = Submenu::with_items(
+        app,
+        "Edit",
+        true,
+        &[
+            &PredefinedMenuItem::undo(app, None)?,
+            &PredefinedMenuItem::redo(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::cut(app, None)?,
+            &PredefinedMenuItem::copy(app, None)?,
+            &PredefinedMenuItem::paste(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &PredefinedMenuItem::select_all(app, None)?,
+        ],
+    )?;
+
     let help_submenu = SubmenuBuilder::new(app, "Help")
         .text("github", "Github")
         .separator()
@@ -26,13 +42,15 @@ pub fn create<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu
             .unwrap_or_else(|| app.package_info().name.clone());
         let app_menu =
             Submenu::with_items(app, title, true, &[&PredefinedMenuItem::quit(app, None)?])?;
-        return MenuBuilder::new(app)
-            .items(&[&app_menu, &help_submenu])
-            .build();
+        MenuBuilder::new(app)
+            .items(&[&app_menu, &edit_submenu, &help_submenu])
+            .build()
     }
 
     #[cfg(not(target_os = "macos"))]
-    MenuBuilder::new(app).items(&[&help_submenu]).build()
+    MenuBuilder::new(app)
+        .items(&[&edit_submenu, &help_submenu])
+        .build()
 }
 
 /// Handles menu item click events.

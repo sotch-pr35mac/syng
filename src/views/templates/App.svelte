@@ -6,13 +6,20 @@
 	import Chat from '@/routes/Chat.svelte';
 	import Help from '@/routes/Help.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
-	import Reader from '@/routes/Reader.svelte';
+	import ReaderLibrary from '@/routes/Reader/Library.svelte';
+	import ReaderDocument from '@/routes/Reader/Document.svelte';
 	import Search from '@/routes/Search.svelte';
 	import Settings from '@/routes/Settings.svelte';
 	import Study from '@/routes/Study.svelte';
 	import Tools from '@/routes/Tools.svelte';
 	import { router } from 'svelte-spa-router';
-	import { runStartupActions, handleError, installPendingUpdate, telemetry } from '@/utils';
+	import {
+		runStartupActions,
+		handleError,
+		installPendingUpdate,
+		telemetry,
+		getRouteScreenName,
+	} from '@/utils';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
@@ -29,7 +36,7 @@
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
-		const screenName = routeScreenNames[router.location];
+		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
 		}
@@ -53,7 +60,8 @@
 
 	const routes = {
 		'/': Search,
-		'/read': Reader,
+		'/read': ReaderLibrary,
+		'/read/document/:id': ReaderDocument,
 		'/bookmarks': Bookmarks,
 		'/study': Study,
 		'/study/flashcards': Flashcards,
@@ -68,7 +76,7 @@
 
 	const routeScreenNames = {
 		'/': 'search',
-		'/read': 'reader',
+		'/read': 'library',
 		'/bookmarks': 'bookmarks',
 		'/study': 'study',
 		'/study/flashcards': 'flashcards',

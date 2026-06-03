@@ -12,18 +12,19 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [size] - small
+	 * @property {string} [aria-label] - Accessible label
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
 	/** @type {Props} */
-	const { size = 'medium', children } = $props();
+	const { size = 'medium', children, ...restProps } = $props();
 
 	const getClasses = () => {
 		return ['sy-button-bar--container', `sy-button-bar--container--${size}`].join(' ');
 	};
 </script>
 
-<div class={getClasses()}>
+<div {...restProps} class={getClasses()}>
 	{@render children?.()}
 </div>
 

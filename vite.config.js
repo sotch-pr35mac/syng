@@ -1,16 +1,16 @@
-import { defineConfig } from 'vite'
-import { svelte } from '@sveltejs/vite-plugin-svelte'
-import { resolve } from 'path'
+import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
+import { resolve } from 'path';
 
 export default defineConfig({
 	plugins: [svelte()],
 	resolve: {
 		alias: {
 			'@': resolve(import.meta.dirname, 'src/views/templates'),
-			'@test': resolve(import.meta.dirname, 'src/test')
+			'@test': resolve(import.meta.dirname, 'src/test'),
 		},
 		// Force browser conditions for all resolution
-		conditions: ['browser', 'import', 'module', 'default']
+		conditions: ['browser', 'import', 'module', 'default'],
 	},
 	build: {
 		outDir: 'src/views/templates/build',
@@ -21,17 +21,17 @@ export default defineConfig({
 		terserOptions: {
 			compress: {
 				drop_console: true,
-				drop_debugger: true
-			}
+				drop_debugger: true,
+			},
 		},
 		rollupOptions: {
 			input: resolve(import.meta.dirname, 'src/views/templates/app.js'),
 			output: {
 				format: 'iife',
 				entryFileNames: 'bundle.js',
-				assetFileNames: 'bundle[extname]'
-			}
-		}
+				assetFileNames: 'bundle[extname]',
+			},
+		},
 	},
 	test: {
 		globals: true,
@@ -40,9 +40,9 @@ export default defineConfig({
 		deps: {
 			optimizer: {
 				web: {
-					include: ['svelte', '@testing-library/svelte']
-				}
-			}
-		}
-	}
-})
+					include: ['svelte', '@testing-library/svelte'],
+				},
+			},
+		},
+	},
+});

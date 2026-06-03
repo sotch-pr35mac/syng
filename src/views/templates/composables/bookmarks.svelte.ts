@@ -16,6 +16,7 @@ import {
 } from '@/stores/bookmarksRoute.svelte.js';
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import type { SearchEntry } from '@/types/search.js';
 import { handleError, resolveNameConflict, telemetry } from '@/utils';
 
 export const DEFAULT_BOOKMARKS_LIST = 'Bookmarks';
@@ -39,6 +40,10 @@ let activeList = $state(bookmarksActiveListStore.value);
 let activeWord = $state<BookmarkWordEntry | undefined>(bookmarksActiveWordStore.value);
 let words = $state<BookmarkWordEntry[]>([]);
 let wordList = $state<WordListPreviewItem[]>([]);
+let popoverResults = $state<SearchEntry[]>([]);
+let popoverResultIndex = $state(0);
+let popoverWord = $state<SearchEntry | undefined>(undefined);
+let popoverAnchor = $state<DOMRect | undefined>(undefined);
 
 function getDropdownList() {
 	return [
@@ -226,6 +231,59 @@ function importList(): Promise<boolean> {
 		});
 }
 
+async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+		popoverAnchor = anchor;
+		telemetry.trackEvent('bookmarks.dictionary_link_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+async function lookupPopoverWord(text: string): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+		telemetry.trackEvent('bookmarks.dictionary_link_opened', {}).catch(() => {});
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+function selectPopoverResult(index: number): void {
+	popoverResultIndex = index;
+	popoverWord = popoverResults[index];
+}
+
+function closePopoverDictionary(): void {
+	popoverWord = undefined;
+	popoverResults = [];
+	popoverResultIndex = 0;
+	popoverAnchor = undefined;
+}
+
 function getNewPlaceholder(): string {
 	return CREATE_NEW_PLACEHOLDERS[Math.floor(Math.random() * CREATE_NEW_PLACEHOLDERS.length)];
 }
@@ -249,6 +307,18 @@ export const bookmarksRoute = {
 	get wordList(): WordListPreviewItem[] {
 		return wordList;
 	},
+	get popoverWord(): SearchEntry | undefined {
+		return popoverWord;
+	},
+	get popoverResults(): SearchEntry[] {
+		return popoverResults;
+	},
+	get popoverResultIndex(): number {
+		return popoverResultIndex;
+	},
+	get popoverAnchor(): DOMRect | undefined {
+		return popoverAnchor;
+	},
 	updateListContent,
 	setActiveList,
 	setActiveWord,
@@ -260,4 +330,8 @@ export const bookmarksRoute = {
 	exportActiveList,
 	importList,
 	getNewPlaceholder,
+	openPopoverDictionary,
+	lookupPopoverWord,
+	selectPopoverResult,
+	closePopoverDictionary,
 };

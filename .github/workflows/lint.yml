@@ -1,4 +1,4 @@
-name: Lint
+name: Check
 
 on:
   push:
@@ -17,7 +17,11 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
+      - name: Install Native Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
       - name: Install Dependencies
         run: make install-dev
       - name: Lint
-        run: make lint
+        run: make check

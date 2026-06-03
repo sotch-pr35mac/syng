@@ -4,6 +4,7 @@
 
 	const tabs = [
 		{ href: '#/', path: '/', label: 'Search' },
+		{ href: '#/read', path: /^\/read(\/.*)?/, label: 'Read' },
 		{ href: '#/bookmarks', path: '/bookmarks', label: 'Bookmarks' },
 		{ href: '#/study', path: /^\/study(\/.*)?/, label: 'Study' },
 	];
@@ -46,7 +47,7 @@
 	.mobile-nav__tabs {
 		grid-column: 2;
 		display: flex;
-		gap: var(--sy-space--extra-large);
+		gap: var(--sy-space--large);
 		align-items: center;
 	}
 

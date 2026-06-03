@@ -2,11 +2,13 @@
 	import { tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { searchStore as search } from '@/composables/search.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
@@ -109,19 +111,10 @@
 		selectElement(0);
 	};
 
-	const handleLink = (word: string): void => {
-		const input = document.getElementById('search') as HTMLInputElement | null;
-		if (input) {
-			input.value = word;
-		}
-		doSearch(word, true);
-		tick()
-			.then(() => {
-				selectElement(0);
-				return undefined;
-			})
-			.catch(() => {});
-	};
+	const clickTracker = createClickPositionTracker();
+	function handleDictionaryLink(text: string): void {
+		search.openPopoverDictionary(text, clickTracker.lastClickRect);
+	}
 </script>
 
 <div class="search-page-container">
@@ -165,14 +158,24 @@
 				onselection={handleSelection}
 			/>
 		</div>
-		<div class="dictionary-content">
+		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
 				word={search.activeWord}
 				lists={search.bookmarks}
-				onlink={handleLink}
+				onlink={handleDictionaryLink}
 			/>
 		</div>
 	</div>
+	<DictionaryPopover
+		word={search.popoverWord}
+		results={search.popoverResults}
+		resultIndex={search.popoverResultIndex}
+		lists={search.bookmarks}
+		anchor={search.popoverAnchor}
+		onselect={search.selectPopoverResult}
+		onclose={search.closePopoverDictionary}
+		onlink={search.lookupPopoverWord}
+	/>
 </div>
 
 <style>
@@ -192,11 +195,13 @@
 		align-items: center;
 	}
 	.search-bar-container--ipad {
-		padding-top: var(--sy-space--large);
+		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
 		padding-bottom: var(--sy-space--large);
 	}
 	.search-content-container {
 		display: flex;
+		flex: 1;
+		min-height: 0;
 	}
 	.search-results {
 		display: flex;
@@ -204,7 +209,7 @@
 		z-index: var(--sy-z-index--base);
 		flex-direction: column;
 		background-color: var(--sy-color--white);
-		height: calc(100vh - 83px);
+		height: 100%;
 		overflow-y: scroll;
 		overflow-x: hidden;
 	}
@@ -214,7 +219,7 @@
 		display: flex;
 		flex: 9;
 		box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
-		height: calc(100vh - 83px);
+		height: 100%;
 		z-index: var(--sy-z-index--base-1);
 	}
 </style>

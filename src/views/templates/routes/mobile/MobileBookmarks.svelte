@@ -12,6 +12,7 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
@@ -23,6 +24,7 @@
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
 
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
@@ -104,6 +106,11 @@
 		if (event.target instanceof HTMLInputElement && currentSnap === 'collapsed') {
 			sheetRef?.openPartial();
 		}
+	}
+
+	const clickTracker = createClickPositionTracker();
+	function handleDictionaryLink(text: string): void {
+		bookmarksRoute.openPopoverDictionary(text, clickTracker.lastClickRect);
 	}
 
 	// Overflow menu
@@ -192,8 +199,11 @@
 <div class="mobile-bookmarks">
 	<div class="mobile-bookmarks__content" use:scrollRestore={'mobile-bookmarks-content'}>
 		{#if activeWord}
-			<div class="mobile-bookmarks__dict-wrapper">
-				<DictionaryContent word={activeWord} {lists} />
+			<div
+				class="mobile-bookmarks__dict-wrapper"
+				onclickcapture={clickTracker.captureClickPosition}
+			>
+				<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
 			</div>
 		{:else}
 			<div class="mobile-bookmarks__empty">
@@ -286,6 +296,17 @@
 		</SyButton>
 	{/snippet}
 </SyModal>
+
+<DictionaryPopover
+	word={bookmarksRoute.popoverWord}
+	results={bookmarksRoute.popoverResults}
+	resultIndex={bookmarksRoute.popoverResultIndex}
+	lists={bookmarksRoute.lists}
+	anchor={bookmarksRoute.popoverAnchor}
+	onselect={bookmarksRoute.selectPopoverResult}
+	onclose={bookmarksRoute.closePopoverDictionary}
+	onlink={bookmarksRoute.lookupPopoverWord}
+/>
 
 <style>
 	.mobile-bookmarks {

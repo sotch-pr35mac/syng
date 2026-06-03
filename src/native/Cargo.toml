@@ -29,6 +29,16 @@ tauri-plugin-process = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-opener = "2"
 tauri-plugin-cli = "2"
+sha2 = "0.11.0"
+base64 = "0.22.1"
+html2text = "0.17.1"
+encoding_rs = "0.8.35"
+epub = "2.1.5"
+pdf-extract = "0.10.0"
+scraper = "0.23.1"
+ego-tree = "0.10.0"
+quick-xml = "0.39.2"
+zip = { version = "3.0.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6.3"
@@ -40,6 +50,7 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 
 [dev-dependencies]
+lopdf = { version = "0.38", default-features = false }
 tempfile = "3"
 
 [features]
@@ -56,6 +67,12 @@ codegen-units = 1
 opt-level = 3
 strip = true
 panic = "abort"
+
+[patch.crates-io]
+# Syng vendors pdf-extract to support predefined CJK CID encodings used by
+# Chinese PDFs, including UniGB-UCS2-H, before those fixes are available
+# through the upstream crate.
+pdf-extract = { path = "vendor/pdf-extract" }
 
 [lib]
 name = "syng_lib"

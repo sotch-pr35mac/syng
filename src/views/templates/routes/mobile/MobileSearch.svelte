@@ -4,11 +4,13 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 	import { type SheetSnap } from '@/types/snapSheet.js';
 	import { untrack } from 'svelte';
 	import { searchStore as search } from '@/composables/search.svelte.js';
+	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
@@ -82,11 +84,9 @@
 		sheetRef?.collapse();
 	}
 
-	function handleLink(word: string): void {
-		searchQuery = word;
-		mobileSearchQueryStore.set(word);
-		search.doSearch(word);
-		sheetRef?.openPartial();
+	const clickTracker = createClickPositionTracker();
+	function handleDictionaryLink(text: string): void {
+		search.openPopoverDictionary(text, clickTracker.lastClickRect);
 	}
 
 	function handleSearch(value: string): void {
@@ -109,11 +109,14 @@
 <div class="mobile-search">
 	<div class="mobile-search__content" use:scrollRestore={'mobile-search-content'}>
 		{#if search.activeWord}
-			<div class="mobile-search__dict-wrapper">
+			<div
+				class="mobile-search__dict-wrapper"
+				onclickcapture={clickTracker.captureClickPosition}
+			>
 				<DictionaryContent
 					word={search.activeWord}
 					lists={search.bookmarks}
-					onlink={handleLink}
+					onlink={handleDictionaryLink}
 				/>
 			</div>
 		{:else}
@@ -144,6 +147,17 @@
 		</div>
 	</SySnapSheet>
 </div>
+
+<DictionaryPopover
+	word={search.popoverWord}
+	results={search.popoverResults}
+	resultIndex={search.popoverResultIndex}
+	lists={search.bookmarks}
+	anchor={search.popoverAnchor}
+	onselect={search.selectPopoverResult}
+	onclose={search.closePopoverDictionary}
+	onlink={search.lookupPopoverWord}
+/>
 
 <style>
 	.mobile-search {

@@ -26,6 +26,14 @@ it('should respond to the grouped prop', async () => {
 
 	expect(classes).toContain('sy-button--grouped');
 });
+it('should respond to the disableHoverActions prop', async () => {
+	const { getByTestId } = render(SyButton, {
+		disableHoverActions: true,
+	});
+	const classes = getByTestId('sy-button').className.split(' ');
+
+	expect(classes).toContain('sy-button--hover-actions-disabled');
+});
 it('should not respond to click events when disbaled', async () => {
 	const { getByTestId } = render(SyButton, {
 		disabled: true,

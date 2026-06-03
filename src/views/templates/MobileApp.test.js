@@ -25,16 +25,19 @@ vi.mock('@/utils', async () => {
 vi.mock('@/routes/mobile/MobileSearch.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
+vi.mock('@/routes/mobile/Reader/MobileReader.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
+}));
 vi.mock('@/routes/mobile/MobileBookmarks.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/mobile/MobileStudy.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/routes/mobile/MobileStudyFlashcards.svelte', async () => ({
+vi.mock('@/routes/mobile/Study/MobileStudyFlashcards.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/routes/mobile/MobileStudyQuiz.svelte', async () => ({
+vi.mock('@/routes/mobile/Study/MobileStudyQuiz.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/mobile/MobileSettings.svelte', async () => ({
@@ -60,6 +63,9 @@ it('tracks screen views for mobile route changes', async () => {
 
 	await user.click(getByText('Bookmarks'));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('bookmarks'));
+
+	await user.click(getByText('Read'));
+	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('library'));
 
 	await user.click(getByText('Study'));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));

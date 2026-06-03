@@ -43,6 +43,18 @@ it('should display simplified and traditional characters separately', async () =
 	expect(chineseCharacters.textContent).toBe('AB \xa0(CD)');
 });
 
+it('should display traditional characters on a second line when requested', async () => {
+	const { getByTestId } = render(EntryTopline, {
+		word: TEST_WORD_1,
+		separateTraditionalCharacters: true,
+	});
+
+	const chineseCharacters = getByTestId('chinese-characters');
+	const traditionalCharacters = getByTestId('chinese-characters-traditional');
+	expect(chineseCharacters.textContent.trim()).toBe('AB');
+	expect(traditionalCharacters.textContent).toBe('(CD)');
+});
+
 it('should omit displaying traditional characters if they match the simplified', async () => {
 	const { getByTestId } = render(EntryTopline, {
 		word: TEST_WORD_2,

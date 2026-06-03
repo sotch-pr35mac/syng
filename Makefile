@@ -25,8 +25,9 @@ start-android:
 	npm run build
 	cd src/native && cargo tauri android dev --config tauri.mobile.conf.json
 
-lint:
+check:
 	cd src/native && cargo fmt --check
+	cd src/native && cargo clippy
 	npm run format:check
 	npm run lint
 	npm run typecheck

@@ -70,7 +70,7 @@
 		<!-- Timer with fade animation -->
 		{#if timerVisible}
 			<div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
-				<!-- eslint-disable no-magic-numbers -->
+				<!-- eslint-disable @typescript-eslint/no-magic-numbers -->
 				<SyTimer
 					bind:this={timer}
 					duration={QUIZ_RESULT_DISPLAY_TIME}

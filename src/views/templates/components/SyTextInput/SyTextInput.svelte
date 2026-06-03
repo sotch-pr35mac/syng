@@ -14,9 +14,14 @@
 	 * @property {string} [style] - 'standard' - Standard text box styling
 	 * @property {string} [size] - 'extra-large' - Extra large text field
 	 * @property {string} [placeholder] - Placeholder Prop
+	 * @property {string} [value] - Controlled input value
 	 * @property {string} [type] - Type Prop
+	 * @property {string} [autocomplete] - Autocomplete Prop
+	 * @property {string} [inputmode] - Input mode Prop
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
+	 * @property {any[]} [classes] - Additional class names
+	 * @property {number} [maxlength] - Maximum character length
 	 * @property {(value: string) => void} [onchange] - Change handler
 	 * @property {(value: string) => void} [onkeyup] - Keyup handler
 	 * @property {(value: string) => void} [oninput] - Input handler
@@ -33,21 +38,28 @@
 		style = 'standard',
 		size = 'medium',
 		placeholder = '',
+		value = '',
 		type = 'text',
+		autocomplete = undefined,
+		inputmode = undefined,
 		id,
+		maxlength = undefined,
 		spellcheck = undefined,
+		classes = [],
 		onchange = () => {},
 		onkeyup = () => {},
 		oninput = () => {},
 		onenter = () => {},
 	} = $props();
 	const getClasses = () => {
-		return [
-			'sy-text-input',
-			`sy-text-input--${style}`,
-			`sy-text-input--${size}`,
-			mobile ? 'sy-text-input--mobile' : '',
-		].join(' ');
+		return classes
+			.concat([
+				'sy-text-input',
+				`sy-text-input--${style}`,
+				`sy-text-input--${size}`,
+				mobile ? 'sy-text-input--mobile' : '',
+			])
+			.join(' ');
 	};
 	const handleKeyup = (event) => {
 		if (event.code === 'Enter') {
@@ -63,9 +75,13 @@
 
 <input
 	{placeholder}
+	{value}
 	{type}
+	{autocomplete}
+	{inputmode}
 	class={getClasses()}
 	{id}
+	{maxlength}
 	{spellcheck}
 	onchange={(e) => onchange(e.currentTarget.value)}
 	oninput={handleInput}

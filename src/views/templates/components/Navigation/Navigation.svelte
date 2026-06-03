@@ -27,9 +27,10 @@
 		},
 		{
 			link: 'read',
+			pattern: /\/read(\/.*)?/,
 			icon: BookOpen,
 			title: 'Read',
-			beta: true,
+			beta: false,
 		},
 		{
 			link: 'bookmarks',
@@ -77,7 +78,7 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	let enableBetaFeatures = $state(false);
-	let trafficLightMargin = $state(isMacos || isIPadDevice);
+	let trafficLightInset = $state(isMacos || isIPadDevice);
 	const updateAvailable = $derived(updateStore.updateAvailable);
 
 	// On macOS, listen for fullscreen to adjust navigation when traffic lights disappear.
@@ -88,7 +89,7 @@
 			getCurrentWindow()
 				.onResized(async () => {
 					const fullscreen = await getCurrentWindow().isFullscreen();
-					trafficLightMargin = !fullscreen;
+					trafficLightInset = !fullscreen;
 				})
 				.then((unlistenFn) => {
 					unlisten = unlistenFn;
@@ -121,7 +122,10 @@
 </script>
 
 <div class="navigation-container">
-	<div class="navigation--primary-nav" class:navigation--primary-nav--macos={trafficLightMargin}>
+	<div
+		class="navigation--primary-nav"
+		class:navigation--primary-nav--traffic-light-inset={trafficLightInset}
+	>
 		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
 				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
@@ -187,7 +191,7 @@
 		align-items: center;
 		margin-top: var(--sy-space);
 	}
-	.navigation--primary-nav--macos {
+	.navigation--primary-nav--traffic-light-inset {
 		margin-top: calc(35px + var(--sy-space--large));
 	}
 	.navigation--secondary-nav {

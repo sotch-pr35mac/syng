@@ -24,7 +24,7 @@ Syng v2 is a ground-up rewrite focusing on speed and user experience. Due to tha
 - [x] Character Stroke Animations
 - [x] Bookmarks
 - [x] Flash cards & Quizzes
-- [ ] Reader
+- [X] Reader
 - [ ] Prettify Pinyin
 - [ ] Character Converter
 - [ ] Pinyinify
