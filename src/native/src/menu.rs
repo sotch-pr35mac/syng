@@ -42,9 +42,9 @@ pub fn create<R: Runtime>(app: &tauri::AppHandle<R>) -> Result<tauri::menu::Menu
             .unwrap_or_else(|| app.package_info().name.clone());
         let app_menu =
             Submenu::with_items(app, title, true, &[&PredefinedMenuItem::quit(app, None)?])?;
-        return MenuBuilder::new(app)
+        MenuBuilder::new(app)
             .items(&[&app_menu, &edit_submenu, &help_submenu])
-            .build();
+            .build()
     }
 
     #[cfg(not(target_os = "macos"))]

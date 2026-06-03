@@ -202,6 +202,15 @@ pub struct ReaderContentBlock {
     pub extensions: Option<ReaderBlockExtensions>,
 }
 
+pub(super) struct LinearBlock<'a> {
+    pub kind: &'a str,
+    pub text: String,
+    pub heading_level: Option<u8>,
+    pub text_align: Option<String>,
+    pub spans: Option<Vec<ReaderInlineSpan>>,
+    pub extensions: Option<ReaderBlockExtensions>,
+}
+
 /// Serializes `Option<Vec<u8>>` as base64 (or omits it) so a binary source payload crosses the
 /// IPC boundary as a compact string instead of a JSON array of integers, which would inflate the
 /// transfer ~4-6x and stress the JSON parser for multi-megabyte documents.
@@ -640,7 +649,7 @@ fn bytes_look_like_plain_text(bytes: &[u8]) -> bool {
     }
     let chunk_len = bytes.len().min(8192);
     let chunk = &bytes[..chunk_len];
-    if chunk.iter().any(|&byte| byte == 0) {
+    if chunk.contains(&0) {
         return false;
     }
     std::str::from_utf8(chunk).is_ok()

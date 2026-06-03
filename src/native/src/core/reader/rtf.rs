@@ -9,9 +9,9 @@ use uuid::Uuid;
 use crate::core::reader::{
     append_linear_block, decode_reader_text, decode_with_encoding,
     default_canonical_schema_version, docx_table_text, normalize_line_endings,
-    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderContentBlock,
-    ReaderImportPayload, ReaderInlineSpan, ReaderTableCell, ReaderTableExtension, ReaderTableRow,
-    RTF_EXTRACTOR_VERSION,
+    title_from_file_stem, utf16_len, FormatExtractor, LinearBlock, ReaderBlockExtensions,
+    ReaderContentBlock, ReaderImportPayload, ReaderInlineSpan, ReaderTableCell,
+    ReaderTableExtension, ReaderTableRow, RTF_EXTRACTOR_VERSION,
 };
 
 /// RTF (Rich Text Format) extractor implementing [`FormatExtractor`].
@@ -174,6 +174,16 @@ impl RtfTableBuilder {
     }
 }
 
+#[derive(Debug, Default)]
+struct RtfParseState {
+    paragraph: RtfParagraphBuilder,
+    table: RtfTableBuilder,
+    in_table: bool,
+    linear_text: String,
+    blocks: Vec<ReaderContentBlock>,
+    pending_high_surrogate: Option<u16>,
+}
+
 fn rtf_style_names(style: &RtfTextStyle) -> Vec<&'static str> {
     let mut names = Vec::new();
     if style.strong {
@@ -283,16 +293,18 @@ fn append_rtf_paragraph(
         append_linear_block(
             blocks,
             linear_text,
-            "paragraph",
-            paragraph.text,
-            None,
-            paragraph.text_align,
-            if paragraph.spans.is_empty() {
-                None
-            } else {
-                Some(paragraph.spans)
+            LinearBlock {
+                kind: "paragraph",
+                text: paragraph.text,
+                heading_level: None,
+                text_align: paragraph.text_align,
+                spans: if paragraph.spans.is_empty() {
+                    None
+                } else {
+                    Some(paragraph.spans)
+                },
+                extensions: None,
             },
-            None,
         );
     }
 }
@@ -301,12 +313,7 @@ fn apply_rtf_control(
     control: &str,
     parameter: Option<i32>,
     style: &mut RtfTextStyle,
-    paragraph: &mut RtfParagraphBuilder,
-    blocks: &mut Vec<ReaderContentBlock>,
-    linear_text: &mut String,
-    table: &mut RtfTableBuilder,
-    in_table: &mut bool,
-    pending_high_surrogate: &mut Option<u16>,
+    state: &mut RtfParseState,
 ) -> Option<usize> {
     match control {
         "b" => style.strong = parameter.unwrap_or(1) != 0,
@@ -341,60 +348,64 @@ fn apply_rtf_control(
         "qj" => style.text_align = Some("justify".to_string()),
         "ql" => style.text_align = None,
         "trowd" => {
-            if let Some(block) = table.finish() {
-                blocks.push(block);
+            if let Some(block) = state.table.finish() {
+                state.blocks.push(block);
             }
-            *in_table = true;
+            state.in_table = true;
         }
-        "intbl" => *in_table = true,
+        "intbl" => state.in_table = true,
         "cell" => {
-            *in_table = true;
-            table.push_cell(paragraph);
+            state.in_table = true;
+            state.table.push_cell(&mut state.paragraph);
         }
         "row" => {
-            *in_table = true;
-            table.push_row(paragraph);
-            if let Some(block) = table.finish() {
-                blocks.push(block);
+            state.in_table = true;
+            state.table.push_row(&mut state.paragraph);
+            if let Some(block) = state.table.finish() {
+                state.blocks.push(block);
             }
-            *in_table = false;
+            state.in_table = false;
         }
         "par" | "sect" | "page" => {
-            if *in_table {
-                paragraph.push_text("\n", style);
+            if state.in_table {
+                state.paragraph.push_text("\n", style);
             } else {
-                if let Some(block) = table.finish() {
-                    blocks.push(block);
+                if let Some(block) = state.table.finish() {
+                    state.blocks.push(block);
                 }
-                append_rtf_paragraph(blocks, linear_text, paragraph);
+                append_rtf_paragraph(
+                    &mut state.blocks,
+                    &mut state.linear_text,
+                    &mut state.paragraph,
+                );
             }
         }
-        "line" => paragraph.push_text("\n", style),
-        "tab" => paragraph.push_text("\t", style),
-        "emdash" => paragraph.push_text("—", style),
-        "endash" => paragraph.push_text("–", style),
-        "bullet" => paragraph.push_text("•", style),
-        "lquote" | "rquote" => paragraph.push_text("'", style),
-        "ldblquote" | "rdblquote" => paragraph.push_text("\"", style),
+        "line" => state.paragraph.push_text("\n", style),
+        "tab" => state.paragraph.push_text("\t", style),
+        "emdash" => state.paragraph.push_text("—", style),
+        "endash" => state.paragraph.push_text("–", style),
+        "bullet" => state.paragraph.push_text("•", style),
+        "lquote" | "rquote" => state.paragraph.push_text("'", style),
+        "ldblquote" | "rdblquote" => state.paragraph.push_text("\"", style),
         "u" => {
             if let Some(value) = parameter {
                 let unit = rtf_unicode_unit(value);
                 if (0xD800..=0xDBFF).contains(&unit) {
                     // High surrogate half: hold it until the following low surrogate arrives.
-                    *pending_high_surrogate = Some(unit);
+                    state.pending_high_surrogate = Some(unit);
                 } else if (0xDC00..=0xDFFF).contains(&unit) {
                     // Low surrogate half: recombine with the pending high half into one code point.
-                    if let Some(high) = pending_high_surrogate.take() {
+                    if let Some(high) = state.pending_high_surrogate.take() {
                         let code_point =
                             0x10000 + (((high as u32 - 0xD800) << 10) | (unit as u32 - 0xDC00));
                         if let Some(ch) = char::from_u32(code_point) {
-                            paragraph.push_text(&ch.to_string(), style);
+                            state.paragraph.push_text(&ch.to_string(), style);
                         }
                     }
                 } else {
-                    *pending_high_surrogate = None;
+                    state.pending_high_surrogate = None;
                     if let Some(ch) = char::from_u32(unit as u32) {
-                        paragraph.push_text(&ch.to_string(), style);
+                        state.paragraph.push_text(&ch.to_string(), style);
                     }
                 }
                 return Some(style.uc_skip);
@@ -432,15 +443,10 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
         uc_skip: 1,
         ..RtfTextStyle::default()
     }];
-    let mut paragraph = RtfParagraphBuilder::default();
-    let mut table = RtfTableBuilder::default();
-    let mut in_table = false;
-    let mut linear_text = String::new();
-    let mut blocks = Vec::new();
+    let mut state = RtfParseState::default();
     let mut skip_depth: Option<usize> = None;
     let mut ignorable_current_group = false;
     let mut unicode_fallback_remaining = 0usize;
-    let mut pending_high_surrogate: Option<u16> = None;
 
     while index < bytes.len() {
         let byte = bytes[index];
@@ -522,7 +528,7 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
                     b'\\' | b'{' | b'}' => {
                         let ch = bytes[index] as char;
                         if let Some(style) = styles.last() {
-                            paragraph.push_text(&ch.to_string(), style);
+                            state.paragraph.push_text(&ch.to_string(), style);
                         }
                         index += 1;
                     }
@@ -558,7 +564,7 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
                                         hex_bytes.iter().map(|byte| char::from(*byte)).collect()
                                     });
                                 if let Some(style) = styles.last() {
-                                    paragraph.push_text(&ch, style);
+                                    state.paragraph.push_text(&ch, style);
                                 }
                             } else {
                                 index += 1;
@@ -608,17 +614,7 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
                         }
 
                         let skip_count = if let Some(style) = styles.last_mut() {
-                            apply_rtf_control(
-                                control,
-                                parameter,
-                                style,
-                                &mut paragraph,
-                                &mut blocks,
-                                &mut linear_text,
-                                &mut table,
-                                &mut in_table,
-                                &mut pending_high_surrogate,
-                            )
+                            apply_rtf_control(control, parameter, style, &mut state)
                         } else {
                             None
                         };
@@ -641,20 +637,24 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
                     index += 1;
                 }
                 if let Some(style) = styles.last() {
-                    paragraph.push_text(&input[run_start..index], style);
+                    state.paragraph.push_text(&input[run_start..index], style);
                 }
             }
         }
     }
 
-    if in_table {
-        table.push_row(&mut paragraph);
+    if state.in_table {
+        state.table.push_row(&mut state.paragraph);
     }
-    if let Some(block) = table.finish() {
-        blocks.push(block);
+    if let Some(block) = state.table.finish() {
+        state.blocks.push(block);
     }
-    append_rtf_paragraph(&mut blocks, &mut linear_text, &mut paragraph);
-    Ok((linear_text, blocks))
+    append_rtf_paragraph(
+        &mut state.blocks,
+        &mut state.linear_text,
+        &mut state.paragraph,
+    );
+    Ok((state.linear_text, state.blocks))
 }
 
 #[cfg(test)]

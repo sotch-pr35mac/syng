@@ -1,35 +1,17 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
 	import { ChevronLeft, SlidersHorizontal } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import ReaderThemeSelector from '@/components/Reader/ReaderThemeSelector.svelte';
 	import ReaderTextSizeSelector from '@/components/Reader/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import CssPageCurlOverlay from '@/components/Reader/CssPageCurlOverlay.svelte';
 	import { readerPageSwipe } from '@/actions/readerPageSwipe.svelte.js';
 	import { readerRoute } from '@/composables/reader.svelte.js';
-	import { isAndroid, isIos } from '@/utils/device.js';
-	import {
-		getReaderColorTheme,
-		getReaderColorThemeSettings,
-		READER_FONT_SIZE_MAX_PERCENT,
-		READER_FONT_SIZE_MIN_PERCENT,
-	} from '@/utils/readerSettings.js';
-	import CssPageCurlOverlay from '@/components/Reader/CssPageCurlOverlay.svelte';
-	import type {
-		ReaderBlockStyleExtension,
-		ReaderColorThemeId,
-		ReaderContentBlock,
-		ReaderToken,
-	} from '@/types/reader.js';
+	import { createReaderDocumentController } from '@/composables/readerDocument.svelte.js';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
-	import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
-	import {
-		createReaderPageSnapshot,
-		READER_IMAGE_MAX_HEIGHT_RATIO,
-		READER_TABLE_MAX_HEIGHT_RATIO,
-	} from '@/utils/readerPagination.js';
+	import { isAndroid, isIos } from '@/utils/device.js';
 
 	type Props = {
 		params?: {
@@ -38,358 +20,50 @@
 	};
 
 	const { params = {} }: Props = $props();
-	const CHARACTER_MEASURE_SAMPLE = '汉字阅读天地学习语言文字故事春夏秋冬';
 	const DEFAULT_PAGE_FONT_SIZE = 19;
 	const BODY_BLOCK_GAP_EM = 1.25;
 	const HEADING_FONT_SCALE = 1.28;
-	const HEADING_LINE_HEIGHT = 1.5;
 	const LIST_NESTING_INDENT_EM = 1.15;
-	const MAX_HEADING_LEVEL = 6;
 	const PAGE_CURL_DURATION_MS = 720;
-	const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
 
-	const activeDocument = $derived(readerRoute.activeDocument);
-	const routeDocumentId = $derived(params.id ? decodeURIComponent(params.id) : undefined);
-	const currentPage = $derived(readerRoute.currentPage);
-	const readerSettings = $derived(readerSettingsStore.settings);
-	let systemPrefersDark = $state(false);
-	let pageContentHeight = $state(0);
-	const activeReaderTheme = $derived(
-		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
-	);
-	const activeReaderThemeSettings = $derived(
-		getReaderColorThemeSettings(readerSettings.colorTheme, systemPrefersDark)
-	);
-	const canDecreaseFontSize = $derived(
-		readerSettings.fontSizePercent > READER_FONT_SIZE_MIN_PERCENT
-	);
-	const canIncreaseFontSize = $derived(
-		readerSettings.fontSizePercent < READER_FONT_SIZE_MAX_PERCENT
-	);
-	const readerThemeStyle = $derived(
-		[
-			`--reader-page-background: ${activeReaderThemeSettings.backgroundColor}`,
-			`--reader-page-text: ${activeReaderThemeSettings.textColor}`,
-			`--reader-link-color: ${activeReaderThemeSettings.linkColor}`,
-			`--reader-selection-background: ${activeReaderThemeSettings.selectionBackgroundColor}`,
-			`--reader-selection-text: ${activeReaderThemeSettings.selectionTextColor}`,
-			`--reader-stage-background: ${activeReaderTheme.stageBackgroundColor}`,
-			`--reader-muted-text: ${activeReaderTheme.mutedTextColor}`,
-			`--reader-border-color: ${activeReaderTheme.borderColor}`,
-			`--reader-control-background: ${activeReaderTheme.controlBackgroundColor}`,
-			`--reader-control-text: ${activeReaderTheme.controlTextColor}`,
-			`--reader-font-family: ${readerSettings.fontFamily}`,
-			`--reader-page-font-size: ${(DEFAULT_PAGE_FONT_SIZE * readerSettings.fontSizePercent) / 100}px`,
-			`--reader-page-line-height: ${readerSettings.lineHeight}`,
-			`--reader-image-max-height: ${pageContentHeight ? `${pageContentHeight * READER_IMAGE_MAX_HEIGHT_RATIO}px` : 'none'}`,
-			`--reader-table-max-height: ${pageContentHeight ? `${pageContentHeight * READER_TABLE_MAX_HEIGHT_RATIO}px` : 'none'}`,
-		].join(';')
-	);
-	let readerSettingsPopoverVisible = $state(false);
-	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
-	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
 	let pageElement = $state<HTMLElement | undefined>(undefined);
 	let characterMeasureElement = $state<HTMLElement | undefined>(undefined);
-	let turningPage = $state(false);
-	let turningPageDirection = $state<'next' | 'previous' | undefined>(undefined);
-	let currentPageImage = $state<string | undefined>(undefined);
-	let targetPageImage = $state<string | undefined>(undefined);
-	let pendingTargetPageIndex = $state<number | undefined>(undefined);
-	const readerPageSwipeOptions = $derived({
-		enabled: !turningPage,
-		onTurnPage: turnPage,
-	});
-	let lastRouteDocumentId = $state<string | undefined | null>(undefined);
-	let routeLoadRequest = $state(0);
-	const activeDocumentVerticalWriting = $derived(
-		Boolean(
-			activeDocument?.blocks.some(
-				(block) => getBlockStyle(block)?.vertical_writing_mode === true
-			)
-		)
-	);
 
-	onMount(() => {
-		readerRoute.refresh().catch(() => {});
-		readerSettingsStore.loadSettings().catch(() => {});
-
-		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		const updateSystemColorScheme = () => {
-			systemPrefersDark = colorSchemeQuery.matches;
-		};
-		updateSystemColorScheme();
-		colorSchemeQuery.addEventListener('change', updateSystemColorScheme);
-
-		return () => {
-			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
-		};
-	});
-
-	$effect(() => {
-		const documentId = routeDocumentId;
-		if ((documentId ?? null) === lastRouteDocumentId) {
-			return;
-		}
-		lastRouteDocumentId = documentId ?? null;
-		routeLoadRequest += 1;
-		const requestId = routeLoadRequest;
-		if (!documentId) {
+	const reader = createReaderDocumentController({
+		pageFontSize: DEFAULT_PAGE_FONT_SIZE,
+		bodyBlockGapEm: BODY_BLOCK_GAP_EM,
+		headingFontScale: HEADING_FONT_SCALE,
+		listNestingIndentEm: LIST_NESTING_INDENT_EM,
+		pageCurlDurationMs: PAGE_CURL_DURATION_MS,
+		swipeEnabled: true,
+		getRouteParamId: () => params.id,
+		getPageElement: () => pageElement,
+		getCharacterMeasureElement: () => characterMeasureElement,
+		onMissingDocumentId: () => {
 			if (readerDocumentRouteStore.value) {
 				window.location.hash = `#/read/document/${encodeURIComponent(readerDocumentRouteStore.value)}`;
 				return;
 			}
-			if (activeDocument) {
-				window.location.hash = `#/read/document/${encodeURIComponent(activeDocument._id)}`;
-				return;
+			if (readerRoute.activeDocument) {
+				window.location.hash = `#/read/document/${encodeURIComponent(readerRoute.activeDocument._id)}`;
 			}
-			return;
-		}
-		readerRoute
-			.refresh()
-			.then(() => {
-				if (routeLoadRequest === requestId) {
-					return readerRoute.openDocumentById(documentId);
-				}
-				return undefined;
-			})
-			.catch(() => {});
+		},
 	});
 
-	$effect(() => {
-		if (!pageElement) {
-			return () => {};
-		}
-
-		const resizeObserver = new ResizeObserver(() => {
-			updatePageLayout().catch(() => {});
-		});
-		resizeObserver.observe(pageElement);
-		updatePageLayout().catch(() => {});
-
-		return () => {
-			resizeObserver.disconnect();
-		};
-	});
-
-	$effect(() => {
-		readerSettings.fontSizePercent;
-		readerSettings.lineHeight;
-		if (pageElement) {
-			updatePageLayout().catch(() => {});
-		}
-	});
-
-	$effect(() => {
-		currentPage;
-		pageElement;
-		pageContentHeight;
-		schedulePageOverflowCheck();
-	});
-
-	function openToken(event: MouseEvent, token: ReaderToken | undefined): void {
-		if (!token || !(event.currentTarget instanceof HTMLElement)) {
-			return;
-		}
-		readerRoute.openDictionary(token, event.currentTarget.getBoundingClientRect());
-	}
-
-	function getBlockStyle(block: ReaderContentBlock | undefined): ReaderBlockStyleExtension {
-		return block?.extensions?.block_style ?? {};
-	}
-
-	function getBlockCssStyle(block: ReaderContentBlock | undefined): string | undefined {
-		const styles: string[] = [];
-		const blockStyle = getBlockStyle(block);
-		const listDepth = block?.extensions?.list_item?.nesting_depth;
-		if (typeof listDepth === 'number') {
-			styles.push(
-				`--reader-list-depth-offset: ${Math.max(0, listDepth) * LIST_NESTING_INDENT_EM}em`
-			);
-		}
-		if (blockStyle.text_align || block?.text_align) {
-			styles.push(`text-align: ${blockStyle.text_align ?? block?.text_align}`);
-		}
-		if (blockStyle.text_indent) {
-			styles.push(`text-indent: ${blockStyle.text_indent}`);
-		}
-		if (blockStyle.vertical_writing_mode) {
-			styles.push('writing-mode: vertical-rl');
-		}
-		return styles.length ? styles.join(';') : undefined;
-	}
-
-	function toggleReaderSettingsPopover(event: MouseEvent): void {
-		if (!(event.currentTarget instanceof HTMLElement)) {
-			return;
-		}
-		readerSettingsButtonElement = event.currentTarget;
-		readerSettingsPopoverAnchor = event.currentTarget.getBoundingClientRect();
-		readerSettingsPopoverVisible = !readerSettingsPopoverVisible;
-	}
-
-	function closeReaderSettingsPopover(): void {
-		readerSettingsPopoverVisible = false;
-	}
-
-	function backToLibrary(): void {
-		readerRoute.backToLibrary();
-		window.location.hash = '#/read';
-	}
-
-	function setReaderTheme(theme: ReaderColorThemeId): void {
-		if (readerSettings.colorTheme !== theme) {
-			readerRoute.trackThemeChanged(theme);
-		}
-		readerSettingsStore.applyColorTheme(theme);
-	}
-
-	function changeReaderFontSize(direction: 'increase' | 'decrease'): void {
-		const previousFontSize = readerSettings.fontSizePercent;
-		if (direction === 'increase') {
-			readerSettingsStore.increaseFontSize();
-		} else {
-			readerSettingsStore.decreaseFontSize();
-		}
-		const nextFontSize = readerSettingsStore.settings.fontSizePercent;
-		if (nextFontSize !== previousFontSize) {
-			readerRoute.trackLayoutChanged('font_size_percent', nextFontSize, direction);
-		}
-	}
-
-	function parsePixelValue(value: string, fallback: number): number {
-		const parsedValue = Number.parseFloat(value);
-		return Number.isFinite(parsedValue) ? parsedValue : fallback;
-	}
-
-	async function updatePageLayout(): Promise<void> {
-		await tick();
-		if (!pageElement) {
-			return;
-		}
-
-		const pageStyles = getComputedStyle(pageElement);
-		const fontSize = parsePixelValue(pageStyles.fontSize, DEFAULT_PAGE_FONT_SIZE);
-		const lineHeight = parsePixelValue(pageStyles.lineHeight, fontSize * 2);
-		const paddingX =
-			parsePixelValue(pageStyles.paddingLeft, 0) +
-			parsePixelValue(pageStyles.paddingRight, 0);
-		const paddingY =
-			parsePixelValue(pageStyles.paddingTop, 0) +
-			parsePixelValue(pageStyles.paddingBottom, 0);
-		const contentHeight = pageElement.clientHeight - paddingY;
-		const measuredCharacterWidth = characterMeasureElement
-			? characterMeasureElement.getBoundingClientRect().width /
-				CHARACTER_MEASURE_SAMPLE.length
-			: fontSize;
-		pageContentHeight = contentHeight;
-
-		await readerRoute.setPageLayout({
-			contentWidth: pageElement.clientWidth - paddingX,
-			contentHeight,
-			fontSize,
-			lineHeight,
-			blockGap: fontSize * BODY_BLOCK_GAP_EM,
-			headingLineHeight: fontSize * HEADING_FONT_SCALE * HEADING_LINE_HEIGHT,
-			headingGap: fontSize * BODY_BLOCK_GAP_EM,
-			headingFontScale: HEADING_FONT_SCALE,
-			averageCharacterWidth: measuredCharacterWidth,
-		});
-	}
-
-	function schedulePageOverflowCheck(): void {
-		tick()
-			.then(() => checkPageOverflow())
-			.catch(() => {});
-	}
-
-	async function checkPageOverflow(): Promise<void> {
-		await tick();
-		if (!pageElement || turningPage) {
-			return;
-		}
-
-		const measuredBlocks = pageElement.querySelectorAll<HTMLElement>(
-			'[data-reader-atomic-block-id]'
-		);
-		const measurements = Object.fromEntries(
-			Array.from(measuredBlocks)
-				.map((element) => [
-					element.dataset.readerAtomicBlockId,
-					element.getBoundingClientRect().height,
-				])
-				.filter(
-					(entry): entry is [string, number] =>
-						typeof entry[0] === 'string' &&
-						typeof entry[1] === 'number' &&
-						Number.isFinite(entry[1]) &&
-						entry[1] > 0
-				)
-		);
-
-		if (Object.keys(measurements).length) {
-			await readerRoute.updateMeasuredAtomicBlockHeights(measurements);
-		}
-	}
-
-	async function turnPage(direction: 'next' | 'previous'): Promise<void> {
-		if (turningPage) {
-			return;
-		}
-
-		const targetPageIndex =
-			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
-		const targetPage = readerRoute.getPage(targetPageIndex);
-		if (!targetPage || !currentPage) {
-			return;
-		}
-
-		try {
-			await tick();
-			if (!pageElement || window.matchMedia(REDUCED_MOTION_QUERY).matches) {
-				turningPage = true;
-				await readerRoute.goToPage(targetPageIndex);
-				clearPageTurn();
-				return;
-			}
-
-			currentPageImage = createReaderPageSnapshot(
-				currentPage,
-				pageElement
-			).source.toDataURL();
-			targetPageImage = createReaderPageSnapshot(targetPage, pageElement).source.toDataURL();
-			pendingTargetPageIndex = targetPageIndex;
-			turningPageDirection = direction;
-			turningPage = true;
-		} catch {
-			turningPage = true;
-			await readerRoute.goToPage(targetPageIndex);
-			clearPageTurn();
-		}
-	}
-
-	async function completePageTurn(): Promise<void> {
-		const targetPageIndex = pendingTargetPageIndex;
-		if (targetPageIndex === undefined) {
-			clearPageTurn();
-			return;
-		}
-		await readerRoute.goToPage(targetPageIndex);
-		clearPageTurn();
-	}
-
-	function clearPageTurn(): void {
-		turningPage = false;
-		turningPageDirection = undefined;
-		currentPageImage = undefined;
-		targetPageImage = undefined;
-		pendingTargetPageIndex = undefined;
-	}
+	// Local aliases so the template can narrow these inside `{#if}`/`{#each}`;
+	// the type-checker does not narrow getter accesses on the controller.
+	const activeDocument = $derived(reader.activeDocument);
+	const currentPage = $derived(reader.currentPage);
+	const pageCurl = $derived(reader.pageCurl);
 </script>
 
-<div class="mobile-reader-document" style={activeDocument && currentPage ? readerThemeStyle : ''}>
+<div
+	class="mobile-reader-document"
+	style={activeDocument && currentPage ? reader.readerThemeStyle : ''}
+>
 	{#if activeDocument && currentPage}
 		<div class="mobile-reader-document__reader-header">
-			<SyButton style="ghost" size="small" onclick={backToLibrary}>
+			<SyButton style="ghost" size="small" onclick={reader.backToLibrary}>
 				<ChevronLeft size="18" />
 			</SyButton>
 			<span class="mobile-reader-document__document-title">{activeDocument.title}</span>
@@ -398,37 +72,37 @@
 					style="ghost"
 					size="small"
 					aria-label="Reader settings"
-					aria-pressed={readerSettingsPopoverVisible}
-					onclick={toggleReaderSettingsPopover}
+					aria-pressed={reader.readerSettingsPopoverVisible}
+					onclick={reader.toggleReaderSettingsPopover}
 				>
 					<SlidersHorizontal size="18" />
 				</SyButton>
 			</div>
 		</div>
 		<SyPopover
-			visible={readerSettingsPopoverVisible}
-			anchor={readerSettingsPopoverAnchor}
-			ignoreElement={readerSettingsButtonElement}
+			visible={reader.readerSettingsPopoverVisible}
+			anchor={reader.readerSettingsPopoverAnchor}
+			ignoreElement={reader.readerSettingsButtonElement}
 			horizontalAlign="end"
 			mobileTitle="Reader settings"
-			onclose={closeReaderSettingsPopover}
+			onclose={reader.closeReaderSettingsPopover}
 		>
 			<div class="mobile-reader-document__settings-popover" aria-label="Reader settings">
 				<div class="mobile-reader-document__settings-section">
 					<span class="mobile-reader-document__settings-label">Theme</span>
 					<ReaderThemeSelector
-						colorTheme={readerSettings.colorTheme}
-						{systemPrefersDark}
-						onchange={setReaderTheme}
+						colorTheme={reader.readerSettings.colorTheme}
+						systemPrefersDark={reader.systemPrefersDark}
+						onchange={reader.setReaderTheme}
 					/>
 				</div>
 				<div class="mobile-reader-document__settings-section">
 					<span class="mobile-reader-document__settings-label">Text size</span>
 					<ReaderTextSizeSelector
-						fontSizePercent={readerSettings.fontSizePercent}
-						canDecrease={canDecreaseFontSize}
-						canIncrease={canIncreaseFontSize}
-						onchange={changeReaderFontSize}
+						fontSizePercent={reader.readerSettings.fontSizePercent}
+						canDecrease={reader.canDecreaseFontSize}
+						canIncrease={reader.canIncreaseFontSize}
+						onchange={reader.changeReaderFontSize}
 					/>
 				</div>
 			</div>
@@ -436,22 +110,22 @@
 		<main
 			class="mobile-reader-document__stage"
 			class:mobile-reader-document__stage--android={isAndroid()}
-			use:readerPageSwipe={readerPageSwipeOptions}
+			use:readerPageSwipe={reader.readerPageSwipeOptions}
 		>
 			<span
 				bind:this={characterMeasureElement}
 				class="mobile-reader-document__measure-text"
 				aria-hidden="true"
 			>
-				{CHARACTER_MEASURE_SAMPLE}
+				{reader.characterMeasureSample}
 			</span>
 			<article
 				bind:this={pageElement}
 				class="mobile-reader-document__page mobile-reader-document__page--base"
 				class:mobile-reader-document__page--ios={isIos()}
 				class:mobile-reader-document__page--android={isAndroid()}
-				class:mobile-reader-document__page--turning={turningPage}
-				class:mobile-reader-document__page--vertical={activeDocumentVerticalWriting}
+				class:mobile-reader-document__page--turning={reader.turningPage}
+				class:mobile-reader-document__page--vertical={reader.activeDocumentVerticalWriting}
 			>
 				{#each currentPage.blocks as block (block.id)}
 					{#if block.layout_mode === 'atomic' && block.kind === 'thematic_break'}
@@ -460,9 +134,7 @@
 							data-reader-atomic-block-id={block.sourceBlockId}
 						/>
 					{:else if block.layout_mode === 'atomic' && block.kind === 'table'}
-						{@const tableSource = activeDocument.blocks.find(
-							(b) => b.id === block.sourceBlockId
-						)}
+						{@const tableSource = reader.getSourceBlock(block)}
 						{#if tableSource?.extensions?.table}
 							<div
 								class="mobile-reader-document__block mobile-reader-document__block--table"
@@ -487,7 +159,7 @@
 																		readerRoute.dictionaryToken
 																	)}
 																	onclick={(event) =>
-																		openToken(
+																		reader.openToken(
 																			event,
 																			segment.token
 																		)}
@@ -507,9 +179,7 @@
 							</div>
 						{/if}
 					{:else if block.layout_mode === 'atomic' && block.kind === 'image'}
-						{@const imageSource = activeDocument.blocks.find(
-							(b) => b.id === block.sourceBlockId
-						)}
+						{@const imageSource = reader.getSourceBlock(block)}
 						{#if imageSource}
 							<figure
 								class="mobile-reader-document__block mobile-reader-document__figure"
@@ -522,7 +192,7 @@
 										class="mobile-reader-document__inline-image"
 										width={imageSource.extensions.image.width ?? undefined}
 										height={imageSource.extensions.image.height ?? undefined}
-										onload={schedulePageOverflowCheck}
+										onload={reader.schedulePageOverflowCheck}
 									/>
 								{:else if imageSource.text}
 									<figcaption class="mobile-reader-document__image-caption">
@@ -532,40 +202,26 @@
 							</figure>
 						{/if}
 					{:else}
-						{@const sourceBlock = activeDocument.blocks.find(
-							(b) => b.id === block.sourceBlockId
-						)}
+						{@const sourceBlock = reader.getSourceBlock(block)}
 						<svelte:element
-							this={block.kind === 'heading'
-								? (`h${Math.min(MAX_HEADING_LEVEL, Math.max(1, sourceBlock?.heading_level ?? 2))}` as
-										| 'h1'
-										| 'h2'
-										| 'h3'
-										| 'h4'
-										| 'h5'
-										| 'h6')
-								: block.kind === 'blockquote'
-									? 'blockquote'
-									: block.kind === 'code_block'
-										? 'pre'
-										: 'p'}
+							this={reader.getBlockTag(block, sourceBlock)}
 							class="mobile-reader-document__block"
 							class:mobile-reader-document__block--code={block.kind === 'code_block'}
 							class:mobile-reader-document__block--aside={block.kind === 'aside'}
 							class:mobile-reader-document__block--note={Boolean(
-								getBlockStyle(sourceBlock).note
+								reader.getBlockStyle(sourceBlock).note
 							)}
 							class:mobile-reader-document__block--boxed={Boolean(
-								getBlockStyle(sourceBlock).boxed
+								reader.getBlockStyle(sourceBlock).boxed
 							)}
 							class:mobile-reader-document__block--poem={Boolean(
-								getBlockStyle(sourceBlock).poem
+								reader.getBlockStyle(sourceBlock).poem
 							)}
 							class:mobile-reader-document__block--small={Boolean(
-								getBlockStyle(sourceBlock).small_text
+								reader.getBlockStyle(sourceBlock).small_text
 							)}
 							class:mobile-reader-document__block--centered={Boolean(
-								getBlockStyle(sourceBlock).centered
+								reader.getBlockStyle(sourceBlock).centered
 							)}
 							class:mobile-reader-document__block--list={block.kind === 'list_item'}
 							class:mobile-reader-document__block--list-bullet={block.kind ===
@@ -580,7 +236,7 @@
 							sourceBlock.extensions.list_item.ordinal !== undefined
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
-							style={getBlockCssStyle(sourceBlock)}
+							style={reader.getBlockCssStyle(sourceBlock)}
 						>
 							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
 								{#if segment.type === 'token'}
@@ -590,7 +246,7 @@
 											segment.token,
 											readerRoute.dictionaryToken
 										)}
-										onclick={(event) => openToken(event, segment.token)}
+										onclick={(event) => reader.openToken(event, segment.token)}
 									>
 										{segment.text}
 									</button>
@@ -602,15 +258,15 @@
 					{/if}
 				{/each}
 			</article>
-			{#if turningPage && currentPageImage && targetPageImage && turningPageDirection}
+			{#if pageCurl}
 				<div class="mobile-reader-document__page-curl" aria-hidden="true">
 					<CssPageCurlOverlay
-						currentImage={currentPageImage}
-						targetImage={targetPageImage}
-						direction={turningPageDirection}
-						durationMs={PAGE_CURL_DURATION_MS}
+						currentImage={pageCurl.currentImage}
+						targetImage={pageCurl.targetImage}
+						direction={pageCurl.direction}
+						durationMs={reader.pageCurlDurationMs}
 						oncomplete={() => {
-							completePageTurn().catch(clearPageTurn);
+							reader.completePageTurn().catch(reader.clearPageTurn);
 						}}
 					/>
 				</div>

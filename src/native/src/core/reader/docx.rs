@@ -14,9 +14,9 @@ use zip;
 
 use crate::core::reader::{
     append_linear_block, default_canonical_schema_version, normalize_line_endings,
-    title_from_file_stem, utf16_len, FormatExtractor, ReaderBlockExtensions, ReaderContentBlock,
-    ReaderImportPayload, ReaderInlineSpan, ReaderListItemExtension, ReaderTableCell,
-    ReaderTableExtension, ReaderTableRow, DOCX_EXTRACTOR_VERSION,
+    title_from_file_stem, utf16_len, FormatExtractor, LinearBlock, ReaderBlockExtensions,
+    ReaderContentBlock, ReaderImportPayload, ReaderInlineSpan, ReaderListItemExtension,
+    ReaderTableCell, ReaderTableExtension, ReaderTableRow, DOCX_EXTRACTOR_VERSION,
 };
 
 /// DOCX (Office Open XML) format extractor implementing [`FormatExtractor`].
@@ -389,10 +389,8 @@ fn parse_docx_numbering(xml: &str) -> DocxNumberingMap {
         .flat_map(|(num_id, abstract_id)| {
             abstract_levels
                 .iter()
-                .filter_map(move |((level_abstract_id, level), data)| {
-                    (level_abstract_id == &abstract_id)
-                        .then(|| ((num_id.clone(), *level), data.clone()))
-                })
+                .filter(move |&((level_abstract_id, _), _)| level_abstract_id == &abstract_id)
+                .map(move |((_, level), data)| ((num_id.clone(), *level), data.clone()))
         })
         .collect()
 }
@@ -552,16 +550,18 @@ fn append_docx_paragraph(
     append_linear_block(
         blocks,
         linear_text,
-        kind,
-        paragraph.text,
-        paragraph.style.heading_level,
-        paragraph.style.text_align.clone(),
-        if paragraph.spans.is_empty() {
-            None
-        } else {
-            Some(paragraph.spans)
+        LinearBlock {
+            kind,
+            text: paragraph.text,
+            heading_level: paragraph.style.heading_level,
+            text_align: paragraph.style.text_align.clone(),
+            spans: if paragraph.spans.is_empty() {
+                None
+            } else {
+                Some(paragraph.spans)
+            },
+            extensions: docx_paragraph_extensions(&paragraph.style),
         },
-        docx_paragraph_extensions(&paragraph.style),
     );
 }
 
@@ -586,10 +586,8 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
 
     loop {
         match reader.read_event() {
-            Ok(Event::Start(start)) => {
-                if xml_local_name(start.name().as_ref()) == b"title" {
-                    inside_title = true;
-                }
+            Ok(Event::Start(start)) if xml_local_name(start.name().as_ref()) == b"title" => {
+                inside_title = true;
             }
             Ok(Event::Text(text)) if inside_title => {
                 return text
@@ -598,10 +596,8 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
                     .map(|value| value.trim().to_string())
                     .filter(|value| !value.is_empty());
             }
-            Ok(Event::End(end)) => {
-                if xml_local_name(end.name().as_ref()) == b"title" {
-                    inside_title = false;
-                }
+            Ok(Event::End(end)) if xml_local_name(end.name().as_ref()) == b"title" => {
+                inside_title = false;
             }
             Ok(Event::Eof) => break,
             Err(_) => break,
@@ -808,12 +804,10 @@ fn parse_docx_document(
                             current_cells.push(cell);
                         }
                     }
-                    b"tr" if table_depth == 1 => {
-                        if !current_cells.is_empty() {
-                            current_rows.push(ReaderTableRow {
-                                cells: std::mem::take(&mut current_cells),
-                            });
-                        }
+                    b"tr" if table_depth == 1 && !current_cells.is_empty() => {
+                        current_rows.push(ReaderTableRow {
+                            cells: std::mem::take(&mut current_cells),
+                        });
                     }
                     b"tbl" => {
                         if table_depth == 1 && !current_rows.is_empty() {

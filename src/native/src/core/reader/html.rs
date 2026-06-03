@@ -13,9 +13,10 @@ use uuid::Uuid;
 use crate::core::reader::{
     collapse_whitespace, decode_reader_text, default_canonical_schema_version, extract_text_blocks,
     normalize_line_endings, safe_remote_image_src, sha256_hex, title_from_file_stem, utf16_len,
-    FormatExtractor, ReaderBlockExtensions, ReaderBlockStyleExtension, ReaderContentBlock,
-    ReaderImageExtension, ReaderImportPayload, ReaderInlineSpan, ReaderListItemExtension,
-    ReaderTableCell, ReaderTableExtension, ReaderTableRow, HTML_EXTRACTOR_VERSION,
+    FormatExtractor, LinearBlock, ReaderBlockExtensions, ReaderBlockStyleExtension,
+    ReaderContentBlock, ReaderImageExtension, ReaderImportPayload, ReaderInlineSpan,
+    ReaderListItemExtension, ReaderTableCell, ReaderTableExtension, ReaderTableRow,
+    HTML_EXTRACTOR_VERSION,
 };
 
 /// HTML file format extractor implementing [`FormatExtractor`].
@@ -432,13 +433,16 @@ fn ruby_annotation(element: ElementRef<'_>) -> Option<String> {
 pub(super) fn append_linear_block(
     blocks: &mut Vec<ReaderContentBlock>,
     linear_text: &mut String,
-    kind: &str,
-    text: String,
-    heading_level: Option<u8>,
-    text_align: Option<String>,
-    spans: Option<Vec<ReaderInlineSpan>>,
-    extensions: Option<ReaderBlockExtensions>,
+    block: LinearBlock<'_>,
 ) {
+    let LinearBlock {
+        kind,
+        text,
+        heading_level,
+        text_align,
+        spans,
+        extensions,
+    } = block;
     let trimmed = text.trim();
     if trimmed.is_empty() {
         return;
@@ -584,12 +588,14 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "heading",
-                    block_text.clone(),
-                    level,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &block_text),
-                    block_style_extension(element),
+                    LinearBlock {
+                        kind: "heading",
+                        text: block_text.clone(),
+                        heading_level: level,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &block_text),
+                        extensions: block_style_extension(element),
+                    },
                 );
             }
             "p" | "small" => {
@@ -597,12 +603,14 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "paragraph",
-                    block_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &block_text),
-                    block_style_extension(element),
+                    LinearBlock {
+                        kind: "paragraph",
+                        text: block_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &block_text),
+                        extensions: block_style_extension(element),
+                    },
                 );
             }
             "li" => {
@@ -664,12 +672,17 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "list_item",
-                    block_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &block_text),
-                    merge_extensions(list_extension, block_style_extension(element)),
+                    LinearBlock {
+                        kind: "list_item",
+                        text: block_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &block_text),
+                        extensions: merge_extensions(
+                            list_extension,
+                            block_style_extension(element),
+                        ),
+                    },
                 );
             }
             "blockquote" => {
@@ -677,12 +690,14 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "blockquote",
-                    block_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &block_text),
-                    block_style_extension(element),
+                    LinearBlock {
+                        kind: "blockquote",
+                        text: block_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &block_text),
+                        extensions: block_style_extension(element),
+                    },
                 );
             }
             "pre" => {
@@ -691,17 +706,19 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "code_block",
-                    code_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    Some(vec![ReaderInlineSpan {
-                        start: 0,
-                        end: utf16_len(&code_text),
-                        style: "code".to_string(),
-                        annotation: None,
-                    }]),
-                    block_style_extension(element),
+                    LinearBlock {
+                        kind: "code_block",
+                        text: code_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: Some(vec![ReaderInlineSpan {
+                            start: 0,
+                            end: utf16_len(&code_text),
+                            style: "code".to_string(),
+                            annotation: None,
+                        }]),
+                        extensions: block_style_extension(element),
+                    },
                 );
             }
             "table" => {
@@ -757,12 +774,14 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    "paragraph",
-                    figure_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &figure_text),
-                    block_style_extension(element),
+                    LinearBlock {
+                        kind: "paragraph",
+                        text: figure_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &figure_text),
+                        extensions: block_style_extension(element),
+                    },
                 );
             }
             "div" | "section" | "article" | "aside" | "nav" => {
@@ -788,12 +807,14 @@ pub(super) fn html_to_blocks(
                 append_linear_block(
                     &mut blocks,
                     &mut text,
-                    kind,
-                    block_text.clone(),
-                    None,
-                    infer_text_align(element),
-                    inline_spans_for_block(element, &block_text),
-                    style_extension,
+                    LinearBlock {
+                        kind,
+                        text: block_text.clone(),
+                        heading_level: None,
+                        text_align: infer_text_align(element),
+                        spans: inline_spans_for_block(element, &block_text),
+                        extensions: style_extension,
+                    },
                 );
             }
             _ => {}

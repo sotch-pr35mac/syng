@@ -178,7 +178,7 @@ fn inline_epub_image(
     let already_resolved = extensions
         .image
         .as_ref()
-        .map_or(true, |image| image.inline_src.is_some());
+        .is_none_or(|image| image.inline_src.is_some());
     if already_resolved {
         return;
     }
