@@ -1,3 +1,4 @@
+<!-- Colors dictionary-backed pinyin segments using native word_data tone metadata. -->
 <script lang="ts">
 	import type { PinyinSegment } from '@/types/tools.js';
 

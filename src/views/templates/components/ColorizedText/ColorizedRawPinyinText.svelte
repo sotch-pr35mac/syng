@@ -1,3 +1,4 @@
+<!-- Colors free-form pinyin text by tokenizing tone marks and tone-number syllables directly. -->
 <script lang="ts">
 	interface Props {
 		text?: string;
