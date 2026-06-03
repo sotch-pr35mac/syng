@@ -1,4 +1,4 @@
-name: Lint
+name: Check
 
 on:
   push:
@@ -20,4 +20,4 @@ jobs:
       - name: Install Dependencies
         run: make install-dev
       - name: Lint
-        run: make lint
+        run: make check
