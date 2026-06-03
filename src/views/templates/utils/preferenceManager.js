@@ -64,6 +64,7 @@ export class PreferenceManager {
 		this._name = dbName;
 		this._config = {};
 		this.initialized = false;
+		this._initPromise = null;
 	}
 
 	/*
@@ -73,55 +74,37 @@ export class PreferenceManager {
 	 * finishes loading; rejects if the file doesn't exist or can't be created.
 	 */
 	init() {
-		return new Promise((resolve, reject) => {
-			this._db = new PouchDB(this._name);
-			this._db
-				.get('config')
-				.catch((err) => {
-					if (err.name === 'not_found') {
-						return createDefaultPreferences();
-					} else {
-						console.error(err);
-						reject(
-							'There was an error loading user preferences. Check the logs for more details.'
-						);
-						return undefined;
-					}
-				})
-				.then((configuration) => {
-					this._config = backfillPreferences(configuration);
-					this.initialized = true;
-					resolve();
-					return undefined;
-				})
-				.catch((err) => {
-					console.error(err);
-					reject(
-						'There was an error loading user preferences. Check the logs for more details.'
-					);
-				});
-		});
+		this._db = new PouchDB(this._name);
+		this._initPromise = this._db
+			.get('config')
+			.catch((err) => {
+				if (err.name === 'not_found') {
+					return createDefaultPreferences();
+				}
+				console.error(err);
+				throw new Error(
+					'There was an error loading user preferences. Check the logs for more details.'
+				);
+			})
+			.then((configuration) => {
+				this._config = backfillPreferences(configuration);
+				this.initialized = true;
+				return undefined;
+			});
+		return this._initPromise;
 	}
 
 	/*
-	 * Description: A function that resolves a promise once the database has been initalized.
+	 * Description: A function that resolves once the database has been initialized.
 	 * Should be used when data is required at application load when it is reasonable
-	 * that there may be a race condition with db initialization. Internally just polls the
-	 * value of `initialized` until initialization has completed.
-	 * Return: Promise: Returns a promise that resolves once initialization has been completed.
+	 * that there may be a race condition with db initialization. Awaits the in-flight
+	 * initialization promise (starting one if `init` has not yet been called) so a failed
+	 * initialization rejects here instead of polling `initialized` forever.
+	 * Return: Promise: Returns a promise that resolves once initialization has completed,
+	 * and rejects if initialization failed.
 	 */
 	waitForInit() {
-		const POLL_INTERVAL_MS = 10;
-		return new Promise((resolve) => {
-			const pollInit = () => {
-				if (this.initialized) {
-					resolve();
-				} else {
-					setTimeout(pollInit, POLL_INTERVAL_MS);
-				}
-			};
-			pollInit();
-		});
+		return this._initPromise ?? this.init();
 	}
 
 	/*

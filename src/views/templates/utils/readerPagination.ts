@@ -15,11 +15,15 @@ const DEFAULT_LINE_HEIGHT = 40;
 const DEFAULT_BLOCK_GAP = 28;
 const DEFAULT_HEADING_LINE_HEIGHT = 30;
 const DEFAULT_HEADING_GAP = 28;
-const HEADING_CHARACTER_WIDTH_SCALE = 0.9;
+const DEFAULT_HEADING_FONT_SCALE = 1.35;
 const TABLE_ROW_HEIGHT_SCALE = 1.25;
 export const READER_IMAGE_MAX_WIDTH_RATIO = 0.7;
 export const READER_IMAGE_MAX_HEIGHT_RATIO = 0.65;
 export const READER_TABLE_MAX_HEIGHT_RATIO = 0.75;
+const HIGH_SURROGATE_MIN = 0xd800;
+const HIGH_SURROGATE_MAX = 0xdbff;
+const LOW_SURROGATE_MIN = 0xdc00;
+const LOW_SURROGATE_MAX = 0xdfff;
 
 export interface ReaderPageLayout {
 	contentWidth: number;
@@ -29,6 +33,8 @@ export interface ReaderPageLayout {
 	blockGap: number;
 	headingLineHeight: number;
 	headingGap: number;
+	/** Font-size multiplier applied to headings when they render (used for capacity math). */
+	headingFontScale?: number;
 	averageCharacterWidth?: number;
 	measuredAtomicBlockHeights?: Record<string, number>;
 }
@@ -98,6 +104,7 @@ function normalizeLayout(layout: ReaderPageLayout | undefined): ReaderPageLayout
 		blockGap: Math.max(0, layout?.blockGap ?? DEFAULT_BLOCK_GAP),
 		headingLineHeight: Math.max(1, layout?.headingLineHeight ?? DEFAULT_HEADING_LINE_HEIGHT),
 		headingGap: Math.max(0, layout?.headingGap ?? DEFAULT_HEADING_GAP),
+		headingFontScale: Math.max(1, layout?.headingFontScale ?? DEFAULT_HEADING_FONT_SCALE),
 		averageCharacterWidth: Math.max(
 			1,
 			layout?.averageCharacterWidth ?? layout?.fontSize ?? DEFAULT_FONT_SIZE
@@ -107,13 +114,14 @@ function normalizeLayout(layout: ReaderPageLayout | undefined): ReaderPageLayout
 }
 
 function getCharacterCapacity(layout: ReaderPageLayout, kind: ReaderContentBlock['kind']): number {
+	const baseCharacterWidth = layout.averageCharacterWidth ?? layout.fontSize;
+	// Headings render larger than body text (headingFontScale), so their glyphs are wider and
+	// fewer fit per line. Scaling the character width keeps the estimated line count (and thus
+	// the heading's height) from being undercounted, which would clip a wrapped heading.
 	const characterWidth =
 		kind === 'heading'
-			? Math.max(
-					layout.averageCharacterWidth ?? layout.fontSize,
-					layout.fontSize * HEADING_CHARACTER_WIDTH_SCALE
-				)
-			: (layout.averageCharacterWidth ?? layout.fontSize);
+			? baseCharacterWidth * (layout.headingFontScale ?? DEFAULT_HEADING_FONT_SCALE)
+			: baseCharacterWidth;
 	return Math.max(1, Math.floor(layout.contentWidth / characterWidth));
 }
 
@@ -184,12 +192,32 @@ function isUnsplittableFlowBlock(block: ReaderContentBlock): boolean {
 	return Boolean(style?.note || style?.boxed || style?.poem);
 }
 
+/**
+ * If `index` falls between a surrogate pair, advance past the low surrogate so a line/page
+ * boundary never splits an astral-plane character (CJK Extension B, emoji) into lone
+ * surrogates (which render as U+FFFD and misalign token offsets).
+ */
+function alignToCodePointBoundary(text: string, index: number): number {
+	if (index <= 0 || index >= text.length) {
+		return index;
+	}
+	const previousUnit = text.charCodeAt(index - 1);
+	const currentUnit = text.charCodeAt(index);
+	const isHighSurrogate =
+		previousUnit >= HIGH_SURROGATE_MIN && previousUnit <= HIGH_SURROGATE_MAX;
+	const isLowSurrogate = currentUnit >= LOW_SURROGATE_MIN && currentUnit <= LOW_SURROGATE_MAX;
+	return isHighSurrogate && isLowSurrogate ? index + 1 : index;
+}
+
 function createLineSlices(text: string, charactersPerLine: number): LineSlice[] {
 	const slices: LineSlice[] = [];
 	let segmentStart = 0;
 
 	while (segmentStart < text.length) {
-		const segmentLimit = Math.min(text.length, segmentStart + charactersPerLine);
+		const segmentLimit = alignToCodePointBoundary(
+			text,
+			Math.min(text.length, segmentStart + charactersPerLine)
+		);
 		const newlineIndex = text.indexOf('\n', segmentStart);
 		const segmentEnd =
 			newlineIndex >= segmentStart && newlineIndex < segmentLimit
@@ -313,6 +341,10 @@ export function createReaderPages(
 			}
 
 			appendAtomicPageBlock(state.pageBlocks, sourceBlock, state.lastLinearTextEnd);
+			// Advance the synthetic anchor so consecutive atomic blocks (e.g. several images in a
+			// row) get distinct [anchor, anchor+1) ranges; otherwise they collide and saved
+			// progress can only ever resolve to the first such page.
+			state.lastLinearTextEnd += 1;
 			state.usedHeight += atomicHeight;
 			state.usedHeight += blockGap;
 			continue;
@@ -378,10 +410,22 @@ export function createReaderPages(
 }
 
 export function findPageIndexForPosition(pages: ReaderPage[], position: number): number {
-	const page = pages.find(
-		(readerPage) => position >= readerPage.start && position < readerPage.end
-	);
-	return page?.index ?? Math.max(0, pages.length - 1);
+	if (!pages.length) {
+		return 0;
+	}
+	// Prefer an exact half-open range match. Otherwise fall back to the last page that starts
+	// at or before the position, so a position landing in a gap between page ranges maps to the
+	// nearest preceding page rather than jumping to the final page.
+	let candidateIndex = 0;
+	for (const readerPage of pages) {
+		if (position >= readerPage.start && position < readerPage.end) {
+			return readerPage.index;
+		}
+		if (readerPage.start <= position) {
+			candidateIndex = readerPage.index;
+		}
+	}
+	return candidateIndex;
 }
 
 export function createReaderSegments(

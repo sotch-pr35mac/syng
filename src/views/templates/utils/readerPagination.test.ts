@@ -380,3 +380,101 @@ it('segments ruby-safe visible text without pronunciation tokens', () => {
 	expect(segments[0].annotation).toBe('han');
 	expect(segments[1].annotation).toBeUndefined();
 });
+
+function hasLoneSurrogate(text: string): boolean {
+	return /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(text);
+}
+
+it('gives consecutive atomic blocks distinct offsets so progress restores to the right page', () => {
+	const document = buildDocument('');
+	document.blocks = [
+		{
+			id: 'image-0',
+			kind: 'image',
+			text: 'Image 0',
+			participates_in_linear_text: false,
+			extensions: { image: { asset_id: 'image-0', mime_type: 'image/png', width: 100, height: 100 } },
+		},
+		{
+			id: 'image-1',
+			kind: 'image',
+			text: 'Image 1',
+			participates_in_linear_text: false,
+			extensions: { image: { asset_id: 'image-1', mime_type: 'image/png', width: 100, height: 100 } },
+		},
+		{
+			id: 'image-2',
+			kind: 'image',
+			text: 'Image 2',
+			participates_in_linear_text: false,
+			extensions: { image: { asset_id: 'image-2', mime_type: 'image/png', width: 100, height: 100 } },
+		},
+	];
+
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		measuredAtomicBlockHeights: { 'image-0': 20, 'image-1': 20, 'image-2': 20 },
+	});
+
+	expect(pages).toHaveLength(EXPECTED_PAGE_COUNT);
+	expect(pages.map((page) => page.blocks[0].start_offset)).toEqual([0, 1, 2]);
+	expect(findPageIndexForPosition(pages, 0)).toBe(0);
+	expect(findPageIndexForPosition(pages, 1)).toBe(1);
+	expect(findPageIndexForPosition(pages, 2)).toBe(2);
+});
+
+it('restores a position in a gap to the nearest preceding page, not the last page', () => {
+	const pages = [
+		{ index: 0, start: 0, end: 10, blocks: [] },
+		{ index: 1, start: 10, end: 11, blocks: [] },
+		{ index: 2, start: 50, end: 80, blocks: [] },
+	];
+
+	// 30 falls in the gap between page 1 (ends at 11) and page 2 (starts at 50).
+	expect(findPageIndexForPosition(pages, 30)).toBe(1);
+	// A position before the first page maps to page 0.
+	expect(findPageIndexForPosition(pages, -5)).toBe(0);
+	// Exact half-open matches still win.
+	expect(findPageIndexForPosition(pages, 60)).toBe(2);
+});
+
+it('never splits an astral-plane character across a line boundary', () => {
+	// U+20BB7 (CJK Extension B) is two UTF-16 code units; a 3-code-unit line width would
+	// otherwise slice through the middle of a surrogate pair.
+	const document = buildDocument('𠮷𠮷𠮷');
+	const pages = createReaderPages(document, {
+		...compactLayout,
+		contentWidth: 30,
+		contentHeight: 10,
+	});
+
+	const sliceTexts = pages.flatMap((page) => page.blocks.map((block) => block.text));
+	expect(sliceTexts.join('')).toBe('𠮷𠮷𠮷');
+	for (const sliceText of sliceTexts) {
+		expect(hasLoneSurrogate(sliceText)).toBe(false);
+	}
+});
+
+it('reserves more vertical space for headings than body text of the same length', () => {
+	const text = 'abcdefgh';
+	const layout: ReaderPageLayout = {
+		...compactLayout,
+		contentWidth: 40,
+		contentHeight: 25,
+		averageCharacterWidth: 10,
+		lineHeight: 10,
+		headingLineHeight: 10,
+		headingFontScale: 2,
+	};
+
+	const bodyPages = createReaderPages(buildDocument(text), layout);
+
+	const headingDocument = buildDocument(text);
+	headingDocument.blocks = [
+		{ id: 'h1', kind: 'heading', text, start_offset: 0, end_offset: text.length },
+	];
+	const headingPages = createReaderPages(headingDocument, layout);
+
+	expect(bodyPages).toHaveLength(1);
+	expect(headingPages.length).toBeGreaterThan(bodyPages.length);
+});

@@ -35,3 +35,17 @@ it('backfills reader settings into existing preference documents', async () => {
 		})
 	);
 });
+
+it('rejects waitForInit when loading preferences fails instead of hanging', async () => {
+	vi.spyOn(console, 'error').mockImplementation(() => {});
+	global.PouchDB = class {
+		get = vi.fn(() => Promise.reject({ name: 'unauthorized' }));
+	};
+	const { PreferenceManager } = await import('@/utils/preferenceManager.js');
+	const manager = new PreferenceManager('config');
+
+	await expect(manager.waitForInit()).rejects.toThrow(
+		'There was an error loading user preferences.'
+	);
+	expect(manager.initialized).toBe(false);
+});

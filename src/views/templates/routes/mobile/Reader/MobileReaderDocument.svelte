@@ -291,6 +291,7 @@
 			blockGap: fontSize * BODY_BLOCK_GAP_EM,
 			headingLineHeight: fontSize * HEADING_FONT_SCALE * HEADING_LINE_HEIGHT,
 			headingGap: fontSize * BODY_BLOCK_GAP_EM,
+			headingFontScale: HEADING_FONT_SCALE,
 			averageCharacterWidth: measuredCharacterWidth,
 		});
 	}

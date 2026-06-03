@@ -10,6 +10,14 @@ import type { ReaderColorThemeId, ReaderThemeSettings } from '@/types/reader.js'
 import { getPreferenceManager } from '@/utils/appServices.js';
 
 const READER_SETTINGS_PREFERENCE_KEY = 'readerSettings';
+const READER_LINE_HEIGHT_MIN = 1;
+const READER_LINE_HEIGHT_MAX = 3;
+const READER_MARGIN_SCALE_MIN = 0.5;
+const READER_MARGIN_SCALE_MAX = 2;
+const READER_COLUMN_COUNT_MIN = 1;
+const READER_COLUMN_COUNT_MAX = 3;
+const READER_PDF_ZOOM_MIN = 0.5;
+const READER_PDF_ZOOM_MAX = 4;
 
 let settings = $state<ReaderThemeSettings>({ ...DEFAULT_READER_SETTINGS });
 
@@ -29,20 +37,51 @@ function clampFontSizePercent(value: unknown): number {
 	);
 }
 
+function clampNumber(value: unknown, fallback: number, min: number, max: number): number {
+	const numericValue = typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+	return Math.min(max, Math.max(min, numericValue));
+}
+
 function normalizeSettings(value: unknown): ReaderThemeSettings {
-	const storedSettings = value && typeof value === 'object' ? value : {};
-	const colorTheme = isReaderColorThemeId(
-		(storedSettings as Partial<ReaderThemeSettings>).colorTheme
-	)
-		? (storedSettings as Partial<ReaderThemeSettings>).colorTheme!
+	const storedSettings = (
+		value && typeof value === 'object' ? value : {}
+	) as Partial<ReaderThemeSettings>;
+	const colorTheme = isReaderColorThemeId(storedSettings.colorTheme)
+		? storedSettings.colorTheme!
 		: DEFAULT_READER_SETTINGS.colorTheme;
 
+	// Persisted numeric settings are validated/clamped (not just spread) so a corrupt or
+	// downgraded settings blob can't feed an invalid value (e.g. lineHeight: 0) straight to CSS.
 	return {
 		...DEFAULT_READER_SETTINGS,
-		...(storedSettings as Partial<ReaderThemeSettings>),
+		...storedSettings,
 		...getReaderColorThemeSettings(colorTheme),
-		fontSizePercent: clampFontSizePercent(
-			(storedSettings as Partial<ReaderThemeSettings>).fontSizePercent
+		fontSizePercent: clampFontSizePercent(storedSettings.fontSizePercent),
+		lineHeight: clampNumber(
+			storedSettings.lineHeight,
+			DEFAULT_READER_SETTINGS.lineHeight,
+			READER_LINE_HEIGHT_MIN,
+			READER_LINE_HEIGHT_MAX
+		),
+		marginScale: clampNumber(
+			storedSettings.marginScale,
+			DEFAULT_READER_SETTINGS.marginScale,
+			READER_MARGIN_SCALE_MIN,
+			READER_MARGIN_SCALE_MAX
+		),
+		columnCount: Math.round(
+			clampNumber(
+				storedSettings.columnCount,
+				DEFAULT_READER_SETTINGS.columnCount,
+				READER_COLUMN_COUNT_MIN,
+				READER_COLUMN_COUNT_MAX
+			)
+		),
+		pdfZoom: clampNumber(
+			storedSettings.pdfZoom,
+			DEFAULT_READER_SETTINGS.pdfZoom,
+			READER_PDF_ZOOM_MIN,
+			READER_PDF_ZOOM_MAX
 		),
 	};
 }

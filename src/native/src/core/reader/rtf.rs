@@ -225,13 +225,15 @@ fn rtf_decode_hex_bytes(values: &[u8], style: &RtfTextStyle) -> String {
     values.iter().map(|value| char::from(*value)).collect()
 }
 
-fn rtf_unicode_char(value: i32) -> Option<char> {
-    let unit = if value < 0 {
+/// Normalizes a `\uN` parameter (which RTF may encode as a signed 16-bit value) into a UTF-16
+/// code unit. Surrogate pairing and `char` conversion happen in the caller so that an astral
+/// character emitted as two `\u` surrogate halves can be recombined.
+fn rtf_unicode_unit(value: i32) -> u16 {
+    if value < 0 {
         (value + 65_536) as u16
     } else {
         value as u16
-    };
-    char::from_u32(unit as u32)
+    }
 }
 
 fn rtf_destination_should_skip(control: &str) -> bool {
@@ -304,6 +306,7 @@ fn apply_rtf_control(
     linear_text: &mut String,
     table: &mut RtfTableBuilder,
     in_table: &mut bool,
+    pending_high_surrogate: &mut Option<u16>,
 ) -> Option<usize> {
     match control {
         "b" => style.strong = parameter.unwrap_or(1) != 0,
@@ -375,8 +378,24 @@ fn apply_rtf_control(
         "ldblquote" | "rdblquote" => paragraph.push_text("\"", style),
         "u" => {
             if let Some(value) = parameter {
-                if let Some(ch) = rtf_unicode_char(value) {
-                    paragraph.push_text(&ch.to_string(), style);
+                let unit = rtf_unicode_unit(value);
+                if (0xD800..=0xDBFF).contains(&unit) {
+                    // High surrogate half: hold it until the following low surrogate arrives.
+                    *pending_high_surrogate = Some(unit);
+                } else if (0xDC00..=0xDFFF).contains(&unit) {
+                    // Low surrogate half: recombine with the pending high half into one code point.
+                    if let Some(high) = pending_high_surrogate.take() {
+                        let code_point =
+                            0x10000 + (((high as u32 - 0xD800) << 10) | (unit as u32 - 0xDC00));
+                        if let Some(ch) = char::from_u32(code_point) {
+                            paragraph.push_text(&ch.to_string(), style);
+                        }
+                    }
+                } else {
+                    *pending_high_surrogate = None;
+                    if let Some(ch) = char::from_u32(unit as u32) {
+                        paragraph.push_text(&ch.to_string(), style);
+                    }
                 }
                 return Some(style.uc_skip);
             }
@@ -421,15 +440,31 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
     let mut skip_depth: Option<usize> = None;
     let mut ignorable_current_group = false;
     let mut unicode_fallback_remaining = 0usize;
+    let mut pending_high_surrogate: Option<u16> = None;
 
     while index < bytes.len() {
         let byte = bytes[index];
 
         if unicode_fallback_remaining > 0 {
-            if byte == b'\\' && index + 1 < bytes.len() && bytes[index + 1] == b'\'' {
-                index = (index + 4).min(bytes.len());
+            if byte == b'\\' {
+                if index + 1 < bytes.len() && bytes[index + 1] == b'\'' {
+                    // A \'XX hex escape is one fallback character spanning four bytes.
+                    index = (index + 4).min(bytes.len());
+                } else {
+                    // \\, \{, \} (or any single-character control) is one fallback character.
+                    index = (index + 2).min(bytes.len());
+                }
             } else {
-                index += 1;
+                // Skip one whole character, not one byte, so multibyte fallback text following a
+                // \uc count stays aligned and we never land mid-codepoint.
+                let char_len = match byte {
+                    0x00..=0x7f => 1,
+                    0xc0..=0xdf => 2,
+                    0xe0..=0xef => 3,
+                    0xf0..=0xf7 => 4,
+                    _ => 1,
+                };
+                index = (index + char_len).min(bytes.len());
             }
             unicode_fallback_remaining -= 1;
             continue;
@@ -582,6 +617,7 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
                                 &mut linear_text,
                                 &mut table,
                                 &mut in_table,
+                                &mut pending_high_surrogate,
                             )
                         } else {
                             None
@@ -594,11 +630,19 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
             }
             b'\n' | b'\r' => index += 1,
             _ => {
-                let ch = byte as char;
-                if let Some(style) = styles.last() {
-                    paragraph.push_text(&ch.to_string(), style);
+                // Accumulate a run of literal characters and push it as a UTF-8 slice. `input` is
+                // valid UTF-8 and every stop byte below is ASCII (a char boundary), so the slice
+                // is always valid. Casting each byte to `char` would reinterpret multibyte UTF-8
+                // (e.g. literal CJK) as Latin-1 and corrupt it into mojibake.
+                let run_start = index;
+                while index < bytes.len()
+                    && !matches!(bytes[index], b'\\' | b'{' | b'}' | b'\n' | b'\r')
+                {
+                    index += 1;
                 }
-                index += 1;
+                if let Some(style) = styles.last() {
+                    paragraph.push_text(&input[run_start..index], style);
+                }
             }
         }
     }
@@ -611,4 +655,44 @@ fn parse_rtf_document(input: &str) -> Result<(String, Vec<ReaderContentBlock>), 
     }
     append_rtf_paragraph(&mut blocks, &mut linear_text, &mut paragraph);
     Ok((linear_text, blocks))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decodes_literal_utf8_cjk_in_body() {
+        let (linear_text, _blocks) = parse_rtf_document("{\\rtf1\\ansi 你好今天}").unwrap();
+        assert!(
+            linear_text.contains("你好今天"),
+            "expected literal CJK to round-trip, got {linear_text:?}"
+        );
+    }
+
+    #[test]
+    fn recombines_surrogate_pair_unicode_escapes() {
+        // U+20BB7 (𠮷) encoded as its UTF-16 surrogate halves via signed \u escapes.
+        let (linear_text, _blocks) =
+            parse_rtf_document("{\\rtf1\\ansi\\uc1\\u-10174?\\u-8265?}").unwrap();
+        assert!(
+            linear_text.contains('\u{20BB7}'),
+            "expected astral character to be recombined, got {linear_text:?}"
+        );
+    }
+
+    #[test]
+    fn skips_multibyte_unicode_fallback_by_character() {
+        // The unicode escape emits 你 (U+4F60); its single-character fallback 他 (3 UTF-8 bytes)
+        // must be skipped as one whole character so the following literal X is not corrupted.
+        let (linear_text, _blocks) = parse_rtf_document("{\\rtf1\\ansi\\uc1\\u20320他X}").unwrap();
+        assert!(
+            linear_text.contains("你X"),
+            "expected multibyte fallback to be skipped cleanly, got {linear_text:?}"
+        );
+        assert!(
+            !linear_text.contains('他'),
+            "fallback character should be skipped, got {linear_text:?}"
+        );
+    }
 }

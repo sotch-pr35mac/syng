@@ -505,6 +505,11 @@ fn image_extension(
 
     let mut extra = Map::new();
     extra.insert("alt".to_string(), Value::String(alt));
+    // When the source could not be resolved as a safe remote URL, keep the raw src so callers
+    // that read from a local archive (e.g. EPUB) can resolve and inline the image themselves.
+    if safe_src.is_none() {
+        extra.insert("src".to_string(), Value::String(src));
+    }
     Some(ReaderBlockExtensions {
         image: Some(ReaderImageExtension {
             asset_id: Uuid::new_v4().to_string(),

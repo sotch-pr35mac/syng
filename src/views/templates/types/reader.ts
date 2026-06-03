@@ -262,7 +262,8 @@ export interface ReaderImportPayload {
 	color?: string;
 	source_url?: string;
 	source_html?: string;
-	source_data?: ArrayBuffer | Uint8Array | number[];
+	/** Base64 string from native imports; binary types from in-process (e.g. test) imports. */
+	source_data?: ArrayBuffer | Uint8Array | number[] | string;
 	/** Hex sha256 of source_data when present; for re-import integrity. */
 	source_sha256?: string;
 	source_byte_length?: number;

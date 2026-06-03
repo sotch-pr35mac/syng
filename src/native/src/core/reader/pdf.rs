@@ -164,9 +164,11 @@ impl pdf_extract::OutputDev for PdfLayoutOutput {
         let position = trm.post_transform(&self.flip_ctm);
         let x = position.m31;
         let y = position.m32;
-        let vector_x = (trm.m11 * font_size) + (trm.m21 * font_size);
-        let vector_y = (trm.m12 * font_size) + (trm.m22 * font_size);
-        let transformed_font_size = (vector_x * vector_y).abs().sqrt();
+        // Effective glyph size is the text-space font size scaled by the text matrix. Use the
+        // square root of the matrix determinant (the uniform-equivalent scale) so rotated or
+        // sheared text is sized correctly, instead of summing the scale and shear of each axis.
+        let matrix_scale = (trm.m11 * trm.m22 - trm.m12 * trm.m21).abs().sqrt();
+        let transformed_font_size = font_size * matrix_scale;
         let glyph_font_size = if transformed_font_size.is_finite() && transformed_font_size > 0.0 {
             transformed_font_size
         } else {

@@ -202,6 +202,38 @@ pub struct ReaderContentBlock {
     pub extensions: Option<ReaderBlockExtensions>,
 }
 
+/// Serializes `Option<Vec<u8>>` as base64 (or omits it) so a binary source payload crosses the
+/// IPC boundary as a compact string instead of a JSON array of integers, which would inflate the
+/// transfer ~4-6x and stress the JSON parser for multi-megabyte documents.
+mod base64_source_data {
+    use base64::{engine::general_purpose::STANDARD, Engine as _};
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub fn serialize<S>(value: &Option<Vec<u8>>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            Some(bytes) => serializer.serialize_str(&STANDARD.encode(bytes)),
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let encoded: Option<String> = Option::deserialize(deserializer)?;
+        match encoded {
+            Some(encoded) => STANDARD
+                .decode(encoded.as_bytes())
+                .map(Some)
+                .map_err(serde::de::Error::custom),
+            None => Ok(None),
+        }
+    }
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
 /// Import payload sent over Tauri IPC after native file, HTML, webpage, or text extraction.
 pub struct ReaderImportPayload {
@@ -224,7 +256,11 @@ pub struct ReaderImportPayload {
     pub source_url: Option<String>,
     #[serde(default)]
     pub source_html: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "base64_source_data"
+    )]
     pub source_data: Option<Vec<u8>>,
     #[serde(default)]
     pub import_app_version: Option<String>,
@@ -304,17 +340,19 @@ fn decode_with_encoding(bytes: &[u8], label: &str) -> Option<String> {
     Some(decoded.into_owned())
 }
 
-fn decode_bom_text(bytes: &[u8]) -> Option<String> {
+/// Detects a leading UTF byte-order mark and returns its encoding label together with the bytes
+/// that follow it. The BOM-stripped slice must be used for every fallback decode so a failed
+/// primary decode never re-attaches the BOM bytes to the output.
+fn strip_bom(bytes: &[u8]) -> Option<(&'static str, &[u8])> {
     if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
-        return decode_with_encoding(&bytes[3..], "utf-8");
+        Some(("utf-8", &bytes[3..]))
+    } else if bytes.starts_with(&[0xFF, 0xFE]) {
+        Some(("utf-16le", &bytes[2..]))
+    } else if bytes.starts_with(&[0xFE, 0xFF]) {
+        Some(("utf-16be", &bytes[2..]))
+    } else {
+        None
     }
-    if bytes.starts_with(&[0xFF, 0xFE]) {
-        return decode_with_encoding(&bytes[2..], "utf-16le");
-    }
-    if bytes.starts_with(&[0xFE, 0xFF]) {
-        return decode_with_encoding(&bytes[2..], "utf-16be");
-    }
-    None
 }
 
 fn decoded_text_score(value: &str) -> i32 {
@@ -333,21 +371,31 @@ fn decoded_text_score(value: &str) -> i32 {
 }
 
 fn decode_reader_text(bytes: &[u8], declared_charset: Option<&str>) -> Result<String, String> {
-    if let Some(decoded) = decode_bom_text(bytes) {
-        return Ok(decoded);
-    }
-    if let Some(charset) = declared_charset {
-        if let Some(decoded) = decode_with_encoding(bytes, charset) {
+    // If a BOM is present, decode the bytes that follow it — and use that same BOM-stripped slice
+    // for every fallback below, so a failed primary decode never re-decodes the BOM bytes (which
+    // would leave a stray U+FEFF / replacement character at the start of the document).
+    let (bom_encoding, content_bytes) = match strip_bom(bytes) {
+        Some((encoding, stripped)) => (Some(encoding), stripped),
+        None => (None, bytes),
+    };
+
+    if let Some(encoding) = bom_encoding {
+        if let Some(decoded) = decode_with_encoding(content_bytes, encoding) {
             return Ok(decoded);
         }
     }
-    if let Ok(value) = std::str::from_utf8(bytes) {
+    if let Some(charset) = declared_charset {
+        if let Some(decoded) = decode_with_encoding(content_bytes, charset) {
+            return Ok(decoded);
+        }
+    }
+    if let Ok(value) = std::str::from_utf8(content_bytes) {
         return Ok(value.to_string());
     }
 
-    let (gbk, _, _) = GBK.decode(bytes);
+    let (gbk, _, _) = GBK.decode(content_bytes);
     let gbk = gbk.into_owned();
-    let (big5, _, _) = BIG5.decode(bytes);
+    let (big5, _, _) = BIG5.decode(content_bytes);
     let big5 = big5.into_owned();
     let decoded = if decoded_text_score(&big5) > decoded_text_score(&gbk) {
         big5
@@ -360,6 +408,11 @@ fn decode_reader_text(bytes: &[u8], declared_charset: Option<&str>) -> Result<St
 }
 
 fn is_blocked_ipv4(ip: Ipv4Addr) -> bool {
+    let octets = ip.octets();
+    // CGNAT shared address space (100.64.0.0/10) and the benchmarking range (198.18.0.0/15) are
+    // not covered by the std predicates below but can still reach internal infrastructure.
+    let is_shared_cgnat = octets[0] == 100 && (64..=127).contains(&octets[1]);
+    let is_benchmarking = octets[0] == 198 && (18..=19).contains(&octets[1]);
     ip.is_private()
         || ip.is_loopback()
         || ip.is_link_local()
@@ -367,6 +420,8 @@ fn is_blocked_ipv4(ip: Ipv4Addr) -> bool {
         || ip.is_broadcast()
         || ip.is_documentation()
         || ip.is_unspecified()
+        || is_shared_cgnat
+        || is_benchmarking
 }
 
 fn is_blocked_ip(ip: IpAddr) -> bool {
@@ -951,6 +1006,26 @@ mod tests {
             .iter()
             .any(|token| token.text == "你好" && token.start == 0));
         assert!(tokens.iter().any(|token| token.text == "今天"));
+    }
+
+    #[test]
+    fn blocks_cgnat_and_benchmarking_ipv4() {
+        assert!(is_blocked_ipv4("100.64.0.1".parse::<Ipv4Addr>().unwrap()));
+        assert!(is_blocked_ipv4("100.127.255.255".parse::<Ipv4Addr>().unwrap()));
+        assert!(is_blocked_ipv4("198.18.0.1".parse::<Ipv4Addr>().unwrap()));
+        assert!(!is_blocked_ipv4("100.128.0.1".parse::<Ipv4Addr>().unwrap()));
+        assert!(!is_blocked_ipv4("8.8.8.8".parse::<Ipv4Addr>().unwrap()));
+    }
+
+    #[test]
+    fn bom_text_fallback_does_not_reattach_bom() {
+        // UTF-8 BOM followed by GBK bytes that are invalid UTF-8 ("你好" in GBK). The post-BOM
+        // UTF-8 decode fails, so the GBK fallback must run on the BOM-stripped bytes only — never
+        // re-decoding the BOM bytes (which would prepend stray characters).
+        let mut bytes = vec![0xEF, 0xBB, 0xBF];
+        bytes.extend_from_slice(&[0xC4, 0xE3, 0xBA, 0xC3]);
+        let decoded = decode_reader_text(&bytes, None).unwrap();
+        assert_eq!(decoded, "你好");
     }
 
     #[test]

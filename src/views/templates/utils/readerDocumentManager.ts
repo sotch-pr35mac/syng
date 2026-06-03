@@ -103,16 +103,34 @@ const createInitialProgress = (text = '', resourceHref = 'text'): ReaderLocator 
 	};
 };
 
-const isBinarySource = (
-	sourceData: ArrayBuffer | Uint8Array | number[] | Blob | undefined
-): boolean =>
-	sourceData instanceof ArrayBuffer ||
-	Array.isArray(sourceData) ||
-	Boolean((sourceData as Uint8Array)?.byteLength);
+const base64ToUint8Array = (base64: string): Uint8Array => {
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let index = 0; index < binary.length; index += 1) {
+		bytes[index] = binary.charCodeAt(index);
+	}
+	return bytes;
+};
 
-const toBlob = (sourceData: ArrayBuffer | Uint8Array | number[] | Blob, mimeType: string): Blob => {
+const isBinarySource = (
+	sourceData: ArrayBuffer | Uint8Array | number[] | Blob | string | undefined
+): boolean =>
+	typeof sourceData === 'string'
+		? sourceData.length > 0
+		: sourceData instanceof ArrayBuffer ||
+			Array.isArray(sourceData) ||
+			Boolean((sourceData as Uint8Array)?.byteLength);
+
+const toBlob = (
+	sourceData: ArrayBuffer | Uint8Array | number[] | Blob | string,
+	mimeType: string
+): Blob => {
 	if (sourceData instanceof Blob) {
 		return sourceData;
+	}
+	// Native imports send the source as a base64 string to keep the IPC payload compact.
+	if (typeof sourceData === 'string') {
+		return new Blob([base64ToUint8Array(sourceData)], { type: mimeType });
 	}
 	if (Array.isArray(sourceData)) {
 		return new Blob([new Uint8Array(sourceData)], { type: mimeType });
@@ -162,6 +180,7 @@ const toText = async (
 export class ReaderDocumentManager {
 	initialized: boolean;
 	_document_db: PouchDatabase;
+	_initPromise?: Promise<void>;
 
 	constructor(documentDb: string) {
 		this.initialized = false;
@@ -169,7 +188,7 @@ export class ReaderDocumentManager {
 	}
 
 	init(): Promise<void> {
-		return this._document_db
+		this._initPromise = this._document_db
 			.allDocs({ include_docs: true })
 			.then(() => {
 				this.initialized = true;
@@ -179,20 +198,13 @@ export class ReaderDocumentManager {
 				console.error(error);
 				throw new Error('There was an error loading reader documents.');
 			});
+		return this._initPromise;
 	}
 
+	// Awaits the in-flight init promise (starting one if needed) so a failed init rejects
+	// here instead of polling `initialized` forever.
 	waitForInit(): Promise<void> {
-		const POLL_INTERVAL_MS = 10;
-		return new Promise((resolve) => {
-			const pollInit = () => {
-				if (this.initialized) {
-					resolve();
-				} else {
-					setTimeout(pollInit, POLL_INTERVAL_MS);
-				}
-			};
-			pollInit();
-		});
+		return this._initPromise ?? this.init();
 	}
 
 	createDocument(importPayload: ReaderImportPayload): Promise<StoredReaderDocument> {

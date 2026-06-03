@@ -39,6 +39,23 @@ it('loads persisted reader settings and clamps the font size', async () => {
 	expect(readerSettingsStore.settings.fontSizePercent).toBe(MAX_FONT_SIZE_PERCENT);
 });
 
+it('clamps out-of-range persisted layout settings', async () => {
+	const preferenceManager = buildPreferenceManager({
+		lineHeight: 0,
+		marginScale: 99,
+		columnCount: 12,
+		pdfZoom: -5,
+	});
+	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
+
+	await readerSettingsStore.loadSettings();
+
+	expect(readerSettingsStore.settings.lineHeight).toBe(1);
+	expect(readerSettingsStore.settings.marginScale).toBe(2);
+	expect(readerSettingsStore.settings.columnCount).toBe(3);
+	expect(readerSettingsStore.settings.pdfZoom).toBe(0.5);
+});
+
 it('updates and persists the active color theme', () => {
 	const preferenceManager = buildPreferenceManager();
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);

@@ -190,6 +190,26 @@ it('stores native number-array source attachments', async () => {
 	expect(Array.from(new Uint8Array(loaded))).toEqual(SOURCE_BYTES);
 });
 
+it('stores base64-encoded source attachments from native imports', async () => {
+	const manager = new ReaderDocumentManager('test-reader-documents');
+	await manager.init();
+	const base64Source = btoa(String.fromCharCode(...SOURCE_BYTES));
+	const document = await manager.createDocument({
+		...importPayload,
+		title: 'PDF',
+		file_name: 'story.pdf',
+		source_type: 'pdf',
+		mime_type: 'application/pdf',
+		text: '',
+		blocks: [],
+		source_data: base64Source,
+	});
+
+	const loaded = await manager.getSourceData(document._id);
+
+	expect(Array.from(new Uint8Array(loaded))).toEqual(SOURCE_BYTES);
+});
+
 it('stores source HTML as an attachment instead of inline document data', async () => {
 	const manager = new ReaderDocumentManager('test-reader-documents');
 	await manager.init();
@@ -279,4 +299,15 @@ it('removes reader documents', async () => {
 	await manager.deleteDocument(document._id);
 	const documents = await manager.getDocuments();
 	expect(documents).toEqual([]);
+});
+
+it('rejects waitForInit when loading documents fails instead of hanging', async () => {
+	vi.spyOn(console, 'error').mockImplementation(() => {});
+	const manager = new ReaderDocumentManager('test-reader-documents-failure');
+	manager._document_db.allDocs = vi.fn(() => Promise.reject(new Error('db failure')));
+
+	await expect(manager.waitForInit()).rejects.toThrow(
+		'There was an error loading reader documents.'
+	);
+	expect(manager.initialized).toBe(false);
 });
