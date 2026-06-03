@@ -1011,7 +1011,9 @@ mod tests {
     #[test]
     fn blocks_cgnat_and_benchmarking_ipv4() {
         assert!(is_blocked_ipv4("100.64.0.1".parse::<Ipv4Addr>().unwrap()));
-        assert!(is_blocked_ipv4("100.127.255.255".parse::<Ipv4Addr>().unwrap()));
+        assert!(is_blocked_ipv4(
+            "100.127.255.255".parse::<Ipv4Addr>().unwrap()
+        ));
         assert!(is_blocked_ipv4("198.18.0.1".parse::<Ipv4Addr>().unwrap()));
         assert!(!is_blocked_ipv4("100.128.0.1".parse::<Ipv4Addr>().unwrap()));
         assert!(!is_blocked_ipv4("8.8.8.8".parse::<Ipv4Addr>().unwrap()));

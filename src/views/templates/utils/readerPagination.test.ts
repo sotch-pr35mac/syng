@@ -393,21 +393,27 @@ it('gives consecutive atomic blocks distinct offsets so progress restores to the
 			kind: 'image',
 			text: 'Image 0',
 			participates_in_linear_text: false,
-			extensions: { image: { asset_id: 'image-0', mime_type: 'image/png', width: 100, height: 100 } },
+			extensions: {
+				image: { asset_id: 'image-0', mime_type: 'image/png', width: 100, height: 100 },
+			},
 		},
 		{
 			id: 'image-1',
 			kind: 'image',
 			text: 'Image 1',
 			participates_in_linear_text: false,
-			extensions: { image: { asset_id: 'image-1', mime_type: 'image/png', width: 100, height: 100 } },
+			extensions: {
+				image: { asset_id: 'image-1', mime_type: 'image/png', width: 100, height: 100 },
+			},
 		},
 		{
 			id: 'image-2',
 			kind: 'image',
 			text: 'Image 2',
 			participates_in_linear_text: false,
-			extensions: { image: { asset_id: 'image-2', mime_type: 'image/png', width: 100, height: 100 } },
+			extensions: {
+				image: { asset_id: 'image-2', mime_type: 'image/png', width: 100, height: 100 },
+			},
 		},
 	];
 
