@@ -66,7 +66,8 @@
 
 	const pinyinifyText = $derived(segmentsToPinyinText(toolsStore.pinyinifyResult));
 	const colorizeModeForOutput = $derived(
-		toolsStore.colorizeResolvedMode ?? (toolsStore.colorizeMode === 'pinyin' ? 'pinyin' : 'characters')
+		toolsStore.colorizeResolvedMode ??
+			(toolsStore.colorizeMode === 'pinyin' ? 'pinyin' : 'characters')
 	);
 	const colorizeText = $derived(
 		colorizeModeForOutput === 'pinyin'
@@ -154,7 +155,9 @@
 						placeholder={activePlaceholder}
 						value={toolsStore.pinyinifyInput}
 						oninput={(event) =>
-							toolsStore.setPinyinifyInput((event.currentTarget as HTMLTextAreaElement).value)}
+							toolsStore.setPinyinifyInput(
+								(event.currentTarget as HTMLTextAreaElement).value
+							)}
 					></textarea>
 					<div class="tools__actions">
 						<SyButton onclick={toolsStore.doPinyinify} center>
@@ -187,27 +190,35 @@
 						placeholder={activePlaceholder}
 						value={toolsStore.converterInput}
 						oninput={(event) =>
-							toolsStore.setConverterInput((event.currentTarget as HTMLTextAreaElement).value)}
+							toolsStore.setConverterInput(
+								(event.currentTarget as HTMLTextAreaElement).value
+							)}
 					></textarea>
 					<div class="tools__controls">
 						<SyButtonBar>
 							<SyButton
 								grouped
-								color={toolsStore.converterDirection === 'automatic' ? 'blue' : undefined}
+								color={toolsStore.converterDirection === 'automatic'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setConverterDirection('automatic')}
 							>
 								Automatic
 							</SyButton>
 							<SyButton
 								grouped
-								color={toolsStore.converterDirection === 'to_simplified' ? 'blue' : undefined}
+								color={toolsStore.converterDirection === 'to_simplified'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setConverterDirection('to_simplified')}
 							>
 								To Simplified
 							</SyButton>
 							<SyButton
 								grouped
-								color={toolsStore.converterDirection === 'to_traditional' ? 'blue' : undefined}
+								color={toolsStore.converterDirection === 'to_traditional'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setConverterDirection('to_traditional')}
 							>
 								To Traditional
@@ -246,7 +257,9 @@
 						placeholder={activePlaceholder}
 						value={toolsStore.colorizeInput}
 						oninput={(event) =>
-							toolsStore.setColorizeInput((event.currentTarget as HTMLTextAreaElement).value)}
+							toolsStore.setColorizeInput(
+								(event.currentTarget as HTMLTextAreaElement).value
+							)}
 					></textarea>
 					<div class="tools__controls">
 						<SyButtonBar>
@@ -259,7 +272,9 @@
 							</SyButton>
 							<SyButton
 								grouped
-								color={toolsStore.colorizeMode === 'characters' ? 'blue' : undefined}
+								color={toolsStore.colorizeMode === 'characters'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setColorizeMode('characters')}
 							>
 								Characters
@@ -276,21 +291,27 @@
 							<SyButtonBar>
 								<SyButton
 									grouped
-									color={toolsStore.colorizeScript === 'automatic' ? 'blue' : undefined}
+									color={toolsStore.colorizeScript === 'automatic'
+										? 'blue'
+										: undefined}
 									onclick={() => toolsStore.setColorizeScript('automatic')}
 								>
 									Automatic
 								</SyButton>
 								<SyButton
 									grouped
-									color={toolsStore.colorizeScript === 'simplified' ? 'blue' : undefined}
+									color={toolsStore.colorizeScript === 'simplified'
+										? 'blue'
+										: undefined}
 									onclick={() => toolsStore.setColorizeScript('simplified')}
 								>
 									Simplified
 								</SyButton>
 								<SyButton
 									grouped
-									color={toolsStore.colorizeScript === 'traditional' ? 'blue' : undefined}
+									color={toolsStore.colorizeScript === 'traditional'
+										? 'blue'
+										: undefined}
 									onclick={() => toolsStore.setColorizeScript('traditional')}
 								>
 									Traditional
@@ -318,7 +339,8 @@
 							{#each toolsStore.colorizeResult as segment, index (index)}
 								{#if segment.word_data}
 									<ChineseCharacters
-										characters={toolsStore.colorizeResolvedScript === 'automatic'
+										characters={toolsStore.colorizeResolvedScript ===
+										'automatic'
 											? segment.source
 											: toolsStore.colorizeResolvedScript === 'simplified'
 												? segment.word_data.simplified
@@ -353,27 +375,35 @@
 						placeholder={activePlaceholder}
 						value={toolsStore.prettifyInput}
 						oninput={(event) =>
-							toolsStore.setPrettifyInput((event.currentTarget as HTMLTextAreaElement).value)}
+							toolsStore.setPrettifyInput(
+								(event.currentTarget as HTMLTextAreaElement).value
+							)}
 					></textarea>
 					<div class="tools__controls">
 						<SyButtonBar>
 							<SyButton
 								grouped
-								color={toolsStore.prettifyDirection === 'automatic' ? 'blue' : undefined}
+								color={toolsStore.prettifyDirection === 'automatic'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setPrettifyDirection('automatic')}
 							>
 								Automatic
 							</SyButton>
 							<SyButton
 								grouped
-								color={toolsStore.prettifyDirection === 'to_marks' ? 'blue' : undefined}
+								color={toolsStore.prettifyDirection === 'to_marks'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setPrettifyDirection('to_marks')}
 							>
 								To Marks
 							</SyButton>
 							<SyButton
 								grouped
-								color={toolsStore.prettifyDirection === 'to_numbers' ? 'blue' : undefined}
+								color={toolsStore.prettifyDirection === 'to_numbers'
+									? 'blue'
+									: undefined}
 								onclick={() => toolsStore.setPrettifyDirection('to_numbers')}
 							>
 								To Numbers
@@ -414,7 +444,11 @@
 	ondismiss={() => (showCopyToast = false)}
 />
 
-<SyModal title={activeInfo?.title ?? ''} visible={infoTool !== null} onclose={() => (infoTool = null)}>
+<SyModal
+	title={activeInfo?.title ?? ''}
+	visible={infoTool !== null}
+	onclose={() => (infoTool = null)}
+>
 	{#snippet body()}
 		{#if activeInfo}
 			<p class="tools__info">{activeInfo.body}</p>

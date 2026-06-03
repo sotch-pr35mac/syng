@@ -85,11 +85,11 @@ pub fn pinyinify(text: String) -> Vec<PinyinSegment> {
     let mut cursor = 0;
 
     for token in tokens {
-        if !contains_cjk(&token) {
+        if !contains_cjk(token) {
             continue;
         }
 
-        let Some(relative_position) = text[cursor..].find(&token) else {
+        let Some(relative_position) = text[cursor..].find(token) else {
             continue;
         };
         let token_start = cursor + relative_position;
@@ -99,7 +99,7 @@ pub fn pinyinify(text: String) -> Vec<PinyinSegment> {
         }
 
         let token_end = token_start + token.len();
-        let word_data = dictionary::query_by_chinese(&token)
+        let word_data = dictionary::query_by_chinese(token)
             .first()
             .map(|entry| WordData::from(*entry));
         if word_data.is_some() {
@@ -126,7 +126,9 @@ pub fn convert_characters(text: String, direction: ConvertDirection) -> ConvertC
     let resolved_direction = match direction {
         ConvertDirection::Automatic => match detected_script {
             CharacterScript::Traditional => ConvertDirection::ToSimplified,
-            CharacterScript::Simplified | CharacterScript::Unknown => ConvertDirection::ToTraditional,
+            CharacterScript::Simplified | CharacterScript::Unknown => {
+                ConvertDirection::ToTraditional
+            }
         },
         explicit_direction => explicit_direction,
     };
@@ -226,7 +228,10 @@ fn detect_character_script(text: &str) -> CharacterScript {
 }
 
 fn detect_pinyin_style(text: &str) -> PinyinStyle {
-    if text.chars().any(|character| accented_vowel_data(character).is_some()) {
+    if text
+        .chars()
+        .any(|character| accented_vowel_data(character).is_some())
+    {
         PinyinStyle::Marks
     } else if text
         .chars()

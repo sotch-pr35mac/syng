@@ -50,18 +50,18 @@
 	}
 
 	function accentedVowelTone(character: string): number | null {
-		const tones = [
-			'āēīōūǖĀĒĪŌŪǕ',
-			'áéíóúǘÁÉÍÓÚǗ',
-			'ǎěǐǒǔǚǍĚǏǑǓǙ',
-			'àèìòùǜÀÈÌÒÙǛ',
-		];
+		const tones = ['āēīōūǖĀĒĪŌŪǕ', 'áéíóúǘÁÉÍÓÚǗ', 'ǎěǐǒǔǚǍĚǏǑǓǙ', 'àèìòùǜÀÈÌÒÙǛ'];
 		const index = tones.findIndex((toneCharacters) => toneCharacters.includes(character));
 		return index === -1 ? null : index + 1;
 	}
 </script>
 
-<span>{#each tokens as token, index (index)}{#if token.tone}<span class="sy-text--selectable {`colored-pinyin--tone-${token.tone}`}">{token.text}</span>{:else}{token.text}{/if}{/each}</span>
+<span
+	>{#each tokens as token, index (index)}{#if token.tone}<span
+				class="sy-text--selectable {`colored-pinyin--tone-${token.tone}`}"
+				>{token.text}</span
+			>{:else}{token.text}{/if}{/each}</span
+>
 
 <style>
 	.colored-pinyin--tone-1 {

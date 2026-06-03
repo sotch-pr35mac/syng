@@ -85,16 +85,22 @@ function doColorize(): void {
 	}
 
 	const resolvedMode =
-		colorizeMode === 'automatic' ? (containsCjk(colorizeInput) ? 'characters' : 'pinyin') : colorizeMode;
+		colorizeMode === 'automatic'
+			? containsCjk(colorizeInput)
+				? 'characters'
+				: 'pinyin'
+			: colorizeMode;
 	colorizeResolvedMode = resolvedMode;
-	colorizeResolvedScript =
-		resolvedMode === 'characters' ? colorizeScript : 'automatic';
+	colorizeResolvedScript = resolvedMode === 'characters' ? colorizeScript : 'automatic';
 	colorizeDecision =
-		colorizeMode === 'automatic' || (resolvedMode === 'characters' && colorizeScript === 'automatic')
+		colorizeMode === 'automatic' ||
+		(resolvedMode === 'characters' && colorizeScript === 'automatic')
 			? `Automatic: ${
 					resolvedMode === 'characters'
 						? `Chinese characters, ${
-								colorizeScript === 'automatic' ? 'original script' : describeCharacterScript(colorizeScript)
+								colorizeScript === 'automatic'
+									? 'original script'
+									: describeCharacterScript(colorizeScript)
 							}`
 						: 'pinyin'
 				}`
@@ -165,7 +171,9 @@ export function segmentsToCharacterText(
 			if (script === 'automatic') {
 				return segment.source;
 			}
-			return script === 'simplified' ? segment.word_data.simplified : segment.word_data.traditional;
+			return script === 'simplified'
+				? segment.word_data.simplified
+				: segment.word_data.traditional;
 		})
 		.join('');
 }
