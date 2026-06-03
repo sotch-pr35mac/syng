@@ -19,9 +19,9 @@
 	import type { ToolName } from '@/types/tools.js';
 
 	const tabs: { name: ToolName; label: string }[] = [
-		{ name: 'pinyinify', label: 'Pinyin' },
+		{ name: 'pinyinify', label: 'Pinyinify' },
 		{ name: 'converter', label: 'Convert' },
-		{ name: 'colorize', label: 'Color' },
+		{ name: 'colorize', label: 'Colorize' },
 		{ name: 'prettify', label: 'Prettify' },
 	];
 	const PLACEHOLDER_ROTATION_MS = 2000;
