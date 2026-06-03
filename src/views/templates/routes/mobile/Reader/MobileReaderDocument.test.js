@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
@@ -135,6 +135,12 @@ beforeEach(() => {
 	setBookmarkManagerForTest(mockBookmarkManager({ words: [], lists: ['Bookmarks'] }));
 	setReaderDocumentManagerForTest(buildReaderDocumentManager());
 	window.location.hash = '#/read/document/reader-1';
+});
+
+afterEach(() => {
+	readerRoute.backToLibrary();
+	readerDocumentRouteStore.set(null);
+	vi.restoreAllMocks();
 });
 
 it('renders the routed document title and tokenized page text', async () => {

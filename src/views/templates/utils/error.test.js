@@ -1,23 +1,30 @@
-import { vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { handleError } from '@/utils/error.js';
 
-it('should alert the user with the error message', async () => {
-	global.alert = vi.fn();
-	handleError('message');
-	expect(global.alert).toHaveBeenCalledWith('message');
+beforeEach(() => {
+	vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+	vi.spyOn(console, 'error').mockImplementation(() => {});
 });
 
-it('should print additional information to the console', async () => {
-	global.alert = vi.fn();
-	global.console.error = vi.fn();
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+it('should alert the user with the error message', () => {
+	handleError('message');
+	expect(global.alert).toHaveBeenCalledWith('message');
+	expect(console.error).toHaveBeenCalledWith('[handleError]', 'message');
+});
+
+it('should print additional information to the console', () => {
 	handleError('message', 'additional information');
 	expect(global.alert).toHaveBeenCalledWith('message');
-	expect(global.console.error).toHaveBeenCalledWith(
+	expect(console.error).toHaveBeenCalledWith(
 		'[handleError]',
 		'message',
 		'additional information'
 	);
-	expect(global.console.error).toHaveBeenCalledWith('[handleError] serialized', {
+	expect(console.error).toHaveBeenCalledWith('[handleError] serialized', {
 		error_message: 'additional information',
 	});
 });
