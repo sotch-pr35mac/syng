@@ -56,7 +56,7 @@
 		width: min(100%, calc(var(--sy-mobile-touch-target) * 8));
 		padding: var(--sy-mobile-space--extra-small);
 		border: var(--sy-mobile-surface-border);
-		border-radius: calc(var(--sy-border-radius) * 4);
+		border-radius: calc(var(--sy-border-radius) * 8);
 		background-color: var(--sy-color--grey-2);
 		box-shadow: var(--sy-inner-shadow);
 	}
@@ -68,7 +68,7 @@
 		box-sizing: border-box;
 		min-width: 0;
 		min-height: var(--sy-mobile-touch-target);
-		border-radius: calc(var(--sy-border-radius) * 3);
+		border-radius: calc(var(--sy-border-radius) * 8);
 		font-family: var(--sy-font-family);
 		color: var(--sy-color--grey-4);
 		text-decoration: none;
