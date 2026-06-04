@@ -1,0 +1,24 @@
+.colored-pinyin--tone-1,
+.colored-characters--tone-1 {
+	color: var(--sy-tone-color--1);
+}
+
+.colored-pinyin--tone-2,
+.colored-characters--tone-2 {
+	color: var(--sy-tone-color--2);
+}
+
+.colored-pinyin--tone-3,
+.colored-characters--tone-3 {
+	color: var(--sy-tone-color--3);
+}
+
+.colored-pinyin--tone-4,
+.colored-characters--tone-4 {
+	color: var(--sy-tone-color--4);
+}
+
+.colored-pinyin--tone-5,
+.colored-characters--tone-5 {
+	color: var(--sy-tone-color--5);
+}

@@ -33,6 +33,12 @@ export const NATIVE_COMMANDS = {
 		PREPARE_IMPORT: 'prepare_reader_import',
 		TOKENIZE_TEXT: 'tokenize_reader_text',
 	},
+	TOOLS: {
+		PINYINIFY: 'pinyinify',
+		CONVERT_CHARACTERS: 'convert_characters',
+		PRETTIFY_PINYIN: 'prettify_pinyin',
+		TOKENIZE_PINYIN: 'tokenize_pinyin',
+	},
 	WINDOW: {
 		OPEN_CHARACTER_WINDOW: 'open_character_window',
 	},

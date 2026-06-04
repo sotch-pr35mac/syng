@@ -1,44 +1,41 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { platform } from '@tauri-apps/plugin-os';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ColorizedToolOutput from '@/components/Tools/ColorizedToolOutput.svelte';
 	import TextConversionToolPanel from '@/components/Tools/TextConversionToolPanel.svelte';
 	import ToolsOverlays from '@/components/Tools/ToolsOverlays.svelte';
-	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
 		textConversionHeadingId,
 		textConversionTabs,
 	} from '@/composables/textConversionTools.js';
 	import { toolsRoute } from '@/composables/toolsRoute.svelte.js';
 
-	const isMacos = platform() === 'macos';
 	const outputText = $derived(toolsRoute.activeTool.getOutputText());
 
 	onMount(() => toolsRoute.startPlaceholderRotation());
 </script>
 
-<div class="tools">
-	<div class="tools__title" data-tauri-drag-region={isMacos ? true : undefined}>
-		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Extras</h1>
-	</div>
+<div class="mobile-tools">
+	<header class="mobile-tools__header">
+		<div class="mobile-tools__tabs" aria-label="Extras tools">
+			{#each textConversionTabs as tab (tab.name)}
+				<SyTab
+					variant="mobile"
+					active={toolsRoute.activeTab === tab.name}
+					onclick={() => toolsRoute.setActiveTab(tab.name)}
+				>
+					{tab.label}
+				</SyTab>
+			{/each}
+		</div>
+	</header>
 
-	<div class="tools__tabs" aria-label="Extras tools">
-		{#each textConversionTabs as tab (tab.name)}
-			<SyTab
-				active={toolsRoute.activeTab === tab.name}
-				onclick={() => toolsRoute.setActiveTab(tab.name)}
-			>
-				{tab.label}
-			</SyTab>
-		{/each}
-	</div>
-
-	<div class="tools__content" use:scrollRestore={'tools-content'}>
+	<div class="mobile-tools__content">
 		<TextConversionToolPanel
+			variant="mobile"
 			tool={toolsRoute.activeTool.name}
 			label={toolsRoute.activeTool.label}
-			headingId={textConversionHeadingId(toolsRoute.activeTool.name, 'desktop')}
+			headingId={textConversionHeadingId(toolsRoute.activeTool.name, 'mobile')}
 			inputLabel={toolsRoute.activeTool.inputLabel}
 			inputValue={toolsRoute.activeTool.getInput()}
 			placeholder={toolsRoute.activePlaceholder}
@@ -64,28 +61,28 @@
 <ToolsOverlays />
 
 <style>
-	.tools {
+	.mobile-tools {
 		display: flex;
 		flex-direction: column;
-		width: -webkit-fill-available;
-		overflow: hidden;
-		padding: 0 var(--sy-space--extra-large);
+		height: 100%;
 		background-color: var(--sy-color--white);
 	}
-	.tools__title {
-		padding: var(--sy-space--extra-large) var(--sy-space);
+	.mobile-tools__header {
+		flex-shrink: 0;
+		padding: calc(var(--sy-mobile-space--extra-small) * 5);
+		background-color: var(--sy-color--white);
+		border-bottom: var(--sy-mobile-surface-border);
 	}
-	.tools__tabs {
+	.mobile-tools__tabs {
 		display: flex;
-		gap: var(--sy-space--large);
-		padding: 0 var(--sy-space);
-		border-bottom: var(--sy-border);
-		margin-bottom: var(--sy-space--extra-large);
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-mobile-space--medium);
 	}
-	.tools__content {
+	.mobile-tools__content {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: 0 var(--sy-space) var(--sy-space--extra-large);
+		padding: calc(var(--sy-mobile-space--extra-small) * 5);
 	}
 </style>
