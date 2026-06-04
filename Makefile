@@ -37,7 +37,7 @@ run-ios-device:
 		printf 'No connected iOS device found. Connect a paired iPhone/iPad or run make run-ios-device IOS_DEVICE=<device-id-or-name>\n'; \
 		exit 1; \
 	fi; \
-	xcrun devicectl device install app --device "$$device" "$(IOS_APP_BUNDLE)"; \
+	xcrun devicectl device install app --device "$$device" "$(IOS_APP_BUNDLE)" && \
 	xcrun devicectl device process launch --device "$$device" --terminate-existing "$(IOS_BUNDLE_ID)"
 
 start-android:
