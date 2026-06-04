@@ -7,6 +7,7 @@ import type {
 	ConvertCharactersResult,
 	ConvertDirection,
 	PinyinSegment,
+	PinyinToken,
 	PrettifyPinyinResult,
 	PrettifyDirection,
 	ResolvedConvertDirection,
@@ -26,7 +27,7 @@ let colorizeResolvedMode = $state<Exclude<ColorizeMode, 'automatic'> | null>(nul
 let colorizeScript = $state<CharacterScript>('automatic');
 let colorizeResolvedScript = $state<CharacterScript>('automatic');
 let colorizeResult = $state<PinyinSegment[]>([]);
-let colorizeRawPinyin = $state('');
+let colorizeTokens = $state<PinyinToken[]>([]);
 let colorizeDecision = $state('');
 let prettifyInput = $state('');
 let prettifyDirection = $state<PrettifyDirection>('automatic');
@@ -77,48 +78,62 @@ function doConvert(): void {
 function doColorize(): void {
 	if (!colorizeInput) {
 		colorizeResult = [];
-		colorizeRawPinyin = '';
+		colorizeTokens = [];
 		colorizeResolvedMode = null;
 		colorizeResolvedScript = 'automatic';
 		colorizeDecision = '';
 		return;
 	}
 
-	const resolvedMode =
-		colorizeMode === 'automatic'
-			? containsCjk(colorizeInput)
-				? 'characters'
-				: 'pinyin'
-			: colorizeMode;
-	colorizeResolvedMode = resolvedMode;
-	colorizeResolvedScript = resolvedMode === 'characters' ? colorizeScript : 'automatic';
-	colorizeDecision =
-		colorizeMode === 'automatic' ||
-		(resolvedMode === 'characters' && colorizeScript === 'automatic')
-			? `Automatic: ${
-					resolvedMode === 'characters'
-						? `Chinese characters, ${
-								colorizeScript === 'automatic'
-									? 'original script'
-									: describeCharacterScript(colorizeScript)
-							}`
-						: 'pinyin'
-				}`
-			: '';
-
-	if (resolvedMode === 'pinyin' && !containsCjk(colorizeInput)) {
-		colorizeResult = [];
-		colorizeRawPinyin = colorizeInput;
-		return;
-	}
-
-	colorizeRawPinyin = '';
+	// Segment first; whether any token resolved to a dictionary word tells us if the
+	// input is Chinese characters (color the characters) or free-form pinyin (color
+	// the syllables) — no separate front-end CJK detector needed.
 	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: colorizeInput })
-		.then((result) => {
-			colorizeResult = result;
+		.then((segments) => {
+			const hasChinese = segments.some((segment) => segment.word_data !== null);
+			const resolvedMode =
+				colorizeMode === 'automatic'
+					? hasChinese
+						? 'characters'
+						: 'pinyin'
+					: colorizeMode;
+			colorizeResolvedMode = resolvedMode;
+			colorizeResolvedScript = resolvedMode === 'characters' ? colorizeScript : 'automatic';
+			colorizeDecision = describeColorizeDecision(resolvedMode);
+			colorizeResult = segments;
+
+			// Free-form pinyin (no dictionary words): tokenize natively so each syllable
+			// is colored by its tone.
+			if (resolvedMode === 'pinyin' && !hasChinese) {
+				return invoke<PinyinToken[]>(NATIVE_COMMANDS.TOOLS.TOKENIZE_PINYIN, {
+					text: colorizeInput,
+				}).then((tokens) => {
+					colorizeTokens = tokens;
+					return undefined;
+				});
+			}
+
+			colorizeTokens = [];
 			return undefined;
 		})
 		.catch((error) => handleError('Colorize failed.', error));
+}
+
+function describeColorizeDecision(resolvedMode: Exclude<ColorizeMode, 'automatic'>): string {
+	const shouldDescribe =
+		colorizeMode === 'automatic' ||
+		(resolvedMode === 'characters' && colorizeScript === 'automatic');
+	if (!shouldDescribe) {
+		return '';
+	}
+	if (resolvedMode !== 'characters') {
+		return 'Automatic: pinyin';
+	}
+	const script =
+		colorizeScript === 'automatic'
+			? 'original script'
+			: describeCharacterScript(colorizeScript);
+	return `Automatic: Chinese characters, ${script}`;
 }
 
 function doPrettify(): void {
@@ -176,10 +191,6 @@ export function segmentsToCharacterText(
 				: segment.word_data.traditional;
 		})
 		.join('');
-}
-
-function containsCjk(text: string): boolean {
-	return /[\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/u.test(text);
 }
 
 function describeScript(script: ConvertCharactersResult['detected_script']): string {
@@ -260,8 +271,8 @@ export const toolsStore = {
 	get colorizeResult(): PinyinSegment[] {
 		return colorizeResult;
 	},
-	get colorizeRawPinyin(): string {
-		return colorizeRawPinyin;
+	get colorizeTokens(): PinyinToken[] {
+		return colorizeTokens;
 	},
 	get colorizeDecision(): string {
 		return colorizeDecision;
@@ -325,7 +336,7 @@ export function resetToolsStoreForTest(): void {
 	colorizeScript = 'automatic';
 	colorizeResolvedScript = 'automatic';
 	colorizeResult = [];
-	colorizeRawPinyin = '';
+	colorizeTokens = [];
 	colorizeDecision = '';
 	prettifyInput = '';
 	prettifyDirection = 'automatic';

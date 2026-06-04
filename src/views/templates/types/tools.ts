@@ -17,6 +17,11 @@ export interface PinyinSegment {
 	word_data: WordData | null;
 }
 
+export interface PinyinToken {
+	text: string;
+	tone: number | null;
+}
+
 export type ColorizeMode = 'automatic' | 'characters' | 'pinyin';
 export type CharacterScript = 'automatic' | 'simplified' | 'traditional';
 export type DetectedCharacterScript = 'simplified' | 'traditional' | 'unknown';

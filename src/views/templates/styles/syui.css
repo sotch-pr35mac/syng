@@ -1,5 +1,7 @@
 /* SYUI */
 
+@import url('./tones.css');
+
 /* Tooltip */
 .sy-tooltip--container {
 	display: inline-block;
@@ -22,8 +24,8 @@
 	z-index: var(--sy-z-index--top);
 	box-sizing: border-box;
 	box-shadow: var(--sy-shadow--active);
-	visibility: hidden; 
-	opacity: 0; 
+	visibility: hidden;
+	opacity: 0;
 	transition: opacity var(--sy-transition-duraction);
 }
 

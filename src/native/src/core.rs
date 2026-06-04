@@ -28,4 +28,4 @@ pub use telemetry::{
     telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
     telemetry_track_error, telemetry_track_event, telemetry_track_screen, TelemetryManager,
 };
-pub use tools::{convert_characters, pinyinify, prettify_pinyin};
+pub use tools::{convert_characters, pinyinify, prettify_pinyin, tokenize_pinyin};

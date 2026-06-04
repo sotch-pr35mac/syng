@@ -89,13 +89,25 @@ it('runs automatic character conversion and stores the decision', async () => {
 	);
 });
 
-it('colorizes raw pinyin automatically without invoking native segmentation', () => {
+it('colorizes raw pinyin automatically with native pinyin tokens', async () => {
+	const rawPinyinSegments = [{ source: 'ni3 hao3', word_data: null }];
+	const rawPinyinTokens = [
+		{ text: 'ni3', tone: THIRD_TONE },
+		{ text: ' ', tone: null },
+		{ text: 'hao3', tone: THIRD_TONE },
+	];
+	vi.mocked(invoke)
+		.mockResolvedValueOnce(rawPinyinSegments)
+		.mockResolvedValueOnce(rawPinyinTokens);
 	toolsStore.setColorizeInput('ni3 hao3');
 
 	toolsStore.doColorize();
 
-	expect(invoke).not.toHaveBeenCalled();
-	expect(toolsStore.colorizeRawPinyin).toBe('ni3 hao3');
+	expect(invoke).toHaveBeenNthCalledWith(1, 'pinyinify', { text: 'ni3 hao3' });
+	await waitFor(() =>
+		expect(invoke).toHaveBeenNthCalledWith(2, 'tokenize_pinyin', { text: 'ni3 hao3' })
+	);
+	await waitFor(() => expect(toolsStore.colorizeTokens).toEqual(rawPinyinTokens));
 	expect(toolsStore.colorizeDecision).toBe('Automatic: pinyin');
 });
 

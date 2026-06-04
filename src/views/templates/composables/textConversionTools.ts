@@ -58,9 +58,12 @@ export function colorizeModeForOutput(): 'characters' | 'pinyin' {
 }
 
 export function colorizeOutputText(): string {
-	return colorizeModeForOutput() === 'pinyin'
-		? toolsStore.colorizeRawPinyin || segmentsToPinyinText(toolsStore.colorizeResult)
-		: segmentsToCharacterText(toolsStore.colorizeResult, toolsStore.colorizeResolvedScript);
+	if (colorizeModeForOutput() === 'pinyin') {
+		return toolsStore.colorizeTokens.length > 0
+			? toolsStore.colorizeTokens.map((token) => token.text).join('')
+			: segmentsToPinyinText(toolsStore.colorizeResult);
+	}
+	return segmentsToCharacterText(toolsStore.colorizeResult, toolsStore.colorizeResolvedScript);
 }
 
 export const textConversionToolConfigs: Record<ToolName, TextConversionToolConfig> = {

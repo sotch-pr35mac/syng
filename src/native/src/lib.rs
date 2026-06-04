@@ -16,7 +16,7 @@ use core::{
     pinyinify, prepare_reader_import, prettify_pinyin, query, query_by_chinese, query_by_english,
     query_by_pinyin, score_quiz, start_quiz, telemetry_get_prefs, telemetry_get_queued_events,
     telemetry_init, telemetry_set_pref, telemetry_track_error, telemetry_track_event,
-    telemetry_track_screen, tokenize_reader_text, QuizState, TelemetryManager,
+    telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, QuizState, TelemetryManager,
 };
 #[cfg(desktop)]
 use tauri::Manager;
@@ -93,6 +93,7 @@ pub fn run() {
             pinyinify,
             convert_characters,
             prettify_pinyin,
+            tokenize_pinyin,
             is_dev_build
         ));
     }
@@ -125,6 +126,7 @@ pub fn run() {
             pinyinify,
             convert_characters,
             prettify_pinyin,
+            tokenize_pinyin,
             is_dev_build
         ));
     }
