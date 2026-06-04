@@ -6,6 +6,11 @@ install-dev:
 	git submodule update --init
 	npm install --include=dev
 
+IOS_APP_BUNDLE ?= src/native/gen/apple/build/syng_iOS.xcarchive/Products/Applications/Syng.app
+IOS_BUNDLE_ID ?= org.syng.app
+IOS_DEVICE ?=
+IOS_OFFLINE_CONFIG ?= tauri.ios.offline.conf.json
+
 build:
 	npm run build
 
@@ -20,6 +25,20 @@ start:
 start-ios:
 	npm run build
 	cd src/native && cargo tauri ios dev --config tauri.mobile.conf.json
+
+run-ios-device:
+	npm run build
+	cd src/native && cargo tauri ios build --config tauri.mobile.conf.json --config $(IOS_OFFLINE_CONFIG) --export-method debugging
+	@device="$(IOS_DEVICE)"; \
+	if [ -z "$$device" ]; then \
+		device="$$(xcrun devicectl list devices --filter "connectionProperties.tunnelState != 'unavailable' AND hardwareProperties.reality == 'physical' AND hardwareProperties.platform == 'iOS'" --hide-default-columns --hide-headers --columns identifier | head -n 1)"; \
+	fi; \
+	if [ -z "$$device" ]; then \
+		printf 'No connected iOS device found. Connect a paired iPhone/iPad or run make run-ios-device IOS_DEVICE=<device-id-or-name>\n'; \
+		exit 1; \
+	fi; \
+	xcrun devicectl device install app --device "$$device" "$(IOS_APP_BUNDLE)" && \
+	xcrun devicectl device process launch --device "$$device" --terminate-existing "$(IOS_BUNDLE_ID)"
 
 start-android:
 	npm run build
