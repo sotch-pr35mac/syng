@@ -39,7 +39,7 @@
 		"terser": "^5.44.1",
 		"typescript": "^6.0.2",
 		"typescript-eslint": "^8.58.1",
-		"vite": "^8.0.10",
+		"vite": "^8.0.16",
 		"vitest": "^4.1.5"
 	},
 	"dependencies": {
