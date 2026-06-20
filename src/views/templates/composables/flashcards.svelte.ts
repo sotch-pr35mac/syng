@@ -6,12 +6,20 @@ import {
 } from '@/stores/flashcards.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { handleError } from '@/utils/index.js';
+import { invoke } from '@tauri-apps/api/core';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import type { SearchEntry } from '@/types/search.js';
 
 let flashcardsActiveList = $state<string | null>(flashcardsActiveListStore.value);
 let flashcardsActiveIndex = $state(flashcardsActiveIndexStore.value);
 let flashcardsShowDetails = $state(flashcardsShowDetailsStore.value);
 let flashcardsListContent = $state<BookmarkWordEntry[]>([]);
 let flashcardsLoading = $state(true);
+// Shared dictionary popover state for cross-reference links (e.g. measure words) tapped inside
+// the flashcard's DictionaryContent. Mirrors the search/bookmarks popover pattern.
+let popoverResults = $state<SearchEntry[]>([]);
+let popoverResultIndex = $state(0);
+let popoverWord = $state<SearchEntry | undefined>(undefined);
 
 function loadFlashcards(listFromUrl: string | null): void {
 	const storedList = flashcardsActiveListStore.value;
@@ -89,6 +97,36 @@ function flipFlashcard(): void {
 	persistFlashcardsDetails();
 }
 
+async function lookupPopoverWord(text: string): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+function selectPopoverResult(index: number): void {
+	popoverResultIndex = index;
+	popoverWord = popoverResults[index];
+}
+
+function closePopoverDictionary(): void {
+	popoverWord = undefined;
+	popoverResults = [];
+	popoverResultIndex = 0;
+}
+
 export const flashcardsRoute = {
 	get activeList(): string | null {
 		return flashcardsActiveList;
@@ -117,6 +155,15 @@ export const flashcardsRoute = {
 	get canGoNext(): boolean {
 		return flashcardsActiveIndex < flashcardsListContent.length - 1;
 	},
+	get popoverWord(): SearchEntry | undefined {
+		return popoverWord;
+	},
+	get popoverResults(): SearchEntry[] {
+		return popoverResults;
+	},
+	get popoverResultIndex(): number {
+		return popoverResultIndex;
+	},
 	load: loadFlashcards,
 	persistIndex: persistFlashcardsIndex,
 	persistDetails: persistFlashcardsDetails,
@@ -124,4 +171,7 @@ export const flashcardsRoute = {
 	previous: previousFlashcard,
 	next: nextFlashcard,
 	flip: flipFlashcard,
+	lookupPopoverWord,
+	selectPopoverResult,
+	closePopoverDictionary,
 };

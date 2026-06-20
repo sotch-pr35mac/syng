@@ -20,6 +20,7 @@
 		horizontalAlign = 'center',
 		mobileTitle = 'Options',
 		mobileSnap = 'partial',
+		reopenKey = undefined,
 		children,
 		onclose = () => {},
 	}: {
@@ -33,6 +34,7 @@
 		horizontalAlign?: PopoverHorizontalAlign;
 		mobileTitle?: string;
 		mobileSnap?: SheetSnap;
+		reopenKey?: number | string;
 		children?: Snippet;
 		onclose?: () => void;
 	} = $props();
@@ -209,7 +211,7 @@
 
 {#if visible}
 	{#if mobile}
-		<SySnapSheet initialSnap={mobileSnap}>
+		<SySnapSheet initialSnap={mobileSnap} {reopenKey}>
 			<div class="sy-popover__mobile-header">
 				<span class="sy-popover__mobile-title">{mobileTitle}</span>
 				<SyButton style="ghost" size="small" aria-label="Close" onclick={onclose}>

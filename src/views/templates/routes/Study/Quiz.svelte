@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { router } from 'svelte-spa-router';
 	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
 	import SyTimer from '@/components/SyTimer/SyTimer.svelte';
@@ -18,6 +19,17 @@
 	let timerRef = $state(); // Reference to the timer component
 	const params = new URLSearchParams(router.querystring);
 	const activeList = params.get('list');
+
+	// Reset scroll to top when the question or the question/answer view changes, so a
+	// scrolled-down previous word doesn't leave the next word/answer out of view.
+	let contentElement = $state();
+	$effect(() => {
+		void quizRoute.question;
+		void quizRoute.showAnswer;
+		if (contentElement) {
+			contentElement.scrollTop = 0;
+		}
+	});
 
 	const handleRetakeQuiz = () => {
 		quizRoute.retake();
@@ -162,6 +174,7 @@
 	</div>
 	<div
 		class="quiz--content"
+		bind:this={contentElement}
 		onclick={handlePageClick}
 		onkeydown={handlePageClick}
 		role="button"
@@ -183,6 +196,7 @@
 						word={quizRoute.answer}
 						backgroundColor="white"
 						lists={quizRoute.lists}
+						onlink={quizRoute.lookupPopoverWord}
 					/>
 				</div>
 			{:else}
@@ -215,6 +229,16 @@
 		{/if}
 	</div>
 </div>
+
+<DictionaryPopover
+	word={quizRoute.popoverWord}
+	results={quizRoute.popoverResults}
+	resultIndex={quizRoute.popoverResultIndex}
+	lists={quizRoute.lists}
+	onselect={quizRoute.selectPopoverResult}
+	onlink={quizRoute.lookupPopoverWord}
+	onclose={quizRoute.closePopoverDictionary}
+/>
 
 <style>
 	.quiz--container {

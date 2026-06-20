@@ -18,7 +18,7 @@ use core::{
     telemetry_init, telemetry_set_pref, telemetry_track_error, telemetry_track_event,
     telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, QuizState, TelemetryManager,
 };
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
 #[cfg(desktop)]
 use windows::open_character_window;
@@ -52,6 +52,15 @@ pub fn run() {
             }
 
             windows::setup(app)?;
+
+            // Recover from iOS terminating the WKWebView content process while the app is
+            // backgrounded, which otherwise leaves a blank page on resume.
+            #[cfg(target_os = "ios")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    platform::ios::install_content_process_recovery(&window, app.handle());
+                }
+            }
 
             Ok(())
         })

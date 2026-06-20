@@ -17,6 +17,8 @@
 	 * @property {string} [value] - Controlled input value
 	 * @property {string} [type] - Type Prop
 	 * @property {string} [autocomplete] - Autocomplete Prop
+	 * @property {string} [autocorrect] - Autocorrect Prop ('off' by default to stop pinyin being "corrected")
+	 * @property {string} [autocapitalize] - Autocapitalize Prop ('off' by default)
 	 * @property {string} [inputmode] - Input mode Prop
 	 * @property {any} id - ID Prop
 	 * @property {any} [spellcheck] - Spellcheck Prop
@@ -29,6 +31,7 @@
 	 */
 
 	import { isMobile } from '@/utils/device.js';
+	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
 	const mobile = isMobile();
@@ -41,10 +44,14 @@
 		value = '',
 		type = 'text',
 		autocomplete = undefined,
+		// Default to disabling autocorrect/autocapitalize so the keyboard stops
+		// "correcting" pinyin into English. Exceptions (e.g. reader titles) opt back in.
+		autocorrect = 'off',
+		autocapitalize = 'off',
 		inputmode = undefined,
 		id,
 		maxlength = undefined,
-		spellcheck = undefined,
+		spellcheck = false,
 		classes = [],
 		onchange = () => {},
 		onkeyup = () => {},
@@ -74,10 +81,13 @@
 </script>
 
 <input
+	use:cursorToEnd
 	{placeholder}
 	{value}
 	{type}
 	{autocomplete}
+	{autocorrect}
+	{autocapitalize}
 	{inputmode}
 	class={getClasses()}
 	{id}

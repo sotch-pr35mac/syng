@@ -13,8 +13,10 @@
 	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
+	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	/* Background Color Prop */
 	/* Possible Values */
@@ -137,6 +139,9 @@
 				// isMobile() includes iPad — both iPhone and iPad navigate in-app
 				// rather than opening the separate character window (desktop only).
 				if (isMobile()) {
+					// Set the word the characters screen renders before navigating;
+					// otherwise it shows whatever word Search/Bookmarks last set.
+					mobileCharacterWindowWordStore.set(word);
 					window.location.hash = '#/characters';
 				} else {
 					invoke(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
@@ -185,6 +190,19 @@
 					);
 				});
 		}, DEBOUNCE_MS);
+	};
+
+	const NOTES_KEYBOARD_SETTLE_MS = 300;
+	const handleNotesFocus = (event) => {
+		if (!isMobile()) {
+			return;
+		}
+		const notesElement = event.currentTarget;
+		// Wait for the on-screen keyboard to finish animating in (the layout shrinks
+		// via visualViewport in MobileApp) before centering the field above it.
+		setTimeout(() => {
+			notesElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		}, NOTES_KEYBOARD_SETTLE_MS);
 	};
 
 	const handleMembershipModification = (listName) => {
@@ -272,11 +290,15 @@
 			<section class="dictionary-content">
 				<h2 class="dictionary-content--section-title">Notes</h2>
 				<textarea
+					use:cursorToEnd
 					placeholder="No Notes"
 					class="dictionary-content--notes {isMobile()
 						? 'dictionary-content--notes--mobile'
 						: ''}"
 					id="dictionary-content--notes"
+					autocorrect="on"
+					autocapitalize="sentences"
+					onfocus={handleNotesFocus}
 					oninput={saveNotes}>{word.notes}</textarea
 				>
 			</section>

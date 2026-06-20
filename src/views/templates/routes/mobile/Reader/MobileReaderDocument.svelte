@@ -284,6 +284,8 @@
 	resultIndex={readerRoute.dictionaryResultIndex}
 	lists={bookmarksStore.lists}
 	anchor={readerRoute.dictionaryAnchor}
+	reopenKey={readerRoute.dictionaryOpenCount}
+	onlink={readerRoute.lookupDictionaryWord}
 	onselect={readerRoute.selectDictionaryResult}
 	onclose={readerRoute.closeDictionary}
 />
@@ -614,5 +616,11 @@
 
 	.mobile-reader-document__token:active {
 		color: var(--reader-link-color, var(--sy-color--blue));
+	}
+
+	.mobile-reader-document__token--active {
+		background: var(--reader-selection-background, #dbeafe);
+		color: var(--reader-selection-text, #111827);
+		border-radius: 3px;
 	}
 </style>

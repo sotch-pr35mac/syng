@@ -4,7 +4,9 @@
  * An instance of BookmarkManager class is created from a desired pouchdb.
  * After initialization the bookmarks are ready to be read and written.
  */
-import { handleError } from '@/utils/error.js';
+import { describeUnknownError, handleError } from '@/utils/error.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { getResumeContext } from '@/utils/lifecycleDiagnostics.js';
 
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {
@@ -37,60 +39,118 @@ export class BookmarkManager {
 	 * Return: Promise: Returns a Promise that resolves to undefined when the bookmarks
 	 * have loaded; fatally rejects if the bookmarks cannot be loaded or created.
 	 */
-	init() {
-		return new Promise((resolve, reject) => {
-			this._list_db
-				.allDocs({ include_docs: true })
-				.then((documents) => {
-					// Syng expects there to always be a bookmarks list. If a bookmarks
-					// list is not present, initialize it.
-					if (!documents.rows.map((list) => list.doc.name).includes('Bookmarks')) {
-						return this._list_db
-							.post({ name: 'Bookmarks' })
-							.then((result) => {
-								if (result.ok) {
-									this.initialized = true;
-									resolve();
-								} else {
-									console.error(result);
-									reject(
-										new Error(
-											'There was an error initializing the bookmarks data. Check the logs for more details.'
-										)
-									);
-									throw EARLY_EXIT;
-								}
-								return undefined;
-							})
-							.catch((e) => {
-								console.error(e);
-								reject(
-									new Error(
-										'There was an error initializing the bookmarks data. Check the logs for more details.'
-									)
-								);
-								throw EARLY_EXIT;
-							});
-					}
-					this.initialized = true;
-					resolve();
-					return undefined;
-				})
-				.catch((e) => {
-					if (e === EARLY_EXIT) {
-						return;
-					}
-					throw e;
-				})
-				.catch((e) => {
-					console.error(e);
-					reject(
-						new Error(
-							'There was an error loading bookmarks data. Check the logs for more details.'
-						)
-					);
-				});
-		});
+	async init() {
+		let documents;
+		try {
+			// Collapse any duplicate-named lists before anything reads them. This both repairs
+			// databases that already contain duplicates and self-heals the duplicate that the
+			// migration importer can create, because importMigrationData calls init() again at
+			// its end (see _reconcileDuplicateLists and utils/migrationManager.js).
+			await this._reconcileDuplicateLists();
+			documents = await this._list_db.allDocs({ include_docs: true });
+		} catch (error) {
+			console.error(error);
+			throw new Error(
+				'There was an error loading bookmarks data. Check the logs for more details.',
+				{ cause: error }
+			);
+		}
+
+		// Syng expects there to always be a bookmarks list. If a bookmarks list is not
+		// present, initialize it.
+		if (!documents.rows.some((list) => list.doc.name === 'Bookmarks')) {
+			try {
+				const result = await this._list_db.post({ name: 'Bookmarks' });
+				if (!result.ok) {
+					console.error(result);
+					throw new Error('Creating the default Bookmarks list did not succeed.');
+				}
+			} catch (error) {
+				console.error(error);
+				throw new Error(
+					'There was an error initializing the bookmarks data. Check the logs for more details.',
+					{ cause: error }
+				);
+			}
+		}
+
+		this.initialized = true;
+	}
+
+	/*
+	 * Description: Enforce the invariant that each list name maps to exactly one list
+	 * document. Two startup paths historically created same-named lists with different
+	 * _ids — init() creating a default 'Bookmarks' by name, and importMigrationData restoring
+	 * the exported 'Bookmarks' by _id — producing duplicate-named lists that collide in
+	 * name-keyed UI. This collapses every duplicate group onto a single canonical document,
+	 * re-points word entries that referenced a removed list onto the canonical list id (and
+	 * de-dupes each word's membership), then deletes the extra list documents. Idempotent:
+	 * a no-op when every list name is already unique.
+	 * Return: Promise: Resolves once any duplicates have been reconciled.
+	 */
+	async _reconcileDuplicateLists() {
+		const listDocuments = await this._list_db.allDocs({ include_docs: true });
+
+		const listsByName = new Map();
+		for (const row of listDocuments.rows) {
+			const existing = listsByName.get(row.doc.name);
+			if (existing) {
+				existing.push(row.doc);
+			} else {
+				listsByName.set(row.doc.name, [row.doc]);
+			}
+		}
+
+		// Map each removed (duplicate) list id to the canonical id it should merge into.
+		const canonicalListId = new Map();
+		const listsToDelete = [];
+		for (const group of listsByName.values()) {
+			if (group.length < 2) {
+				continue;
+			}
+			const [canonical, ...duplicates] = group;
+			for (const duplicate of duplicates) {
+				canonicalListId.set(duplicate._id, canonical._id);
+				listsToDelete.push(duplicate);
+			}
+		}
+
+		if (!listsToDelete.length) {
+			return;
+		}
+
+		// Re-point word entries off the removed lists and onto the canonical ids, de-duping
+		// each word's membership so a word that lived in both copies isn't listed twice.
+		const wordDocuments = await this._document_db.allDocs({ include_docs: true });
+		const wordsToUpdate = [];
+		for (const row of wordDocuments.rows) {
+			const word = row.doc;
+			if (!Array.isArray(word.lists)) {
+				continue;
+			}
+			const remappedLists = [];
+			let changed = false;
+			for (const listId of word.lists) {
+				const mappedListId = canonicalListId.get(listId) ?? listId;
+				if (mappedListId !== listId) {
+					changed = true;
+				}
+				if (remappedLists.includes(mappedListId)) {
+					changed = true;
+				} else {
+					remappedLists.push(mappedListId);
+				}
+			}
+			if (changed) {
+				word.lists = remappedLists;
+				wordsToUpdate.push(word);
+			}
+		}
+
+		if (wordsToUpdate.length) {
+			await this._document_db.bulkDocs(wordsToUpdate);
+		}
+		await this._list_db.bulkDocs(listsToDelete.map((list) => ({ ...list, _deleted: true })));
 	}
 
 	/*
@@ -115,6 +175,26 @@ export class BookmarkManager {
 	}
 
 	/*
+	 * Description: Diagnostics-only reporter for read failures. Logs the original error
+	 * and reports its name/message plus an app-resume context to telemetry, so the
+	 * resume-time database failure can be correlated with a recent resume before the DB
+	 * layer is changed. The caller still rejects with its existing user-facing message,
+	 * so behavior is unchanged.
+	 * Param: String: operation: The manager method that failed (e.g. 'inList').
+	 * Param: Any: error: The original error caught from PouchDB.
+	 */
+	_reportDbError(operation, error) {
+		console.error(error);
+		telemetry
+			.trackError('bookmarks.db_error', error?.message ?? 'unknown error', {
+				operation,
+				...describeUnknownError(error),
+				...getResumeContext(),
+			})
+			.catch(() => {});
+	}
+
+	/*
 	 * Description: Get a list of the word lists
 	 * Return: Promise<Array<String>>: Returns a Promise that resolves with a list of
 	 * strings representing the names of the available word lists.
@@ -128,7 +208,7 @@ export class BookmarkManager {
 					return undefined;
 				})
 				.catch((e) => {
-					console.error(e);
+					this._reportDbError('getLists', e);
 					reject(new Error('There was an error fetching the available word lists.'));
 				});
 		});
@@ -353,7 +433,7 @@ export class BookmarkManager {
 					throw e;
 				})
 				.catch((e) => {
-					console.error(e);
+					this._reportDbError('getListContent', e);
 					reject(
 						new Error(
 							`There was an error loading the list ${listName}. Check the log for more details.`
@@ -569,7 +649,7 @@ export class BookmarkManager {
 					return undefined;
 				})
 				.catch((e) => {
-					console.error(e);
+					this._reportDbError('inList', e);
 					reject(
 						new Error(
 							'There was an error fetching bookmarks data. Please check the log for more details.'

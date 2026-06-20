@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { bookmarksStore, type BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import type { SearchEntry } from '@/types/search.js';
 import { handleError, telemetry } from '@/utils/index.js';
 import {
 	CHARACTER_QUESTIONS,
@@ -33,6 +34,11 @@ let quizShowResult = $state(false);
 let quizLastAnswerCorrect = $state(false);
 let quizChosenAnswer = $state('');
 let quizLoading = $state(true);
+// Shared dictionary popover state for cross-reference links (e.g. measure words) tapped inside
+// the answer's DictionaryContent. Mirrors the search/bookmarks popover pattern.
+let popoverResults = $state<SearchEntry[]>([]);
+let popoverResultIndex = $state(0);
+let popoverWord = $state<SearchEntry | undefined>(undefined);
 const EMPTY_QUIZ_ERROR = new Error('EMPTY_QUIZ');
 
 function resetQuizState(): void {
@@ -187,6 +193,36 @@ function studyFlashcardsFromQuiz(): void {
 	}
 }
 
+async function lookupPopoverWord(text: string): Promise<void> {
+	try {
+		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+			text,
+		});
+		if (!results.length) {
+			return;
+		}
+		const exactMatchIndex = results.findIndex(
+			(result) => result.simplified === text || result.traditional === text
+		);
+		popoverResults = results;
+		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+		popoverWord = popoverResults[popoverResultIndex];
+	} catch (error) {
+		handleError('There was an error looking up the dictionary word.', error);
+	}
+}
+
+function selectPopoverResult(index: number): void {
+	popoverResultIndex = index;
+	popoverWord = popoverResults[index];
+}
+
+function closePopoverDictionary(): void {
+	popoverWord = undefined;
+	popoverResults = [];
+	popoverResultIndex = 0;
+}
+
 export const quizRoute = {
 	get activeList(): string | null {
 		return quizActiveList;
@@ -257,6 +293,15 @@ export const quizRoute = {
 	get continueLabel(): string {
 		return quizQuestionsPending > 1 ? 'Continue' : 'Finish';
 	},
+	get popoverWord(): SearchEntry | undefined {
+		return popoverWord;
+	},
+	get popoverResults(): SearchEntry[] {
+		return popoverResults;
+	},
+	get popoverResultIndex(): number {
+		return popoverResultIndex;
+	},
 	start: startQuiz,
 	reset: resetQuizState,
 	answerQuestion,
@@ -264,4 +309,7 @@ export const quizRoute = {
 	retake: retakeQuiz,
 	exit: exitQuiz,
 	studyFlashcards: studyFlashcardsFromQuiz,
+	lookupPopoverWord,
+	selectPopoverResult,
+	closePopoverDictionary,
 };

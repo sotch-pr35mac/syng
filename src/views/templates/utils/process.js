@@ -1,6 +1,14 @@
 import { handleError } from '@/utils/error.js';
+import { isMobile } from '@/utils/device.js';
 
 const getArgs = async () => {
+	// The cli plugin is desktop-only (registered under #[cfg(desktop)] in the Rust layer and
+	// absent from the mobile capabilities), so invoking it on iOS/Android is rejected by the
+	// ACL ("cli|cli_matches not allowed by ACL"). There are no process arguments on mobile
+	// anyway, so skip the call entirely.
+	if (isMobile()) {
+		return {};
+	}
 	try {
 		const { getMatches } = await import('@tauri-apps/plugin-cli');
 		const matches = await getMatches();

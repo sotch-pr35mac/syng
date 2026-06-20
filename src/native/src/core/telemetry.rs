@@ -448,6 +448,21 @@ fn emit_event(
     insert_event(family, name, payload, inner)
 }
 
+/// Emits an `Event`-family telemetry event from native (non-command) code paths.
+///
+/// Reuses the same SQLite queue and per-family opt-out handling as the JS-facing
+/// `telemetry_*` commands. This is the entry point for events recorded by native
+/// platform code (e.g. iOS web-content-process recovery), where the JS bridge may not
+/// be running. Silently no-ops if telemetry has not been initialized yet.
+#[cfg(target_os = "ios")]
+pub fn track_event_native(manager: &TelemetryManager, name: &str, payload: Value) {
+    if let Ok(mut lock) = manager.state.lock() {
+        if let Some(inner) = lock.as_mut() {
+            let _ = emit_event(EventFamily::Event, name, payload, inner);
+        }
+    }
+}
+
 #[tauri::command]
 pub fn telemetry_init(
     app: AppHandle,

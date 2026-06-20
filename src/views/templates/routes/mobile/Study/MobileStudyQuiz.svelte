@@ -5,6 +5,7 @@
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import MobileTimer from '@/components/MobileTimer/MobileTimer.svelte';
 	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';
 	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
@@ -26,6 +27,16 @@
 	let showResultToast = $state(false);
 	let timerRef = $state<any>(undefined);
 	let resultToastTimeout: ReturnType<typeof setTimeout> | undefined;
+	// Reset scroll to top when the question or the question/answer view changes, so a
+	// scrolled-down previous word doesn't leave the next word/answer out of view.
+	let contentElement = $state<HTMLDivElement | undefined>(undefined);
+	$effect(() => {
+		void quizRoute.question;
+		void quizRoute.showAnswer;
+		if (contentElement) {
+			contentElement.scrollTop = 0;
+		}
+	});
 	const finalActions = $derived([
 		{
 			icon: RotateCw,
@@ -160,7 +171,7 @@
 		</div>
 	{/if}
 
-	<div class="mobile-quiz__content">
+	<div class="mobile-quiz__content" bind:this={contentElement}>
 		{#if quizRoute.showFinalResults}
 			<QuizResults
 				score={quizRoute.finalScore}
@@ -175,6 +186,7 @@
 					word={quizRoute.answer}
 					backgroundColor="white"
 					lists={quizRoute.lists}
+					onlink={quizRoute.lookupPopoverWord}
 				/>
 			</div>
 		{:else if quizRoute.currentQuestion}
@@ -305,6 +317,16 @@
 		</div>
 	</div>
 </div>
+
+<DictionaryPopover
+	word={quizRoute.popoverWord}
+	results={quizRoute.popoverResults}
+	resultIndex={quizRoute.popoverResultIndex}
+	lists={quizRoute.lists}
+	onselect={quizRoute.selectPopoverResult}
+	onlink={quizRoute.lookupPopoverWord}
+	onclose={quizRoute.closePopoverDictionary}
+/>
 
 <style>
 	.mobile-quiz {

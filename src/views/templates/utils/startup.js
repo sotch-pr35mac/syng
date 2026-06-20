@@ -14,7 +14,6 @@ import {
 	exportMigrationData,
 	setupShutdownHook,
 } from '@/utils/migrationManager.js';
-import { inDebugMode } from '@/utils/process.js';
 import { invoke } from '@tauri-apps/api/core';
 import { checkForUpdate } from '@/utils/updateManager.js';
 import { isMobile } from '@/utils/device.js';
@@ -29,6 +28,16 @@ export const getStartupDatabaseNames = (debugMode) => ({
 	bookmarkDb: debugMode ? 'development_bookmarks' : 'bookmarks',
 	readerDocumentDb: debugMode ? 'development_reader-documents' : 'reader-documents',
 });
+
+/**
+ * Debug flag resolved once during bootstrap (app.js) before the shell mounts, so the
+ * synchronous runStartupActions() below can choose the database names without awaiting.
+ * Defaults to false so any failure to resolve falls back to the production databases.
+ */
+let resolvedDebugMode = false;
+export const setDebugMode = (debugMode) => {
+	resolvedDebugMode = debugMode;
+};
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -45,8 +54,12 @@ window.onload = () => {
 
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
-	const debugMode = inDebugMode();
-	const { configDb, listDb, bookmarkDb, readerDocumentDb } = getStartupDatabaseNames(debugMode);
+	// resolvedDebugMode is set by setDebugMode() in app.js before this runs (the bootstrap awaits
+	// inDebugMode() before mounting the shell). Reading it synchronously keeps service creation
+	// ordered before the first render. A bare inDebugMode() returns a Promise (always truthy) —
+	// that was the bug that made production open the development_* databases.
+	const { configDb, listDb, bookmarkDb, readerDocumentDb } =
+		getStartupDatabaseNames(resolvedDebugMode);
 	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
 		configDb,
 		listDb,

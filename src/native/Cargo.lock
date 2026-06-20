@@ -5045,6 +5045,7 @@ name = "syng"
 version = "2.0.0"
 dependencies = [
  "base64 0.22.1",
+ "block2",
  "chinese_dictionary",
  "ego-tree",
  "encoding_rs",
