@@ -15,10 +15,9 @@ export type DictionaryPopoverController = {
 
 /**
  * Shared dictionary-popover state for cross-reference links (e.g. measure words) tapped inside
- * a DictionaryContent. The quiz and flashcards routes previously each held an identical copy of
- * this state; this factory consolidates it. `reopenKey` is bumped on every lookup so a mobile
- * snap sheet can re-pop to partial when a new word is tapped while it's already open (see
- * SySnapSheet); paging through senses with the result arrows does not bump it.
+ * a DictionaryContent. `reopenKey` is bumped on every lookup so a mobile snap sheet can re-pop to
+ * partial when a new word is tapped while it's already open (see SySnapSheet); paging through
+ * senses with the result arrows does not bump it.
  */
 export function createDictionaryPopover(): DictionaryPopoverController {
 	let results = $state<SearchEntry[]>([]);
