@@ -16,3 +16,6 @@ src/native/gen/apple/Podfile.lock
 src/native/gen/apple/Pods/
 src/native/gen/apple/*.xcworkspace
 src/native/gen/apple/build/
+
+# Local Apple signing overrides (Team ID kept out of version control)
+src/native/gen/apple/syng_iOS/Signing.local.xcconfig

@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5AFECC022FDFF1C900935BCA /* icon-apple-variant.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5AFECC012FDFF1C900935BCA /* icon-apple-variant.icon */; };
 		5AFECC042FE54CCA00935BCA /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5AFECC032FE54CCA00935BCA /* AppIcon.icon */; };
 		6309E3645391D0C7F1154264 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5C1CD7C0B13BEA74CB8E11E5 /* main.mm */; };
 		7F1FCA6910DB6FC9BE041CE6 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4015A7990EDAAD91B3851384 /* Security.framework */; };
@@ -30,10 +29,10 @@
 		378795A69211DE85265E3FD2 /* io.rs */ = {isa = PBXFileReference; lastKnownFileType = file; path = io.rs; sourceTree = "<group>"; };
 		37F1D8A0774A32B983FA7CA6 /* lib.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = lib.rs; sourceTree = "<group>"; };
 		3850660EA2D6AF329AE70F1B /* syng_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = syng_iOS.entitlements; sourceTree = "<group>"; };
+		5AFECC052FE54CCA00935BCA /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
 		4015A7990EDAAD91B3851384 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		42EF545F873D18615AB407A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		508D49EB77176B79586A610F /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
-		5AFECC012FDFF1C900935BCA /* icon-apple-variant.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = "icon-apple-variant.icon"; sourceTree = "<group>"; };
 		5AFECC032FE54CCA00935BCA /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		5BA7517BD03183F63AEE3BCF /* word_utils.rs */ = {isa = PBXFileReference; lastKnownFileType = text; path = word_utils.rs; sourceTree = "<group>"; };
 		5C1CD7C0B13BEA74CB8E11E5 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
@@ -73,7 +72,6 @@
 		3DCA4ED8132E44B3E47DA7A3 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5AFECC012FDFF1C900935BCA /* icon-apple-variant.icon */,
 				D2EC0774234B34BA906DAC06 /* syng_iOS.app */,
 			);
 			name = Products;
@@ -123,6 +121,7 @@
 			children = (
 				EBC60850860B5012DA5B8E6E /* Info.plist */,
 				3850660EA2D6AF329AE70F1B /* syng_iOS.entitlements */,
+				5AFECC052FE54CCA00935BCA /* Signing.xcconfig */,
 			);
 			path = syng_iOS;
 			sourceTree = "<group>";
@@ -229,7 +228,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5AFECC022FDFF1C900935BCA /* icon-apple-variant.icon in Resources */,
 				CCDBF545A4F3979260E3D1DB /* Assets.xcassets in Resources */,
 				A2D3B70D19A374CA93945D20 /* LaunchScreen.storyboard in Resources */,
 				D32B339F79228A2C3BFB45D2 /* assets in Resources */,
@@ -277,13 +275,13 @@
 /* Begin XCBuildConfiguration section */
 		0D2E7341ABF7AC4BC7EEFF8A /* debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5AFECC052FE54CCA00935BCA /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = syng_iOS/syng_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "GQL2C94T8A";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -319,13 +317,13 @@
 		};
 		40D40769B4D4E2B97A84A4A7 /* release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 5AFECC052FE54CCA00935BCA /* Signing.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				ARCHS = arm64;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = syng_iOS/syng_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = "GQL2C94T8A";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (

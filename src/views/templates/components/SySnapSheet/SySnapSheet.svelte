@@ -45,8 +45,7 @@
 	const transitioning = $derived(dragHeight === null);
 
 	// Render the sheet at full height and reveal it by translating down. Animating `transform`
-	// is compositor-accelerated, so dragging no longer forces a layout/reflow every frame the
-	// way animating `height` did — that was the source of the choppiness.
+	// is compositor-accelerated
 	const fullSheetHeight = $derived.by(() => {
 		// Recompute alongside snap/drag changes so an orientation change between gestures is
 		// picked up; reading window.innerHeight is not itself reactive.

@@ -6,7 +6,7 @@
  */
 import { describeUnknownError, handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
-import { getResumeContext } from '@/utils/lifecycleDiagnostics.js';
+import { getResumeContext } from '@/utils/appLifecycle.js';
 
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {

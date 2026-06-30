@@ -1,0 +1,4 @@
+// Copy this file to Signing.local.xcconfig (which is gitignored) and set your Apple Team ID.
+// Find it under Xcode → Settings → Accounts, or at https://developer.apple.com/account
+// (Membership details → Team ID).
+DEVELOPMENT_TEAM = YOUR_TEAM_ID

@@ -124,6 +124,7 @@
 	results={flashcardsRoute.popoverResults}
 	resultIndex={flashcardsRoute.popoverResultIndex}
 	{lists}
+	reopenKey={flashcardsRoute.popoverReopenKey}
 	onselect={flashcardsRoute.selectPopoverResult}
 	onlink={flashcardsRoute.lookupPopoverWord}
 	onclose={flashcardsRoute.closePopoverDictionary}

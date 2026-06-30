@@ -15,7 +15,7 @@
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
 	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
-	import { startLifecycleDiagnostics } from '@/utils/lifecycleDiagnostics.js';
+	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 
 	runStartupActions();
 

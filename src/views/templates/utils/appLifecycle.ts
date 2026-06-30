@@ -1,12 +1,12 @@
 import { telemetry } from '@/utils/telemetry.js';
 
 /**
- * Diagnostics for the resume-time database failure: after the mobile app is
- * backgrounded and resumed, bookmark/list reads can fail (the leading hypothesis is
- * stale IndexedDB handles). This module records foreground/background breadcrumbs and
- * exposes a resume context that error reports attach, so we can confirm whether those
- * failures follow a recent resume — before changing the database layer. No behavior
- * change; telemetry only. See utils/bookmarkManager.js for where the context is used.
+ * App lifecycle telemetry: records foreground/background/pageshow breadcrumbs as the
+ * mobile app is suspended and resumed (emitted as `app.lifecycle` events). It also
+ * exposes a resume context (`getResumeContext`) that error reports attach so failures can
+ * be correlated with a recent resume from suspension — currently used by the open
+ * resume-time bookmark/DB investigation (see utils/bookmarkManager.js). Telemetry only;
+ * no behavior change.
  */
 
 // When the app last came to the foreground (or first loaded).

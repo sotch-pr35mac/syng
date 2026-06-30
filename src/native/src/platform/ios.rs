@@ -16,10 +16,10 @@
 use std::ptr::NonNull;
 
 use block2::RcBlock;
+use objc2::msg_send;
 use objc2::rc::Retained;
 use objc2::runtime::AnyObject;
-use objc2::msg_send;
-use objc2_foundation::{NSNotification, NSNotificationCenter, NSString, NSURL, NSURLRequest};
+use objc2_foundation::{NSNotification, NSNotificationCenter, NSString, NSURLRequest, NSURL};
 use serde_json::json;
 use tauri::webview::PlatformWebview;
 use tauri::{AppHandle, Manager, WebviewWindow};

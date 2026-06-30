@@ -84,7 +84,8 @@
 		/>
 		<label class="reader-clipboard-import__field">
 			<span>Text</span>
-			<!-- Reader paste field is an autocorrect exception; "on" is the browser default. -->
+			<!-- Reader paste field is an autocorrect exception: no attribute, so it inherits the
+			     WebKit/iOS default of "on" (the attribute is a no-op on Android/desktop). -->
 			<textarea
 				use:cursorToEnd
 				value={text}
