@@ -79,7 +79,6 @@
 
 	.acknowledgements--license {
 		font-size: var(--sy-font-size--small);
-		color: var(--sy-text--light);
 	}
 
 	.acknowledgements--text {

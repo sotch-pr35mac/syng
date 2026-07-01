@@ -111,11 +111,12 @@ below.
   No action.
 - **`r-efi`** — offered as `LGPL-2.1-or-later OR MIT OR Apache-2.0`; we take MIT/Apache, so no
   copyleft obligation.
-- ⚠️ **`epub` 2.1.5 is `GPL-3.0`** — a direct dependency used by the reader for EPUB import. This
-  is fine for Syng's normal GPL distribution (direct download, Linux, etc.). **But the App Store
-  exception cannot cover it:** Preston does not hold its copyright, so the GPLv3 §7 additional
-  permission in `LICENSE-APP-STORE-EXCEPTION` does not extend to `epub`'s code. Shipping the
-  statically-linked binary through the **Apple App Store / Mac App Store or iOS** therefore
-  remains blocked by `epub`'s plain GPL until it is replaced with a permissively-licensed EPUB
-  parser (or its author grants an equivalent exception). **Does not affect the desktop
-  direct-download / Linux release**, which is the current 2.0.0 target.
+- ✅ **EPUB parsing is `rbook` 0.7.9 (`Apache-2.0`)** — the reader previously depended on the
+  `epub` crate (`2.1.5`, `GPL-3.0`). Because Preston does not hold that crate's copyright, the
+  GPLv3 §7 additional permission in `LICENSE-APP-STORE-EXCEPTION` could not extend to it, which
+  left the statically-linked binary blocked from the **Apple App Store / Mac App Store and iOS**.
+  It was replaced with `rbook` (`Apache-2.0`) on 2026-07-01. `rbook`'s only added transitive
+  crates — `quick-xml` (`MIT`), `typed-path` (`MIT OR Apache-2.0`), `zip` (`MIT`) — are all
+  permissive. **No GPL-licensed dependency remains; the sole `GPL-3.0` entry in the tree is Syng
+  itself**, so the App Store exception now cleanly covers the whole distributed binary. (MAS/iOS
+  are still deferred for the cert / provisioning / submission work noted above, not for licensing.)

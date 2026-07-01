@@ -1,11 +1,11 @@
 //! EPUB import.
 //!
-//! Reads EPUB archives via the `epub` crate, iterates over spine chapters, and delegates
+//! Reads EPUB archives via the `rbook` crate, iterates over spine chapters, and delegates
 //! HTML content extraction to [`html::html_to_blocks`]. Chapter offsets are adjusted so
 //! the final linear text is a single contiguous string with correct UTF-16 code unit offsets.
 
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
-use epub::doc::EpubDoc;
+use rbook::Epub;
 use serde_json::Value;
 use std::io::Cursor;
 use std::path::Path;
@@ -27,29 +27,34 @@ impl FormatExtractor for EpubFormat {
         byte_len: u64,
     ) -> Result<ReaderImportPayload, String> {
         let cursor = Cursor::new(bytes.to_vec());
-        let mut doc = EpubDoc::from_reader(cursor)
-            .map_err(|error| format!("Could not read EPUB: {}", error))?;
-        let title = doc
-            .get_title()
+        let epub = Epub::read(cursor).map_err(|error| format!("Could not read EPUB: {}", error))?;
+        let title = epub
+            .metadata()
+            .title()
+            .map(|title_entry| title_entry.value().to_string())
             .filter(|value| !value.trim().is_empty())
             .unwrap_or_else(|| title_from_file_stem(&file_name));
 
-        let spine_len = doc.spine.len();
         let mut text = String::new();
         let mut blocks = Vec::new();
         let mut html_title = None;
-        for chapter_index in 0..spine_len {
-            if !doc.set_current_chapter(chapter_index) {
-                continue;
-            }
-            let chapter_path = doc.get_current_path();
-            let Some((chapter_html, mime)) = doc.get_current_str() else {
+        // rbook's default reader (LinearBehavior::Original) yields every spine entry, linear and
+        // non-linear, in reading order.
+        let mut reader = epub.reader();
+        while let Some(chapter_result) = reader.read_next() {
+            let Ok(chapter) = chapter_result else {
                 continue;
             };
-            let mime_lower = mime.to_lowercase();
+            let manifest_entry = chapter.manifest_entry();
+            let resource = manifest_entry.resource();
+            let mime_lower = resource.kind().as_str().to_lowercase();
             if !(mime_lower.contains("html") || mime_lower.contains("xml")) {
                 continue;
             }
+            // The resource key is the chapter's absolute path from the archive root (e.g.
+            // "/EPUB/text/c1.xhtml"), which relative <img> sources are resolved against below.
+            let chapter_path = resource.key().value().map(str::to_string);
+            let chapter_html = chapter.content().to_string();
 
             let (chapter_text, mut chapter_blocks, chapter_title) =
                 html_to_blocks(&chapter_html, None);
@@ -61,8 +66,9 @@ impl FormatExtractor for EpubFormat {
             // inline them as data URIs so EPUB images render. html_to_blocks only resolves remote
             // URLs, leaving intra-archive images without a usable source.
             if let Some(chapter_path) = chapter_path.as_deref() {
+                let chapter_path = Path::new(chapter_path);
                 for block in &mut chapter_blocks {
-                    inline_epub_image(&mut doc, chapter_path, block);
+                    inline_epub_image(&epub, chapter_path, block);
                 }
             }
 
@@ -167,11 +173,7 @@ fn epub_image_mime(path: &str) -> &'static str {
 
 /// Resolves a single image block's relative source against the archive and inlines it as a data
 /// URI. No-op for non-image blocks or images that already carry a source.
-fn inline_epub_image(
-    doc: &mut EpubDoc<Cursor<Vec<u8>>>,
-    chapter_path: &Path,
-    block: &mut ReaderContentBlock,
-) {
+fn inline_epub_image(epub: &Epub, chapter_path: &Path, block: &mut ReaderContentBlock) {
     let Some(extensions) = block.extensions.as_mut() else {
         return;
     };
@@ -195,7 +197,12 @@ fn inline_epub_image(
     let Some(archive_path) = resolve_epub_resource_path(chapter_path, &raw_src) else {
         return;
     };
-    let Some(image_bytes) = doc.get_resource_by_path(&archive_path) else {
+    // rbook keys archive resources by their absolute path from the zip root (e.g.
+    // "/EPUB/images/x.png"); resolve_epub_resource_path returns that path without the leading
+    // slash, so restore it. Per rbook's Epub::copy_resource docs, "/EPUB/c1.xhtml" resolves while
+    // "EPUB/c1.xhtml" does not.
+    let absolute_path = format!("/{}", archive_path);
+    let Ok(image_bytes) = epub.read_resource_bytes(absolute_path.as_str()) else {
         return;
     };
     let mime = epub_image_mime(&archive_path);
@@ -212,8 +219,12 @@ fn inline_epub_image(
 
 #[cfg(test)]
 mod tests {
-    use super::{epub_image_mime, resolve_epub_resource_path};
+    use super::{epub_image_mime, resolve_epub_resource_path, EpubFormat};
+    use crate::core::reader::FormatExtractor;
+    use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
+    use std::io::{Cursor, Write};
     use std::path::Path;
+    use zip::write::SimpleFileOptions;
 
     #[test]
     fn resolves_relative_epub_image_paths() {
@@ -250,5 +261,108 @@ mod tests {
         assert_eq!(epub_image_mime("x.png"), "image/png");
         assert_eq!(epub_image_mime("x.svg"), "image/svg+xml");
         assert_eq!(epub_image_mime("x.bin"), "image/*");
+    }
+
+    // Arbitrary bytes standing in for a PNG resource. The extractor keys image inlining off the
+    // manifest path/extension, not the byte content, so a real image is unnecessary here.
+    const IMAGE_BYTES: &[u8] = b"\x89PNG\r\n\x1a\nsyng-fake-png-payload";
+
+    /// Builds a valid EPUB 3 archive in memory: a chapter under `EPUB/text/` with a `<p>` and an
+    /// `<img>` whose relative `src` points up into `EPUB/images/`. Exercises rbook's spine reader,
+    /// metadata title, and archive resource lookup end to end.
+    fn build_epub_with_chapter_and_image() -> Vec<u8> {
+        let container = r#"<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="EPUB/package.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>"#;
+
+        let package = r#"<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="pub-id">urn:uuid:syng-test-book</dc:identifier>
+    <dc:title>Syng Test Book</dc:title>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="chapter1" href="text/c1.xhtml" media-type="application/xhtml+xml"/>
+    <item id="image1" href="images/pic.png" media-type="image/png"/>
+  </manifest>
+  <spine>
+    <itemref idref="chapter1"/>
+  </spine>
+</package>"#;
+
+        let chapter = r#"<?xml version="1.0" encoding="utf-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head><title>Chapter One</title></head>
+  <body>
+    <h1>Chapter One</h1>
+    <p>The quick brown fox jumps over the lazy dog.</p>
+    <img src="../images/pic.png" alt="a picture"/>
+  </body>
+</html>"#;
+
+        let mut buffer = Cursor::new(Vec::new());
+        {
+            let mut writer = zip::ZipWriter::new(&mut buffer);
+            // The mimetype entry must be stored (uncompressed) and first, per the EPUB spec.
+            let stored =
+                SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+            writer.start_file("mimetype", stored).expect("mimetype");
+            writer
+                .write_all(b"application/epub+zip")
+                .expect("mimetype body");
+
+            let deflate = SimpleFileOptions::default();
+            for (path, body) in [
+                ("META-INF/container.xml", container.as_bytes()),
+                ("EPUB/package.opf", package.as_bytes()),
+                ("EPUB/text/c1.xhtml", chapter.as_bytes()),
+                ("EPUB/images/pic.png", IMAGE_BYTES),
+            ] {
+                writer.start_file(path, deflate).expect("start file");
+                writer.write_all(body).expect("write file");
+            }
+            writer.finish().expect("finish epub");
+        }
+        buffer.into_inner()
+    }
+
+    #[test]
+    fn extracts_epub_title_text_and_inlines_images() {
+        let bytes = build_epub_with_chapter_and_image();
+        let payload = EpubFormat::extract(
+            &bytes,
+            "book.epub".to_string(),
+            "hash".to_string(),
+            bytes.len() as u64,
+        )
+        .expect("valid EPUB should extract");
+
+        assert_eq!(payload.title, "Syng Test Book");
+        assert_eq!(payload.source_type, "epub");
+        assert!(
+            payload
+                .text
+                .contains("The quick brown fox jumps over the lazy dog."),
+            "expected chapter text in payload, got: {}",
+            payload.text
+        );
+
+        // The intra-archive <img> should be resolved and inlined as a base64 data URI.
+        let inline_src = payload
+            .blocks
+            .iter()
+            .filter_map(|block| block.extensions.as_ref())
+            .filter_map(|extensions| extensions.image.as_ref())
+            .find_map(|image| image.inline_src.as_deref())
+            .expect("EPUB image should be inlined as a data URI");
+        let encoded = inline_src
+            .strip_prefix("data:image/png;base64,")
+            .expect("image should inline as a base64 PNG data URI");
+        let decoded = BASE64_STANDARD.decode(encoded).expect("valid base64");
+        assert_eq!(decoded, IMAGE_BYTES);
     }
 }
