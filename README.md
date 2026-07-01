@@ -34,7 +34,4 @@ Syng v1 is no longer maintained. Installation instructions and more information 
 ## __License__
 This software is licensed under the [GNU General Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html) (see [`LICENSE`](./LICENSE)).
 
-As the sole copyright holder, Preston Wang-Stosur-Bassett grants an additional permission under GPLv3 §7 allowing distribution through application stores (Apple App Store / Mac App Store, Google Play, Microsoft Store) whose terms would otherwise be incompatible with the GPL — see [`LICENSE-APP-STORE-EXCEPTION`](./LICENSE-APP-STORE-EXCEPTION). Third-party components are listed with their licenses on the in-app Acknowledgements screen and under [`src/native/resources/licenses/`](./src/native/resources/licenses/).
-
-## __Releasing__
-Maintainers: see [`RELEASING.md`](./RELEASING.md) for versioning, the release flow, and per-channel distribution notes.
+Additional permission is granted under GPLv3 §7 allowing distribution through application stores (Apple App Store / Mac App Store, Google Play, Microsoft Store) whose terms would otherwise be incompatible with the GPL — see [`LICENSE-APP-STORE-EXCEPTION`](./LICENSE-APP-STORE-EXCEPTION). Third-party components are listed with their licenses on the in-app Acknowledgements screen and under [`src/native/resources/licenses/`](./src/native/resources/licenses/).

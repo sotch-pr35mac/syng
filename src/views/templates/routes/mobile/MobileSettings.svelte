@@ -52,7 +52,7 @@
 		{:else if activeTab === 'telemetry'}
 			<TelemetrySettings variant="mobile" />
 		{:else}
-			<Acknowledgements variant="mobile" />
+			<Acknowledgements />
 		{/if}
 	</div>
 </div>

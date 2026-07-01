@@ -5,18 +5,12 @@
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { handleError } from '@/utils/error.js';
 
-	interface Props {
-		variant?: 'desktop' | 'mobile';
-	}
-
 	interface Acknowledgement {
 		id: string;
 		name: string;
 		license: string;
 		text: string;
 	}
-
-	const { variant = 'desktop' }: Props = $props();
 
 	let acknowledgements = $state<Acknowledgement[]>([]);
 
@@ -32,7 +26,7 @@
 	});
 </script>
 
-<div class="acknowledgements" class:acknowledgements--mobile={variant === 'mobile'}>
+<div class="acknowledgements">
 	<p class="acknowledgements--intro">
 		Syng is free and open-source software, built on the work of others. Each component below is
 		used under its own license; the full license texts also ship alongside the application.

@@ -29,6 +29,8 @@
 		{
 			label: 'Under Construction Features',
 			devOnly: true,
+			hideOnIPad: false,
+			hideOnMas: false,
 			centerLabel: true,
 			component: SyToggle,
 			props: {
@@ -48,6 +50,8 @@
 		{
 			label: 'Tone Colors',
 			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
 			centerLabel: false,
 			component: ToneColorPicker,
 			props: {

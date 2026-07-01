@@ -20,6 +20,7 @@ import { isMobile } from '@/utils/device.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
+import { resolveIsMasBuild } from '@/composables/settings.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -141,9 +142,16 @@ export const runStartupActions = () => {
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.
 			if (!isMobile()) {
-				checkForUpdate().catch((error) => {
-					handleError('Startup update check failed', error, { silent: true });
-				});
+				resolveIsMasBuild()
+					.then((isMas) => {
+						if (!isMas) {
+							return checkForUpdate();
+						}
+						return undefined;
+					})
+					.catch((error) => {
+						handleError('Startup update check failed', error, { silent: true });
+					});
 			}
 
 			return undefined;
