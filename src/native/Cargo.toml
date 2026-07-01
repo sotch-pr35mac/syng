@@ -65,7 +65,7 @@ tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 
 [dev-dependencies]
-lopdf = { version = "0.38", default-features = false }
+lopdf = { version = "0.43", default-features = false }
 tempfile = "3"
 
 [features]

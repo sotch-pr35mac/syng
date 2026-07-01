@@ -11,12 +11,10 @@
 		"isolatedModules": true,
 		"resolveJsonModule": true,
 		"allowSyntheticDefaultImports": true,
-		"esModuleInterop": false,
 		"skipLibCheck": true,
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/views/templates/*"],
-			"@test/*": ["src/test/*"]
+			"@/*": ["./src/views/templates/*"],
+			"@test/*": ["./src/test/*"]
 		}
 	},
 	"include": [
