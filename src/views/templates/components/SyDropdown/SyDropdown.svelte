@@ -1,6 +1,7 @@
 <script>
 	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import { isMobile } from '@/utils/device.js';
+	import { portal } from '@/actions/portal.svelte.js';
 
 	/* Dropdown Values Prop */
 	// The values to be present in the dropdown list.
@@ -141,7 +142,10 @@
 </div>
 
 {#if fixed && active}
+	<!-- Portaled to <body> so position:fixed resolves against the viewport, not a
+	     transformed ancestor (e.g. SySnapSheet's translate3d), which would otherwise displace it. -->
 	<div
+		use:portal
 		class="sy-dropdown--list sy-dropdown--fixed-list"
 		class:sy-dropdown--list--mobile={mobile}
 		style={fixedStyle}

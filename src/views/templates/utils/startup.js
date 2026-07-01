@@ -14,13 +14,13 @@ import {
 	exportMigrationData,
 	setupShutdownHook,
 } from '@/utils/migrationManager.js';
-import { inDebugMode } from '@/utils/process.js';
 import { invoke } from '@tauri-apps/api/core';
 import { checkForUpdate } from '@/utils/updateManager.js';
 import { isMobile } from '@/utils/device.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
+import { resolveIsMasBuild } from '@/composables/settings.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -29,6 +29,25 @@ export const getStartupDatabaseNames = (debugMode) => ({
 	bookmarkDb: debugMode ? 'development_bookmarks' : 'bookmarks',
 	readerDocumentDb: debugMode ? 'development_reader-documents' : 'reader-documents',
 });
+
+/**
+ * Debug flag resolved once during bootstrap (app.js) before the shell mounts, so the
+ * synchronous runStartupActions() below can choose the database names without awaiting.
+ * Defaults to false so any failure to resolve falls back to the production databases.
+ */
+let resolvedDebugMode = false;
+export const setDebugMode = (debugMode) => {
+	resolvedDebugMode = debugMode;
+};
+
+export const shouldRunStartupUpdateCheck = async () => {
+	// isMobile() intentionally includes iPad, even though iPad uses the desktop UI.
+	if (isMobile()) {
+		return false;
+	}
+
+	return !(await resolveIsMasBuild());
+};
 
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
@@ -45,8 +64,12 @@ window.onload = () => {
 
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
-	const debugMode = inDebugMode();
-	const { configDb, listDb, bookmarkDb, readerDocumentDb } = getStartupDatabaseNames(debugMode);
+	// resolvedDebugMode is set by setDebugMode() in app.js before this runs (the bootstrap awaits
+	// inDebugMode() before mounting the shell). Reading it synchronously keeps service creation
+	// ordered before the first render. A bare inDebugMode() returns a Promise (always truthy) —
+	// that was the bug that made production open the development_* databases.
+	const { configDb, listDb, bookmarkDb, readerDocumentDb } =
+		getStartupDatabaseNames(resolvedDebugMode);
 	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
 		configDb,
 		listDb,
@@ -127,11 +150,16 @@ export const runStartupActions = () => {
 
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.
-			if (!isMobile()) {
-				checkForUpdate().catch((error) => {
+			shouldRunStartupUpdateCheck()
+				.then((shouldCheck) => {
+					if (shouldCheck) {
+						return checkForUpdate();
+					}
+					return undefined;
+				})
+				.catch((error) => {
 					handleError('Startup update check failed', error, { silent: true });
 				});
-			}
 
 			return undefined;
 		})

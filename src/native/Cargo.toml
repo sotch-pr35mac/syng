@@ -20,7 +20,6 @@ rand = "0.9"
 uuid = { version = "1.23.1", features = ["v4"] }
 rusqlite = { version = "0.39", features = ["bundled"] }
 tauri-plugin-fs = "2"
-tauri-plugin-shell = "2"
 tauri-plugin-os = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-dialog = "2"
@@ -33,7 +32,7 @@ sha2 = "0.11.0"
 base64 = "0.22.1"
 html2text = "0.17.1"
 encoding_rs = "0.8.35"
-epub = "2.1.5"
+rbook = "0.7.9"
 pdf-extract = "0.10.0"
 scraper = "0.23.1"
 ego-tree = "0.10.0"
@@ -45,12 +44,28 @@ objc2 = "0.6.3"
 objc2-app-kit = "0.3.2"
 objc2-foundation = "0.3.2"
 
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+# Recovery from WKWebView content-process termination on resume. The WKWebView itself is
+# messaged via objc2's runtime (objc2-web-kit only models the macOS NSView-based variant),
+# so we just need Foundation: the block-based notification observer needs
+# NSNotification/NSOperation/block2, and we build the reload request from NSURL/NSURLRequest.
+objc2-foundation = { version = "0.3", features = [
+    "NSNotification",
+    "NSOperation",
+    "NSString",
+    "NSURL",
+    "NSURLRequest",
+    "block2",
+] }
+block2 = "0.6"
+
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-updater = "2"
 
 [dev-dependencies]
-lopdf = { version = "0.38", default-features = false }
+lopdf = { version = "0.43", default-features = false }
 tempfile = "3"
 
 [features]
@@ -60,6 +75,11 @@ default = ["custom-protocol"]
 # this feature is used used for production builds where `devPath` points to the filesystem
 # DO NOT remove this
 custom-protocol = ["tauri/custom-protocol"]
+# Mac App Store builds. Apple forbids self-updating apps, so this feature gates off the
+# Tauri updater plugin registration (the crate stays a dependency; only its runtime `.plugin()`
+# init and the in-app Updates UI are excluded). Build via:
+#   cargo tauri build --features mas --config tauri.mas.conf.json   (see `make release-mas`)
+mas = []
 
 [profile.release]
 lto = true

@@ -12,6 +12,7 @@
 		resultIndex = 0,
 		lists = [],
 		anchor = undefined,
+		reopenKey = undefined,
 		onselect = () => {},
 		onclose = () => {},
 		onlink = undefined,
@@ -21,6 +22,7 @@
 		resultIndex?: number;
 		lists?: string[];
 		anchor?: DOMRect;
+		reopenKey?: number | string;
 		onselect?: (_index: number) => void;
 		onclose?: () => void;
 		onlink?: (_text: string) => void;
@@ -38,6 +40,7 @@
 <SyPopover
 	{visible}
 	{anchor}
+	{reopenKey}
 	width={DESKTOP_WIDTH_PX}
 	height={DESKTOP_HEIGHT_PX}
 	mobileTitle="Dictionary"

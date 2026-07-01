@@ -1,0 +1,7 @@
+// Code-signing configuration for the iOS target.
+//
+// The Apple Team ID is intentionally kept out of version control (Syng is open source, and a
+// hardcoded team would break every contributor's local signing). Set yours by copying
+// Signing.local.xcconfig.example to Signing.local.xcconfig and filling in DEVELOPMENT_TEAM.
+// The include is optional, so the project still configures without a local file present.
+#include? "Signing.local.xcconfig"

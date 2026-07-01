@@ -2,10 +2,11 @@
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 	import { updateToneColorsPreference } from '@/composables/settings.js';
 
-	type SettingsTab = 'general' | 'telemetry';
+	type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
 
 	let activeTab = $state(settingsActiveTabStore.value as SettingsTab);
 
@@ -32,6 +33,13 @@
 			>
 				Telemetry
 			</SyTab>
+			<SyTab
+				variant="mobile"
+				active={activeTab === 'acknowledgements'}
+				onclick={() => setActiveTab('acknowledgements')}
+			>
+				Acknowledgements
+			</SyTab>
 		</div>
 	</header>
 
@@ -41,8 +49,10 @@
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
 			</section>
-		{:else}
+		{:else if activeTab === 'telemetry'}
 			<TelemetrySettings variant="mobile" />
+		{:else}
+			<Acknowledgements />
 		{/if}
 	</div>
 </div>

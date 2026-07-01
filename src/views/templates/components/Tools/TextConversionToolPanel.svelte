@@ -8,6 +8,7 @@
 		TextConversionControlGroup,
 		TextConversionToolVariant,
 	} from '@/types/textConversionTool.js';
+	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	interface Props {
 		tool: ToolName;
@@ -98,7 +99,16 @@
 	</div>
 
 	{#if !collapsed}
-		<textarea aria-label={inputLabel} {placeholder} value={inputValue} oninput={handleInput}
+		<!-- autocorrect is spread because Svelte's textarea types omit it (non-standard attr). -->
+		<textarea
+			use:cursorToEnd
+			aria-label={inputLabel}
+			{placeholder}
+			value={inputValue}
+			autocapitalize="off"
+			spellcheck="false"
+			{...{ autocorrect: 'off' }}
+			oninput={handleInput}
 		></textarea>
 		<div
 			class="text-conversion-tool__controls"

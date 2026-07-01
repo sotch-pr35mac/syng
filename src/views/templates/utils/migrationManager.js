@@ -156,6 +156,23 @@ export async function importMigrationData(preferenceManager, bookmarkManager) {
 		}
 	}
 
+	// Remove any pre-existing list whose name matches a list we're about to restore. These
+	// are init()-created defaults (migration only runs when the bookmarks DB is empty, so they
+	// hold no words). Restoring under the migrated _ids without this would leave two lists of
+	// the same name — which breaks name-keyed UI such as the bookmark dropdowns. init()'s
+	// reconcile is the safety net; this stops the duplicate from being created in the first place.
+	const restoredListNames = new Set(migrationData.databases.wordLists.map((doc) => doc.name));
+	const currentLists = await bookmarkManager._list_db.allDocs({ include_docs: true });
+	for (const row of currentLists.rows) {
+		if (restoredListNames.has(row.doc.name)) {
+			try {
+				await bookmarkManager._list_db.remove(row.doc);
+			} catch (e) {
+				console.warn('Error removing pre-existing list before restore:', row.doc.name, e);
+			}
+		}
+	}
+
 	// Import word list documents
 	for (const doc of migrationData.databases.wordLists) {
 		try {

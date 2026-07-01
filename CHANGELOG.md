@@ -3,16 +3,28 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [2.0.0] - XXXX-XX-XX
 ### Added
+- Mobile and iPad support with responsive navigation, settings, and reader flows
+- Reader library with document import support for EPUB, PDF, DOCX, RTF, HTML, plain text, clipboard, and webpages
+- Popup dictionary support in Search, Bookmarks, and Reader
+- Tone color customization
+- In-app updater with startup update notifications
+- Telemetry settings
 - Better automatic language detection during search
 - Dark mode
 
 ### Changed
 - Redesigned interface
-- Improved startup speed
-- Improved search speed and accuracy
 - Migrated from Electron to Tauri
 - Migrated to PouchDB
+- Improved startup speed
+- Improved search speed and accuracy
+- Improved reader layout, pagination, document parsing, images, tables, ruby annotations, and legacy Chinese encodings
+- Improved macOS windowing, native menu behavior, and platform integration
+- Updated dictionary data, dependencies, and security posture
 - Updated app icon
+
+### Fixed
+- Fixed security audit findings and dependency CVEs
 
 ### Removed
 - Startup splash screen

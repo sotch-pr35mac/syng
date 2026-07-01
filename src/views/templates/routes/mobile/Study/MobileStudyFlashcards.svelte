@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
@@ -51,7 +52,12 @@
 	<div class="mobile-flashcards__content" use:scrollRestore={'mobile-flashcards-content'}>
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="mobile-flashcards__back">
-				<DictionaryContent word={activeWord} backgroundColor="white" {lists} />
+				<DictionaryContent
+					word={activeWord}
+					backgroundColor="white"
+					{lists}
+					onlink={flashcardsRoute.lookupPopoverWord}
+				/>
 			</div>
 		{:else}
 			<div class="mobile-flashcards__front">
@@ -107,6 +113,16 @@
 		</div>
 	</div>
 </div>
+
+<DictionaryPopover
+	word={flashcardsRoute.popoverWord}
+	results={flashcardsRoute.popoverResults}
+	resultIndex={flashcardsRoute.popoverResultIndex}
+	{lists}
+	onselect={flashcardsRoute.selectPopoverResult}
+	onlink={flashcardsRoute.lookupPopoverWord}
+	onclose={flashcardsRoute.closePopoverDictionary}
+/>
 
 <style>
 	.mobile-flashcards {

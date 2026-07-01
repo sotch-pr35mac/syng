@@ -59,6 +59,9 @@ let dictionaryResultIndex = $state(0);
 let dictionaryWord = $state<SearchEntry | undefined>(undefined);
 let dictionaryToken = $state<ReaderToken | undefined>(undefined);
 let dictionaryAnchor = $state<DOMRect | undefined>(undefined);
+// Bumped on every openDictionary() call so the mobile sheet can re-pop to partial
+// when a new word is tapped while it's already open. Result-arrow nav does not bump it.
+let dictionaryOpenCount = $state(0);
 let lastPageTurnDirection = $state<'next' | 'previous' | undefined>(undefined);
 
 function participatesInLinearText(block: ReaderContentBlock): boolean {
@@ -686,6 +689,7 @@ async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<voi
 		dictionaryWord = dictionaryResults[dictionaryResultIndex];
 		dictionaryToken = token;
 		dictionaryAnchor = anchor;
+		dictionaryOpenCount += 1;
 		telemetry.trackEvent('reader.dictionary_opened', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error opening the dictionary popover.', error);
@@ -714,6 +718,9 @@ async function lookupDictionaryWord(text: string): Promise<void> {
 		dictionaryResults = results;
 		dictionaryResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
 		dictionaryWord = dictionaryResults[dictionaryResultIndex];
+		// Bump so the mobile sheet re-pops to partial when a cross-link (e.g. a measure word)
+		// is tapped while the sheet is open. Mirrors openDictionary()'s behavior.
+		dictionaryOpenCount += 1;
 		telemetry.trackEvent('reader.dictionary_link_opened', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error looking up the dictionary word.', error);
@@ -829,6 +836,9 @@ export const readerRoute = {
 	},
 	get dictionaryAnchor(): DOMRect | undefined {
 		return dictionaryAnchor;
+	},
+	get dictionaryOpenCount(): number {
+		return dictionaryOpenCount;
 	},
 	get lastPageTurnDirection(): 'next' | 'previous' | undefined {
 		return lastPageTurnDirection;

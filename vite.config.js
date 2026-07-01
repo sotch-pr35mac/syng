@@ -27,7 +27,7 @@ export default defineConfig({
 		rollupOptions: {
 			input: resolve(import.meta.dirname, 'src/views/templates/app.js'),
 			output: {
-				format: 'iife',
+				format: 'es',
 				entryFileNames: 'bundle.js',
 				assetFileNames: 'bundle[extname]',
 			},

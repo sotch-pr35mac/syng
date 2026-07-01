@@ -87,6 +87,27 @@ const getDocuments = (dbName) => {
 					},
 				},
 			];
+		case 'test-lists-duplicate':
+			return [
+				{ doc: { _id: 'bookmarks-a', _rev: '1', name: 'Bookmarks' } },
+				{ doc: { _id: 'bookmarks-b', _rev: '1', name: 'Bookmarks' } },
+				{ doc: { _id: 'other', _rev: '1', name: 'Other' } },
+			];
+		case 'test-bookmarks-duplicate':
+			return [
+				{ doc: { _id: 'w1', _rev: '1', hash: 'w1', notes: '', lists: ['bookmarks-a'] } },
+				{ doc: { _id: 'w2', _rev: '1', hash: 'w2', notes: '', lists: ['bookmarks-b'] } },
+				{
+					doc: {
+						_id: 'w3',
+						_rev: '1',
+						hash: 'w3',
+						notes: '',
+						lists: ['bookmarks-a', 'bookmarks-b'],
+					},
+				},
+				{ doc: { _id: 'w4', _rev: '1', hash: 'w4', notes: '', lists: ['other'] } },
+			];
 		default:
 			throw new Error(`Unknown database name: ${dbName}`);
 	}
@@ -184,6 +205,23 @@ it('should return an array of list names', async () => {
 	await bookmarkManager.init();
 	const listNames = await bookmarkManager.getLists();
 	expect(listNames).toEqual(['Bookmarks', 'Test List 1', 'Test List 2']);
+});
+
+it('should collapse duplicate-named lists and merge their word references on init', async () => {
+	const bookmarkManager = new BookmarkManager('test-lists-duplicate', 'test-bookmarks-duplicate');
+	await bookmarkManager.init();
+
+	// The two 'Bookmarks' documents collapse to one; 'Other' is untouched.
+	const listNames = await bookmarkManager.getLists();
+	expect(listNames).toEqual(['Bookmarks', 'Other']);
+
+	// Every word that referenced either 'Bookmarks' copy now resolves under the single list.
+	const bookmarksContent = await bookmarkManager.getListContent('Bookmarks');
+	expect(bookmarksContent.map((word) => word.hash).sort()).toEqual(['w1', 'w2', 'w3']);
+
+	// A word that lived in both copies is merged onto the canonical id without duplication.
+	const mergedWord = await bookmarkManager.getWordByHash('w3');
+	expect(mergedWord.lists).toEqual(['bookmarks-a']);
 });
 
 it('should create a new list', async () => {

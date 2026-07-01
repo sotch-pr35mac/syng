@@ -11,14 +11,15 @@ mod utils;
 mod windows;
 
 use core::{
-    answer_question, classify, convert_characters, export_list_data, get_incorrect_questions,
-    get_next_question, import_list_data, import_reader_document, init_dictionary, is_dev_build,
-    pinyinify, prepare_reader_import, prettify_pinyin, query, query_by_chinese, query_by_english,
-    query_by_pinyin, score_quiz, start_quiz, telemetry_get_prefs, telemetry_get_queued_events,
-    telemetry_init, telemetry_set_pref, telemetry_track_error, telemetry_track_event,
-    telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, QuizState, TelemetryManager,
+    answer_question, classify, convert_characters, export_list_data, get_acknowledgements,
+    get_incorrect_questions, get_next_question, import_list_data, import_reader_document,
+    init_dictionary, is_dev_build, is_mas_build, pinyinify, prepare_reader_import, prettify_pinyin,
+    query, query_by_chinese, query_by_english, query_by_pinyin, score_quiz, start_quiz,
+    telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
+    telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_pinyin,
+    tokenize_reader_text, QuizState, TelemetryManager,
 };
-#[cfg(desktop)]
+#[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
 #[cfg(desktop)]
 use windows::open_character_window;
@@ -30,7 +31,12 @@ pub fn run() {
 
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+        // The self-updater is excluded from Mac App Store builds (Apple forbids self-updating
+        // apps). Gated on the `mas` Cargo feature; the crate stays a dependency either way.
+        #[cfg(not(feature = "mas"))]
+        {
+            builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+        }
         builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
     }
 
@@ -41,7 +47,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
@@ -52,6 +57,15 @@ pub fn run() {
             }
 
             windows::setup(app)?;
+
+            // Recover from iOS terminating the WKWebView content process while the app is
+            // backgrounded, which otherwise leaves a blank page on resume.
+            #[cfg(target_os = "ios")]
+            {
+                if let Some(window) = app.get_webview_window("main") {
+                    platform::ios::install_content_process_recovery(&window, app.handle());
+                }
+            }
 
             Ok(())
         })
@@ -94,7 +108,9 @@ pub fn run() {
             convert_characters,
             prettify_pinyin,
             tokenize_pinyin,
-            is_dev_build
+            is_dev_build,
+            is_mas_build,
+            get_acknowledgements
         ));
     }
     #[cfg(mobile)]
@@ -127,7 +143,9 @@ pub fn run() {
             convert_characters,
             prettify_pinyin,
             tokenize_pinyin,
-            is_dev_build
+            is_dev_build,
+            is_mas_build,
+            get_acknowledgements
         ));
     }
 

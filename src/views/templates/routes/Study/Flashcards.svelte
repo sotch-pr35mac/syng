@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { router } from 'svelte-spa-router';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
@@ -92,7 +93,12 @@
 		{#if flashcardsRoute.showDetails}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">
-					<DictionaryContent word={activeWord} backgroundColor="white" {lists} />
+					<DictionaryContent
+						word={activeWord}
+						backgroundColor="white"
+						{lists}
+						onlink={flashcardsRoute.lookupPopoverWord}
+					/>
 				</div>
 			</div>
 		{:else}
@@ -112,6 +118,17 @@
 		{/if}
 	</div>
 </div>
+
+<DictionaryPopover
+	word={flashcardsRoute.popoverWord}
+	results={flashcardsRoute.popoverResults}
+	resultIndex={flashcardsRoute.popoverResultIndex}
+	{lists}
+	reopenKey={flashcardsRoute.popoverReopenKey}
+	onselect={flashcardsRoute.selectPopoverResult}
+	onlink={flashcardsRoute.lookupPopoverWord}
+	onclose={flashcardsRoute.closePopoverDictionary}
+/>
 
 <style>
 	.flashcard--container {

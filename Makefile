@@ -86,3 +86,16 @@ package-linux-arm64:
 package-linux-amd64:
 	rustup target add x86_64-unknown-linux-gnu
 	cargo tauri build --target x86_64-unknown-linux-gnu
+
+# Mac App Store build: excludes the self-updater via the `mas` feature + config overlay.
+package-mas:
+	rustup target add aarch64-apple-darwin
+	rustup target add x86_64-apple-darwin
+	cargo tauri build --features mas --config tauri.mas.conf.json --target aarch64-apple-darwin
+	cargo tauri build --features mas --config tauri.mas.conf.json --target x86_64-apple-darwin
+
+package-ios:
+	@echo "iOS packaging not currently implemented"
+
+release-android:
+	@echo "Android packaging not currently implemented"

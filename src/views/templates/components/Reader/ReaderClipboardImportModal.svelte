@@ -5,6 +5,7 @@
 		DEFAULT_READER_DOCUMENT_COLOR,
 		inferPlainTextReaderTitle,
 	} from '@/utils/readerDocument.js';
+	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	type Props = {
 		visible?: boolean;
@@ -83,7 +84,10 @@
 		/>
 		<label class="reader-clipboard-import__field">
 			<span>Text</span>
+			<!-- Reader paste field is an autocorrect exception: no attribute, so it inherits the
+			     WebKit/iOS default of "on" (the attribute is a no-op on Android/desktop). -->
 			<textarea
+				use:cursorToEnd
 				value={text}
 				class="reader-clipboard-import__textarea"
 				placeholder="Paste text here"

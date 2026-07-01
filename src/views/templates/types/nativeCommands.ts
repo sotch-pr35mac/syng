@@ -8,6 +8,8 @@
 export const NATIVE_COMMANDS = {
 	APP: {
 		IS_DEV_BUILD: 'is_dev_build',
+		IS_MAS_BUILD: 'is_mas_build',
+		GET_ACKNOWLEDGEMENTS: 'get_acknowledgements',
 	},
 	DICTIONARY: {
 		INIT: 'init_dictionary',

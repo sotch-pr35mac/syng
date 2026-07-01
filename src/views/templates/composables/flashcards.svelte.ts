@@ -6,12 +6,17 @@ import {
 } from '@/stores/flashcards.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { handleError } from '@/utils/index.js';
+import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
+import type { SearchEntry } from '@/types/search.js';
 
 let flashcardsActiveList = $state<string | null>(flashcardsActiveListStore.value);
 let flashcardsActiveIndex = $state(flashcardsActiveIndexStore.value);
 let flashcardsShowDetails = $state(flashcardsShowDetailsStore.value);
 let flashcardsListContent = $state<BookmarkWordEntry[]>([]);
 let flashcardsLoading = $state(true);
+// Dictionary popover for cross-reference links (e.g. measure words) tapped inside the
+// flashcard's DictionaryContent. Shared with quiz via createDictionaryPopover.
+const popover = createDictionaryPopover();
 
 function loadFlashcards(listFromUrl: string | null): void {
 	const storedList = flashcardsActiveListStore.value;
@@ -117,6 +122,18 @@ export const flashcardsRoute = {
 	get canGoNext(): boolean {
 		return flashcardsActiveIndex < flashcardsListContent.length - 1;
 	},
+	get popoverWord(): SearchEntry | undefined {
+		return popover.word;
+	},
+	get popoverResults(): SearchEntry[] {
+		return popover.results;
+	},
+	get popoverResultIndex(): number {
+		return popover.resultIndex;
+	},
+	get popoverReopenKey(): number {
+		return popover.reopenKey;
+	},
 	load: loadFlashcards,
 	persistIndex: persistFlashcardsIndex,
 	persistDetails: persistFlashcardsDetails,
@@ -124,4 +141,7 @@ export const flashcardsRoute = {
 	previous: previousFlashcard,
 	next: nextFlashcard,
 	flip: flipFlashcard,
+	lookupPopoverWord: popover.lookup,
+	selectPopoverResult: popover.select,
+	closePopoverDictionary: popover.close,
 };

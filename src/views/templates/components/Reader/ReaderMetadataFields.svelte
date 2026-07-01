@@ -48,6 +48,9 @@
 		id={`${idPrefix}-title`}
 		size="large"
 		autocomplete="off"
+		autocorrect="on"
+		autocapitalize="sentences"
+		spellcheck={true}
 		placeholder={titlePlaceholder}
 		maxlength={READER_DOCUMENT_TITLE_MAX_LENGTH}
 		oninput={ontitleinput}
