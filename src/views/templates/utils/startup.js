@@ -40,6 +40,15 @@ export const setDebugMode = (debugMode) => {
 	resolvedDebugMode = debugMode;
 };
 
+export const shouldRunStartupUpdateCheck = async () => {
+	// isMobile() intentionally includes iPad, even though iPad uses the desktop UI.
+	if (isMobile()) {
+		return false;
+	}
+
+	return !(await resolveIsMasBuild());
+};
+
 // This should be run on all windows, not just the main window. Therefore
 // it is run outside of the `runStartupActions` context.
 
@@ -141,18 +150,16 @@ export const runStartupActions = () => {
 
 			// Non-blocking update check — results are cached to window and broadcast
 			// via event so Navigation can show a badge without blocking startup.
-			if (!isMobile()) {
-				resolveIsMasBuild()
-					.then((isMas) => {
-						if (!isMas) {
-							return checkForUpdate();
-						}
-						return undefined;
-					})
-					.catch((error) => {
-						handleError('Startup update check failed', error, { silent: true });
-					});
-			}
+			shouldRunStartupUpdateCheck()
+				.then((shouldCheck) => {
+					if (shouldCheck) {
+						return checkForUpdate();
+					}
+					return undefined;
+				})
+				.catch((error) => {
+					handleError('Startup update check failed', error, { silent: true });
+				});
 
 			return undefined;
 		})
