@@ -26,6 +26,14 @@ export const resolveIsDevBuild = async (env: BuildEnv = currentBuildEnv()): Prom
 	return invoke<boolean>(NATIVE_COMMANDS.APP.IS_DEV_BUILD).catch(() => false);
 };
 
+/**
+ * Whether this is a Mac App Store build. MAS builds ship without the self-updater (Apple forbids
+ * self-updating apps), so the Updates preference is hidden. Defaults to false if the command is
+ * unavailable (e.g. non-desktop platforms).
+ */
+export const resolveIsMasBuild = async (): Promise<boolean> =>
+	invoke<boolean>(NATIVE_COMMANDS.APP.IS_MAS_BUILD).catch(() => false);
+
 export const updateBetaPreference = (checked: boolean): void => {
 	getPreferenceManager().set('beta', checked);
 	telemetry.trackEvent('settings.changed', { setting: 'beta' }).catch(() => {});

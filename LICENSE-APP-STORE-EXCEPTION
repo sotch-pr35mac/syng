@@ -1,0 +1,30 @@
+Syng — App Store Distribution Exception
+Additional permission under GNU GPL version 3 section 7
+
+Copyright (C) Preston Wang-Stosur-Bassett
+
+Syng is licensed under the GNU General Public License version 3 (see the LICENSE
+file for the full text). As the sole copyright holder of Syng, Preston
+Wang-Stosur-Bassett grants the following additional permission under section 7 of
+the GNU General Public License version 3:
+
+    You are permitted to distribute, and to authorize operators of application
+    distribution platforms (such as the Apple App Store and Mac App Store, the
+    Google Play Store, and the Microsoft Store) to distribute, copies of Syng
+    through those platforms, and to agree to those platforms' standard terms of
+    service, notwithstanding that such terms may impose restrictions of the kinds
+    described in section 6 of the GNU GPL version 3 — including usage or
+    installation restrictions, digital rights management, and limits on further
+    redistribution — that would otherwise be incompatible with the license.
+
+This additional permission applies only to the copyrighted material of Syng owned
+by the copyright holder named above. It grants no rights in third-party components
+distributed with Syng that are licensed under their own terms; those components are
+listed with their licenses on the in-app Acknowledgements screen and under
+`src/native/resources/licenses/`.
+
+Nothing in this permission limits the rights granted to recipients by the GNU GPL
+version 3. In particular, every recipient remains entitled to the Corresponding
+Source and may redistribute Syng under the GNU GPL version 3 without these platform
+restrictions. If you modify Syng, you may — but are not required to — remove this
+additional permission from your modified copies (GNU GPL version 3, section 7).

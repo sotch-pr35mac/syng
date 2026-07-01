@@ -3,6 +3,7 @@
 //! This module contains the primary business logic and Tauri command handlers
 //! for the application's main features: dictionary lookup, I/O operations, and quizzes.
 
+pub mod acknowledgements;
 pub mod dictionary;
 pub mod io;
 pub mod quiz;
@@ -15,7 +16,15 @@ pub fn is_dev_build() -> bool {
     cfg!(debug_assertions)
 }
 
+/// Whether this binary was built for the Mac App Store (`--features mas`). MAS builds exclude the
+/// self-updater, so the frontend uses this to hide the in-app Updates UI.
+#[tauri::command]
+pub fn is_mas_build() -> bool {
+    cfg!(feature = "mas")
+}
+
 // Re-export commonly used items for convenience
+pub use acknowledgements::get_acknowledgements;
 pub use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
 };

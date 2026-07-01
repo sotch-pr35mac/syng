@@ -3,6 +3,7 @@
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
@@ -11,6 +12,7 @@
 	import {
 		isDevBuild,
 		resolveIsDevBuild,
+		resolveIsMasBuild,
 		updateBetaPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
@@ -21,6 +23,7 @@
 
 	let activeTab = $state(settingsActiveTabStore.value);
 	let showDevPreferences = $state(isDevBuild());
+	let isMasBuild = $state(false);
 
 	const preferences = [
 		{
@@ -37,6 +40,7 @@
 			label: 'Updates',
 			devOnly: false,
 			hideOnIPad: true,
+			hideOnMas: true,
 			centerLabel: false,
 			component: UpdateChecker,
 			props: {},
@@ -56,7 +60,9 @@
 	const visiblePreferences = $derived(
 		preferences.filter(
 			(preference) =>
-				(!preference.devOnly || showDevPreferences) && (!preference.hideOnIPad || !isIPad())
+				(!preference.devOnly || showDevPreferences) &&
+				(!preference.hideOnIPad || !isIPad()) &&
+				(!preference.hideOnMas || !isMasBuild)
 		)
 	);
 
@@ -64,6 +70,12 @@
 		resolveIsDevBuild()
 			.then((devBuild) => {
 				showDevPreferences = devBuild;
+				return undefined;
+			})
+			.catch(() => {});
+		resolveIsMasBuild()
+			.then((masBuild) => {
+				isMasBuild = masBuild;
 				return undefined;
 			})
 			.catch(() => {});
@@ -97,6 +109,15 @@
 		>
 			Telemetry
 		</SyTab>
+		<SyTab
+			active={activeTab === 'acknowledgements'}
+			onclick={() => {
+				activeTab = 'acknowledgements';
+				settingsActiveTabStore.set('acknowledgements');
+			}}
+		>
+			Acknowledgements
+		</SyTab>
 	</div>
 	<div class="settings--content" use:scrollRestore={'settings-content'}>
 		{#if activeTab === 'general'}
@@ -109,8 +130,10 @@
 					<preference.component {...preference.props} />
 				</div>
 			{/each}
-		{:else}
+		{:else if activeTab === 'telemetry'}
 			<TelemetrySettings />
+		{:else}
+			<Acknowledgements />
 		{/if}
 	</div>
 </div>

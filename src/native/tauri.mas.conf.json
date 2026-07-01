@@ -1,0 +1,11 @@
+{
+  "bundle": {
+    "createUpdaterArtifacts": false,
+    "macOS": {
+      "entitlements": "entitlements.mas.plist"
+    }
+  },
+  "plugins": {
+    "updater": null
+  }
+}

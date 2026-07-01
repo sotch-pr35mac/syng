@@ -86,3 +86,31 @@ package-linux-arm64:
 package-linux-amd64:
 	rustup target add x86_64-unknown-linux-gnu
 	cargo tauri build --target x86_64-unknown-linux-gnu
+
+# --- Release targets -------------------------------------------------------
+# Build release binaries per channel. Distribution-channel submission (code
+# signing, provisioning, store upload) is deferred — see RELEASING.md.
+
+release-desktop: release-macos release-windows release-linux
+
+release-macos: package-macos
+
+release-windows: package-windows
+
+release-linux: package-linux-amd64 package-linux-arm64
+
+# Mac App Store build: excludes the self-updater via the `mas` feature + config overlay.
+release-mas:
+	rustup target add aarch64-apple-darwin
+	rustup target add x86_64-apple-darwin
+	cd src/native && cargo tauri build --features mas --config tauri.mas.conf.json --target aarch64-apple-darwin
+	cd src/native && cargo tauri build --features mas --config tauri.mas.conf.json --target x86_64-apple-darwin
+
+# iOS App Store export — deferred: needs an Apple distribution cert, provisioning
+# profile, and an app-store-connect ExportOptions. See RELEASING.md.
+release-ios:
+	@echo "iOS App Store submission is deferred — see RELEASING.md (needs Apple Developer signing)."; exit 1
+
+# Android Play release bundle — deferred: needs a signing keystore + signingConfig. See RELEASING.md.
+release-android:
+	@echo "Android Play submission is deferred — see RELEASING.md (needs signing config)."; exit 1

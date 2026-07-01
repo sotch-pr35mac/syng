@@ -12,7 +12,6 @@
 		"fs:allow-copy-file",
 		"fs:allow-mkdir",
 		"fs:allow-remove",
-		"fs:allow-remove",
 		"fs:allow-rename",
 		"fs:allow-exists",
 		"fs:allow-appdata-read-recursive",
@@ -55,7 +54,6 @@
 		"core:window:allow-set-ignore-cursor-events",
 		"core:window:allow-start-dragging",
 		"core:webview:allow-print",
-		"shell:allow-open",
 		"dialog:allow-open",
 		"dialog:allow-save",
 		"dialog:allow-message",
@@ -74,7 +72,6 @@
 		"os:allow-arch",
 		"os:allow-exe-extension",
 		"os:allow-locale",
-		"os:allow-hostname",
 		"process:allow-restart",
 		"process:allow-exit",
 		"clipboard-manager:allow-read-text",
@@ -82,7 +79,6 @@
 		"core:app:allow-app-show",
 		"core:app:allow-app-hide",
 		"fs:default",
-		"shell:default",
 		"os:default",
 		"cli:default"
 	]

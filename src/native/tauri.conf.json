@@ -6,7 +6,7 @@
 	},
 	"bundle": {
 		"active": true,
-		"category": "DeveloperTool",
+		"category": "Education",
 		"copyright": "",
 		"targets": "all",
 		"externalBin": [],
@@ -30,7 +30,9 @@
 			"providerShortName": null,
 			"signingIdentity": null
 		},
-		"resources": [],
+		"resources": [
+			"resources/licenses/*"
+		],
 		"shortDescription": "",
 		"linux": {
 			"deb": {
@@ -93,7 +95,7 @@
 		],
 		"withGlobalTauri": false,
 		"security": {
-			"csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https:"
+			"csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
 		}
 	}
 }

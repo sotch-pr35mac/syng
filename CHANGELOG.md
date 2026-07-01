@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This projec
 ### Added
 - Better automatic language detection during search
 - Dark mode
+- Acknowledgements screen in Settings listing third-party licenses
 
 ### Changed
 - Redesigned interface

@@ -18,6 +18,8 @@
 	<string>2.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>2.0.0</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

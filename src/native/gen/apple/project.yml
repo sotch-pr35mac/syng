@@ -51,8 +51,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.0.6
-        CFBundleVersion: "0.0.6"
+        CFBundleShortVersionString: 2.0.0
+        CFBundleVersion: "2.0.0"
     entitlements:
       path: syng_iOS/syng_iOS.entitlements
     scheme:
