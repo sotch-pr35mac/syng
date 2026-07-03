@@ -136,7 +136,7 @@
 				<div>
 					<p class="telemetry--setting-label">Device Context</p>
 					<p class="telemetry--setting-description">
-						OS version, architecture, and locale for compatibility analysis
+						OS version, architecture, locale, and timezone for compatibility analysis
 					</p>
 				</div>
 				<SyToggle

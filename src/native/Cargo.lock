@@ -4777,6 +4777,7 @@ dependencies = [
  "base64 0.22.1",
  "block2",
  "chinese_dictionary",
+ "chrono",
  "ego-tree",
  "encoding_rs",
  "html2text",
@@ -4788,6 +4789,7 @@ dependencies = [
  "quick-xml 0.39.4",
  "rand 0.9.4",
  "rbook",
+ "reqwest 0.12.28",
  "rusqlite",
  "scraper",
  "serde",
@@ -4807,6 +4809,7 @@ dependencies = [
  "tauri-plugin-process",
  "tauri-plugin-updater",
  "tempfile",
+ "tokio",
  "uuid",
  "zip 3.0.0",
 ]
