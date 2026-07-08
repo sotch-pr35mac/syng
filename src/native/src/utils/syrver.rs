@@ -3,6 +3,8 @@
 //! Keep base URLs and endpoint paths separate so build configuration chooses the
 //! deployment, while feature modules choose the endpoint they need.
 
+use crate::utils::build::is_development;
+
 /// Syrver base URL used by debug builds and local development.
 pub const SYRVER_LOCAL_BASE_URL: &str = "http://localhost:8787";
 /// Syrver base URL used by release builds.
@@ -16,7 +18,7 @@ pub const TELEMETRY_INSTALLATIONS_PATH: &str = "/v1/telemetry/installations";
 
 /// Selects the Syrver base URL by build type.
 pub fn syrver_base_url() -> &'static str {
-    if cfg!(debug_assertions) {
+    if is_development() {
         SYRVER_LOCAL_BASE_URL
     } else {
         SYRVER_PRODUCTION_BASE_URL
@@ -33,8 +35,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_syrver_base_url_selects_local_in_debug() {
-        assert_eq!(syrver_base_url(), SYRVER_LOCAL_BASE_URL);
+    fn test_syrver_base_url_selects_by_build_type() {
+        let expected = if is_development() {
+            SYRVER_LOCAL_BASE_URL
+        } else {
+            SYRVER_PRODUCTION_BASE_URL
+        };
+
+        assert_eq!(syrver_base_url(), expected);
     }
 
     #[test]
@@ -52,10 +60,10 @@ mod tests {
     }
 
     #[test]
-    fn test_syrver_url_assembles_debug_telemetry_url() {
+    fn test_syrver_url_assembles_selected_telemetry_url() {
         assert_eq!(
             syrver_url(TELEMETRY_EVENTS_PATH),
-            "http://localhost:8787/v1/telemetry"
+            format!("{}{}", syrver_base_url(), TELEMETRY_EVENTS_PATH)
         );
     }
 }
