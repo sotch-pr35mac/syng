@@ -13,6 +13,7 @@
 //! 4. `insert_event` wraps the payload in a JSON envelope and INSERTs it into SQLite.
 //! 5. After each insert the oldest rows beyond `MAX_QUEUE_SIZE` are pruned.
 
+use crate::utils::syrver::{syrver_url, TELEMETRY_EVENTS_PATH, TELEMETRY_INSTALLATIONS_PATH};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -28,15 +29,6 @@ use uuid::Uuid;
 /// This cap covers all statuses (pending, retrying, etc.) across the full backlog.
 const MAX_QUEUE_SIZE: i64 = 500;
 
-/// Base URL for the analytics backend during local development and testing. Debug builds
-/// (`cfg!(debug_assertions)`) send here so real production data is never polluted by dev traffic.
-const TELEMETRY_BASE_URL_DEV: &str = "http://localhost:8787";
-/// Base URL for the analytics backend in shipped (release) builds.
-const TELEMETRY_BASE_URL_PROD: &str = "https://telemetry.syng.app";
-/// Path appended to the base URL that accepts a batch of event envelopes (bearer-authorized).
-const TELEMETRY_EVENTS_PATH: &str = "/telemetry";
-/// Path appended to the base URL that mints a per-installation telemetry token.
-const TELEMETRY_INSTALLATIONS_PATH: &str = "/telemetry/installations";
 /// Filename (under the app-data dir) holding the persisted installation token and its expiry.
 const INSTALLATION_FILE: &str = "telemetry_installation.json";
 
@@ -46,16 +38,6 @@ const FLUSH_INTERVAL: Duration = Duration::from_secs(60);
 const FLUSH_BATCH_SIZE: i64 = 50;
 /// Per-request timeout for the outbound HTTP call.
 const FLUSH_REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
-
-/// Selects the analytics base URL by build type: local endpoint for debug builds, production
-/// endpoint for release builds. Mirrors the `cfg!(debug_assertions)` split used by `is_dev_build`.
-fn telemetry_base_url() -> &'static str {
-    if cfg!(debug_assertions) {
-        TELEMETRY_BASE_URL_DEV
-    } else {
-        TELEMETRY_BASE_URL_PROD
-    }
-}
 
 /// The category of a telemetry event. Each variant maps to a per-family opt-out pref,
 /// making the complete set of valid families explicit and compiler-checked.
@@ -284,7 +266,7 @@ fn build_batch_body(events: Vec<Value>) -> Value {
     json!({ "events": events })
 }
 
-/// Builds the registration request body for `POST /telemetry/installations`. All fields are
+/// Builds the registration request body for telemetry installation registration. All fields are
 /// optional server-side; `device_context` is included only when the opt-out pref allows it.
 /// Pure function so the shape is unit-testable without a network.
 fn build_registration_body(context: &FlushContext) -> Value {
@@ -397,7 +379,7 @@ async fn register_installation(
     client: &reqwest::Client,
     context: &FlushContext,
 ) -> Option<Installation> {
-    let url = format!("{}{}", telemetry_base_url(), TELEMETRY_INSTALLATIONS_PATH);
+    let url = syrver_url(TELEMETRY_INSTALLATIONS_PATH);
     let response = client
         .post(&url)
         .json(&build_registration_body(context))
@@ -434,7 +416,7 @@ async fn ensure_installation(
 /// POSTs one event batch with a bearer token, classifying the response so the caller can decide
 /// whether to re-register (401) or leave the rows queued (any other failure).
 async fn send_batch(client: &reqwest::Client, token: &str, body: &Value) -> SendOutcome {
-    let url = format!("{}{}", telemetry_base_url(), TELEMETRY_EVENTS_PATH);
+    let url = syrver_url(TELEMETRY_EVENTS_PATH);
     match client.post(&url).bearer_auth(token).json(body).send().await {
         Ok(response) if response.status().is_success() => SendOutcome::Success,
         Ok(response) if response.status() == reqwest::StatusCode::UNAUTHORIZED => {
@@ -682,12 +664,6 @@ mod tests {
     }
 
     // --- Transport helpers ---
-
-    #[test]
-    fn test_telemetry_base_url_selects_dev_in_debug() {
-        // Unit tests compile with debug_assertions on, so the dev endpoint is selected.
-        assert_eq!(telemetry_base_url(), TELEMETRY_BASE_URL_DEV);
-    }
 
     #[test]
     fn test_build_batch_body_wraps_events() {
