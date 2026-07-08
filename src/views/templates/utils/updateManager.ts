@@ -1,6 +1,12 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { updateStore } from '@/stores/update.svelte.js';
+import {
+	getBookmarkManager,
+	getPreferenceManager,
+	getReaderDocumentManager,
+} from '@/utils/appServices.js';
+import { exportMigrationData } from '@/utils/migrationManager.js';
 
 /**
  * Checks for an available update and caches the result in the update store.
@@ -20,8 +26,15 @@ export const checkForUpdate = (): Promise<Update | null> => {
  * Rejects if there is no pending update.
  */
 export const installPendingUpdate = (): Promise<void> => {
-	if (!updateStore.pendingUpdate) {
+	const pendingUpdate = updateStore.pendingUpdate;
+	if (!pendingUpdate) {
 		return Promise.reject(new Error('No pending update available.'));
 	}
-	return updateStore.pendingUpdate.downloadAndInstall().then(() => relaunch());
+	return exportMigrationData(
+		getPreferenceManager(),
+		getBookmarkManager(),
+		getReaderDocumentManager()
+	)
+		.then(() => pendingUpdate.downloadAndInstall())
+		.then(() => relaunch());
 };

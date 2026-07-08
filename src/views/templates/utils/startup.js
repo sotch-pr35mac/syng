@@ -115,19 +115,27 @@ export const runStartupActions = () => {
 			// Migration: Check if we need to restore from a backup file
 			// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
 			try {
-				await checkAndPerformMigration(preferenceManager, bookmarkManager);
+				await checkAndPerformMigration(
+					preferenceManager,
+					bookmarkManager,
+					readerDocumentManager
+				);
 			} catch (error) {
 				handleError('Migration check failed', error, { silent: true });
 			}
 
 			// Migration: Setup shutdown hook to save data when app closes
 			// This ensures fresh data is available for future migrations
-			await setupShutdownHook(preferenceManager, bookmarkManager);
+			await setupShutdownHook(preferenceManager, bookmarkManager, readerDocumentManager);
 
 			// Migration: Also export a backup on startup as a safety net
 			// In case the app crashes before a clean shutdown
 			try {
-				await exportMigrationData(preferenceManager, bookmarkManager);
+				await exportMigrationData(
+					preferenceManager,
+					bookmarkManager,
+					readerDocumentManager
+				);
 			} catch (error) {
 				handleError('Startup backup export failed', error, { silent: true });
 			}

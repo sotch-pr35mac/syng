@@ -44,7 +44,7 @@
 	"productName": "Syng",
 	"mainBinaryName": "Syng",
 	"version": "2.0.0",
-	"identifier": "org.syng.app",
+	"identifier": "xyz.bytecraft.syng",
 	"plugins": {
 		"updater": {
 			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK",
