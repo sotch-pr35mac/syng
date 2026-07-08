@@ -2,8 +2,9 @@
 //!
 //! Events are bucketed into one of three families — Event, ScreenView, or Error —
 //! and written to a local SQLite queue (`telemetry_queue.db` in the app-data dir).
-//! A background flush will batch-send queued rows to the analytics backend; until
-//! then rows accumulate locally and can be inspected in the Telemetry Settings panel.
+//! A background flush batch-sends queued rows to the analytics backend using a
+//! per-installation bearer token; unsent rows accumulate locally and can be inspected
+//! in the Telemetry Settings panel.
 //!
 //! # Flow
 //! 1. JS calls a `telemetry_*` Tauri command.
@@ -12,19 +13,31 @@
 //! 4. `insert_event` wraps the payload in a JSON envelope and INSERTs it into SQLite.
 //! 5. After each insert the oldest rows beyond `MAX_QUEUE_SIZE` are pruned.
 
+use crate::utils::syrver::{syrver_url, TELEMETRY_EVENTS_PATH, TELEMETRY_INSTALLATIONS_PATH};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
 /// Total number of events retained in the local queue before oldest rows are dropped.
 /// This cap covers all statuses (pending, retrying, etc.) across the full backlog.
 const MAX_QUEUE_SIZE: i64 = 500;
+
+/// Filename (under the app-data dir) holding the persisted installation token and its expiry.
+const INSTALLATION_FILE: &str = "telemetry_installation.json";
+
+/// How long the background flush loop waits between send attempts.
+const FLUSH_INTERVAL: Duration = Duration::from_secs(60);
+/// Maximum number of queued events pulled from SQLite and sent in a single POST.
+const FLUSH_BATCH_SIZE: i64 = 50;
+/// Per-request timeout for the outbound HTTP call.
+const FLUSH_REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 
 /// The category of a telemetry event. Each variant maps to a per-family opt-out pref,
 /// making the complete set of valid families explicit and compiler-checked.
@@ -65,17 +78,21 @@ struct TelemetryInner {
     platform: String,
     arch: String,
     os_version: String,
+    timezone: String,
     data_dir: PathBuf,
 }
 
 pub struct TelemetryManager {
     state: Mutex<Option<TelemetryInner>>,
+    /// Guards the background flush loop so repeated `telemetry_init` calls can't spawn duplicates.
+    flush_started: AtomicBool,
 }
 
 impl Default for TelemetryManager {
     fn default() -> Self {
         Self {
             state: Mutex::new(None),
+            flush_started: AtomicBool::new(false),
         }
     }
 }
@@ -168,6 +185,7 @@ fn insert_event(
         envelope["device_context"] = json!({
             "arch": inner.arch,
             "os_version": inner.os_version,
+            "timezone": inner.timezone,
         });
     }
 
@@ -208,6 +226,277 @@ fn insert_event(
 }
 
 // ---------------------------------------------------------------------------
+// Transport
+// ---------------------------------------------------------------------------
+
+/// A per-installation credential issued by the backend. Persisted to `INSTALLATION_FILE` so the
+/// same token is reused across launches until it expires (or is rejected with a 401).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct Installation {
+    installation_id: String,
+    telemetry_token: String,
+    /// RFC 3339 timestamp produced by the backend (`DEFAULT_TELEMETRY_TOKEN_TTL_DAYS` in the future).
+    expires_at: String,
+}
+
+/// The subset of `TelemetryInner` the flush loop needs, snapshotted under a single lock so no
+/// `MutexGuard`/`Connection` is ever held across an `.await`. `app_version`/`platform` mirror the
+/// required event-envelope fields; `arch`/`os_version` are only sent when the device-context
+/// opt-out is on, matching how `insert_event` gates `device_context`.
+struct FlushContext {
+    data_dir: PathBuf,
+    app_version: String,
+    platform: String,
+    arch: String,
+    os_version: String,
+    include_device_context: bool,
+}
+
+/// Outcome of a single event-batch POST, distinguishing an auth rejection (which triggers a
+/// re-register + retry) from other failures (which simply leave the rows queued).
+enum SendOutcome {
+    Success,
+    Unauthorized,
+    Failed,
+}
+
+/// Wraps a batch of event envelopes in the request body expected by the backend.
+/// Kept as a pure function so the payload shape is unit-testable without a network.
+fn build_batch_body(events: Vec<Value>) -> Value {
+    json!({ "events": events })
+}
+
+/// Builds the registration request body for telemetry installation registration. All fields are
+/// optional server-side; `device_context` is included only when the opt-out pref allows it.
+/// Pure function so the shape is unit-testable without a network.
+fn build_registration_body(context: &FlushContext) -> Value {
+    let mut body = json!({
+        "app_version": context.app_version,
+        "platform": context.platform,
+    });
+    if context.include_device_context {
+        body["device_context"] = json!({
+            "arch": context.arch,
+            "os_version": context.os_version,
+        });
+    }
+    body
+}
+
+fn installation_path(data_dir: &Path) -> PathBuf {
+    data_dir.join(INSTALLATION_FILE)
+}
+
+/// Reads the persisted installation token, if any. A missing or unparseable file yields `None`,
+/// which triggers a fresh registration.
+fn load_installation(data_dir: &Path) -> Option<Installation> {
+    fs::read_to_string(installation_path(data_dir))
+        .ok()
+        .and_then(|contents| serde_json::from_str(&contents).ok())
+}
+
+fn save_installation(data_dir: &Path, installation: &Installation) {
+    if let Ok(json) = serde_json::to_string(installation) {
+        let _ = fs::write(installation_path(data_dir), json);
+    }
+}
+
+fn clear_installation(data_dir: &Path) {
+    let _ = fs::remove_file(installation_path(data_dir));
+}
+
+/// Whether a stored token is past its `expires_at`. An unparseable timestamp is treated as valid
+/// so we don't loop on re-registration — the authoritative expiry signal is a 401 from the server.
+fn installation_is_expired(installation: &Installation) -> bool {
+    match chrono::DateTime::parse_from_rfc3339(&installation.expires_at) {
+        Ok(expires) => expires.timestamp() <= now_unix_ms() / 1000,
+        Err(_) => false,
+    }
+}
+
+/// Snapshots the flush context and the oldest pending batch under one lock. Returns `None` when
+/// telemetry has not been initialized. The batch may be empty (nothing queued).
+fn take_pending(manager: &TelemetryManager) -> Option<(FlushContext, Vec<(String, Value)>)> {
+    let lock = manager.state.lock().ok()?;
+    let inner = lock.as_ref()?;
+
+    let context = FlushContext {
+        data_dir: inner.data_dir.clone(),
+        app_version: inner.app_version.clone(),
+        platform: inner.platform.clone(),
+        arch: inner.arch.clone(),
+        os_version: inner.os_version.clone(),
+        include_device_context: inner.prefs.include_device_context,
+    };
+
+    let mut stmt = inner
+        .db
+        .prepare("SELECT id, envelope FROM events ORDER BY created_at ASC LIMIT ?1")
+        .ok()?;
+    let rows = stmt
+        .query_map(params![FLUSH_BATCH_SIZE], |row| {
+            let id: String = row.get(0)?;
+            let envelope: String = row.get(1)?;
+            Ok((id, envelope))
+        })
+        .ok()?;
+
+    let batch = rows
+        .filter_map(Result::ok)
+        .filter_map(|(id, envelope)| {
+            serde_json::from_str(&envelope)
+                .ok()
+                .map(|value| (id, value))
+        })
+        .collect();
+
+    Some((context, batch))
+}
+
+/// Deletes successfully-sent rows from the queue. Runs after the HTTP call returns, re-acquiring
+/// the lock briefly. Unknown ids (already pruned) are simply no-ops.
+fn delete_sent_events(manager: &TelemetryManager, ids: &[String]) {
+    if ids.is_empty() {
+        return;
+    }
+    let lock = match manager.state.lock() {
+        Ok(lock) => lock,
+        Err(_) => return,
+    };
+    if let Some(inner) = lock.as_ref() {
+        let placeholders = std::iter::repeat_n("?", ids.len())
+            .collect::<Vec<_>>()
+            .join(",");
+        let sql = format!("DELETE FROM events WHERE id IN ({placeholders})");
+        let params = rusqlite::params_from_iter(ids.iter());
+        let _ = inner.db.execute(&sql, params);
+    }
+}
+
+/// Registers a fresh installation with the backend and persists the returned token. Returns `None`
+/// on any network/parse failure, leaving events queued for a later attempt.
+async fn register_installation(
+    client: &reqwest::Client,
+    context: &FlushContext,
+) -> Option<Installation> {
+    let url = syrver_url(TELEMETRY_INSTALLATIONS_PATH);
+    let response = client
+        .post(&url)
+        .json(&build_registration_body(context))
+        .send()
+        .await
+        .ok()?;
+    if !response.status().is_success() {
+        #[cfg(debug_assertions)]
+        println!(
+            "[telemetry] registration rejected: HTTP {}",
+            response.status()
+        );
+        return None;
+    }
+    let installation: Installation = response.json().await.ok()?;
+    save_installation(&context.data_dir, &installation);
+    Some(installation)
+}
+
+/// Returns a usable installation token: the persisted one when present and unexpired, otherwise a
+/// freshly registered one.
+async fn ensure_installation(
+    client: &reqwest::Client,
+    context: &FlushContext,
+) -> Option<Installation> {
+    if let Some(installation) = load_installation(&context.data_dir) {
+        if !installation_is_expired(&installation) {
+            return Some(installation);
+        }
+    }
+    register_installation(client, context).await
+}
+
+/// POSTs one event batch with a bearer token, classifying the response so the caller can decide
+/// whether to re-register (401) or leave the rows queued (any other failure).
+async fn send_batch(client: &reqwest::Client, token: &str, body: &Value) -> SendOutcome {
+    let url = syrver_url(TELEMETRY_EVENTS_PATH);
+    match client.post(&url).bearer_auth(token).json(body).send().await {
+        Ok(response) if response.status().is_success() => SendOutcome::Success,
+        Ok(response) if response.status() == reqwest::StatusCode::UNAUTHORIZED => {
+            SendOutcome::Unauthorized
+        }
+        Ok(_response) => {
+            #[cfg(debug_assertions)]
+            println!("[telemetry] flush rejected: HTTP {}", _response.status());
+            SendOutcome::Failed
+        }
+        Err(_error) => {
+            #[cfg(debug_assertions)]
+            println!("[telemetry] flush failed: {_error}");
+            SendOutcome::Failed
+        }
+    }
+}
+
+/// Sends one batch of queued events to the analytics backend. Reads the batch (releasing the lock),
+/// ensures an installation token, POSTs the batch with bearer auth, and deletes the sent rows on
+/// success. A 401 clears the stored token, re-registers once, and retries the batch once. Any other
+/// failure leaves the rows in place for the next tick (still bounded by `MAX_QUEUE_SIZE` pruning).
+async fn flush_once(app: &AppHandle, client: &reqwest::Client) {
+    let manager = app.state::<TelemetryManager>();
+    let Some((context, batch)) = take_pending(&manager) else {
+        return;
+    };
+    if batch.is_empty() {
+        return;
+    }
+
+    let (ids, envelopes): (Vec<String>, Vec<Value>) = batch.into_iter().unzip();
+
+    let Some(installation) = ensure_installation(client, &context).await else {
+        return;
+    };
+
+    let body = build_batch_body(envelopes);
+    match send_batch(client, &installation.telemetry_token, &body).await {
+        SendOutcome::Success => delete_sent_events(&manager, &ids),
+        SendOutcome::Unauthorized => {
+            // The stored token was revoked or expired: drop it, register once more, and retry.
+            clear_installation(&context.data_dir);
+            if let Some(fresh) = register_installation(client, &context).await {
+                if let SendOutcome::Success =
+                    send_batch(client, &fresh.telemetry_token, &body).await
+                {
+                    delete_sent_events(&manager, &ids);
+                }
+            }
+        }
+        SendOutcome::Failed => {}
+    }
+}
+
+/// Spawns the background flush loop exactly once. The `flush_started` guard makes a repeated
+/// `telemetry_init` a no-op so we never run duplicate loops against the same queue.
+fn start_flush_loop(app: &AppHandle, manager: &TelemetryManager) {
+    if manager.flush_started.swap(true, Ordering::SeqCst) {
+        return;
+    }
+
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        let client = match reqwest::Client::builder()
+            .timeout(FLUSH_REQUEST_TIMEOUT)
+            .build()
+        {
+            Ok(client) => client,
+            Err(_) => return,
+        };
+
+        loop {
+            tokio::time::sleep(FLUSH_INTERVAL).await;
+            flush_once(&app, &client).await;
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -228,6 +517,7 @@ mod tests {
             platform: "test".to_string(),
             arch: "x86_64".to_string(),
             os_version: "1.0".to_string(),
+            timezone: "America/New_York".to_string(),
             data_dir,
         }
     }
@@ -339,6 +629,22 @@ mod tests {
     }
 
     #[test]
+    fn test_insert_event_includes_timezone_in_device_context() {
+        let dir = TempDir::new().unwrap();
+        let mut inner = make_inner(&dir, TelemetryPrefs::default());
+
+        insert_event(EventFamily::Event, "test", json!({}), &mut inner).unwrap();
+
+        let envelope_str: String = inner
+            .db
+            .query_row("SELECT envelope FROM events LIMIT 1", [], |r| r.get(0))
+            .unwrap();
+        let envelope: Value = serde_json::from_str(&envelope_str).unwrap();
+
+        assert_eq!(envelope["device_context"]["timezone"], "America/New_York");
+    }
+
+    #[test]
     fn test_insert_event_omits_device_context_when_disabled() {
         let dir = TempDir::new().unwrap();
         let mut prefs = TelemetryPrefs::default();
@@ -353,7 +659,90 @@ mod tests {
             .unwrap();
         let envelope: Value = serde_json::from_str(&envelope_str).unwrap();
 
+        // The whole device_context object (timezone included) is withheld when the pref is off.
         assert!(envelope.get("device_context").is_none());
+    }
+
+    // --- Transport helpers ---
+
+    #[test]
+    fn test_build_batch_body_wraps_events() {
+        let body = build_batch_body(vec![json!({ "name": "a" }), json!({ "name": "b" })]);
+        assert!(body["events"].is_array());
+        assert_eq!(body["events"].as_array().unwrap().len(), 2);
+        assert_eq!(body["events"][0]["name"], "a");
+    }
+
+    fn make_context(dir: &TempDir, include_device_context: bool) -> FlushContext {
+        FlushContext {
+            data_dir: dir.path().to_path_buf(),
+            app_version: "2.0.0".to_string(),
+            platform: "macos".to_string(),
+            arch: "aarch64".to_string(),
+            os_version: "14.0".to_string(),
+            include_device_context,
+        }
+    }
+
+    #[test]
+    fn test_build_registration_body_includes_device_context_when_enabled() {
+        let dir = TempDir::new().unwrap();
+        let body = build_registration_body(&make_context(&dir, true));
+        assert_eq!(body["app_version"], "2.0.0");
+        assert_eq!(body["platform"], "macos");
+        assert_eq!(body["device_context"]["arch"], "aarch64");
+        assert_eq!(body["device_context"]["os_version"], "14.0");
+    }
+
+    #[test]
+    fn test_build_registration_body_omits_device_context_when_disabled() {
+        let dir = TempDir::new().unwrap();
+        let body = build_registration_body(&make_context(&dir, false));
+        assert_eq!(body["app_version"], "2.0.0");
+        assert!(body.get("device_context").is_none());
+    }
+
+    #[test]
+    fn test_installation_round_trips() {
+        let dir = TempDir::new().unwrap();
+        let path = dir.path();
+        assert!(load_installation(path).is_none());
+
+        let installation = Installation {
+            installation_id: "install-1".to_string(),
+            telemetry_token: "syrv_tlm_abc".to_string(),
+            expires_at: "2999-01-01T00:00:00Z".to_string(),
+        };
+        save_installation(path, &installation);
+
+        let loaded = load_installation(path).unwrap();
+        assert_eq!(loaded.installation_id, "install-1");
+        assert_eq!(loaded.telemetry_token, "syrv_tlm_abc");
+
+        clear_installation(path);
+        assert!(load_installation(path).is_none());
+    }
+
+    #[test]
+    fn test_installation_expiry_detection() {
+        let past = Installation {
+            installation_id: "i".to_string(),
+            telemetry_token: "t".to_string(),
+            expires_at: "2000-01-01T00:00:00Z".to_string(),
+        };
+        let future = Installation {
+            expires_at: "2999-01-01T00:00:00Z".to_string(),
+            ..past.clone()
+        };
+        let unparseable = Installation {
+            expires_at: "not-a-timestamp".to_string(),
+            ..past.clone()
+        };
+
+        assert!(installation_is_expired(&past));
+        assert!(!installation_is_expired(&future));
+        // Unparseable expiry is treated as valid; the 401 path is the authoritative signal.
+        assert!(!installation_is_expired(&unparseable));
     }
 
     // --- Queue pruning ---
@@ -468,6 +857,7 @@ pub fn telemetry_init(
     app: AppHandle,
     state: State<'_, TelemetryManager>,
     os_version: String,
+    timezone: String,
 ) -> Result<(), String> {
     let data_dir = app
         .path()
@@ -483,17 +873,23 @@ pub fn telemetry_init(
     let platform = std::env::consts::OS.to_string();
     let arch = std::env::consts::ARCH.to_string();
 
-    let mut lock = state.state.lock().map_err(|e| format!("Lock error: {e}"))?;
-    *lock = Some(TelemetryInner {
-        device_id,
-        prefs,
-        db,
-        app_version,
-        platform,
-        arch,
-        os_version,
-        data_dir,
-    });
+    {
+        let mut lock = state.state.lock().map_err(|e| format!("Lock error: {e}"))?;
+        *lock = Some(TelemetryInner {
+            device_id,
+            prefs,
+            db,
+            app_version,
+            platform,
+            arch,
+            os_version,
+            timezone,
+            data_dir,
+        });
+    }
+
+    // Begin periodically flushing the queue to the analytics backend (spawns at most once).
+    start_flush_loop(&app, state.inner());
 
     Ok(())
 }

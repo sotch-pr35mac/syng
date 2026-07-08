@@ -13,7 +13,7 @@ pub mod tools;
 
 #[tauri::command]
 pub fn is_dev_build() -> bool {
-    cfg!(debug_assertions)
+    crate::utils::build::is_development()
 }
 
 /// Whether this binary was built for the Mac App Store (`--features mas`). MAS builds exclude the

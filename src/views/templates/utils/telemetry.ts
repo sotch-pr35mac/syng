@@ -43,7 +43,13 @@ export const telemetry = {
 		} catch {
 			// noop
 		}
-		return invoke(NATIVE_COMMANDS.TELEMETRY.INIT, { osVersion });
+		let timezone = '';
+		try {
+			timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		} catch {
+			// noop
+		}
+		return invoke(NATIVE_COMMANDS.TELEMETRY.INIT, { osVersion, timezone });
 	},
 	trackEvent: (name: string, payload: Record<string, unknown> = {}): Promise<void> =>
 		invoke(NATIVE_COMMANDS.TELEMETRY.TRACK_EVENT, { name, payload }),
