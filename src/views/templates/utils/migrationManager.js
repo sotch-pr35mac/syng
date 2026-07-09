@@ -16,7 +16,6 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import { appDataDir } from '@tauri-apps/api/path';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { platform } from '@tauri-apps/plugin-os';
@@ -117,10 +116,6 @@ export async function exportMigrationData(preferenceManager, bookmarkManager) {
 		JSON.stringify(migrationData, null, 2),
 		getAppDataOptions()
 	);
-
-	// Log the full path for debugging.
-	const appDataDirPath = await appDataDir();
-	console.log(`Migration data exported successfully to ${appDataDirPath}${MIGRATION_FILE_NAME}`);
 }
 
 /**
@@ -311,10 +306,6 @@ export async function importMigrationData(preferenceManager, bookmarkManager, fi
 	const migrationData = JSON.parse(rawFileContent);
 	const databases = migrationData.databases ?? {};
 
-	console.log(
-		`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`
-	);
-
 	// Import the three databases present in the Tauri 1/Tauri 2 beta migration files.
 	await importDocuments(preferenceManager._db, databases.config, 'config');
 	await importWordLists(bookmarkManager, databases.wordLists);
@@ -323,8 +314,6 @@ export async function importMigrationData(preferenceManager, bookmarkManager, fi
 	// Refresh the managers' internal caches with the imported data.
 	await preferenceManager.init();
 	await bookmarkManager.init();
-
-	console.log('Migration data imported successfully');
 }
 
 /**
@@ -339,12 +328,7 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
 	const isEmpty = await isDatabaseEmpty(bookmarkManager);
 	const migrationFile = isComplete ? null : await readMigrationFileForRestore();
 
-	console.log(
-		`Migration check: database empty = ${isEmpty}, migration complete = ${isComplete}, migration file exists = ${Boolean(migrationFile)}`
-	);
-
 	if (isEmpty && migrationFile) {
-		console.log(`Performing migration from ${migrationFile.source} backup file...`);
 		await importMigrationData(preferenceManager, bookmarkManager, migrationFile.contents);
 		await markMigrationComplete(migrationFile.source);
 		return true;
@@ -384,7 +368,6 @@ export async function setupShutdownHook(preferenceManager, bookmarkManager) {
 		}
 
 		void (async () => {
-			console.log('App closing, exporting migration data...');
 			try {
 				await exportMigrationData(preferenceManager, bookmarkManager);
 			} catch (e) {
@@ -392,5 +375,4 @@ export async function setupShutdownHook(preferenceManager, bookmarkManager) {
 			}
 		})();
 	});
-	console.log('Shutdown hook registered for migration data export');
 }

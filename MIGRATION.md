@@ -90,6 +90,19 @@ current implementation uses Tauri 2 APIs:
 Filesystem calls use `BaseDirectory.AppData` so Tauri handles platform-specific
 paths and fs-scope permissions.
 
+## Identifier Directory Access
+
+The legacy `org.syng.app` backup read is intended for direct-distributed,
+unsandboxed desktop builds. Those builds can read user-owned files in sibling
+app-data directories for the same OS account, so native Rust code can bridge
+from the old identifier directory even though the JavaScript filesystem plugin
+is scoped to the current identifier.
+
+Do not rely on this cross-identifier read for sandboxed store builds. A
+sandboxed Mac App Store build, for example, should be expected to read only its
+own container unless access is granted through a specific entitlement or
+user-mediated file selection.
+
 ## Files Involved
 
 | File                                            | Purpose                                                   |
