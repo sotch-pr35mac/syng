@@ -1,6 +1,6 @@
 name: syng
 options:
-  bundleIdPrefix: org.syng.app
+  bundleIdPrefix: xyz.bytecraft.syng
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -11,7 +11,7 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: Syng 2
-      PRODUCT_BUNDLE_IDENTIFIER: org.syng.app
+      PRODUCT_BUNDLE_IDENTIFIER: xyz.bytecraft.syng
 targetTemplates:
   app:
     type: application

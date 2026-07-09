@@ -7,7 +7,7 @@ install-dev:
 	npm install --include=dev
 
 IOS_APP_BUNDLE ?= src/native/gen/apple/build/syng_iOS.xcarchive/Products/Applications/Syng.app
-IOS_BUNDLE_ID ?= org.syng.app
+IOS_BUNDLE_ID ?= xyz.bytecraft.syng
 IOS_DEVICE ?=
 IOS_OFFLINE_CONFIG ?= tauri.ios.offline.conf.json
 

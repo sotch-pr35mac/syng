@@ -6,6 +6,7 @@
 pub mod acknowledgements;
 pub mod dictionary;
 pub mod io;
+pub mod migration;
 pub mod quiz;
 pub mod reader;
 pub mod telemetry;
@@ -29,6 +30,7 @@ pub use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
 };
 pub use io::{export_list_data, import_list_data};
+pub use migration::read_legacy_migration_file;
 pub use quiz::{
     answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
 };

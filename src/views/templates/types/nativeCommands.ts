@@ -30,6 +30,9 @@ export const NATIVE_COMMANDS = {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
 	},
+	MIGRATION: {
+		READ_LEGACY_MIGRATION_FILE: 'read_legacy_migration_file',
+	},
 	READER: {
 		IMPORT_DOCUMENT: 'import_reader_document',
 		PREPARE_IMPORT: 'prepare_reader_import',

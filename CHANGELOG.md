@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file. This projec
 - Improved macOS windowing, native menu behavior, and platform integration
 - Updated dictionary data, dependencies, and security posture
 - Updated app icon
+- Changed the bundle identifier from org.syng.app to xyz.bytecraft.syng
 
 ### Fixed
 - Fixed security audit findings and dependency CVEs

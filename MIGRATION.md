@@ -1,262 +1,207 @@
 # Syng Data Migration Guide
 
-This document describes the data migration system implemented to preserve user data when upgrading from Tauri 1 to Tauri 2.
+This document describes Syng's file-based migration bridge for preserving user
+data across storage identity changes. It covers both the original Tauri 1 to
+Tauri 2 storage migration and the current bundle identifier move from
+`org.syng.app` to `xyz.bytecraft.syng`.
 
 ## Background
 
-When upgrading from Tauri 1 to Tauri 2, the WebView's data directory path changes. This means that data stored in IndexedDB (where PouchDB stores its data) becomes inaccessible after the upgrade. Users would lose their:
+Syng stores preferences, word lists, and bookmarks in PouchDB/IndexedDB. During
+the Tauri 1 to Tauri 2 upgrade, WebView storage paths could change, making the
+old IndexedDB data inaccessible. Changing the bundle identifier can also hide
+data because app-data directories are keyed by identifier.
 
-- **Preferences** (tone colors, beta opt-in)
-- **Word Lists** (custom vocabulary lists they've created)
-- **Bookmarks** (saved words with notes)
+The current identifier is:
+
+```json
+{
+	"identifier": "xyz.bytecraft.syng"
+}
+```
+
+The legacy beta identifier was `org.syng.app`.
 
 ## Solution Overview
 
-A file-based migration bridge that:
+The app writes a JSON backup named `syng-migration-data.json` in the app data
+directory. That file is outside WebView IndexedDB and can be read after Tauri
+storage changes.
 
-1. **Exports** all PouchDB data to a JSON file in the app data directory
-2. **Imports** from that file when the app detects empty databases after an upgrade
+Known app-data backup locations:
 
-The app data directory (`~/Library/Application Support/org.syng.app/` on macOS) is keyed by the bundle identifier and persists across Tauri major version upgrades.
+- Current macOS: `~/Library/Application Support/xyz.bytecraft.syng/syng-migration-data.json`
+- Legacy macOS: `~/Library/Application Support/org.syng.app/syng-migration-data.json`
+- Current Windows: `%APPDATA%\xyz.bytecraft.syng\syng-migration-data.json`
+- Legacy Windows: `%APPDATA%\org.syng.app\syng-migration-data.json`
+- Current Linux: `~/.local/share/xyz.bytecraft.syng/syng-migration-data.json`
+- Legacy Linux: `~/.local/share/org.syng.app/syng-migration-data.json`
 
-## How It Works
+On startup, the app:
 
-### Data Flow Diagram
+1. Initializes preference and bookmark managers.
+2. Checks whether the current bookmarks database is empty.
+3. Checks whether `syng-migration-complete.json` exists in the current app-data directory.
+4. If current user data is empty and migration is not complete, tries the legacy `org.syng.app` migration file first, then the current file.
+5. Imports data and writes `syng-migration-complete.json` so prefs-only migrations do not repeat forever.
+6. Exports a fresh current-identifier backup after startup.
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           APP STARTUP                                       │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 1. Initialize PreferenceManager & BookmarkManager (creates default data)    │
-│ 2. Migration Check:                                                         │
-│    ├─ Is bookmarks database empty? (no user data)                          │
-│    └─ Does migration file exist?                                           │
-│        ├─ BOTH TRUE  → Import migration data, refresh managers             │
-│        └─ OTHERWISE  → Continue normally (existing install or fresh start) │
-│ 3. Setup shutdown hook for future backups                                   │
-│ 4. Export backup (safety net in case of crash before clean shutdown)       │
-│ 5. Dispatch 'init' event, app ready                                        │
-└─────────────────────────────────────────────────────────────────────────────┘
+The updater also exports a fresh migration backup before `downloadAndInstall()`.
+If that backup fails, the update install is rejected.
 
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           APP SHUTDOWN                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│ 1. Intercept 'tauri://close-requested' event                               │
-│ 2. Export all PouchDB data to migration file (freshest data)               │
-│ 3. Close the window                                                         │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+## Migration File Format
 
-### Migration File Format
-
-The migration file (`syng-migration-data.json`) is stored in the app data directory:
-
-- **macOS**: `~/Library/Application Support/org.syng.app/syng-migration-data.json`
-- **Windows**: `%APPDATA%\org.syng.app\syng-migration-data.json`
-- **Linux**: `~/.config/org.syng.app/syng-migration-data.json`
-
-Structure:
+Version 1 was the original Tauri 1 to Tauri 2 bridge. Version 2 adds identifier
+metadata for the package identifier migration. Both versions contain the same
+user data categories:
 
 ```json
 {
-  "version": 1,
-  "exportedAt": "2024-01-15T10:30:00.000Z",
-  "databases": {
-    "config": [
-      { "_id": "config", "_rev": "...", "toneColors": {...} }
-    ],
-    "wordLists": [
-      { "_id": "abc123", "_rev": "...", "name": "Bookmarks" },
-      { "_id": "def456", "_rev": "...", "name": "HSK 1" }
-    ],
-    "bookmarks": [
-      { "_id": "...", "_rev": "...", "hash": 12345, "simplified": "你好", ... }
-    ]
-  }
+	"version": 2,
+	"exportedAt": "2026-01-01T00:00:00.000Z",
+	"identifiers": {
+		"current": "xyz.bytecraft.syng",
+		"legacy": "org.syng.app"
+	},
+	"databases": {
+		"config": [{ "_id": "config", "_rev": "...", "toneColors": {} }],
+		"wordLists": [{ "_id": "abc123", "_rev": "...", "name": "Bookmarks" }],
+		"bookmarks": [{ "_id": "...", "_rev": "...", "simplified": "你好" }]
+	}
 }
 ```
+
+Version 1 files are still accepted. They contain `config`, `wordLists`, and
+`bookmarks` without the `identifiers` field.
+
+## Tauri 2 Notes
+
+The bridge was originally added for the Tauri 1 to Tauri 2 transition. The
+current implementation uses Tauri 2 APIs:
+
+| Tauri 1 API                         | Tauri 2 implementation                                  |
+| ----------------------------------- | ------------------------------------------------------- |
+| `window.__TAURI__.path.appDataDir()` | `import { appDataDir } from '@tauri-apps/api/path'`     |
+| `window.__TAURI__.fs.readTextFile()` | `import { readTextFile } from '@tauri-apps/plugin-fs'`  |
+| `window.__TAURI__.fs.writeTextFile()` | `import { writeTextFile } from '@tauri-apps/plugin-fs'` |
+| `window.__TAURI__.fs.createDir()`   | `import { mkdir } from '@tauri-apps/plugin-fs'`         |
+| `window.__TAURI__.window...`        | `import { getCurrentWebviewWindow } ...`                |
+
+Filesystem calls use `BaseDirectory.AppData` so Tauri handles platform-specific
+paths and fs-scope permissions.
+
+## Identifier Directory Access
+
+The legacy `org.syng.app` backup read is intended for direct-distributed,
+unsandboxed desktop builds. Those builds can read user-owned files in sibling
+app-data directories for the same OS account, so native Rust code can bridge
+from the old identifier directory even though the JavaScript filesystem plugin
+is scoped to the current identifier.
+
+Do not rely on this cross-identifier read for sandboxed store builds. A
+sandboxed Mac App Store build, for example, should be expected to read only its
+own container unless access is granted through a specific entitlement or
+user-mediated file selection.
 
 ## Files Involved
 
-| File | Purpose |
-|------|---------|
-| `src/views/templates/utils/migrationManager.js` | Core migration logic (export, import, hooks) |
-| `src/views/templates/utils/startup.js` | Integrates migration into app startup |
+| File                                            | Purpose                                                   |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| `src/views/templates/utils/migrationManager.js` | Export/import logic, legacy file selection, shutdown hook |
+| `src/views/templates/utils/startup.js`          | Runs migration during startup                             |
+| `src/views/templates/utils/updateManager.ts`    | Exports backup before updater install                     |
+| `src/native/src/core/migration.rs`              | Reads legacy app-data migration file                      |
 
-## Tauri 2 Upgrade Status
+## What Is Migrated
 
-✅ **The migration code has been updated for Tauri 2!** The following changes have been implemented:
+- Preferences and settings
+- Word lists
+- Bookmarked words and notes
 
-### 1. Bundle Identifier Remains the Same
+Reader documents and telemetry state are not migrated by this bridge because the
+source beta builds this identifier migration targets did not ship those stores.
 
-The app data directory is determined by the bundle identifier. The `tauri.conf.json` maintains:
+Old app-data directories are left in place. The app reads what it needs from
+`org.syng.app` and writes current backups under `xyz.bytecraft.syng`.
 
-```json
-{
-  "identifier": "org.syng.app"
-}
+## Testing
+
+Run automated coverage:
+
+```bash
+npm test -- migrationManager updateManager
+cd src/native && cargo test migration
 ```
 
-### 2. Tauri 2 API Migration Completed
+Manual upgrade check:
 
-The migration code has been updated from Tauri 1 to Tauri 2 APIs:
+1. Run an `org.syng.app` beta that exports `syng-migration-data.json`.
+2. Confirm the legacy file exists:
 
-| Tauri 1 API | Tauri 2 Implementation | Status |
-|-------------|------------------------|--------|
-| `window.__TAURI__.path.appDataDir()` | `import { appDataDir } from '@tauri-apps/api/path'` | ✅ Updated |
-| `window.__TAURI__.fs.readTextFile()` | `import { readTextFile } from '@tauri-apps/plugin-fs'` | ✅ Updated |
-| `window.__TAURI__.fs.writeTextFile()` | `import { writeTextFile } from '@tauri-apps/plugin-fs'` | ✅ Updated |
-| `window.__TAURI__.fs.createDir()` | `import { mkdir } from '@tauri-apps/plugin-fs'` | ✅ Updated |
-| `window.__TAURI__.event.listen()` | `import { listen } from '@tauri-apps/api/event'` | ✅ Updated |
-| `window.__TAURI__.window.appWindow.close()` | `import { getCurrentWindow } from '@tauri-apps/api/window'` | ✅ Updated |
+    ```bash
+    cat ~/Library/Application\ Support/org.syng.app/syng-migration-data.json
+    ```
 
-**Additional Changes for Tauri 2:**
+3. Install/run the `xyz.bytecraft.syng` build.
+4. Confirm bookmarks, lists, and preferences are restored.
+5. Confirm a completion marker exists:
 
-1. ✅ Updated `migrationManager.js` to use ES module imports instead of `window.__TAURI__`
-2. ✅ Changed `dir` option to `baseDir` for filesystem operations
-3. ✅ Added `fs:allow-appdata-read-recursive` and `fs:allow-appdata-write-recursive` permissions to `capabilities/migrated.json`
+    ```bash
+    cat ~/Library/Application\ Support/xyz.bytecraft.syng/syng-migration-complete.json
+    ```
 
-### 3. PouchDB Continues to Work
+6. Relaunch and confirm migration does not replay.
 
-PouchDB should continue working in Tauri 2's WebView. If there are issues, ensure:
-- The PouchDB script is still loaded in `index.html`
-- IndexedDB is available in the WebView
+Fresh install check:
 
-### 4. First Launch Detection
+1. Remove both current and legacy migration files in a test account/profile.
+2. Launch the app.
+3. Confirm it starts with default state and no migration errors.
 
-The migration triggers when:
-- Bookmarks database is empty (no user-saved words)
-- Migration file exists
+Existing data safety check:
 
-This means:
-- Fresh installs won't trigger migration (no migration file)
-- Existing Tauri 2 installs with data won't be overwritten (database not empty)
-- Upgrades from Tauri 1 will trigger migration (empty DB + file exists)
-
-## Testing the Migration
-
-### Prerequisites
-
-- A working build of the current Tauri 1 version
-- Some test data (bookmarks, custom lists, preferences)
-
-### Test Procedure
-
-#### Step 1: Verify Export Works
-
-1. Launch the app
-2. Add some test data:
-   - Create a custom word list (e.g., "Test List")
-   - Add several words to bookmarks
-   - Add notes to a bookmarked word
-   - Change tone color settings
-3. **Close the app cleanly** (not force-quit)
-4. Check that the migration file was created:
-
-   ```bash
-   # macOS
-   cat ~/Library/Application\ Support/org.syng.app/syng-migration-data.json
-
-   # Linux
-   cat ~/.config/org.syng.app/syng-migration-data.json
-
-   # Windows (PowerShell)
-   Get-Content "$env:APPDATA\org.syng.app\syng-migration-data.json"
-   ```
-
-5. Verify the JSON contains your test data
-
-#### Step 2: Verify Startup Backup Works
-
-1. Launch the app
-2. Immediately check the migration file's timestamp - it should be updated
-3. This confirms the startup safety backup is working
-
-#### Step 3: Simulate the Upgrade Scenario
-
-Since you don't have Tauri 2 ready yet, you can simulate the "empty database" scenario:
-
-1. **Close the app**
-2. **Delete the IndexedDB data** (simulates what happens after Tauri upgrade):
-
-   ```bash
-   # macOS - delete WebKit storage for the app
-   rm -rf ~/Library/WebKit/org.syng.app
-
-   # Alternative: Clear via browser dev tools if accessible
-   ```
-
-3. **Keep the migration file** (don't delete it)
-4. **Launch the app**
-5. **Verify your data was restored**:
-   - Custom word lists should appear
-   - Bookmarked words should be present
-   - Notes on words should be intact
-   - Tone color settings should be restored
-
-#### Step 4: Verify Fresh Install Behavior
-
-1. Delete both the IndexedDB data AND the migration file
-2. Launch the app
-3. Verify it starts with default/empty state (no errors)
-
-#### Step 5: Verify Existing Data Not Overwritten
-
-1. With data in the app, create a migration file (close app cleanly)
-2. Add MORE data to the app
-3. Close and relaunch
-4. Verify the new data persists and wasn't overwritten by the migration file
-
-### Console Logging
-
-The migration system logs its activity. Open DevTools (if available) to see:
-
-```
-Migration check: database empty = false, migration file exists = true
-```
-
-or
-
-```
-Migration check: database empty = true, migration file exists = true
-Performing migration from backup file...
-Importing migration data (version 1) from 2024-01-15T10:30:00.000Z
-Migration data imported successfully
-Migration completed, reinitializing styles...
-```
+1. Put bookmark data in the current `xyz.bytecraft.syng` app.
+2. Leave a legacy migration file in `org.syng.app`.
+3. Relaunch.
+4. Confirm current data is not overwritten.
 
 ## Troubleshooting
 
 ### Migration File Not Created
 
-- Check console for errors during shutdown
-- Verify the app has write permissions to the app data directory
-- Try closing the app cleanly (not force-quit)
+- Check console logs for errors during startup, shutdown, or update install.
+- Verify the app has write permissions to the app-data directory.
+- Try closing the app cleanly rather than force-quitting.
 
 ### Migration Not Triggered After Upgrade
 
-- Verify the migration file exists in the correct location
-- Check that the bundle identifier matches
-- Look for console errors during startup
+- Verify the migration file exists in the expected legacy or current location.
+- Confirm the current bookmarks database is empty in the test profile.
+- Confirm `syng-migration-complete.json` is not already present.
+- Check console logs for native legacy-file read errors.
 
 ### Data Partially Restored
 
-- Check console for individual document import errors
-- The migration continues even if some documents fail
-- Manually check the migration file JSON for corruption
+- Check console logs for individual document import errors.
+- The migration continues if one document fails.
+- Manually check the migration file JSON for corruption.
 
-## Removing the Migration System
+## Known Limits
 
-Once you've confirmed all users have successfully migrated to Tauri 2, you can optionally remove this system:
+This bridge relies on the JSON backup file. A dormant beta user who never ran a
+build that exported `syng-migration-data.json` may not have data available for
+automatic restore. The static Tauri updater endpoint can also allow version
+skips, so keep legacy migration reading in place for several releases.
 
-1. Delete `src/views/templates/utils/migrationManager.js`
-2. Remove migration imports and calls from `startup.js`
-3. Optionally delete migration files from users' systems (or leave them - they're harmless)
+## Removing The Bridge
 
-However, keeping it has minimal overhead and provides an ongoing backup mechanism.
+Do not remove the legacy file reader until you are comfortable dropping direct
+beta migration support. The ongoing backup export is low overhead and useful
+even after the identifier migration window closes.
 
 ## Version History
 
-| Version | Date | Changes |
-|---------|------|---------|
-| 1 | 2024 | Initial migration system for Tauri 1 → 2 upgrade |
+| Version | Date | Changes                                                                  |
+| ------- | ---- | ------------------------------------------------------------------------ |
+| 1       | 2024 | Initial Tauri 1 to Tauri 2 file bridge                                   |
+| 2       | 2026 | Identifier bridge from `org.syng.app` to `xyz.bytecraft.syng`             |

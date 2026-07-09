@@ -1,4 +1,4 @@
-package org.syng.app
+package xyz.bytecraft.syng
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge

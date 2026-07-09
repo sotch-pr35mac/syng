@@ -113,7 +113,8 @@ export const runStartupActions = () => {
 	Promise.all(startupActions.map((item) => item.action))
 		.then(async () => {
 			// Migration: Check if we need to restore from a backup file
-			// This handles the Tauri 1 -> Tauri 2 upgrade scenario where IndexedDB is wiped
+			// This handles Tauri storage changes and the org.syng.app -> xyz.bytecraft.syng
+			// identifier change for data that shipped beta builds could have written.
 			try {
 				await checkAndPerformMigration(preferenceManager, bookmarkManager);
 			} catch (error) {

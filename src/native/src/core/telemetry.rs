@@ -31,6 +31,9 @@ const MAX_QUEUE_SIZE: i64 = 500;
 
 /// Filename (under the app-data dir) holding the persisted installation token and its expiry.
 const INSTALLATION_FILE: &str = "telemetry_installation.json";
+const DEVICE_ID_FILE: &str = "syng_device_id.txt";
+const TELEMETRY_PREFS_FILE: &str = "telemetry_prefs.json";
+const TELEMETRY_QUEUE_FILE: &str = "telemetry_queue.db";
 
 /// How long the background flush loop waits between send attempts.
 const FLUSH_INTERVAL: Duration = Duration::from_secs(60);
@@ -107,7 +110,7 @@ fn now_unix_ms() -> i64 {
 /// Reads or generates the persistent anonymous device identifier.
 /// Stored as a plain-text UUID in the app-data directory.
 fn get_or_create_device_id(data_dir: &Path) -> Result<String, String> {
-    let id_path = data_dir.join("syng_device_id.txt");
+    let id_path = data_dir.join(DEVICE_ID_FILE);
     if id_path.exists() {
         fs::read_to_string(&id_path)
             .map(|s| s.trim().to_string())
@@ -121,7 +124,7 @@ fn get_or_create_device_id(data_dir: &Path) -> Result<String, String> {
 
 /// Loads telemetry opt-out preferences from a JSON sidecar file.
 fn load_prefs(data_dir: &Path) -> TelemetryPrefs {
-    let prefs_path = data_dir.join("telemetry_prefs.json");
+    let prefs_path = data_dir.join(TELEMETRY_PREFS_FILE);
     fs::read_to_string(prefs_path)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
@@ -129,7 +132,7 @@ fn load_prefs(data_dir: &Path) -> TelemetryPrefs {
 }
 
 fn save_prefs(data_dir: &Path, prefs: &TelemetryPrefs) -> Result<(), String> {
-    let prefs_path = data_dir.join("telemetry_prefs.json");
+    let prefs_path = data_dir.join(TELEMETRY_PREFS_FILE);
     let json =
         serde_json::to_string(prefs).map_err(|e| format!("Failed to serialize prefs: {e}"))?;
     fs::write(prefs_path, json).map_err(|e| format!("Failed to save prefs: {e}"))
@@ -137,7 +140,7 @@ fn save_prefs(data_dir: &Path, prefs: &TelemetryPrefs) -> Result<(), String> {
 
 /// Opens (or creates) the SQLite queue database and ensures the `events` table exists.
 fn open_db(data_dir: &Path) -> Result<Connection, String> {
-    let db_path = data_dir.join("telemetry_queue.db");
+    let db_path = data_dir.join(TELEMETRY_QUEUE_FILE);
     let conn =
         Connection::open(db_path).map_err(|e| format!("Failed to open telemetry DB: {e}"))?;
     // Single table holds every pending/retrying event; rows are pruned to MAX_QUEUE_SIZE.

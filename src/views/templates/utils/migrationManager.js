@@ -1,33 +1,38 @@
 /*
  * File: migrationManager.js
- * Description: Handles data migration between Tauri major versions.
+ * Description: Handles file-based data migration across Tauri storage and app identity changes.
  *
- * When upgrading from Tauri 1 to Tauri 2, IndexedDB data becomes inaccessible
- * because the WebView data directory changes. This module provides a file-based
- * bridge to preserve user data across the upgrade.
+ * When upgrading from Tauri 1 to Tauri 2, IndexedDB data can become inaccessible
+ * because the WebView data directory changes. When changing the bundle identifier,
+ * app-data directories also move. This module provides a file-based bridge to
+ * preserve the user data that existing beta builds could have written.
  *
  * Strategy:
- * - Export all PouchDB data to a JSON file in the app data directory (stable location)
- * - On startup, check if databases are empty and migration file exists, then restore
- * - On shutdown, export fresh data as a backup
+ * - Export PouchDB data to a JSON file in the app data directory.
+ * - On startup, restore from the legacy org.syng.app file when user data is empty.
+ * - On shutdown and before updater installs, export fresh data as a backup.
  *
  * See MIGRATION.md for detailed documentation.
  */
 
-import { appDataDir } from '@tauri-apps/api/path';
+import { invoke } from '@tauri-apps/api/core';
 import { readTextFile, writeTextFile, mkdir, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { platform } from '@tauri-apps/plugin-os';
 import { handleError } from '@/utils/error.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
-const MIGRATION_VERSION = 1;
+const MIGRATION_COMPLETION_FILE_NAME = 'syng-migration-complete.json';
+const MIGRATION_VERSION = 2;
+const LEGACY_IDENTIFIER = 'org.syng.app';
+const CURRENT_IDENTIFIER = 'xyz.bytecraft.syng';
 
 /**
  * Get the Tauri fs options for accessing the app data directory.
  * Using BaseDirectory.AppData is more reliable than manual path construction
  * and properly handles directory creation and scope permissions.
- * @returns {object} Options object with dir set to AppData
+ * @returns {object} Options object with baseDir set to AppData
  */
 function getAppDataOptions() {
 	return { baseDir: BaseDirectory.AppData };
@@ -39,14 +44,14 @@ function getAppDataOptions() {
  */
 async function ensureAppDataDirExists() {
 	try {
-		// Create the app data directory with recursive option
-		// Using empty string as path creates the base AppData directory itself
+		// Create the app data directory with recursive option.
+		// Using empty string as path creates the base AppData directory itself.
 		await mkdir('', {
 			baseDir: BaseDirectory.AppData,
 			recursive: true,
 		});
 	} catch (e) {
-		// Directory may already exist, which is fine
+		// Directory may already exist, which is fine.
 		if (!e.message?.includes('already exists') && !e.message?.includes('os error 17')) {
 			console.warn('Could not create app data directory:', e);
 		}
@@ -54,18 +59,36 @@ async function ensureAppDataDirExists() {
 }
 
 /**
- * Export all PouchDB data to the migration file.
- * Called on both startup (safety backup) and shutdown (fresh backup).
- * @param {PreferenceManager} preferenceManager - The preference manager instance
- * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
+ * Deep-copy a PouchDB document before serializing or mutating it for import.
+ * @param {object} doc - The document to clone.
+ * @returns {object} A detached copy of the document.
+ */
+const cloneDocument = (doc) => JSON.parse(JSON.stringify(doc));
+
+/**
+ * Extract cloned documents from PouchDB allDocs rows.
+ * @param {Array<{doc?: object}>} rows - Rows returned by allDocs({ include_docs: true }).
+ * @returns {Array<object>} Documents safe to write into the migration file.
+ */
+const readRows = (rows) =>
+	rows
+		.map((row) => row.doc)
+		.filter(Boolean)
+		.map(cloneDocument);
+
+/**
+ * Export all PouchDB data supported by the beta migration bridge.
+ * Called on startup (safety backup), shutdown (fresh backup), and before updater installs.
+ * @param {PreferenceManager} preferenceManager - The preference manager instance.
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
  * @returns {Promise<void>}
  */
 export async function exportMigrationData(preferenceManager, bookmarkManager) {
-	// Wait for managers to be initialized
+	// Wait for managers to be initialized.
 	await preferenceManager.waitForInit();
 	await bookmarkManager.waitForInit();
 
-	// Gather all data from the three databases
+	// Gather all data from the three databases present in legacy beta builds.
 	const configData = await preferenceManager._db.allDocs({ include_docs: true });
 	const listData = await bookmarkManager._list_db.allDocs({ include_docs: true });
 	const bookmarkData = await bookmarkManager._document_db.allDocs({ include_docs: true });
@@ -73,36 +96,36 @@ export async function exportMigrationData(preferenceManager, bookmarkManager) {
 	const migrationData = {
 		version: MIGRATION_VERSION,
 		exportedAt: new Date().toISOString(),
+		identifiers: {
+			current: CURRENT_IDENTIFIER,
+			legacy: LEGACY_IDENTIFIER,
+		},
 		databases: {
-			config: configData.rows.map((row) => row.doc),
-			wordLists: listData.rows.map((row) => row.doc),
-			bookmarks: bookmarkData.rows.map((row) => row.doc),
+			config: readRows(configData.rows),
+			wordLists: readRows(listData.rows),
+			bookmarks: readRows(bookmarkData.rows),
 		},
 	};
 
-	// Ensure the app data directory exists
+	// Ensure the app data directory exists.
 	await ensureAppDataDirExists();
 
-	// Write the migration file using BaseDirectory.AppData
+	// Write the migration file using BaseDirectory.AppData.
 	await writeTextFile(
 		MIGRATION_FILE_NAME,
 		JSON.stringify(migrationData, null, 2),
 		getAppDataOptions()
 	);
-
-	// Log the full path for debugging
-	const appDataDirPath = await appDataDir();
-	console.log(`Migration data exported successfully to ${appDataDirPath}${MIGRATION_FILE_NAME}`);
 }
 
 /**
- * Check if the current databases are empty (fresh install or post-Tauri-upgrade).
+ * Check if the current databases are empty (fresh install or post-storage migration).
  * We consider the database "empty" if there are no user bookmarks, since:
  * - config always has 1 default doc after init
  * - word-lists always has the default "Bookmarks" list after init
- * - bookmarks (actual user data) being empty indicates no user data
- * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
- * @returns {Promise<boolean>} True if user data is empty
+ * - bookmarks (actual migrated beta user data) being empty indicates no user data
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
+ * @returns {Promise<boolean>} True if user data is empty.
  */
 export async function isDatabaseEmpty(bookmarkManager) {
 	await bookmarkManager.waitForInit();
@@ -111,12 +134,59 @@ export async function isDatabaseEmpty(bookmarkManager) {
 }
 
 /**
- * Check if a migration file exists and is readable.
- * @returns {Promise<boolean>} True if migration file exists
+ * Read the current identifier's migration file, if available.
+ * @returns {Promise<string|null>} File contents, or null when the file is missing/unreadable.
  */
-export async function migrationFileExists() {
+async function readCurrentMigrationFile() {
 	try {
-		await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
+		return await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Ask native code to read the legacy identifier's migration file, if available.
+ * JS fs permissions are scoped to the current identifier, so sibling app-data
+ * access is handled by the Tauri command.
+ * @returns {Promise<string|null>} File contents, or null when the file is missing/unreadable.
+ */
+async function readLegacyMigrationFile() {
+	try {
+		return await invoke(NATIVE_COMMANDS.MIGRATION.READ_LEGACY_MIGRATION_FILE);
+	} catch (e) {
+		console.warn('Could not read legacy migration file:', e);
+		return null;
+	}
+}
+
+/**
+ * Select the best migration file to restore.
+ * Legacy identifier data wins because it is the data strand that would otherwise
+ * be hidden after the bundle identifier changes.
+ * @returns {Promise<{contents: string, source: string}|null>} Restore candidate and source id.
+ */
+async function readMigrationFileForRestore() {
+	const legacyFile = await readLegacyMigrationFile();
+	if (legacyFile) {
+		return { contents: legacyFile, source: LEGACY_IDENTIFIER };
+	}
+
+	const currentFile = await readCurrentMigrationFile();
+	if (currentFile) {
+		return { contents: currentFile, source: CURRENT_IDENTIFIER };
+	}
+
+	return null;
+}
+
+/**
+ * Check whether this current app-data directory already completed migration.
+ * @returns {Promise<boolean>} True when the completion marker exists.
+ */
+async function migrationComplete() {
+	try {
+		await readTextFile(MIGRATION_COMPLETION_FILE_NAME, getAppDataOptions());
 		return true;
 	} catch {
 		return false;
@@ -124,47 +194,90 @@ export async function migrationFileExists() {
 }
 
 /**
- * Import data from the migration file into PouchDB databases.
- * Handles conflicts by updating existing documents with the migrated data.
- * @param {PreferenceManager} preferenceManager - The preference manager instance
- * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
+ * Write a completion marker so prefs-only migrations do not replay on every launch.
+ * @param {string} source - Identifier the restored migration file came from.
  * @returns {Promise<void>}
  */
-export async function importMigrationData(preferenceManager, bookmarkManager) {
-	const fileContent = await readTextFile(MIGRATION_FILE_NAME, getAppDataOptions());
-	const migrationData = JSON.parse(fileContent);
-
-	console.log(
-		`Importing migration data (version ${migrationData.version}) from ${migrationData.exportedAt}`
+async function markMigrationComplete(source) {
+	await ensureAppDataDirExists();
+	await writeTextFile(
+		MIGRATION_COMPLETION_FILE_NAME,
+		JSON.stringify(
+			{
+				version: MIGRATION_VERSION,
+				completedAt: new Date().toISOString(),
+				source,
+			},
+			null,
+			2
+		),
+		getAppDataOptions()
 	);
+}
 
-	// Import config documents
-	for (const doc of migrationData.databases.config) {
-		try {
-			// Check if document already exists (from default init)
-			const existing = await preferenceManager._db.get(doc._id).catch(() => null);
-			if (existing) {
-				// Update existing doc - need to use its current _rev
-				doc._rev = existing._rev;
-			} else {
-				// New doc - remove stale _rev from migration file
-				delete doc._rev;
-			}
-			await preferenceManager._db.put(doc);
-		} catch (e) {
-			console.warn('Error importing config doc:', doc._id, e);
-		}
+/**
+ * Check if a migration file exists and is readable.
+ * @returns {Promise<boolean>} True if either legacy or current migration file exists.
+ */
+export async function migrationFileExists() {
+	return Boolean(await readMigrationFileForRestore());
+}
+
+/**
+ * Insert or update one PouchDB document while avoiding stale revision conflicts.
+ * @param {object} db - PouchDB-compatible database.
+ * @param {object} doc - Document from the migration file.
+ * @returns {Promise<object|null>} PouchDB put result, or null for invalid docs.
+ */
+const upsertDocument = async (db, doc) => {
+	if (!doc?._id) {
+		return null;
 	}
 
+	const nextDoc = cloneDocument(doc);
+	const existing = await db.get(nextDoc._id).catch(() => null);
+	if (existing) {
+		nextDoc._rev = existing._rev;
+	} else {
+		delete nextDoc._rev;
+	}
+
+	return db.put(nextDoc);
+};
+
+/**
+ * Import a list of documents and continue if individual docs fail.
+ * @param {object} db - PouchDB-compatible database.
+ * @param {Array<object>} docs - Documents from the migration file.
+ * @param {string} label - Log label for import errors.
+ * @returns {Promise<void>}
+ */
+const importDocuments = async (db, docs, label) => {
+	for (const doc of docs ?? []) {
+		try {
+			await upsertDocument(db, doc);
+		} catch (e) {
+			console.warn(`Error importing ${label} doc:`, doc?._id, e);
+		}
+	}
+};
+
+/**
+ * Import word-list docs after removing default lists that would duplicate names.
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
+ * @param {Array<object>} wordLists - Word-list docs from the migration file.
+ * @returns {Promise<void>}
+ */
+const importWordLists = async (bookmarkManager, wordLists) => {
 	// Remove any pre-existing list whose name matches a list we're about to restore. These
 	// are init()-created defaults (migration only runs when the bookmarks DB is empty, so they
 	// hold no words). Restoring under the migrated _ids without this would leave two lists of
-	// the same name — which breaks name-keyed UI such as the bookmark dropdowns. init()'s
+	// the same name, which breaks name-keyed UI such as the bookmark dropdowns. init()'s
 	// reconcile is the safety net; this stops the duplicate from being created in the first place.
-	const restoredListNames = new Set(migrationData.databases.wordLists.map((doc) => doc.name));
+	const restoredListNames = new Set((wordLists ?? []).map((doc) => doc.name));
 	const currentLists = await bookmarkManager._list_db.allDocs({ include_docs: true });
 	for (const row of currentLists.rows) {
-		if (restoredListNames.has(row.doc.name)) {
+		if (row.doc && restoredListNames.has(row.doc.name)) {
 			try {
 				await bookmarkManager._list_db.remove(row.doc);
 			} catch (e) {
@@ -173,61 +286,51 @@ export async function importMigrationData(preferenceManager, bookmarkManager) {
 		}
 	}
 
-	// Import word list documents
-	for (const doc of migrationData.databases.wordLists) {
-		try {
-			const existing = await bookmarkManager._list_db.get(doc._id).catch(() => null);
-			if (existing) {
-				doc._rev = existing._rev;
-			} else {
-				delete doc._rev;
-			}
-			await bookmarkManager._list_db.put(doc);
-		} catch (e) {
-			console.warn('Error importing word list doc:', doc._id, e);
-		}
+	await importDocuments(bookmarkManager._list_db, wordLists, 'word list');
+};
+
+/**
+ * Import data from a migration file into PouchDB databases.
+ * Handles conflicts by updating existing documents with the migrated data.
+ * @param {PreferenceManager} preferenceManager - The preference manager instance.
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
+ * @param {string} [fileContent] - Optional already-read migration file content.
+ * @returns {Promise<void>}
+ */
+export async function importMigrationData(preferenceManager, bookmarkManager, fileContent) {
+	const rawFileContent = fileContent ?? (await readCurrentMigrationFile());
+	if (!rawFileContent) {
+		throw new Error('No migration file available to import.');
 	}
 
-	// Import bookmark documents
-	for (const doc of migrationData.databases.bookmarks) {
-		try {
-			const existing = await bookmarkManager._document_db.get(doc._id).catch(() => null);
-			if (existing) {
-				doc._rev = existing._rev;
-			} else {
-				delete doc._rev;
-			}
-			await bookmarkManager._document_db.put(doc);
-		} catch (e) {
-			console.warn('Error importing bookmark doc:', doc._id, e);
-		}
-	}
+	const migrationData = JSON.parse(rawFileContent);
+	const databases = migrationData.databases ?? {};
 
-	// Refresh the managers' internal caches with the imported data
+	// Import the three databases present in the Tauri 1/Tauri 2 beta migration files.
+	await importDocuments(preferenceManager._db, databases.config, 'config');
+	await importWordLists(bookmarkManager, databases.wordLists);
+	await importDocuments(bookmarkManager._document_db, databases.bookmarks, 'bookmark');
+
+	// Refresh the managers' internal caches with the imported data.
 	await preferenceManager.init();
 	await bookmarkManager.init();
-
-	console.log('Migration data imported successfully');
 }
 
 /**
  * Perform the migration check and restore if needed.
  * Should be called after managers are initialized but before the app is fully ready.
- * @param {PreferenceManager} preferenceManager - The preference manager instance
- * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
- * @returns {Promise<boolean>} True if migration was performed
+ * @param {PreferenceManager} preferenceManager - The preference manager instance.
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
+ * @returns {Promise<boolean>} True if migration was performed.
  */
 export async function checkAndPerformMigration(preferenceManager, bookmarkManager) {
+	const isComplete = await migrationComplete();
 	const isEmpty = await isDatabaseEmpty(bookmarkManager);
-	const fileExists = await migrationFileExists();
+	const migrationFile = isComplete ? null : await readMigrationFileForRestore();
 
-	console.log(
-		`Migration check: database empty = ${isEmpty}, migration file exists = ${fileExists}`
-	);
-
-	if (isEmpty && fileExists) {
-		console.log('Performing migration from backup file...');
-		await importMigrationData(preferenceManager, bookmarkManager);
+	if (isEmpty && migrationFile) {
+		await importMigrationData(preferenceManager, bookmarkManager, migrationFile.contents);
+		await markMigrationComplete(migrationFile.source);
 		return true;
 	}
 
@@ -244,19 +347,19 @@ export async function checkAndPerformMigration(preferenceManager, bookmarkManage
  * on macOS to stop onCloseRequested from calling destroy() after this handler,
  * which would force-destroy the window and break the dock reopen flow.
  *
- * Tauri’s `onCloseRequested` implementation awaits the handler, then calls
+ * Tauri's `onCloseRequested` implementation awaits the handler, then calls
  * `destroy()` only if `preventDefault()` was not set. An `async` handler still
  * runs its synchronous code before the first `await`, so `preventDefault()` at
- * the top of an async function would work in theory; we use a **non-async**
- * handler anyway so the intent is obvious and `preventDefault()` cannot
- * accidentally move below a future `await` during edits.
+ * the top of an async function would work in theory; we use a non-async handler
+ * anyway so the intent is obvious and `preventDefault()` cannot accidentally
+ * move below a future `await` during edits.
  *
  * We also `await` listener registration so the close hook is active before the
- * user can interact with the window, and we use {@link getCurrentWebviewWindow}
- * because Tauri 2 windows are webview windows.
+ * user can interact with the window, and we use getCurrentWebviewWindow because
+ * Tauri 2 windows are webview windows.
  *
- * @param {PreferenceManager} preferenceManager - The preference manager instance
- * @param {BookmarkManager} bookmarkManager - The bookmark manager instance
+ * @param {PreferenceManager} preferenceManager - The preference manager instance.
+ * @param {BookmarkManager} bookmarkManager - The bookmark manager instance.
  */
 export async function setupShutdownHook(preferenceManager, bookmarkManager) {
 	await getCurrentWebviewWindow().onCloseRequested((event) => {
@@ -265,7 +368,6 @@ export async function setupShutdownHook(preferenceManager, bookmarkManager) {
 		}
 
 		void (async () => {
-			console.log('App closing, exporting migration data...');
 			try {
 				await exportMigrationData(preferenceManager, bookmarkManager);
 			} catch (e) {
@@ -273,5 +375,4 @@ export async function setupShutdownHook(preferenceManager, bookmarkManager) {
 			}
 		})();
 	});
-	console.log('Shutdown hook registered for migration data export');
 }
