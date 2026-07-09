@@ -13,7 +13,6 @@
 //! 4. `insert_event` wraps the payload in a JSON envelope and INSERTs it into SQLite.
 //! 5. After each insert the oldest rows beyond `MAX_QUEUE_SIZE` are pruned.
 
-use super::migration;
 use crate::utils::syrver::{syrver_url, TELEMETRY_EVENTS_PATH, TELEMETRY_INSTALLATIONS_PATH};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -35,14 +34,6 @@ const INSTALLATION_FILE: &str = "telemetry_installation.json";
 const DEVICE_ID_FILE: &str = "syng_device_id.txt";
 const TELEMETRY_PREFS_FILE: &str = "telemetry_prefs.json";
 const TELEMETRY_QUEUE_FILE: &str = "telemetry_queue.db";
-const TELEMETRY_QUEUE_WAL_FILE: &str = "telemetry_queue.db-wal";
-const TELEMETRY_QUEUE_SHM_FILE: &str = "telemetry_queue.db-shm";
-const TELEMETRY_QUEUE_JOURNAL_FILE: &str = "telemetry_queue.db-journal";
-const TELEMETRY_SIDE_CAR_FILES: &[&str] = &[
-    TELEMETRY_QUEUE_WAL_FILE,
-    TELEMETRY_QUEUE_SHM_FILE,
-    TELEMETRY_QUEUE_JOURNAL_FILE,
-];
 
 /// How long the background flush loop waits between send attempts.
 const FLUSH_INTERVAL: Duration = Duration::from_secs(60);
@@ -166,58 +157,6 @@ fn open_db(data_dir: &Path) -> Result<Connection, String> {
     )
     .map_err(|e| format!("Failed to create events table: {e}"))?;
     Ok(conn)
-}
-
-fn copy_missing_file(source: &Path, destination: &Path) -> Result<(), String> {
-    if destination.exists() || !source.exists() {
-        return Ok(());
-    }
-
-    fs::copy(source, destination).map(|_| ()).map_err(|e| {
-        format!(
-            "Failed to copy {} to {}: {e}",
-            source.display(),
-            destination.display()
-        )
-    })
-}
-
-pub(crate) fn copy_missing_telemetry_files(
-    legacy_data_dir: &Path,
-    current_data_dir: &Path,
-) -> Result<(), String> {
-    if legacy_data_dir == current_data_dir || !legacy_data_dir.exists() {
-        return Ok(());
-    }
-
-    fs::create_dir_all(current_data_dir)
-        .map_err(|e| format!("Failed to create telemetry data dir: {e}"))?;
-
-    for file_name in [DEVICE_ID_FILE, TELEMETRY_PREFS_FILE, INSTALLATION_FILE] {
-        copy_missing_file(
-            &legacy_data_dir.join(file_name),
-            &current_data_dir.join(file_name),
-        )?;
-    }
-
-    let legacy_queue = legacy_data_dir.join(TELEMETRY_QUEUE_FILE);
-    let current_queue = current_data_dir.join(TELEMETRY_QUEUE_FILE);
-    if !current_queue.exists() && legacy_queue.exists() {
-        copy_missing_file(&legacy_queue, &current_queue)?;
-        for file_name in TELEMETRY_SIDE_CAR_FILES {
-            copy_missing_file(
-                &legacy_data_dir.join(file_name),
-                &current_data_dir.join(file_name),
-            )?;
-        }
-    }
-
-    Ok(())
-}
-
-fn migrate_legacy_telemetry_files(app: &AppHandle, current_data_dir: &Path) -> Result<(), String> {
-    let legacy_data_dir = migration::legacy_app_data_dir(app)?;
-    copy_missing_telemetry_files(&legacy_data_dir, current_data_dir)
 }
 
 /// Writes a single event envelope to the SQLite queue and prunes any overflow.
@@ -567,7 +506,6 @@ fn start_flush_loop(app: &AppHandle, manager: &TelemetryManager) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use std::path::PathBuf;
     use tempfile::TempDir;
 
@@ -592,67 +530,6 @@ mod tests {
             .db
             .query_row("SELECT COUNT(*) FROM events", [], |r| r.get(0))
             .unwrap()
-    }
-
-    #[test]
-    fn test_copy_missing_telemetry_files_copies_existing_legacy_files() {
-        let legacy = TempDir::new().unwrap();
-        let current = TempDir::new().unwrap();
-        fs::write(legacy.path().join(DEVICE_ID_FILE), "legacy-device").unwrap();
-        fs::write(legacy.path().join(TELEMETRY_QUEUE_FILE), "sqlite").unwrap();
-        fs::write(legacy.path().join(TELEMETRY_QUEUE_WAL_FILE), "wal").unwrap();
-        fs::write(legacy.path().join(TELEMETRY_QUEUE_SHM_FILE), "shm").unwrap();
-
-        copy_missing_telemetry_files(legacy.path(), current.path()).unwrap();
-
-        assert_eq!(
-            fs::read_to_string(current.path().join(DEVICE_ID_FILE)).unwrap(),
-            "legacy-device"
-        );
-        assert_eq!(
-            fs::read_to_string(current.path().join(TELEMETRY_QUEUE_FILE)).unwrap(),
-            "sqlite"
-        );
-        assert_eq!(
-            fs::read_to_string(current.path().join(TELEMETRY_QUEUE_WAL_FILE)).unwrap(),
-            "wal"
-        );
-        assert_eq!(
-            fs::read_to_string(current.path().join(TELEMETRY_QUEUE_SHM_FILE)).unwrap(),
-            "shm"
-        );
-    }
-
-    #[test]
-    fn test_copy_missing_telemetry_files_does_not_overwrite_current_files() {
-        let legacy = TempDir::new().unwrap();
-        let current = TempDir::new().unwrap();
-        fs::write(legacy.path().join(DEVICE_ID_FILE), "legacy-device").unwrap();
-        fs::write(current.path().join(DEVICE_ID_FILE), "current-device").unwrap();
-
-        copy_missing_telemetry_files(legacy.path(), current.path()).unwrap();
-
-        assert_eq!(
-            fs::read_to_string(current.path().join(DEVICE_ID_FILE)).unwrap(),
-            "current-device"
-        );
-    }
-
-    #[test]
-    fn test_copy_missing_telemetry_files_does_not_copy_sidecars_for_existing_current_queue() {
-        let legacy = TempDir::new().unwrap();
-        let current = TempDir::new().unwrap();
-        fs::write(legacy.path().join(TELEMETRY_QUEUE_FILE), "legacy-sqlite").unwrap();
-        fs::write(legacy.path().join(TELEMETRY_QUEUE_WAL_FILE), "legacy-wal").unwrap();
-        fs::write(current.path().join(TELEMETRY_QUEUE_FILE), "current-sqlite").unwrap();
-
-        copy_missing_telemetry_files(legacy.path(), current.path()).unwrap();
-
-        assert_eq!(
-            fs::read_to_string(current.path().join(TELEMETRY_QUEUE_FILE)).unwrap(),
-            "current-sqlite"
-        );
-        assert!(!current.path().join(TELEMETRY_QUEUE_WAL_FILE).exists());
     }
 
     // --- TelemetryPrefs defaults ---
@@ -991,7 +868,6 @@ pub fn telemetry_init(
         .map_err(|e| format!("Failed to get app data dir: {e}"))?;
 
     fs::create_dir_all(&data_dir).map_err(|e| format!("Failed to create app data dir: {e}"))?;
-    migrate_legacy_telemetry_files(&app, &data_dir)?;
 
     let device_id = get_or_create_device_id(&data_dir)?;
     let prefs = load_prefs(&data_dir);

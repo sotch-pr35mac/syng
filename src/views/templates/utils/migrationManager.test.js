@@ -48,14 +48,12 @@ import {
 
 const MIGRATION_FILE_NAME = 'syng-migration-data.json';
 const MIGRATION_COMPLETION_FILE_NAME = 'syng-migration-complete.json';
-const SOURCE_BYTES = [1, 2, 3];
 
 const clone = (value) => JSON.parse(JSON.stringify(value));
 
 class FakeDb {
 	constructor(documents = []) {
 		this.documents = documents.map((document) => clone(document));
-		this.attachments = new Map();
 		this.putCalls = [];
 	}
 
@@ -98,49 +96,17 @@ class FakeDb {
 		}
 		return Promise.resolve({ ok: true });
 	}
-
-	putAttachment(id, name, revision, data, contentType) {
-		this.attachments.set(`${id}:${name}`, data);
-		const index = this.documents.findIndex((candidate) => candidate._id === id);
-		const nextRevision = `${Number(revision ?? this.documents[index]?._rev ?? 1) + 1}`;
-		if (index >= 0) {
-			this.documents[index] = {
-				...this.documents[index],
-				_rev: nextRevision,
-				_attachments: {
-					...(this.documents[index]._attachments ?? {}),
-					[name]: { content_type: contentType },
-				},
-			};
-		}
-		return Promise.resolve({ ok: true, id, rev: nextRevision });
-	}
-
-	getAttachment(id, name) {
-		const attachment = this.attachments.get(`${id}:${name}`);
-		if (!attachment) {
-			return Promise.reject({ status: 404 });
-		}
-		return Promise.resolve(attachment);
-	}
 }
 
-const createManagers = ({
-	config = [],
-	wordLists = [],
-	bookmarks = [],
-	readerDocuments = [],
-} = {}) => {
+const createManagers = ({ config = [], wordLists = [], bookmarks = [] } = {}) => {
 	const configDb = new FakeDb(config);
 	const listDb = new FakeDb(wordLists);
 	const bookmarkDb = new FakeDb(bookmarks);
-	const readerDb = new FakeDb(readerDocuments);
 
 	return {
 		configDb,
 		listDb,
 		bookmarkDb,
-		readerDb,
 		preferenceManager: {
 			_db: configDb,
 			waitForInit: vi.fn(() => Promise.resolve()),
@@ -149,11 +115,6 @@ const createManagers = ({
 		bookmarkManager: {
 			_list_db: listDb,
 			_document_db: bookmarkDb,
-			waitForInit: vi.fn(() => Promise.resolve()),
-			init: vi.fn(() => Promise.resolve()),
-		},
-		readerDocumentManager: {
-			_document_db: readerDb,
 			waitForInit: vi.fn(() => Promise.resolve()),
 			init: vi.fn(() => Promise.resolve()),
 		},
@@ -188,128 +149,74 @@ beforeEach(() => {
 	mocks.mkdir.mockResolvedValue(undefined);
 });
 
-it('exports reader documents with source and asset attachments', async () => {
-	const { preferenceManager, bookmarkManager, readerDocumentManager, readerDb } = createManagers({
-		readerDocuments: [
-			{
-				_id: 'reader:1',
-				title: 'PDF',
-				imported_at: '2026-01-01T00:00:00.000Z',
-				source_byte_length: SOURCE_BYTES.length,
-				blocks: [
-					{
-						id: 'image-block',
-						extensions: {
-							image: { asset_id: 'image-1' },
-						},
-					},
-				],
-			},
-		],
+it('exports beta migration databases with identifier metadata', async () => {
+	const { preferenceManager, bookmarkManager } = createManagers({
+		config: [{ _id: 'config', toneColors: {} }],
+		wordLists: [{ _id: 'list:1', name: 'Bookmarks' }],
+		bookmarks: [{ _id: 'bookmark:1', simplified: '词' }],
 	});
-	await readerDb.putAttachment(
-		'reader:1',
-		'source',
-		'1',
-		new Blob([new Uint8Array(SOURCE_BYTES)], { type: 'application/pdf' }),
-		'application/pdf'
-	);
-	await readerDb.putAttachment(
-		'reader:1',
-		'assets/image-1',
-		'2',
-		new Blob([new Uint8Array([9])], { type: 'image/png' }),
-		'image/png'
-	);
 
-	await exportMigrationData(preferenceManager, bookmarkManager, readerDocumentManager);
+	await exportMigrationData(preferenceManager, bookmarkManager);
 
 	const exported = JSON.parse(mocks.fsFiles.get(MIGRATION_FILE_NAME));
-	expect(exported.version).toBe(2);
-	expect(exported.databases.readerDocuments).toHaveLength(1);
-	expect(exported.databases.readerDocuments[0].attachments.map((item) => item.name)).toEqual([
-		'source',
-		'assets/image-1',
-	]);
-	expect(exported.databases.readerDocuments[0].attachments[0].contentType).toBe(
-		'application/pdf'
-	);
+	expect(exported).toMatchObject({
+		version: 2,
+		identifiers: {
+			current: 'xyz.bytecraft.syng',
+			legacy: 'org.syng.app',
+		},
+		databases: {
+			config: [{ _id: 'config', toneColors: {} }],
+			wordLists: [{ _id: 'list:1', name: 'Bookmarks' }],
+			bookmarks: [{ _id: 'bookmark:1', simplified: '词' }],
+		},
+	});
+	expect(exported.databases).not.toHaveProperty('readerDocuments');
 });
 
-it('imports v2 reader documents with attachments', async () => {
-	const { preferenceManager, bookmarkManager, readerDocumentManager, readerDb } =
-		createManagers();
+it('imports migration data into preferences, word lists, and bookmarks', async () => {
+	const { preferenceManager, bookmarkManager, configDb, listDb, bookmarkDb } = createManagers({
+		wordLists: [{ _id: 'default', name: 'Bookmarks' }],
+	});
 	const fileContent = migrationData({
-		config: [],
-		wordLists: [],
-		bookmarks: [],
-		readerDocuments: [
-			{
-				doc: {
-					_id: 'reader:1',
-					title: 'Imported PDF',
-					imported_at: '2026-01-01T00:00:00.000Z',
-					_attachments: {
-						source: { content_type: 'application/pdf' },
-					},
-				},
-				attachments: [
-					{
-						name: 'source',
-						contentType: 'application/pdf',
-						data: btoa(String.fromCharCode(...SOURCE_BYTES)),
-					},
-				],
-			},
-		],
+		config: [{ _id: 'prefs', language: 'zh-Hant' }],
+		wordLists: [{ _id: 'legacy-list', name: 'Bookmarks' }],
+		bookmarks: [{ _id: 'bookmark:1', simplified: '词' }],
 	});
 
-	await importMigrationData(
-		preferenceManager,
-		bookmarkManager,
-		readerDocumentManager,
-		fileContent
-	);
+	await importMigrationData(preferenceManager, bookmarkManager, fileContent);
 
-	const document = await readerDb.get('reader:1');
-	const attachment = await readerDb.getAttachment('reader:1', 'source');
-	expect(document.title).toBe('Imported PDF');
-	expect(Array.from(new Uint8Array(await attachment.arrayBuffer()))).toEqual(SOURCE_BYTES);
+	expect(await configDb.get('prefs')).toMatchObject({ language: 'zh-Hant' });
+	expect(await listDb.get('legacy-list')).toMatchObject({ name: 'Bookmarks' });
+	await expect(listDb.get('default')).rejects.toMatchObject({ status: 404 });
+	expect(await bookmarkDb.get('bookmark:1')).toMatchObject({ simplified: '词' });
 });
 
 it('uses the legacy identifier migration file when current stores are empty', async () => {
-	const { preferenceManager, bookmarkManager, readerDocumentManager, bookmarkDb } =
-		createManagers();
+	const { preferenceManager, bookmarkManager, bookmarkDb } = createManagers();
 	mocks.legacyFileContent = migrationData({
 		config: [],
 		wordLists: [],
 		bookmarks: [{ _id: 'bookmark:1', simplified: '词' }],
-		readerDocuments: [],
 	});
 
-	await expect(
-		checkAndPerformMigration(preferenceManager, bookmarkManager, readerDocumentManager)
-	).resolves.toBe(true);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(true);
 
 	expect(await bookmarkDb.get('bookmark:1')).toMatchObject({ simplified: '词' });
 	expect(mocks.fsFiles.has(MIGRATION_COMPLETION_FILE_NAME)).toBe(true);
 });
 
 it('skips legacy import when current user data is not empty', async () => {
-	const { preferenceManager, bookmarkManager, readerDocumentManager, bookmarkDb } =
-		createManagers({
-			bookmarks: [{ _id: 'bookmark:current', simplified: '现' }],
-		});
+	const { preferenceManager, bookmarkManager, bookmarkDb } = createManagers({
+		bookmarks: [{ _id: 'bookmark:current', simplified: '现' }],
+	});
 	mocks.legacyFileContent = migrationData({
 		config: [],
 		wordLists: [],
 		bookmarks: [{ _id: 'bookmark:legacy', simplified: '旧' }],
-		readerDocuments: [],
 	});
 
-	await expect(
-		checkAndPerformMigration(preferenceManager, bookmarkManager, readerDocumentManager)
-	).resolves.toBe(false);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(false);
 
 	await expect(bookmarkDb.get('bookmark:current')).resolves.toMatchObject({ simplified: '现' });
 	await expect(bookmarkDb.get('bookmark:legacy')).rejects.toMatchObject({ status: 404 });
@@ -317,28 +224,21 @@ it('skips legacy import when current user data is not empty', async () => {
 });
 
 it('does not replay prefs-only migrations after completion is marked', async () => {
-	const { preferenceManager, bookmarkManager, readerDocumentManager, configDb } =
-		createManagers();
+	const { preferenceManager, bookmarkManager, configDb } = createManagers();
 	mocks.legacyFileContent = migrationData({
 		config: [{ _id: 'prefs', language: 'zh-Hant' }],
 		wordLists: [],
 		bookmarks: [],
-		readerDocuments: [],
 	});
 
-	await expect(
-		checkAndPerformMigration(preferenceManager, bookmarkManager, readerDocumentManager)
-	).resolves.toBe(true);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(true);
 	mocks.legacyFileContent = migrationData({
 		config: [{ _id: 'prefs', language: 'zh-Hans' }],
 		wordLists: [],
 		bookmarks: [],
-		readerDocuments: [],
 	});
 
-	await expect(
-		checkAndPerformMigration(preferenceManager, bookmarkManager, readerDocumentManager)
-	).resolves.toBe(false);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(false);
 
 	expect(await configDb.get('prefs')).toMatchObject({ language: 'zh-Hant' });
 });

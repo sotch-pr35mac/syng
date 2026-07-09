@@ -7,7 +7,6 @@ const mocks = vi.hoisted(() => ({
 	exportMigrationData: vi.fn(),
 	preferenceManager: {},
 	bookmarkManager: {},
-	readerDocumentManager: {},
 }));
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
@@ -21,7 +20,6 @@ vi.mock('@tauri-apps/plugin-process', () => ({
 vi.mock('@/utils/appServices.js', () => ({
 	getPreferenceManager: vi.fn(() => mocks.preferenceManager),
 	getBookmarkManager: vi.fn(() => mocks.bookmarkManager),
-	getReaderDocumentManager: vi.fn(() => mocks.readerDocumentManager),
 }));
 
 vi.mock('@/utils/migrationManager.js', () => ({
@@ -55,8 +53,7 @@ it('exports migration data before installing a pending update', async () => {
 
 	expect(mocks.exportMigrationData).toHaveBeenCalledWith(
 		mocks.preferenceManager,
-		mocks.bookmarkManager,
-		mocks.readerDocumentManager
+		mocks.bookmarkManager
 	);
 	expect(update.downloadAndInstall).toHaveBeenCalledOnce();
 	expect(mocks.exportMigrationData.mock.invocationCallOrder[0]).toBeLessThan(

@@ -1,11 +1,7 @@
 import { check, type Update } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { updateStore } from '@/stores/update.svelte.js';
-import {
-	getBookmarkManager,
-	getPreferenceManager,
-	getReaderDocumentManager,
-} from '@/utils/appServices.js';
+import { getBookmarkManager, getPreferenceManager } from '@/utils/appServices.js';
 import { exportMigrationData } from '@/utils/migrationManager.js';
 
 /**
@@ -26,15 +22,12 @@ export const checkForUpdate = (): Promise<Update | null> => {
  * Rejects if there is no pending update.
  */
 export const installPendingUpdate = (): Promise<void> => {
+	// Snapshot the update object before the async backup runs; UI error handling can reset the store.
 	const pendingUpdate = updateStore.pendingUpdate;
 	if (!pendingUpdate) {
 		return Promise.reject(new Error('No pending update available.'));
 	}
-	return exportMigrationData(
-		getPreferenceManager(),
-		getBookmarkManager(),
-		getReaderDocumentManager()
-	)
+	return exportMigrationData(getPreferenceManager(), getBookmarkManager())
 		.then(() => pendingUpdate.downloadAndInstall())
 		.then(() => relaunch());
 };

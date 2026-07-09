@@ -1,15 +1,16 @@
 # Syng Data Migration Guide
 
-This document describes Syng's file-based migration bridge for storage identity
-changes. It currently covers the identifier move from `org.syng.app` to
-`xyz.bytecraft.syng`, and still supports the earlier Tauri 1 to Tauri 2 storage
-bridge.
+This document describes Syng's file-based migration bridge for preserving user
+data across storage identity changes. It covers both the original Tauri 1 to
+Tauri 2 storage migration and the current bundle identifier move from
+`org.syng.app` to `xyz.bytecraft.syng`.
 
 ## Background
 
-Syng stores user data in PouchDB/IndexedDB. Tauri and the host OS key that
-storage by application identity, so changing the bundle identifier can make the
-old WebView data inaccessible to the renamed app.
+Syng stores preferences, word lists, and bookmarks in PouchDB/IndexedDB. During
+the Tauri 1 to Tauri 2 upgrade, WebView storage paths could change, making the
+old IndexedDB data inaccessible. Changing the bundle identifier can also hide
+data because app-data directories are keyed by identifier.
 
 The current identifier is:
 
@@ -23,7 +24,11 @@ The legacy beta identifier was `org.syng.app`.
 
 ## Solution Overview
 
-The app keeps a JSON backup in the app data directory:
+The app writes a JSON backup named `syng-migration-data.json` in the app data
+directory. That file is outside WebView IndexedDB and can be read after Tauri
+storage changes.
+
+Known app-data backup locations:
 
 - Current macOS: `~/Library/Application Support/xyz.bytecraft.syng/syng-migration-data.json`
 - Legacy macOS: `~/Library/Application Support/org.syng.app/syng-migration-data.json`
@@ -34,10 +39,10 @@ The app keeps a JSON backup in the app data directory:
 
 On startup, the app:
 
-1. Initializes preferences, bookmarks, and reader document managers.
-2. Checks whether current user data stores are empty.
-3. Checks whether the migration completion marker exists in the current app data directory.
-4. If current stores are empty and migration has not completed, tries the legacy `org.syng.app` migration file first, then the current file.
+1. Initializes preference and bookmark managers.
+2. Checks whether the current bookmarks database is empty.
+3. Checks whether `syng-migration-complete.json` exists in the current app-data directory.
+4. If current user data is empty and migration is not complete, tries the legacy `org.syng.app` migration file first, then the current file.
 5. Imports data and writes `syng-migration-complete.json` so prefs-only migrations do not repeat forever.
 6. Exports a fresh current-identifier backup after startup.
 
@@ -46,8 +51,9 @@ If that backup fails, the update install is rejected.
 
 ## Migration File Format
 
-Version 2 includes preferences, word lists, bookmarks, reader documents, and
-reader attachments:
+Version 1 was the original Tauri 1 to Tauri 2 bridge. Version 2 adds identifier
+metadata for the package identifier migration. Both versions contain the same
+user data categories:
 
 ```json
 {
@@ -60,47 +66,50 @@ reader attachments:
 	"databases": {
 		"config": [{ "_id": "config", "_rev": "...", "toneColors": {} }],
 		"wordLists": [{ "_id": "abc123", "_rev": "...", "name": "Bookmarks" }],
-		"bookmarks": [{ "_id": "...", "_rev": "...", "simplified": "你好" }],
-		"readerDocuments": [
-			{
-				"doc": { "_id": "reader:1", "_rev": "...", "title": "Reader Doc" },
-				"attachments": [
-					{
-						"name": "source",
-						"contentType": "application/pdf",
-						"data": "base64..."
-					}
-				]
-			}
-		]
+		"bookmarks": [{ "_id": "...", "_rev": "...", "simplified": "你好" }]
 	}
 }
 ```
 
-Version 1 files are still accepted. They contain only `config`, `wordLists`, and
-`bookmarks`; missing `readerDocuments` is treated as an empty list.
+Version 1 files are still accepted. They contain `config`, `wordLists`, and
+`bookmarks` without the `identifiers` field.
+
+## Tauri 2 Notes
+
+The bridge was originally added for the Tauri 1 to Tauri 2 transition. The
+current implementation uses Tauri 2 APIs:
+
+| Tauri 1 API                         | Tauri 2 implementation                                  |
+| ----------------------------------- | ------------------------------------------------------- |
+| `window.__TAURI__.path.appDataDir()` | `import { appDataDir } from '@tauri-apps/api/path'`     |
+| `window.__TAURI__.fs.readTextFile()` | `import { readTextFile } from '@tauri-apps/plugin-fs'`  |
+| `window.__TAURI__.fs.writeTextFile()` | `import { writeTextFile } from '@tauri-apps/plugin-fs'` |
+| `window.__TAURI__.fs.createDir()`   | `import { mkdir } from '@tauri-apps/plugin-fs'`         |
+| `window.__TAURI__.window...`        | `import { getCurrentWebviewWindow } ...`                |
+
+Filesystem calls use `BaseDirectory.AppData` so Tauri handles platform-specific
+paths and fs-scope permissions.
 
 ## Files Involved
 
-| File                                            | Purpose                                                                |
-| ----------------------------------------------- | ---------------------------------------------------------------------- |
-| `src/views/templates/utils/migrationManager.js` | Export/import logic, legacy file selection, shutdown hook              |
-| `src/views/templates/utils/startup.js`          | Runs migration during startup                                          |
-| `src/views/templates/utils/updateManager.ts`    | Exports backup before updater install                                  |
-| `src/native/src/core/migration.rs`              | Reads legacy app-data migration file                                   |
-| `src/native/src/core/telemetry.rs`              | Copies legacy telemetry identity/state into the new app-data directory |
+| File                                            | Purpose                                                   |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| `src/views/templates/utils/migrationManager.js` | Export/import logic, legacy file selection, shutdown hook |
+| `src/views/templates/utils/startup.js`          | Runs migration during startup                             |
+| `src/views/templates/utils/updateManager.ts`    | Exports backup before updater install                     |
+| `src/native/src/core/migration.rs`              | Reads legacy app-data migration file                      |
 
 ## What Is Migrated
 
 - Preferences and settings
 - Word lists
 - Bookmarked words and notes
-- Reader documents
-- Reader source attachments, source HTML, and imported image assets
-- Native telemetry device ID, prefs, installation token, and pending SQLite queue files
 
-Old app data directories are left in place. The app copies what it needs into
-the new identifier and does not delete `org.syng.app`.
+Reader documents and telemetry state are not migrated by this bridge because the
+source beta builds this identifier migration targets did not ship those stores.
+
+Old app-data directories are left in place. The app reads what it needs from
+`org.syng.app` and writes current backups under `xyz.bytecraft.syng`.
 
 ## Testing
 
@@ -109,7 +118,6 @@ Run automated coverage:
 ```bash
 npm test -- migrationManager updateManager
 cd src/native && cargo test migration
-cd src/native && cargo test telemetry
 ```
 
 Manual upgrade check:
@@ -122,7 +130,7 @@ Manual upgrade check:
     ```
 
 3. Install/run the `xyz.bytecraft.syng` build.
-4. Confirm bookmarks, lists, preferences, and reader documents are restored.
+4. Confirm bookmarks, lists, and preferences are restored.
 5. Confirm a completion marker exists:
 
     ```bash
@@ -139,10 +147,31 @@ Fresh install check:
 
 Existing data safety check:
 
-1. Put data in the current `xyz.bytecraft.syng` app.
+1. Put bookmark data in the current `xyz.bytecraft.syng` app.
 2. Leave a legacy migration file in `org.syng.app`.
 3. Relaunch.
 4. Confirm current data is not overwritten.
+
+## Troubleshooting
+
+### Migration File Not Created
+
+- Check console logs for errors during startup, shutdown, or update install.
+- Verify the app has write permissions to the app-data directory.
+- Try closing the app cleanly rather than force-quitting.
+
+### Migration Not Triggered After Upgrade
+
+- Verify the migration file exists in the expected legacy or current location.
+- Confirm the current bookmarks database is empty in the test profile.
+- Confirm `syng-migration-complete.json` is not already present.
+- Check console logs for native legacy-file read errors.
+
+### Data Partially Restored
+
+- Check console logs for individual document import errors.
+- The migration continues if one document fails.
+- Manually check the migration file JSON for corruption.
 
 ## Known Limits
 
@@ -153,13 +182,13 @@ skips, so keep legacy migration reading in place for several releases.
 
 ## Removing The Bridge
 
-Do not remove the legacy reader until you are comfortable dropping direct beta
-migration support. The ongoing backup export is low overhead and useful even
-after the identifier migration window closes.
+Do not remove the legacy file reader until you are comfortable dropping direct
+beta migration support. The ongoing backup export is low overhead and useful
+even after the identifier migration window closes.
 
 ## Version History
 
-| Version | Date | Changes                                                                                    |
-| ------- | ---- | ------------------------------------------------------------------------------------------ |
-| 1       | 2024 | Initial Tauri 1 to Tauri 2 file bridge                                                     |
-| 2       | 2026 | Identifier bridge from `org.syng.app` to `xyz.bytecraft.syng`; reader docs and attachments |
+| Version | Date | Changes                                                                  |
+| ------- | ---- | ------------------------------------------------------------------------ |
+| 1       | 2024 | Initial Tauri 1 to Tauri 2 file bridge                                   |
+| 2       | 2026 | Identifier bridge from `org.syng.app` to `xyz.bytecraft.syng`             |
