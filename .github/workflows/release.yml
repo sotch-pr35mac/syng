@@ -32,7 +32,9 @@ jobs:
       - name: Build
         run: make build
       - name: Prepare Tauri Environment
-        run: cargo install tauri-cli
+        run: |
+          npm install --global @tauri-apps/cli@1.6.3
+          tauri --version
       - name: Build & Package (Windows Only)
         if: matrix.platform == 'windows-latest'
         env:
