@@ -14,7 +14,7 @@
 		"updater": {
 			"active": true,
 			"endpoints": [
-				"https://raw.githubusercontent.com/sotch-pr35mac/syng/master/latest-release.json"
+				"https://v3k460rfi6.execute-api.us-west-2.amazonaws.com/production/v1/updates/stable/{{target}}/{{arch}}/{{current_version}}"
 			],
 			"dialog": false,
 			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IENGNzEzRjQ3QkNGOEEwNDAKUldSQW9QaThSejl4eitnN1VnLzVWSktJSXFCakJqSDFrOVVpcTVacE5WdzI4MkVJZTlYR3o2eWkK"
