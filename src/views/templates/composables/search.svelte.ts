@@ -4,6 +4,10 @@ import { telemetry } from '@/utils/telemetry.js';
 import { LANG_COMMANDS, SEARCH_LANGS, type SearchEntry, type SearchLang } from '@/types/search.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import {
+	normalizeDictionaryLookupRequest,
+	type DictionaryLookupRequest,
+} from '@/composables/dictionaryPopover.svelte.js';
 
 const SEARCH_TRACK_DEBOUNCE_MS = 800;
 
@@ -122,16 +126,17 @@ async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<voi
 	}
 }
 
-async function lookupPopoverWord(text: string): Promise<void> {
+async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void> {
+	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
 		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text,
+			text: lookup.text,
 		});
 		if (!results.length) {
 			return;
 		}
 		const exactMatchIndex = results.findIndex(
-			(result) => result.simplified === text || result.traditional === text
+			(result) => result.simplified === lookup.text || result.traditional === lookup.text
 		);
 		popoverResults = results;
 		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;

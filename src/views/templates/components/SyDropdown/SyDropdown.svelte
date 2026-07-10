@@ -43,14 +43,22 @@
 	const mobile = isMobile();
 	let containerElement = $state(undefined);
 	let triggerElement = $state(undefined);
+	let fixedListElement = $state(undefined);
 	let fixedStyle = $state('');
 	const FIXED_DROPDOWN_OFFSET_PX = 4;
+	const FIXED_DROPDOWN_PORTAL_ATTRIBUTES = {
+		'data-sy-portal-overlay': 'true',
+	};
 
 	// Whether or not the dropdown is "open".
 	let active = $state(false);
 
 	const handleClick = (event) => {
-		if (!containerElement || !event.composedPath().includes(containerElement)) {
+		const eventPath = event.composedPath();
+		if (
+			(!containerElement || !eventPath.includes(containerElement)) &&
+			(!fixedListElement || !eventPath.includes(fixedListElement))
+		) {
 			active = false;
 		}
 	};
@@ -145,7 +153,8 @@
 	<!-- Portaled to <body> so position:fixed resolves against the viewport, not a
 	     transformed ancestor (e.g. SySnapSheet's translate3d), which would otherwise displace it. -->
 	<div
-		use:portal
+		use:portal={{ attributes: FIXED_DROPDOWN_PORTAL_ATTRIBUTES }}
+		bind:this={fixedListElement}
 		class="sy-dropdown--list sy-dropdown--fixed-list"
 		class:sy-dropdown--list--mobile={mobile}
 		style={fixedStyle}

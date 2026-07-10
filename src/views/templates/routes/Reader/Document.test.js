@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { fireEvent, render, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import Document from '@/routes/Reader/Document.svelte';
 import { readerRoute } from '@/composables/reader.svelte.js';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	setBookmarkManagerForTest,
 	setPreferenceManagerForTest,
@@ -44,6 +45,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 		if (command === 'query_by_chinese') {
 			return Promise.resolve([
 				{
+					word_id: 1,
+					hash: 'nihao',
 					traditional: '你好',
 					simplified: '你好',
 					english: ['hello'],
@@ -111,7 +114,7 @@ function renderReaderDocument(documentId) {
 	});
 }
 
-beforeEach(() => {
+beforeEach(async () => {
 	// jsdom lacks layout, so stub the browser APIs the reader observes. Spying on
 	// setPageLayout keeps the controller from re-paginating against zero-height
 	// measurements (which would split the sample paragraph one glyph per page).
@@ -133,6 +136,7 @@ beforeEach(() => {
 	setPreferenceManagerForTest(mockPreferenceManager({}));
 	setBookmarkManagerForTest(mockBookmarkManager({ words: [], lists: ['Bookmarks'] }));
 	setReaderDocumentManagerForTest(buildReaderDocumentManager());
+	await bookmarksStore.refresh();
 	window.location.hash = '#/read/document/reader-1';
 });
 
@@ -157,6 +161,39 @@ it('opens the dictionary when a token is clicked', async () => {
 	await fireEvent.click(await findByText('你好'));
 
 	await waitFor(() => expect(invoke).toHaveBeenCalledWith('query_by_chinese', { text: '你好' }));
+});
+
+it('adds a reader dictionary word to a selected list from the popup', async () => {
+	const user = userEvent.setup();
+	const addToList = vi.fn(() => Promise.resolve());
+	setBookmarkManagerForTest({
+		waitForInit: vi.fn(() => Promise.resolve()),
+		getLists: vi.fn(() => Promise.resolve(['Bookmarks', 'Test'])),
+		inList: vi.fn(() => Promise.resolve([])),
+		getListContent: vi.fn(() => Promise.resolve([])),
+		getEmptyLists: vi.fn(() => Promise.resolve([])),
+		getWordByHash: vi.fn(() => Promise.resolve(undefined)),
+		addToList,
+		removeFromList: vi.fn(() => Promise.resolve()),
+		updateProperty: vi.fn(() => Promise.resolve()),
+	});
+	await bookmarksStore.refresh();
+
+	const { container, findByText } = renderReaderDocument('reader-1');
+	await fireEvent.click(await findByText('你好'));
+	await findByText('hello');
+
+	const listTrigger = container.querySelector(
+		'.dictionary-popover__content .sy-dropdown--trigger button'
+	);
+	expect(listTrigger).toBeTruthy();
+
+	await user.click(listTrigger);
+	await user.click(await screen.findByText('Test'));
+
+	await waitFor(() =>
+		expect(addToList).toHaveBeenCalledWith('Test', expect.objectContaining({ hash: 'nihao' }))
+	);
 });
 
 it('toggles the reader settings popover from the header', async () => {

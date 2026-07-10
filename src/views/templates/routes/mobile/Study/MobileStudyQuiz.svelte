@@ -323,6 +323,7 @@
 	results={quizRoute.popoverResults}
 	resultIndex={quizRoute.popoverResultIndex}
 	lists={quizRoute.lists}
+	anchor={quizRoute.popoverAnchor}
 	onselect={quizRoute.selectPopoverResult}
 	onlink={quizRoute.lookupPopoverWord}
 	onclose={quizRoute.closePopoverDictionary}

@@ -9,14 +9,24 @@
 	/** @type {Props} */
 	const { link, children, onopen } = $props();
 
-	const openLink = () => onopen?.({ detail: link });
+	const openLink = (event) => {
+		onopen?.({
+			detail: {
+				text: link,
+				anchor:
+					event.currentTarget instanceof HTMLElement
+						? event.currentTarget.getBoundingClientRect()
+						: undefined,
+			},
+		});
+	};
 </script>
 
 <!-- svelte-ignore a11y_invalid_attribute -->
 <a
 	href="javascript:void(0)"
 	class="dictionary-link"
-	onclick={() => openLink()}
+	onclick={openLink}
 	data-testid="dictionary-link"
 >
 	{@render children?.()}

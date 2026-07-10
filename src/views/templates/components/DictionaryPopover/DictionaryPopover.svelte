@@ -5,6 +5,10 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { SearchEntry } from '@/types/search.js';
 	import { isMobileLayout } from '@/utils/device.js';
+	import {
+		getDictionaryLookupText,
+		type DictionaryLookupRequest,
+	} from '@/composables/dictionaryPopover.svelte.js';
 
 	const {
 		word = undefined,
@@ -25,7 +29,7 @@
 		reopenKey?: number | string;
 		onselect?: (_index: number) => void;
 		onclose?: () => void;
-		onlink?: (_text: string) => void;
+		onlink?: (_request: DictionaryLookupRequest) => void;
 	} = $props();
 
 	const mobile = isMobileLayout();
@@ -35,6 +39,11 @@
 
 	const visible = $derived(Boolean(word));
 	const showDots = $derived(!mobile && results.length <= MAX_DOT_RESULTS);
+	const handleContentLink = (request: DictionaryLookupRequest) => {
+		// Keep nested popover lookups anchored to the original trigger instead of
+		// moving the popover arrow to a link inside the popover itself.
+		onlink?.(getDictionaryLookupText(request));
+	};
 </script>
 
 <SyPopover
@@ -107,7 +116,7 @@
 				backgroundColor="white"
 				fixedActions={true}
 				separateTraditionalCharacters={true}
-				{onlink}
+				onlink={handleContentLink}
 			/>
 		</div>
 	</div>

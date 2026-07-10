@@ -191,6 +191,13 @@
 			if (popoverElement && eventPath.includes(popoverElement)) {
 				return;
 			}
+			if (
+				eventPath.some(
+					(item) => item instanceof HTMLElement && item.dataset.syPortalOverlay === 'true'
+				)
+			) {
+				return;
+			}
 			if (ignoreElement && eventPath.includes(ignoreElement)) {
 				return;
 			}

@@ -16,6 +16,7 @@
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
+	import { normalizeDictionaryLookupRequest } from '@/composables/dictionaryPopover.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 
 	const isMacos = platform() === 'macos';
@@ -125,8 +126,12 @@
 	const importList = () => bookmarksRoute.importList();
 
 	const clickTracker = createClickPositionTracker();
-	const handleDictionaryLink = (text) => {
-		bookmarksRoute.openPopoverDictionary(text, clickTracker.lastClickRect);
+	const handleDictionaryLink = (request) => {
+		const lookup = normalizeDictionaryLookupRequest(request);
+		bookmarksRoute.openPopoverDictionary(
+			lookup.text,
+			lookup.anchor ?? clickTracker.lastClickRect
+		);
 	};
 
 	const actions = $derived([

@@ -65,6 +65,16 @@
 			});
 	};
 	const _modifyListMembership = (fnName, list, word) => {
+		if (!word?.hash) {
+			handleError(
+				'There was an error modifying the list membership. Check the log for more details.',
+				{
+					message: 'Cannot modify list membership without an active dictionary word.',
+					list,
+				}
+			);
+			return;
+		}
 		bookmarksStore[fnName](list, word)
 			.then(() => {
 				updateListMembership();
@@ -74,8 +84,8 @@
 				handleError(
 					'There was an error modifying the list membership. Check the log for more details.',
 					{
-						e,
-						word,
+						message: e instanceof Error ? e.message : String(e),
+						word_hash: word?.hash,
 						list,
 					}
 				);
