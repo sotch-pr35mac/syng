@@ -274,6 +274,9 @@ export const quizRoute = {
 	get popoverReopenKey(): number {
 		return popover.reopenKey;
 	},
+	get popoverAnchor(): DOMRect | undefined {
+		return popover.anchor;
+	},
 	start: startQuiz,
 	reset: resetQuizState,
 	answerQuestion,

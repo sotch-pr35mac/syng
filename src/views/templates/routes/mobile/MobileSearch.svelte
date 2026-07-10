@@ -11,6 +11,10 @@
 	import { untrack } from 'svelte';
 	import { searchStore as search } from '@/composables/search.svelte.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
+	import {
+		normalizeDictionaryLookupRequest,
+		type DictionaryLookupRequest,
+	} from '@/composables/dictionaryPopover.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
@@ -85,8 +89,9 @@
 	}
 
 	const clickTracker = createClickPositionTracker();
-	function handleDictionaryLink(text: string): void {
-		search.openPopoverDictionary(text, clickTracker.lastClickRect);
+	function handleDictionaryLink(request: DictionaryLookupRequest): void {
+		const lookup = normalizeDictionaryLookupRequest(request);
+		search.openPopoverDictionary(lookup.text, lookup.anchor ?? clickTracker.lastClickRect);
 	}
 
 	function handleSearch(value: string): void {

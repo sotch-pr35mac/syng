@@ -11,6 +11,10 @@ import type {
 	ReaderToken,
 } from '@/types/reader.js';
 import type { SearchEntry } from '@/types/search.js';
+import {
+	normalizeDictionaryLookupRequest,
+	type DictionaryLookupRequest,
+} from '@/composables/dictionaryPopover.svelte.js';
 import { handleError, telemetry } from '@/utils';
 import {
 	applyReaderImportMetadata,
@@ -704,20 +708,24 @@ function selectDictionaryResult(index: number): void {
 	dictionaryWord = dictionaryResults[index];
 }
 
-async function lookupDictionaryWord(text: string): Promise<void> {
+async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<void> {
+	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
 		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text,
+			text: lookup.text,
 		});
 		if (!results.length) {
 			return;
 		}
 		const exactMatchIndex = results.findIndex(
-			(result) => result.simplified === text || result.traditional === text
+			(result) => result.simplified === lookup.text || result.traditional === lookup.text
 		);
 		dictionaryResults = results;
 		dictionaryResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
 		dictionaryWord = dictionaryResults[dictionaryResultIndex];
+		if (lookup.anchor) {
+			dictionaryAnchor = lookup.anchor;
+		}
 		// Bump so the mobile sheet re-pops to partial when a cross-link (e.g. a measure word)
 		// is tapped while the sheet is open. Mirrors openDictionary()'s behavior.
 		dictionaryOpenCount += 1;

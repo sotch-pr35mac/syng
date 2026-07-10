@@ -18,12 +18,57 @@ import type { Action } from 'svelte/action';
  *   <div use:portal>…</div>                 // → document.body
  *   <div use:portal={someContainer}>…</div>
  */
-export const portal: Action<HTMLElement, HTMLElement | undefined> = (node, target) => {
+type PortalOptions =
+	| HTMLElement
+	| {
+			target?: HTMLElement;
+			attributes?: Record<string, string>;
+	  }
+	| undefined;
+
+function resolvePortalOptions(options: PortalOptions): {
+	target?: HTMLElement;
+	attributes: Record<string, string>;
+} {
+	if (!options) {
+		return {
+			target: undefined,
+			attributes: {},
+		};
+	}
+	if (options instanceof HTMLElement) {
+		return {
+			target: options,
+			attributes: {},
+		};
+	}
+	return {
+		target: options.target,
+		attributes: options.attributes ?? {},
+	};
+}
+
+export const portal: Action<HTMLElement, PortalOptions> = (node, options) => {
+	const { target, attributes } = resolvePortalOptions(options);
 	const destination = target ?? document.body;
+	const previousAttributes = Object.fromEntries(
+		Object.keys(attributes).map((name) => [name, node.getAttribute(name)])
+	);
+
+	for (const [name, value] of Object.entries(attributes)) {
+		node.setAttribute(name, value);
+	}
 	destination.appendChild(node);
 
 	return {
 		destroy() {
+			for (const [name, previousValue] of Object.entries(previousAttributes)) {
+				if (previousValue === null) {
+					node.removeAttribute(name);
+				} else {
+					node.setAttribute(name, previousValue);
+				}
+			}
 			node.remove();
 		},
 	};

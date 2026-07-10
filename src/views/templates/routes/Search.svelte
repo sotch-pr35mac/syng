@@ -9,6 +9,10 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import { searchStore as search } from '@/composables/search.svelte.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
+	import {
+		normalizeDictionaryLookupRequest,
+		type DictionaryLookupRequest,
+	} from '@/composables/dictionaryPopover.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
@@ -112,8 +116,9 @@
 	};
 
 	const clickTracker = createClickPositionTracker();
-	function handleDictionaryLink(text: string): void {
-		search.openPopoverDictionary(text, clickTracker.lastClickRect);
+	function handleDictionaryLink(request: DictionaryLookupRequest): void {
+		const lookup = normalizeDictionaryLookupRequest(request);
+		search.openPopoverDictionary(lookup.text, lookup.anchor ?? clickTracker.lastClickRect);
 	}
 </script>
 

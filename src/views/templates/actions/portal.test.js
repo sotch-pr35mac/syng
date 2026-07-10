@@ -25,6 +25,27 @@ it('moves the host element to an explicit target when provided', () => {
 	target.remove();
 });
 
+it('applies and restores attributes when provided', () => {
+	const node = document.createElement('div');
+	node.setAttribute('data-existing', 'before');
+
+	const action = portal(node, {
+		attributes: {
+			'data-existing': 'after',
+			'data-added': 'true',
+		},
+	});
+
+	expect(node.parentElement).toBe(document.body);
+	expect(node.dataset.existing).toBe('after');
+	expect(node.dataset.added).toBe('true');
+
+	action.destroy();
+
+	expect(node.dataset.existing).toBe('before');
+	expect(node.hasAttribute('data-added')).toBe(false);
+});
+
 it('removes the host element from the document on destroy', () => {
 	const node = document.createElement('div');
 	const action = portal(node);

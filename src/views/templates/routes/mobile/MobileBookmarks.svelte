@@ -25,6 +25,10 @@
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
+	import {
+		normalizeDictionaryLookupRequest,
+		type DictionaryLookupRequest,
+	} from '@/composables/dictionaryPopover.svelte.js';
 	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
 
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
@@ -109,8 +113,12 @@
 	}
 
 	const clickTracker = createClickPositionTracker();
-	function handleDictionaryLink(text: string): void {
-		bookmarksRoute.openPopoverDictionary(text, clickTracker.lastClickRect);
+	function handleDictionaryLink(request: DictionaryLookupRequest): void {
+		const lookup = normalizeDictionaryLookupRequest(request);
+		bookmarksRoute.openPopoverDictionary(
+			lookup.text,
+			lookup.anchor ?? clickTracker.lastClickRect
+		);
 	}
 
 	// Overflow menu

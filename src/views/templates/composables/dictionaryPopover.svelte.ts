@@ -3,15 +3,37 @@ import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
 import { handleError } from '@/utils/index.js';
 
+export type DictionaryLookupRequest =
+	| string
+	| {
+			text: string;
+			anchor?: DOMRect;
+	  };
+
 export type DictionaryPopoverController = {
 	readonly word: SearchEntry | undefined;
 	readonly results: SearchEntry[];
 	readonly resultIndex: number;
 	readonly reopenKey: number;
-	lookup: (_text: string) => Promise<void>;
+	readonly anchor: DOMRect | undefined;
+	lookup: (_request: DictionaryLookupRequest) => Promise<void>;
 	select: (_index: number) => void;
 	close: () => void;
 };
+
+export function normalizeDictionaryLookupRequest(request: DictionaryLookupRequest): {
+	text: string;
+	anchor?: DOMRect;
+} {
+	if (typeof request === 'string') {
+		return { text: request };
+	}
+	return request;
+}
+
+export function getDictionaryLookupText(request: DictionaryLookupRequest): string {
+	return normalizeDictionaryLookupRequest(request).text;
+}
 
 /**
  * Shared dictionary-popover state for cross-reference links (e.g. measure words) tapped inside
@@ -24,21 +46,26 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 	let resultIndex = $state(0);
 	let word = $state<SearchEntry | undefined>(undefined);
 	let reopenKey = $state(0);
+	let anchor = $state<DOMRect | undefined>(undefined);
 
-	async function lookup(text: string): Promise<void> {
+	async function lookup(request: DictionaryLookupRequest): Promise<void> {
+		const lookup = normalizeDictionaryLookupRequest(request);
 		try {
 			const found = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-				text,
+				text: lookup.text,
 			});
 			if (!found.length) {
 				return;
 			}
 			const exactMatchIndex = found.findIndex(
-				(result) => result.simplified === text || result.traditional === text
+				(result) => result.simplified === lookup.text || result.traditional === lookup.text
 			);
 			results = found;
 			resultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
 			word = results[resultIndex];
+			if (lookup.anchor) {
+				anchor = lookup.anchor;
+			}
 			reopenKey += 1;
 		} catch (error) {
 			handleError('There was an error looking up the dictionary word.', error);
@@ -54,6 +81,7 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 		word = undefined;
 		results = [];
 		resultIndex = 0;
+		anchor = undefined;
 	}
 
 	return {
@@ -68,6 +96,9 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 		},
 		get reopenKey() {
 			return reopenKey;
+		},
+		get anchor() {
+			return anchor;
 		},
 		lookup,
 		select,

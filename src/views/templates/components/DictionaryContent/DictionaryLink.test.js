@@ -23,3 +23,24 @@ it('should dispatch an event when the link is clicked', async () => {
 	await fireEvent.click(link);
 	expect(mock).toHaveBeenCalled();
 });
+
+it('should include clicked text and anchor details when the link is clicked', async () => {
+	const mock = vi.fn();
+	const { getByTestId } = render(DictionaryLink, {
+		link: 'A',
+		onopen: mock,
+	});
+
+	const link = getByTestId('dictionary-link');
+	const anchor = new DOMRect(10, 20, 30, 40);
+	vi.spyOn(link, 'getBoundingClientRect').mockReturnValue(anchor);
+
+	await fireEvent.click(link);
+
+	expect(mock).toHaveBeenCalledWith({
+		detail: {
+			text: 'A',
+			anchor,
+		},
+	});
+});

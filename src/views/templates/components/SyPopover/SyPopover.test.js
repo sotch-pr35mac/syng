@@ -123,3 +123,24 @@ it('should ignore outside clicks on the ignored element', async () => {
 	expect(onclose).not.toHaveBeenCalled();
 	ignoredElement.remove();
 });
+
+it('should ignore outside clicks inside portaled overlay content', async () => {
+	const onclose = vi.fn();
+	const overlayElement = document.createElement('button');
+	overlayElement.dataset.syPortalOverlay = 'true';
+	document.body.appendChild(overlayElement);
+	render(SyPopover, {
+		props: {
+			visible: true,
+			anchor: ANCHOR,
+			onclose,
+		},
+	});
+
+	await tick();
+	await new Promise((resolve) => setTimeout(resolve, 0));
+	await fireEvent.click(overlayElement);
+
+	expect(onclose).not.toHaveBeenCalled();
+	overlayElement.remove();
+});

@@ -134,6 +134,9 @@ export const flashcardsRoute = {
 	get popoverReopenKey(): number {
 		return popover.reopenKey;
 	},
+	get popoverAnchor(): DOMRect | undefined {
+		return popover.anchor;
+	},
 	load: loadFlashcards,
 	persistIndex: persistFlashcardsIndex,
 	persistDetails: persistFlashcardsDetails,

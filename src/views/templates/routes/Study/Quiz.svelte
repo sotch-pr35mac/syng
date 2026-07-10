@@ -235,6 +235,7 @@
 	results={quizRoute.popoverResults}
 	resultIndex={quizRoute.popoverResultIndex}
 	lists={quizRoute.lists}
+	anchor={quizRoute.popoverAnchor}
 	reopenKey={quizRoute.popoverReopenKey}
 	onselect={quizRoute.selectPopoverResult}
 	onlink={quizRoute.lookupPopoverWord}

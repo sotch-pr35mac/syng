@@ -14,6 +14,10 @@ import {
 	bookmarksActiveListStore,
 	bookmarksActiveWordStore,
 } from '@/stores/bookmarksRoute.svelte.js';
+import {
+	normalizeDictionaryLookupRequest,
+	type DictionaryLookupRequest,
+} from '@/composables/dictionaryPopover.svelte.js';
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
@@ -252,16 +256,17 @@ async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<voi
 	}
 }
 
-async function lookupPopoverWord(text: string): Promise<void> {
+async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void> {
+	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
 		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text,
+			text: lookup.text,
 		});
 		if (!results.length) {
 			return;
 		}
 		const exactMatchIndex = results.findIndex(
-			(result) => result.simplified === text || result.traditional === text
+			(result) => result.simplified === lookup.text || result.traditional === lookup.text
 		);
 		popoverResults = results;
 		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
