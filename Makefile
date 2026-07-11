@@ -45,8 +45,8 @@ package-windows:
 package-macos:
 	rustup target add aarch64-apple-darwin
 	rustup target add x86_64-apple-darwin
-	tauri build --target aarch64-apple-darwin
-	tauri build --target x86_64-apple-darwin
+	tauri build --target aarch64-apple-darwin --verbose
+	tauri build --target x86_64-apple-darwin --verbose
 
 package-linux-arm64:
 	rustup target add aarch64-unknown-linux-gnu 
