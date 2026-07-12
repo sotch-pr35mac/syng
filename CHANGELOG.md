@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.0.0] - XXXX-XX-XX
+## [2.0.0] - 2026-07-12
 ### Added
 - Mobile and iPad support with responsive navigation, settings, and reader flows
 - Reader library with document import support for EPUB, PDF, DOCX, RTF, HTML, plain text, clipboard, and webpages
