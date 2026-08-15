@@ -591,7 +591,7 @@ fn parse_docx_core_title(xml: &str) -> Option<String> {
             }
             Ok(Event::Text(text)) if inside_title => {
                 return text
-                    .xml_content()
+                    .xml10_content()
                     .ok()
                     .map(|value| value.trim().to_string())
                     .filter(|value| !value.is_empty());
@@ -771,7 +771,7 @@ fn parse_docx_document(
             }
             Event::Text(text) if inside_text => {
                 if let Some(paragraph) = paragraph.as_mut() {
-                    let value = text.xml_content().map_err(|error| {
+                    let value = text.xml10_content().map_err(|error| {
                         format!("Could not decode Word document text: {}", error)
                     })?;
                     paragraph.push_text(&value, &run_style);

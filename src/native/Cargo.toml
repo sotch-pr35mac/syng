@@ -39,7 +39,7 @@ rbook = "0.7.9"
 pdf-extract = "0.10.0"
 scraper = "0.23.1"
 ego-tree = "0.10.0"
-quick-xml = "0.39.2"
+quick-xml = "0.41.0"
 zip = { version = "3.0.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
