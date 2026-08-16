@@ -98,7 +98,13 @@
 			});
 	};
 	const exportActiveList = () => bookmarksRoute.exportActiveList();
-	const importList = () => bookmarksRoute.importList();
+	const importList = () =>
+		bookmarksRoute.importList().then((imported) => {
+			if (imported) {
+				filterValue = '';
+			}
+			return imported;
+		});
 
 	const clickTracker = createClickPositionTracker();
 	const handleDictionaryLink = (request) => {

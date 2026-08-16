@@ -290,6 +290,7 @@ function importList(): Promise<boolean> {
 					);
 					return Promise.all(bulkImport);
 				})
+				.then(() => setActiveList(listName))
 				.then(() => {
 					telemetry.trackEvent('list.imported', {}).catch(() => {});
 					return true;

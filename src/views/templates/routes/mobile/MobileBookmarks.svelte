@@ -150,7 +150,15 @@
 
 	function importList(): void {
 		closeOverflowMenu();
-		bookmarksRoute.importList();
+		bookmarksRoute
+			.importList()
+			.then((imported) => {
+				if (imported) {
+					filterValue = '';
+				}
+				return undefined;
+			})
+			.catch(() => {});
 	}
 
 	function exportActiveList(): void {
