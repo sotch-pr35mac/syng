@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -23,7 +23,9 @@
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
+		type WordListPreviewItem,
 	} from '@/composables/bookmarks.svelte.js';
+	import type { BookmarkListMembershipEvent } from '@/types/bookmarks.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import {
 		normalizeDictionaryLookupRequest,
@@ -38,45 +40,15 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
+	let filterValue = $state('');
+	let visibleWordList = $state<WordListPreviewItem[]>([]);
 	const dropdownDirection = $derived(
 		currentSnap === 'full' ? DROPDOWN_DIRECTIONS.DOWN : DROPDOWN_DIRECTIONS.UP
 	);
 	const OVERFLOW_MENU_OFFSET_PX = 4;
 
-	const selectWordElement = (index: number) => {
-		const container = document.querySelector('.mobile-bookmarks__results');
-		if (!container) {
-			return;
-		}
-		const elements = container.getElementsByClassName('sy-list-preview-item-container');
-		if (elements[index]) {
-			(elements[index] as HTMLElement).click();
-		}
-	};
-
-	const replayActiveWordSelection = () => {
-		if (!activeWord) {
-			return;
-		}
-		const activeWordIndex = bookmarksRoute.words.findIndex(
-			(word) => word.hash === activeWord?.hash
-		);
-		if (activeWordIndex < 0) {
-			return;
-		}
-		tick()
-			.then(() => {
-				selectWordElement(activeWordIndex);
-				return undefined;
-			})
-			.catch(() => {});
-	};
-
 	onMount(() => {
-		bookmarksRoute
-			.updateListContent()
-			.then(replayActiveWordSelection)
-			.catch(() => {});
+		bookmarksRoute.updateListContent().catch(() => {});
 
 		if (currentSnap === 'partial') {
 			sheetRef?.openPartial();
@@ -95,15 +67,29 @@
 			createNewModalVisible = true;
 			return;
 		}
-		bookmarksRoute
-			.setActiveList(id)
-			.then(replayActiveWordSelection)
-			.catch(() => {});
+		filterValue = '';
+		bookmarksRoute.setActiveList(id).catch(() => {});
 	}
 
 	function handleSelectWord(data: { index: number; value: any }): void {
 		bookmarksRoute.selectWord(data);
 		sheetRef?.collapse();
+	}
+
+	function handleVisibleWordListChange(values: WordListPreviewItem[]): void {
+		visibleWordList = values;
+	}
+
+	function handleMembershipChange(event: BookmarkListMembershipEvent): void {
+		bookmarksRoute
+			.reconcileMembershipChange(event, visibleWordList)
+			.then(({ clearFilter }) => {
+				if (clearFilter) {
+					filterValue = '';
+				}
+				return undefined;
+			})
+			.catch(() => {});
 	}
 
 	function handleFilterFocus(event: FocusEvent): void {
@@ -211,7 +197,12 @@
 				class="mobile-bookmarks__dict-wrapper"
 				onclickcapture={clickTracker.captureClickPosition}
 			>
-				<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
+				<DictionaryContent
+					word={activeWord}
+					{lists}
+					onlink={handleDictionaryLink}
+					onmembershipchange={handleMembershipChange}
+				/>
 			</div>
 		{:else}
 			<div class="mobile-bookmarks__empty">
@@ -251,6 +242,9 @@
 			<SyList
 				style="preview"
 				values={wordList}
+				activeKey={activeWord?.hash ?? null}
+				bind:filterValue
+				onvisiblechange={handleVisibleWordListChange}
 				filterable={true}
 				onselection={handleSelectWord}
 			/>
@@ -314,6 +308,7 @@
 	onselect={bookmarksRoute.selectPopoverResult}
 	onclose={bookmarksRoute.closePopoverDictionary}
 	onlink={bookmarksRoute.lookupPopoverWord}
+	onmembershipchange={handleMembershipChange}
 />
 
 <style>

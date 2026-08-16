@@ -14,59 +14,61 @@
 	 * @property {SyListPreviewValue[]} [values] - Values Prop
 	 * @property {boolean} [highlight] - Highlight Prop
 	 * @property {boolean} [filterable] - Filterable Prop
+	 * @property {string | number | null} [activeKey] - Controlled active row key
+	 * @property {string} [filterValue] - Filter value
 	 * @property {any} [component] - Suppress the unexpected prop warning
 	 * @property {(detail: any) => void} [onselection] - Selection callback
+	 * @property {(values: SyListPreviewValue[]) => void} [onvisiblechange] - Visible values callback
 	 * @property {(detail: any) => void} [onevent] - Event callback
 	 */
 
+	/* eslint-disable prefer-const -- filterValue uses $bindable() which requires let for the entire destructuring */
 	/** @type {Props} */
-	const {
+	let {
 		values = [],
 		highlight = true,
 		filterable = false,
+		activeKey = undefined,
+		filterValue = $bindable(''),
 		component: _component = undefined,
 		onselection,
+		onvisiblechange,
 		onevent,
 	} = $props();
+	/* eslint-enable prefer-const */
 
-	let activeIndex = $state();
-	let filteredValues = $state([]);
-
-	// Reset filtered values when values prop changes
-	$effect(() => {
-		if (values) {
-			filteredValues = values;
-
-			// Reset the filter text field
-			if (filterable) {
-				const filterInput = document.getElementById(id);
-				if (filterInput) {
-					filterInput.value = '';
-				}
-			}
-		}
-	});
-
-	const handleSelection = (event) => {
-		activeIndex = event.detail;
-		onselection?.({
-			index: values.indexOf(filteredValues[activeIndex]),
-			value: filteredValues[activeIndex],
-		});
-	};
-	const handleFilter = (filterText) => {
-		const normalizedFilter = filterText.toLowerCase();
-		filteredValues = values.filter((item) => {
+	let selectedKey = $state();
+	const normalizedFilter = $derived(filterValue.toLowerCase());
+	const filteredValues = $derived(
+		values.filter((item) => {
 			const searchableText = [item.content, item.headline, item.subtitle]
 				.flat()
 				.filter(Boolean)
 				.join(' ')
 				.toLowerCase();
 			return searchableText.includes(normalizedFilter);
+		})
+	);
+	const currentActiveKey = $derived(activeKey === undefined ? selectedKey : activeKey);
+
+	$effect(() => {
+		onvisiblechange?.(filteredValues);
+	});
+
+	const handleSelection = (event) => {
+		const selectedValue = filteredValues[event.detail];
+		const sourceIndex = values.indexOf(selectedValue);
+		selectedKey = getItemKey(selectedValue, sourceIndex);
+		onselection?.({
+			index: sourceIndex,
+			value: selectedValue,
 		});
 	};
+	const handleFilter = (filterText) => {
+		filterValue = filterText;
+	};
 	/** @param {SyListPreviewValue} value */
-	const getItemKey = (value, index) => value.key ?? index;
+	const getItemKey = (value, index) => value?.key ?? index;
 </script>
 
 <div
@@ -81,17 +83,19 @@
 				placeholder="Filter"
 				size="large"
 				{id}
+				value={filterValue}
 				oninput={handleFilter}
 			/>
 		</div>
 	{/if}
 	<div class="sy-list-preview__rows">
-		{#each filteredValues as value, index (getItemKey(value, index))}
+		{#each filteredValues as value, index (getItemKey(value, values.indexOf(value)))}
+			{@const sourceIndex = values.indexOf(value)}
 			<SyListPreviewItem
 				headline={value.headline}
 				subtitle={value.subtitle}
 				content={value.content}
-				active={activeIndex === index}
+				active={currentActiveKey === getItemKey(value, sourceIndex)}
 				{index}
 				{highlight}
 				onclick={handleSelection}

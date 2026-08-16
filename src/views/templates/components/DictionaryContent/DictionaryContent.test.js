@@ -1,9 +1,10 @@
-import { vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { beforeEach, vi } from 'vitest';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
 import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -26,6 +27,7 @@ vi.mock('@tauri-apps/plugin-os', () => ({
 }));
 
 const TEST_WORD = {
+	hash: 'test-word',
 	simplified: 'A',
 	traditional: 'B',
 	english: ['test'],
@@ -34,12 +36,14 @@ const TEST_WORD = {
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
 
-setBookmarkManagerForTest(
-	mockBookmarkManager({
-		words: [],
-		lists: ['Bookmarks'],
-	})
-);
+beforeEach(() => {
+	setBookmarkManagerForTest(
+		mockBookmarkManager({
+			words: [],
+			lists: ['Bookmarks'],
+		})
+	);
+});
 
 it('should display the definitions', async () => {
 	const { getByText } = render(DictionaryContent, {
@@ -82,4 +86,64 @@ it('should emit an event when dictionary link is clicked', async () => {
 	});
 	await user.click(getByText('MWA'));
 	expect(handleOpenLink).toHaveBeenCalled();
+});
+
+it('reports a successful list membership change', async () => {
+	const user = userEvent.setup();
+	const onmembershipchange = vi.fn();
+	const memberships = ['Bookmarks'];
+	setBookmarkManagerForTest({
+		waitForInit: () => Promise.resolve(),
+		inList: () => Promise.resolve(memberships),
+		removeFromList: (_listName, _word) => {
+			memberships.length = 0;
+			return Promise.resolve();
+		},
+	});
+	const { findByText } = render(DictionaryContent, {
+		word: TEST_WORD,
+		lists: ['Bookmarks'],
+		onmembershipchange,
+	});
+
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(onmembershipchange).toHaveBeenCalledWith({
+			listName: 'Bookmarks',
+			wordHash: TEST_WORD.hash,
+			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
+		});
+	});
+});
+
+it('reports when a word is added to a list', async () => {
+	const user = userEvent.setup();
+	const onmembershipchange = vi.fn();
+	const memberships = [];
+	setBookmarkManagerForTest({
+		waitForInit: () => Promise.resolve(),
+		inList: () => Promise.resolve(memberships),
+		addToList: (_listName, _word) => {
+			memberships.push('Bookmarks');
+			return Promise.resolve();
+		},
+	});
+	const { findByText } = render(DictionaryContent, {
+		word: TEST_WORD,
+		lists: ['Bookmarks'],
+		onmembershipchange,
+	});
+
+	const addAction = await findByText('Add to Bookmarks');
+	await user.click(addAction.closest('button'));
+
+	await waitFor(() => {
+		expect(onmembershipchange).toHaveBeenCalledWith({
+			listName: 'Bookmarks',
+			wordHash: TEST_WORD.hash,
+			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED,
+		});
+	});
 });

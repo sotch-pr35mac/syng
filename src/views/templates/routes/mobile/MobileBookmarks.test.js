@@ -80,20 +80,35 @@ const WORDS = [
 	},
 ];
 
+let words;
+
 function mockBookmarkManager() {
 	return {
 		waitForInit: () => Promise.resolve(),
 		getLists: () => Promise.resolve(['Bookmarks']),
 		getEmptyLists: () => Promise.resolve([]),
 		getListContent: (listName) =>
-			Promise.resolve(WORDS.filter((word) => word.lists.includes(listName))),
-		inList: (hash) => Promise.resolve(WORDS.find((word) => word.hash === hash)?.lists ?? []),
-		addToList: () => Promise.resolve(),
-		removeFromList: () => Promise.resolve(),
+			Promise.resolve(words.filter((word) => word.lists.includes(listName))),
+		inList: (hash) => Promise.resolve(words.find((word) => word.hash === hash)?.lists ?? []),
+		addToList: (listName, wordToAdd) => {
+			const word = words.find((item) => item.hash === wordToAdd.hash);
+			if (word && !word.lists.includes(listName)) {
+				word.lists = [...word.lists, listName];
+			}
+			return Promise.resolve();
+		},
+		removeFromList: (listName, wordToRemove) => {
+			const word = words.find((item) => item.hash === wordToRemove.hash);
+			if (word) {
+				word.lists = word.lists.filter((item) => item !== listName);
+			}
+			return Promise.resolve();
+		},
 	};
 }
 
 beforeEach(async () => {
+	words = WORDS.map((word) => ({ ...word, lists: [...word.lists] }));
 	setBookmarkManagerForTest(mockBookmarkManager());
 	bookmarksActiveListStore.set('Bookmarks');
 	bookmarksActiveWordStore.set(undefined);
@@ -159,4 +174,71 @@ it('restores filtered bookmark rows when the filter is cleared', async () => {
 
 	expect(await findByText('西瓜')).toBeTruthy();
 	expect(await findByText(/苹果/)).toBeTruthy();
+});
+
+it('selects the next bookmark after removing the active word', async () => {
+	const user = userEvent.setup();
+	const { container, findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(container.querySelector('.mobile-bookmarks__results').textContent).not.toContain(
+			'西瓜'
+		);
+	});
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'苹果'
+	);
+	expect(
+		container.querySelector('.sy-list-preview-item-container--active').textContent
+	).toContain('苹果');
+});
+
+it('selects the previous bookmark after removing the last active word', async () => {
+	const user = userEvent.setup();
+	const { container, findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText(/苹果/));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(container.querySelector('.mobile-bookmarks__results').textContent).not.toContain(
+			'苹果'
+		);
+	});
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'西瓜'
+	);
+});
+
+it('clears an exhausted filter and selects from the remaining bookmarks', async () => {
+	const user = userEvent.setup();
+	const { container, findByPlaceholderText, findByText } = render(MobileBookmarks);
+	const filterInput = await findByPlaceholderText('Filter');
+	await user.type(filterInput, 'watermelon');
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => expect(filterInput.value).toBe(''));
+	expect(container.querySelector('.mobile-bookmarks__results').textContent).toContain('苹果');
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'苹果'
+	);
+});
+
+it('shows the default empty state after removing the final bookmark', async () => {
+	words = [words[0]];
+	const user = userEvent.setup();
+	const { findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	expect(await findByText('Select a word from your bookmarks')).toBeTruthy();
 });

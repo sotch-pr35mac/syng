@@ -7,7 +7,7 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import {
@@ -27,42 +27,11 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
-
-	// SyList tracks its selected item via click events internally, so the only way to
-	// restore a persisted selection is to programmatically click the corresponding element.
-	const selectWordElement = (index) => {
-		const container = document.querySelector('.bookmarks--word-listing');
-		if (!container) {
-			return;
-		}
-		const elements = container.getElementsByClassName('sy-list-preview-item-container');
-		if (elements[index]) {
-			elements[index].click();
-		}
-	};
-	const replayActiveWordSelection = () => {
-		if (!activeWord) {
-			return;
-		}
-		const activeWordIndex = bookmarksRoute.words.findIndex(
-			(word) => word.hash === activeWord.hash
-		);
-		if (activeWordIndex < 0) {
-			return;
-		}
-		tick()
-			.then(() => {
-				selectWordElement(activeWordIndex);
-				return undefined;
-			})
-			.catch(() => {});
-	};
+	let filterValue = $state('');
+	let visibleWordList = $state([]);
 
 	onMount(() => {
-		bookmarksRoute
-			.updateListContent()
-			.then(replayActiveWordSelection)
-			.catch(() => {});
+		bookmarksRoute.updateListContent().catch(() => {});
 	});
 
 	// Handle active list selection
@@ -71,11 +40,8 @@
 			createNewModalVisible = true;
 			return;
 		}
-		highlightActive = false;
-		bookmarksRoute
-			.setActiveList(id)
-			.then(replayActiveWordSelection)
-			.catch(() => {});
+		filterValue = '';
+		bookmarksRoute.setActiveList(id).catch(() => {});
 	};
 
 	// Create New Modal
@@ -101,9 +67,21 @@
 	// Word Selection
 	const handleSelection = (data) => {
 		bookmarksRoute.selectWord(data);
-		highlightActive = true;
 	};
-	let highlightActive = $state(true);
+	const handleVisibleWordListChange = (values) => {
+		visibleWordList = values;
+	};
+	const handleMembershipChange = (event) => {
+		bookmarksRoute
+			.reconcileMembershipChange(event, visibleWordList)
+			.then(({ clearFilter }) => {
+				if (clearFilter) {
+					filterValue = '';
+				}
+				return undefined;
+			})
+			.catch(() => {});
+	};
 
 	// Actions
 	let disableDeleteButton = $state(false);
@@ -111,10 +89,7 @@
 		disableDeleteButton = true;
 		bookmarksRoute
 			.confirmDeleteActiveList()
-			.then((deleted) => {
-				if (deleted) {
-					highlightActive = false;
-				}
+			.then(() => {
 				disableDeleteButton = false;
 				return undefined;
 			})
@@ -204,13 +179,20 @@
 			<SyList
 				style="preview"
 				values={wordList}
-				highlight={highlightActive}
+				activeKey={activeWord?.hash ?? null}
+				bind:filterValue
+				onvisiblechange={handleVisibleWordListChange}
 				onselection={handleSelection}
 				filterable={true}
 			/>
 		</div>
 		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
-			<DictionaryContent word={activeWord} {lists} onlink={handleDictionaryLink} />
+			<DictionaryContent
+				word={activeWord}
+				{lists}
+				onlink={handleDictionaryLink}
+				onmembershipchange={handleMembershipChange}
+			/>
 		</div>
 	</div>
 	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>
@@ -246,6 +228,7 @@
 		onselect={bookmarksRoute.selectPopoverResult}
 		onclose={bookmarksRoute.closePopoverDictionary}
 		onlink={bookmarksRoute.lookupPopoverWord}
+		onmembershipchange={handleMembershipChange}
 	/>
 </div>
 
