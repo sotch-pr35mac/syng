@@ -1,9 +1,10 @@
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
 import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -122,4 +123,38 @@ it('should select previous, next, and dotted results', async () => {
 	expect(onselect).toHaveBeenNthCalledWith(1, 0);
 	expect(onselect).toHaveBeenNthCalledWith(2, 2);
 	expect(onselect).toHaveBeenNthCalledWith(3, 2);
+});
+
+it('forwards list membership changes from its dictionary content', async () => {
+	const user = userEvent.setup();
+	const onmembershipchange = vi.fn();
+	const memberships = ['Bookmarks'];
+	setBookmarkManagerForTest({
+		waitForInit: () => Promise.resolve(),
+		inList: () => Promise.resolve(memberships),
+		removeFromList: () => {
+			memberships.length = 0;
+			return Promise.resolve();
+		},
+	});
+	const { findByText } = render(DictionaryPopover, {
+		props: {
+			word: RESULTS[0],
+			results: [RESULTS[0]],
+			anchor: ANCHOR,
+			lists: ['Bookmarks'],
+			onmembershipchange,
+		},
+	});
+
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(onmembershipchange).toHaveBeenCalledWith({
+			listName: 'Bookmarks',
+			wordHash: RESULTS[0].hash,
+			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
+		});
+	});
 });

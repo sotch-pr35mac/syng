@@ -16,6 +16,7 @@
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
+	import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	/* Background Color Prop */
@@ -30,6 +31,7 @@
 	 * @property {boolean} [fixedActions] - Render action dropdowns with fixed positioning
 	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
+	 * @property {(event: import('@/types/bookmarks.js').BookmarkListMembershipEvent) => void} [onmembershipchange] - Callback after list membership changes
 	 */
 
 	/** @type {Props} */
@@ -40,14 +42,19 @@
 		fixedActions = false,
 		separateTraditionalCharacters,
 		onlink,
+		onmembershipchange,
 	} = $props();
 
 	let memberLists = $state([]);
 
 	const updateListMembership = () => {
+		const requestedWordHash = word?.hash;
 		bookmarksStore
-			.inList(word.hash)
+			.inList(requestedWordHash)
 			.then((lists) => {
+				if (word?.hash !== requestedWordHash) {
+					return undefined;
+				}
 				memberLists = lists;
 
 				// After updating list membership update the 'add to bookmarks' action item icon
@@ -77,6 +84,14 @@
 		}
 		bookmarksStore[fnName](list, word)
 			.then(() => {
+				onmembershipchange?.({
+					listName: list,
+					wordHash: word.hash,
+					operation:
+						fnName === 'addToList'
+							? BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED
+							: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
+				});
 				updateListMembership();
 				return undefined;
 			})

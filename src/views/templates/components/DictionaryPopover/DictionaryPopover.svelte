@@ -4,6 +4,7 @@
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { SearchEntry } from '@/types/search.js';
+	import type { BookmarkListMembershipEvent } from '@/types/bookmarks.js';
 	import { isMobileLayout } from '@/utils/device.js';
 	import {
 		getDictionaryLookupText,
@@ -20,6 +21,7 @@
 		onselect = () => {},
 		onclose = () => {},
 		onlink = undefined,
+		onmembershipchange = undefined,
 	}: {
 		word?: SearchEntry;
 		results?: SearchEntry[];
@@ -30,6 +32,7 @@
 		onselect?: (_index: number) => void;
 		onclose?: () => void;
 		onlink?: (_request: DictionaryLookupRequest) => void;
+		onmembershipchange?: (_event: BookmarkListMembershipEvent) => void;
 	} = $props();
 
 	const mobile = isMobileLayout();
@@ -117,6 +120,7 @@
 				fixedActions={true}
 				separateTraditionalCharacters={true}
 				onlink={handleContentLink}
+				{onmembershipchange}
 			/>
 		</div>
 	</div>

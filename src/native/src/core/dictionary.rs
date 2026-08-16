@@ -63,6 +63,42 @@ mod tests {
     use super::*;
     use std::collections::HashSet;
 
+    fn result_ids(text: &str) -> Vec<u32> {
+        query(text.to_string())
+            .into_iter()
+            .map(|entry| entry.word_id)
+            .collect()
+    }
+
+    #[test]
+    fn test_punctuation_does_not_change_english_or_pinyin_queries() {
+        for (plain, punctuated, expected_language) in [
+            ("watermelon", "watermelon.", "EN"),
+            ("watermelon", ".watermelon", "EN"),
+            ("watermelon", "\"watermelon\"", "EN"),
+            ("ni hao", "ni hao.", "PY"),
+            ("ni hao", "ni hao。", "PY"),
+            ("nihao", "nihao.", "PY"),
+        ] {
+            let plain_ids = result_ids(plain);
+
+            assert!(
+                !plain_ids.is_empty(),
+                "Baseline query {plain:?} returned no results"
+            );
+            assert_eq!(
+                expected_language,
+                classify(punctuated.to_string()).unwrap(),
+                "Punctuation changed the classification of {punctuated:?}"
+            );
+            assert_eq!(
+                plain_ids,
+                result_ids(punctuated),
+                "Punctuation changed the results for {punctuated:?}"
+            );
+        }
+    }
+
     #[test]
     fn test_affected_chinese_queries_return_exact_headwords() {
         for (text, simplified, traditional) in [

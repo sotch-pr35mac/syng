@@ -10,21 +10,29 @@
 	 * @property {any} component - The component must accept a value prop
 	 * @property {any} [highlight] - Suppress the unexpected prop warning
 	 * @property {any} [filterable]
+	 * @property {string | number | null} [activeKey] - Suppress the unexpected prop warning
+	 * @property {string} [filterValue] - Suppress the unexpected prop warning
 	 * @property {(detail: any) => void} [onselection] - Selection callback
+	 * @property {(values: any[]) => void} [onvisiblechange] - Suppress the unexpected prop warning
 	 * @property {(detail: any) => void} [onevent] - Event callback
 	 */
 
 	const mobile = isMobile();
 
+	/* eslint-disable prefer-const, no-useless-assignment -- the dynamic SyList contract requires a bindable filterValue for both styles */
 	/** @type {Props} */
-	const {
+	let {
 		values = [],
 		component,
 		highlight: _highlight = undefined,
 		filterable: _filterable = undefined,
+		activeKey: _activeKey = undefined,
+		filterValue: _filterValue = $bindable(''),
 		onselection,
+		onvisiblechange: _onvisiblechange,
 		onevent,
 	} = $props();
+	/* eslint-enable prefer-const, no-useless-assignment */
 </script>
 
 <div class="sy-list--container" class:sy-list--container--mobile={mobile}>

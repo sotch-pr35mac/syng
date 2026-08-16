@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.2] - 2026-08-17
+### Fixed
+- Fixed punctuation causing English and Pinyin searches to return no or incomplete results
+- Fixed issue with list import behavior
+- Fixed issue with list membership removal behavior
+
 ## [2.0.1] - 2026-08-16
 ### Fixed
 - Fixed valid Chinese headwords being split into separate characters during dictionary search, Reader tokenization, and Pinyinify

@@ -21,6 +21,10 @@ import {
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
+import {
+	BOOKMARK_LIST_MEMBERSHIP_OPERATIONS,
+	type BookmarkListMembershipEvent,
+} from '@/types/bookmarks.js';
 import { handleError, resolveNameConflict, telemetry } from '@/utils';
 
 export const DEFAULT_BOOKMARKS_LIST = 'Bookmarks';
@@ -29,7 +33,7 @@ export const RESTRICTED_LIST_NAMES = [CREATE_NEW_LIST_ID, DEFAULT_BOOKMARKS_LIST
 
 const CREATE_NEW_PLACEHOLDERS = ['HSK 1', 'Week 3 Vocab', 'Internet Slang', 'Idioms', 'Chapter 7'];
 
-type WordListPreviewItem = SyListPreviewValue & {
+export type WordListPreviewItem = SyListPreviewValue & {
 	active: boolean;
 	sourceIndex: number;
 	word: BookmarkWordEntry;
@@ -38,6 +42,10 @@ type WordListPreviewItem = SyListPreviewValue & {
 type WordSelection = {
 	index: number;
 	value?: WordListPreviewItem;
+};
+
+export type MembershipReconciliation = {
+	clearFilter: boolean;
 };
 
 let activeList = $state(bookmarksActiveListStore.value);
@@ -120,6 +128,74 @@ function updateListContent(): Promise<void> {
 				error
 			);
 		});
+}
+
+function getAdjacentWordHash(
+	items: WordListPreviewItem[],
+	removedWordHash: string
+): string | undefined {
+	const removedVisibleIndex = items.findIndex((item) => item.word.hash === removedWordHash);
+	if (removedVisibleIndex >= 0) {
+		return (
+			items[removedVisibleIndex + 1]?.word.hash ?? items[removedVisibleIndex - 1]?.word.hash
+		);
+	}
+
+	const removedSourceIndex = words.findIndex((word) => word.hash === removedWordHash);
+	if (removedSourceIndex < 0) {
+		return items[0]?.word.hash;
+	}
+
+	const nextVisibleWord = items.find((item) => item.sourceIndex > removedSourceIndex);
+	if (nextVisibleWord) {
+		return nextVisibleWord.word.hash;
+	}
+	return [...items].reverse().find((item) => item.sourceIndex < removedSourceIndex)?.word.hash;
+}
+
+async function reconcileMembershipChange(
+	event: BookmarkListMembershipEvent,
+	visibleItems: WordListPreviewItem[]
+): Promise<MembershipReconciliation> {
+	if (event.listName !== activeList) {
+		return { clearFilter: false };
+	}
+
+	const selectedWordHash = activeWord?.hash;
+	const selectedWordWasRemoved =
+		event.operation === BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED &&
+		selectedWordHash === event.wordHash;
+	const removedSourceIndex = words.findIndex((word) => word.hash === event.wordHash);
+	const visibleAdjacentHash = selectedWordWasRemoved
+		? getAdjacentWordHash(visibleItems, event.wordHash)
+		: undefined;
+
+	await updateListContent();
+
+	if (!selectedWordWasRemoved) {
+		if (selectedWordHash) {
+			const refreshedActiveWord = words.find((word) => word.hash === selectedWordHash);
+			if (refreshedActiveWord) {
+				setActiveWord(refreshedActiveWord);
+			}
+		}
+		return { clearFilter: false };
+	}
+
+	const visibleAdjacentWord = words.find((word) => word.hash === visibleAdjacentHash);
+	if (visibleAdjacentWord) {
+		setActiveWord(visibleAdjacentWord);
+		return { clearFilter: false };
+	}
+
+	if (!words.length) {
+		clearActiveWord();
+		return { clearFilter: true };
+	}
+
+	const fallbackIndex = Math.min(Math.max(removedSourceIndex, 0), words.length - 1);
+	setActiveWord(words[fallbackIndex]);
+	return { clearFilter: true };
 }
 
 function setActiveList(nextList: string): Promise<void> {
@@ -214,6 +290,7 @@ function importList(): Promise<boolean> {
 					);
 					return Promise.all(bulkImport);
 				})
+				.then(() => setActiveList(listName))
 				.then(() => {
 					telemetry.trackEvent('list.imported', {}).catch(() => {});
 					return true;
@@ -328,6 +405,7 @@ export const bookmarksRoute = {
 	setActiveList,
 	setActiveWord,
 	selectWord,
+	reconcileMembershipChange,
 	clearActiveWord,
 	createList,
 	deleteActiveList,

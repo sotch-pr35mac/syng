@@ -1,7 +1,9 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import { invoke } from '@tauri-apps/api/core';
 import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
+import { bookmarksRoute } from '@/composables/bookmarks.svelte.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	bookmarksActiveListStore,
@@ -80,25 +82,70 @@ const WORDS = [
 	},
 ];
 
+const IMPORTED_WORD = {
+	hash: 'huoche',
+	traditional: '火車',
+	simplified: '火车',
+	english: ['train'],
+	pinyin_marks: 'huǒ chē',
+	tone_marks: [THIRD_TONE, FIRST_TONE],
+	measure_words: [],
+	notes: '',
+};
+
+let words;
+let lists;
+
 function mockBookmarkManager() {
 	return {
 		waitForInit: () => Promise.resolve(),
-		getLists: () => Promise.resolve(['Bookmarks']),
+		getLists: () => Promise.resolve(lists),
 		getEmptyLists: () => Promise.resolve([]),
 		getListContent: (listName) =>
-			Promise.resolve(WORDS.filter((word) => word.lists.includes(listName))),
-		inList: (hash) => Promise.resolve(WORDS.find((word) => word.hash === hash)?.lists ?? []),
-		addToList: () => Promise.resolve(),
-		removeFromList: () => Promise.resolve(),
+			Promise.resolve(words.filter((word) => word.lists.includes(listName))),
+		inList: (hash) => Promise.resolve(words.find((word) => word.hash === hash)?.lists ?? []),
+		createList: (listName) => {
+			lists = [...lists, listName];
+			return Promise.resolve();
+		},
+		addToList: (listName, wordToAdd) => {
+			const word = words.find((item) => item.hash === wordToAdd.hash);
+			if (word && !word.lists.includes(listName)) {
+				word.lists = [...word.lists, listName];
+			} else if (!word) {
+				words = [
+					...words,
+					{
+						...wordToAdd,
+						_id: `imported-${wordToAdd.hash}`,
+						_rev: '1',
+						lists: [listName],
+						notes: wordToAdd.notes ?? '',
+					},
+				];
+			}
+			return Promise.resolve();
+		},
+		removeFromList: (listName, wordToRemove) => {
+			const word = words.find((item) => item.hash === wordToRemove.hash);
+			if (word) {
+				word.lists = word.lists.filter((item) => item !== listName);
+			}
+			return Promise.resolve();
+		},
 	};
 }
 
 beforeEach(async () => {
+	invoke.mockResolvedValue(null);
+	words = WORDS.map((word) => ({ ...word, lists: [...word.lists] }));
+	lists = ['Bookmarks'];
 	setBookmarkManagerForTest(mockBookmarkManager());
 	bookmarksActiveListStore.set('Bookmarks');
 	bookmarksActiveWordStore.set(undefined);
 	mobileBookmarksSnapStore.set('partial');
 	await bookmarksStore.refresh();
+	await bookmarksRoute.setActiveList('Bookmarks');
 });
 
 it('renders bookmark list content and opens word details', async () => {
@@ -159,4 +206,96 @@ it('restores filtered bookmark rows when the filter is cleared', async () => {
 
 	expect(await findByText('西瓜')).toBeTruthy();
 	expect(await findByText(/苹果/)).toBeTruthy();
+});
+
+it('selects the next bookmark after removing the active word', async () => {
+	const user = userEvent.setup();
+	const { container, findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(container.querySelector('.mobile-bookmarks__results').textContent).not.toContain(
+			'西瓜'
+		);
+	});
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'苹果'
+	);
+	expect(
+		container.querySelector('.sy-list-preview-item-container--active').textContent
+	).toContain('苹果');
+});
+
+it('selects the previous bookmark after removing the last active word', async () => {
+	const user = userEvent.setup();
+	const { container, findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText(/苹果/));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => {
+		expect(container.querySelector('.mobile-bookmarks__results').textContent).not.toContain(
+			'苹果'
+		);
+	});
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'西瓜'
+	);
+});
+
+it('clears an exhausted filter and selects from the remaining bookmarks', async () => {
+	const user = userEvent.setup();
+	const { container, findByPlaceholderText, findByText } = render(MobileBookmarks);
+	const filterInput = await findByPlaceholderText('Filter');
+	await user.type(filterInput, 'watermelon');
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	await waitFor(() => expect(filterInput.value).toBe(''));
+	expect(container.querySelector('.mobile-bookmarks__results').textContent).toContain('苹果');
+	expect(container.querySelector('.mobile-bookmarks__dict-wrapper').textContent).toContain(
+		'苹果'
+	);
+});
+
+it('shows the default empty state after removing the final bookmark', async () => {
+	words = [words[0]];
+	const user = userEvent.setup();
+	const { findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText('西瓜'));
+	const removeAction = await findByText('Remove from Bookmarks');
+	await user.click(removeAction.closest('button'));
+
+	expect(await findByText('Select a word from your bookmarks')).toBeTruthy();
+});
+
+it('navigates mobile bookmarks to a successfully imported list', async () => {
+	invoke.mockResolvedValueOnce({
+		meta: { name: 'Travel' },
+		entries: [IMPORTED_WORD],
+	});
+	const user = userEvent.setup();
+	const { container, findByPlaceholderText, findByText } = render(MobileBookmarks);
+
+	await user.click(await findByText('西瓜'));
+	const filterInput = await findByPlaceholderText('Filter');
+	await user.type(filterInput, 'water');
+	const overflowButton = container.querySelector('.mobile-bookmarks__overflow-anchor button');
+	await user.click(overflowButton);
+	await user.click(await findByText('Import'));
+
+	await waitFor(() => expect(bookmarksActiveListStore.value).toBe('Travel'));
+	expect(filterInput.value).toBe('');
+	expect(bookmarksActiveWordStore.value).toBeUndefined();
+	expect(container.querySelector('.mobile-bookmarks__header-row').textContent).toContain(
+		'Travel'
+	);
+	expect(container.querySelector('.mobile-bookmarks__results').textContent).toContain('火车');
+	expect(await findByText('Select a word from your bookmarks')).toBeTruthy();
 });
