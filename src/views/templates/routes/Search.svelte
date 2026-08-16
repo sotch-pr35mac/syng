@@ -16,6 +16,7 @@
 	import type { SearchEntry } from '@/types/search.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
+	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
 	let highlightActive = $state(true);
 	const isMacos = platform() === 'macos';
@@ -23,6 +24,7 @@
 
 	const searchResults = $derived(
 		search.fullResults.map((entry) => ({
+			key: entry.hash,
 			headline:
 				entry.traditional === entry.simplified
 					? entry.simplified
@@ -30,7 +32,7 @@
 			subtitle: entry.pinyin_marks,
 			content: entry.english.join('; '),
 			active: false,
-			_entry: entry,
+			word: entry,
 		}))
 	);
 
@@ -74,7 +76,7 @@
 		if (!search.activeWord) {
 			return -1;
 		}
-		return searchResults.findIndex((result) => result._entry.hash === search.activeWord?.hash);
+		return searchResults.findIndex((result) => result.word.hash === search.activeWord?.hash);
 	};
 
 	let replayedWordHash = $state<string | undefined>(undefined);
@@ -100,8 +102,8 @@
 			.catch(() => {});
 	});
 
-	const handleSelection = (data: { value: { _entry: SearchEntry } }): void => {
-		const word = data.value._entry;
+	const handleSelection = (data: { value: { word: SearchEntry } }): void => {
+		const word = data.value.word;
 		if (!word) {
 			return;
 		}
@@ -159,6 +161,7 @@
 			<SyList
 				style="preview"
 				values={searchResults}
+				component={DictionaryListPreviewContent}
 				highlight={highlightActive}
 				onselection={handleSelection}
 			/>

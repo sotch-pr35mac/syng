@@ -16,6 +16,7 @@ export interface SearchEntry {
 	simplified: string;
 	traditional: string;
 	pinyin_marks: string;
+	tone_marks?: number[];
 	english: string[];
 	measure_words: unknown[];
 	notes?: string;

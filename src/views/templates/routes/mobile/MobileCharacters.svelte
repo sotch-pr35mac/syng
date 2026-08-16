@@ -7,6 +7,7 @@
 	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 	import { handleError } from '@/utils/error.js';
+	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
 
 	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
 	const LIGHT_MODE_OUTLINE_COLOR = '#DDDDDD';
@@ -15,7 +16,9 @@
 	const CHARACTER_SIZE = 200;
 	const CHARACTER_PADDING = 5;
 
-	let activeScript = $state<'simplified' | 'traditional'>('simplified');
+	let activeScript = $state<CharacterScript>(
+		mobileCharacterWindowWordStore.initialScript ?? CHARACTER_SETS.SIMPLIFIED
+	);
 	let activeAnimation = $state(false);
 	let pausedAnimation = $state(false);
 	let currentlyAnimating = 0;
@@ -24,7 +27,12 @@
 
 	const word = $derived(mobileCharacterWindowWordStore.value);
 	const characters = $derived(
-		word ? (activeScript === 'simplified' ? word.simplified : word.traditional).split('') : []
+		word
+			? (activeScript === CHARACTER_SETS.SIMPLIFIED
+					? word.simplified
+					: word.traditional
+				).split('')
+			: []
 	);
 
 	const inDarkMode = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -105,7 +113,7 @@
 		}
 	}
 
-	function switchScript(script: 'simplified' | 'traditional'): void {
+	function switchScript(script: CharacterScript): void {
 		activeScript = script;
 	}
 
@@ -153,12 +161,21 @@
 		</div>
 
 		<div class="mobile-characters__script-selector">
-			<SyButton style="ghost" size="large" onclick={() => switchScript('simplified')}>
-				<span class:script-selector--active={activeScript === 'simplified'}>Simplified</span
+			<SyButton
+				style="ghost"
+				size="large"
+				onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
+			>
+				<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}
+					>Simplified</span
 				>
 			</SyButton>
-			<SyButton style="ghost" size="large" onclick={() => switchScript('traditional')}>
-				<span class:script-selector--active={activeScript === 'traditional'}
+			<SyButton
+				style="ghost"
+				size="large"
+				onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
+			>
+				<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}
 					>Traditional</span
 				>
 			</SyButton>

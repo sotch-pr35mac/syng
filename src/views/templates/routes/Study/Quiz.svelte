@@ -9,8 +9,13 @@
 	import SyTimer from '@/components/SyTimer/SyTimer.svelte';
 	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';
 	import QuizResults from '@/components/QuizResults/QuizResults.svelte';
+	import QuizDisplayText from '@/components/QuizText/QuizDisplayText.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { EMPTY_QUIZ_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
+	import {
+		CHARACTER_QUESTIONS,
+		EMPTY_QUIZ_MESSAGE,
+		LOADING_STUDY_MESSAGE,
+	} from '@/composables/study.js';
 	import { quizRoute } from '@/composables/quiz.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 
@@ -202,13 +207,28 @@
 			{:else}
 				<div class="quiz--questions">
 					{#if quizRoute.question !== undefined}
+						{@const currentQuestion = quizRoute.question.question.MultipleChoice}
 						<span class="quiz--question">
-							{quizRoute.question.question.MultipleChoice.question}
+							<QuizDisplayText
+								text={currentQuestion.question}
+								characters={currentQuestion.kind === CHARACTER_QUESTIONS
+									? currentQuestion.word_data
+									: undefined}
+								variant="display"
+								lexicalTestIdPrefix="quiz-question"
+							/>
 						</span>
 						<div class="quiz--options">
-							{#each quizRoute.question.question.MultipleChoice.options as option (option)}
-								<button class="quiz--option" onclick={() => answerQuestion(option)}>
-									{option}
+							{#each currentQuestion.options as option (option.value)}
+								<button
+									class="quiz--option"
+									onclick={() => answerQuestion(option.value)}
+								>
+									<QuizDisplayText
+										text={option.value}
+										characters={option.characters}
+										variant="inline"
+									/>
 								</button>
 							{/each}
 						</div>

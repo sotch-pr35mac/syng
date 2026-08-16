@@ -19,3 +19,14 @@ it('should render the correct color for each character', async () => {
 	expect(fourthTone).toContain('colored-characters--tone-4');
 	expect(noTone).toContain('colored-characters--tone-5');
 });
+
+it('renders selectable characters without tone classes when coloring is disabled', () => {
+	const { getByText } = render(ChineseCharacters, {
+		characters: '妈',
+		tones: [1],
+		colorByTone: false,
+	});
+
+	expect(getByText('妈').className.split(' ')).toContain('sy-text--selectable');
+	expect(getByText('妈').className).not.toContain('colored-characters--tone');
+});

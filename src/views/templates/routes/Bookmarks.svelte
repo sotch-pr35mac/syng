@@ -18,6 +18,7 @@
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import { normalizeDictionaryLookupRequest } from '@/composables/dictionaryPopover.svelte.js';
 	import { isIPad } from '@/utils/device.js';
+	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
@@ -185,6 +186,7 @@
 			<SyList
 				style="preview"
 				values={wordList}
+				component={DictionaryListPreviewContent}
 				activeKey={activeWord?.hash ?? null}
 				bind:filterValue
 				onvisiblechange={handleVisibleWordListChange}

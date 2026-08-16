@@ -1,6 +1,7 @@
 import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import HanziWriter from 'hanzi-writer';
 import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 
@@ -50,6 +51,7 @@ beforeEach(() => {
 	animateCharacter.mockClear();
 	pauseAnimation.mockClear();
 	resumeAnimation.mockClear();
+	vi.mocked(HanziWriter.create).mockClear();
 	mobileCharacterWindowWordStore.set(undefined);
 	window.matchMedia = vi.fn(() => ({
 		matches: false,
@@ -74,8 +76,41 @@ it('loads character data and starts stroke animation', async () => {
 	const { container } = render(MobileCharacters);
 
 	await waitFor(() => expect(container.querySelector('#character-target')).toBeTruthy());
+	await waitFor(() =>
+		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
+			'character-target',
+			'汉',
+			expect.any(Object)
+		)
+	);
 	await user.click(container.querySelector('[data-testid="control-button"]'));
 
 	expect(hideCharacter).toHaveBeenCalled();
 	expect(animateCharacter).toHaveBeenCalled();
+});
+
+it('opens on the requested script and still allows manual switching', async () => {
+	const user = userEvent.setup();
+	mobileCharacterWindowWordStore.set(WORD, 'traditional');
+	const { getByText } = render(MobileCharacters);
+
+	await waitFor(() =>
+		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
+			'character-target',
+			'漢',
+			expect.any(Object)
+		)
+	);
+	expect(getByText('Traditional').className).toContain('script-selector--active');
+
+	await user.click(getByText('Simplified'));
+
+	await waitFor(() =>
+		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
+			'character-target',
+			'汉',
+			expect.any(Object)
+		)
+	);
+	expect(getByText('Simplified').className).toContain('script-selector--active');
 });

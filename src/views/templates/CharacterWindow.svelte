@@ -5,6 +5,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { listen } from '@tauri-apps/api/event';
+	import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
 	import { handleError } from '@/utils/error.js';
 
 	// Constants
@@ -19,7 +20,7 @@
 	const enableDrag = platform() === 'macos';
 	let word;
 	let activeCharacters = [];
-	let activeScript = $state('simplified');
+	let activeScript = $state(CHARACTER_SETS.SIMPLIFIED);
 	let activeAnimation = $state(false);
 	let pausedAnimation = $state(false);
 	let currentlyAnimating; // The index of the character currently being animated
@@ -112,6 +113,9 @@
 	// Event Listeners
 	listen('display-characters', (requestedWord) => {
 		word = requestedWord.payload;
+		if (word.initialScript) {
+			activeScript = word.initialScript;
+		}
 		loadAllCharacters(word[activeScript]);
 	});
 	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
@@ -121,11 +125,21 @@
 
 <div class="character-window-container">
 	<div class="script-selector-container" data-tauri-drag-region={enableDrag ? true : undefined}>
-		<SyButton style="ghost" size="large" onclick={() => switchScript('simplified')}>
-			<span class:script-selector--active={activeScript === 'simplified'}> Simplified </span>
+		<SyButton
+			style="ghost"
+			size="large"
+			onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
+		>
+			<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}>
+				Simplified
+			</span>
 		</SyButton>
-		<SyButton style="ghost" size="large" onclick={() => switchScript('traditional')}>
-			<span class:script-selector--active={activeScript === 'traditional'}>
+		<SyButton
+			style="ghost"
+			size="large"
+			onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
+		>
+			<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}>
 				Traditional
 			</span>
 		</SyButton>

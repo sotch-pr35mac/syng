@@ -2,6 +2,8 @@ import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import type { CharacterSet } from '@/types/dictionaryDisplay.js';
 
 interface BuildEnv {
 	DEV?: boolean;
@@ -42,4 +44,24 @@ export const updateBetaPreference = (checked: boolean): void => {
 export const updateToneColorsPreference = (data: ToneColorsPreference): void => {
 	getPreferenceManager().set('toneColors', data);
 	telemetry.trackEvent('settings.changed', { setting: 'toneColors' }).catch(() => {});
+};
+
+export const updateCharacterSetPreference = (characterSet: CharacterSet): void => {
+	dictionaryDisplaySettingsStore.setCharacterSet(characterSet);
+	telemetry.trackEvent('settings.changed', { setting: 'characterSet' }).catch(() => {});
+};
+
+export const updateColorCharactersByTonePreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setColorCharactersByTone(checked);
+	telemetry.trackEvent('settings.changed', { setting: 'colorCharactersByTone' }).catch(() => {});
+};
+
+export const updateColorPinyinByTonePreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setColorPinyinByTone(checked);
+	telemetry.trackEvent('settings.changed', { setting: 'colorPinyinByTone' }).catch(() => {});
+};
+
+export const updateColorListsByTonePreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setColorListsByTone(checked);
+	telemetry.trackEvent('settings.changed', { setting: 'colorListsByTone' }).catch(() => {});
 };

@@ -30,7 +30,7 @@
 		filterable = false,
 		activeKey = undefined,
 		filterValue = $bindable(''),
-		component: _component = undefined,
+		component = undefined,
 		onselection,
 		onvisiblechange,
 		onevent,
@@ -92,6 +92,8 @@
 		{#each filteredValues as value, index (getItemKey(value, values.indexOf(value)))}
 			{@const sourceIndex = values.indexOf(value)}
 			<SyListPreviewItem
+				{component}
+				itemValue={value}
 				headline={value.headline}
 				subtitle={value.subtitle}
 				content={value.content}

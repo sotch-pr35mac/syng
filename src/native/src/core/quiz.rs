@@ -20,6 +20,19 @@ enum AnswerKind {
     Characters,
 }
 
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct CharacterOption {
+    simplified: String,
+    traditional: String,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Eq)]
+pub struct QuestionOption {
+    value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    characters: Option<CharacterOption>,
+}
+
 impl AnswerKind {
     fn get_random(exclude: AnswerKind) -> Result<Self, String> {
         let mut rng = rng();
@@ -40,7 +53,7 @@ pub enum Question {
         kind: QuestionKind,
         question: String,
         answer: String,
-        options: Vec<String>,
+        options: Vec<QuestionOption>,
         time_limit: u16,
         word_data: dictionary::WordEntry,
     },
@@ -48,7 +61,34 @@ pub enum Question {
 
 static DEFAULT_MULTIPLE_CHOICE_TIME_LIMIT: u16 = 30;
 
-type QuestionAnswerOptions = (Vec<String>, String);
+type QuestionAnswerOptions = (Vec<QuestionOption>, String);
+
+fn build_question_option(
+    answer_kind: AnswerKind,
+    word: &dictionary::WordEntry,
+    rng: &mut impl Rng,
+) -> Result<QuestionOption, String> {
+    let (value, characters) = match answer_kind {
+        AnswerKind::Pinyin => (word.pinyin_marks.to_owned(), None),
+        AnswerKind::English => (
+            word.english
+                .choose(rng)
+                .ok_or("Could not choose an english definition answer.")?
+                .to_owned(),
+            None,
+        ),
+        AnswerKind::Characters => (
+            word_utils::get_characters(word),
+            Some(CharacterOption {
+                simplified: word.simplified.to_owned(),
+                traditional: word.traditional.to_owned(),
+            }),
+        ),
+    };
+
+    Ok(QuestionOption { value, characters })
+}
+
 fn get_question_answer_options(
     question_kind: &QuestionKind,
     word: &dictionary::WordEntry,
@@ -62,18 +102,11 @@ fn get_question_answer_options(
         QuestionKind::Characters => AnswerKind::Characters,
     };
     let answer_kind = AnswerKind::get_random(exclude_answer_kind)?;
-    let answer = match answer_kind {
-        AnswerKind::Pinyin => word.pinyin_marks.to_owned(),
-        AnswerKind::English => word
-            .english
-            .choose(&mut rng)
-            .ok_or("Could not choose an english definition answer.")?
-            .to_owned(),
-        AnswerKind::Characters => word_utils::get_characters(word),
-    };
+    let answer_option = build_question_option(answer_kind, word, &mut rng)?;
+    let answer = answer_option.value.to_owned();
 
-    options.push(answer.clone());
-    let mut possible_options: Vec<String> = list
+    options.push(answer_option);
+    let mut possible_options: Vec<QuestionOption> = list
         .iter()
         .filter_map(|w| {
             let is_match = match answer_kind {
@@ -82,11 +115,7 @@ fn get_question_answer_options(
                 AnswerKind::Characters => word_utils::get_characters(w) != answer,
             };
             if is_match {
-                Some(match answer_kind {
-                    AnswerKind::Pinyin => w.pinyin_marks.to_owned(),
-                    AnswerKind::English => w.english.choose(&mut rng).unwrap().to_owned(),
-                    AnswerKind::Characters => word_utils::get_characters(w),
-                })
+                build_question_option(answer_kind, w, &mut rng).ok()
             } else {
                 None
             }
@@ -386,4 +415,82 @@ pub fn score_quiz(state: tauri::State<QuizState>) -> Result<ScoreCard, String> {
 pub fn get_incorrect_questions(state: tauri::State<QuizState>) -> Result<Vec<Answer>, String> {
     let quiz = state.0.lock().map_err(|err| err.to_string())?;
     quiz.as_ref().ok_or("No quiz in progress")?.get_incorrect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn word(simplified: &str, traditional: &str) -> dictionary::WordEntry {
+        dictionary::WordEntry {
+            traditional: traditional.to_string(),
+            simplified: simplified.to_string(),
+            pinyin_marks: "shí yàn".to_string(),
+            pinyin_numbers: "shi2 yan4".to_string(),
+            english: vec!["experiment".to_string()],
+            tone_marks: vec![2, 4],
+            hash: 1,
+            measure_words: vec![],
+            hsk: 1,
+            word_id: 1,
+        }
+    }
+
+    #[test]
+    fn character_options_include_both_character_forms() {
+        let mut rng = rng();
+        let option =
+            build_question_option(AnswerKind::Characters, &word("实验", "實驗"), &mut rng).unwrap();
+
+        assert_eq!(option.value, "实验 (實驗)");
+        assert_eq!(
+            option.characters,
+            Some(CharacterOption {
+                simplified: "实验".to_string(),
+                traditional: "實驗".to_string(),
+            })
+        );
+    }
+
+    #[test]
+    fn non_character_options_do_not_include_character_metadata() {
+        let mut rng = rng();
+        let option =
+            build_question_option(AnswerKind::Pinyin, &word("实验", "實驗"), &mut rng).unwrap();
+
+        assert_eq!(option.value, "shí yàn");
+        assert_eq!(option.characters, None);
+    }
+
+    #[test]
+    fn grading_uses_the_canonical_option_value() {
+        let word = word("实验", "實驗");
+        let question = Question::MultipleChoice {
+            kind: QuestionKind::English,
+            question: "experiment".to_string(),
+            answer: "实验 (實驗)".to_string(),
+            options: vec![QuestionOption {
+                value: "实验 (實驗)".to_string(),
+                characters: Some(CharacterOption {
+                    simplified: "实验".to_string(),
+                    traditional: "實驗".to_string(),
+                }),
+            }],
+            time_limit: DEFAULT_MULTIPLE_CHOICE_TIME_LIMIT,
+            word_data: word,
+        };
+        let mut quiz = SimpleQuiz {
+            pending: vec![question],
+            completed: vec![],
+        };
+
+        let answer = quiz
+            .answer(AnswerCard {
+                answered_in: 1,
+                response: "实验 (實驗)".to_string(),
+            })
+            .unwrap();
+
+        assert!(answer.correct);
+    }
 }

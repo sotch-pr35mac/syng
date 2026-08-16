@@ -90,7 +90,9 @@ it('should populate the search result list after a query', async () => {
 	const updateSearchResults = vi.fn(); // eslint-disable-line no-unused-vars
 	const { getByPlaceholderText, getByText } = render(Search, {});
 	await user.type(getByPlaceholderText('Search...'), 'watermelon');
-	const searchResultItemClasses = getByText('西瓜').className.split(' ');
+	const searchResultItemClasses = getByText('西瓜')
+		.closest('.sy-list-preview-item--headline')
+		.className.split(' ');
 	expect(searchResultItemClasses).toContain('sy-list-preview-item--headline');
 });
 it('should display word details after clicking on the search result', async () => {

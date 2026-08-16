@@ -19,6 +19,7 @@
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
+	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
 	// sheetRef gives us access to collapse/openPartial/openFull on the snap sheet.
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
@@ -28,7 +29,7 @@
 	let searchQuery = $state(mobileSearchQueryStore.value);
 
 	type SearchResultPreviewItem = SyListPreviewValue & {
-		_entry: SearchEntry;
+		word: SearchEntry;
 	};
 
 	onMount(() => {
@@ -58,7 +59,7 @@
 					: entry.simplified,
 			subtitle: entry.pinyin_marks,
 			content: entry.english.slice(0, 2).join('; '),
-			_entry: entry,
+			word: entry,
 		}))
 	);
 
@@ -82,9 +83,9 @@
 		mobileSearchSnapStore.set(snap);
 	}
 
-	function handleSelectResult(data: { value: { _entry: SearchEntry } }): void {
-		search.setActiveWord(data.value._entry);
-		mobileCharacterWindowWordStore.set(data.value._entry);
+	function handleSelectResult(data: { value: { word: SearchEntry } }): void {
+		search.setActiveWord(data.value.word);
+		mobileCharacterWindowWordStore.set(data.value.word);
 		sheetRef?.collapse();
 	}
 
@@ -148,7 +149,12 @@
 		</div>
 
 		<div class="mobile-search__results" use:scrollRestore={'mobile-search-results'}>
-			<SyList style="preview" values={searchResultItems} onselection={handleSelectResult} />
+			<SyList
+				style="preview"
+				values={searchResultItems}
+				component={DictionaryListPreviewContent}
+				onselection={handleSelectResult}
+			/>
 		</div>
 	</SySnapSheet>
 </div>

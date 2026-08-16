@@ -12,11 +12,18 @@
 	 * @property {boolean} [checked] - false - The toggle is in the 'off' position
 	 * @property {any} [id] - HTML ID for reference
 	 * @property {any} value - The value property for the HTML checkbox
+	 * @property {string} [accessibleLabel] - Accessible name for the checkbox
 	 * @property {(checked: boolean) => void} [onchange] - Change handler
 	 */
 
 	/** @type {Props} */
-	const { checked = false, id = crypto.randomUUID(), value, onchange } = $props();
+	const {
+		checked = false,
+		id = crypto.randomUUID(),
+		value,
+		accessibleLabel = 'Toggle',
+		onchange,
+	} = $props();
 </script>
 
 <span class="sy-toggle--container">
@@ -26,6 +33,7 @@
 		class="sy-toggle"
 		{value}
 		{checked}
+		aria-label={accessibleLabel}
 		onchange={(e) => onchange?.(e.target.checked)}
 	/>
 	<label for={id} class="sy-toggle--label">Toggle</label>

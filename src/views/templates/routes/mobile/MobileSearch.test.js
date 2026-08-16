@@ -91,7 +91,7 @@ it('should populate the result list after a query', async () => {
 	const user = userEvent.setup();
 	const { getByPlaceholderText, getByText } = render(MobileSearch);
 	await user.type(getByPlaceholderText('Search...'), 'watermelon');
-	const headline = getByText('西瓜');
+	const headline = getByText('西瓜').closest('.sy-list-preview-item--headline');
 	expect(headline.className.split(' ')).toContain('sy-list-preview-item--headline');
 });
 

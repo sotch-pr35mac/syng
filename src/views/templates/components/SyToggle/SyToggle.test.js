@@ -12,6 +12,15 @@ it('should have the uuid passed to it', async () => {
 	expect(id).toBe('test-id');
 });
 
+it('uses the provided accessible label', () => {
+	const { getByLabelText } = render(SyToggle, {
+		value: 'test',
+		accessibleLabel: 'Color pinyin by tone',
+	});
+
+	expect(getByLabelText('Color pinyin by tone')).toBeTruthy();
+});
+
 it('should respect the state passed to it', async () => {
 	const { getByRole } = render(SyToggle, {
 		value: 'test',

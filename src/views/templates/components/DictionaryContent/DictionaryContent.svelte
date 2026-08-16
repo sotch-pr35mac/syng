@@ -13,9 +13,11 @@
 	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { DROPDOWN_POSITIONS } from '@/types/dropdown.js';
+	import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
 	import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
@@ -161,18 +163,22 @@
 			tooltip: 'Write Characters',
 			action: () => {
 				telemetry.trackEvent('character_window.opened', {}).catch(() => {});
+				const characterSet = dictionaryDisplaySettingsStore.settings.characterSet;
+				const initialScript =
+					characterSet === CHARACTER_SETS.BOTH ? undefined : characterSet;
 				// isMobile() includes iPad — both iPhone and iPad navigate in-app
 				// rather than opening the separate character window (desktop only).
 				if (isMobile()) {
 					// Set the word the characters screen renders before navigating;
 					// otherwise it shows whatever word Search/Bookmarks last set.
-					mobileCharacterWindowWordStore.set(word);
+					mobileCharacterWindowWordStore.set(word, initialScript);
 					window.location.hash = '#/characters';
 				} else {
 					invoke(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
 						word: {
 							traditional: word.traditional,
 							simplified: word.simplified,
+							...(initialScript ? { initialScript } : {}),
 						},
 					}).catch((e) => {
 						handleError(

@@ -14,12 +14,12 @@
 </script>
 
 <div class="dictionary-content--mw sy-text--selectable">
-	<DictionaryLink link={value.traditional} onopen={handleOpenLink}>
-		{value.simplified}
-		{#if value.simplified !== value.traditional}
-			&nbsp;({value.traditional})
-		{/if}
-	</DictionaryLink>
+	<DictionaryLink
+		link={value.traditional}
+		simplified={value.simplified}
+		traditional={value.traditional}
+		onopen={handleOpenLink}
+	/>
 </div>
 
 <style>

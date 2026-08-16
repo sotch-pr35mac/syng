@@ -7,6 +7,8 @@
 	 * @property {any} index - Index Prop
 	 * @property {boolean} [active] - Active Prop
 	 * @property {any} highlight - Highlight Prop
+	 * @property {any} [component] - Optional custom preview content component
+	 * @property {any} [itemValue] - Complete value passed to a custom preview component
 	 * @property {(detail: any) => void} [onclick] - Click callback
 	 * @property {(detail: any) => void} [onevent] - Event callback
 	 */
@@ -24,6 +26,8 @@
 		index,
 		active = false,
 		highlight,
+		component: PreviewContent = undefined,
+		itemValue = undefined,
 		onclick,
 		onevent: _onevent,
 	} = $props();
@@ -54,7 +58,12 @@
 	onclick={handleClick}
 	onkeyup={handleKeyup}
 >
-	{#if mobile}
+	{#if PreviewContent}
+		<PreviewContent value={itemValue} {mobile} />
+		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+			{truncateContent(content)}
+		</p>
+	{:else if mobile}
 		<p class="sy-list-preview-item--text sy-list-preview-item--topline">
 			<span class="sy-list-preview-item--headline">{headline}</span>
 			{#if subtitle}
@@ -123,16 +132,16 @@
 		color: var(--sy-color--black);
 		background-color: var(--sy-mobile-state-pressed);
 	}
-	.sy-list-preview-item-container--mobile .sy-list-preview-item--text {
+	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--text) {
 		margin: 0;
 	}
-	.sy-list-preview-item-container--mobile .sy-list-preview-item--topline {
+	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--topline) {
 		display: flex;
 		align-items: baseline;
 		gap: var(--sy-mobile-space--medium);
 		min-width: 0;
 	}
-	.sy-list-preview-item-container--mobile .sy-list-preview-item--headline {
+	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--headline) {
 		flex: 0 1 auto;
 		min-width: 0;
 		color: var(--sy-color--grey-4);
@@ -142,7 +151,7 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.sy-list-preview-item-container--mobile .sy-list-preview-item--subtitle {
+	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--subtitle) {
 		flex: 1 1 auto;
 		min-width: 0;
 		color: var(--sy-color--grey-3);
@@ -151,21 +160,21 @@
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
-	.sy-list-preview-item-container--mobile .sy-list-preview-item--content {
+	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--content) {
 		margin-top: var(--sy-mobile-space--extra-small);
 		color: var(--sy-color--grey-4);
 		font-size: var(--sy-font-size--mobile-small);
 	}
-	.sy-list-preview-item--text {
+	:global(.sy-list-preview-item--text) {
 		margin: var(--sy-space--small);
 	}
-	.sy-list-preview-item--headline {
+	:global(.sy-list-preview-item--headline) {
 		font-size: 1em;
 	}
-	.sy-list-preview-item--subtitle {
+	:global(.sy-list-preview-item--subtitle) {
 		font-size: 0.8em;
 	}
-	.sy-list-preview-item--content {
+	:global(.sy-list-preview-item--content) {
 		font-size: 0.8em;
 		text-overflow: ellipsis;
 		overflow: hidden;
