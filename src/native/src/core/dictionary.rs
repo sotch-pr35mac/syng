@@ -61,6 +61,39 @@ pub fn find_best_match(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn test_affected_chinese_queries_return_exact_headwords() {
+        for (text, simplified, traditional) in [
+            ("以后", "以后", "以後"),
+            ("以後", "以后", "以後"),
+            ("用于", "用于", "用於"),
+            ("用於", "用于", "用於"),
+            ("万", "万", "萬"),
+            ("萬", "万", "萬"),
+            ("舍不得", "舍不得", "捨不得"),
+            ("捨不得", "舍不得", "捨不得"),
+        ] {
+            let results = query(text.to_string());
+
+            assert!(
+                results.iter().any(|entry| {
+                    entry.simplified == simplified && entry.traditional == traditional
+                }),
+                "Missing exact Chinese headword for {text:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_ambiguous_chinese_query_returns_unique_union() {
+        let results = query_by_chinese("万".to_string());
+        let unique_ids: HashSet<u32> = results.iter().map(|entry| entry.word_id).collect();
+
+        assert_eq!(3, results.len());
+        assert_eq!(results.len(), unique_ids.len());
+    }
 
     #[test]
     fn test_best_match() {

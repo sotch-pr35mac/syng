@@ -133,7 +133,7 @@ pub async fn export_list_data(
         .file()
         .set_title("Save Vocabulary List")
         .add_filter("Syng List Formats", &["sld", "syli"])
-        .set_file_name(format!("{}.syli", &name))
+        .set_file_name(format!("{}.syli", name))
         .blocking_save_file();
     if let Some(file_path) = file_path {
         let export = BookmarksExport {
@@ -236,6 +236,9 @@ mod tests {
 
     #[test]
     fn test_convert_v1_bookmark_entry_match() {
+        let expected_word_id = find_best_match("上水", "上水", &[4, 3], 4)
+            .expect("Expected 上水 dictionary fixture")
+            .word_id;
         let original = V1BookmarkEntry {
             traditional: "上水".to_string(),
             simplified: "上水".to_string(),
@@ -267,7 +270,7 @@ mod tests {
                 simplified: "上水".to_string(),
                 tone_marks: vec![4u8, 3u8],
                 traditional: "上水".to_string(),
-                word_id: 1669
+                word_id: expected_word_id
             }
         );
     }

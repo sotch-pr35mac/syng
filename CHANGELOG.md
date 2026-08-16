@@ -1,6 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.0.1] - 2026-08-16
+### Fixed
+- Fixed valid Chinese headwords being split into separate characters during dictionary search, Reader tokenization, and Pinyinify
+- Fixed incomplete results for headwords shared between simplified and traditional Chinese
+
+### Changed
+- Updated dictionary entries
+
 ## [2.0.0] - 2026-07-12
 ### Added
 - Mobile and iPad support with responsive navigation, settings, and reader flows

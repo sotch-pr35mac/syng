@@ -43,7 +43,7 @@
 	},
 	"productName": "Syng",
 	"mainBinaryName": "Syng",
-	"version": "2.0.0",
+	"version": "2.0.1",
 	"identifier": "xyz.bytecraft.syng",
 	"plugins": {
 		"updater": {

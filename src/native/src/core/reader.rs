@@ -1018,6 +1018,37 @@ mod tests {
     }
 
     #[test]
+    fn tokenizes_affected_headwords_with_utf16_offsets() {
+        let tokens = tokenize_reader_text("🙂以后，用于；万。舍不得".to_string());
+
+        assert_eq!(
+            tokens,
+            vec![
+                ReaderToken {
+                    text: "以后".to_string(),
+                    start: 2,
+                    end: 4,
+                },
+                ReaderToken {
+                    text: "用于".to_string(),
+                    start: 5,
+                    end: 7,
+                },
+                ReaderToken {
+                    text: "万".to_string(),
+                    start: 8,
+                    end: 9,
+                },
+                ReaderToken {
+                    text: "舍不得".to_string(),
+                    start: 10,
+                    end: 13,
+                },
+            ]
+        );
+    }
+
+    #[test]
     fn blocks_cgnat_and_benchmarking_ipv4() {
         assert!(is_blocked_ipv4("100.64.0.1".parse::<Ipv4Addr>().unwrap()));
         assert!(is_blocked_ipv4(
