@@ -798,6 +798,20 @@ mod tests {
     }
 
     #[test]
+    fn test_pinyinify_affected_headwords_as_single_segments() {
+        for headword in ["以后", "用于", "万", "舍不得"] {
+            let result = pinyinify(headword.to_string());
+
+            assert_eq!(1, result.len(), "Unexpected tokenization for {headword:?}");
+            assert_eq!(headword, result[0].source);
+            assert!(
+                result[0].word_data.is_some(),
+                "Missing dictionary entry for {headword:?}"
+            );
+        }
+    }
+
+    #[test]
     fn test_pinyinify_mixed_content() {
         let result = pinyinify("Hello你好world".to_string());
 

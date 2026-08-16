@@ -236,6 +236,9 @@ mod tests {
 
     #[test]
     fn test_convert_v1_bookmark_entry_match() {
+        let expected_word_id = find_best_match("上水", "上水", &[4, 3], 4)
+            .expect("Expected 上水 dictionary fixture")
+            .word_id;
         let original = V1BookmarkEntry {
             traditional: "上水".to_string(),
             simplified: "上水".to_string(),
@@ -267,7 +270,7 @@ mod tests {
                 simplified: "上水".to_string(),
                 tone_marks: vec![4u8, 3u8],
                 traditional: "上水".to_string(),
-                word_id: 1669
+                word_id: expected_word_id
             }
         );
     }

@@ -641,13 +641,14 @@ dependencies = [
 
 [[package]]
 name = "chinese_dictionary"
-version = "2.1.6"
+version = "2.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc3a725f108a4963ecd6577cf934db6b0224057b5f34144faf0f8db922cf2eb9"
+checksum = "44013123267642253635926761c6e986fa0347ddbc435e7b1950b488c6d855c9"
 dependencies = [
  "bincode",
  "character_converter",
  "chinese_detection",
+ "fst",
  "once_cell",
  "serde",
  "serde_derive",
@@ -4875,7 +4876,7 @@ dependencies = [
 
 [[package]]
 name = "syng"
-version = "2.0.0"
+version = "2.0.1"
 dependencies = [
  "base64 0.22.1",
  "block2",
