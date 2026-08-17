@@ -1,10 +1,11 @@
 import { vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
+import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -51,19 +52,29 @@ setBookmarkManagerForTest(
 	})
 );
 
-it('sets the character-window word when Write Characters is tapped (covers reader, search, bookmarks, study)', async () => {
-	const user = userEvent.setup();
-	mobileCharacterWindowWordStore.set(undefined);
+it.each([
+	['simplified', 'simplified'],
+	['traditional', 'traditional'],
+	['both', undefined],
+])(
+	'sets the character-window word and %s preference when Write Characters is tapped',
+	async (characterSet, initialScript) => {
+		const user = userEvent.setup();
+		setPreferenceManagerForTest(mockPreferenceManager({}));
+		dictionaryDisplaySettingsStore.setCharacterSet(characterSet);
+		mobileCharacterWindowWordStore.set(undefined);
 
-	const { getByText } = render(DictionaryContent, {
-		word: TEST_WORD,
-		lists: ['Bookmarks'],
-	});
+		const { getByText } = render(DictionaryContent, {
+			word: TEST_WORD,
+			lists: ['Bookmarks'],
+		});
 
-	await user.click(getByText('Write Characters'));
+		await user.click(getByText('Write Characters'));
 
-	// The displayed word — not whatever was last selected elsewhere — drives the
-	// characters screen, because DictionaryContent is the single mobile entry point.
-	// (The store is $state-backed, so the value is a reactive proxy: compare by value.)
-	expect(mobileCharacterWindowWordStore.value).toEqual(TEST_WORD);
-});
+		// The displayed word — not whatever was last selected elsewhere — drives the
+		// characters screen, because DictionaryContent is the single mobile entry point.
+		// (The store is $state-backed, so the value is a reactive proxy: compare by value.)
+		expect(mobileCharacterWindowWordStore.value).toEqual(TEST_WORD);
+		expect(mobileCharacterWindowWordStore.initialScript).toBe(initialScript);
+	}
+);

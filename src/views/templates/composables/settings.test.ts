@@ -3,6 +3,10 @@ import {
 	isDevBuild,
 	resolveIsDevBuild,
 	updateBetaPreference,
+	updateCharacterSetPreference,
+	updateColorCharactersByTonePreference,
+	updateColorListsByTonePreference,
+	updateColorPinyinByTonePreference,
 	updateToneColorsPreference,
 } from '@/composables/settings.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -68,4 +72,33 @@ it('updates the tone colors preference and tracks the settings event', () => {
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'toneColors',
 	});
+});
+
+it.each([
+	{
+		update: () => updateCharacterSetPreference('traditional'),
+		key: 'characterSet',
+		value: 'traditional',
+	},
+	{
+		update: () => updateColorCharactersByTonePreference(false),
+		key: 'colorCharactersByTone',
+		value: false,
+	},
+	{
+		update: () => updateColorPinyinByTonePreference(true),
+		key: 'colorPinyinByTone',
+		value: true,
+	},
+	{
+		update: () => updateColorListsByTonePreference(true),
+		key: 'colorListsByTone',
+		value: true,
+	},
+])('updates and tracks the $key display preference', ({ update, key, value }) => {
+	update();
+
+	expect(preferenceManager.set).toHaveBeenCalledWith(key, value);
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', { setting: key });
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('toneColors', expect.anything());
 });

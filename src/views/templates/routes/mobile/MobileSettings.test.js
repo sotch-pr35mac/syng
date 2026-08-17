@@ -5,6 +5,7 @@ import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
@@ -29,18 +30,25 @@ const toneColors = {
 };
 let preferenceManager;
 
-beforeEach(() => {
+beforeEach(async () => {
 	settingsActiveTabStore.set('general');
 	preferenceManager = {
+		waitForInit: vi.fn(() => Promise.resolve()),
 		get: vi.fn((name) => {
 			if (name === 'toneColors') {
 				return toneColors;
 			}
-			return undefined;
+			return {
+				characterSet: 'both',
+				colorCharactersByTone: true,
+				colorPinyinByTone: false,
+				colorListsByTone: false,
+			}[name];
 		}),
 		set: vi.fn(),
 	};
 	setPreferenceManagerForTest(preferenceManager);
+	await dictionaryDisplaySettingsStore.loadSettings();
 	vi.mocked(telemetry.getPrefs).mockClear();
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
@@ -48,12 +56,40 @@ beforeEach(() => {
 });
 
 it('renders the mobile general settings without desktop-only options', () => {
-	const { getByText, queryByRole, queryByText } = render(MobileSettings);
+	const { getByRole, queryByRole, queryByText } = render(MobileSettings);
 
 	expect(queryByRole('heading', { name: 'Settings' })).toBeNull();
-	expect(getByText('Tone Colors')).toBeTruthy();
+	expect(getByRole('heading', { name: 'Characters' })).toBeTruthy();
+	expect(getByRole('heading', { name: 'Tone Coloring' })).toBeTruthy();
+	expect(getByRole('heading', { name: 'Tone Colors' })).toBeTruthy();
 	expect(queryByText('Updates')).toBeNull();
 	expect(queryByText('Under Construction Features')).toBeNull();
+});
+
+it('updates the character-set radio preference', async () => {
+	const user = userEvent.setup();
+	const { getByRole } = render(MobileSettings);
+
+	await user.click(getByRole('radio', { name: 'Traditional' }));
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('characterSet', 'traditional');
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
+		setting: 'characterSet',
+	});
+});
+
+it('updates the independent tone-coloring toggles', async () => {
+	const user = userEvent.setup();
+	const { getByLabelText } = render(MobileSettings);
+
+	await user.click(getByLabelText('Color characters by tone'));
+	await user.click(getByLabelText('Color pinyin by tone'));
+	await user.click(getByLabelText('Apply tone coloring to lists'));
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('colorCharactersByTone', false);
+	expect(preferenceManager.set).toHaveBeenCalledWith('colorPinyinByTone', true);
+	expect(preferenceManager.set).toHaveBeenCalledWith('colorListsByTone', true);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('toneColors', expect.anything());
 });
 
 it('updates tone colors through the shared settings handler', async () => {

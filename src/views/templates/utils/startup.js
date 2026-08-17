@@ -8,6 +8,7 @@
 import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { handleError } from '@/utils/error.js';
 import {
 	checkAndPerformMigration,
@@ -120,6 +121,8 @@ export const runStartupActions = () => {
 			} catch (error) {
 				handleError('Migration check failed', error, { silent: true });
 			}
+
+			await dictionaryDisplaySettingsStore.loadSettings();
 
 			// Migration: Setup shutdown hook to save data when app closes
 			// This ensures fresh data is available for future migrations

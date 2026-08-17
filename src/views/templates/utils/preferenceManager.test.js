@@ -4,7 +4,7 @@ beforeEach(() => {
 	vi.resetModules();
 });
 
-it('backfills reader settings into existing preference documents', async () => {
+it('backfills newer settings into existing preference documents', async () => {
 	global.PouchDB = class {
 		get = vi.fn(() =>
 			Promise.resolve({
@@ -34,6 +34,25 @@ it('backfills reader settings into existing preference documents', async () => {
 			textColor: '#171717',
 		})
 	);
+	expect(manager.get('characterSet')).toBe('both');
+	expect(manager.get('colorCharactersByTone')).toBe(true);
+	expect(manager.get('colorPinyinByTone')).toBe(false);
+	expect(manager.get('colorListsByTone')).toBe(false);
+});
+
+it('uses dictionary display defaults for new preference documents', async () => {
+	global.PouchDB = class {
+		get = vi.fn(() => Promise.reject({ name: 'not_found' }));
+	};
+	const { PreferenceManager } = await import('@/utils/preferenceManager.js');
+	const manager = new PreferenceManager('config');
+
+	await manager.init();
+
+	expect(manager.get('characterSet')).toBe('both');
+	expect(manager.get('colorCharactersByTone')).toBe(true);
+	expect(manager.get('colorPinyinByTone')).toBe(false);
+	expect(manager.get('colorListsByTone')).toBe(false);
 });
 
 it('rejects waitForInit when loading preferences fails instead of hanging', async () => {

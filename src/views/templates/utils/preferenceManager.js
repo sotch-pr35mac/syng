@@ -8,6 +8,7 @@
  */
 import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
+import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
 
 /*
  * Description: Construct a preference entry.
@@ -28,6 +29,10 @@ const createPreference = (restart, value) => {
 const createDefaultPreferences = () => ({
 	_id: 'config',
 	beta: createPreference(true, false),
+	characterSet: createPreference(false, CHARACTER_SETS.BOTH),
+	colorCharactersByTone: createPreference(false, true),
+	colorPinyinByTone: createPreference(false, false),
+	colorListsByTone: createPreference(false, false),
 	toneColors: createPreference(true, {
 		colors: [
 			'--sy-color--blue-3',

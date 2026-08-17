@@ -1,10 +1,13 @@
 import { beforeEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { mockBookmarkManager } from '@test/utils/unitTestUtils.js';
+import { invoke } from '@tauri-apps/api/core';
+import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
-import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -37,12 +40,35 @@ const TEST_WORD = {
 };
 
 beforeEach(() => {
+	setPreferenceManagerForTest(mockPreferenceManager({}));
+	dictionaryDisplaySettingsStore.setCharacterSet('both');
+	vi.mocked(invoke).mockClear();
 	setBookmarkManagerForTest(
 		mockBookmarkManager({
 			words: [],
 			lists: ['Bookmarks'],
 		})
 	);
+});
+
+it.each([
+	['simplified', 'simplified'],
+	['traditional', 'traditional'],
+	['both', undefined],
+])('opens the character window for the %s preference', async (characterSet, initialScript) => {
+	const user = userEvent.setup();
+	dictionaryDisplaySettingsStore.setCharacterSet(characterSet);
+	const { getByText } = render(DictionaryContent, { word: TEST_WORD });
+
+	await user.click(getByText('Write Characters'));
+
+	expect(invoke).toHaveBeenCalledWith(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
+		word: {
+			traditional: TEST_WORD.traditional,
+			simplified: TEST_WORD.simplified,
+			...(initialScript ? { initialScript } : {}),
+		},
+	});
 });
 
 it('should display the definitions', async () => {

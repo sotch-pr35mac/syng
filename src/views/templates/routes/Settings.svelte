@@ -1,6 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
+	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
@@ -14,6 +16,10 @@
 		resolveIsDevBuild,
 		resolveIsMasBuild,
 		updateBetaPreference,
+		updateCharacterSetPreference,
+		updateColorCharactersByTonePreference,
+		updateColorListsByTonePreference,
+		updateColorPinyinByTonePreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
@@ -46,6 +52,32 @@
 			centerLabel: false,
 			component: UpdateChecker,
 			props: {},
+		},
+		{
+			label: 'Characters',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: false,
+			component: CharacterSetSelector,
+			props: {
+				variant: isIPad() ? 'mobile' : 'desktop',
+				onchange: updateCharacterSetPreference,
+			},
+		},
+		{
+			label: 'Tone Coloring',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: false,
+			component: ToneColoringSettings,
+			props: {
+				variant: isIPad() ? 'mobile' : 'desktop',
+				oncharacterschange: updateColorCharactersByTonePreference,
+				onpinyinchange: updateColorPinyinByTonePreference,
+				onlistschange: updateColorListsByTonePreference,
+			},
 		},
 		{
 			label: 'Tone Colors',

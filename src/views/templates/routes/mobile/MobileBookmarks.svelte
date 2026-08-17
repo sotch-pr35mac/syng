@@ -32,6 +32,7 @@
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
 	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
+	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	let currentSnap = $state<SheetSnap>(mobileBookmarksSnapStore.value);
@@ -250,6 +251,7 @@
 			<SyList
 				style="preview"
 				values={wordList}
+				component={DictionaryListPreviewContent}
 				activeKey={activeWord?.hash ?? null}
 				bind:filterValue
 				onvisiblechange={handleVisibleWordListChange}

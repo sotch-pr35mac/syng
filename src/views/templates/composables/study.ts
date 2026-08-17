@@ -13,10 +13,20 @@ export const EMPTY_FLASHCARDS_LIST_MESSAGE = 'No flashcards in this list';
 export const EMPTY_QUIZ_MESSAGE = 'No Questions Available';
 export const LOADING_STUDY_MESSAGE = 'Loading...';
 
-type MultipleChoiceQuestion = {
+export type QuizCharacterOption = {
+	simplified: string;
+	traditional: string;
+};
+
+export type QuizOption = {
+	value: string;
+	characters?: QuizCharacterOption;
+};
+
+export type MultipleChoiceQuestion = {
 	kind: string;
 	question: string;
-	options: string[];
+	options: QuizOption[];
 	answer: string;
 	time_limit: number;
 	word_data: BookmarkWordEntry;

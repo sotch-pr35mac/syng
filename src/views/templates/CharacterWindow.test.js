@@ -1,9 +1,13 @@
-import { vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { beforeEach, vi } from 'vitest';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { wait } from '@test/utils/unitTestUtils.js';
 import CharacterWindow from '@/CharacterWindow.svelte';
-import HanziWriter from 'hanzi-writer'; //eslint-disable-line no-unused-vars
+import HanziWriter from 'hanzi-writer';
+
+const eventMocks = vi.hoisted(() => ({
+	displayCharactersListener: undefined,
+}));
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -17,14 +21,14 @@ vi.mock('lucide-svelte', async () => {
 vi.mock('hanzi-writer', () => {
 	return {
 		default: {
-			create: (_param1, _param2, _param3) => {
+			create: vi.fn((_param1, _param2, _param3) => {
 				return {
 					hideCharacter: vi.fn(),
 					animateCharacter: vi.fn(),
 					pauseAnimation: vi.fn(),
 					resumeAnimation: vi.fn(),
 				};
-			},
+			}),
 		},
 	};
 });
@@ -35,13 +39,14 @@ vi.mock('@tauri-apps/plugin-os', () => ({
 }));
 
 const WORD = {
-	simplified: '你好',
-	traditional: '你好',
+	simplified: '汉字',
+	traditional: '漢字',
 };
 
 vi.mock('@tauri-apps/api/event', () => ({
 	listen: vi.fn((event, callback) => {
 		if (event === 'display-characters') {
+			eventMocks.displayCharactersListener = callback;
 			wait(() => callback({ payload: WORD }));
 		}
 		return Promise.resolve(() => {});
@@ -50,6 +55,10 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 const mockMatchMedia = vi.fn().mockReturnValue({
 	addEventListener: (event, callback) => undefined, // eslint-disable-line no-unused-vars
+});
+
+beforeEach(() => {
+	vi.mocked(HanziWriter.create).mockClear();
 });
 
 it('should highlight the tab that you click on', async () => {
@@ -94,4 +103,42 @@ it('should update the tooltip as you click it', async () => {
 	// Test tooltip after second interaction
 	await user.click(controlButton);
 	expect(tooltip.textContent).toBe('Resume');
+});
+
+it('opens on a requested script', async () => {
+	window.matchMedia = mockMatchMedia;
+	const { getByText } = render(CharacterWindow, {});
+
+	await waitFor(() => expect(eventMocks.displayCharactersListener).toBeTypeOf('function'));
+	eventMocks.displayCharactersListener({
+		payload: { ...WORD, initialScript: 'traditional' },
+	});
+
+	await waitFor(() =>
+		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
+			'character-target',
+			'漢',
+			expect.any(Object)
+		)
+	);
+	expect(getByText('Traditional').className).toContain('script-selector--active');
+});
+
+it('keeps the current script when no initial script is requested', async () => {
+	const user = userEvent.setup();
+	window.matchMedia = mockMatchMedia;
+	const { getByText } = render(CharacterWindow, {});
+	await waitFor(() => expect(eventMocks.displayCharactersListener).toBeTypeOf('function'));
+
+	await user.click(getByText('Traditional'));
+	eventMocks.displayCharactersListener({ payload: WORD });
+
+	await waitFor(() =>
+		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
+			'character-target',
+			'漢',
+			expect.any(Object)
+		)
+	);
+	expect(getByText('Traditional').className).toContain('script-selector--active');
 });

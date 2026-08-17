@@ -10,6 +10,7 @@
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 	import { isIPad } from '@/utils/device.js';
+	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const params = new URLSearchParams(router.querystring);
@@ -105,7 +106,11 @@
 			<div class="flashcard--front">
 				{#if flashcardsRoute.listContent.length > 0 && activeWord}
 					<h1>
-						{activeWord.simplified}&nbsp;({activeWord.traditional})
+						<PreferredCharacters
+							simplified={activeWord.simplified}
+							traditional={activeWord.traditional}
+							lexicalTestIdPrefix="flashcard-front"
+						/>
 					</h1>
 				{:else}
 					<h1>

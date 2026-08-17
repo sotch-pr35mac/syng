@@ -1,9 +1,13 @@
 <script lang="ts">
 	import {
+		CHARACTER_QUESTIONS,
 		GOOD_SCORE_THRESHOLD,
 		OKAY_SCORE_THRESHOLD,
 		type IncorrectAnswer,
+		type MultipleChoiceQuestion,
+		type QuizCharacterOption,
 	} from '@/composables/study.js';
+	import QuizDisplayText from '@/components/QuizText/QuizDisplayText.svelte';
 
 	type Props = {
 		score?: number;
@@ -34,6 +38,17 @@
 		}
 		return { label: "Keep practicing - you'll get there!", level: 'needs-work' };
 	});
+
+	function questionCharacters(question: MultipleChoiceQuestion): QuizCharacterOption | undefined {
+		return question.kind === CHARACTER_QUESTIONS ? question.word_data : undefined;
+	}
+
+	function optionCharacters(
+		question: MultipleChoiceQuestion,
+		value: string
+	): QuizCharacterOption | undefined {
+		return question.options.find((option) => option.value === value)?.characters;
+	}
 </script>
 
 <div class="quiz-results" class:quiz-results--mobile={variant === 'mobile'}>
@@ -52,21 +67,35 @@
 			<h2 class="quiz-results__incorrect-title">Incorrect Answers</h2>
 			<div class="quiz-results__incorrect-list">
 				{#each incorrect as item, index (index)}
+					{@const question = item.question.MultipleChoice}
 					<div class="quiz-results__incorrect-item">
 						<div class="quiz-results__incorrect-question">
 							<strong>Question:</strong>
-							{item.question.MultipleChoice.question}
+							<QuizDisplayText
+								text={question.question}
+								characters={questionCharacters(question)}
+								variant="inline"
+							/>
 						</div>
 						<div class="quiz-results__incorrect-details">
 							<span>
-								Your answer: <span class="quiz-results__incorrect-answer"
-									>{item.response}</span
-								>
+								Your answer:
+								<span class="quiz-results__incorrect-answer">
+									<QuizDisplayText
+										text={item.response}
+										characters={optionCharacters(question, item.response)}
+										variant="inline"
+									/>
+								</span>
 							</span>
 							<span>
 								Correct answer:
 								<span class="quiz-results__correct-answer">
-									{item.question.MultipleChoice.answer}
+									<QuizDisplayText
+										text={question.answer}
+										characters={optionCharacters(question, question.answer)}
+										variant="inline"
+									/>
 								</span>
 							</span>
 						</div>

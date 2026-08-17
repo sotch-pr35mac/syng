@@ -8,12 +8,27 @@ use serde::{Deserialize, Serialize};
 #[cfg(desktop)]
 use tauri::{Emitter, Manager, WebviewWindow, WindowEvent};
 
+/// The writing system initially selected in the character window.
+#[cfg(desktop)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CharacterScript {
+    Simplified,
+    Traditional,
+}
+
 /// Data structure for displaying character information.
 #[cfg(desktop)]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CharacterWindowWord {
     pub traditional: String,
     pub simplified: String,
+    #[serde(
+        default,
+        rename = "initialScript",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub initial_script: Option<CharacterScript>,
 }
 
 /// Opens the character window and displays the given word.
@@ -44,4 +59,40 @@ pub fn setup(character_window: &WebviewWindow) {
             let _ = window.hide();
         }
     });
+}
+
+#[cfg(all(test, desktop))]
+mod tests {
+    use super::{CharacterScript, CharacterWindowWord};
+
+    #[test]
+    fn character_window_word_uses_the_frontend_initial_script_shape() {
+        let word: CharacterWindowWord = serde_json::from_value(serde_json::json!({
+            "traditional": "漢字",
+            "simplified": "汉字",
+            "initialScript": "traditional"
+        }))
+        .unwrap();
+
+        assert_eq!(word.initial_script, Some(CharacterScript::Traditional));
+        assert_eq!(
+            serde_json::to_value(word).unwrap()["initialScript"],
+            "traditional"
+        );
+    }
+
+    #[test]
+    fn character_window_word_allows_no_initial_script_for_both() {
+        let word: CharacterWindowWord = serde_json::from_value(serde_json::json!({
+            "traditional": "漢字",
+            "simplified": "汉字"
+        }))
+        .unwrap();
+
+        assert_eq!(word.initial_script, None);
+        assert!(serde_json::to_value(word)
+            .unwrap()
+            .get("initialScript")
+            .is_none());
+    }
 }

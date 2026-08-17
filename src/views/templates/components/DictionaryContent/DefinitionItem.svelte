@@ -19,29 +19,24 @@
 		const characters = text.split('[')[0];
 		const breakdown = characters.split('|');
 		return {
-			traditional: breakdown[0],
-			simplified: breakdown[1] || breakdown[0],
+			traditional: breakdown[0].trim(),
+			simplified: (breakdown[1] || breakdown[0]).trim(),
 		};
 	};
-	const getDisplayValue = (text) => {
-		const characters = getCharactersFromMatch(text);
-		return characters.traditional === characters.simplified
-			? `${characters.traditional}`
-			: `${characters.simplified} (${characters.traditional})`;
-	};
-	const getLink = (text) => {
-		const characters = getCharactersFromMatch(text);
-		return characters.traditional;
-	};
+	const match = $derived(findPattern(value));
+	const characters = $derived(match ? getCharactersFromMatch(match) : undefined);
 	const handleOpenLink = (event) => onevent?.(event.detail);
 </script>
 
 <div class="dictionary-content--definition-item sy-text--selectable">
-	{#if pattern.test(value)}
-		{value.split(findPattern(value))}&nbsp;
-		<DictionaryLink link={getLink(findPattern(value))} onopen={handleOpenLink}>
-			{getDisplayValue(findPattern(value))}
-		</DictionaryLink>
+	{#if match && characters}
+		{value.split(match)}&nbsp;
+		<DictionaryLink
+			link={characters.traditional}
+			simplified={characters.simplified}
+			traditional={characters.traditional}
+			onopen={handleOpenLink}
+		/>
 	{:else}
 		{value}
 	{/if}

@@ -10,6 +10,7 @@
 	import SyProgressLine from '@/components/SyProgressLine/SyProgressLine.svelte';
 	import ResultIndicator from '@/components/ResultIndicator/ResultIndicator.svelte';
 	import QuizResults from '@/components/QuizResults/QuizResults.svelte';
+	import QuizDisplayText from '@/components/QuizText/QuizDisplayText.svelte';
 	import {
 		CHARACTER_QUESTIONS,
 		EMPTY_QUIZ_MESSAGE,
@@ -192,21 +193,27 @@
 		{:else if quizRoute.currentQuestion}
 			<div class="mobile-quiz__question-view">
 				<h1>
-					{#if isCharacterQuestion}
-						{quizRoute.currentQuestion.word_data.simplified}
-						{#if quizRoute.currentQuestion.word_data.simplified !== quizRoute.currentQuestion.word_data.traditional}
-							<span class="mobile-quiz__traditional"
-								>{quizRoute.currentQuestion.word_data.traditional}</span
-							>
-						{/if}
-					{:else}
-						{quizRoute.currentQuestion.question}
-					{/if}
+					<QuizDisplayText
+						text={quizRoute.currentQuestion.question}
+						characters={isCharacterQuestion
+							? quizRoute.currentQuestion.word_data
+							: undefined}
+						variant="display"
+						stacked={isCharacterQuestion}
+						lexicalTestIdPrefix="quiz-question"
+					/>
 				</h1>
 				<div class="mobile-quiz__options">
-					{#each quizRoute.currentQuestion.options as option (option)}
-						<button class="mobile-quiz__option" onclick={() => answerQuestion(option)}>
-							{option}
+					{#each quizRoute.currentQuestion.options as option (option.value)}
+						<button
+							class="mobile-quiz__option"
+							onclick={() => answerQuestion(option.value)}
+						>
+							<QuizDisplayText
+								text={option.value}
+								characters={option.characters}
+								variant="inline"
+							/>
 						</button>
 					{/each}
 				</div>
@@ -387,13 +394,6 @@
 		font-weight: 200;
 		line-height: 1.3;
 		overflow-wrap: anywhere;
-	}
-
-	.mobile-quiz__traditional {
-		display: block;
-		margin-top: calc(var(--sy-mobile-space--extra-small) * 5);
-		font-size: var(--sy-font-size--display-medium);
-		color: var(--sy-color--grey-5);
 	}
 
 	.mobile-quiz__options {

@@ -1,40 +1,58 @@
+import { beforeEach, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
 import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 
-const mockMeasureWordA = {
-	simplified: 'A',
-	traditional: 'A',
-};
+const IDENTICAL_MEASURE_WORD = { simplified: '个', traditional: '个' };
+const DIFFERENT_MEASURE_WORD = { simplified: '只', traditional: '隻' };
 
-const mockMeasureWordB = {
-	simplified: 'A',
-	traditional: 'B',
-};
-
-it('should display a dictionary link', async () => {
-	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordA,
+beforeEach(async () => {
+	const preferences = {
+		characterSet: 'both',
+		colorCharactersByTone: true,
+		colorPinyinByTone: false,
+	};
+	setPreferenceManagerForTest({
+		waitForInit: vi.fn(() => Promise.resolve()),
+		get: vi.fn((name) => preferences[name]),
+		set: vi.fn((name, value) => {
+			preferences[name] = value;
+		}),
 	});
-
-	const text = getByText(mockMeasureWordA.traditional);
-	const styles = text.className.split(' ');
-	expect(styles).toContain('dictionary-link');
+	await dictionaryDisplaySettingsStore.loadSettings();
 });
 
-it('should display a single character when the traditional and simplified match', async () => {
-	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordA,
+it('renders matching forms once as a dictionary link', () => {
+	const { getByTestId, queryByLabelText } = render(MeasureWord, {
+		value: IDENTICAL_MEASURE_WORD,
 	});
 
-	const text = getByText(mockMeasureWordA.traditional);
-	expect(text.textContent).toBe('A ');
+	expect(getByTestId('dictionary-link-simplified').textContent).toBe('个');
+	expect(queryByLabelText('Simplified Chinese')).toBeNull();
 });
 
-it('should display both traditional and simplified when they do not match', async () => {
-	const { getByText } = render(MeasureWord, {
-		value: mockMeasureWordB,
+it('renders parenthetical forms for the both preference', () => {
+	const { getByLabelText, getByTestId, queryByText } = render(MeasureWord, {
+		value: DIFFERENT_MEASURE_WORD,
 	});
 
-	const text = getByText(`${mockMeasureWordB.simplified} (${mockMeasureWordB.traditional})`);
-	expect(text.textContent).toBe('A  (B)');
+	expect(getByLabelText('Simplified Chinese: 只').textContent).toBe('只');
+	expect(getByLabelText('Traditional Chinese: 隻').textContent).toBe('隻');
+	expect(getByTestId('dictionary-link-simplified').textContent).toBe('只');
+	expect(getByTestId('dictionary-link-traditional').textContent).toBe('隻');
+	expect(getByTestId('dictionary-link').textContent).toBe('只（隻）');
+	expect(queryByText('简')).toBeNull();
+	expect(queryByText('繁')).toBeNull();
+});
+
+it.each([
+	['simplified', 'dictionary-link-simplified', '只'],
+	['traditional', 'dictionary-link-traditional', '隻'],
+])('renders the %s preference', (characterSet, testId, expected) => {
+	dictionaryDisplaySettingsStore.setCharacterSet(characterSet);
+	const { getByTestId } = render(MeasureWord, { value: DIFFERENT_MEASURE_WORD });
+
+	expect(getByTestId(testId).textContent).toBe(expected);
+	expect(getByTestId('dictionary-link').innerHTML).not.toContain('colored-characters--tone');
 });

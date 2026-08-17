@@ -1,0 +1,17 @@
+export const CHARACTER_SETS = {
+	SIMPLIFIED: 'simplified',
+	TRADITIONAL: 'traditional',
+	BOTH: 'both',
+} as const;
+
+export type CharacterSet = (typeof CHARACTER_SETS)[keyof typeof CHARACTER_SETS];
+export type CharacterScript = Exclude<CharacterSet, (typeof CHARACTER_SETS)['BOTH']>;
+
+export const CHARACTER_SET_VALUES: readonly CharacterSet[] = Object.values(CHARACTER_SETS);
+
+export interface DictionaryDisplaySettings {
+	characterSet: CharacterSet;
+	colorCharactersByTone: boolean;
+	colorPinyinByTone: boolean;
+	colorListsByTone: boolean;
+}

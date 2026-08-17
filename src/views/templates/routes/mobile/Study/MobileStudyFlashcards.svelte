@@ -8,6 +8,7 @@
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
+	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 
 	const params = new URLSearchParams(router.querystring);
 	const listFromUrl = params.get('list');
@@ -63,10 +64,12 @@
 			<div class="mobile-flashcards__front">
 				<h1>
 					{#if activeWord}
-						{activeWord.simplified}
-						{#if activeWord.simplified !== activeWord.traditional}
-							<span>({activeWord.traditional})</span>
-						{/if}
+						<PreferredCharacters
+							simplified={activeWord.simplified}
+							traditional={activeWord.traditional}
+							stacked={true}
+							lexicalTestIdPrefix="flashcard-front"
+						/>
 					{:else}
 						{flashcardsRoute.loading
 							? LOADING_STUDY_MESSAGE
@@ -161,13 +164,6 @@
 		font-weight: 200;
 		line-height: 1.2;
 		overflow-wrap: anywhere;
-	}
-
-	.mobile-flashcards__front span {
-		display: block;
-		margin-top: calc(var(--sy-mobile-space--extra-small) * 5);
-		font-size: var(--sy-font-size--display-medium);
-		color: var(--sy-color--grey-5);
 	}
 
 	.mobile-flashcards__back {

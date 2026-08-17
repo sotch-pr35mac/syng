@@ -1,10 +1,18 @@
 <script lang="ts">
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
+	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
-	import { updateToneColorsPreference } from '@/composables/settings.js';
+	import {
+		updateCharacterSetPreference,
+		updateColorCharactersByTonePreference,
+		updateColorListsByTonePreference,
+		updateColorPinyinByTonePreference,
+		updateToneColorsPreference,
+	} from '@/composables/settings.js';
 
 	type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
 
@@ -45,6 +53,19 @@
 
 	<div class="mobile-settings__content">
 		{#if activeTab === 'general'}
+			<section class="mobile-settings__section" aria-labelledby="characters-heading">
+				<h2 id="characters-heading">Characters</h2>
+				<CharacterSetSelector variant="mobile" onchange={updateCharacterSetPreference} />
+			</section>
+			<section class="mobile-settings__section" aria-labelledby="tone-coloring-heading">
+				<h2 id="tone-coloring-heading">Tone Coloring</h2>
+				<ToneColoringSettings
+					variant="mobile"
+					oncharacterschange={updateColorCharactersByTonePreference}
+					onpinyinchange={updateColorPinyinByTonePreference}
+					onlistschange={updateColorListsByTonePreference}
+				/>
+			</section>
 			<section class="mobile-settings__section" aria-labelledby="tone-colors-heading">
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
@@ -86,6 +107,9 @@
 		min-height: 0;
 		overflow-y: auto;
 		padding: calc(var(--sy-mobile-space--extra-small) * 5);
+		display: flex;
+		flex-direction: column;
+		gap: calc(var(--sy-mobile-space--medium) * 3);
 	}
 
 	.mobile-settings__section {

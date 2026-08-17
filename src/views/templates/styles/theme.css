@@ -41,6 +41,8 @@
 	--sy-font-size--mobile-large: 1rem;
 	--sy-font-size--mobile-extra-large: 1.125rem;
 	--sy-font-size--result-caption: 0.875rem;
+	--sy-font-size--character-set-label: 0.3em;
+	--sy-font-size--character-set-label-inline: 0.75em;
 
 	/* Display Sizes (viewport-based for large UI elements) */
 	--sy-font-size--display-extra-large: 14vh;

@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.0] - 2026-08-17
+### Added
+- Added character display options
+
 ## [2.0.2] - 2026-08-17
 ### Fixed
 - Fixed punctuation causing English and Pinyin searches to return no or incomplete results

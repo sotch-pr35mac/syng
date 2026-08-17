@@ -13,7 +13,8 @@ import {
 } from '@/stores/flashcards.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { quizRoute } from '@/composables/quiz.svelte.js';
-import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -44,8 +45,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 					pending: 1,
 					question: {
 						MultipleChoice: {
+							kind: 'Characters',
 							question: '西瓜',
-							options: ['watermelon', 'apple', 'pear', 'plum'],
+							options: ['watermelon', 'apple', 'pear', 'plum'].map((value) => ({
+								value,
+							})),
 							answer: 'watermelon',
 							time_limit: 10,
 							word_data: WORDS[0],
@@ -163,6 +167,20 @@ beforeEach(async () => {
 		onfinish: null,
 	}));
 	setBookmarkManagerForTest(mockBookmarkManager());
+	const displayPreferences = {
+		characterSet: 'both',
+		colorCharactersByTone: true,
+		colorPinyinByTone: false,
+		colorListsByTone: false,
+	};
+	setPreferenceManagerForTest({
+		waitForInit: vi.fn(() => Promise.resolve()),
+		get: vi.fn((name) => displayPreferences[name]),
+		set: vi.fn((name, value) => {
+			displayPreferences[name] = value;
+		}),
+	});
+	await dictionaryDisplaySettingsStore.loadSettings();
 	window.location.hash = '#/study';
 	studySubRouteStore.set(null);
 	flashcardsActiveListStore.set(null);
@@ -170,6 +188,20 @@ beforeEach(async () => {
 	flashcardsShowDetailsStore.set(false);
 	quizRoute.reset();
 	await bookmarksStore.refresh();
+});
+
+it('uses character display preferences on mobile flashcard fronts without tone coloring', async () => {
+	window.location.hash = '#/study/flashcards?list=Bookmarks';
+	flashcardsActiveListStore.set('Bookmarks');
+	flashcardsActiveIndexStore.set(1);
+	flashcardsShowDetailsStore.set(false);
+	const { container, findByTestId, getByLabelText } = render(MobileStudyFlashcards);
+
+	expect((await findByTestId('flashcard-front-simplified')).textContent).toBe('苹果');
+	expect((await findByTestId('flashcard-front-traditional')).textContent).toBe('蘋果');
+	expect(getByLabelText('Simplified Chinese')).toBeTruthy();
+	expect(getByLabelText('Traditional Chinese')).toBeTruthy();
+	expect(container.innerHTML).not.toContain('colored-characters--tone');
 });
 
 it('renders populated study lists and opens flashcards', async () => {
@@ -211,6 +243,12 @@ it('answers a mobile quiz question and shows final results', async () => {
 	const { findByText } = render(MobileStudyQuiz);
 
 	await user.click(await findByText('watermelon'));
+	expect(invoke).toHaveBeenCalledWith('answer_question', {
+		response: {
+			response: 'watermelon',
+			answered_in: expect.any(Number),
+		},
+	});
 	expect(await findByText('Finish')).toBeTruthy();
 
 	await user.click(await findByText('Finish'));
