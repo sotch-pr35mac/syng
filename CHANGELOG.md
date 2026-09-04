@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.2.0]
+### Added
+- Search field is now focused automatically on launch and when returning to the Search page
+
 ## [2.1.0] - 2026-08-17
 ### Added
 - Added character display options
