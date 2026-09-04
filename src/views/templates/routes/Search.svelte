@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -21,6 +21,17 @@
 	let highlightActive = $state(true);
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
+
+	onMount(() => {
+		// Auto-focus the search field so the user can type immediately on launch and
+		// on every navigation back to this route. Skipped on iPad (desktop UI, but a
+		// hardware keyboard isn't guaranteed and focus would raise the on-screen one).
+		if (isIPadDevice) {
+			return;
+		}
+		const input = document.getElementById('search') as HTMLInputElement | null;
+		input?.focus();
+	});
 
 	const searchResults = $derived(
 		search.fullResults.map((entry) => ({

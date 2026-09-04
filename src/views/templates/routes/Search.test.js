@@ -71,6 +71,10 @@ setBookmarkManagerForTest(
 	})
 );
 
+it('should auto-focus the search field on mount', () => {
+	const { getByPlaceholderText } = render(Search, {});
+	expect(getByPlaceholderText('Search...')).toBe(document.activeElement);
+});
 it('should update the language selection after entering text to the search bar', async () => {
 	const user = userEvent.setup();
 	const { getByPlaceholderText, getByText } = render(Search, {});
