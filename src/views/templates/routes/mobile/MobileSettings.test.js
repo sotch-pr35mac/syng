@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
@@ -51,6 +52,11 @@ beforeEach(async () => {
 	};
 	setPreferenceManagerForTest(preferenceManager);
 	await dictionaryDisplaySettingsStore.loadSettings();
+	privacySettingsStore.setPrivacySettingsForTest({
+		regionCode: null,
+		childPrivacyMode: false,
+		completedOnboardingVersion: 1,
+	});
 	vi.mocked(telemetry.getPrefs).mockClear();
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
@@ -77,6 +83,17 @@ it('renders the mobile general settings without desktop-only options', () => {
 	expect(getByRole('heading', { name: 'Tone Colors' })).toBeTruthy();
 	expect(queryByText('Updates')).toBeNull();
 	expect(queryByText('Under Construction Features')).toBeNull();
+});
+
+it('replays onboarding from the dev-only general setting', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText } = render(MobileSettings);
+
+	expect(getByText('Replay onboarding')).toBeTruthy();
+	await user.click(getByRole('button', { name: 'Show again' }));
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('forceOnboardingReplay', true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
 });
 
 it('updates the character-set radio preference', async () => {
@@ -139,4 +156,25 @@ it('restores the last active settings tab', async () => {
 	const { getByText } = render(MobileSettings);
 
 	await waitFor(() => expect(getByText('Enable Telemetry')).toBeTruthy());
+});
+
+it('shows age status on the telemetry tab while child privacy mode is on', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({
+		regionCode: 'US',
+		childPrivacyMode: true,
+		completedOnboardingVersion: 1,
+	});
+	vi.mocked(telemetry.getPrefs).mockResolvedValue({
+		enabled: false,
+		track_events: true,
+		track_screen_views: true,
+		track_errors: true,
+		include_device_context: true,
+	});
+	const user = userEvent.setup();
+	const { getByText, getByLabelText } = render(MobileSettings);
+
+	await user.click(getByText('Telemetry'));
+	await waitFor(() => expect(getByText(/additional privacy protections apply/i)).toBeTruthy());
+	await waitFor(() => expect(getByLabelText('Enable Telemetry').disabled).toBe(true));
 });

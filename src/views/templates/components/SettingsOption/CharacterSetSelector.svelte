@@ -9,9 +9,9 @@
 
 	const { variant = 'desktop', onchange }: Props = $props();
 	const options: { value: CharacterSet; label: string }[] = [
+		{ value: CHARACTER_SETS.BOTH, label: 'Simplified + Traditional' },
 		{ value: CHARACTER_SETS.SIMPLIFIED, label: 'Simplified' },
 		{ value: CHARACTER_SETS.TRADITIONAL, label: 'Traditional' },
-		{ value: CHARACTER_SETS.BOTH, label: 'Simplified + Traditional' },
 	];
 </script>
 

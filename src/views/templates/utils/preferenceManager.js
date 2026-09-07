@@ -10,6 +10,8 @@ import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 
+const POUCH_CONFLICT_STATUS = 409;
+
 /*
  * Description: Construct a preference entry.
  * Param: restart: Boolean: True if a restart is required for this change
@@ -45,6 +47,10 @@ const createDefaultPreferences = () => ({
 		hasCustomColors: false,
 	}),
 	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
+	regionCode: createPreference(false, null),
+	childPrivacyMode: createPreference(false, false),
+	completedOnboardingVersion: createPreference(false, 0),
+	forceOnboardingReplay: createPreference(false, false),
 });
 
 const backfillPreferences = (configuration) => {
@@ -71,6 +77,7 @@ export class PreferenceManager {
 		this._config = {};
 		this.initialized = false;
 		this._initPromise = null;
+		this._writeQueue = Promise.resolve();
 	}
 
 	/*
@@ -154,24 +161,48 @@ export class PreferenceManager {
 		}
 
 		this._config[property].value = value;
-		this._db
-			.put(this._config)
-			.then((response) => {
-				if (response.ok) {
-					this._config._rev = response.rev;
-				} else {
-					handleError(
-						'Cannot save preferences. An unknown error occurred. Check the log for more details.',
-						response
-					);
-				}
-				return undefined;
-			})
-			.catch((err) => {
+		this._writeQueue = this._writeQueue.then(() => this._persistConfig());
+	}
+
+	_isConflictError(error) {
+		return (
+			Boolean(error) && (error.status === POUCH_CONFLICT_STATUS || error.name === 'conflict')
+		);
+	}
+
+	async _putConfig() {
+		const response = await this._db.put(this._config);
+		if (response.ok) {
+			this._config._rev = response.rev;
+			return;
+		}
+		handleError(
+			'Cannot save preferences. An unknown error occurred. Check the log for more details.',
+			response
+		);
+	}
+
+	async _persistConfig() {
+		try {
+			await this._putConfig();
+		} catch (error) {
+			if (!this._isConflictError(error)) {
 				handleError(
 					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
-					err
+					error
 				);
-			});
+				return;
+			}
+			try {
+				const latest = await this._db.get('config');
+				this._config._rev = latest._rev;
+				await this._putConfig();
+			} catch (retryError) {
+				handleError(
+					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
+					retryError
+				);
+			}
+		}
 	}
 }

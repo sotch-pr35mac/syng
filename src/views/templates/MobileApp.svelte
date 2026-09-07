@@ -14,12 +14,19 @@
 	import MobileTools from '@/routes/mobile/MobileTools.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
 	import NotFound from '@/routes/NotFound.svelte';
-	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
+	import { runStartupActions, waitForStartupComplete } from '@/utils/startup.js';
+	import { telemetry, getRouteScreenName } from '@/utils/telemetry.js';
 	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+	import { handleError } from '@/utils/error.js';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+	import OnboardingFlow from '@/components/Onboarding/OnboardingFlow.svelte';
 
 	runStartupActions();
+
+	let keyboardInset = $state(0);
+	let shellReady = $state(false);
 
 	const routes = {
 		'/': MobileSearch,
@@ -53,8 +60,6 @@
 	// content area, and only while the software keyboard is shown. window.innerHeight (the
 	// layout viewport) is the stable full-height basis: it does NOT shrink with the iOS
 	// keyboard, whereas visualViewport.height does.
-	let keyboardInset = $state(0);
-
 	function computeKeyboardInset(): number {
 		const viewport = window.visualViewport;
 		if (!viewport) {
@@ -65,6 +70,9 @@
 	}
 
 	$effect(() => {
+		if (!shellReady || !privacySettingsStore.hasCompletedOnboarding) {
+			return;
+		}
 		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
@@ -72,8 +80,18 @@
 	});
 
 	onMount(() => {
-		// Diagnostics for the resume-time database failure; correlates DB errors with
-		// recent foreground/background transitions. No behavior change.
+		waitForStartupComplete()
+			.then(() => {
+				shellReady = true;
+				return undefined;
+			})
+			.catch((error) => {
+				handleError(
+					'There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.',
+					error
+				);
+			});
+
 		const stopLifecycleDiagnostics = startLifecycleDiagnostics();
 
 		const viewport = window.visualViewport;
@@ -111,6 +129,14 @@
 
 {#if databaseMigrationStore.active}
 	<DatabaseMigrationScreen />
+{:else if !shellReady}
+	<div class="mobile-app" style="bottom: {keyboardInset}px" aria-busy="true"></div>
+{:else if !privacySettingsStore.hasCompletedOnboarding}
+	<div class="mobile-app" style="bottom: {keyboardInset}px">
+		<div class="mobile-app__content">
+			<OnboardingFlow variant="mobile" />
+		</div>
+	</div>
 {:else}
 	<div class="mobile-app" style="bottom: {keyboardInset}px">
 		<MobileNavigation />

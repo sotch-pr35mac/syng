@@ -4,6 +4,7 @@
 	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
 	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '@/utils/telemetry.js';
 	import { handleError } from '@/utils/error.js';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
@@ -24,6 +25,7 @@
 
 	let queuedEvents = $state<TelemetryEvent[]>([]);
 	let refreshInterval: ReturnType<typeof setInterval>;
+	const telemetryLocked = $derived(privacySettingsStore.childPrivacyMode);
 
 	onMount(async () => {
 		try {
@@ -39,6 +41,17 @@
 		clearInterval(refreshInterval);
 	});
 
+	$effect(() => {
+		void privacySettingsStore.childPrivacyMode;
+		telemetry
+			.getPrefs()
+			.then((nextPrefs) => {
+				prefs = nextPrefs;
+				return undefined;
+			})
+			.catch(() => {});
+	});
+
 	const refreshEvents = async () => {
 		try {
 			queuedEvents = await telemetry.getQueuedEvents(MAX_DISPLAY_EVENTS);
@@ -48,6 +61,9 @@
 	};
 
 	const setPref = async (key: string, value: boolean) => {
+		if (telemetryLocked) {
+			return;
+		}
 		prefs = { ...prefs, [key]: value };
 		await telemetry
 			.setPref(key, value)
@@ -92,10 +108,16 @@
 			<p class="telemetry--setting-label">Enable Telemetry</p>
 			<p class="telemetry--setting-description">Allow Syng to collect usage data</p>
 		</div>
-		<SyToggle value="enabled" checked={prefs.enabled} onchange={(v) => setPref('enabled', v)} />
+		<SyToggle
+			value="enabled"
+			accessibleLabel="Enable Telemetry"
+			checked={telemetryLocked ? false : prefs.enabled}
+			disabled={telemetryLocked}
+			onchange={(v) => setPref('enabled', v)}
+		/>
 	</div>
 
-	{#if prefs.enabled}
+	{#if prefs.enabled && !telemetryLocked}
 		<div class="telemetry--categories">
 			<div class="telemetry--setting telemetry--setting--center">
 				<div>

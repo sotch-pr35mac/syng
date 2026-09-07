@@ -9,6 +9,7 @@ import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { handleError } from '@/utils/error.js';
 import {
 	checkAndPerformMigration,
@@ -44,6 +45,23 @@ export const getStartupDatabaseNames = (debugMode) => ({
 let resolvedDebugMode = false;
 export const setDebugMode = (debugMode) => {
 	resolvedDebugMode = debugMode;
+};
+
+let startupCompleteResolve;
+let startupCompleteSettled = false;
+const startupCompletePromise = new Promise((resolve) => {
+	startupCompleteResolve = resolve;
+});
+
+export const waitForStartupComplete = () => startupCompletePromise;
+
+const markStartupComplete = () => {
+	if (startupCompleteSettled) {
+		return;
+	}
+	startupCompleteSettled = true;
+	document.dispatchEvent(new Event('init'));
+	startupCompleteResolve();
 };
 
 export const shouldRunStartupUpdateCheck = async () => {
@@ -141,6 +159,7 @@ export const runStartupActions = () => {
 				throw error;
 			}
 
+			await privacySettingsStore.loadSettings();
 			await dictionaryDisplaySettingsStore.loadSettings();
 
 			// Migration: Setup shutdown hook to save data when app closes
@@ -155,7 +174,7 @@ export const runStartupActions = () => {
 				handleError('Startup backup export failed', error, { silent: true });
 			}
 
-			document.dispatchEvent(new Event('init'));
+			markStartupComplete();
 			initializeStyles();
 			telemetry.trackEvent('app.started', {}).catch(() => {});
 

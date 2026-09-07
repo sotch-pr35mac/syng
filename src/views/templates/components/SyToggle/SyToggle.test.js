@@ -45,3 +45,19 @@ it('should update its state once clicked', async () => {
 	state = element.checked;
 	expect(state).toBe(true);
 });
+
+it('does not change state when disabled', async () => {
+	const user = userEvent.setup();
+	const onchange = vi.fn();
+	const { getByRole } = render(SyToggle, {
+		value: 'test',
+		disabled: true,
+		onchange,
+	});
+	const element = getByRole('checkbox', { hidden: true });
+
+	expect(element.disabled).toBe(true);
+	await user.click(element);
+	expect(element.checked).toBe(false);
+	expect(onchange).not.toHaveBeenCalled();
+});

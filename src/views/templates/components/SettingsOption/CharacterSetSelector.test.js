@@ -25,5 +25,7 @@ it('exposes the character choices as one named radio group', () => {
 
 	expect(getByRole('group', { name: 'Characters' })).toBeTruthy();
 	expect(getAllByRole('radio')).toHaveLength(3);
+	expect(getAllByRole('radio')[0].name).toBeDefined();
+	expect(getAllByRole('radio')[0]).toHaveProperty('value', 'both');
 	expect(getByRole('radio', { name: 'Simplified + Traditional' }).checked).toBe(true);
 });

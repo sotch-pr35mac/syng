@@ -32,6 +32,7 @@
 		"dialog:allow-message",
 		"dialog:allow-confirm",
 		"process:allow-restart",
-		"process:allow-exit"
+		"process:allow-exit",
+		"opener:default"
 	]
 }

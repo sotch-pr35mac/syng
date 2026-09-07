@@ -80,6 +80,7 @@
 		"core:app:allow-app-hide",
 		"fs:default",
 		"os:default",
-		"cli:default"
+		"cli:default",
+		"opener:default"
 	]
 }
