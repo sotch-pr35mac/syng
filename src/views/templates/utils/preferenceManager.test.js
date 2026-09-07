@@ -38,6 +38,7 @@ it('backfills newer settings into existing preference documents', async () => {
 	expect(manager.get('colorCharactersByTone')).toBe(true);
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
+	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
 });
 
 it('uses dictionary display defaults for new preference documents', async () => {
@@ -53,6 +54,7 @@ it('uses dictionary display defaults for new preference documents', async () => 
 	expect(manager.get('colorCharactersByTone')).toBe(true);
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
+	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
 });
 
 it('rejects waitForInit when loading preferences fails instead of hanging', async () => {

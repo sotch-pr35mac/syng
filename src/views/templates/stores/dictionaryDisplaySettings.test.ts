@@ -23,6 +23,7 @@ it('starts with compatibility-preserving defaults', () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 });
 
@@ -32,6 +33,7 @@ it('loads persisted settings', async () => {
 		colorCharactersByTone: false,
 		colorPinyinByTone: true,
 		colorListsByTone: true,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
 
@@ -42,6 +44,7 @@ it('loads persisted settings', async () => {
 		colorCharactersByTone: false,
 		colorPinyinByTone: true,
 		colorListsByTone: true,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 });
 
@@ -59,6 +62,7 @@ it('normalizes missing or invalid persisted values to defaults', async () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 });
 
@@ -76,6 +80,7 @@ it('updates reactive state and persists each preference independently', () => {
 		colorCharactersByTone: false,
 		colorPinyinByTone: true,
 		colorListsByTone: true,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 	expect(preferenceManager.set.mock.calls).toEqual([
 		['characterSet', 'simplified'],

@@ -12,7 +12,9 @@ pub struct WordData {
     pub tone_marks: Vec<u8>,
     pub english: Vec<String>,
     pub hash: u64,
-    pub hsk: u8,
+    /// Structured HSK data from chinese_dictionary v3. This remains a JSON value at
+    /// the Tauri boundary so old numeric bookmark data can still be read.
+    pub hsk: serde_json::Value,
     pub word_id: u32,
 }
 
@@ -213,7 +215,7 @@ impl From<&dictionary::WordEntry> for WordData {
             tone_marks: entry.tone_marks.clone(),
             english: entry.english.clone(),
             hash: entry.hash,
-            hsk: entry.hsk,
+            hsk: serde_json::to_value(&entry.hsk).unwrap_or(serde_json::Value::Null),
             word_id: entry.word_id,
         }
     }

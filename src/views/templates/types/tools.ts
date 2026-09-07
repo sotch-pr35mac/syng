@@ -1,4 +1,5 @@
 export type ToolName = 'pinyinify' | 'converter' | 'colorize' | 'prettify';
+import type { HskLevels } from '@/types/hsk.js';
 
 export interface WordData {
 	traditional: string;
@@ -8,7 +9,7 @@ export interface WordData {
 	tone_marks: number[];
 	english: string[];
 	hash: number;
-	hsk: number;
+	hsk: HskLevels | number;
 	word_id: number;
 }
 

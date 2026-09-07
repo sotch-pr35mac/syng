@@ -8,7 +8,7 @@
  */
 import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
-import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
+import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 
 /*
  * Description: Construct a preference entry.
@@ -33,6 +33,7 @@ const createDefaultPreferences = () => ({
 	colorCharactersByTone: createPreference(false, true),
 	colorPinyinByTone: createPreference(false, false),
 	colorListsByTone: createPreference(false, false),
+	hskVariant: createPreference(false, HSK_VARIANTS.HSK_EXAM_SYLLABUS_2025),
 	toneColors: createPreference(true, {
 		colors: [
 			'--sy-color--blue-3',

@@ -20,6 +20,9 @@
 	import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
 	import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
+	import SyTag from '@/components/SyTag/SyTag.svelte';
+	import { HSK_VARIANT_LABELS } from '@/types/dictionaryDisplay.js';
+	import { resolveHskLevels } from '@/utils/hsk.js';
 
 	/* Background Color Prop */
 	/* Possible Values */
@@ -254,24 +257,43 @@
 			`dictionary-content--background-${backgroundColor}`,
 		].join(' ');
 	};
+	const getHskLevels = () =>
+		resolveHskLevels(word?.hsk, dictionaryDisplaySettingsStore.settings.hskVariant);
 </script>
 
 <div class={getContainerClasses()}>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
 			<EntryTopline {word} {separateTraditionalCharacters} />
-			<SyButtonBar>
-				{#each actions as action, index (index)}
-					{#if action.dropdown}
-						<SyDropdown
-							values={action.dropdown}
-							onselection={handleMembershipModification}
-							position={DROPDOWN_POSITIONS.RIGHT}
-							fixed={fixedActions}
-						>
+			<div class="dictionary-content__actions">
+				<SyButtonBar>
+					{#each actions as action, index (index)}
+						{#if action.dropdown}
+							<SyDropdown
+								values={action.dropdown}
+								onselection={handleMembershipModification}
+								position={DROPDOWN_POSITIONS.RIGHT}
+								fixed={fixedActions}
+							>
+								<SyButton
+									grouped="true"
+									classes={['sy-tooltip--container', ...action.classes]}
+									onclick={action.action}
+								>
+									<action.component size="18" />
+									{#if action.tooltip}
+										<div class="sy-tooltip--body sy-tooltip--body-bottom">
+											<p>
+												{action.tooltip}
+											</p>
+										</div>
+									{/if}
+								</SyButton>
+							</SyDropdown>
+						{:else}
 							<SyButton
 								grouped="true"
-								classes={['sy-tooltip--container', ...action.classes]}
+								classes={['sy-tooltip--container', ...(action.classes ?? [])]}
 								onclick={action.action}
 							>
 								<action.component size="18" />
@@ -283,25 +305,22 @@
 									</div>
 								{/if}
 							</SyButton>
-						</SyDropdown>
-					{:else}
-						<SyButton
-							grouped="true"
-							classes={['sy-tooltip--container', ...(action.classes ?? [])]}
-							onclick={action.action}
+						{/if}
+					{/each}
+				</SyButtonBar>
+				{#if getHskLevels().length}
+					<div class="dictionary-content__hsk">
+						<SyTag
+							variant="yellow"
+							tooltip={HSK_VARIANT_LABELS[
+								dictionaryDisplaySettingsStore.settings.hskVariant
+							]}
 						>
-							<action.component size="18" />
-							{#if action.tooltip}
-								<div class="sy-tooltip--body sy-tooltip--body-bottom">
-									<p>
-										{action.tooltip}
-									</p>
-								</div>
-							{/if}
-						</SyButton>
-					{/if}
-				{/each}
-			</SyButtonBar>
+							HSK: {getHskLevels().join(', ')}
+						</SyTag>
+					</div>
+				{/if}
+			</div>
 		</section>
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">Definitions</h2>
@@ -355,6 +374,16 @@
 	.dictionary-content--header {
 		display: flex;
 		justify-content: space-between;
+		align-items: flex-start;
+	}
+	.dictionary-content__hsk {
+		margin-left: auto;
+		padding: var(--sy-space--large);
+	}
+	.dictionary-content__actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 	}
 	.dictionary-content--section-title {
 		font-size: 1.8em;

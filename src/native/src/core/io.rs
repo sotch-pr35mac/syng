@@ -10,6 +10,7 @@ use tauri_plugin_fs::{FsExt, OpenOptions};
 pub enum BookmarksExportVersion {
     V1,
     V2,
+    V3,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
@@ -24,7 +25,7 @@ pub struct MeasureWord {
 pub struct BookmarkEntry {
     english: Vec<String>,
     hash: u64,
-    hsk: u8,
+    pub hsk: serde_json::Value,
     measure_words: Vec<MeasureWord>,
     notes: String,
     pinyin_marks: String,
@@ -84,7 +85,7 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
             Some(best_match) => Self {
                 english: best_match.english.clone(),
                 hash: best_match.hash,
-                hsk: best_match.hsk,
+                hsk: serde_json::to_value(&best_match.hsk).unwrap_or(serde_json::Value::Null),
                 measure_words: best_match
                     .measure_words
                     .iter()
@@ -107,7 +108,7 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
                 Self {
                     english: original.definitions.clone(),
                     hash: original_hash,
-                    hsk: 0,
+                    hsk: serde_json::Value::from(0),
                     measure_words: vec![],
                     notes: original.notes.clone(),
                     pinyin_marks: "Pinyin not found".to_string(),
@@ -139,7 +140,7 @@ pub async fn export_list_data(
         let export = BookmarksExport {
             meta: BookmarksExportMeta {
                 name,
-                version: BookmarksExportVersion::V2,
+                version: BookmarksExportVersion::V3,
             },
             entries: data,
         };
@@ -262,7 +263,11 @@ mod tests {
                     "to water (a crop etc)".to_string()
                 ],
                 hash: 9216539338582081123,
-                hsk: 0,
+                hsk: serde_json::json!({
+                    "hsk_2015": [],
+                    "hsk_exam_syllabus_2025": [],
+                    "proficiency_standard_2021": []
+                }),
                 measure_words: vec![],
                 notes: "This is a test".to_string(),
                 pinyin_marks: "shàng shuǐ".to_string(),
@@ -290,7 +295,7 @@ mod tests {
             BookmarkEntry {
                 english: vec!["Totally made up word.".to_string()],
                 hash: 16059756997626313037,
-                hsk: 0,
+                hsk: serde_json::Value::from(0),
                 measure_words: vec![],
                 notes: "This word doesn't exist.".to_string(),
                 pinyin_marks: "Pinyin not found".to_string(),

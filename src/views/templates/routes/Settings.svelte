@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
@@ -20,6 +21,7 @@
 		updateColorCharactersByTonePreference,
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
+		updateHskVariantPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
@@ -32,6 +34,18 @@
 	let isMasBuild = $state(false);
 
 	const preferences = [
+		{
+			label: 'HSK',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: false,
+			component: HskVariantSelector,
+			props: {
+				variant: isIPad() ? 'mobile' : 'desktop',
+				onchange: updateHskVariantPreference,
+			},
+		},
 		{
 			label: 'Under Construction Features',
 			devOnly: true,
