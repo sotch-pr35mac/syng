@@ -5,6 +5,7 @@
 
 pub mod acknowledgements;
 pub mod dictionary;
+pub mod hsk;
 pub mod io;
 pub mod migration;
 pub mod quiz;
@@ -29,6 +30,7 @@ pub use acknowledgements::get_acknowledgements;
 pub use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_pinyin,
 };
+pub use hsk::get_hsk_levels;
 pub use io::{export_list_data, import_list_data};
 pub use migration::read_legacy_migration_file;
 pub use quiz::{

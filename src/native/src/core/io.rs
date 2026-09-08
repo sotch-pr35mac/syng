@@ -1,4 +1,5 @@
 use super::dictionary::find_best_match;
+use super::hsk::levels_value;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -85,7 +86,7 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
             Some(best_match) => Self {
                 english: best_match.english.clone(),
                 hash: best_match.hash,
-                hsk: serde_json::to_value(&best_match.hsk).unwrap_or(serde_json::Value::Null),
+                hsk: levels_value(&best_match.simplified, &best_match.pinyin_numbers),
                 measure_words: best_match
                     .measure_words
                     .iter()
@@ -131,33 +132,8 @@ fn empty_hsk_value() -> serde_json::Value {
     })
 }
 
-/// Normalize the numeric HSK representation used by old V1/V2 bookmark exports.
-/// Positive values in those exports are HSK 2015 levels; zero means unset.
-fn normalize_hsk_value(value: serde_json::Value) -> serde_json::Value {
-    let Some(level) = value.as_u64() else {
-        return value;
-    };
-    if level == 0 {
-        return empty_hsk_value();
-    }
-    let level_name = match level {
-        1 => "One",
-        2 => "Two",
-        3 => "Three",
-        4 => "Four",
-        5 => "Five",
-        6 => "Six",
-        _ => return empty_hsk_value(),
-    };
-    serde_json::json!({
-        "hsk_2015": [level_name],
-        "proficiency_standard_2021": [],
-        "hsk_exam_syllabus_2025": []
-    })
-}
-
 fn normalize_bookmark_entry(mut entry: BookmarkEntry) -> BookmarkEntry {
-    entry.hsk = normalize_hsk_value(entry.hsk);
+    entry.hsk = levels_value(&entry.simplified, &entry.pinyin_numbers);
     entry
 }
 
@@ -362,32 +338,5 @@ mod tests {
                 word_id: 0
             }
         );
-    }
-
-    #[test]
-    fn test_normalize_legacy_numeric_hsk() {
-        assert_eq!(
-            normalize_hsk_value(serde_json::json!(3)),
-            serde_json::json!({
-                "hsk_2015": ["Three"],
-                "proficiency_standard_2021": [],
-                "hsk_exam_syllabus_2025": []
-            })
-        );
-    }
-
-    #[test]
-    fn test_normalize_legacy_zero_hsk() {
-        assert_eq!(normalize_hsk_value(serde_json::json!(0)), empty_hsk_value());
-    }
-
-    #[test]
-    fn test_normalize_structured_hsk_unchanged() {
-        let structured = serde_json::json!({
-            "hsk_2015": ["One"],
-            "proficiency_standard_2021": ["SevenToNine"],
-            "hsk_exam_syllabus_2025": []
-        });
-        assert_eq!(normalize_hsk_value(structured.clone()), structured);
     }
 }

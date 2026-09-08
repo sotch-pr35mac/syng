@@ -2049,6 +2049,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hsk"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db9ed9d0b5d50f3452b621b8b919bd091b2b14073a780d029e3270969b8a3b00"
+dependencies = [
+ "unicode-normalization",
+]
+
+[[package]]
 name = "html2text"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4894,6 +4903,7 @@ dependencies = [
  "chrono",
  "ego-tree",
  "encoding_rs",
+ "hsk",
  "html2text",
  "lopdf",
  "objc2",

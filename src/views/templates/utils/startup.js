@@ -122,6 +122,10 @@ export const runStartupActions = () => {
 				handleError('Migration check failed', error, { silent: true });
 			}
 
+			// Normalize all persisted bookmark HSK metadata before the UI or startup backup
+			// can observe a mixture of legacy numeric and structured records.
+			await bookmarkManager.migrateHskLevels();
+
 			await dictionaryDisplaySettingsStore.loadSettings();
 
 			// Migration: Setup shutdown hook to save data when app closes

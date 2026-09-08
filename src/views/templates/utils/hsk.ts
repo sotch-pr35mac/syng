@@ -9,18 +9,15 @@ const levelNumber: Record<HskLevel, string> = {
 	[HSK_LEVELS.SIX]: '6',
 	[HSK_LEVELS.SEVEN_TO_NINE]: '7–9',
 };
-const HSK_LEVEL_COUNT = 6;
-export function resolveHskLevels(
-	hsk: HskLevels | number | undefined,
-	variant: HskVariant
-): string[] {
-	if (variant === HSK_VARIANTS.NONE || hsk === undefined || hsk === null) {
+export function resolveHskLevels(hsk: HskLevels | undefined, variant: HskVariant): string[] {
+	if (variant === HSK_VARIANTS.NONE || !hsk || !Object.values(HSK_VARIANTS).includes(variant)) {
 		return [];
 	}
-	if (typeof hsk === 'number') {
-		return hsk > 0 && hsk <= HSK_LEVEL_COUNT && variant === HSK_VARIANTS.HSK_2015
-			? [String(hsk)]
-			: [];
+	const levels = hsk[variant as keyof HskLevels];
+	if (!Array.isArray(levels)) {
+		return [];
 	}
-	return (hsk[variant] ?? []).map((level) => levelNumber[level]).filter(Boolean);
+	return levels
+		.map((level) => levelNumber[level])
+		.filter((level): level is string => Boolean(level));
 }

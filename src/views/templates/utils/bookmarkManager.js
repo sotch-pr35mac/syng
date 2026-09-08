@@ -7,6 +7,8 @@
 import { describeUnknownError, handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
+import { invoke } from '@tauri-apps/api/core';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {
@@ -21,32 +23,11 @@ const MODIFIABLE_BOOKMARK_PROPERTIES = ['notes'];
 // Symbol for early exit from promise chains
 const EARLY_EXIT = Symbol('EARLY_EXIT');
 
-const HSK_LEVELS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six'];
-const HSK_LEVEL_COUNT = HSK_LEVELS.length;
-
-// Bookmark documents created before structured HSK data used a numeric HSK 2015
-// level. Keep this compatibility handling at the persistence boundary.
-async function normalizeBookmarkHsk(documentDb, word) {
-	if (typeof word?.hsk !== 'number') {
-		return word;
-	}
-
-	const level = word.hsk;
-	const normalized = {
-		...word,
-		hsk: {
-			hsk_2015: level >= 1 && level <= HSK_LEVEL_COUNT ? [HSK_LEVELS[level - 1]] : [],
-			proficiency_standard_2021: [],
-			hsk_exam_syllabus_2025: [],
-		},
-	};
-	try {
-		await documentDb.put(normalized);
-	} catch {
-		// A read remains useful even when an older database cannot be updated.
-	}
-	return normalized;
-}
+const EMPTY_HSK = {
+	hsk_2015: [],
+	proficiency_standard_2021: [],
+	hsk_exam_syllabus_2025: [],
+};
 
 export class BookmarkManager {
 	/*
@@ -59,6 +40,42 @@ export class BookmarkManager {
 		this.initialized = false;
 		this._list_db = new PouchDB(listDb);
 		this._document_db = new PouchDB(documentDb);
+	}
+
+	async migrateHskLevels() {
+		const documents = await this._document_db.allDocs({ include_docs: true });
+		const rows = documents.rows.map((row) => row.doc);
+		const lookupRows = [];
+		const lookupIndexes = [];
+		rows.forEach((word, index) => {
+			if (typeof word.simplified === 'string' && word.simplified.trim()) {
+				lookupIndexes.push(index);
+				lookupRows.push({
+					simplified: word.simplified,
+					pinyin_numbers:
+						typeof word.pinyin_numbers === 'string' ? word.pinyin_numbers : '',
+				});
+			}
+		});
+		const levels = lookupRows.length
+			? await invoke(NATIVE_COMMANDS.BOOKMARKS.GET_HSK_LEVELS, { entries: lookupRows })
+			: [];
+		if (!Array.isArray(levels) || levels.length !== lookupRows.length) {
+			throw new Error('HSK migration returned an invalid result.');
+		}
+		const levelByIndex = new Map(
+			lookupIndexes.map((index, resultIndex) => [index, levels[resultIndex]])
+		);
+		const changed = rows.reduce((updates, word, index) => {
+			const nextHsk = levelByIndex.get(index) ?? EMPTY_HSK;
+			if (JSON.stringify(word.hsk) !== JSON.stringify(nextHsk)) {
+				updates.push({ ...word, hsk: nextHsk });
+			}
+			return updates;
+		}, []);
+		if (changed.length) {
+			await this._document_db.bulkDocs(changed);
+		}
 	}
 
 	/*
@@ -449,7 +466,7 @@ export class BookmarkManager {
 					return Promise.all(
 						documents.rows
 							.filter((word) => word.doc.lists.includes(listId))
-							.map((word) => normalizeBookmarkHsk(this._document_db, word.doc))
+							.map((word) => word.doc)
 					).then(resolve);
 				})
 				.catch((e) => {
@@ -484,7 +501,7 @@ export class BookmarkManager {
 					const word = documents.rows
 						.filter((entry) => entry.doc.hash === hash)
 						.map((entry) => entry.doc)[0];
-					return normalizeBookmarkHsk(this._document_db, word).then(resolve);
+					return resolve(word);
 				})
 				.catch((e) => {
 					handleError('There was an error fetching a bookmark by hash.', e, {

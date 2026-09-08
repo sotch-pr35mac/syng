@@ -1,3 +1,4 @@
+use super::hsk::levels_value;
 use chinese_dictionary as dictionary;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -215,7 +216,7 @@ impl From<&dictionary::WordEntry> for WordData {
             tone_marks: entry.tone_marks.clone(),
             english: entry.english.clone(),
             hash: entry.hash,
-            hsk: serde_json::to_value(&entry.hsk).unwrap_or(serde_json::Value::Null),
+            hsk: levels_value(&entry.simplified, &entry.pinyin_numbers),
             word_id: entry.word_id,
         }
     }
