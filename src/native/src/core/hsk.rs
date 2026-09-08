@@ -1,5 +1,5 @@
 use chinese_dictionary::{HskLevel as DictionaryHskLevel, HskLevels};
-use hsk::{HskLevel, HskQuery, HskSystem};
+use hsk::{HskError, HskLevel, HskQuery, HskSystem};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -24,16 +24,17 @@ fn lookup(simplified: &str, pinyin: Option<&str>) -> HskLevels {
     if simplified.trim().is_empty() {
         return HskLevels::default();
     }
-    let query = match pinyin {
-        Some(pinyin) if !pinyin.trim().is_empty() => HskQuery::new(simplified).pinyin(pinyin),
-        _ => HskQuery::new(simplified),
-    };
-    let result = hsk::levels_all(query)
-        .ok()
-        .filter(|levels| !levels.is_empty());
-    let result = result.or_else(|| hsk::levels_all(HskQuery::new(simplified)).ok());
-    let Some(levels) = result else {
-        return HskLevels::default();
+    let levels = match pinyin {
+        Some(pinyin) if !pinyin.trim().is_empty() => {
+            match hsk::levels_all(HskQuery::new(simplified).pinyin(pinyin)) {
+                Ok(levels) => levels,
+                Err(HskError::InvalidPinyin(_)) => {
+                    hsk::levels_all(HskQuery::new(simplified)).unwrap_or_default()
+                }
+                Err(_) => return HskLevels::default(),
+            }
+        }
+        _ => hsk::levels_all(HskQuery::new(simplified)).unwrap_or_default(),
     };
     let mut output = HskLevels::default();
     for (system, values) in levels {
@@ -66,7 +67,21 @@ mod tests {
 
     #[test]
     fn invalid_pinyin_falls_back_to_word() {
-        assert_eq!(levels_value("你好", "not pinyin"), levels_value("你好", ""));
+        assert_eq!(levels_value("出租车", "11 Qu1"), levels_value("出租车", ""));
+    }
+
+    #[test]
+    fn valid_unmatched_reading_does_not_inherit_another_readings_levels() {
+        let zhong = chinese_dictionary::query_by_chinese("中")
+            .into_iter()
+            .find(|entry| entry.pinyin_numbers == "zhong4")
+            .expect("Expected the zhòng dictionary reading");
+
+        assert_eq!(zhong.hsk, HskLevels::default());
+        assert_eq!(
+            levels_value(&zhong.simplified, &zhong.pinyin_numbers),
+            HskLevels::default()
+        );
     }
 
     #[test]
