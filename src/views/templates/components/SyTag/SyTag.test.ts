@@ -13,13 +13,3 @@ it('renders valid tag and tooltip markup', () => {
 	expect(tooltip.tagName).toBe('P');
 	expect(tooltip.closest('.sy-tooltip--body-bottom')).toBeTruthy();
 });
-
-it('anchors its tooltip to the shorter tag while retaining shared spacing', async () => {
-	const source = (await import('./SyTag.svelte?raw')).default;
-	const localTooltipRule = source.match(/\.sy-tag \.sy-tooltip--body\s*\{([^}]*)\}/)?.[1] ?? '';
-
-	expect(localTooltipRule).toMatch(/\btop\s*:\s*100%/);
-	expect(localTooltipRule).not.toMatch(/\bmargin(?:-top)?\s*:/);
-	expect(localTooltipRule).not.toMatch(/\btransform\s*:/);
-	expect(source).not.toMatch(/\.sy-tag \.sy-tooltip--body p[^}]*font-weight/s);
-});

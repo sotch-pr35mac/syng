@@ -29,6 +29,8 @@
 		top: 100%;
 		right: 0;
 		left: auto;
+		margin: var(--sy-space) 0 0;
+		transform: none;
 		max-width: calc(100vw - var(--sy-space--large));
 		line-height: normal;
 		font-family: var(--sy-font-family);
@@ -37,6 +39,7 @@
 	.sy-tag .sy-tooltip--body p {
 		margin: 0;
 		font: inherit;
+		font-weight: var(--sy-font-weight--normal);
 	}
 	.sy-tag--blue {
 		background: var(--sy-color--blue);
