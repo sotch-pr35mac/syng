@@ -5,6 +5,7 @@
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
+	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
@@ -104,6 +105,15 @@
 				variant: isIPad() ? 'mobile' : 'desktop',
 				onchange: updateToneColorsPreference,
 			},
+		},
+		{
+			label: 'Database Migration',
+			devOnly: true,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: true,
+			component: DatabaseMigrationPreview,
+			props: {},
 		},
 	];
 

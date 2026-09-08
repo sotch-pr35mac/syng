@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
@@ -6,6 +7,7 @@
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
+	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 	import {
 		updateCharacterSetPreference,
@@ -14,16 +16,28 @@
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
 		updateToneColorsPreference,
+		isDevBuild,
+		resolveIsDevBuild,
 	} from '@/composables/settings.js';
 
 	type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
 
 	let activeTab = $state(settingsActiveTabStore.value as SettingsTab);
+	let showDevPreferences = $state(isDevBuild());
 
 	function setActiveTab(tab: SettingsTab): void {
 		activeTab = tab;
 		settingsActiveTabStore.set(tab);
 	}
+
+	onMount(() => {
+		resolveIsDevBuild()
+			.then((devBuild) => {
+				showDevPreferences = devBuild;
+				return undefined;
+			})
+			.catch(() => {});
+	});
 </script>
 
 <div class="mobile-settings">
@@ -76,6 +90,12 @@
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
 			</section>
+			{#if showDevPreferences}
+				<section class="mobile-settings__section" aria-labelledby="migration-heading">
+					<h2 id="migration-heading">Database Migration</h2>
+					<DatabaseMigrationPreview />
+				</section>
+			{/if}
 		{:else if activeTab === 'telemetry'}
 			<TelemetrySettings variant="mobile" />
 		{:else}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { databaseMigrationStore, MIGRATION_STATUS } from '@/stores/databaseMigration.svelte.js';
 	import {
 		MIGRATION_MESSAGES,
 		MESSAGE_ROTATION_INTERVAL_MS,
@@ -22,7 +23,7 @@
 	<div class="migration-screen__content">
 		<div class="migration-screen__brand" aria-hidden="true">Syng | 词应</div>
 
-		{#if databaseMigrationStore.status === 'running'}
+		{#if databaseMigrationStore.status === MIGRATION_STATUS.RUNNING}
 			<div
 				class="migration-screen__loader"
 				role="progressbar"
@@ -46,6 +47,14 @@
 		<p class="migration-screen__joke" aria-hidden="true">
 			{MIGRATION_MESSAGES[messageIndex]}
 		</p>
+
+		{#if databaseMigrationStore.isPreview}
+			<div class="migration-screen__preview-controls">
+				<SyButton size="large" onclick={() => databaseMigrationStore.closePreview()}>
+					Close preview
+				</SyButton>
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -60,7 +69,7 @@
 		padding: max(var(--sy-space--extra-large), env(safe-area-inset-top))
 			var(--sy-space--extra-large)
 			max(var(--sy-space--extra-large), env(safe-area-inset-bottom));
-		background: linear-gradient(155deg, #ff8a00 0%, #ef1063 100%);
+		background: linear-gradient(#ff8a00, #ef1063, #9d29ad);
 		color: var(--sy-color--white);
 		font-family: var(--sy-font-family);
 		text-align: center;
@@ -128,9 +137,23 @@
 	.migration-screen__joke {
 		min-height: 1.5em;
 		margin: var(--sy-space--extra-large) 0 0;
-		font-size: var(--sy-font-size--small);
+		background: linear-gradient(
+			100deg,
+			rgb(255 255 255 / 62%) 20%,
+			var(--sy-color--white) 50%,
+			rgb(255 255 255 / 62%) 80%
+		);
+		-webkit-background-clip: text;
+		background-clip: text;
+		background-size: 200% 100%;
+		color: transparent;
+		font-size: var(--sy-font-size--normal);
 		line-height: 1.5;
-		opacity: 0.86;
+		animation: migration-shimmer 2.2s linear infinite;
+	}
+
+	.migration-screen__preview-controls {
+		margin-top: var(--sy-space--large);
 	}
 
 	@keyframes migration-ripple {
@@ -154,9 +177,24 @@
 		}
 	}
 
+	@keyframes migration-shimmer {
+		from {
+			background-position: 200% 0;
+		}
+		to {
+			background-position: -200% 0;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.migration-screen__loader span {
 			animation-duration: 6s;
+		}
+
+		.migration-screen__joke {
+			background: none;
+			color: var(--sy-color--white);
+			animation: none;
 		}
 	}
 </style>

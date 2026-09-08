@@ -22,7 +22,11 @@ import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
 import { resolveIsMasBuild } from '@/composables/settings.js';
-import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+import {
+	BOOKMARK_MIGRATION_COPY,
+	databaseMigrationStore,
+	MIGRATION_STATUS,
+} from '@/stores/databaseMigration.svelte.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -125,12 +129,9 @@ export const runStartupActions = () => {
 
 			try {
 				await bookmarkManager.prepareSchema(() => {
-					databaseMigrationStore.start({
-						title: 'Updating your bookmarks…',
-						detail: 'This only needs to happen once.',
-					});
+					databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
 				});
-				if (databaseMigrationStore.status === 'running') {
+				if (databaseMigrationStore.status === MIGRATION_STATUS.RUNNING) {
 					databaseMigrationStore.finish();
 				}
 			} catch (error) {

@@ -26,6 +26,7 @@
 		font-weight: var(--sy-font-weight--normal);
 	}
 	.sy-tag .sy-tooltip--body {
+		top: 100%;
 		right: 0;
 		left: auto;
 		max-width: calc(100vw - var(--sy-space--large));
