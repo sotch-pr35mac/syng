@@ -1,4 +1,5 @@
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import type { HskLevels } from '@/types/hsk.js';
 
 export const SEARCH_LANGS = ['EN', 'PY', 'ZH'] as const;
 export type SearchLang = (typeof SEARCH_LANGS)[number];
@@ -20,4 +21,5 @@ export interface SearchEntry {
 	english: string[];
 	measure_words: unknown[];
 	notes?: string;
+	hsk?: HskLevels;
 }

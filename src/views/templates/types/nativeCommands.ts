@@ -29,6 +29,7 @@ export const NATIVE_COMMANDS = {
 	BOOKMARKS: {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
+		GET_HSK_LEVELS: 'get_hsk_levels',
 	},
 	MIGRATION: {
 		READ_LEGACY_MIGRATION_FILE: 'read_legacy_migration_file',

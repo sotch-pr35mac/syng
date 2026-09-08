@@ -1,9 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.2.0]
+## [2.2.0] - 2026-09-08
 ### Added
 - Search field is now focused automatically on launch and when returning to the Search page
+- Added selectable HSK 2015, Proficiency Standard 2021, and HSK Exam Syllabus 2025 tags.
 
 ## [2.1.0] - 2026-08-17
 ### Added

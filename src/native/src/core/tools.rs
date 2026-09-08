@@ -1,3 +1,4 @@
+use super::hsk::levels_value;
 use chinese_dictionary as dictionary;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -12,7 +13,7 @@ pub struct WordData {
     pub tone_marks: Vec<u8>,
     pub english: Vec<String>,
     pub hash: u64,
-    pub hsk: u8,
+    pub hsk: dictionary::HskLevels,
     pub word_id: u32,
 }
 
@@ -213,7 +214,7 @@ impl From<&dictionary::WordEntry> for WordData {
             tone_marks: entry.tone_marks.clone(),
             english: entry.english.clone(),
             hash: entry.hash,
-            hsk: entry.hsk,
+            hsk: levels_value(&entry.simplified, &entry.pinyin_numbers),
             word_id: entry.word_id,
         }
     }
@@ -783,6 +784,18 @@ mod tests {
         assert_eq!(result[0].source, "你");
         assert_eq!(word_data(&result[0]).pinyin_marks, "nǐ");
         assert_eq!(word_data(&result[0]).tone_marks, vec![3]);
+    }
+
+    #[test]
+    fn word_data_preserves_dictionary_pinyin_for_polyphonic_hsk_lookups() {
+        for entry in chinese_dictionary::query_by_chinese("长") {
+            let converted = WordData::from(entry);
+            assert_eq!(converted.pinyin_numbers, entry.pinyin_numbers);
+            assert_eq!(
+                converted.hsk,
+                levels_value(&entry.simplified, &entry.pinyin_numbers)
+            );
+        }
     }
 
     #[test]

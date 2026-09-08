@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
-import type { CharacterSet } from '@/types/dictionaryDisplay.js';
+import type { CharacterSet, HskVariant } from '@/types/dictionaryDisplay.js';
 
 interface BuildEnv {
 	DEV?: boolean;
@@ -64,4 +64,9 @@ export const updateColorPinyinByTonePreference = (checked: boolean): void => {
 export const updateColorListsByTonePreference = (checked: boolean): void => {
 	dictionaryDisplaySettingsStore.setColorListsByTone(checked);
 	telemetry.trackEvent('settings.changed', { setting: 'colorListsByTone' }).catch(() => {});
+};
+
+export const updateHskVariantPreference = (variant: HskVariant): void => {
+	dictionaryDisplaySettingsStore.setHskVariant(variant);
+	telemetry.trackEvent('settings.changed', { setting: 'hskVariant' }).catch(() => {});
 };

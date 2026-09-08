@@ -22,6 +22,11 @@ import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
 import { resolveIsMasBuild } from '@/composables/settings.js';
+import {
+	BOOKMARK_MIGRATION_COPY,
+	databaseMigrationStore,
+	MIGRATION_STATUS,
+} from '@/stores/databaseMigration.svelte.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -111,7 +116,7 @@ export const runStartupActions = () => {
 		}
 	};
 
-	Promise.all(startupActions.map((item) => item.action))
+	return Promise.all(startupActions.map((item) => item.action))
 		.then(async () => {
 			// Migration: Check if we need to restore from a backup file
 			// This handles Tauri storage changes and the org.syng.app -> xyz.bytecraft.syng
@@ -120,6 +125,20 @@ export const runStartupActions = () => {
 				await checkAndPerformMigration(preferenceManager, bookmarkManager);
 			} catch (error) {
 				handleError('Migration check failed', error, { silent: true });
+			}
+
+			try {
+				await bookmarkManager.prepareSchema(() => {
+					databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
+				});
+				if (databaseMigrationStore.status === MIGRATION_STATUS.RUNNING) {
+					databaseMigrationStore.finish();
+				}
+			} catch (error) {
+				databaseMigrationStore.fail(
+					'The update could not be completed. No schema version was saved.'
+				);
+				throw error;
 			}
 
 			await dictionaryDisplaySettingsStore.loadSettings();

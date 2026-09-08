@@ -2,11 +2,13 @@
  * File: bookmarkManager.js
  * Description: Describes the bookmark manager to read and write bookmarks.
  * An instance of BookmarkManager class is created from a desired pouchdb.
- * After initialization the bookmarks are ready to be read and written.
+ * Raw initialization is separate from schema readiness so restoration can run first.
  */
 import { describeUnknownError, handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
+import { invoke } from '@tauri-apps/api/core';
+import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
 // Default bookmark data
 const DEFAULT_BOOKMARK_DATA = {
@@ -21,6 +23,16 @@ const MODIFIABLE_BOOKMARK_PROPERTIES = ['notes'];
 // Symbol for early exit from promise chains
 const EARLY_EXIT = Symbol('EARLY_EXIT');
 
+const EMPTY_HSK = {
+	hsk_2015: [],
+	proficiency_standard_2021: [],
+	hsk_exam_syllabus_2025: [],
+};
+
+export const BOOKMARK_SCHEMA_VERSION = 1;
+export const BOOKMARK_SCHEMA_DOCUMENT_ID = '_local/syng-bookmark-schema';
+const NOT_FOUND_STATUS = 404;
+
 export class BookmarkManager {
 	/*
 	 * Description: Construct an instance of the bookmark manager.
@@ -30,8 +42,99 @@ export class BookmarkManager {
 	 */
 	constructor(listDb, documentDb) {
 		this.initialized = false;
+		this.ready = false;
+		this._resolveReady = undefined;
+		this._readyPromise = new Promise((resolve) => {
+			this._resolveReady = resolve;
+		});
 		this._list_db = new PouchDB(listDb);
 		this._document_db = new PouchDB(documentDb);
+	}
+
+	_markReady() {
+		if (!this.ready) {
+			this.ready = true;
+			this._resolveReady();
+		}
+	}
+
+	/**
+	 * Bring this bookmark database up to its current schema after any storage restoration.
+	 * The local marker is scoped to the bookmark PouchDB and is excluded from normal allDocs
+	 * reads and backups. `onMigrationStart` runs only for a populated database that needs work.
+	 */
+	async prepareSchema(onMigrationStart = () => {}) {
+		await this.waitForInit();
+
+		let marker;
+		try {
+			marker = await this._document_db.get(BOOKMARK_SCHEMA_DOCUMENT_ID);
+		} catch (error) {
+			if (error?.status !== NOT_FOUND_STATUS && error?.name !== 'not_found') {
+				throw error;
+			}
+		}
+
+		if (marker?.version >= BOOKMARK_SCHEMA_VERSION) {
+			this._markReady();
+			return false;
+		}
+
+		const documents = await this._document_db.allDocs({ limit: 1 });
+		if (documents.rows.length) {
+			onMigrationStart();
+			await this.migrateHskLevels();
+		}
+
+		const markerResult = await this._document_db.put({
+			...(marker ?? {}),
+			_id: BOOKMARK_SCHEMA_DOCUMENT_ID,
+			version: BOOKMARK_SCHEMA_VERSION,
+		});
+		if (markerResult?.ok !== true) {
+			throw new Error('Bookmark schema version could not be saved.');
+		}
+		this._markReady();
+		return documents.rows.length > 0;
+	}
+
+	async migrateHskLevels() {
+		const documents = await this._document_db.allDocs({ include_docs: true });
+		const rows = documents.rows.map((row) => row.doc);
+		const lookupRows = [];
+		const lookupIndexes = [];
+		rows.forEach((word, index) => {
+			if (typeof word.simplified === 'string' && word.simplified.trim()) {
+				lookupIndexes.push(index);
+				lookupRows.push({
+					simplified: word.simplified,
+					pinyin_numbers:
+						typeof word.pinyin_numbers === 'string' ? word.pinyin_numbers : '',
+				});
+			}
+		});
+		const levels = lookupRows.length
+			? await invoke(NATIVE_COMMANDS.BOOKMARKS.GET_HSK_LEVELS, { entries: lookupRows })
+			: [];
+		if (!Array.isArray(levels) || levels.length !== lookupRows.length) {
+			throw new Error('HSK migration returned an invalid result.');
+		}
+		const levelByIndex = new Map(
+			lookupIndexes.map((index, resultIndex) => [index, levels[resultIndex]])
+		);
+		const changed = rows.reduce((updates, word, index) => {
+			const nextHsk = levelByIndex.get(index) ?? EMPTY_HSK;
+			if (JSON.stringify(word.hsk) !== JSON.stringify(nextHsk)) {
+				updates.push({ ...word, hsk: nextHsk });
+			}
+			return updates;
+		}, []);
+		if (changed.length) {
+			const results = await this._document_db.bulkDocs(changed);
+			if (!Array.isArray(results) || results.some((result) => result?.ok !== true)) {
+				throw new Error('HSK migration could not persist every bookmark.');
+			}
+		}
 	}
 
 	/*
@@ -172,6 +275,14 @@ export class BookmarkManager {
 			};
 			pollInit();
 		});
+	}
+
+	/**
+	 * Resolve only after storage restoration and all bookmark schema migrations complete.
+	 * Bookmark consumers use this gate; migration code itself uses waitForInit().
+	 */
+	waitForReady() {
+		return this._readyPromise;
 	}
 
 	/*
@@ -419,12 +530,11 @@ export class BookmarkManager {
 					return this._document_db.allDocs({ include_docs: true });
 				})
 				.then((documents) => {
-					resolve(
+					return Promise.all(
 						documents.rows
 							.filter((word) => word.doc.lists.includes(listId))
 							.map((word) => word.doc)
-					);
-					return undefined;
+					).then(resolve);
 				})
 				.catch((e) => {
 					if (e === EARLY_EXIT) {
@@ -455,12 +565,10 @@ export class BookmarkManager {
 				.allDocs({ include_docs: true })
 				.then((documents) => {
 					// Syng expects the entries in the document DB to be unique by hash.
-					resolve(
-						documents.rows
-							.filter((word) => word.doc.hash === hash)
-							.map((word) => word.doc)[0]
-					);
-					return undefined;
+					const word = documents.rows
+						.filter((entry) => entry.doc.hash === hash)
+						.map((entry) => entry.doc)[0];
+					return resolve(word);
 				})
 				.catch((e) => {
 					handleError('There was an error fetching a bookmark by hash.', e, {

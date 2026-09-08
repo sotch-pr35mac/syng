@@ -16,6 +16,8 @@
 	import NotFound from '@/routes/NotFound.svelte';
 	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
 	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
+	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
+	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 	runStartupActions();
 
@@ -107,12 +109,16 @@
 	});
 </script>
 
-<div class="mobile-app" style="bottom: {keyboardInset}px">
-	<MobileNavigation />
-	<div class="mobile-app__content">
-		<Router {routes} />
+{#if databaseMigrationStore.active}
+	<DatabaseMigrationScreen />
+{:else}
+	<div class="mobile-app" style="bottom: {keyboardInset}px">
+		<MobileNavigation />
+		<div class="mobile-app__content">
+			<Router {routes} />
+		</div>
 	</div>
-</div>
+{/if}
 
 <style>
 	.mobile-app {

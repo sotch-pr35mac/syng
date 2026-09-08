@@ -6,6 +6,7 @@ import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettin
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 vi.mock('@/components/SettingsOption/UpdateChecker.svelte', async () => ({
 	default: (await import('@/components/__mocks__/FeatherIcon.svelte')).default,
@@ -43,6 +44,7 @@ let preferenceManager;
 
 beforeEach(async () => {
 	settingsActiveTabStore.set('general');
+	databaseMigrationStore.resetForTest();
 	const preferences = {
 		beta: false,
 		characterSet: 'both',
@@ -61,6 +63,18 @@ beforeEach(async () => {
 	setPreferenceManagerForTest(preferenceManager);
 	await dictionaryDisplaySettingsStore.loadSettings();
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('starts a dismissible database migration preview from development settings', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText } = render(Settings);
+
+	expect(getByText('Database Migration')).toBeTruthy();
+	await user.click(getByRole('button', { name: 'Preview migration screen' }));
+
+	expect(databaseMigrationStore.status).toBe('running');
+	expect(databaseMigrationStore.isPreview).toBe(true);
+	expect(databaseMigrationStore.title).toBe('Updating your bookmarks…');
 });
 
 it('renders and updates desktop dictionary display settings', async () => {

@@ -6,6 +6,7 @@ import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
@@ -32,6 +33,7 @@ let preferenceManager;
 
 beforeEach(async () => {
 	settingsActiveTabStore.set('general');
+	databaseMigrationStore.resetForTest();
 	preferenceManager = {
 		waitForInit: vi.fn(() => Promise.resolve()),
 		get: vi.fn((name) => {
@@ -53,6 +55,17 @@ beforeEach(async () => {
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('starts a dismissible database migration preview from development settings', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText } = render(MobileSettings);
+
+	expect(getByText('Database Migration')).toBeTruthy();
+	await user.click(getByRole('button', { name: 'Preview migration screen' }));
+
+	expect(databaseMigrationStore.status).toBe('running');
+	expect(databaseMigrationStore.isPreview).toBe(true);
 });
 
 it('renders the mobile general settings without desktop-only options', () => {

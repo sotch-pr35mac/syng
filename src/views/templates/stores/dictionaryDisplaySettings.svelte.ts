@@ -3,6 +3,9 @@ import {
 	CHARACTER_SETS,
 	type CharacterSet,
 	type DictionaryDisplaySettings,
+	HSK_VARIANTS,
+	HSK_VARIANT_VALUES,
+	type HskVariant,
 } from '@/types/dictionaryDisplay.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 
@@ -11,6 +14,7 @@ export const DEFAULT_DICTIONARY_DISPLAY_SETTINGS: Readonly<DictionaryDisplaySett
 	colorCharactersByTone: true,
 	colorPinyinByTone: false,
 	colorListsByTone: false,
+	hskVariant: HSK_VARIANTS.HSK_EXAM_SYLLABUS_2025,
 };
 
 let settings = $state<DictionaryDisplaySettings>({ ...DEFAULT_DICTIONARY_DISPLAY_SETTINGS });
@@ -19,6 +23,12 @@ function normalizeCharacterSet(value: unknown): CharacterSet {
 	return CHARACTER_SET_VALUES.includes(value as CharacterSet)
 		? (value as CharacterSet)
 		: DEFAULT_DICTIONARY_DISPLAY_SETTINGS.characterSet;
+}
+
+function normalizeHskVariant(value: unknown): HskVariant {
+	return HSK_VARIANT_VALUES.includes(value as HskVariant)
+		? (value as HskVariant)
+		: DEFAULT_DICTIONARY_DISPLAY_SETTINGS.hskVariant;
 }
 
 function normalizeBoolean(value: unknown, fallback: boolean): boolean {
@@ -43,10 +53,16 @@ async function loadSettings(): Promise<void> {
 				preferenceManager.get('colorListsByTone'),
 				DEFAULT_DICTIONARY_DISPLAY_SETTINGS.colorListsByTone
 			),
+			hskVariant: normalizeHskVariant(preferenceManager.get('hskVariant')),
 		};
 	} catch {
 		settings = { ...DEFAULT_DICTIONARY_DISPLAY_SETTINGS };
 	}
+}
+
+function setHskVariant(hskVariant: HskVariant): void {
+	settings.hskVariant = normalizeHskVariant(hskVariant);
+	getPreferenceManager().set('hskVariant', settings.hskVariant);
 }
 
 function setCharacterSet(characterSet: CharacterSet): void {
@@ -78,4 +94,5 @@ export const dictionaryDisplaySettingsStore = {
 	setColorCharactersByTone,
 	setColorPinyinByTone,
 	setColorListsByTone,
+	setHskVariant,
 };

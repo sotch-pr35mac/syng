@@ -2,8 +2,10 @@
 	import { onMount } from 'svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
+	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
@@ -20,6 +22,7 @@
 		updateColorCharactersByTonePreference,
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
+		updateHskVariantPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
@@ -32,6 +35,18 @@
 	let isMasBuild = $state(false);
 
 	const preferences = [
+		{
+			label: 'HSK',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: false,
+			component: HskVariantSelector,
+			props: {
+				variant: isIPad() ? 'mobile' : 'desktop',
+				onchange: updateHskVariantPreference,
+			},
+		},
 		{
 			label: 'Under Construction Features',
 			devOnly: true,
@@ -90,6 +105,15 @@
 				variant: isIPad() ? 'mobile' : 'desktop',
 				onchange: updateToneColorsPreference,
 			},
+		},
+		{
+			label: 'Database Migration',
+			devOnly: true,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: true,
+			component: DatabaseMigrationPreview,
+			props: {},
 		},
 	];
 

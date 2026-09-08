@@ -39,7 +39,7 @@ const pinyinSegments = [
 			tone_marks: [THIRD_TONE, THIRD_TONE],
 			english: ['hello'],
 			hash: 1,
-			hsk: 1,
+			hsk: { hsk_2015: ['One'], proficiency_standard_2021: [], hsk_exam_syllabus_2025: [] },
 			word_id: 1,
 		},
 	},

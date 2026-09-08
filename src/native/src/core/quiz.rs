@@ -422,18 +422,23 @@ mod tests {
     use super::*;
 
     fn word(simplified: &str, traditional: &str) -> dictionary::WordEntry {
-        dictionary::WordEntry {
-            traditional: traditional.to_string(),
-            simplified: simplified.to_string(),
-            pinyin_marks: "shí yàn".to_string(),
-            pinyin_numbers: "shi2 yan4".to_string(),
-            english: vec!["experiment".to_string()],
-            tone_marks: vec![2, 4],
-            hash: 1,
-            measure_words: vec![],
-            hsk: 1,
-            word_id: 1,
-        }
+        serde_json::from_value(serde_json::json!({
+            "traditional": traditional,
+            "simplified": simplified,
+            "pinyin_marks": "shí yàn",
+            "pinyin_numbers": "shi2 yan4",
+            "english": ["experiment"],
+            "tone_marks": [2, 4],
+            "hash": 1,
+            "measure_words": [],
+            "hsk": {
+                "hsk_2015": ["One"],
+                "proficiency_standard_2021": [],
+                "hsk_exam_syllabus_2025": []
+            },
+            "word_id": 1,
+        }))
+        .expect("test dictionary entry should deserialize")
     }
 
     #[test]

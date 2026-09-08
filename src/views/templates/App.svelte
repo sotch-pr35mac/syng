@@ -24,6 +24,8 @@
 	import Flashcards from '@/routes/Study/Flashcards.svelte';
 	import Quiz from '@/routes/Study/Quiz.svelte';
 	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
+	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
+	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 	// Run the startup script
 	runStartupActions();
@@ -89,23 +91,27 @@
 	};
 </script>
 
-<div class="app-container">
-	<div class="navigation-container">
-		<Navigation />
+{#if databaseMigrationStore.active}
+	<DatabaseMigrationScreen />
+{:else}
+	<div class="app-container">
+		<div class="navigation-container">
+			<Navigation />
+		</div>
+		<div class="content-container">
+			<Router {routes} />
+		</div>
 	</div>
-	<div class="content-container">
-		<Router {routes} />
-	</div>
-</div>
 
-<SyToast
-	visible={showUpdateToast}
-	message={buildToastMessage()}
-	actionLabel="Update now"
-	corner="bottom-right"
-	onaction={handleUpdateAction}
-	ondismiss={() => (showUpdateToast = false)}
-/>
+	<SyToast
+		visible={showUpdateToast}
+		message={buildToastMessage()}
+		actionLabel="Update now"
+		corner="bottom-right"
+		onaction={handleUpdateAction}
+		ondismiss={() => (showUpdateToast = false)}
+	/>
+{/if}
 
 <style>
 	.app-container {
