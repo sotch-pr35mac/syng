@@ -7,11 +7,12 @@
 	const { variant = 'blue', tooltip, children }: Props = $props();
 </script>
 
-<span class="sy-tag sy-tag--{variant} sy-tooltip--container" title={tooltip}
-	>{@render children?.()}{#if tooltip}<span class="sy-tooltip--body sy-tooltip--body-bottom"
-			><p>{tooltip}</p></span
-		>{/if}</span
->
+<span class="sy-tag sy-tag--{variant} sy-tooltip--container" title={tooltip}>
+	{@render children?.()}
+	{#if tooltip}
+		<span class="sy-tooltip--body sy-tooltip--body-bottom"><p>{tooltip}</p></span>
+	{/if}
+</span>
 
 <style>
 	.sy-tag {
@@ -25,11 +26,8 @@
 		font-weight: var(--sy-font-weight--normal);
 	}
 	.sy-tag .sy-tooltip--body {
-		top: 100%;
 		right: 0;
 		left: auto;
-		margin: var(--sy-space) 0 0;
-		transform: none;
 		max-width: calc(100vw - var(--sy-space--large));
 		line-height: normal;
 		font-family: var(--sy-font-family);
@@ -38,7 +36,6 @@
 	.sy-tag .sy-tooltip--body p {
 		margin: 0;
 		font: inherit;
-		font-weight: var(--sy-font-weight--normal);
 	}
 	.sy-tag--blue {
 		background: var(--sy-color--blue);

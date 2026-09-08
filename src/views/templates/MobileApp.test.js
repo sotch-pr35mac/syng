@@ -1,8 +1,9 @@
-import { beforeEach, expect, vi } from 'vitest';
+import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileApp from '@/MobileApp.svelte';
 import { telemetry } from '@/utils';
+import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -60,8 +61,11 @@ vi.mock('@/routes/NotFound.svelte', async () => ({
 
 beforeEach(() => {
 	vi.mocked(telemetry.trackScreen).mockClear();
+	databaseMigrationStore.resetForTest();
 	window.location.hash = '#/';
 });
+
+afterEach(() => databaseMigrationStore.resetForTest());
 
 it('tracks screen views for mobile route changes', async () => {
 	const user = userEvent.setup();
@@ -81,4 +85,15 @@ it('tracks screen views for mobile route changes', async () => {
 
 	await user.click(getByRole('link', { name: 'Study' }));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));
+});
+
+it('keeps mobile navigation and routes inert while a migration is active', () => {
+	databaseMigrationStore.start({
+		title: 'Updating your bookmarks…',
+		detail: 'This only needs to happen once.',
+	});
+	const { getByTestId, queryByRole } = render(MobileApp);
+
+	expect(getByTestId('database-migration-screen')).toBeTruthy();
+	expect(queryByRole('link', { name: 'Search' })).toBeNull();
 });

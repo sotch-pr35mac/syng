@@ -22,6 +22,7 @@ import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { createAppServices } from '@/utils/appServices.js';
 import { resolveIsMasBuild } from '@/composables/settings.js';
+import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -111,7 +112,7 @@ export const runStartupActions = () => {
 		}
 	};
 
-	Promise.all(startupActions.map((item) => item.action))
+	return Promise.all(startupActions.map((item) => item.action))
 		.then(async () => {
 			// Migration: Check if we need to restore from a backup file
 			// This handles Tauri storage changes and the org.syng.app -> xyz.bytecraft.syng
@@ -122,9 +123,22 @@ export const runStartupActions = () => {
 				handleError('Migration check failed', error, { silent: true });
 			}
 
-			// Normalize all persisted bookmark HSK metadata before the UI or startup backup
-			// can observe a mixture of legacy numeric and structured records.
-			await bookmarkManager.migrateHskLevels();
+			try {
+				await bookmarkManager.prepareSchema(() => {
+					databaseMigrationStore.start({
+						title: 'Updating your bookmarks…',
+						detail: 'This only needs to happen once.',
+					});
+				});
+				if (databaseMigrationStore.status === 'running') {
+					databaseMigrationStore.finish();
+				}
+			} catch (error) {
+				databaseMigrationStore.fail(
+					'The update could not be completed. No schema version was saved.'
+				);
+				throw error;
+			}
 
 			await dictionaryDisplaySettingsStore.loadSettings();
 

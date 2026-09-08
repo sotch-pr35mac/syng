@@ -13,9 +13,7 @@ pub struct WordData {
     pub tone_marks: Vec<u8>,
     pub english: Vec<String>,
     pub hash: u64,
-    /// Structured HSK data from chinese_dictionary v3. This remains a JSON value at
-    /// the Tauri boundary so old numeric bookmark data can still be read.
-    pub hsk: serde_json::Value,
+    pub hsk: dictionary::HskLevels,
     pub word_id: u32,
 }
 
@@ -786,6 +784,18 @@ mod tests {
         assert_eq!(result[0].source, "你");
         assert_eq!(word_data(&result[0]).pinyin_marks, "nǐ");
         assert_eq!(word_data(&result[0]).tone_marks, vec![3]);
+    }
+
+    #[test]
+    fn word_data_preserves_dictionary_pinyin_for_polyphonic_hsk_lookups() {
+        for entry in chinese_dictionary::query_by_chinese("长") {
+            let converted = WordData::from(entry);
+            assert_eq!(converted.pinyin_numbers, entry.pinyin_numbers);
+            assert_eq!(
+                converted.hsk,
+                levels_value(&entry.simplified, &entry.pinyin_numbers)
+            );
+        }
     }
 
     #[test]

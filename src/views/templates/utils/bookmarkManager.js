@@ -2,7 +2,7 @@
  * File: bookmarkManager.js
  * Description: Describes the bookmark manager to read and write bookmarks.
  * An instance of BookmarkManager class is created from a desired pouchdb.
- * After initialization the bookmarks are ready to be read and written.
+ * Raw initialization is separate from schema readiness so restoration can run first.
  */
 import { describeUnknownError, handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -29,6 +29,10 @@ const EMPTY_HSK = {
 	hsk_exam_syllabus_2025: [],
 };
 
+export const BOOKMARK_SCHEMA_VERSION = 1;
+export const BOOKMARK_SCHEMA_DOCUMENT_ID = '_local/syng-bookmark-schema';
+const NOT_FOUND_STATUS = 404;
+
 export class BookmarkManager {
 	/*
 	 * Description: Construct an instance of the bookmark manager.
@@ -38,8 +42,60 @@ export class BookmarkManager {
 	 */
 	constructor(listDb, documentDb) {
 		this.initialized = false;
+		this.ready = false;
+		this._resolveReady = undefined;
+		this._readyPromise = new Promise((resolve) => {
+			this._resolveReady = resolve;
+		});
 		this._list_db = new PouchDB(listDb);
 		this._document_db = new PouchDB(documentDb);
+	}
+
+	_markReady() {
+		if (!this.ready) {
+			this.ready = true;
+			this._resolveReady();
+		}
+	}
+
+	/**
+	 * Bring this bookmark database up to its current schema after any storage restoration.
+	 * The local marker is scoped to the bookmark PouchDB and is excluded from normal allDocs
+	 * reads and backups. `onMigrationStart` runs only for a populated database that needs work.
+	 */
+	async prepareSchema(onMigrationStart = () => {}) {
+		await this.waitForInit();
+
+		let marker;
+		try {
+			marker = await this._document_db.get(BOOKMARK_SCHEMA_DOCUMENT_ID);
+		} catch (error) {
+			if (error?.status !== NOT_FOUND_STATUS && error?.name !== 'not_found') {
+				throw error;
+			}
+		}
+
+		if (marker?.version >= BOOKMARK_SCHEMA_VERSION) {
+			this._markReady();
+			return false;
+		}
+
+		const documents = await this._document_db.allDocs({ limit: 1 });
+		if (documents.rows.length) {
+			onMigrationStart();
+			await this.migrateHskLevels();
+		}
+
+		const markerResult = await this._document_db.put({
+			...(marker ?? {}),
+			_id: BOOKMARK_SCHEMA_DOCUMENT_ID,
+			version: BOOKMARK_SCHEMA_VERSION,
+		});
+		if (markerResult?.ok !== true) {
+			throw new Error('Bookmark schema version could not be saved.');
+		}
+		this._markReady();
+		return documents.rows.length > 0;
 	}
 
 	async migrateHskLevels() {
@@ -74,7 +130,10 @@ export class BookmarkManager {
 			return updates;
 		}, []);
 		if (changed.length) {
-			await this._document_db.bulkDocs(changed);
+			const results = await this._document_db.bulkDocs(changed);
+			if (!Array.isArray(results) || results.some((result) => result?.ok !== true)) {
+				throw new Error('HSK migration could not persist every bookmark.');
+			}
 		}
 	}
 
@@ -216,6 +275,14 @@ export class BookmarkManager {
 			};
 			pollInit();
 		});
+	}
+
+	/**
+	 * Resolve only after storage restoration and all bookmark schema migrations complete.
+	 * Bookmark consumers use this gate; migration code itself uses waitForInit().
+	 */
+	waitForReady() {
+		return this._readyPromise;
 	}
 
 	/*

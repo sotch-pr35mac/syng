@@ -26,7 +26,26 @@ pub struct MeasureWord {
 pub struct BookmarkEntry {
     english: Vec<String>,
     hash: u64,
-    hsk: serde_json::Value,
+    hsk: chinese_dictionary::HskLevels,
+    measure_words: Vec<MeasureWord>,
+    notes: String,
+    pinyin_marks: String,
+    pinyin_numbers: String,
+    simplified: String,
+    tone_marks: Vec<u8>,
+    traditional: String,
+    word_id: u32,
+}
+
+/// The archive shape deliberately accepts any historical `hsk` JSON. Imported HSK data is
+/// recomputed from the canonical word and numbered pinyin instead of being trusted or exposed.
+#[derive(Debug, Deserialize)]
+struct ArchivedBookmarkEntry {
+    english: Vec<String>,
+    hash: u64,
+    #[serde(rename = "hsk")]
+    #[serde(default)]
+    _legacy_hsk: serde_json::Value,
     measure_words: Vec<MeasureWord>,
     notes: String,
     pinyin_marks: String,
@@ -57,6 +76,12 @@ pub struct BookmarksExportMeta {
 pub struct BookmarksExport {
     meta: BookmarksExportMeta,
     entries: Vec<BookmarkEntry>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ArchivedBookmarksExport {
+    meta: BookmarksExportMeta,
+    entries: Vec<ArchivedBookmarkEntry>,
 }
 
 impl From<&chinese_dictionary::MeasureWord> for MeasureWord {
@@ -109,7 +134,7 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
                 Self {
                     english: original.definitions.clone(),
                     hash: original_hash,
-                    hsk: empty_hsk_value(),
+                    hsk: chinese_dictionary::HskLevels::default(),
                     measure_words: vec![],
                     notes: original.notes.clone(),
                     pinyin_marks: "Pinyin not found".to_string(),
@@ -124,11 +149,32 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
     }
 }
 
-fn empty_hsk_value() -> serde_json::Value {
-    serde_json::json!({
-        "hsk_2015": [],
-        "proficiency_standard_2021": [],
-        "hsk_exam_syllabus_2025": []
+impl From<ArchivedBookmarkEntry> for BookmarkEntry {
+    fn from(original: ArchivedBookmarkEntry) -> Self {
+        Self {
+            hsk: levels_value(&original.simplified, &original.pinyin_numbers),
+            english: original.english,
+            hash: original.hash,
+            measure_words: original.measure_words,
+            notes: original.notes,
+            pinyin_marks: original.pinyin_marks,
+            pinyin_numbers: original.pinyin_numbers,
+            simplified: original.simplified,
+            tone_marks: original.tone_marks,
+            traditional: original.traditional,
+            word_id: original.word_id,
+        }
+    }
+}
+
+fn parse_bookmarks_export(file: &str) -> serde_json::Result<BookmarksExport> {
+    serde_json::from_str::<ArchivedBookmarksExport>(file).map(|archive| BookmarksExport {
+        meta: archive.meta,
+        entries: archive
+            .entries
+            .into_iter()
+            .map(BookmarkEntry::from)
+            .collect(),
     })
 }
 
@@ -210,26 +256,13 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
                     entries: content,
                 }))
             }
-            Some("syli") => serde_json::from_str::<BookmarksExport>(&file)
-                .map(|mut export| {
-                    export.entries = export
-                        .entries
-                        .into_iter()
-                        .map(normalize_bookmark_entry)
-                        .collect();
-                    Some(export)
-                })
+            Some("syli") => parse_bookmarks_export(&file)
+                .map(Some)
                 .map_err(|err| format!("Could not read from file: {}", err)),
             _ => {
                 // On Android, content URIs don't include file extensions.
                 // Try parsing as V2 (syli/JSON) first, then fall back to V1 (sld).
-                if let Ok(export) = serde_json::from_str::<BookmarksExport>(&file) {
-                    let mut export = export;
-                    export.entries = export
-                        .entries
-                        .into_iter()
-                        .map(normalize_bookmark_entry)
-                        .collect();
+                if let Ok(export) = parse_bookmarks_export(&file) {
                     Ok(Some(export))
                 } else {
                     let content: Vec<BookmarkEntry> = file
@@ -291,11 +324,7 @@ mod tests {
                     "to water (a crop etc)".to_string()
                 ],
                 hash: 9216539338582081123,
-                hsk: serde_json::json!({
-                    "hsk_2015": [],
-                    "hsk_exam_syllabus_2025": [],
-                    "proficiency_standard_2021": []
-                }),
+                hsk: chinese_dictionary::HskLevels::default(),
                 measure_words: vec![],
                 notes: "This is a test".to_string(),
                 pinyin_marks: "shàng shuǐ".to_string(),
@@ -323,11 +352,7 @@ mod tests {
             BookmarkEntry {
                 english: vec!["Totally made up word.".to_string()],
                 hash: 16059756997626313037,
-                hsk: serde_json::json!({
-                    "hsk_2015": [],
-                    "proficiency_standard_2021": [],
-                    "hsk_exam_syllabus_2025": []
-                }),
+                hsk: chinese_dictionary::HskLevels::default(),
                 measure_words: vec![],
                 notes: "This word doesn't exist.".to_string(),
                 pinyin_marks: "Pinyin not found".to_string(),
@@ -338,5 +363,33 @@ mod tests {
                 word_id: 0
             }
         );
+    }
+
+    #[test]
+    fn legacy_numeric_hsk_archives_are_recomputed_into_typed_levels() {
+        let archive = serde_json::json!({
+            "meta": { "version": "V2", "name": "Legacy" },
+            "entries": [{
+                "english": ["to love"],
+                "hash": 1,
+                "hsk": 1,
+                "measure_words": [],
+                "notes": "",
+                "pinyin_marks": "ài",
+                "pinyin_numbers": "ai4",
+                "simplified": "爱",
+                "tone_marks": [4],
+                "traditional": "愛",
+                "word_id": 1
+            }]
+        });
+
+        let parsed = parse_bookmarks_export(&archive.to_string()).expect("legacy archive parses");
+        assert_eq!(parsed.entries[0].pinyin_numbers, "ai4");
+        assert_eq!(parsed.entries[0].hsk, levels_value("爱", "ai4"));
+        assert!(parsed.entries[0]
+            .hsk
+            .hsk_2015
+            .contains(&chinese_dictionary::HskLevel::One));
     }
 }

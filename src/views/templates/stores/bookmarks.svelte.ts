@@ -43,9 +43,15 @@ let lists = $state<string[]>([]);
 let initialized = $state(false);
 
 async function ensureManagerReady(): Promise<void> {
-	// The manager is constructed synchronously in runStartupActions. waitForInit is still
-	// needed to ensure the PouchDB load has completed before we issue queries.
-	await getBookmarkManager().waitForInit();
+	// Bookmark readiness includes schema migrations, while waitForInit only means the raw
+	// databases are available for storage restoration. The fallback keeps lightweight test
+	// doubles compatible without weakening the real manager's migration gate.
+	const manager = getBookmarkManager();
+	if ('waitForReady' in manager && typeof manager.waitForReady === 'function') {
+		await manager.waitForReady();
+	} else {
+		await manager.waitForInit();
+	}
 }
 
 async function refresh(): Promise<void> {
