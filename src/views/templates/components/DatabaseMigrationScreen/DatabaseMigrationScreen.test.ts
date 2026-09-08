@@ -54,12 +54,12 @@ afterEach(() => {
 	databaseMigrationStore.resetForTest();
 });
 
-it('shows stable accessible status copy and keeps the joke out of the live region', () => {
-	const { getByRole, getByTestId, getByText } = render(DatabaseMigrationScreen);
+it('shows stable accessible status copy without a loading indicator and keeps the joke out of the live region', () => {
+	const { getByRole, getByTestId, getByText, queryByRole } = render(DatabaseMigrationScreen);
 
 	expect(getByRole('heading', { name: 'Updating your bookmarks…' })).toBeTruthy();
 	expect(getByText('This only needs to happen once.')).toBeTruthy();
-	expect(getByRole('progressbar', { name: 'Bookmark update in progress' })).toBeTruthy();
+	expect(queryByRole('progressbar')).toBeNull();
 	const joke = getByTestId('database-migration-screen').querySelector('.migration-screen__joke');
 	expect(joke?.getAttribute('aria-hidden')).toBe('true');
 	expect(joke?.closest('[aria-live]')).toBeNull();
@@ -124,7 +124,7 @@ it('contains approved messages and none of the retired messages', () => {
 	}
 });
 
-it('uses the v1.5.0 gradient and shimmers only the full-size joke copy', async () => {
+it('uses the v1.5.0 gradient and a softer dark-mode shimmer only on the full-size joke copy', async () => {
 	const source = (await import('./DatabaseMigrationScreen.svelte?raw')).default;
 	const jokeRule = source.match(/\.migration-screen__joke\s*\{([^}]*)\}/)?.[1] ?? '';
 
@@ -132,6 +132,8 @@ it('uses the v1.5.0 gradient and shimmers only the full-size joke copy', async (
 	expect(jokeRule).toContain('font-size: var(--sy-font-size--normal)');
 	expect(jokeRule).toContain('animation: migration-shimmer');
 	expect(source.match(/animation: migration-shimmer/g)).toHaveLength(1);
+	expect(source).toContain('@media (prefers-color-scheme: dark)');
+	expect(source).toContain('rgb(35 35 35 / 78%) 50%');
 });
 
 it('allows every message to be selected first', () => {

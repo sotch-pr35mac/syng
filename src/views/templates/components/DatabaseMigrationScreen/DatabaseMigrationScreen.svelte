@@ -24,14 +24,6 @@
 		<div class="migration-screen__brand" aria-hidden="true">Syng | 词应</div>
 
 		{#if databaseMigrationStore.status === MIGRATION_STATUS.RUNNING}
-			<div
-				class="migration-screen__loader"
-				role="progressbar"
-				aria-label="Bookmark update in progress"
-			>
-				<span></span>
-				<span></span>
-			</div>
 			<div class="migration-screen__status" role="status" aria-live="polite">
 				<h1>{databaseMigrationStore.title}</h1>
 				<p>{databaseMigrationStore.detail}</p>
@@ -91,29 +83,6 @@
 		letter-spacing: -0.04em;
 	}
 
-	.migration-screen__loader {
-		position: relative;
-		width: 112px;
-		height: 112px;
-		margin: var(--sy-space--extra-large) 0;
-	}
-
-	.migration-screen__loader span {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 0;
-		height: 0;
-		border: 4px solid currentColor;
-		border-radius: 50%;
-		opacity: 0;
-		animation: migration-ripple 3s ease-out infinite;
-	}
-
-	.migration-screen__loader span:last-child {
-		animation-delay: 1.5s;
-	}
-
 	.migration-screen__status h1 {
 		margin: 0;
 		font-size: clamp(1.35rem, 5vw, 1.8rem);
@@ -156,24 +125,14 @@
 		margin-top: var(--sy-space--large);
 	}
 
-	@keyframes migration-ripple {
-		0% {
-			width: 0;
-			height: 0;
-			margin: 0;
-			opacity: 0;
-		}
-		33% {
-			width: 56px;
-			height: 56px;
-			margin: -28px 0 0 -28px;
-			opacity: 1;
-		}
-		100% {
-			width: 112px;
-			height: 112px;
-			margin: -56px 0 0 -56px;
-			opacity: 0;
+	@media (prefers-color-scheme: dark) {
+		.migration-screen__joke {
+			background-image: linear-gradient(
+				100deg,
+				rgb(35 35 35 / 56%) 20%,
+				rgb(35 35 35 / 78%) 50%,
+				rgb(35 35 35 / 56%) 80%
+			);
 		}
 	}
 
@@ -187,10 +146,6 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.migration-screen__loader span {
-			animation-duration: 6s;
-		}
-
 		.migration-screen__joke {
 			background: none;
 			color: var(--sy-color--white);
