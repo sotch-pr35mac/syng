@@ -25,7 +25,7 @@ pub struct MeasureWord {
 pub struct BookmarkEntry {
     english: Vec<String>,
     hash: u64,
-    pub hsk: serde_json::Value,
+    hsk: serde_json::Value,
     measure_words: Vec<MeasureWord>,
     notes: String,
     pinyin_marks: String,
@@ -108,7 +108,7 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
                 Self {
                     english: original.definitions.clone(),
                     hash: original_hash,
-                    hsk: serde_json::Value::from(0),
+                    hsk: empty_hsk_value(),
                     measure_words: vec![],
                     notes: original.notes.clone(),
                     pinyin_marks: "Pinyin not found".to_string(),
@@ -121,6 +121,44 @@ impl From<V1BookmarkEntry> for BookmarkEntry {
             }
         }
     }
+}
+
+fn empty_hsk_value() -> serde_json::Value {
+    serde_json::json!({
+        "hsk_2015": [],
+        "proficiency_standard_2021": [],
+        "hsk_exam_syllabus_2025": []
+    })
+}
+
+/// Normalize the numeric HSK representation used by old V1/V2 bookmark exports.
+/// Positive values in those exports are HSK 2015 levels; zero means unset.
+fn normalize_hsk_value(value: serde_json::Value) -> serde_json::Value {
+    let Some(level) = value.as_u64() else {
+        return value;
+    };
+    if level == 0 {
+        return empty_hsk_value();
+    }
+    let level_name = match level {
+        1 => "One",
+        2 => "Two",
+        3 => "Three",
+        4 => "Four",
+        5 => "Five",
+        6 => "Six",
+        _ => return empty_hsk_value(),
+    };
+    serde_json::json!({
+        "hsk_2015": [level_name],
+        "proficiency_standard_2021": [],
+        "hsk_exam_syllabus_2025": []
+    })
+}
+
+fn normalize_bookmark_entry(mut entry: BookmarkEntry) -> BookmarkEntry {
+    entry.hsk = normalize_hsk_value(entry.hsk);
+    entry
 }
 
 #[tauri::command(async)]
@@ -142,7 +180,7 @@ pub async fn export_list_data(
                 name,
                 version: BookmarksExportVersion::V3,
             },
-            entries: data,
+            entries: data.into_iter().map(normalize_bookmark_entry).collect(),
         };
         let export_data = serde_json::to_string(&export)
             .map_err(|err| format!("Could not prepare data for export: {}", err))?;
@@ -196,12 +234,26 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
                     entries: content,
                 }))
             }
-            Some("syli") => serde_json::from_str(&file)
+            Some("syli") => serde_json::from_str::<BookmarksExport>(&file)
+                .map(|mut export| {
+                    export.entries = export
+                        .entries
+                        .into_iter()
+                        .map(normalize_bookmark_entry)
+                        .collect();
+                    Some(export)
+                })
                 .map_err(|err| format!("Could not read from file: {}", err)),
             _ => {
                 // On Android, content URIs don't include file extensions.
                 // Try parsing as V2 (syli/JSON) first, then fall back to V1 (sld).
                 if let Ok(export) = serde_json::from_str::<BookmarksExport>(&file) {
+                    let mut export = export;
+                    export.entries = export
+                        .entries
+                        .into_iter()
+                        .map(normalize_bookmark_entry)
+                        .collect();
                     Ok(Some(export))
                 } else {
                     let content: Vec<BookmarkEntry> = file
@@ -295,7 +347,11 @@ mod tests {
             BookmarkEntry {
                 english: vec!["Totally made up word.".to_string()],
                 hash: 16059756997626313037,
-                hsk: serde_json::Value::from(0),
+                hsk: serde_json::json!({
+                    "hsk_2015": [],
+                    "proficiency_standard_2021": [],
+                    "hsk_exam_syllabus_2025": []
+                }),
                 measure_words: vec![],
                 notes: "This word doesn't exist.".to_string(),
                 pinyin_marks: "Pinyin not found".to_string(),
@@ -306,5 +362,32 @@ mod tests {
                 word_id: 0
             }
         );
+    }
+
+    #[test]
+    fn test_normalize_legacy_numeric_hsk() {
+        assert_eq!(
+            normalize_hsk_value(serde_json::json!(3)),
+            serde_json::json!({
+                "hsk_2015": ["Three"],
+                "proficiency_standard_2021": [],
+                "hsk_exam_syllabus_2025": []
+            })
+        );
+    }
+
+    #[test]
+    fn test_normalize_legacy_zero_hsk() {
+        assert_eq!(normalize_hsk_value(serde_json::json!(0)), empty_hsk_value());
+    }
+
+    #[test]
+    fn test_normalize_structured_hsk_unchanged() {
+        let structured = serde_json::json!({
+            "hsk_2015": ["One"],
+            "proficiency_standard_2021": ["SevenToNine"],
+            "hsk_exam_syllabus_2025": []
+        });
+        assert_eq!(normalize_hsk_value(structured.clone()), structured);
     }
 }

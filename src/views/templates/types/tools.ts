@@ -9,7 +9,7 @@ export interface WordData {
 	tone_marks: number[];
 	english: string[];
 	hash: number;
-	hsk: HskLevels | number;
+	hsk: HskLevels;
 	word_id: number;
 }
 

@@ -21,6 +21,33 @@ const MODIFIABLE_BOOKMARK_PROPERTIES = ['notes'];
 // Symbol for early exit from promise chains
 const EARLY_EXIT = Symbol('EARLY_EXIT');
 
+const HSK_LEVELS = ['One', 'Two', 'Three', 'Four', 'Five', 'Six'];
+const HSK_LEVEL_COUNT = HSK_LEVELS.length;
+
+// Bookmark documents created before structured HSK data used a numeric HSK 2015
+// level. Keep this compatibility handling at the persistence boundary.
+async function normalizeBookmarkHsk(documentDb, word) {
+	if (typeof word?.hsk !== 'number') {
+		return word;
+	}
+
+	const level = word.hsk;
+	const normalized = {
+		...word,
+		hsk: {
+			hsk_2015: level >= 1 && level <= HSK_LEVEL_COUNT ? [HSK_LEVELS[level - 1]] : [],
+			proficiency_standard_2021: [],
+			hsk_exam_syllabus_2025: [],
+		},
+	};
+	try {
+		await documentDb.put(normalized);
+	} catch {
+		// A read remains useful even when an older database cannot be updated.
+	}
+	return normalized;
+}
+
 export class BookmarkManager {
 	/*
 	 * Description: Construct an instance of the bookmark manager.
@@ -419,12 +446,11 @@ export class BookmarkManager {
 					return this._document_db.allDocs({ include_docs: true });
 				})
 				.then((documents) => {
-					resolve(
+					return Promise.all(
 						documents.rows
 							.filter((word) => word.doc.lists.includes(listId))
-							.map((word) => word.doc)
-					);
-					return undefined;
+							.map((word) => normalizeBookmarkHsk(this._document_db, word.doc))
+					).then(resolve);
 				})
 				.catch((e) => {
 					if (e === EARLY_EXIT) {
@@ -455,12 +481,10 @@ export class BookmarkManager {
 				.allDocs({ include_docs: true })
 				.then((documents) => {
 					// Syng expects the entries in the document DB to be unique by hash.
-					resolve(
-						documents.rows
-							.filter((word) => word.doc.hash === hash)
-							.map((word) => word.doc)[0]
-					);
-					return undefined;
+					const word = documents.rows
+						.filter((entry) => entry.doc.hash === hash)
+						.map((entry) => entry.doc)[0];
+					return normalizeBookmarkHsk(this._document_db, word).then(resolve);
 				})
 				.catch((e) => {
 					handleError('There was an error fetching a bookmark by hash.', e, {

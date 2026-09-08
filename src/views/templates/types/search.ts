@@ -21,5 +21,5 @@ export interface SearchEntry {
 	english: string[];
 	measure_words: unknown[];
 	notes?: string;
-	hsk?: HskLevels | number;
+	hsk?: HskLevels;
 }

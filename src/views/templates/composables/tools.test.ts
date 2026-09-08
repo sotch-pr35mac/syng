@@ -7,6 +7,7 @@ import {
 	segmentsToPinyinText,
 	toolsStore,
 } from '@/composables/tools.svelte.js';
+import type { PinyinSegment } from '@/types/tools.js';
 
 const THIRD_TONE = 3;
 
@@ -18,7 +19,7 @@ vi.mock('@/utils/error.js', () => ({
 	handleError: vi.fn(),
 }));
 
-const segments = [
+const segments: PinyinSegment[] = [
 	{ source: 'Hello', word_data: null },
 	{
 		source: '你好',
@@ -30,7 +31,7 @@ const segments = [
 			tone_marks: [THIRD_TONE, THIRD_TONE],
 			english: ['hello'],
 			hash: 1,
-			hsk: 1,
+			hsk: { hsk_2015: ['One'], proficiency_standard_2021: [], hsk_exam_syllabus_2025: [] },
 			word_id: 1,
 		},
 	},

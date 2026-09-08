@@ -8,8 +8,8 @@
 </script>
 
 <span class="sy-tag sy-tag--{variant} sy-tooltip--container" title={tooltip}
-	>{@render children?.()}{#if tooltip}<span class="sy-tooltip--body sy-tooltip--body-bottom"
-			><p>{tooltip}</p></span
+	>{@render children?.()}{#if tooltip}<span
+			class="sy-tag__tooltip sy-tooltip--body sy-tooltip--body-bottom"><p>{tooltip}</p></span
 		>{/if}</span
 >
 
@@ -21,7 +21,21 @@
 		border-radius: var(--sy-border-radius);
 		color: var(--sy-color--white);
 		font-size: var(--sy-font-size--small);
-		font-weight: var(--sy-font-weight--bold);
+		font-family: var(--sy-font-family);
+		font-weight: var(--sy-font-weight--normal);
+	}
+	.sy-tag__tooltip {
+		top: 100%;
+		right: auto;
+		left: 50%;
+		margin: var(--sy-space) 0 0;
+		transform: translateX(-50%);
+		line-height: normal;
+		font-family: var(--sy-font-family);
+		font-weight: var(--sy-font-weight--normal);
+	}
+	.sy-tag__tooltip p {
+		margin: 0;
 	}
 	.sy-tag--blue {
 		background: var(--sy-color--blue);
