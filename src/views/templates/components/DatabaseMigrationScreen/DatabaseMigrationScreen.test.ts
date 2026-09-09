@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 import {
-	MIGRATION_MESSAGES,
+	LOADING_MESSAGES,
 	MESSAGE_ROTATION_INTERVAL_MS,
 	randomMessageIndex,
-} from '@/components/DatabaseMigrationScreen/messages.js';
+} from '@/components/LoadingScreen/messages.js';
 
 const RETIRED_MESSAGES = [
 	'Rasterbating gigapixels...',
@@ -60,7 +60,7 @@ it('shows stable accessible status copy without a loading indicator and keeps th
 	expect(getByRole('heading', { name: 'Updating your bookmarks…' })).toBeTruthy();
 	expect(getByText('This only needs to happen once.')).toBeTruthy();
 	expect(queryByRole('progressbar')).toBeNull();
-	const joke = getByTestId('database-migration-screen').querySelector('.migration-screen__joke');
+	const joke = getByTestId('database-migration-screen').querySelector('.loading-screen__message');
 	expect(joke?.getAttribute('aria-hidden')).toBe('true');
 	expect(joke?.closest('[aria-live]')).toBeNull();
 });
@@ -70,9 +70,9 @@ it('chooses a random message immediately, rotates at three seconds, and skips a 
 	vi.spyOn(Math, 'random').mockReturnValueOnce(0).mockReturnValueOnce(0);
 	const { getByText } = render(DatabaseMigrationScreen);
 
-	expect(getByText(MIGRATION_MESSAGES[0])).toBeTruthy();
+	expect(getByText(LOADING_MESSAGES[0])).toBeTruthy();
 	await vi.advanceTimersByTimeAsync(MESSAGE_ROTATION_INTERVAL_MS);
-	expect(getByText(MIGRATION_MESSAGES[1])).toBeTruthy();
+	expect(getByText(LOADING_MESSAGES[1])).toBeTruthy();
 });
 
 it('clears its rotation timer when it closes', () => {
@@ -112,33 +112,33 @@ it('allows a settings preview to close without making real migrations dismissibl
 });
 
 it('contains approved messages and none of the retired messages', () => {
-	expect(MIGRATION_MESSAGES).toContain(
+	expect(LOADING_MESSAGES).toContain(
 		'Pay no attention to Caesar. Caesar doesn’t have the slightest idea what’s really going on.'
 	);
-	expect(MIGRATION_MESSAGES).toContain('Taking too long? Go outside!');
-	expect(MIGRATION_MESSAGES).toContain('Asking AI simple questions...');
-	expect(MIGRATION_MESSAGES).toContain('Asking AI what to do next…');
-	expect(MIGRATION_MESSAGES).toContain('正在加载…');
+	expect(LOADING_MESSAGES).toContain('Taking too long? Go outside!');
+	expect(LOADING_MESSAGES).toContain('Asking AI simple questions...');
+	expect(LOADING_MESSAGES).toContain('Asking AI what to do next…');
+	expect(LOADING_MESSAGES).toContain('正在加载…');
 	for (const retired of RETIRED_MESSAGES) {
-		expect(MIGRATION_MESSAGES).not.toContain(retired);
+		expect(LOADING_MESSAGES).not.toContain(retired);
 	}
 });
 
 it('uses the v1.5.0 gradient and a softer dark-mode shimmer only on the full-size joke copy', async () => {
-	const source = (await import('./DatabaseMigrationScreen.svelte?raw')).default;
-	const jokeRule = source.match(/\.migration-screen__joke\s*\{([^}]*)\}/)?.[1] ?? '';
+	const source = (await import('../LoadingScreen/LoadingScreen.svelte?raw')).default;
+	const jokeRule = source.match(/\.loading-screen__message\s*\{([^}]*)\}/)?.[1] ?? '';
 
 	expect(source).toContain('background: linear-gradient(#ff8a00, #ef1063, #9d29ad);');
 	expect(jokeRule).toContain('font-size: var(--sy-font-size--normal)');
-	expect(jokeRule).toContain('animation: migration-shimmer');
-	expect(source.match(/animation: migration-shimmer/g)).toHaveLength(1);
+	expect(jokeRule).toContain('animation: loading-shimmer');
+	expect(source.match(/animation: loading-shimmer/g)).toHaveLength(1);
 	expect(source).toContain('@media (prefers-color-scheme: dark)');
 	expect(source).toContain('rgb(35 35 35 / 78%) 50%');
 });
 
 it('allows every message to be selected first', () => {
-	expect(randomMessageIndex(MIGRATION_MESSAGES.length, -1, () => 0)).toBe(0);
-	expect(randomMessageIndex(MIGRATION_MESSAGES.length, -1, () => 0.999999)).toBe(
-		MIGRATION_MESSAGES.length - 1
+	expect(randomMessageIndex(LOADING_MESSAGES.length, -1, () => 0)).toBe(0);
+	expect(randomMessageIndex(LOADING_MESSAGES.length, -1, () => 0.999999)).toBe(
+		LOADING_MESSAGES.length - 1
 	);
 });

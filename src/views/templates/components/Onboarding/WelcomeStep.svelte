@@ -1,13 +1,12 @@
 <script lang="ts">
-	import { Award, Bookmark, BookOpen, GraduationCap, Search, SquareStack } from 'lucide-svelte';
+	import { Award, BookOpen, GraduationCap, Search } from 'lucide-svelte';
 
 	const features = [
 		{
 			id: 'search',
 			title: 'Search',
 			description:
-				'Look up words and phrases with characters, pinyin, and English. Explore what their meaning and build vocabulary lists.',
-			emphasized: true,
+				'Look up words and phrases with characters, pinyin, and English. Explore their meanings and build vocabulary lists.',
 			icons: [Search],
 		},
 		{
@@ -15,7 +14,6 @@
 			title: 'Read',
 			description:
 				'Read real Chinese and look up anything you don’t know without leaving the page.',
-			emphasized: false,
 			icons: [BookOpen],
 		},
 		{
@@ -23,32 +21,29 @@
 			title: 'Review',
 			description:
 				'Save words you want to remember, then review them with flashcards and quizzes.',
-			emphasized: false,
-			icons: [Bookmark, GraduationCap],
+			icons: [GraduationCap],
 		},
 		{
 			id: 'and_more',
 			title: 'And More',
 			description:
 				'Go further with tone coloring, script conversion, pinyin tools, and more.',
-			emphasized: false,
-			icons: [Award, SquareStack],
+			icons: [Award],
 		},
 	];
 </script>
 
 <div class="welcome-step">
-	<h2 class="welcome-step__title">Welcome to Syng</h2>
-	<p class="welcome-step__intro">
-		Syng helps you understand the Chinese you encounter and learn from it. Look up words, read
-		real text, save what matters, and practice it later.
-	</p>
+	<header class="welcome-step__header">
+		<h2 class="welcome-step__title">Welcome to Syng</h2>
+		<p class="welcome-step__intro">
+			Syng helps you understand the Chinese you encounter and learn from it. Look up words,
+			read real text, save what matters, and practice it later.
+		</p>
+	</header>
 	<ul class="welcome-step__features">
 		{#each features as feature (feature.id)}
-			<li
-				class="welcome-step__feature"
-				class:welcome-step__feature--emphasized={feature.emphasized}
-			>
+			<li class="welcome-step__feature">
 				<span class="welcome-step__icons" aria-hidden="true">
 					{#each feature.icons as Icon, iconIndex (`${feature.id}-${iconIndex}`)}
 						<Icon size="22" />
@@ -67,7 +62,13 @@
 	.welcome-step {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--extra-large);
+		gap: calc(var(--sy-space--extra-large) + var(--sy-space--large));
+	}
+
+	.welcome-step__header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space--large);
 	}
 
 	.welcome-step__title,
@@ -77,7 +78,7 @@
 
 	.welcome-step__title {
 		margin: 0;
-		font-size: var(--sy-font-size--large);
+		font-size: 1.5rem;
 		font-weight: var(--sy-font-weight--bold);
 	}
 
@@ -105,22 +106,19 @@
 		border-radius: var(--sy-border-radius);
 	}
 
-	.welcome-step__feature--emphasized {
-		background-color: var(--sy-color--grey-2);
-	}
-
 	.welcome-step__icons {
 		display: flex;
+		align-items: center;
 		gap: var(--sy-space);
 		color: var(--sy-color--blue-2);
 		flex-shrink: 0;
-		margin-top: var(--sy-space);
 	}
 
 	.welcome-step__feature-title {
 		margin: 0 0 var(--sy-space) 0;
 		font-size: var(--sy-font-size--medium);
 		font-weight: var(--sy-font-weight--bold);
+		line-height: 22px;
 	}
 
 	.welcome-step__feature-copy {
@@ -131,7 +129,7 @@
 	}
 
 	:global(.onboarding-flow--mobile) .welcome-step__title {
-		font-size: var(--sy-font-size--mobile-extra-large);
+		font-size: 1.375rem;
 	}
 
 	:global(.onboarding-flow--mobile) .welcome-step__intro,

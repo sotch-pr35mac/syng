@@ -1,4 +1,4 @@
-export const MIGRATION_MESSAGES = [
+export const LOADING_MESSAGES = [
 	'Contacting Starfleet...',
 	'Pay no attention to Caesar. Caesar doesn’t have the slightest idea what’s really going on.',
 	"Don't think about elephants.",

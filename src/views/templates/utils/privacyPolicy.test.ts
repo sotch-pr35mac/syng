@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	childPrivacyModeFrom,
-	filterRegionOptions,
 	isPrivacyStepComplete,
 	normalizeRegionCode,
 	privacyPolicyFor,
-	REGION_OPTIONS,
-	regionNameFor,
 } from '@/utils/privacyPolicy.js';
 import { PRIVACY_REGIMES } from '@/types/privacy.js';
 
@@ -56,6 +53,7 @@ describe('privacyPolicyFor', () => {
 			ageThreshold: 13,
 		});
 		expect(normalizeRegionCode(' jp ')).toBe('JP');
+		expect(normalizeRegionCode('invalid')).toBeNull();
 	});
 });
 
@@ -82,21 +80,5 @@ describe('isPrivacyStepComplete', () => {
 		expect(isPrivacyStepComplete('US', null)).toBe(false);
 		expect(isPrivacyStepComplete('US', false)).toBe(true);
 		expect(isPrivacyStepComplete('US', true)).toBe(true);
-	});
-});
-
-describe('region dataset', () => {
-	it('vendors ISO 3166-1 alpha-2 English names and excludes grouping codes', () => {
-		expect(REGION_OPTIONS.some((region) => region.code === 'US')).toBe(true);
-		expect(regionNameFor('US')).toBe('United States');
-		expect(REGION_OPTIONS.some((region) => region.code === 'EU')).toBe(false);
-		expect(REGION_OPTIONS.some((region) => region.code === 'UN')).toBe(false);
-		expect(REGION_OPTIONS.some((region) => region.code === 'ZZ')).toBe(false);
-	});
-
-	it('filters regions by English name or code', () => {
-		const matches = filterRegionOptions('united');
-		expect(matches.some((region) => region.code === 'US')).toBe(true);
-		expect(filterRegionOptions('JP')[0]?.code).toBe('JP');
 	});
 });

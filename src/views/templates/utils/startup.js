@@ -37,31 +37,29 @@ export const getStartupDatabaseNames = (debugMode) => ({
 	readerDocumentDb: debugMode ? 'development_reader-documents' : 'reader-documents',
 });
 
-/**
- * Debug flag resolved once during bootstrap (app.js) before the shell mounts, so the
- * synchronous runStartupActions() below can choose the database names without awaiting.
- * Defaults to false so any failure to resolve falls back to the production databases.
- */
 let resolvedDebugMode = false;
 export const setDebugMode = (debugMode) => {
 	resolvedDebugMode = debugMode;
 };
 
-let startupCompleteResolve;
-let startupCompleteSettled = false;
-const startupCompletePromise = new Promise((resolve) => {
-	startupCompleteResolve = resolve;
-});
+let onboardingReadyPromise = null;
+let startupCompletePromise = null;
+const IDLE_FALLBACK_DELAY_MS = 250;
 
-export const waitForStartupComplete = () => startupCompletePromise;
+const requireStartupPromise = (promise, phase) =>
+	promise ?? Promise.reject(new Error(`${phase} requested before startup began.`));
 
-const markStartupComplete = () => {
-	if (startupCompleteSettled) {
+export const waitForOnboardingReady = () =>
+	requireStartupPromise(onboardingReadyPromise, 'Onboarding readiness');
+export const waitForStartupComplete = () =>
+	requireStartupPromise(startupCompletePromise, 'Startup completion');
+
+const scheduleIdleWork = (task) => {
+	if (typeof window.requestIdleCallback === 'function') {
+		window.requestIdleCallback(() => task(), { timeout: 5000 });
 		return;
 	}
-	startupCompleteSettled = true;
-	document.dispatchEvent(new Event('init'));
-	startupCompleteResolve();
+	window.setTimeout(task, IDLE_FALLBACK_DELAY_MS);
 };
 
 export const shouldRunStartupUpdateCheck = async () => {
@@ -88,10 +86,9 @@ window.onload = () => {
 
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
-	// resolvedDebugMode is set by setDebugMode() in app.js before this runs (the bootstrap awaits
-	// inDebugMode() before mounting the shell). Reading it synchronously keeps service creation
-	// ordered before the first render. A bare inDebugMode() returns a Promise (always truthy) —
-	// that was the bug that made production open the development_* databases.
+	// app.js resolves and stores debug mode before mounting the shell. Reading it synchronously here
+	// keeps service creation ordered when the shell starts initialization. A bare inDebugMode()
+	// returns a Promise (always truthy), which would incorrectly select the development databases.
 	const { configDb, listDb, bookmarkDb, readerDocumentDb } =
 		getStartupDatabaseNames(resolvedDebugMode);
 	const { preferenceManager, bookmarkManager, readerDocumentManager } = createAppServices(
@@ -101,28 +98,14 @@ export const runStartupActions = () => {
 		readerDocumentDb
 	);
 
-	const startupActions = [
-		{
-			name: 'init-dictionary',
-			action: invoke(NATIVE_COMMANDS.DICTIONARY.INIT),
-		},
-		{
-			name: 'init-preference-manager',
-			action: preferenceManager.init(),
-		},
-		{
-			name: 'init-bookmark-manager',
-			action: bookmarkManager.init(),
-		},
-		{
-			name: 'init-reader-document-manager',
-			action: readerDocumentManager.init(),
-		},
-		{
-			name: 'init-telemetry',
-			action: telemetry.init(),
-		},
-	];
+	const dictionaryInit = invoke(NATIVE_COMMANDS.DICTIONARY.INIT);
+	const preferenceManagerInit = preferenceManager.init();
+	const bookmarkManagerInit = bookmarkManager.init();
+	const readerDocumentManagerInit = readerDocumentManager.init();
+	const telemetryInit = telemetry.init().catch((error) => {
+		handleError('Telemetry initialization failed', error, { silent: true });
+	});
+
 	const initializeStyles = () => {
 		const colorSettings = preferenceManager.get('toneColors');
 		if (colorSettings.hasCustomColors) {
@@ -134,53 +117,85 @@ export const runStartupActions = () => {
 		}
 	};
 
-	return Promise.all(startupActions.map((item) => item.action))
-		.then(async () => {
-			// Migration: Check if we need to restore from a backup file
-			// This handles Tauri storage changes and the org.syng.app -> xyz.bytecraft.syng
-			// identifier change for data that shipped beta builds could have written.
+	const loadDisplayPreferences = async () => {
+		await Promise.all([
+			privacySettingsStore.loadSettings(),
+			dictionaryDisplaySettingsStore.loadSettings(),
+		]);
+		initializeStyles();
+	};
+
+	const migrationPromise = Promise.all([preferenceManagerInit, bookmarkManagerInit]).then(
+		async () => {
+			// Migration: Check if we need to restore from a backup file before reading preferences.
+			// This handles Tauri storage changes and the org.syng.app -> xyz.bytecraft.syng identifier
+			// change for data that shipped beta builds could have written.
 			try {
-				await checkAndPerformMigration(preferenceManager, bookmarkManager);
+				return await checkAndPerformMigration(preferenceManager, bookmarkManager);
 			} catch (error) {
 				handleError('Migration check failed', error, { silent: true });
+				return false;
 			}
+		}
+	);
 
-			try {
-				await bookmarkManager.prepareSchema(() => {
-					databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
+	// Existing installs can show their shell as soon as the small preference record is available.
+	// A genuinely incomplete install waits for the legacy migration check before showing onboarding,
+	// preventing migrated users from briefly seeing the first-run flow.
+	onboardingReadyPromise = preferenceManagerInit.then(async () => {
+		await loadDisplayPreferences();
+		if (!privacySettingsStore.hasCompletedOnboarding) {
+			await migrationPromise;
+			await loadDisplayPreferences();
+		}
+		return undefined;
+	});
+
+	startupCompletePromise = Promise.all([
+		onboardingReadyPromise,
+		migrationPromise,
+		bookmarkManagerInit,
+		dictionaryInit,
+		readerDocumentManagerInit,
+	]).then(async () => {
+		try {
+			await bookmarkManager.prepareSchema(() => {
+				databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
+			});
+			if (databaseMigrationStore.status === MIGRATION_STATUS.RUNNING) {
+				databaseMigrationStore.finish();
+			}
+		} catch (error) {
+			databaseMigrationStore.fail(
+				'The update could not be completed. No schema version was saved.'
+			);
+			throw error;
+		}
+		return undefined;
+	});
+
+	return startupCompletePromise
+		.then(() => {
+			document.dispatchEvent(new Event('init'));
+
+			// Register shutdown handling without delaying the first usable frame.
+			setupShutdownHook(preferenceManager, bookmarkManager).catch((error) => {
+				handleError('Failed to register the startup shutdown hook.', error, {
+					silent: true,
 				});
-				if (databaseMigrationStore.status === MIGRATION_STATUS.RUNNING) {
-					databaseMigrationStore.finish();
-				}
-			} catch (error) {
-				databaseMigrationStore.fail(
-					'The update could not be completed. No schema version was saved.'
-				);
-				throw error;
-			}
+			});
 
-			await privacySettingsStore.loadSettings();
-			await dictionaryDisplaySettingsStore.loadSettings();
+			// A full bookmark backup can be expensive for established libraries. Run it once the
+			// browser is idle (or shortly after first paint where requestIdleCallback is unavailable).
+			scheduleIdleWork(() => {
+				exportMigrationData(preferenceManager, bookmarkManager).catch((error) => {
+					handleError('Startup backup export failed', error, { silent: true });
+				});
+			});
 
-			// Migration: Setup shutdown hook to save data when app closes
-			// This ensures fresh data is available for future migrations
-			await setupShutdownHook(preferenceManager, bookmarkManager);
+			telemetryInit.then(() => telemetry.trackEvent('app.started', {})).catch(() => {});
 
-			// Migration: Also export a backup on startup as a safety net
-			// In case the app crashes before a clean shutdown
-			try {
-				await exportMigrationData(preferenceManager, bookmarkManager);
-			} catch (error) {
-				handleError('Startup backup export failed', error, { silent: true });
-			}
-
-			markStartupComplete();
-			initializeStyles();
-			telemetry.trackEvent('app.started', {}).catch(() => {});
-
-			// Populate the bookmarks store cache now that the manager is ready (and any
-			// migration has completed). Non-blocking — views read reactive `bookmarksStore.lists`
-			// and will update when this resolves.
+			// Populate caches after the schema is ready. Views consume these stores reactively.
 			bookmarksStore.refresh().catch((error) => {
 				handleError('Initial bookmarks store load failed', error, { silent: true });
 			});
@@ -190,8 +205,7 @@ export const runStartupActions = () => {
 				});
 			});
 
-			// Non-blocking update check — results are cached to window and broadcast
-			// via event so Navigation can show a badge without blocking startup.
+			// Update checks are also non-blocking; Navigation reacts when the result arrives.
 			shouldRunStartupUpdateCheck()
 				.then((shouldCheck) => {
 					if (shouldCheck) {

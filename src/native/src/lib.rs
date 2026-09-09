@@ -12,9 +12,9 @@ mod windows;
 
 use core::{
     answer_question, classify, convert_characters, export_list_data, get_acknowledgements,
-    get_hsk_levels, get_incorrect_questions, get_next_question, import_list_data,
-    import_reader_document, init_dictionary, is_dev_build, is_mas_build, pinyinify,
-    prepare_reader_import, prettify_pinyin, query, query_by_chinese, query_by_english,
+    get_hsk_levels, get_incorrect_questions, get_next_question, get_region_options,
+    import_list_data, import_reader_document, init_dictionary, is_dev_build, is_mas_build,
+    pinyinify, prepare_reader_import, prettify_pinyin, query, query_by_chinese, query_by_english,
     query_by_pinyin, read_legacy_migration_file, score_quiz, start_quiz, telemetry_get_prefs,
     telemetry_get_queued_events, telemetry_init, telemetry_set_pref, telemetry_track_error,
     telemetry_track_event, telemetry_track_screen, tokenize_pinyin, tokenize_reader_text,
@@ -113,7 +113,8 @@ pub fn run() {
             tokenize_pinyin,
             is_dev_build,
             is_mas_build,
-            get_acknowledgements
+            get_acknowledgements,
+            get_region_options
         ));
     }
     #[cfg(mobile)]
@@ -150,7 +151,8 @@ pub fn run() {
             tokenize_pinyin,
             is_dev_build,
             is_mas_build,
-            get_acknowledgements
+            get_acknowledgements,
+            get_region_options
         ));
     }
 

@@ -1,6 +1,5 @@
-import type { PrivacyPolicy, PrivacyRegime, RegionOption } from '@/types/privacy.js';
+import type { PrivacyPolicy, PrivacyRegime } from '@/types/privacy.js';
 import { PRIVACY_REGIMES } from '@/types/privacy.js';
-import cldrTerritoriesEn from '@/utils/cldrTerritoriesEn.json';
 
 const US_AGE_THRESHOLD = 13;
 const EEA_AGE_THRESHOLD = 16;
@@ -63,36 +62,12 @@ const OTHER_POLICY: PrivacyPolicy = {
 	ageThreshold: null,
 };
 
-const territoryNames = cldrTerritoriesEn as Record<string, string>;
-
-export const REGION_OPTIONS: readonly RegionOption[] = Object.entries(territoryNames)
-	.map(([code, name]) => ({ code, name }))
-	.sort((left, right) => left.name.localeCompare(right.name, 'en'));
-
 export function normalizeRegionCode(regionCode: string | null | undefined): string | null {
 	if (!regionCode) {
 		return null;
 	}
 	const normalized = regionCode.trim().toUpperCase();
-	return Object.prototype.hasOwnProperty.call(territoryNames, normalized) ? normalized : null;
-}
-
-export function regionNameFor(regionCode: string | null | undefined): string | null {
-	const normalized = normalizeRegionCode(regionCode);
-	return normalized ? territoryNames[normalized] : null;
-}
-
-export function filterRegionOptions(query: string): RegionOption[] {
-	const normalizedQuery = query.trim().toLowerCase();
-	if (!normalizedQuery) {
-		return [...REGION_OPTIONS];
-	}
-	return REGION_OPTIONS.filter((region) => {
-		return (
-			region.name.toLowerCase().includes(normalizedQuery) ||
-			region.code.toLowerCase().includes(normalizedQuery)
-		);
-	});
+	return /^[A-Z]{2}$/.test(normalized) ? normalized : null;
 }
 
 function policyForRegime(regime: PrivacyRegime, ageThreshold: number): PrivacyPolicy {

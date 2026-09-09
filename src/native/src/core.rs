@@ -10,6 +10,7 @@ pub mod io;
 pub mod migration;
 pub mod quiz;
 pub mod reader;
+pub mod regions;
 pub mod telemetry;
 pub mod tools;
 
@@ -37,6 +38,7 @@ pub use quiz::{
     answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
 };
 pub use reader::{import_reader_document, prepare_reader_import, tokenize_reader_text};
+pub use regions::get_region_options;
 #[cfg(target_os = "ios")]
 pub use telemetry::track_event_native;
 pub use telemetry::{

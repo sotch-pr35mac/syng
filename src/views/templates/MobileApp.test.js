@@ -22,6 +22,7 @@ vi.mock('lucide-svelte', async () => {
 
 vi.mock('@/utils/startup.js', () => ({
 	runStartupActions: vi.fn(),
+	waitForOnboardingReady: vi.fn(() => Promise.resolve()),
 	waitForStartupComplete: vi.fn(() => Promise.resolve()),
 }));
 
@@ -124,14 +125,14 @@ it('tracks screen views for mobile route changes', async () => {
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));
 });
 
-it('keeps mobile navigation and routes inert while a migration is active', () => {
+it('keeps mobile navigation and routes inert while a migration is active', async () => {
 	databaseMigrationStore.start({
 		title: 'Updating your bookmarks…',
 		detail: 'This only needs to happen once.',
 	});
 	const { getByTestId, queryByRole } = render(MobileApp);
 
-	expect(getByTestId('database-migration-screen')).toBeTruthy();
+	await waitFor(() => expect(getByTestId('database-migration-screen')).toBeTruthy());
 	expect(queryByRole('link', { name: 'Search' })).toBeNull();
 });
 

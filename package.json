@@ -5,6 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"build": "vite build",
+		"bundle:check": "npm run build && node scripts/check-bundle-size.mjs",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
 		"lint": "eslint src/views",
 		"fix-lint": "eslint src/views --fix",

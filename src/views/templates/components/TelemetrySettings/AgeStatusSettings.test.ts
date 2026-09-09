@@ -65,7 +65,12 @@ it('keeps child mode and telemetry off when age status stays below the threshold
 	const user = userEvent.setup();
 	const { getByRole } = render(AgeStatusSettings);
 
-	await user.click(getByRole('button', { name: 'Yes' }));
+	expect(
+		Array.from(document.querySelectorAll('.age-status__actions button'), (button) =>
+			button.textContent?.trim()
+		)
+	).toEqual(['No', 'Yes']);
+	await user.click(getByRole('button', { name: 'No' }));
 
 	expect(privacySettingsStore.childPrivacyMode).toBe(true);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
@@ -75,7 +80,7 @@ it('leaves child mode and restores telemetry when age status is no longer below 
 	const user = userEvent.setup();
 	const { getByRole } = render(AgeStatusSettings);
 
-	await user.click(getByRole('button', { name: 'No' }));
+	await user.click(getByRole('button', { name: 'Yes' }));
 
 	expect(privacySettingsStore.childPrivacyMode).toBe(false);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);

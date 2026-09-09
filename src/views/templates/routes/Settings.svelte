@@ -207,8 +207,9 @@
 		{:else if activeTab === 'telemetry'}
 			{#if privacySettingsStore.childPrivacyMode}
 				<AgeStatusSettings />
+			{:else}
+				<TelemetrySettings />
 			{/if}
-			<TelemetrySettings />
 		{:else}
 			<Acknowledgements />
 		{/if}

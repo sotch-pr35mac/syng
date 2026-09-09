@@ -156,7 +156,7 @@
 	}
 
 	.onboarding-flow--desktop .onboarding-flow__card {
-		width: min(40rem, 100%);
+		width: min(44rem, 100%);
 		max-height: calc(100vh - (var(--sy-space--extra-large) * 2));
 		border-radius: var(--sy-border-radius);
 		box-shadow: var(--sy-box-shadow);
@@ -206,16 +206,6 @@
 
 	.onboarding-flow__primary {
 		justify-self: end;
-	}
-
-	:global(.onboarding-flow__continue.sy-button--filled) {
-		background-color: var(--sy-color--blue-2);
-		color: var(--sy-color--white);
-	}
-
-	:global(.onboarding-flow__continue.sy-button--filled:disabled) {
-		background-color: var(--sy-color--grey-2);
-		color: var(--sy-color--grey-5);
 	}
 
 	@media (prefers-reduced-motion: reduce) {

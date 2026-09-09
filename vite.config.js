@@ -24,7 +24,13 @@ export default defineConfig({
 				drop_debugger: true,
 			},
 		},
-		rollupOptions: {
+		rolldownOptions: {
+			// This reports relative build-time plugin costs once a build crosses three seconds.
+			// Svelte compilation, CSS processing, and production minification are expected here;
+			// the bundle budgets below `make check` remain the actionable performance gate.
+			checks: {
+				pluginTimings: false,
+			},
 			input: resolve(import.meta.dirname, 'src/views/templates/app.js'),
 			output: {
 				format: 'es',

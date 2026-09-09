@@ -2,12 +2,16 @@
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	import ColorizedPinyinSyllables from '@/components/ColorizedText/ColorizedPinyinSyllables.svelte';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
+	import SyTag from '@/components/SyTag/SyTag.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+	import { HSK_VARIANT_LABELS } from '@/types/dictionaryDisplay.js';
+	import { HSK_LEVELS } from '@/types/hsk.js';
 	import type { SearchEntry } from '@/types/search.js';
+	import { resolveHskLevels } from '@/utils/hsk.js';
 
 	const PREVIEW_SIMPLIFIED = '汉语';
 	const PREVIEW_TRADITIONAL = '漢語';
-	const PREVIEW_PINYIN = 'hànyǔ';
+	const PREVIEW_PINYIN = 'hàn yǔ';
 	const HAN_TONE = 4;
 	const YU_TONE = 3;
 	const PREVIEW_TONES = [HAN_TONE, YU_TONE];
@@ -20,19 +24,37 @@
 		tone_marks: PREVIEW_TONES,
 		english: ['Chinese language'],
 		measure_words: [],
+		hsk: {
+			hsk_2015: [HSK_LEVELS.ONE],
+			proficiency_standard_2021: [HSK_LEVELS.ONE],
+			hsk_exam_syllabus_2025: [HSK_LEVELS.ONE],
+		},
 	};
+	const previewHskLevels = $derived(
+		resolveHskLevels(PREVIEW_LIST_ENTRY.hsk, dictionaryDisplaySettingsStore.settings.hskVariant)
+	);
 </script>
 
 <figure class="chinese-preview" aria-live="polite">
 	<figcaption class="chinese-preview__label">Preview</figcaption>
-	<p class="chinese-preview__characters">
-		<PreferredCharacters
-			simplified={PREVIEW_SIMPLIFIED}
-			traditional={PREVIEW_TRADITIONAL}
-			tones={PREVIEW_TONES}
-			colorByTone={dictionaryDisplaySettingsStore.settings.colorCharactersByTone}
-		/>
-	</p>
+	<div class="chinese-preview__word">
+		<p class="chinese-preview__characters">
+			<PreferredCharacters
+				simplified={PREVIEW_SIMPLIFIED}
+				traditional={PREVIEW_TRADITIONAL}
+				tones={PREVIEW_TONES}
+				colorByTone={dictionaryDisplaySettingsStore.settings.colorCharactersByTone}
+			/>
+		</p>
+		{#if previewHskLevels.length}
+			<SyTag
+				variant="yellow"
+				tooltip={HSK_VARIANT_LABELS[dictionaryDisplaySettingsStore.settings.hskVariant]}
+			>
+				HSK: {previewHskLevels.join(', ')}
+			</SyTag>
+		{/if}
+	</div>
 	<p class="chinese-preview__pinyin" lang="zh-Latn">
 		<ColorizedPinyinSyllables
 			pinyin={PREVIEW_PINYIN}
@@ -43,7 +65,11 @@
 	<div class="chinese-preview__list">
 		<p class="chinese-preview__list-label">List result</p>
 		<div class="chinese-preview__list-row">
-			<DictionaryListPreviewContent value={{ word: PREVIEW_LIST_ENTRY }} />
+			<div class="chinese-preview__list-entry">
+				<div>
+					<DictionaryListPreviewContent value={{ word: PREVIEW_LIST_ENTRY }} />
+				</div>
+			</div>
 			<p class="chinese-preview__list-gloss">Chinese language</p>
 		</div>
 	</div>
@@ -75,6 +101,13 @@
 		line-height: 1.4;
 	}
 
+	.chinese-preview__word {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sy-space--large);
+	}
+
 	.chinese-preview__list {
 		display: flex;
 		flex-direction: column;
@@ -91,6 +124,13 @@
 		padding: var(--sy-space--large);
 		background-color: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
+	}
+
+	.chinese-preview__list-entry {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--sy-space--large);
 	}
 
 	.chinese-preview__list-gloss {

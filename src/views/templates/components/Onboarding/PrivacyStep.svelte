@@ -33,6 +33,7 @@
 	);
 	const showTelemetry = $derived(
 		privacySettingsStore.regionCode !== null &&
+			onboardingStore.isBelowApplicableAge !== true &&
 			(policy.ageThreshold === null || onboardingStore.isBelowApplicableAge !== null)
 	);
 	const telemetryLocked = $derived(privacySettingsStore.childPrivacyMode);
@@ -40,9 +41,7 @@
 		telemetryLocked ? [] : exampleTelemetryEnvelopes(telemetryPrefs)
 	);
 	const ageQuestion = $derived(
-		policy.ageThreshold === null
-			? ''
-			: `Are you below the age of ${policy.ageThreshold} for this region?`
+		policy.ageThreshold === null ? '' : `Are you over ${policy.ageThreshold}?`
 	);
 
 	onMount(() => {
@@ -82,10 +81,13 @@
 </script>
 
 <div class="privacy-step" class:privacy-step--mobile={variant === 'mobile'}>
-	<h2 class="privacy-step__title">Privacy</h2>
-	<p class="privacy-step__intro">
-		Choose your region so Syng can apply the right privacy defaults.
-	</p>
+	<header class="privacy-step__header">
+		<h2 class="privacy-step__title">Privacy</h2>
+		<p class="privacy-step__intro">
+			Choose your region so Syng can apply the right privacy protections. This setting stays
+			on your device and can be changed later.
+		</p>
+	</header>
 
 	<RegionSelector
 		selectedRegionCode={privacySettingsStore.regionCode}
@@ -97,33 +99,30 @@
 			<legend>{ageQuestion}</legend>
 			<div class="privacy-step__age-actions">
 				<SyButton
-					style={onboardingStore.isBelowApplicableAge === true ? 'filled' : 'ghost'}
-					color="blue"
+					style="filled"
+					color={onboardingStore.isBelowApplicableAge === true ? 'blue' : undefined}
 					aria-pressed={onboardingStore.isBelowApplicableAge === true}
-					classes={onboardingStore.isBelowApplicableAge === true
-						? ['privacy-step__age-button--selected']
-						: []}
+					classes={['privacy-step__age-button']}
 					onclick={() => onboardingStore.setIsBelowApplicableAge(true)}
 				>
-					Yes
+					No
 				</SyButton>
 				<SyButton
-					style={onboardingStore.isBelowApplicableAge === false ? 'filled' : 'ghost'}
-					color="blue"
+					style="filled"
+					color={onboardingStore.isBelowApplicableAge === false ? 'blue' : undefined}
 					aria-pressed={onboardingStore.isBelowApplicableAge === false}
-					classes={onboardingStore.isBelowApplicableAge === false
-						? ['privacy-step__age-button--selected']
-						: []}
+					classes={['privacy-step__age-button']}
 					onclick={() => onboardingStore.setIsBelowApplicableAge(false)}
 				>
-					No
+					Yes
 				</SyButton>
 			</div>
 		</fieldset>
 	{/if}
 
 	{#if showTelemetry}
-		<div class="privacy-step__telemetry">
+		<section class="privacy-step__telemetry" aria-labelledby="privacy-telemetry-heading">
+			<h3 id="privacy-telemetry-heading">Help improve Syng</h3>
 			<p class="privacy-step__disclosure">
 				We hate creepy data collection, and you should too! That's why Syng's telemetry
 				service is designed to be open and transparent. You can inspect and change this
@@ -229,7 +228,7 @@
 					{/each}
 				{/if}
 			</div>
-		</div>
+		</section>
 	{/if}
 </div>
 
@@ -237,12 +236,18 @@
 	.privacy-step {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--extra-large);
+		gap: calc(var(--sy-space--extra-large) + var(--sy-space--large));
+	}
+
+	.privacy-step__header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space--large);
 	}
 
 	.privacy-step__title {
 		margin: 0;
-		font-size: var(--sy-font-size--large);
+		font-size: 1.5rem;
 		font-weight: var(--sy-font-weight--bold);
 	}
 
@@ -259,7 +264,7 @@
 		border: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--extra-large);
+		gap: 0;
 	}
 
 	.privacy-step__age legend {
@@ -271,17 +276,24 @@
 	.privacy-step__age-actions {
 		display: flex;
 		gap: var(--sy-space--large);
+		margin-top: calc(var(--sy-space--extra-large) + var(--sy-space--large));
 	}
 
-	:global(.privacy-step__age-button--selected.sy-button--filled) {
-		background-color: var(--sy-color--blue-2);
-		color: var(--sy-color--white);
+	:global(.privacy-step__age-button.sy-button--filled) {
+		min-width: 5rem;
+		margin: 0;
 	}
 
 	.privacy-step__telemetry {
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--extra-large);
+	}
+
+	.privacy-step__telemetry h3 {
+		margin: 0;
+		font-size: var(--sy-font-size--medium);
+		font-weight: var(--sy-font-weight--bold);
 	}
 
 	.privacy-step__disclosure,
@@ -345,7 +357,7 @@
 	}
 
 	.privacy-step--mobile .privacy-step__title {
-		font-size: var(--sy-font-size--mobile-extra-large);
+		font-size: 1.375rem;
 	}
 
 	.privacy-step--mobile .privacy-step__intro,

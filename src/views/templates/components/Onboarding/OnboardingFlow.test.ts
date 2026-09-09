@@ -8,15 +8,22 @@ import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 
+vi.mock('@tauri-apps/api/core', () => ({
+	invoke: vi.fn(() =>
+		Promise.resolve([
+			{ code: 'US', fallbackName: 'United States of America' },
+			{ code: 'CN', fallbackName: 'China' },
+		])
+	),
+}));
+
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Award: mockIcon,
-		Bookmark: mockIcon,
 		BookOpen: mockIcon,
 		GraduationCap: mockIcon,
 		Search: mockIcon,
-		SquareStack: mockIcon,
 	};
 });
 
@@ -68,6 +75,7 @@ beforeEach(async () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		hskVariant: 'hsk_exam_syllabus_2025',
 		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
@@ -136,10 +144,22 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	expect(queryByLabelText('First Tone')).toBeNull();
 	expect(getByLabelText('Apply tone coloring to lists')).toBeTruthy();
 	expect(getByText('List result')).toBeTruthy();
+	expect(
+		(getByRole('radio', { name: 'HSK Exam Syllabus 2025' }) as HTMLInputElement).checked
+	).toBe(true);
+	const hskRadios = document.querySelectorAll('input[name="hsk-variant"]');
+	expect(Array.from(hskRadios, (radio) => (radio as HTMLInputElement).value)).toEqual([
+		'hsk_exam_syllabus_2025',
+		'hsk_2015',
+		'proficiency_standard_2021',
+		'none',
+	]);
 	const characterRadios = document.querySelectorAll('input[name="character-set"]');
 	expect((characterRadios[0] as HTMLInputElement).value).toBe('both');
 
 	await user.click(getByRole('radio', { name: 'Traditional' }));
+	await user.click(getByRole('radio', { name: 'HSK 2015' }));
+	expect(preferenceManager.set).toHaveBeenCalledWith('hskVariant', 'hsk_2015');
 	await user.click(getByRole('button', { name: 'Continue' }));
 	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
 
@@ -148,19 +168,23 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	await waitFor(() =>
 		expect((getByRole('radio', { name: 'Traditional' }) as HTMLInputElement).checked).toBe(true)
 	);
+	expect((getByRole('radio', { name: 'HSK 2015' }) as HTMLInputElement).checked).toBe(true);
 
 	await user.click(getByRole('button', { name: 'Continue' }));
 	await waitFor(() => expect(getByText('Country or region')).toBeTruthy());
 
 	await user.selectOptions(getByLabelText('Country or region'), 'US');
-	await waitFor(() =>
-		expect(getByText('Are you below the age of 13 for this region?')).toBeTruthy()
-	);
+	await waitFor(() => expect(getByText('Are you over 13?')).toBeTruthy());
+	expect(
+		Array.from(document.querySelectorAll('.privacy-step__age-actions button'), (button) =>
+			button.textContent?.trim()
+		)
+	).toEqual(['No', 'Yes']);
 	expect((getByRole('button', { name: 'Get Started' }) as HTMLButtonElement).disabled).toBe(true);
 
-	await user.click(getByRole('button', { name: 'No' }));
+	await user.click(getByRole('button', { name: 'Yes' }));
 	await waitFor(() => expect(getByLabelText('Enable Telemetry')).toBeTruthy());
-	expect(getByRole('button', { name: 'No' }).getAttribute('aria-pressed')).toBe('true');
+	expect(getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true');
 	expect(getByLabelText('Event Tracking')).toBeTruthy();
 	expect(getByLabelText('Screen Views')).toBeTruthy();
 	expect(getByLabelText('Error Reporting')).toBeTruthy();
@@ -199,24 +223,20 @@ it('progressively discloses privacy controls and locks telemetry in child mode',
 	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
 
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
-	expect(queryByText('Are you below the age of 13 for this region?')).toBeNull();
+	expect(queryByText('Are you over 13?')).toBeNull();
 
 	await user.selectOptions(getByLabelText('Country or region'), 'US');
-	await waitFor(() =>
-		expect(getByText('Are you below the age of 13 for this region?')).toBeTruthy()
-	);
+	await waitFor(() => expect(getByText('Are you over 13?')).toBeTruthy());
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
 
-	await user.click(getByRole('button', { name: 'Yes' }));
-	await waitFor(() => expect(getByLabelText('Enable Telemetry')).toBeTruthy());
-	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).disabled).toBe(true);
-	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).checked).toBe(false);
+	await user.click(getByRole('button', { name: 'No' }));
+	await waitFor(() => expect(queryByLabelText('Enable Telemetry')).toBeNull());
 	expect(queryByLabelText('Event Tracking')).toBeNull();
-	expect(getByText('No telemetry is sent with these settings.')).toBeTruthy();
+	expect(queryByText('No telemetry is sent with these settings.')).toBeNull();
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
 	expect(
-		getByText('Telemetry is turned off while additional privacy protections apply.')
-	).toBeTruthy();
+		queryByText('Telemetry is turned off while additional privacy protections apply.')
+	).toBeNull();
 
 	await user.click(getByRole('button', { name: 'Get Started' }));
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
@@ -235,7 +255,7 @@ it('skips the age question for other regions and allows disabling telemetry', as
 
 	await user.selectOptions(getByLabelText('Country or region'), 'CN');
 	await waitFor(() => expect(getByLabelText('Enable Telemetry')).toBeTruthy());
-	expect(queryByText('Are you below the age of 13 for this region?')).toBeNull();
+	expect(queryByText('Are you over 13?')).toBeNull();
 	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).checked).toBe(true);
 	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).disabled).toBe(false);
 

@@ -12,7 +12,6 @@ vi.mock('lucide-svelte', async () => {
 		CircleQuestionMark: mockIcon,
 		EllipsisVertical: mockIcon,
 		GraduationCap: mockIcon,
-		MessageCircle: mockIcon,
 		Search: mockIcon,
 		Settings: mockIcon,
 		SquareStack: mockIcon,
@@ -22,6 +21,7 @@ vi.mock('lucide-svelte', async () => {
 
 vi.mock('@/utils/startup.js', () => ({
 	runStartupActions: vi.fn(),
+	waitForOnboardingReady: vi.fn(() => Promise.resolve()),
 	waitForStartupComplete: vi.fn(() => Promise.resolve()),
 }));
 
@@ -60,9 +60,6 @@ vi.mock('@/routes/Search.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/Bookmarks.svelte', async () => ({
-	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
-}));
-vi.mock('@/routes/Chat.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/Help.svelte', async () => ({

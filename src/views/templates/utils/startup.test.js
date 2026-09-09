@@ -22,6 +22,13 @@ vi.mock('@/stores/dictionaryDisplaySettings.svelte.js', () => ({
 	},
 }));
 
+vi.mock('@/stores/privacySettings.svelte.js', () => ({
+	privacySettingsStore: {
+		hasCompletedOnboarding: true,
+		loadSettings: vi.fn().mockResolvedValue(undefined),
+	},
+}));
+
 vi.mock('@/utils/error.js', () => ({
 	handleError: vi.fn(),
 }));
@@ -76,9 +83,16 @@ import {
 	setupShutdownHook,
 } from '@/utils/migrationManager.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
-import { runStartupActions, shouldRunStartupUpdateCheck } from '@/utils/startup.js';
+import {
+	runStartupActions,
+	shouldRunStartupUpdateCheck,
+	waitForOnboardingReady,
+	waitForStartupComplete,
+} from '@/utils/startup.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { invoke } from '@tauri-apps/api/core';
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -88,8 +102,12 @@ beforeEach(() => {
 	vi.mocked(exportMigrationData).mockResolvedValue(undefined);
 	vi.mocked(setupShutdownHook).mockResolvedValue(undefined);
 	vi.mocked(dictionaryDisplaySettingsStore.loadSettings).mockResolvedValue(undefined);
+	vi.mocked(privacySettingsStore.loadSettings).mockResolvedValue(undefined);
+	privacySettingsStore.hasCompletedOnboarding = true;
 	vi.mocked(telemetry.init).mockResolvedValue(undefined);
 	vi.mocked(telemetry.trackEvent).mockResolvedValue(undefined);
+	vi.mocked(invoke).mockResolvedValue(undefined);
+	window.requestIdleCallback = vi.fn();
 	databaseMigrationStore.resetForTest();
 });
 
@@ -152,9 +170,60 @@ it('restores storage before preparing the bookmark schema and starts the app aft
 
 	await runStartupActions();
 
-	expect(order).toEqual(['restore', 'schema', 'backup', 'init-event']);
+	expect(order).toEqual(['restore', 'schema', 'init-event']);
 	expect(bookmarkManager.prepareSchema).toHaveBeenCalledOnce();
+	expect(setupShutdownHook).toHaveBeenCalledOnce();
+	expect(exportMigrationData).not.toHaveBeenCalled();
+	expect(window.requestIdleCallback).toHaveBeenCalledOnce();
+	window.requestIdleCallback.mock.calls[0][0]();
+	await vi.waitFor(() => expect(exportMigrationData).toHaveBeenCalledOnce());
+	expect(order).toEqual(['restore', 'schema', 'init-event', 'backup']);
 	expect(databaseMigrationStore.status).toBe('idle');
+});
+
+it('makes onboarding ready without waiting for dictionary initialization', async () => {
+	let resolveDictionary;
+	vi.mocked(invoke).mockReturnValue(
+		new Promise((resolve) => {
+			resolveDictionary = resolve;
+		})
+	);
+	startupServices();
+
+	const startup = runStartupActions();
+	await expect(waitForOnboardingReady()).resolves.toBeUndefined();
+
+	let startupComplete = false;
+	const completion = waitForStartupComplete().then(() => {
+		startupComplete = true;
+		return undefined;
+	});
+	await Promise.resolve();
+	expect(startupComplete).toBe(false);
+
+	resolveDictionary();
+	await startup;
+	await completion;
+	expect(startupComplete).toBe(true);
+});
+
+it('makes an existing install ready without waiting for bookmark initialization', async () => {
+	let resolveBookmarks;
+	startupServices({
+		init: vi.fn(
+			() =>
+				new Promise((resolve) => {
+					resolveBookmarks = resolve;
+				})
+		),
+	});
+
+	const startup = runStartupActions();
+	await expect(waitForOnboardingReady()).resolves.toBeUndefined();
+	expect(checkAndPerformMigration).not.toHaveBeenCalled();
+
+	resolveBookmarks();
+	await startup;
 });
 
 it('does not show migration UI when the current schema requires no work', async () => {

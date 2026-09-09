@@ -142,13 +142,22 @@ it('shows age status on the telemetry tab and unlocks telemetry after leaving ch
 		include_device_context: true,
 	});
 	const user = userEvent.setup();
-	const { getByText, getByLabelText, queryByText } = render(Settings);
+	const { getByText, getByLabelText, queryByText, queryByLabelText } = render(Settings);
 
 	await user.click(getByText('Telemetry'));
-	await waitFor(() => expect(getByText(/additional privacy protections apply/i)).toBeTruthy());
-	await waitFor(() => expect(getByLabelText('Enable Telemetry').disabled).toBe(true));
+	await waitFor(() => expect(getByText('Age Status')).toBeTruthy());
+	expect(
+		getByText(
+			/additional restrictions apply based on the age information provided during setup/i
+		)
+	).toBeTruthy();
+	expect(
+		getByText(/are you above the minimum digital consent age in your country or region/i)
+	).toBeTruthy();
+	expect(queryByLabelText('Enable Telemetry')).toBeNull();
+	expect(queryByText('Recent Telemetry Events')).toBeNull();
 
-	await user.click(getByText('No'));
+	await user.click(getByText('Yes'));
 
 	expect(privacySettingsStore.childPrivacyMode).toBe(false);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
@@ -160,7 +169,7 @@ it('shows age status on the telemetry tab and unlocks telemetry after leaving ch
 		include_device_context: true,
 	});
 	await waitFor(() => {
-		expect(queryByText(/additional privacy protections apply/i)).toBeNull();
+		expect(queryByText('Age Status')).toBeNull();
 		expect(getByLabelText('Enable Telemetry').disabled).toBe(false);
 	});
 });

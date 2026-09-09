@@ -10,6 +10,7 @@ export const NATIVE_COMMANDS = {
 		IS_DEV_BUILD: 'is_dev_build',
 		IS_MAS_BUILD: 'is_mas_build',
 		GET_ACKNOWLEDGEMENTS: 'get_acknowledgements',
+		GET_REGION_OPTIONS: 'get_region_options',
 	},
 	DICTIONARY: {
 		INIT: 'init_dictionary',

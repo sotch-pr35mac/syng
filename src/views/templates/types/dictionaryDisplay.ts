@@ -16,7 +16,12 @@ export const HSK_VARIANTS = {
 	NONE: 'none',
 } as const;
 export type HskVariant = (typeof HSK_VARIANTS)[keyof typeof HSK_VARIANTS];
-export const HSK_VARIANT_VALUES: readonly HskVariant[] = Object.values(HSK_VARIANTS);
+export const HSK_VARIANT_VALUES: readonly HskVariant[] = [
+	HSK_VARIANTS.HSK_EXAM_SYLLABUS_2025,
+	HSK_VARIANTS.HSK_2015,
+	HSK_VARIANTS.PROFICIENCY_STANDARD_2021,
+	HSK_VARIANTS.NONE,
+];
 export const HSK_VARIANT_LABELS: Record<HskVariant, string> = {
 	[HSK_VARIANTS.HSK_2015]: 'HSK 2015',
 	[HSK_VARIANTS.PROFICIENCY_STANDARD_2021]: 'Proficiency Standard 2021',

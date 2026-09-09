@@ -1,17 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+		/>
 
 		<title>Syng</title>
-		
-		<link rel="stylesheet" href="templates/styles/theme.css">
-		<link rel="stylesheet" href="templates/styles/syui.css">
-		<link rel="stylesheet" href="templates/build/bundle.css">
+
+		<link rel="stylesheet" href="templates/styles/theme.css" />
+		<link rel="stylesheet" href="templates/styles/syui.css" />
+		<link rel="stylesheet" href="templates/build/bundle.css" />
 		<script src="templates/utils/pouchdb-7.3.0.min.js"></script>
 		<script type="module" src="templates/build/bundle.js"></script>
+		<style>
+			#launch-screen {
+				position: fixed;
+				inset: 0;
+				display: grid;
+				place-items: center;
+				box-sizing: border-box;
+				padding: 32px;
+				background: linear-gradient(#ff8a00, #ef1063, #9d29ad);
+				color: #fff;
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+				text-align: center;
+			}
+			#launch-screen > div {
+				display: flex;
+				min-height: 420px;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+			}
+			#launch-brand {
+				margin-bottom: 32px;
+				font-size: clamp(2.5rem, 10vw, 4rem);
+				font-weight: 300;
+				letter-spacing: -0.04em;
+			}
+			#launch-status h1 {
+				margin: 0;
+				font-size: clamp(1.35rem, 5vw, 1.8rem);
+				font-weight: 500;
+			}
+			#launch-status p,
+			#launch-message {
+				margin: 16px 0 0;
+				font-size: 1rem;
+				line-height: 1.5;
+			}
+			#launch-message {
+				min-height: 1.5em;
+				margin-top: 32px;
+				opacity: 0.75;
+			}
+		</style>
 	</head>
 	<body id="app">
+		<div id="launch-screen">
+			<div>
+				<div id="launch-brand" aria-hidden="true">Syng | 词应</div>
+				<div id="launch-status" role="status" aria-live="polite">
+					<h1 id="launch-status-title">Starting Syng…</h1>
+					<p id="launch-status-detail">Loading the application.</p>
+				</div>
+				<p id="launch-message" aria-hidden="true">正在加载…</p>
+			</div>
+		</div>
 	</body>
 </html>

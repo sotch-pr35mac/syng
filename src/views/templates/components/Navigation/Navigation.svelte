@@ -4,7 +4,6 @@
 		Bookmark,
 		BookOpen,
 		CircleQuestionMark,
-		MessageCircle,
 		EllipsisVertical,
 		Search,
 		Settings,
@@ -44,12 +43,6 @@
 			icon: GraduationCap,
 			title: 'Study',
 			beta: false,
-		},
-		{
-			link: 'chat',
-			icon: MessageCircle,
-			title: 'Chat',
-			beta: true,
 		},
 		{
 			link: 'tools',

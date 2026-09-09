@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { openUrl } from '@tauri-apps/plugin-opener';
-	import { REGION_OPTIONS, regionNameFor } from '@/utils/privacyPolicy.js';
+	import { handleError } from '@/utils/error.js';
+	import { loadRegionOptions } from '@/utils/regions.js';
+	import type { RegionOption } from '@/types/privacy.js';
 
-	const CLDR_HOME_URL = 'https://cldr.unicode.org/';
+	const ISO_3166_URL = 'https://www.iso.org/iso-3166-country-codes.html';
 
 	interface Props {
 		selectedRegionCode?: string | null;
@@ -10,7 +13,26 @@
 	}
 
 	const { selectedRegionCode = null, onselect }: Props = $props();
-	const selectedName = $derived(regionNameFor(selectedRegionCode));
+	let regions = $state<readonly RegionOption[]>([]);
+	let loading = $state(true);
+	let loadFailed = $state(false);
+
+	async function loadRegions(): Promise<void> {
+		loading = true;
+		loadFailed = false;
+		try {
+			regions = await loadRegionOptions();
+		} catch (error) {
+			loadFailed = true;
+			handleError('Failed to load country and region options.', error, { silent: true });
+		} finally {
+			loading = false;
+		}
+	}
+
+	onMount(() => {
+		loadRegions().catch(() => {});
+	});
 
 	function handleChange(event: Event): void {
 		const select = event.currentTarget as HTMLSelectElement;
@@ -19,35 +41,42 @@
 		}
 	}
 
-	function handleCldrLinkClick(event: MouseEvent): void {
+	function handleIsoLinkClick(event: MouseEvent): void {
 		event.preventDefault();
-		openUrl(CLDR_HOME_URL).catch(() => {
-			window.open(CLDR_HOME_URL, '_blank', 'noopener,noreferrer');
+		openUrl(ISO_3166_URL).catch(() => {
+			window.open(ISO_3166_URL, '_blank', 'noopener,noreferrer');
 		});
 	}
 </script>
 
 <div class="region-selector">
 	<label class="region-selector__label" for="onboarding-region-select">Country or region</label>
-	{#if selectedName}
-		<p class="region-selector__selected">
-			Selected: {selectedName}
-		</p>
-	{/if}
 	<select
 		id="onboarding-region-select"
 		class="region-selector__select"
 		value={selectedRegionCode ?? ''}
 		onchange={handleChange}
+		disabled={loading || loadFailed}
 	>
-		<option value="" disabled>Select a country or region</option>
-		{#each REGION_OPTIONS as region (region.code)}
+		<option value="" disabled>
+			{loading
+				? 'Loading countries and regions…'
+				: loadFailed
+					? 'Countries and regions unavailable'
+					: 'Select a country or region'}
+		</option>
+		{#each regions as region (region.code)}
 			<option value={region.code}>{region.name}</option>
 		{/each}
 	</select>
+	{#if loadFailed}
+		<button class="region-selector__retry" type="button" onclick={() => loadRegions()}
+			>Retry</button
+		>
+	{/if}
 	<p class="region-selector__attribution">
-		Country and region names from
-		<a href={CLDR_HOME_URL} onclick={handleCldrLinkClick}>Unicode CLDR</a>.
+		Country and region codes from
+		<a href={ISO_3166_URL} onclick={handleIsoLinkClick}>ISO 3166</a>.
 	</p>
 </div>
 
@@ -63,7 +92,6 @@
 		font-weight: var(--sy-font-weight--bold);
 	}
 
-	.region-selector__selected,
 	.region-selector__attribution {
 		margin: 0;
 		font-size: var(--sy-font-size--small);
@@ -73,6 +101,17 @@
 	.region-selector__attribution a {
 		color: var(--sy-color--blue-2);
 		text-decoration: underline;
+	}
+
+	.region-selector__retry {
+		align-self: flex-start;
+		font: inherit;
+		color: var(--sy-color--blue-2);
+		background: none;
+		border: 0;
+		padding: 0;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 
 	.region-selector__select {

@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import ChinesePreferencesPreview from '@/components/Onboarding/ChinesePreferencesPreview.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -12,6 +12,7 @@ beforeEach(async () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		hskVariant: 'hsk_exam_syllabus_2025',
 	});
 	setPreferenceManagerForTest({
 		waitForInit: vi.fn(() => Promise.resolve()),
@@ -21,6 +22,20 @@ beforeEach(async () => {
 		}),
 	} as never);
 	await dictionaryDisplaySettingsStore.loadSettings();
+});
+
+it('assigns the correct tone color to each pinyin syllable', () => {
+	dictionaryDisplaySettingsStore.setColorPinyinByTone(true);
+	const preview = render(ChinesePreferencesPreview);
+
+	expect(
+		preview.container.querySelector('.chinese-preview__pinyin .colored-pinyin--tone-4')
+			?.textContent
+	).toBe('hàn');
+	expect(
+		preview.container.querySelector('.chinese-preview__pinyin .colored-pinyin--tone-3')
+			?.textContent
+	).toBe('yǔ');
 });
 
 it('includes a list-result preview that follows list tone coloring', () => {
@@ -41,4 +56,19 @@ it('includes a list-result preview that follows list tone coloring', () => {
 			'.chinese-preview__list [class*="colored-characters--tone"]'
 		)
 	).toBeTruthy();
+});
+
+it('previews the selected HSK variant and hides the tag when HSK is disabled', async () => {
+	const preview = render(ChinesePreferencesPreview);
+	const tag = preview.getByText('HSK: 1').closest('.sy-tag');
+
+	expect(tag?.getAttribute('title')).toBe('HSK Exam Syllabus 2025');
+	expect(tag?.closest('.chinese-preview__word')).toBeTruthy();
+	expect(tag?.closest('.chinese-preview__list')).toBeNull();
+
+	dictionaryDisplaySettingsStore.setHskVariant('hsk_2015');
+	await waitFor(() => expect(tag?.getAttribute('title')).toBe('HSK 2015'));
+
+	dictionaryDisplaySettingsStore.setHskVariant('none');
+	await waitFor(() => expect(preview.queryByText(/^HSK:/)).toBeNull());
 });

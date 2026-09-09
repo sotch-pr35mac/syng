@@ -27,7 +27,9 @@ async function bootstrap() {
 		// inDebugMode() never rejects (getArgs swallows errors and returns {}), so this defaults
 		// to false — the production databases — on any failure.
 		setDebugMode(await inDebugMode());
-		return mount(useMobile ? MobileApp : App, { target: appContainer });
+		const application = mount(useMobile ? MobileApp : App, { target: appContainer });
+		document.getElementById('launch-screen')?.remove();
+		return application;
 	}
 	if (charactersContainer) {
 		return mount(CharacterWindow, { target: charactersContainer });
@@ -35,4 +37,18 @@ async function bootstrap() {
 	return undefined;
 }
 
-export default bootstrap();
+const bootstrapPromise = bootstrap().catch((error) => {
+	const launchStatus = document.getElementById('launch-status');
+	launchStatus?.setAttribute('role', 'alert');
+	const launchStatusTitle = document.getElementById('launch-status-title');
+	const launchStatusDetail = document.getElementById('launch-status-detail');
+	if (launchStatusTitle) {
+		launchStatusTitle.textContent = 'Syng could not start.';
+	}
+	if (launchStatusDetail) {
+		launchStatusDetail.textContent = 'Please restart the app.';
+	}
+	handleError('Syng could not start. Please restart the app.', error);
+});
+
+export default bootstrapPromise;

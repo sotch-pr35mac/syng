@@ -172,9 +172,15 @@ it('shows age status on the telemetry tab while child privacy mode is on', async
 		include_device_context: true,
 	});
 	const user = userEvent.setup();
-	const { getByText, getByLabelText } = render(MobileSettings);
+	const { getByText, queryByLabelText, queryByText } = render(MobileSettings);
 
 	await user.click(getByText('Telemetry'));
-	await waitFor(() => expect(getByText(/additional privacy protections apply/i)).toBeTruthy());
-	await waitFor(() => expect(getByLabelText('Enable Telemetry').disabled).toBe(true));
+	await waitFor(() => expect(getByText('Age Status')).toBeTruthy());
+	expect(
+		getByText(
+			/additional restrictions apply based on the age information provided during setup/i
+		)
+	).toBeTruthy();
+	expect(queryByLabelText('Enable Telemetry')).toBeNull();
+	expect(queryByText('Recent Telemetry Events')).toBeNull();
 });
