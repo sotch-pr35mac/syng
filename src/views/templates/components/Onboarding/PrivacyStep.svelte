@@ -27,12 +27,13 @@
 		include_device_context: true,
 	});
 
-	const policy = $derived(privacyPolicyFor(privacySettingsStore.regionCode));
+	const policy = $derived(privacyPolicyFor(onboardingStore.regionCode));
 	const showAgeQuestion = $derived(
-		privacySettingsStore.regionCode !== null && policy.ageThreshold !== null
+		onboardingStore.regionCode !== null && policy.ageThreshold !== null
 	);
 	const showTelemetry = $derived(
-		privacySettingsStore.regionCode !== null &&
+		onboardingStore.regionCode !== null &&
+			!onboardingStore.applyingRegionSelection &&
 			onboardingStore.isBelowApplicableAge !== true &&
 			(policy.ageThreshold === null || onboardingStore.isBelowApplicableAge !== null)
 	);
@@ -41,7 +42,7 @@
 		telemetryLocked ? [] : exampleTelemetryEnvelopes(telemetryPrefs)
 	);
 	const ageQuestion = $derived(
-		policy.ageThreshold === null ? '' : `Are you over ${policy.ageThreshold}?`
+		policy.ageThreshold === null ? '' : `Are you ${policy.ageThreshold} or older?`
 	);
 
 	onMount(() => {
@@ -78,20 +79,40 @@
 				handleError('Failed to set telemetry preference.', error, { silent: true })
 			);
 	}
+
+	async function handleAgeClassification(isBelowApplicableAge: boolean): Promise<void> {
+		try {
+			await onboardingStore.setIsBelowApplicableAge(isBelowApplicableAge);
+		} catch (error) {
+			handleError('Failed to apply age-based privacy settings.', error, { silent: true });
+		}
+	}
+
+	async function handleRegionSelection(regionCode: string): Promise<void> {
+		try {
+			await onboardingStore.selectRegion(regionCode);
+		} catch (error) {
+			handleError('Failed to reset privacy settings for the selected region.', error, {
+				silent: true,
+			});
+		}
+	}
 </script>
 
 <div class="privacy-step" class:privacy-step--mobile={variant === 'mobile'}>
 	<header class="privacy-step__header">
 		<h2 class="privacy-step__title">Privacy</h2>
 		<p class="privacy-step__intro">
-			Choose your region so Syng can apply the right privacy protections. This setting stays
-			on your device and can be changed later.
+			Choose your region so Syng can apply the right privacy protections. Your selection is
+			processed only on your device and is not saved after setup.
 		</p>
 	</header>
 
 	<RegionSelector
-		selectedRegionCode={privacySettingsStore.regionCode}
-		onselect={(regionCode) => onboardingStore.selectRegion(regionCode)}
+		selectedRegionCode={onboardingStore.regionCode}
+		disabled={onboardingStore.applyingRegionSelection ||
+			onboardingStore.applyingAgeClassification}
+		onselect={(regionCode) => handleRegionSelection(regionCode)}
 	/>
 
 	{#if showAgeQuestion}
@@ -103,7 +124,9 @@
 					color={onboardingStore.isBelowApplicableAge === true ? 'blue' : undefined}
 					aria-pressed={onboardingStore.isBelowApplicableAge === true}
 					classes={['privacy-step__age-button']}
-					onclick={() => onboardingStore.setIsBelowApplicableAge(true)}
+					disabled={onboardingStore.applyingRegionSelection ||
+						onboardingStore.applyingAgeClassification}
+					onclick={() => handleAgeClassification(true)}
 				>
 					No
 				</SyButton>
@@ -112,7 +135,9 @@
 					color={onboardingStore.isBelowApplicableAge === false ? 'blue' : undefined}
 					aria-pressed={onboardingStore.isBelowApplicableAge === false}
 					classes={['privacy-step__age-button']}
-					onclick={() => onboardingStore.setIsBelowApplicableAge(false)}
+					disabled={onboardingStore.applyingRegionSelection ||
+						onboardingStore.applyingAgeClassification}
+					onclick={() => handleAgeClassification(false)}
 				>
 					Yes
 				</SyButton>
@@ -247,7 +272,7 @@
 
 	.privacy-step__title {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: var(--sy-font-size--heading);
 		font-weight: var(--sy-font-weight--bold);
 	}
 
@@ -357,7 +382,7 @@
 	}
 
 	.privacy-step--mobile .privacy-step__title {
-		font-size: 1.375rem;
+		font-size: var(--sy-font-size--mobile-heading);
 	}
 
 	.privacy-step--mobile .privacy-step__intro,

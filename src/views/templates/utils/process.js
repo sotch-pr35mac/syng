@@ -1,6 +1,5 @@
 import { handleError } from '@/utils/error.js';
 import { isMobile } from '@/utils/device.js';
-import { getMatches } from '@tauri-apps/plugin-cli';
 
 const getArgs = async () => {
 	// The cli plugin is desktop-only (registered under #[cfg(desktop)] in the Rust layer and
@@ -11,6 +10,7 @@ const getArgs = async () => {
 		return {};
 	}
 	try {
+		const { getMatches } = await import('@tauri-apps/plugin-cli');
 		const matches = await getMatches();
 		return matches.subcommand?.name === 'run' ? matches.subcommand.matches.args : matches.args;
 	} catch (e) {

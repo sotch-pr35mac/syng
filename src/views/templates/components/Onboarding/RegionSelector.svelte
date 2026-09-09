@@ -9,10 +9,11 @@
 
 	interface Props {
 		selectedRegionCode?: string | null;
+		disabled?: boolean;
 		onselect?: (regionCode: string) => void;
 	}
 
-	const { selectedRegionCode = null, onselect }: Props = $props();
+	const { selectedRegionCode = null, disabled = false, onselect }: Props = $props();
 	let regions = $state<readonly RegionOption[]>([]);
 	let loading = $state(true);
 	let loadFailed = $state(false);
@@ -56,7 +57,7 @@
 		class="region-selector__select"
 		value={selectedRegionCode ?? ''}
 		onchange={handleChange}
-		disabled={loading || loadFailed}
+		disabled={disabled || loading || loadFailed}
 	>
 		<option value="" disabled>
 			{loading

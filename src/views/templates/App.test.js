@@ -96,7 +96,6 @@ vi.mock('@/routes/mobile/MobileCharacters.svelte', async () => ({
 beforeEach(() => {
 	window.location.hash = '#/';
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});

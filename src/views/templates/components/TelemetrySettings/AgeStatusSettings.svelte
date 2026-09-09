@@ -1,16 +1,25 @@
 <script lang="ts">
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { updateAgeStatus } from '@/composables/settings.js';
-	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
-	import { privacyPolicyFor } from '@/utils/privacyPolicy.js';
+	import { handleError } from '@/utils/error.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
 	}
 
 	const { variant = 'desktop' }: Props = $props();
-	const policy = $derived(privacyPolicyFor(privacySettingsStore.regionCode));
-	const showAgeQuestion = $derived(policy.ageThreshold !== null);
+	let updatingAgeStatus = $state(false);
+
+	async function handleAgeStatus(isBelowApplicableAge: boolean): Promise<void> {
+		updatingAgeStatus = true;
+		try {
+			await updateAgeStatus(isBelowApplicableAge);
+		} catch (error) {
+			handleError('Failed to update age-based privacy settings.', error, { silent: true });
+		} finally {
+			updatingAgeStatus = false;
+		}
+	}
 </script>
 
 <section
@@ -24,33 +33,33 @@
 			Additional restrictions apply based on the age information provided during setup.
 		</p>
 	</header>
-	{#if showAgeQuestion}
-		<fieldset class="age-status__question">
-			<legend>Update Age Status</legend>
-			<p class="age-status__prompt">
-				Are you above the minimum digital consent age in your country or region?
-			</p>
-			<div class="age-status__actions">
-				<SyButton
-					style="filled"
-					color="blue"
-					aria-pressed="true"
-					classes={['age-status__button']}
-					onclick={() => updateAgeStatus(true)}
-				>
-					No
-				</SyButton>
-				<SyButton
-					style="filled"
-					aria-pressed="false"
-					classes={['age-status__button']}
-					onclick={() => updateAgeStatus(false)}
-				>
-					Yes
-				</SyButton>
-			</div>
-		</fieldset>
-	{/if}
+	<fieldset class="age-status__question">
+		<legend>Update Age Status</legend>
+		<p class="age-status__prompt">
+			Are you now at least the minimum digital consent age in your country or region?
+		</p>
+		<div class="age-status__actions">
+			<SyButton
+				style="filled"
+				color="blue"
+				aria-pressed="true"
+				classes={['age-status__button']}
+				disabled={updatingAgeStatus}
+				onclick={() => handleAgeStatus(true)}
+			>
+				No
+			</SyButton>
+			<SyButton
+				style="filled"
+				aria-pressed="false"
+				classes={['age-status__button']}
+				disabled={updatingAgeStatus}
+				onclick={() => handleAgeStatus(false)}
+			>
+				Yes
+			</SyButton>
+		</div>
+	</fieldset>
 </section>
 
 <style>
@@ -68,7 +77,7 @@
 
 	.age-status h2 {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: var(--sy-font-size--heading);
 		font-weight: var(--sy-font-weight--bold);
 	}
 
@@ -112,7 +121,7 @@
 	}
 
 	.age-status--mobile h2 {
-		font-size: 1.375rem;
+		font-size: var(--sy-font-size--mobile-heading);
 	}
 
 	.age-status--mobile .age-status__question legend,

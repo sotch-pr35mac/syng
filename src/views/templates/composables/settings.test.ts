@@ -38,7 +38,6 @@ beforeEach(() => {
 	vi.mocked(telemetry.setPref).mockClear();
 	vi.mocked(invoke).mockReset();
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
 	});
@@ -112,13 +111,13 @@ it.each([
 	expect(preferenceManager.set).not.toHaveBeenCalledWith('toneColors', expect.anything());
 });
 
-it('classifies age status into child privacy mode and restores telemetry when leaving', () => {
-	updateAgeStatus(true);
+it('classifies age status into child privacy mode and restores telemetry when leaving', async () => {
+	await updateAgeStatus(true);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
 
-	updateAgeStatus(false);
+	await updateAgeStatus(false);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', false);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);

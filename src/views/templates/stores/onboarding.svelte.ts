@@ -1,10 +1,14 @@
 import { ONBOARDING_STEPS, type OnboardingStepId } from '@/types/onboarding.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
-import { isPrivacyStepComplete } from '@/utils/privacyPolicy.js';
-import { telemetry } from '@/utils/telemetry.js';
+import { isPrivacyStepComplete, normalizeRegionCode } from '@/utils/privacyPolicy.js';
 
 let currentStepIndex = $state(0);
+let regionCode = $state<string | null>(null);
 let isBelowApplicableAge = $state<boolean | null>(null);
+let applyingRegionSelection = $state(false);
+let regionSelectionApplied = $state(false);
+let applyingAgeClassification = $state(false);
+let ageClassificationApplied = $state(false);
 
 function nextStep(): void {
 	if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
@@ -18,21 +22,43 @@ function previousStep(): void {
 	}
 }
 
-function setIsBelowApplicableAge(value: boolean | null): void {
+async function setIsBelowApplicableAge(value: boolean | null): Promise<void> {
 	isBelowApplicableAge = value;
-	privacySettingsStore.applyAgeClassification(value);
+	ageClassificationApplied = false;
+	applyingAgeClassification = true;
+	try {
+		await privacySettingsStore.applyAgeClassification(regionCode, value);
+		ageClassificationApplied = true;
+	} finally {
+		applyingAgeClassification = false;
+	}
 }
 
-function selectRegion(nextRegionCode: string): void {
+async function selectRegion(nextRegionCode: string): Promise<void> {
+	regionCode = normalizeRegionCode(nextRegionCode);
 	isBelowApplicableAge = null;
-	privacySettingsStore.setRegionCode(nextRegionCode);
-	privacySettingsStore.applyAgeClassification(null);
-	telemetry.setPref('enabled', true).catch(() => {});
+	regionSelectionApplied = false;
+	ageClassificationApplied = false;
+	applyingRegionSelection = true;
+	try {
+		await privacySettingsStore.resetAgeClassification();
+		regionSelectionApplied = true;
+	} catch (error) {
+		regionCode = null;
+		throw error;
+	} finally {
+		applyingRegionSelection = false;
+	}
 }
 
 function reset(): void {
 	currentStepIndex = 0;
+	regionCode = null;
 	isBelowApplicableAge = null;
+	applyingRegionSelection = false;
+	regionSelectionApplied = false;
+	applyingAgeClassification = false;
+	ageClassificationApplied = false;
 }
 
 export const onboardingStore = {
@@ -42,8 +68,17 @@ export const onboardingStore = {
 	get currentStepId(): OnboardingStepId {
 		return ONBOARDING_STEPS[currentStepIndex].id;
 	},
+	get regionCode(): string | null {
+		return regionCode;
+	},
 	get isBelowApplicableAge(): boolean | null {
 		return isBelowApplicableAge;
+	},
+	get applyingAgeClassification(): boolean {
+		return applyingAgeClassification;
+	},
+	get applyingRegionSelection(): boolean {
+		return applyingRegionSelection;
 	},
 	get isFirstStep(): boolean {
 		return currentStepIndex === 0;
@@ -55,7 +90,17 @@ export const onboardingStore = {
 		if (ONBOARDING_STEPS[currentStepIndex].id !== 'privacy') {
 			return true;
 		}
-		return isPrivacyStepComplete(privacySettingsStore.regionCode, isBelowApplicableAge);
+		if (
+			!regionSelectionApplied ||
+			applyingRegionSelection ||
+			!isPrivacyStepComplete(regionCode, isBelowApplicableAge)
+		) {
+			return false;
+		}
+		return (
+			isBelowApplicableAge === null ||
+			(ageClassificationApplied && !applyingAgeClassification)
+		);
 	},
 	nextStep,
 	previousStep,

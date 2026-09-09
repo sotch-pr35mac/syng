@@ -17,7 +17,6 @@ export interface PrivacyPolicy {
 }
 
 export interface PrivacySettings {
-	regionCode: string | null;
 	childPrivacyMode: boolean;
 	completedOnboardingVersion: number;
 	forceOnboardingReplay: boolean;

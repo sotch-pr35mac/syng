@@ -83,7 +83,6 @@ beforeEach(() => {
 	databaseMigrationStore.resetForTest();
 	window.location.hash = '#/';
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});

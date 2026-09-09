@@ -75,7 +75,6 @@ beforeEach(async () => {
 	setPreferenceManagerForTest(preferenceManager);
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});
@@ -130,7 +129,6 @@ it('replays onboarding from the dev-only general setting', async () => {
 
 it('shows age status on the telemetry tab and unlocks telemetry after leaving child mode', async () => {
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
 	});
@@ -152,7 +150,7 @@ it('shows age status on the telemetry tab and unlocks telemetry after leaving ch
 		)
 	).toBeTruthy();
 	expect(
-		getByText(/are you above the minimum digital consent age in your country or region/i)
+		getByText(/are you now at least the minimum digital consent age in your country or region/i)
 	).toBeTruthy();
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
 	expect(queryByText('Recent Telemetry Events')).toBeNull();

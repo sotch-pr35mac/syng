@@ -47,13 +47,15 @@ const createDefaultPreferences = () => ({
 		hasCustomColors: false,
 	}),
 	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
-	regionCode: createPreference(false, null),
 	childPrivacyMode: createPreference(false, false),
 	completedOnboardingVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
 });
 
 const backfillPreferences = (configuration) => {
+	// Region is needed only while classifying age during onboarding. Older development builds
+	// persisted it; drop that obsolete local value instead of retaining unnecessary data.
+	delete configuration.regionCode;
 	const defaults = createDefaultPreferences();
 	for (const [key, preference] of Object.entries(defaults)) {
 		if (key === '_id') {

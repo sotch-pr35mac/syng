@@ -39,7 +39,6 @@ beforeEach(async () => {
 
 it('loads persisted privacy settings', async () => {
 	const preferenceManager = buildPreferenceManager({
-		regionCode: 'jp',
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
 	});
@@ -47,60 +46,41 @@ it('loads persisted privacy settings', async () => {
 
 	await privacySettingsStore.loadSettings();
 
-	expect(privacySettingsStore.regionCode).toBe('JP');
 	expect(privacySettingsStore.childPrivacyMode).toBe(true);
 	expect(privacySettingsStore.completedOnboardingVersion).toBe(1);
 	expect(privacySettingsStore.forceOnboardingReplay).toBe(false);
 	expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
 });
 
-it('forces telemetry off when entering child privacy mode and restores default-on when leaving', () => {
+it('forces telemetry off when entering child privacy mode and restores default-on when leaving', async () => {
 	const preferenceManager = buildPreferenceManager({
-		regionCode: 'US',
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
 	});
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
 
-	privacySettingsStore.setChildPrivacyMode(true);
+	await privacySettingsStore.setChildPrivacyMode(true);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
 
-	privacySettingsStore.setChildPrivacyMode(false);
+	await privacySettingsStore.setChildPrivacyMode(false);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', false);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
 });
 
-it('does not treat child privacy mode as an alias for the telemetry flag when already eligible', () => {
+it('does not treat child privacy mode as an alias for the telemetry flag when already eligible', async () => {
 	const preferenceManager = buildPreferenceManager();
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
 
-	privacySettingsStore.setChildPrivacyMode(false);
+	await privacySettingsStore.setChildPrivacyMode(false);
 
 	expect(telemetry.setPref).not.toHaveBeenCalled();
 });
 
-it('does not treat a completed version without a region as finished onboarding', async () => {
+it('uses the completed version without retaining a region', async () => {
 	const preferences: Record<string, unknown> = {
-		regionCode: null,
-		completedOnboardingVersion: 1,
-		forceOnboardingReplay: false,
-	};
-	const preferenceManager = buildPreferenceManager(preferences);
-	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
-
-	await privacySettingsStore.loadSettings();
-
-	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 0);
-	expect(privacySettingsStore.completedOnboardingVersion).toBe(0);
-	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
-});
-
-it('keeps a completed onboarding version when a region was persisted', async () => {
-	const preferences: Record<string, unknown> = {
-		regionCode: 'US',
 		completedOnboardingVersion: 1,
 		forceOnboardingReplay: false,
 	};
@@ -116,14 +96,12 @@ it('keeps a completed onboarding version when a region was persisted', async () 
 
 it('replays onboarding without wiping other privacy settings', async () => {
 	const preferences: Record<string, unknown> = {
-		regionCode: 'US',
 		completedOnboardingVersion: 1,
 		forceOnboardingReplay: false,
 	};
 	const preferenceManager = buildPreferenceManager(preferences);
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		completedOnboardingVersion: 1,
 		forceOnboardingReplay: false,
 	});

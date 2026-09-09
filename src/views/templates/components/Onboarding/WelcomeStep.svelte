@@ -78,7 +78,7 @@
 
 	.welcome-step__title {
 		margin: 0;
-		font-size: 1.5rem;
+		font-size: var(--sy-font-size--heading);
 		font-weight: var(--sy-font-weight--bold);
 	}
 
@@ -129,7 +129,7 @@
 	}
 
 	:global(.onboarding-flow--mobile) .welcome-step__title {
-		font-size: 1.375rem;
+		font-size: var(--sy-font-size--mobile-heading);
 	}
 
 	:global(.onboarding-flow--mobile) .welcome-step__intro,

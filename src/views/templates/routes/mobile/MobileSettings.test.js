@@ -53,7 +53,6 @@ beforeEach(async () => {
 	setPreferenceManagerForTest(preferenceManager);
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});
@@ -160,7 +159,6 @@ it('restores the last active settings tab', async () => {
 
 it('shows age status on the telemetry tab while child privacy mode is on', async () => {
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
 	});

@@ -72,6 +72,6 @@ export const updateHskVariantPreference = (variant: HskVariant): void => {
 	telemetry.trackEvent('settings.changed', { setting: 'hskVariant' }).catch(() => {});
 };
 
-export const updateAgeStatus = (isBelowApplicableAge: boolean): void => {
-	privacySettingsStore.applyAgeClassification(isBelowApplicableAge);
+export const updateAgeStatus = async (isBelowApplicableAge: boolean): Promise<void> => {
+	await privacySettingsStore.setChildPrivacyMode(isBelowApplicableAge);
 };

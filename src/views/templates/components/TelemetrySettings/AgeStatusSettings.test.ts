@@ -42,7 +42,6 @@ const preferences: Record<string, unknown> = {};
 beforeEach(() => {
 	telemetryState.enabled = false;
 	Object.assign(preferences, {
-		regionCode: 'US',
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
 	});
@@ -54,7 +53,6 @@ beforeEach(() => {
 		}),
 	} as never);
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
 	});
@@ -98,7 +96,6 @@ it('locks the telemetry master toggle while child privacy mode is on', async () 
 it('unlocks the telemetry toggle after leaving child privacy mode', async () => {
 	const user = userEvent.setup();
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: 'US',
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});

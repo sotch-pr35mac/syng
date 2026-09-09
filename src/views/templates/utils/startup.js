@@ -37,6 +37,11 @@ export const getStartupDatabaseNames = (debugMode) => ({
 	readerDocumentDb: debugMode ? 'development_reader-documents' : 'reader-documents',
 });
 
+/**
+ * Debug flag resolved once during bootstrap (app.js) before the shell mounts, so the
+ * synchronous runStartupActions() below can choose the database names without awaiting.
+ * Defaults to false so any failure to resolve falls back to the production databases.
+ */
 let resolvedDebugMode = false;
 export const setDebugMode = (debugMode) => {
 	resolvedDebugMode = debugMode;
@@ -44,7 +49,7 @@ export const setDebugMode = (debugMode) => {
 
 let onboardingReadyPromise = null;
 let startupCompletePromise = null;
-const IDLE_FALLBACK_DELAY_MS = 250;
+const BACKUP_IDLE_FALLBACK_DELAY_MS = 250;
 
 const requireStartupPromise = (promise, phase) =>
 	promise ?? Promise.reject(new Error(`${phase} requested before startup began.`));
@@ -59,7 +64,9 @@ const scheduleIdleWork = (task) => {
 		window.requestIdleCallback(() => task(), { timeout: 5000 });
 		return;
 	}
-	window.setTimeout(task, IDLE_FALLBACK_DELAY_MS);
+	// Safari and iOS WebViews do not expose requestIdleCallback. Give the first usable frame
+	// time to paint before starting the potentially expensive startup backup there.
+	window.setTimeout(task, BACKUP_IDLE_FALLBACK_DELAY_MS);
 };
 
 export const shouldRunStartupUpdateCheck = async () => {

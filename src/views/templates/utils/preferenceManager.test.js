@@ -40,7 +40,6 @@ it('backfills newer settings into existing preference documents', async () => {
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
 	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
-	expect(manager.get('regionCode')).toBeNull();
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
@@ -67,7 +66,7 @@ it('does not mark existing preference documents as having completed onboarding',
 	expect(put).not.toHaveBeenCalled();
 });
 
-it('does not treat a mid-onboarding persisted config as complete', async () => {
+it('drops a region persisted by an older development build', async () => {
 	const put = vi.fn();
 	global.PouchDB = class {
 		get = vi.fn(() =>
@@ -86,7 +85,7 @@ it('does not treat a mid-onboarding persisted config as complete', async () => {
 	await manager.init();
 
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
-	expect(manager.get('regionCode')).toBe('US');
+	expect(manager._config).not.toHaveProperty('regionCode');
 	expect(put).not.toHaveBeenCalled();
 });
 
@@ -105,7 +104,6 @@ it('uses dictionary display defaults for new preference documents', async () => 
 	expect(manager.get('colorListsByTone')).toBe(false);
 	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
-	expect(manager.get('regionCode')).toBeNull();
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
 });
@@ -137,12 +135,12 @@ it('serializes rapid preference writes so overlapping puts do not conflict', asy
 	const manager = new PreferenceManager('config');
 	await manager.init();
 
-	manager.set('regionCode', 'US');
-	manager.set('childPrivacyMode', false);
+	manager.set('childPrivacyMode', true);
+	manager.set('completedOnboardingVersion', 1);
 	await manager._writeQueue;
 
-	expect(manager.get('regionCode')).toBe('US');
-	expect(manager.get('childPrivacyMode')).toBe(false);
+	expect(manager.get('childPrivacyMode')).toBe(true);
+	expect(manager.get('completedOnboardingVersion')).toBe(1);
 	expect(put).toHaveBeenCalledTimes(2);
 	expect(maxInFlightPuts).toBe(1);
 	expect(handleError).not.toHaveBeenCalled();
@@ -175,10 +173,10 @@ it('retries a conflicting put with the latest revision', async () => {
 	const manager = new PreferenceManager('config');
 	await manager.init();
 
-	manager.set('regionCode', 'JP');
+	manager.set('childPrivacyMode', true);
 	await manager._writeQueue;
 
-	expect(manager.get('regionCode')).toBe('JP');
+	expect(manager.get('childPrivacyMode')).toBe(true);
 	expect(put).toHaveBeenCalledTimes(2);
 	expect(handleError).not.toHaveBeenCalled();
 });

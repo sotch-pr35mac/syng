@@ -76,7 +76,6 @@ beforeEach(async () => {
 		colorPinyinByTone: false,
 		colorListsByTone: false,
 		hskVariant: 'hsk_exam_syllabus_2025',
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
 	});
@@ -90,7 +89,6 @@ beforeEach(async () => {
 	setPreferenceManagerForTest(preferenceManager as never);
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
-		regionCode: null,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
 	});
@@ -174,7 +172,7 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	await waitFor(() => expect(getByText('Country or region')).toBeTruthy());
 
 	await user.selectOptions(getByLabelText('Country or region'), 'US');
-	await waitFor(() => expect(getByText('Are you over 13?')).toBeTruthy());
+	await waitFor(() => expect(getByText('Are you 13 or older?')).toBeTruthy());
 	expect(
 		Array.from(document.querySelectorAll('.privacy-step__age-actions button'), (button) =>
 			button.textContent?.trim()
@@ -223,10 +221,10 @@ it('progressively discloses privacy controls and locks telemetry in child mode',
 	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
 
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
-	expect(queryByText('Are you over 13?')).toBeNull();
+	expect(queryByText('Are you 13 or older?')).toBeNull();
 
 	await user.selectOptions(getByLabelText('Country or region'), 'US');
-	await waitFor(() => expect(getByText('Are you over 13?')).toBeTruthy());
+	await waitFor(() => expect(getByText('Are you 13 or older?')).toBeTruthy());
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
 
 	await user.click(getByRole('button', { name: 'No' }));
@@ -246,6 +244,69 @@ it('progressively discloses privacy controls and locks telemetry in child mode',
 	);
 });
 
+it('waits for the child-privacy telemetry write before allowing completion', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText, getByLabelText } = await continueFromWelcome(user);
+
+	await user.click(getByRole('button', { name: 'Continue' }));
+	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
+	await user.selectOptions(getByLabelText('Country or region'), 'US');
+	await waitFor(() => expect(getByText('Are you 13 or older?')).toBeTruthy());
+
+	let finishPrivacyWrite!: () => void;
+	vi.mocked(telemetry.setPref).mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finishPrivacyWrite = resolve;
+			})
+	);
+
+	await user.click(getByRole('button', { name: 'No' }));
+	const getStarted = getByRole('button', { name: 'Get Started' }) as HTMLButtonElement;
+	expect(getStarted.disabled).toBe(true);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('childPrivacyMode', true);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('completedOnboardingVersion', 1);
+
+	finishPrivacyWrite();
+	await waitFor(() => expect(getStarted.disabled).toBe(false));
+	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
+
+	await user.click(getStarted);
+	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 1);
+});
+
+it('waits for the region telemetry reset before accepting an age answer', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText, getByLabelText } = await continueFromWelcome(user);
+
+	await user.click(getByRole('button', { name: 'Continue' }));
+	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
+
+	let finishRegionReset!: () => void;
+	vi.mocked(telemetry.setPref).mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finishRegionReset = resolve;
+			})
+	);
+
+	const regionSelect = getByLabelText('Country or region') as HTMLSelectElement;
+	await user.selectOptions(regionSelect, 'US');
+	const ageNo = getByRole('button', { name: 'No' }) as HTMLButtonElement;
+	const getStarted = getByRole('button', { name: 'Get Started' }) as HTMLButtonElement;
+
+	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
+	expect(regionSelect.disabled).toBe(true);
+	expect(ageNo.disabled).toBe(true);
+	expect(getStarted.disabled).toBe(true);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('regionCode', expect.anything());
+
+	finishRegionReset();
+	await waitFor(() => expect(regionSelect.disabled).toBe(false));
+	expect(ageNo.disabled).toBe(false);
+	expect(getStarted.disabled).toBe(true);
+});
+
 it('skips the age question for other regions and allows disabling telemetry', async () => {
 	const user = userEvent.setup();
 	const { getByRole, getByText, getByLabelText, queryByText } = await continueFromWelcome(user);
@@ -255,7 +316,7 @@ it('skips the age question for other regions and allows disabling telemetry', as
 
 	await user.selectOptions(getByLabelText('Country or region'), 'CN');
 	await waitFor(() => expect(getByLabelText('Enable Telemetry')).toBeTruthy());
-	expect(queryByText('Are you over 13?')).toBeNull();
+	expect(queryByText('Are you 13 or older?')).toBeNull();
 	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).checked).toBe(true);
 	expect((getByLabelText('Enable Telemetry') as HTMLInputElement).disabled).toBe(false);
 

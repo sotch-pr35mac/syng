@@ -28,7 +28,7 @@ async function bootstrap() {
 		// to false — the production databases — on any failure.
 		setDebugMode(await inDebugMode());
 		const application = mount(useMobile ? MobileApp : App, { target: appContainer });
-		document.getElementById('launch-screen')?.remove();
+		document.getElementById('syng-bootstrap-launch-screen')?.remove();
 		return application;
 	}
 	if (charactersContainer) {
@@ -38,10 +38,10 @@ async function bootstrap() {
 }
 
 const bootstrapPromise = bootstrap().catch((error) => {
-	const launchStatus = document.getElementById('launch-status');
+	const launchStatus = document.getElementById('syng-bootstrap-launch-status');
 	launchStatus?.setAttribute('role', 'alert');
-	const launchStatusTitle = document.getElementById('launch-status-title');
-	const launchStatusDetail = document.getElementById('launch-status-detail');
+	const launchStatusTitle = document.getElementById('syng-bootstrap-launch-status-title');
+	const launchStatusDetail = document.getElementById('syng-bootstrap-launch-status-detail');
 	if (launchStatusTitle) {
 		launchStatusTitle.textContent = 'Syng could not start.';
 	}

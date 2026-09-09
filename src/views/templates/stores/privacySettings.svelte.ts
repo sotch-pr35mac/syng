@@ -1,17 +1,15 @@
 import { hasCompletedCurrentOnboarding, ONBOARDING_VERSION } from '@/types/onboarding.js';
 import type { PrivacySettings } from '@/types/privacy.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
-import { childPrivacyModeFrom, normalizeRegionCode } from '@/utils/privacyPolicy.js';
+import { childPrivacyModeFrom } from '@/utils/privacyPolicy.js';
 import { telemetry } from '@/utils/telemetry.js';
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
-	regionCode: null,
 	childPrivacyMode: false,
 	completedOnboardingVersion: 0,
 	forceOnboardingReplay: false,
 };
 
-let regionCode = $state<string | null>(DEFAULT_PRIVACY_SETTINGS.regionCode);
 let childPrivacyMode = $state(DEFAULT_PRIVACY_SETTINGS.childPrivacyMode);
 let completedOnboardingVersion = $state(DEFAULT_PRIVACY_SETTINGS.completedOnboardingVersion);
 let forceOnboardingReplay = $state(DEFAULT_PRIVACY_SETTINGS.forceOnboardingReplay);
@@ -28,7 +26,6 @@ async function loadSettings(): Promise<void> {
 	try {
 		const preferenceManager = getPreferenceManager();
 		await preferenceManager.waitForInit();
-		regionCode = normalizeRegionCode(preferenceManager.get('regionCode') as string | null);
 		childPrivacyMode = normalizeBoolean(
 			preferenceManager.get('childPrivacyMode'),
 			DEFAULT_PRIVACY_SETTINGS.childPrivacyMode
@@ -40,40 +37,39 @@ async function loadSettings(): Promise<void> {
 			preferenceManager.get('forceOnboardingReplay'),
 			DEFAULT_PRIVACY_SETTINGS.forceOnboardingReplay
 		);
-		// Completing v1 always persists a region. A version without one means the user
-		// never finished onboarding (including installs auto-marked complete).
-		if (completedOnboardingVersion > 0 && !regionCode) {
-			completedOnboardingVersion = 0;
-			preferenceManager.set('completedOnboardingVersion', 0);
-		}
 	} catch {
-		regionCode = DEFAULT_PRIVACY_SETTINGS.regionCode;
 		childPrivacyMode = DEFAULT_PRIVACY_SETTINGS.childPrivacyMode;
 		completedOnboardingVersion = DEFAULT_PRIVACY_SETTINGS.completedOnboardingVersion;
 		forceOnboardingReplay = DEFAULT_PRIVACY_SETTINGS.forceOnboardingReplay;
 	}
 }
 
-function setRegionCode(nextRegionCode: string | null): void {
-	regionCode = normalizeRegionCode(nextRegionCode);
-	getPreferenceManager().set('regionCode', regionCode);
-}
-
-function setChildPrivacyMode(nextChildPrivacyMode: boolean): void {
+async function setChildPrivacyMode(nextChildPrivacyMode: boolean): Promise<void> {
 	const wasChildPrivacyMode = childPrivacyMode;
+	if (nextChildPrivacyMode) {
+		// Apply the native telemetry restriction before publishing/persisting child mode so
+		// onboarding cannot complete while the privacy write is still in flight.
+		await telemetry.setPref('enabled', false);
+	} else if (wasChildPrivacyMode) {
+		await telemetry.setPref('enabled', true);
+	}
 	childPrivacyMode = nextChildPrivacyMode;
 	getPreferenceManager().set('childPrivacyMode', nextChildPrivacyMode);
-	if (nextChildPrivacyMode) {
-		telemetry.setPref('enabled', false).catch(() => {});
-		return;
-	}
-	if (wasChildPrivacyMode) {
-		telemetry.setPref('enabled', true).catch(() => {});
-	}
 }
 
-function applyAgeClassification(isBelowApplicableAge: boolean | null): void {
-	setChildPrivacyMode(childPrivacyModeFrom(regionCode, isBelowApplicableAge));
+async function applyAgeClassification(
+	regionCode: string | null,
+	isBelowApplicableAge: boolean | null
+): Promise<void> {
+	await setChildPrivacyMode(childPrivacyModeFrom(regionCode, isBelowApplicableAge));
+}
+
+async function resetAgeClassification(): Promise<void> {
+	// A new region intentionally resets telemetry to its default. Await this before accepting an
+	// age answer so this enable cannot finish after a subsequent child-mode disable.
+	await telemetry.setPref('enabled', true);
+	childPrivacyMode = false;
+	getPreferenceManager().set('childPrivacyMode', false);
 }
 
 function completeOnboarding(): void {
@@ -97,10 +93,6 @@ function requestOnboardingReplay(): void {
 }
 
 function setPrivacySettingsForTest(settings: Partial<PrivacySettings>): void {
-	regionCode =
-		settings.regionCode !== undefined
-			? normalizeRegionCode(settings.regionCode)
-			: DEFAULT_PRIVACY_SETTINGS.regionCode;
 	childPrivacyMode = settings.childPrivacyMode ?? DEFAULT_PRIVACY_SETTINGS.childPrivacyMode;
 	completedOnboardingVersion =
 		settings.completedOnboardingVersion ?? DEFAULT_PRIVACY_SETTINGS.completedOnboardingVersion;
@@ -109,9 +101,6 @@ function setPrivacySettingsForTest(settings: Partial<PrivacySettings>): void {
 }
 
 export const privacySettingsStore = {
-	get regionCode(): string | null {
-		return regionCode;
-	},
 	get childPrivacyMode(): boolean {
 		return childPrivacyMode;
 	},
@@ -125,9 +114,9 @@ export const privacySettingsStore = {
 		return !forceOnboardingReplay && hasCompletedCurrentOnboarding(completedOnboardingVersion);
 	},
 	loadSettings,
-	setRegionCode,
 	setChildPrivacyMode,
 	applyAgeClassification,
+	resetAgeClassification,
 	completeOnboarding,
 	requestOnboardingReplay,
 	setPrivacySettingsForTest,
