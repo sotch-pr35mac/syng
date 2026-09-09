@@ -66,29 +66,6 @@ it('does not mark existing preference documents as having completed onboarding',
 	expect(put).not.toHaveBeenCalled();
 });
 
-it('drops a region persisted by an older development build', async () => {
-	const put = vi.fn();
-	global.PouchDB = class {
-		get = vi.fn(() =>
-			Promise.resolve({
-				_id: 'config',
-				_rev: '1-in-progress',
-				completedOnboardingVersion: { requiresRestart: false, value: 0 },
-				regionCode: { requiresRestart: false, value: 'US' },
-			})
-		);
-		put = put;
-	};
-	const { PreferenceManager } = await import('@/utils/preferenceManager.js');
-	const manager = new PreferenceManager('config');
-
-	await manager.init();
-
-	expect(manager.get('completedOnboardingVersion')).toBe(0);
-	expect(manager._config).not.toHaveProperty('regionCode');
-	expect(put).not.toHaveBeenCalled();
-});
-
 it('uses dictionary display defaults for new preference documents', async () => {
 	global.PouchDB = class {
 		get = vi.fn(() => Promise.reject({ name: 'not_found' }));

@@ -53,9 +53,6 @@ const createDefaultPreferences = () => ({
 });
 
 const backfillPreferences = (configuration) => {
-	// Region is needed only while classifying age during onboarding. Older development builds
-	// persisted it; drop that obsolete local value instead of retaining unnecessary data.
-	delete configuration.regionCode;
 	const defaults = createDefaultPreferences();
 	for (const [key, preference] of Object.entries(defaults)) {
 		if (key === '_id') {
