@@ -13,6 +13,51 @@
 		<link rel="stylesheet" href="templates/styles/syui.css" />
 		<link rel="stylesheet" href="templates/styles/launch.css" />
 		<link rel="stylesheet" href="templates/build/bundle.css" />
+		<style>
+			#mobile-splash {
+				position: fixed;
+				inset: 0;
+				z-index: 2147483647;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 24px;
+				box-sizing: border-box;
+				padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+					max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+				background: #ffffff;
+				color: #232323;
+				font:
+					500 16px/1.5 system-ui,
+					-apple-system,
+					sans-serif;
+				text-align: center;
+			}
+
+			#mobile-splash[hidden],
+			#mobile-splash [hidden] {
+				display: none;
+			}
+
+			#mobile-splash img {
+				width: 120px;
+				height: 120px;
+				object-fit: contain;
+			}
+
+			#mobile-splash p {
+				max-width: 280px;
+				margin: 0;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				#mobile-splash {
+					background: #232323;
+					color: #ffffff;
+				}
+			}
+		</style>
 		<script src="templates/utils/pouchdb-7.3.0.min.js"></script>
 		<script type="module" src="templates/build/bundle.js"></script>
 	</head>
@@ -33,6 +78,12 @@
 				</div>
 				<p class="syng-bootstrap-launch-screen__message" aria-hidden="true">正在加载…</p>
 			</div>
+		</div>
+		<div id="mobile-splash" hidden aria-hidden="true">
+			<img src="assets/splash-icon.png" width="120" height="120" alt="" />
+			<p data-mobile-splash-message role="alert" hidden>
+				Syng couldn’t start. Please restart the app.
+			</p>
 		</div>
 	</body>
 </html>
