@@ -31,10 +31,13 @@ export default defineConfig({
 			checks: {
 				pluginTimings: false,
 			},
-			input: resolve(import.meta.dirname, 'src/views/templates/app.js'),
+			input: {
+				bundle: resolve(import.meta.dirname, 'src/views/templates/app.js'),
+				'splash-init': resolve(import.meta.dirname, 'src/views/templates/splash-init.ts'),
+			},
 			output: {
 				format: 'es',
-				entryFileNames: 'bundle.js',
+				entryFileNames: '[name].js',
 				assetFileNames: 'bundle[extname]',
 			},
 		},

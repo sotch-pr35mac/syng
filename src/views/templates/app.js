@@ -5,12 +5,46 @@ import { mount } from 'svelte';
 import { isMobile, isIPad } from '@/utils/device.js';
 import { handleError } from '@/utils/error.js';
 import { inDebugMode } from '@/utils/process.js';
-import { createSplashController } from '@/utils/splash.js';
 import { setDebugMode } from '@/utils/startup.js';
 
 const appContainer = document.getElementById('app');
 const charactersContainer = document.getElementById('characters');
-const splash = createSplashController();
+const mobileSplash = document.getElementById('mobile-splash');
+
+function showMobileSplash() {
+	if (mobileSplash) {
+		mobileSplash.hidden = false;
+		mobileSplash.setAttribute('aria-hidden', 'false');
+	}
+}
+
+function dismissMobileSplash() {
+	if (mobileSplash) {
+		mobileSplash.hidden = true;
+		mobileSplash.setAttribute('aria-hidden', 'true');
+	}
+}
+
+function dismissMobileSplashAfterPaint() {
+	if (!mobileSplash || mobileSplash.hidden) {
+		return Promise.resolve();
+	}
+
+	const requestFrame = window.requestAnimationFrame?.bind(window);
+	if (!requestFrame) {
+		dismissMobileSplash();
+		return Promise.resolve();
+	}
+
+	return new Promise((resolve) => {
+		requestFrame(() => {
+			requestFrame(() => {
+				dismissMobileSplash();
+				resolve();
+			});
+		});
+	});
+}
 
 async function bootstrap() {
 	if (appContainer) {
@@ -20,7 +54,7 @@ async function bootstrap() {
 			const mobileHardware = isMobile();
 			useMobile = mobileHardware && !isIPad();
 			if (mobileHardware) {
-				splash.show();
+				showMobileSplash();
 			}
 		} catch (error) {
 			handleError(
@@ -34,7 +68,7 @@ async function bootstrap() {
 		// to false — the production databases — on any failure.
 		setDebugMode(await inDebugMode());
 		const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
-		splash.dismiss();
+		await dismissMobileSplashAfterPaint();
 		document.getElementById('syng-bootstrap-launch-screen')?.remove();
 		return mountedApp;
 	}
@@ -45,7 +79,7 @@ async function bootstrap() {
 }
 
 const bootstrapPromise = bootstrap().catch((error) => {
-	splash.dismiss();
+	dismissMobileSplash();
 	const launchStatus = document.getElementById('syng-bootstrap-launch-status');
 	launchStatus?.setAttribute('role', 'alert');
 	const launchStatusTitle = document.getElementById('syng-bootstrap-launch-status-title');

@@ -14,7 +14,6 @@
 		<link rel="stylesheet" href="templates/styles/launch.css" />
 		<link rel="stylesheet" href="templates/build/bundle.css" />
 		<script src="templates/utils/pouchdb-7.3.0.min.js"></script>
-		<script type="module" src="templates/build/bundle.js"></script>
 	</head>
 	<body id="app">
 		<div id="syng-bootstrap-launch-screen" class="syng-bootstrap-launch-screen">
@@ -37,5 +36,7 @@
 		<div id="mobile-splash" hidden aria-hidden="true">
 			<img src="assets/splash-icon.png" width="120" height="120" alt="" />
 		</div>
+		<script src="templates/build/splash-init.js"></script>
+		<script type="module" src="templates/build/bundle.js"></script>
 	</body>
 </html>

@@ -56,9 +56,6 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-sizing: border-box;
-	padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
-		max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
 	background: #fff;
 }
 

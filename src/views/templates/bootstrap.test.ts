@@ -1,3 +1,5 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 const mocks = vi.hoisted(() => ({
 	isMobile: vi.fn(),
 	isIPad: vi.fn(),
@@ -29,6 +31,14 @@ const splashMarkup = `
 	<div id="mobile-splash" hidden aria-hidden="true"></div>
 `;
 
+let animationFrames;
+
+function runNextAnimationFrame() {
+	const callback = animationFrames.shift();
+	expect(callback).toBeTypeOf('function');
+	callback(performance.now());
+}
+
 function prepareMainWindow() {
 	document.body.id = 'app';
 	document.body.innerHTML = splashMarkup;
@@ -43,6 +53,40 @@ describe('application splash handoff', () => {
 		mocks.isIPad.mockReturnValue(false);
 		mocks.inDebugMode.mockResolvedValue(false);
 		mocks.mount.mockReturnValue({ mounted: true });
+		animationFrames = [];
+		vi.stubGlobal('requestAnimationFrame', (callback) => {
+			animationFrames.push(callback);
+			return animationFrames.length;
+		});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		Reflect.deleteProperty(window, '__TAURI_OS_PLUGIN_INTERNALS__');
+	});
+
+	it.each(['android', 'ios'])(
+		'reveals the mobile splash before the application bundle executes on %s',
+		async (platform) => {
+			Reflect.set(window, '__TAURI_OS_PLUGIN_INTERNALS__', { platform });
+
+			await import('@/splash-init.js');
+
+			const splash = document.getElementById('mobile-splash');
+			expect(splash.hidden).toBe(false);
+			expect(splash.getAttribute('aria-hidden')).toBe('false');
+			expect(mocks.isMobile).not.toHaveBeenCalled();
+		}
+	);
+
+	it('keeps the mobile splash hidden before the application bundle executes on desktop', async () => {
+		Reflect.set(window, '__TAURI_OS_PLUGIN_INTERNALS__', { platform: 'macos' });
+
+		await import('@/splash-init.js');
+
+		const splash = document.getElementById('mobile-splash');
+		expect(splash.hidden).toBe(true);
+		expect(splash.getAttribute('aria-hidden')).toBe('true');
 	});
 
 	it('never reveals the mobile splash on desktop', async () => {
@@ -78,6 +122,12 @@ describe('application splash handoff', () => {
 		expect(splash.getAttribute('aria-hidden')).toBe('false');
 
 		resolveDebugMode(false);
+		await vi.waitFor(() => expect(mocks.mount).toHaveBeenCalled());
+		expect(splash.hidden).toBe(false);
+
+		runNextAnimationFrame();
+		expect(splash.hidden).toBe(false);
+		runNextAnimationFrame();
 		await appModule.default;
 
 		expect(mocks.mount).toHaveBeenCalledWith('mobile-app', { target: document.body });
@@ -100,6 +150,9 @@ describe('application splash handoff', () => {
 		expect(document.getElementById('mobile-splash').hidden).toBe(false);
 
 		resolveDebugMode(false);
+		await vi.waitFor(() => expect(mocks.mount).toHaveBeenCalled());
+		runNextAnimationFrame();
+		runNextAnimationFrame();
 		await appModule.default;
 
 		expect(mocks.mount).toHaveBeenCalledWith('desktop-app', { target: document.body });
