@@ -13,6 +13,7 @@
 	 * @property {any} [id] - HTML ID for reference
 	 * @property {any} value - The value property for the HTML checkbox
 	 * @property {string} [accessibleLabel] - Accessible name for the checkbox
+	 * @property {boolean} [disabled] - Whether the toggle can be changed
 	 * @property {(checked: boolean) => void} [onchange] - Change handler
 	 */
 
@@ -22,17 +23,19 @@
 		id = crypto.randomUUID(),
 		value,
 		accessibleLabel = 'Toggle',
+		disabled = false,
 		onchange,
 	} = $props();
 </script>
 
-<span class="sy-toggle--container">
+<span class="sy-toggle--container" class:sy-toggle--container--disabled={disabled}>
 	<input
 		type="checkbox"
 		{id}
 		class="sy-toggle"
 		{value}
 		{checked}
+		{disabled}
 		aria-label={accessibleLabel}
 		onchange={(e) => onchange?.(e.target.checked)}
 	/>
@@ -42,6 +45,9 @@
 <style>
 	.sy-toggle--container {
 		display: flex;
+	}
+	.sy-toggle--container--disabled {
+		opacity: 0.5;
 	}
 	.sy-toggle {
 		height: 0;
@@ -78,5 +84,8 @@
 	}
 	.sy-toggle--label:active:after {
 		width: 40.625px;
+	}
+	.sy-toggle:disabled + .sy-toggle--label {
+		cursor: not-allowed;
 	}
 </style>

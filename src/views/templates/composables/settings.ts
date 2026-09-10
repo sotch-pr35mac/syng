@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import type { CharacterSet, HskVariant } from '@/types/dictionaryDisplay.js';
 
 interface BuildEnv {
@@ -69,4 +70,8 @@ export const updateColorListsByTonePreference = (checked: boolean): void => {
 export const updateHskVariantPreference = (variant: HskVariant): void => {
 	dictionaryDisplaySettingsStore.setHskVariant(variant);
 	telemetry.trackEvent('settings.changed', { setting: 'hskVariant' }).catch(() => {});
+};
+
+export const updateAgeStatus = async (isBelowApplicableAge: boolean): Promise<void> => {
+	await privacySettingsStore.setChildPrivacyMode(isBelowApplicableAge);
 };

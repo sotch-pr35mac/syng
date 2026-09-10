@@ -54,3 +54,22 @@ it('should respond to different shapes, styles, and sizes', async () => {
 	expect(classes).toContain('sy-button--large');
 	expect(classes).toContain('sy-button--circle');
 });
+
+it('marks only colored filled buttons for filled-color interaction styles', () => {
+	const filled = render(SyButton, {
+		props: { style: 'filled', color: 'blue' },
+	});
+	expect(filled.getByTestId('sy-button').classList).toContain('sy-button--filled-color');
+	filled.unmount();
+
+	const ghost = render(SyButton, {
+		props: { style: 'ghost', color: 'blue' },
+	});
+	expect(ghost.getByTestId('sy-button').classList).not.toContain('sy-button--filled-color');
+	ghost.unmount();
+
+	const neutral = render(SyButton, {
+		props: { style: 'filled' },
+	});
+	expect(neutral.getByTestId('sy-button').classList).not.toContain('sy-button--filled-color');
+});

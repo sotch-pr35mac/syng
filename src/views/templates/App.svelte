@@ -1,36 +1,58 @@
-<script>
-	import Router from 'svelte-spa-router';
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import Router, { router } from 'svelte-spa-router';
 	import Navigation from '@/components/Navigation/Navigation.svelte';
-	import SyToast from '@/components/SyToast/SyToast.svelte';
-	import Bookmarks from '@/routes/Bookmarks.svelte';
-	import Chat from '@/routes/Chat.svelte';
-	import Help from '@/routes/Help.svelte';
-	import NotFound from '@/routes/NotFound.svelte';
-	import ReaderLibrary from '@/routes/Reader/Library.svelte';
-	import ReaderDocument from '@/routes/Reader/Document.svelte';
 	import Search from '@/routes/Search.svelte';
-	import Settings from '@/routes/Settings.svelte';
-	import Study from '@/routes/Study.svelte';
-	import Tools from '@/routes/Tools.svelte';
-	import { router } from 'svelte-spa-router';
+	import SyToast from '@/components/SyToast/SyToast.svelte';
+	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
+	import LoadingScreen from '@/components/LoadingScreen/LoadingScreen.svelte';
+	import RouteLoadError from '@/components/RouteLoading/RouteLoadError.svelte';
+	import { lazyRoute } from '@/utils/lazyRoute.js';
 	import {
 		runStartupActions,
-		handleError,
-		installPendingUpdate,
-		telemetry,
-		getRouteScreenName,
-	} from '@/utils';
+		waitForOnboardingReady,
+		waitForStartupComplete,
+	} from '@/utils/startup.js';
+	import { telemetry, getRouteScreenName } from '@/utils/telemetry.js';
+	import { handleError } from '@/utils/error.js';
+	import { installPendingUpdate } from '@/utils/updateManager.js';
 	import { updateStore } from '@/stores/update.svelte.js';
-	import Flashcards from '@/routes/Study/Flashcards.svelte';
-	import Quiz from '@/routes/Study/Quiz.svelte';
-	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
-	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 
-	// Run the startup script
 	runStartupActions();
 
 	let showUpdateToast = $state(false);
+	let onboardingReady = $state(false);
+	let startupFailed = $state(false);
+
+	const routes = {
+		'/': Search,
+		'/read': lazyRoute(() => import('@/routes/Reader/Library.svelte')),
+		'/read/document/:id': lazyRoute(() => import('@/routes/Reader/Document.svelte')),
+		'/bookmarks': lazyRoute(() => import('@/routes/Bookmarks.svelte')),
+		'/study': lazyRoute(() => import('@/routes/Study.svelte')),
+		'/study/flashcards': lazyRoute(() => import('@/routes/Study/Flashcards.svelte')),
+		'/study/quiz': lazyRoute(() => import('@/routes/Study/Quiz.svelte')),
+		'/tools': lazyRoute(() => import('@/routes/Tools.svelte')),
+		'/help': lazyRoute(() => import('@/routes/Help.svelte')),
+		'/settings': lazyRoute(() => import('@/routes/Settings.svelte')),
+		'/characters': lazyRoute(() => import('@/routes/mobile/MobileCharacters.svelte')),
+		'*': lazyRoute(() => import('@/routes/NotFound.svelte')),
+	};
+
+	const routeScreenNames: Record<string, string> = {
+		'/': 'search',
+		'/read': 'library',
+		'/bookmarks': 'bookmarks',
+		'/study': 'study',
+		'/study/flashcards': 'flashcards',
+		'/study/quiz': 'quiz',
+		'/tools': 'tools',
+		'/help': 'help',
+		'/settings': 'settings',
+		'/characters': 'characters',
+	};
 
 	const buildToastMessage = () =>
 		updateStore.updateVersion
@@ -38,6 +60,9 @@
 			: 'A new version of Syng is available.';
 
 	$effect(() => {
+		if (!onboardingReady || !privacySettingsStore.hasCompletedOnboarding) {
+			return;
+		}
 		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
@@ -50,49 +75,53 @@
 		}
 	});
 
-	const handleUpdateAction = () => {
-		installPendingUpdate().catch((e) => {
+	function handleUpdateAction(): void {
+		installPendingUpdate().catch((error) => {
 			showUpdateToast = false;
 			handleError(
 				'There was an error fetching the update. Please try again later. Check the log for more details.',
-				e
+				error
 			);
 		});
-	};
+	}
 
-	const routes = {
-		'/': Search,
-		'/read': ReaderLibrary,
-		'/read/document/:id': ReaderDocument,
-		'/bookmarks': Bookmarks,
-		'/study': Study,
-		'/study/flashcards': Flashcards,
-		'/study/quiz': Quiz,
-		'/tools': Tools,
-		'/help': Help,
-		'/settings': Settings,
-		'/chat': Chat,
-		'/characters': MobileCharacters,
-		'*': NotFound,
-	};
+	onMount(() => {
+		waitForOnboardingReady()
+			.then(() => {
+				onboardingReady = true;
+				return undefined;
+			})
+			.catch(() => {
+				startupFailed = true;
+			});
 
-	const routeScreenNames = {
-		'/': 'search',
-		'/read': 'library',
-		'/bookmarks': 'bookmarks',
-		'/study': 'study',
-		'/study/flashcards': 'flashcards',
-		'/study/quiz': 'quiz',
-		'/tools': 'tools',
-		'/help': 'help',
-		'/settings': 'settings',
-		'/chat': 'chat',
-		'/characters': 'characters',
-	};
+		// Report late database/schema failures without holding the visible shell behind them.
+		waitForStartupComplete().catch(() => {
+			startupFailed = true;
+		});
+	});
 </script>
 
 {#if databaseMigrationStore.active}
 	<DatabaseMigrationScreen />
+{:else if startupFailed}
+	<LoadingScreen
+		status="error"
+		title="Syng couldn’t start."
+		detail="Please restart the app. If this keeps happening, please file a bug report."
+		actionLabel="Reload Syng"
+		onaction={() => window.location.reload()}
+	/>
+{:else if !onboardingReady}
+	<LoadingScreen title="Starting Syng…" detail="Loading your preferences." />
+{:else if !privacySettingsStore.hasCompletedOnboarding}
+	{#await import('@/components/Onboarding/OnboardingFlow.svelte')}
+		<LoadingScreen title="Preparing Syng…" detail="Loading setup." />
+	{:then OnboardingModule}
+		<OnboardingModule.default variant="desktop" />
+	{:catch}
+		<RouteLoadError />
+	{/await}
 {:else}
 	<div class="app-container">
 		<div class="navigation-container">

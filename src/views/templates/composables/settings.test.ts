@@ -8,10 +8,12 @@ import {
 	updateColorListsByTonePreference,
 	updateColorPinyinByTonePreference,
 	updateToneColorsPreference,
+	updateAgeStatus,
 } from '@/composables/settings.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
@@ -20,6 +22,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		trackEvent: vi.fn(() => Promise.resolve()),
+		setPref: vi.fn(() => Promise.resolve()),
 	},
 }));
 
@@ -32,7 +35,12 @@ beforeEach(() => {
 	};
 	setPreferenceManagerForTest(preferenceManager);
 	vi.mocked(telemetry.trackEvent).mockClear();
+	vi.mocked(telemetry.setPref).mockClear();
 	vi.mocked(invoke).mockReset();
+	privacySettingsStore.setPrivacySettingsForTest({
+		childPrivacyMode: false,
+		completedOnboardingVersion: 0,
+	});
 });
 
 it('detects dev build state from the provided environment', () => {
@@ -101,4 +109,16 @@ it.each([
 	expect(preferenceManager.set).toHaveBeenCalledWith(key, value);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', { setting: key });
 	expect(preferenceManager.set).not.toHaveBeenCalledWith('toneColors', expect.anything());
+});
+
+it('classifies age status into child privacy mode and restores telemetry when leaving', async () => {
+	await updateAgeStatus(true);
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
+	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
+
+	await updateAgeStatus(false);
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', false);
+	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
 });

@@ -50,6 +50,7 @@ check:
 	npm run format:check
 	npm run lint
 	npm run typecheck
+	npm run bundle:check
 
 fix-lint:
 	cd src/native && cargo fmt

@@ -16,6 +16,7 @@ chinese_dictionary = "3.0.0"
 hsk = "1.0.0"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+rust_iso3166 = "0.2.0"
 tauri = { version = "2", features = [] }
 rand = "0.9"
 uuid = { version = "1.23.1", features = ["v4"] }

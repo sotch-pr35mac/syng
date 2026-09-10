@@ -1,23 +1,26 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import {
+		isDevBuild,
+		resolveIsDevBuild,
 		updateCharacterSetPreference,
 		updateColorCharactersByTonePreference,
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
 		updateToneColorsPreference,
-		isDevBuild,
-		resolveIsDevBuild,
 	} from '@/composables/settings.js';
 
 	type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
@@ -95,9 +98,26 @@
 					<h2 id="migration-heading">Database Migration</h2>
 					<DatabaseMigrationPreview />
 				</section>
+				<section
+					class="mobile-settings__section"
+					aria-labelledby="replay-onboarding-heading"
+				>
+					<h2 id="replay-onboarding-heading">Replay onboarding</h2>
+					<p>Show first-run setup again. Your words and documents are kept.</p>
+					<SyButton
+						style="filled"
+						onclick={() => privacySettingsStore.requestOnboardingReplay()}
+					>
+						Show again
+					</SyButton>
+				</section>
 			{/if}
 		{:else if activeTab === 'telemetry'}
-			<TelemetrySettings variant="mobile" />
+			{#if privacySettingsStore.childPrivacyMode}
+				<AgeStatusSettings variant="mobile" />
+			{:else}
+				<TelemetrySettings variant="mobile" />
+			{/if}
 		{:else}
 			<Acknowledgements />
 		{/if}
@@ -148,5 +168,11 @@
 		margin: 0;
 		font-size: var(--sy-font-size--mobile-large);
 		font-weight: var(--sy-font-weight--bold);
+	}
+
+	.mobile-settings__section p {
+		margin: 0;
+		font-size: var(--sy-font-size--small);
+		line-height: var(--sy-line-height--body);
 	}
 </style>

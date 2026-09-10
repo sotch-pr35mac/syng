@@ -89,6 +89,7 @@
 				`sy-button--${shape}`,
 				center ? 'sy-button--center' : '',
 				color ? `sy-button--color-${color}` : '',
+				style === 'filled' && color ? 'sy-button--filled-color' : '',
 				hover ? `sy-button--hover-${hover}` : '',
 				grouped ? 'sy-button--grouped' : '',
 				disableHoverActions ? 'sy-button--hover-actions-disabled' : '',
@@ -175,15 +176,19 @@
 	}
 	.sy-button--color-green {
 		color: var(--sy-color--green);
+		--sy-button-filled-background: var(--sy-color--green);
 	}
 	.sy-button--color-blue {
 		color: var(--sy-color--blue);
+		--sy-button-filled-background: var(--sy-color--blue-2);
 	}
 	.sy-button--color-red {
 		color: var(--sy-color--red);
+		--sy-button-filled-background: var(--sy-color--red);
 	}
 	.sy-button--color-yellow {
 		color: var(--sy-color--yellow);
+		--sy-button-filled-background: var(--sy-color--yellow);
 	}
 	@media (hover: hover) {
 		.sy-button--hover-green:not(.sy-button--hover-actions-disabled):hover {
@@ -226,5 +231,24 @@
 	}
 	.sy-button--mobile.sy-button--small {
 		font-size: 13px;
+	}
+	.sy-button--filled-color {
+		background-color: var(--sy-button-filled-background);
+		color: var(--sy-color--white);
+	}
+	@media (hover: hover) {
+		.sy-button--filled-color:not(.sy-button--hover-actions-disabled):hover {
+			background-color: var(--sy-color--grey-2);
+			color: var(--sy-button-filled-background);
+		}
+	}
+	.sy-button--filled-color:active {
+		background-color: var(--sy-color--grey-2);
+		color: var(--sy-button-filled-background);
+	}
+	.sy-button--filled-color:disabled,
+	.sy-button--filled-color:disabled:hover {
+		background-color: var(--sy-color--grey-2);
+		color: var(--sy-color--grey-5);
 	}
 </style>

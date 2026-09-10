@@ -1,38 +1,44 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Router from 'svelte-spa-router';
-	import { router } from 'svelte-spa-router';
+	import Router, { router } from 'svelte-spa-router';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
-	import MobileReader from '@/routes/mobile/Reader/MobileReader.svelte';
-	import MobileReaderDocument from '@/routes/mobile/Reader/MobileReaderDocument.svelte';
-	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
-	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
-	import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
-	import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
-	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
-	import MobileTools from '@/routes/mobile/MobileTools.svelte';
-	import MobileCharacters from '@/routes/mobile/MobileCharacters.svelte';
-	import NotFound from '@/routes/NotFound.svelte';
-	import { runStartupActions, telemetry, getRouteScreenName } from '@/utils';
-	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
+	import LoadingScreen from '@/components/LoadingScreen/LoadingScreen.svelte';
+	import RouteLoadError from '@/components/RouteLoading/RouteLoadError.svelte';
+	import { lazyRoute } from '@/utils/lazyRoute.js';
+	import {
+		runStartupActions,
+		waitForOnboardingReady,
+		waitForStartupComplete,
+	} from '@/utils/startup.js';
+	import { telemetry, getRouteScreenName } from '@/utils/telemetry.js';
+	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 
 	runStartupActions();
 
+	let keyboardInset = $state(0);
+	let onboardingReady = $state(false);
+	let startupFailed = $state(false);
+
 	const routes = {
 		'/': MobileSearch,
-		'/read': MobileReader,
-		'/read/document/:id': MobileReaderDocument,
-		'/bookmarks': MobileBookmarks,
-		'/study': MobileStudy,
-		'/study/flashcards': MobileStudyFlashcards,
-		'/study/quiz': MobileStudyQuiz,
-		'/tools': MobileTools,
-		'/settings': MobileSettings,
-		'/characters': MobileCharacters,
-		'*': NotFound,
+		'/read': lazyRoute(() => import('@/routes/mobile/Reader/MobileReader.svelte')),
+		'/read/document/:id': lazyRoute(
+			() => import('@/routes/mobile/Reader/MobileReaderDocument.svelte')
+		),
+		'/bookmarks': lazyRoute(() => import('@/routes/mobile/MobileBookmarks.svelte')),
+		'/study': lazyRoute(() => import('@/routes/mobile/MobileStudy.svelte')),
+		'/study/flashcards': lazyRoute(
+			() => import('@/routes/mobile/Study/MobileStudyFlashcards.svelte')
+		),
+		'/study/quiz': lazyRoute(() => import('@/routes/mobile/Study/MobileStudyQuiz.svelte')),
+		'/tools': lazyRoute(() => import('@/routes/mobile/MobileTools.svelte')),
+		'/settings': lazyRoute(() => import('@/routes/mobile/MobileSettings.svelte')),
+		'/characters': lazyRoute(() => import('@/routes/mobile/MobileCharacters.svelte')),
+		'*': lazyRoute(() => import('@/routes/NotFound.svelte')),
 	};
 
 	const routeScreenNames: Record<string, string> = {
@@ -53,8 +59,6 @@
 	// content area, and only while the software keyboard is shown. window.innerHeight (the
 	// layout viewport) is the stable full-height basis: it does NOT shrink with the iOS
 	// keyboard, whereas visualViewport.height does.
-	let keyboardInset = $state(0);
-
 	function computeKeyboardInset(): number {
 		const viewport = window.visualViewport;
 		if (!viewport) {
@@ -65,6 +69,9 @@
 	}
 
 	$effect(() => {
+		if (!onboardingReady || !privacySettingsStore.hasCompletedOnboarding) {
+			return;
+		}
 		const screenName = getRouteScreenName(router.location, routeScreenNames);
 		if (screenName) {
 			telemetry.trackScreen(screenName).catch(() => {});
@@ -72,10 +79,22 @@
 	});
 
 	onMount(() => {
+		waitForOnboardingReady()
+			.then(() => {
+				onboardingReady = true;
+				return undefined;
+			})
+			.catch(() => {
+				startupFailed = true;
+			});
+
+		waitForStartupComplete().catch(() => {
+			startupFailed = true;
+		});
+
 		// Diagnostics for the resume-time database failure; correlates DB errors with
 		// recent foreground/background transitions. No behavior change.
 		const stopLifecycleDiagnostics = startLifecycleDiagnostics();
-
 		const viewport = window.visualViewport;
 		if (!viewport) {
 			return stopLifecycleDiagnostics;
@@ -111,6 +130,28 @@
 
 {#if databaseMigrationStore.active}
 	<DatabaseMigrationScreen />
+{:else if startupFailed}
+	<LoadingScreen
+		status="error"
+		title="Syng couldn’t start."
+		detail="Please restart the app. If this keeps happening, please file a bug report."
+		actionLabel="Reload Syng"
+		onaction={() => window.location.reload()}
+	/>
+{:else if !onboardingReady}
+	<LoadingScreen title="Starting Syng…" detail="Loading your preferences." />
+{:else if !privacySettingsStore.hasCompletedOnboarding}
+	<div class="mobile-app" style="bottom: {keyboardInset}px">
+		<div class="mobile-app__content">
+			{#await import('@/components/Onboarding/OnboardingFlow.svelte')}
+				<LoadingScreen title="Preparing Syng…" detail="Loading setup." />
+			{:then OnboardingModule}
+				<OnboardingModule.default variant="mobile" />
+			{:catch}
+				<RouteLoadError />
+			{/await}
+		</div>
+	</div>
 {:else}
 	<div class="mobile-app" style="bottom: {keyboardInset}px">
 		<MobileNavigation />

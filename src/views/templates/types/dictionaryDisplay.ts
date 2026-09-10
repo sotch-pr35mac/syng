@@ -10,9 +10,9 @@ export type CharacterScript = Exclude<CharacterSet, (typeof CHARACTER_SETS)['BOT
 export const CHARACTER_SET_VALUES: readonly CharacterSet[] = Object.values(CHARACTER_SETS);
 
 export const HSK_VARIANTS = {
+	HSK_EXAM_SYLLABUS_2025: 'hsk_exam_syllabus_2025',
 	HSK_2015: 'hsk_2015',
 	PROFICIENCY_STANDARD_2021: 'proficiency_standard_2021',
-	HSK_EXAM_SYLLABUS_2025: 'hsk_exam_syllabus_2025',
 	NONE: 'none',
 } as const;
 export type HskVariant = (typeof HSK_VARIANTS)[keyof typeof HSK_VARIANTS];

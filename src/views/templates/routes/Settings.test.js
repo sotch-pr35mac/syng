@@ -1,8 +1,9 @@
 import { beforeEach, expect, vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import Settings from '@/routes/Settings.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -32,6 +33,17 @@ vi.mock('@/utils/device.js', () => ({
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		trackEvent: vi.fn(() => Promise.resolve()),
+		getPrefs: vi.fn(() =>
+			Promise.resolve({
+				enabled: true,
+				track_events: true,
+				track_screen_views: true,
+				track_errors: true,
+				include_device_context: true,
+			})
+		),
+		getQueuedEvents: vi.fn(() => Promise.resolve([])),
+		setPref: vi.fn(() => Promise.resolve()),
 	},
 }));
 
@@ -62,6 +74,10 @@ beforeEach(async () => {
 	};
 	setPreferenceManagerForTest(preferenceManager);
 	await dictionaryDisplaySettingsStore.loadSettings();
+	privacySettingsStore.setPrivacySettingsForTest({
+		childPrivacyMode: false,
+		completedOnboardingVersion: 1,
+	});
 	vi.mocked(telemetry.trackEvent).mockClear();
 });
 
@@ -97,5 +113,61 @@ it('renders and updates desktop dictionary display settings', async () => {
 	expect(preferenceManager.set).toHaveBeenCalledWith('colorListsByTone', true);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'characterSet',
+	});
+});
+
+it('replays onboarding from the dev-only general setting', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText } = render(Settings);
+
+	expect(getByText('Replay onboarding')).toBeTruthy();
+	await user.click(getByRole('button', { name: 'Show again' }));
+
+	expect(preferenceManager.set).toHaveBeenCalledWith('forceOnboardingReplay', true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
+});
+
+it('shows age status on the telemetry tab and unlocks telemetry after leaving child mode', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({
+		childPrivacyMode: true,
+		completedOnboardingVersion: 1,
+	});
+	vi.mocked(telemetry.getPrefs).mockResolvedValue({
+		enabled: false,
+		track_events: true,
+		track_screen_views: true,
+		track_errors: true,
+		include_device_context: true,
+	});
+	const user = userEvent.setup();
+	const { getByText, getByLabelText, queryByText, queryByLabelText } = render(Settings);
+
+	await user.click(getByText('Telemetry'));
+	await waitFor(() => expect(getByText('Age Status')).toBeTruthy());
+	expect(
+		getByText(
+			/additional restrictions apply based on the age information provided during setup/i
+		)
+	).toBeTruthy();
+	expect(
+		getByText(/are you now at least the minimum digital consent age in your country or region/i)
+	).toBeTruthy();
+	expect(queryByLabelText('Enable Telemetry')).toBeNull();
+	expect(queryByText('Recent Telemetry Events')).toBeNull();
+
+	await user.click(getByText('Yes'));
+
+	expect(privacySettingsStore.childPrivacyMode).toBe(false);
+	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
+	vi.mocked(telemetry.getPrefs).mockResolvedValue({
+		enabled: true,
+		track_events: true,
+		track_screen_views: true,
+		track_errors: true,
+		include_device_context: true,
+	});
+	await waitFor(() => {
+		expect(queryByText('Age Status')).toBeNull();
+		expect(getByLabelText('Enable Telemetry').disabled).toBe(false);
 	});
 });

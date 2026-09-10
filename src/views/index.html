@@ -1,17 +1,38 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+		/>
 
 		<title>Syng</title>
-		
-		<link rel="stylesheet" href="templates/styles/theme.css">
-		<link rel="stylesheet" href="templates/styles/syui.css">
-		<link rel="stylesheet" href="templates/build/bundle.css">
+
+		<link rel="stylesheet" href="templates/styles/theme.css" />
+		<link rel="stylesheet" href="templates/styles/syui.css" />
+		<link rel="stylesheet" href="templates/styles/launch.css" />
+		<link rel="stylesheet" href="templates/build/bundle.css" />
 		<script src="templates/utils/pouchdb-7.3.0.min.js"></script>
 		<script type="module" src="templates/build/bundle.js"></script>
 	</head>
 	<body id="app">
+		<div id="syng-bootstrap-launch-screen" class="syng-bootstrap-launch-screen">
+			<div class="syng-bootstrap-launch-screen__inner">
+				<div class="syng-bootstrap-launch-screen__brand" aria-hidden="true">
+					Syng | 词应
+				</div>
+				<div
+					id="syng-bootstrap-launch-status"
+					class="syng-bootstrap-launch-screen__status"
+					role="status"
+					aria-live="polite"
+				>
+					<h1 id="syng-bootstrap-launch-status-title">Starting Syng…</h1>
+					<p id="syng-bootstrap-launch-status-detail">Loading the application.</p>
+				</div>
+				<p class="syng-bootstrap-launch-screen__message" aria-hidden="true">正在加载…</p>
+			</div>
+		</div>
 	</body>
 </html>

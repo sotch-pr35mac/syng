@@ -7,7 +7,9 @@
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
+	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
@@ -27,6 +29,7 @@
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
 	import { getPreferenceManager } from '@/utils/appServices.js';
+	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 
 	const isMacos = platform() === 'macos';
 
@@ -190,8 +193,23 @@
 					<preference.component {...preference.props} />
 				</div>
 			{/each}
+			{#if showDevPreferences}
+				<div class="settings--setting settings--setting--center">
+					<p>Replay onboarding</p>
+					<SyButton
+						style="filled"
+						onclick={() => privacySettingsStore.requestOnboardingReplay()}
+					>
+						Show again
+					</SyButton>
+				</div>
+			{/if}
 		{:else if activeTab === 'telemetry'}
-			<TelemetrySettings />
+			{#if privacySettingsStore.childPrivacyMode}
+				<AgeStatusSettings />
+			{:else}
+				<TelemetrySettings />
+			{/if}
 		{:else}
 			<Acknowledgements />
 		{/if}

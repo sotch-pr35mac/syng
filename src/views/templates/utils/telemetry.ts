@@ -66,3 +66,67 @@ export const telemetry = {
 	setPref: (key: string, value: boolean): Promise<void> =>
 		invoke(NATIVE_COMMANDS.TELEMETRY.SET_PREF, { key, value }),
 };
+
+const EXAMPLE_DEVICE_CONTEXT = {
+	arch: 'aarch64',
+	os_version: '15.0',
+	timezone: 'Etc/UTC',
+};
+
+const EXAMPLE_ENVELOPE_BASE = {
+	device_id: 'example-device',
+	app_version: '2.2.0',
+	platform: 'macos',
+	timestamp_ms: 0,
+};
+
+/**
+ * Placeholder telemetry envelopes for onboarding. Categories appear only when
+ * enabled; device context is included only when that preference is on.
+ */
+export function exampleTelemetryEnvelopes(prefs: TelemetryPrefs): Record<string, unknown>[] {
+	if (!prefs.enabled) {
+		return [];
+	}
+
+	const withContext = (envelope: Record<string, unknown>): Record<string, unknown> =>
+		prefs.include_device_context
+			? { ...envelope, device_context: EXAMPLE_DEVICE_CONTEXT }
+			: envelope;
+
+	const envelopes: Record<string, unknown>[] = [];
+	if (prefs.track_events) {
+		envelopes.push(
+			withContext({
+				...EXAMPLE_ENVELOPE_BASE,
+				id: 'example-event',
+				family: 'event',
+				name: 'onboarding.step_viewed',
+				payload: { step: 'welcome' },
+			})
+		);
+	}
+	if (prefs.track_screen_views) {
+		envelopes.push(
+			withContext({
+				...EXAMPLE_ENVELOPE_BASE,
+				id: 'example-screen',
+				family: 'screen_view',
+				name: 'search',
+				payload: {},
+			})
+		);
+	}
+	if (prefs.track_errors) {
+		envelopes.push(
+			withContext({
+				...EXAMPLE_ENVELOPE_BASE,
+				id: 'example-error',
+				family: 'error',
+				name: 'app.error',
+				payload: { message: 'Example error' },
+			})
+		);
+	}
+	return envelopes;
+}
