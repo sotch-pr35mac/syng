@@ -1,5 +1,4 @@
 const SPLASH_ID = 'mobile-splash';
-const FAILURE_MESSAGE_SELECTOR = '[data-mobile-splash-message]';
 
 /**
  * Controls the HTML splash used to bridge the native launch screen to the mounted app shell.
@@ -9,7 +8,6 @@ const FAILURE_MESSAGE_SELECTOR = '[data-mobile-splash-message]';
  */
 export function createSplashController(documentRoot = document) {
 	const splash = documentRoot.getElementById(SPLASH_ID);
-	const failureMessage = splash?.querySelector(FAILURE_MESSAGE_SELECTOR);
 
 	return {
 		show() {
@@ -22,15 +20,6 @@ export function createSplashController(documentRoot = document) {
 			if (splash) {
 				splash.hidden = true;
 				splash.setAttribute('aria-hidden', 'true');
-			}
-		},
-		showFailure() {
-			if (failureMessage instanceof HTMLElement) {
-				failureMessage.hidden = false;
-			}
-			if (splash) {
-				splash.hidden = false;
-				splash.setAttribute('aria-hidden', 'false');
 			}
 		},
 	};

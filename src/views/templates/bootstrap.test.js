@@ -26,9 +26,7 @@ const splashMarkup = `
 			<p id="syng-bootstrap-launch-status-detail">Loading the application.</p>
 		</div>
 	</div>
-	<div id="mobile-splash" hidden aria-hidden="true">
-		<p data-mobile-splash-message role="alert" hidden>Syng couldn’t start. Please restart the app.</p>
-	</div>
+	<div id="mobile-splash" hidden aria-hidden="true"></div>
 `;
 
 function prepareMainWindow() {
@@ -108,7 +106,7 @@ describe('application splash handoff', () => {
 		expect(document.getElementById('mobile-splash').hidden).toBe(true);
 	});
 
-	it('retains the mobile splash and shows a restart message when bootstrap fails', async () => {
+	it('dismisses the mobile splash and uses the existing launch failure screen', async () => {
 		const failure = new Error('bootstrap failed');
 		mocks.isMobile.mockReturnValue(true);
 		mocks.inDebugMode.mockRejectedValue(failure);
@@ -117,15 +115,20 @@ describe('application splash handoff', () => {
 		await expect(appModule.default).resolves.toBeUndefined();
 
 		const splash = document.getElementById('mobile-splash');
-		const message = splash.querySelector('[data-mobile-splash-message]');
-		expect(splash.hidden).toBe(false);
-		expect(message.hidden).toBe(false);
-		expect(message.textContent).toContain('Please restart the app.');
+		const launchStatus = document.getElementById('syng-bootstrap-launch-status');
+		expect(splash.hidden).toBe(true);
+		expect(splash.getAttribute('aria-hidden')).toBe('true');
+		expect(launchStatus.getAttribute('role')).toBe('alert');
+		expect(document.getElementById('syng-bootstrap-launch-status-title').textContent).toBe(
+			'Syng could not start.'
+		);
+		expect(document.getElementById('syng-bootstrap-launch-status-detail').textContent).toBe(
+			'Please restart the app.'
+		);
 		expect(mocks.mount).not.toHaveBeenCalled();
 		expect(mocks.handleError).toHaveBeenCalledWith(
-			'Syng couldn’t start. Please restart the app.',
-			failure,
-			{ silent: true }
+			'Syng could not start. Please restart the app.',
+			failure
 		);
 	});
 });

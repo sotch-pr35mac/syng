@@ -1,6 +1,6 @@
 /*
- * Pre-Svelte launch UI. Every selector is scoped to this uniquely named bootstrap element so
- * these styles cannot affect the mounted application.
+ * Pre-Svelte launch UI. Every selector is scoped to a uniquely named bootstrap element so these
+ * styles cannot affect the mounted application.
  */
 #syng-bootstrap-launch-screen.syng-bootstrap-launch-screen {
 	position: fixed;
@@ -47,4 +47,33 @@
 	min-height: 1.5em;
 	margin-top: 32px;
 	opacity: 0.75;
+}
+
+#mobile-splash {
+	position: fixed;
+	inset: 0;
+	z-index: 2147483647;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right))
+		max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+	background: #fff;
+}
+
+#mobile-splash[hidden] {
+	display: none;
+}
+
+#mobile-splash img {
+	width: 120px;
+	height: 120px;
+	object-fit: contain;
+}
+
+@media (prefers-color-scheme: dark) {
+	#mobile-splash {
+		background: #232323;
+	}
 }

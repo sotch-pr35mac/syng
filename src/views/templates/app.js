@@ -15,10 +15,9 @@ const splash = createSplashController();
 async function bootstrap() {
 	if (appContainer) {
 		let useMobile = false;
-		let mobileHardware = false;
 		try {
 			// iPads run iOS but get the desktop UI — only phones and Android tablets use mobile UI.
-			mobileHardware = isMobile();
+			const mobileHardware = isMobile();
 			useMobile = mobileHardware && !isIPad();
 			if (mobileHardware) {
 				splash.show();
@@ -33,22 +32,11 @@ async function bootstrap() {
 		// creates the app services with the correct (production vs development_*) database names.
 		// inDebugMode() never rejects (getArgs swallows errors and returns {}), so this defaults
 		// to false — the production databases — on any failure.
-		try {
-			setDebugMode(await inDebugMode());
-			const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
-			splash.dismiss();
-			document.getElementById('syng-bootstrap-launch-screen')?.remove();
-			return mountedApp;
-		} catch (error) {
-			if (mobileHardware) {
-				splash.showFailure();
-				handleError('Syng couldn’t start. Please restart the app.', error, {
-					silent: true,
-				});
-				return undefined;
-			}
-			throw error;
-		}
+		setDebugMode(await inDebugMode());
+		const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
+		splash.dismiss();
+		document.getElementById('syng-bootstrap-launch-screen')?.remove();
+		return mountedApp;
 	}
 	if (charactersContainer) {
 		return mount(CharacterWindow, { target: charactersContainer });
@@ -57,6 +45,7 @@ async function bootstrap() {
 }
 
 const bootstrapPromise = bootstrap().catch((error) => {
+	splash.dismiss();
 	const launchStatus = document.getElementById('syng-bootstrap-launch-status');
 	launchStatus?.setAttribute('role', 'alert');
 	const launchStatusTitle = document.getElementById('syng-bootstrap-launch-status-title');
