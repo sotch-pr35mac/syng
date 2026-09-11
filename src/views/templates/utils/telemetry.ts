@@ -75,7 +75,7 @@ const EXAMPLE_DEVICE_CONTEXT = {
 
 const EXAMPLE_ENVELOPE_BASE = {
 	device_id: 'example-device',
-	app_version: '2.2.0',
+	app_version: '2.3.0',
 	platform: 'macos',
 	timestamp_ms: 0,
 };

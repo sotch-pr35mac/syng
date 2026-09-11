@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
 	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '@/utils/telemetry.js';
 	import { handleError } from '@/utils/error.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+	import { isAndroid } from '@/utils/device.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
@@ -12,6 +14,7 @@
 
 	const TELEMETRY_REFRESH_INTERVAL_MS = 5000;
 	const MAX_DISPLAY_EVENTS = 50;
+	const PRIVACY_POLICY_URL = 'https://getsyng.com/privacy';
 
 	const { variant = 'desktop' }: Props = $props();
 
@@ -89,9 +92,25 @@
 				return family;
 		}
 	};
+
+	const openPrivacyPolicy = (event: MouseEvent) => {
+		event.preventDefault();
+		openUrl(PRIVACY_POLICY_URL).catch(() => {
+			window.open(PRIVACY_POLICY_URL, '_blank', 'noopener,noreferrer');
+		});
+	};
 </script>
 
 <div class="telemetry--container" class:telemetry--container--mobile={variant === 'mobile'}>
+	{#if isAndroid()}
+		<p class="telemetry--privacy-notice">
+			We respect your privacy.
+			<a class="telemetry--privacy-link" href={PRIVACY_POLICY_URL} onclick={openPrivacyPolicy}
+				>View our privacy policy to learn more.</a
+			>
+		</p>
+	{/if}
+
 	<div class="telemetry--disclosure">
 		<p class="telemetry--disclosure-text">
 			We hate creepy data collection, and you should too! That's why Syng's telemetry service
@@ -201,6 +220,18 @@
 		gap: var(--sy-space--extra-large);
 		flex: 1;
 		overflow-y: auto;
+	}
+
+	.telemetry--privacy-notice {
+		margin: 0 0 var(--sy-space--large);
+		font-size: var(--sy-font-size--medium);
+		color: var(--sy-text--dark);
+		line-height: 1.5;
+	}
+
+	.telemetry--privacy-link {
+		color: var(--sy-color--blue-2);
+		text-decoration: underline;
 	}
 
 	.telemetry--disclosure {

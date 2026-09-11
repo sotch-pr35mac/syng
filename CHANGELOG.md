@@ -1,6 +1,16 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.0] - 2026-09-11
+### Added
+- Added a guided first-run experience for choosing Chinese character and privacy preferences
+- Added region-aware age protections that disable telemetry when applicable
+- Added branded startup and loading screens, including native mobile splash screens
+- Added a privacy policy link to Android telemetry settings
+
+### Changed
+- Prepared the Android app for Google Play distribution with a local signed App Bundle workflow
+
 ## [2.2.0] - 2026-09-08
 ### Added
 - Search field is now focused automatically on launch and when returning to the Search page
