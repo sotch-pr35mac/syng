@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
@@ -10,6 +11,22 @@ import { telemetry } from '@/utils/telemetry.js';
 const telemetryState = vi.hoisted(() => ({
 	enabled: false,
 }));
+
+const deviceState = vi.hoisted(() => ({
+	isAndroid: false,
+}));
+
+vi.mock('@tauri-apps/plugin-opener', () => ({
+	openUrl: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('@/utils/device.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('@/utils/device.js')>();
+	return {
+		...actual,
+		isAndroid: () => deviceState.isAndroid,
+	};
+});
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
@@ -41,6 +58,7 @@ const preferences: Record<string, unknown> = {};
 
 beforeEach(() => {
 	telemetryState.enabled = false;
+	deviceState.isAndroid = false;
 	Object.assign(preferences, {
 		childPrivacyMode: true,
 		completedOnboardingVersion: 1,
@@ -57,6 +75,35 @@ beforeEach(() => {
 		completedOnboardingVersion: 1,
 	});
 	vi.mocked(telemetry.setPref).mockClear();
+	vi.mocked(openUrl).mockClear();
+});
+
+it('shows the privacy notice and policy link on Android', () => {
+	deviceState.isAndroid = true;
+	const { getByRole, getByText } = render(TelemetrySettings);
+
+	expect(getByText(/We respect your privacy\./)).not.toBeNull();
+	const privacyLink = getByRole('link', {
+		name: 'View our privacy policy to learn more.',
+	}) as HTMLAnchorElement;
+	expect(privacyLink.href).toBe('https://getsyng.com/privacy');
+});
+
+it('does not show the privacy policy link outside Android', () => {
+	const { queryByRole } = render(TelemetrySettings);
+
+	expect(queryByRole('link', { name: 'View our privacy policy to learn more.' })).toBeNull();
+});
+
+it('opens the Android privacy policy in the external browser', async () => {
+	deviceState.isAndroid = true;
+	const user = userEvent.setup();
+	const { getByRole } = render(TelemetrySettings);
+
+	await user.click(getByRole('link', { name: 'View our privacy policy to learn more.' }));
+
+	expect(openUrl).toHaveBeenCalledOnce();
+	expect(openUrl).toHaveBeenCalledWith('https://getsyng.com/privacy');
 });
 
 it('keeps child mode and telemetry off when age status stays below the threshold', async () => {

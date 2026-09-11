@@ -10,6 +10,10 @@ IOS_APP_BUNDLE ?= src/native/gen/apple/build/syng_iOS.xcarchive/Products/Applica
 IOS_BUNDLE_ID ?= xyz.bytecraft.syng
 IOS_DEVICE ?=
 IOS_OFFLINE_CONFIG ?= tauri.ios.offline.conf.json
+ANDROID_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
+ANDROID_KEYSTORE_PROPERTIES := src/native/gen/android/keystore.properties
+ANDROID_AAB := src/native/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab
+TAURI_CLI_VERSION := 2.9.6
 
 build:
 	npm run build
@@ -99,4 +103,33 @@ package-ios:
 	@echo "iOS packaging not currently implemented"
 
 release-android:
-	@echo "Android packaging not currently implemented"
+	@if [ "$$(uname -s)" != "Darwin" ]; then \
+		printf 'release-android is a local macOS release target.\n'; \
+		exit 1; \
+	fi
+	@if [ ! -d "$(ANDROID_JAVA_HOME)" ]; then \
+		printf 'Android JDK not found at %s. Install Android Studio or set ANDROID_JAVA_HOME.\n' "$(ANDROID_JAVA_HOME)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ANDROID_KEYSTORE_PROPERTIES)" ]; then \
+		printf 'Android signing credentials are missing: %s\nSee RELEASING.md for upload-key setup.\n' "$(ANDROID_KEYSTORE_PROPERTIES)"; \
+		exit 1; \
+	fi
+	@actual_version="$$(cargo tauri --version 2>/dev/null | awk '{print $$2}')"; \
+	if [ "$$actual_version" != "$(TAURI_CLI_VERSION)" ]; then \
+		printf 'Tauri CLI %s is required (found %s). Install it with: cargo install tauri-cli --version %s --locked\n' "$(TAURI_CLI_VERSION)" "$${actual_version:-not installed}" "$(TAURI_CLI_VERSION)"; \
+		exit 1; \
+	fi
+	npm run build
+	cd src/native && JAVA_HOME="$(ANDROID_JAVA_HOME)" cargo tauri android build --config tauri.mobile.conf.json --aab true --apk false --target aarch64 armv7 i686 x86_64
+	@if [ ! -f "$(ANDROID_AAB)" ]; then \
+		printf 'Expected Android App Bundle was not created: %s\n' "$(ANDROID_AAB)"; \
+		exit 1; \
+	fi
+	@verification_output="$$("$(ANDROID_JAVA_HOME)/bin/jarsigner" -verify "$(ANDROID_AAB)" 2>&1)"; \
+	printf '%s\n' "$$verification_output"; \
+	printf '%s\n' "$$verification_output" | grep -q '^jar verified\.' || { \
+		printf 'AAB signature verification failed: %s\n' "$(ANDROID_AAB)"; \
+		exit 1; \
+	}
+	@printf 'Signed Android App Bundle: %s\n' "$(ANDROID_AAB)"

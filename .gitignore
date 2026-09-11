@@ -19,3 +19,8 @@ src/native/gen/apple/build/
 
 # Local Apple signing overrides
 src/native/gen/apple/syng_iOS/Signing.local.xcconfig
+
+# Local Android upload signing credentials
+src/native/gen/android/keystore.properties
+*.jks
+*.keystore
