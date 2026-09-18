@@ -4,6 +4,7 @@
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
@@ -20,6 +21,9 @@
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
+		updateShowAlternativePronunciationsPreference,
+		updateShowPartsOfSpeechPreference,
+		updateShowQualifiersPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 
@@ -87,6 +91,15 @@
 					oncharacterschange={updateColorCharactersByTonePreference}
 					onpinyinchange={updateColorPinyinByTonePreference}
 					onlistschange={updateColorListsByTonePreference}
+				/>
+			</section>
+			<section class="mobile-settings__section" aria-labelledby="dictionary-metadata-heading">
+				<h2 id="dictionary-metadata-heading">Dictionary Metadata</h2>
+				<DictionaryMetadataSettings
+					variant="mobile"
+					onqualifierschange={updateShowQualifiersPreference}
+					onpartsofspeechchange={updateShowPartsOfSpeechPreference}
+					onalternativepronunciationschange={updateShowAlternativePronunciationsPreference}
 				/>
 			</section>
 			<section class="mobile-settings__section" aria-labelledby="tone-colors-heading">

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import ChinesePreferencesPreview from '@/components/Onboarding/ChinesePreferencesPreview.svelte';
@@ -9,6 +10,9 @@
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
+		updateShowAlternativePronunciationsPreference,
+		updateShowPartsOfSpeechPreference,
+		updateShowQualifiersPreference,
 	} from '@/composables/settings.js';
 
 	interface Props {
@@ -26,8 +30,8 @@
 	<header class="chinese-prefs__header">
 		<h2 class="chinese-prefs__title">Chinese display</h2>
 		<p class="chinese-prefs__intro">
-			Choose how characters, HSK levels, and tone colors appear throughout Syng. You can
-			change any of these later in Settings.
+			Choose how characters, dictionary details, HSK levels, and tone colors appear throughout
+			Syng. You can change any of these later in Settings.
 		</p>
 	</header>
 	<div class="chinese-prefs__layout">
@@ -53,6 +57,16 @@
 					onlistschange={updateColorListsByTonePreference}
 				/>
 			</section>
+			<section class="chinese-prefs__section" aria-labelledby="onboarding-metadata-heading">
+				<h3 id="onboarding-metadata-heading">Dictionary details</h3>
+				<p>Choose which extra information appears alongside dictionary entries.</p>
+				<DictionaryMetadataSettings
+					variant="mobile"
+					onqualifierschange={updateShowQualifiersPreference}
+					onpartsofspeechchange={updateShowPartsOfSpeechPreference}
+					onalternativepronunciationschange={updateShowAlternativePronunciationsPreference}
+				/>
+			</section>
 		{:else}
 			<div class="chinese-prefs__controls">
 				<section
@@ -75,6 +89,18 @@
 						oncharacterschange={updateColorCharactersByTonePreference}
 						onpinyinchange={updateColorPinyinByTonePreference}
 						onlistschange={updateColorListsByTonePreference}
+					/>
+				</section>
+				<section
+					class="chinese-prefs__section"
+					aria-labelledby="onboarding-metadata-heading"
+				>
+					<h3 id="onboarding-metadata-heading">Dictionary details</h3>
+					<p>Choose which extra information appears alongside dictionary entries.</p>
+					<DictionaryMetadataSettings
+						onqualifierschange={updateShowQualifiersPreference}
+						onpartsofspeechchange={updateShowPartsOfSpeechPreference}
+						onalternativepronunciationschange={updateShowAlternativePronunciationsPreference}
 					/>
 				</section>
 			</div>

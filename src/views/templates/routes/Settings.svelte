@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
@@ -25,6 +26,9 @@
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
+		updateShowAlternativePronunciationsPreference,
+		updateShowPartsOfSpeechPreference,
+		updateShowQualifiersPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 	import { isIPad } from '@/utils/device.js';
@@ -95,6 +99,20 @@
 				oncharacterschange: updateColorCharactersByTonePreference,
 				onpinyinchange: updateColorPinyinByTonePreference,
 				onlistschange: updateColorListsByTonePreference,
+			},
+		},
+		{
+			label: 'Dictionary Metadata',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: false,
+			component: DictionaryMetadataSettings,
+			props: {
+				variant: isIPad() ? 'mobile' : 'desktop',
+				onqualifierschange: updateShowQualifiersPreference,
+				onpartsofspeechchange: updateShowPartsOfSpeechPreference,
+				onalternativepronunciationschange: updateShowAlternativePronunciationsPreference,
 			},
 		},
 		{

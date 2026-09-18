@@ -36,6 +36,9 @@ const createDefaultPreferences = () => ({
 	colorPinyinByTone: createPreference(false, false),
 	colorListsByTone: createPreference(false, false),
 	hskVariant: createPreference(false, HSK_VARIANTS.HSK_EXAM_SYLLABUS_2025),
+	showQualifiers: createPreference(false, true),
+	showPartsOfSpeech: createPreference(false, true),
+	showAlternativePronunciations: createPreference(false, false),
 	toneColors: createPreference(true, {
 		colors: [
 			'--sy-color--blue-3',

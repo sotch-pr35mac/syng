@@ -70,6 +70,40 @@ const STRUCTURED_CLASSIFIER_WORD = {
 	],
 };
 
+const STRUCTURED_METADATA_WORD = {
+	...TEST_WORD,
+	hsk: {
+		hsk_2015: [],
+		proficiency_standard_2021: [],
+		hsk_exam_syllabus_2025: ['One'],
+	},
+	english: [
+		{
+			gloss: { value: 'to test', sources: ['cc-cedict'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [],
+			lexical_kinds: [],
+			parts_of_speech: [
+				{ value: 'verb', sources: ['wiktionary'] },
+				{ value: 'noun', sources: ['cc-cedict'] },
+			],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+		{
+			gloss: { value: 'a test', sources: ['wiktionary'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [],
+			lexical_kinds: [],
+			parts_of_speech: [{ value: 'verb', sources: ['cc-cedict', 'chinese-notes'] }],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+	],
+};
+
 beforeEach(() => {
 	setPreferenceManagerForTest(mockPreferenceManager({}));
 	dictionaryDisplaySettingsStore.setCharacterSet('both');
@@ -110,6 +144,47 @@ it('should display the definitions', async () => {
 	const definition = getByText(TEST_WORD.english[0]);
 
 	expect(definition.textContent).toBe('test');
+});
+
+it('scrolls to the top when a different word replaces the current entry', async () => {
+	const nextWord = {
+		...TEST_WORD,
+		hash: 'next-test-word',
+		simplified: 'B',
+		traditional: 'B',
+	};
+	const { container, rerender } = render(DictionaryContent, {
+		word: TEST_WORD,
+	});
+	const dictionaryContentElement = container.querySelector('.dictionary-content-container');
+	dictionaryContentElement.scrollTop = 240;
+
+	await rerender({ word: nextWord });
+
+	expect(dictionaryContentElement.scrollTop).toBe(0);
+});
+
+it('renders HSK and aggregated POS tags with distinct colors', () => {
+	const { container, getByText } = render(DictionaryContent, {
+		word: STRUCTURED_METADATA_WORD,
+	});
+
+	expect(getByText('HSK: 1')).toBeTruthy();
+	expect(getByText('Verb')).toBeTruthy();
+	expect(getByText('Noun')).toBeTruthy();
+	expect(container.querySelectorAll('.sy-tag--yellow')).toHaveLength(1);
+	expect(container.querySelectorAll('.sy-tag--blue')).toHaveLength(2);
+	expect(getByText('Verb').getAttribute('title')).toBeNull();
+	expect(getByText('Noun').getAttribute('title')).toBeNull();
+});
+
+it('hides POS tags when dictionary POS display is disabled', () => {
+	dictionaryDisplaySettingsStore.setShowPartsOfSpeech(false);
+	const { container } = render(DictionaryContent, {
+		word: STRUCTURED_METADATA_WORD,
+	});
+
+	expect(container.querySelector('.sy-tag--blue')).toBeNull();
 });
 
 it('should display the pinyin', async () => {

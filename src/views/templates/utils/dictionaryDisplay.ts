@@ -15,46 +15,56 @@ function unsupportedCharacterSet(characterSet: never): never {
 }
 
 export function resolveCharacterForms(
-	simplified: string,
-	traditional: string,
+	simplified: string | null | undefined,
+	traditional: string | null | undefined,
 	characterSet: CharacterSet
 ): CharacterForm[] {
+	const hasSimplified = typeof simplified === 'string' && simplified.length > 0;
+	const hasTraditional = typeof traditional === 'string' && traditional.length > 0;
+	const simplifiedCharacters = hasSimplified ? simplified : (traditional ?? '');
+	const traditionalCharacters = hasTraditional ? traditional : (simplified ?? '');
+
 	switch (characterSet) {
 		case CHARACTER_SETS.SIMPLIFIED:
 			return [
 				{
-					script: CHARACTER_SETS.SIMPLIFIED,
-					characters: simplified,
-					showLabel: false,
+					script: hasSimplified ? CHARACTER_SETS.SIMPLIFIED : CHARACTER_SETS.TRADITIONAL,
+					characters: simplifiedCharacters,
+					showLabel: !hasSimplified,
 				},
 			];
 		case CHARACTER_SETS.TRADITIONAL:
 			return [
 				{
-					script: CHARACTER_SETS.TRADITIONAL,
-					characters: traditional,
-					showLabel: false,
+					script: hasTraditional ? CHARACTER_SETS.TRADITIONAL : CHARACTER_SETS.SIMPLIFIED,
+					characters: traditionalCharacters,
+					showLabel: !hasTraditional,
 				},
 			];
 		case CHARACTER_SETS.BOTH:
-			if (simplified === traditional) {
+			if (!hasSimplified && !hasTraditional) {
+				return [];
+			}
+			if (!hasSimplified || !hasTraditional || simplified === traditional) {
 				return [
 					{
-						script: CHARACTER_SETS.SIMPLIFIED,
-						characters: simplified,
-						showLabel: false,
+						script: hasSimplified
+							? CHARACTER_SETS.SIMPLIFIED
+							: CHARACTER_SETS.TRADITIONAL,
+						characters: simplifiedCharacters,
+						showLabel: !hasSimplified || !hasTraditional,
 					},
 				];
 			}
 			return [
 				{
 					script: CHARACTER_SETS.SIMPLIFIED,
-					characters: simplified,
+					characters: simplifiedCharacters,
 					showLabel: true,
 				},
 				{
 					script: CHARACTER_SETS.TRADITIONAL,
-					characters: traditional,
+					characters: traditionalCharacters,
 					showLabel: true,
 				},
 			];

@@ -6,6 +6,7 @@ import type {
 	ReaderImportPayload,
 	ReaderSchemaVersion,
 	ReaderTableExtension,
+	ReaderToken,
 } from '@/types/reader.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
@@ -50,6 +51,42 @@ export function getTableExtension(block: ReaderContentBlock): ReaderTableExtensi
 
 export function tableCellTokenKey(blockId: string, row: number, col: number): string {
 	return `${blockId}::${row}::${col}`;
+}
+
+export type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
+
+/** Align the tokenizer's text or offset tokens with the source text used by reader rendering. */
+export function alignReaderTokens(
+	text: string,
+	tokenTexts: Array<string | NativeReaderToken>,
+	blockId: string
+): ReaderToken[] {
+	const tokens: ReaderToken[] = [];
+	let cursor = 0;
+	for (const nativeToken of tokenTexts) {
+		if (typeof nativeToken !== 'string') {
+			if (
+				typeof nativeToken.text === 'string' &&
+				Number.isInteger(nativeToken.start) &&
+				Number.isInteger(nativeToken.end) &&
+				nativeToken.start >= 0 &&
+				nativeToken.end > nativeToken.start &&
+				nativeToken.end <= text.length
+			) {
+				tokens.push({ ...nativeToken, block_id: blockId });
+			}
+			continue;
+		}
+
+		const tokenStart = text.indexOf(nativeToken, cursor);
+		if (tokenStart < 0) {
+			continue;
+		}
+		const tokenEnd = tokenStart + nativeToken.length;
+		tokens.push({ text: nativeToken, start: tokenStart, end: tokenEnd, block_id: blockId });
+		cursor = tokenEnd;
+	}
+	return tokens;
 }
 
 // --- Document metadata (title, color) ---

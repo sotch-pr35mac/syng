@@ -63,6 +63,9 @@ beforeEach(async () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 		toneColors,
 	};
 	preferenceManager = {
@@ -99,18 +102,28 @@ it('renders and updates desktop dictionary display settings', async () => {
 
 	expect(getByText('Tone Coloring')).toBeTruthy();
 	expect(getByText('Tone Colors')).toBeTruthy();
+	expect(getByText('Dictionary Metadata')).toBeTruthy();
 	expect(getByRole('radio', { name: 'Simplified + Traditional' }).checked).toBe(true);
 	expect(getByLabelText('Color characters by tone').checked).toBe(true);
 	expect(getByLabelText('Color pinyin by tone').checked).toBe(false);
 	expect(getByLabelText('Apply tone coloring to lists').checked).toBe(false);
+	expect(getByLabelText('Show qualifiers').checked).toBe(true);
+	expect(getByLabelText('Show parts of speech').checked).toBe(true);
+	expect(getByLabelText('Show alternative pronunciations').checked).toBe(false);
 
 	await user.click(getByRole('radio', { name: 'Traditional' }));
 	await user.click(getByLabelText('Color pinyin by tone'));
 	await user.click(getByLabelText('Apply tone coloring to lists'));
+	await user.click(getByLabelText('Show qualifiers'));
+	await user.click(getByLabelText('Show parts of speech'));
+	await user.click(getByLabelText('Show alternative pronunciations'));
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('characterSet', 'traditional');
 	expect(preferenceManager.set).toHaveBeenCalledWith('colorPinyinByTone', true);
 	expect(preferenceManager.set).toHaveBeenCalledWith('colorListsByTone', true);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showQualifiers', false);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showPartsOfSpeech', false);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showAlternativePronunciations', true);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'characterSet',
 	});

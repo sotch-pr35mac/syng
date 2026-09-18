@@ -22,14 +22,59 @@ beforeEach(async () => {
 });
 
 it('should display textual value with the correct styles', async () => {
-	const { getByText } = render(DefinitionItem, {
+	const { container, getByText } = render(DefinitionItem, {
 		value: 'test',
 	});
 
 	const text = getByText('test');
-	const styles = text.className.split(' ');
 	expect(text.textContent).toBe('test');
-	expect(styles).toContain('dictionary-content--definition-item');
+	expect(container.querySelector('.dictionary-content--definition-item')).toBeTruthy();
+});
+
+it('renders ordered structured qualifiers with green category-tag styling', () => {
+	const { container, getByText } = render(DefinitionItem, {
+		value: {
+			gloss: { value: 'test', sources: ['cc-cedict'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [
+				{ value: { category: 'register', value: 'formal' }, sources: ['cc-cedict'] },
+				{ value: { category: 'domain', value: 'law' }, sources: ['wiktionary'] },
+			],
+			lexical_kinds: [],
+			parts_of_speech: [],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+	});
+
+	expect(container.textContent).toContain('test');
+	expect(container.textContent).toContain('formal');
+	expect(container.textContent).toContain('law');
+	expect(container.textContent).not.toContain('Register: formal');
+	expect(container.textContent).not.toContain('Domain: law');
+	expect(container.querySelectorAll('.sy-tag--green')).toHaveLength(2);
+	expect(getByText('formal').getAttribute('title')).toBe('Register');
+	expect(getByText('law').getAttribute('title')).toBe('Domain');
+});
+
+it('hides qualifiers when dictionary qualifier display is disabled', () => {
+	dictionaryDisplaySettingsStore.setShowQualifiers(false);
+	const { container } = render(DefinitionItem, {
+		value: {
+			gloss: { value: 'test', sources: ['cc-cedict'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [{ value: { category: 'domain', value: 'law' }, sources: ['wiktionary'] }],
+			lexical_kinds: [],
+			parts_of_speech: [],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+	});
+
+	expect(container.textContent).not.toContain('Domain: law');
+	expect(container.querySelector('.sy-tag--green')).toBeNull();
 });
 
 it('renders and opens parenthetical preference-aware links in definitions', async () => {

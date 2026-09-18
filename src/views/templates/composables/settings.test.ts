@@ -7,6 +7,9 @@ import {
 	updateColorCharactersByTonePreference,
 	updateColorListsByTonePreference,
 	updateColorPinyinByTonePreference,
+	updateShowAlternativePronunciationsPreference,
+	updateShowPartsOfSpeechPreference,
+	updateShowQualifiersPreference,
 	updateToneColorsPreference,
 	updateAgeStatus,
 } from '@/composables/settings.js';
@@ -101,6 +104,21 @@ it.each([
 	{
 		update: () => updateColorListsByTonePreference(true),
 		key: 'colorListsByTone',
+		value: true,
+	},
+	{
+		update: () => updateShowQualifiersPreference(false),
+		key: 'showQualifiers',
+		value: false,
+	},
+	{
+		update: () => updateShowPartsOfSpeechPreference(false),
+		key: 'showPartsOfSpeech',
+		value: false,
+	},
+	{
+		update: () => updateShowAlternativePronunciationsPreference(true),
+		key: 'showAlternativePronunciations',
 		value: true,
 	},
 ])('updates and tracks the $key display preference', ({ update, key, value }) => {

@@ -1,9 +1,10 @@
 <script>
+	import CharacterSetLabel from '@/components/DictionaryContent/CharacterSetLabel.svelte';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	import ColorizedPinyinSyllables from '@/components/ColorizedText/ColorizedPinyinSyllables.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { isMobile } from '@/utils/device.js';
-	import { lexicalPinyin } from '@/types/dictionary.js';
+	import { lexicalAlternativePronunciations, lexicalPinyin } from '@/types/dictionary.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -16,6 +17,11 @@
 
 	const pinyinData = $derived(lexicalPinyin(word));
 	const pinyin = $derived(pinyinData.marks);
+	const alternativePronunciations = $derived(
+		dictionaryDisplaySettingsStore.settings.showAlternativePronunciations
+			? lexicalAlternativePronunciations(word)
+			: []
+	);
 </script>
 
 <div class="chinese-characters--container">
@@ -41,6 +47,32 @@
 				{pinyin}
 			{/if}
 		</h3>
+		{#if alternativePronunciations.length}
+			<div class="chinese-characters--alternative-pronunciations">
+				{#each alternativePronunciations as alternative, alternativeIndex (`${alternative.value.label}-${alternativeIndex}`)}
+					<div class="chinese-characters--alternative-pronunciation">
+						<CharacterSetLabel
+							label="alt"
+							variant="inline"
+							testId="alternative-pronunciation-label"
+						/>
+						<span class="chinese-characters--alternative-pronunciation-text">
+							{#if dictionaryDisplaySettingsStore.settings.colorPinyinByTone}
+								<ColorizedPinyinSyllables
+									pinyin={alternative.value.pronunciation.marks}
+									tones={alternative.value.pronunciation.tones}
+								/>
+							{:else}
+								{alternative.value.pronunciation.marks}
+							{/if}
+						</span>
+						<span class="chinese-characters--alternative-pronunciation-name">
+							({alternative.value.label})
+						</span>
+					</div>
+				{/each}
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -67,6 +99,28 @@
 		font-weight: 300;
 		margin: var(--sy-space--small) var(--sy-space--large);
 		color: var(--sy-color--grey-4);
+	}
+	.chinese-characters--alternative-pronunciations {
+		margin: var(--sy-space--small) var(--sy-space--large);
+		color: var(--sy-color--grey-4);
+	}
+	.chinese-characters--alternative-pronunciation {
+		display: flex;
+		align-items: baseline;
+		font-size: 1.6em;
+		font-weight: 300;
+		line-height: 1.35;
+	}
+	.chinese-characters--alternative-pronunciation :global(.character-set-label--inline) {
+		/* Match the 0.3em label in the 3em lexical-character heading. */
+		font-size: 0.5625em;
+	}
+	.chinese-characters--alternative-pronunciation-text {
+		font-size: 1em;
+	}
+	.chinese-characters--alternative-pronunciation-name {
+		margin-left: var(--sy-space--large);
+		font-size: 0.5625em;
 	}
 	.chinese-characters--character {
 		font-size: 3em;

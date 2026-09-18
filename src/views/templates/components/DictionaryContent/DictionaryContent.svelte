@@ -9,6 +9,7 @@
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import DefinitionItem from '@/components/DictionaryContent/DefinitionItem.svelte';
+	import ExampleSentence from '@/components/DictionaryContent/ExampleSentence.svelte';
 	import EntryTopline from '@/components/DictionaryContent/EntryTopline.svelte';
 	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
@@ -25,9 +26,12 @@
 	import { resolveHskLevels } from '@/utils/hsk.js';
 	import {
 		lexicalDisplayId,
-		lexicalGlosses,
+		formatPartOfSpeech,
+		lexicalDefinitions,
+		lexicalExamples,
 		lexicalLegacyMeasureWords,
 		lexicalMeasureWords,
+		lexicalPartsOfSpeech,
 	} from '@/types/dictionary.js';
 
 	/* Background Color Prop */
@@ -58,6 +62,21 @@
 
 	let memberLists = $state([]);
 	let measureWords = $state([]);
+	let dictionaryContentElement = $state();
+	let previousWordId;
+
+	// Reset the dictionary's own scroll position whenever a different word replaces
+	// the current entry. Keep the position when the same entry is merely re-rendered.
+	$effect(() => {
+		const currentWordId = word ? lexicalDisplayId(word) : undefined;
+		if (currentWordId === previousWordId) {
+			return;
+		}
+		previousWordId = currentWordId;
+		if (dictionaryContentElement) {
+			dictionaryContentElement.scrollTop = 0;
+		}
+	});
 
 	const updateListMembership = () => {
 		const requestedWordId = word ? lexicalDisplayId(word) : undefined;
@@ -277,9 +296,13 @@
 	};
 	const getHskLevels = () =>
 		resolveHskLevels(word?.hsk, dictionaryDisplaySettingsStore.settings.hskVariant);
+	const getPartsOfSpeech = () =>
+		word && dictionaryDisplaySettingsStore.settings.showPartsOfSpeech
+			? lexicalPartsOfSpeech(word)
+			: [];
 </script>
 
-<div class={getContainerClasses()}>
+<div class={getContainerClasses()} bind:this={dictionaryContentElement}>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
 			<EntryTopline {word} {separateTraditionalCharacters} />
@@ -326,16 +349,23 @@
 						{/if}
 					{/each}
 				</SyButtonBar>
-				{#if getHskLevels().length}
-					<div class="dictionary-content__hsk">
-						<SyTag
-							variant="yellow"
-							tooltip={HSK_VARIANT_LABELS[
-								dictionaryDisplaySettingsStore.settings.hskVariant
-							]}
-						>
-							HSK: {getHskLevels().join(', ')}
-						</SyTag>
+				{#if getHskLevels().length || getPartsOfSpeech().length}
+					<div class="dictionary-content__tags">
+						{#if getHskLevels().length}
+							<SyTag
+								variant="yellow"
+								tooltip={HSK_VARIANT_LABELS[
+									dictionaryDisplaySettingsStore.settings.hskVariant
+								]}
+							>
+								HSK: {getHskLevels().join(', ')}
+							</SyTag>
+						{/if}
+						{#each getPartsOfSpeech() as partOfSpeech (partOfSpeech.value)}
+							<SyTag variant="blue">
+								{formatPartOfSpeech(partOfSpeech.value)}
+							</SyTag>
+						{/each}
 					</div>
 				{/if}
 			</div>
@@ -343,7 +373,7 @@
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">Definitions</h2>
 			<SyList
-				values={lexicalGlosses(word)}
+				values={lexicalDefinitions(word)}
 				component={DefinitionItem}
 				onevent={handleOpenLink}
 			/>
@@ -352,6 +382,16 @@
 			<section class="dictionary-content">
 				<h2 class="dictionary-content--section-title">Measure Words</h2>
 				<SyList values={measureWords} component={MeasureWord} onevent={handleOpenLink} />
+			</section>
+		{/if}
+		{#if lexicalExamples(word).length}
+			<section class="dictionary-content">
+				<h2 class="dictionary-content--section-title">Examples</h2>
+				<SyList
+					values={lexicalExamples(word)}
+					component={ExampleSentence}
+					onevent={handleOpenLink}
+				/>
 			</section>
 		{/if}
 		{#if typeof word.notes === 'string'}
@@ -394,7 +434,11 @@
 		justify-content: space-between;
 		align-items: flex-start;
 	}
-	.dictionary-content__hsk {
+	.dictionary-content__tags {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--sy-space--small);
 		margin-left: auto;
 		padding: var(--sy-space--large);
 	}

@@ -18,6 +18,7 @@ import {
 import { handleError, telemetry } from '@/utils';
 import {
 	applyReaderImportMetadata,
+	alignReaderTokens,
 	ensureReaderDocumentForRendering,
 	getTableExtension,
 	invokeImportReaderDocument,
@@ -92,30 +93,6 @@ function trackImportFailed(
 		.catch(() => {});
 }
 
-function alignTokens(
-	text: string,
-	tokenTexts: Array<string | NativeReaderToken>,
-	blockId: string
-): ReaderToken[] {
-	const tokens: ReaderToken[] = [];
-	let cursor = 0;
-	for (const nativeToken of tokenTexts) {
-		if (typeof nativeToken !== 'string') {
-			tokens.push({ ...nativeToken, block_id: blockId });
-			continue;
-		}
-		const tokenText = nativeToken;
-		const start = text.indexOf(tokenText, cursor);
-		if (start < 0) {
-			continue;
-		}
-		const end = start + tokenText.length;
-		tokens.push({ text: tokenText, start, end, block_id: blockId });
-		cursor = end;
-	}
-	return tokens;
-}
-
 async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> {
 	if (!participatesInLinearText(block)) {
 		return [];
@@ -126,7 +103,7 @@ async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> 
 			text: block.text,
 		}
 	);
-	return alignTokens(block.text, tokenTexts, block.id);
+	return alignReaderTokens(block.text, tokenTexts, block.id);
 }
 
 async function tokenizeTableCell(
@@ -141,7 +118,7 @@ async function tokenizeTableCell(
 			text,
 		}
 	);
-	const base = alignTokens(text, tokenTexts, blockId);
+	const base = alignReaderTokens(text, tokenTexts, blockId);
 	return base.map((token) => ({
 		...token,
 		table_cell: { row, col },

@@ -72,6 +72,23 @@ export const updateHskVariantPreference = (variant: HskVariant): void => {
 	telemetry.trackEvent('settings.changed', { setting: 'hskVariant' }).catch(() => {});
 };
 
+export const updateShowQualifiersPreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setShowQualifiers(checked);
+	telemetry.trackEvent('settings.changed', { setting: 'showQualifiers' }).catch(() => {});
+};
+
+export const updateShowPartsOfSpeechPreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setShowPartsOfSpeech(checked);
+	telemetry.trackEvent('settings.changed', { setting: 'showPartsOfSpeech' }).catch(() => {});
+};
+
+export const updateShowAlternativePronunciationsPreference = (checked: boolean): void => {
+	dictionaryDisplaySettingsStore.setShowAlternativePronunciations(checked);
+	telemetry
+		.trackEvent('settings.changed', { setting: 'showAlternativePronunciations' })
+		.catch(() => {});
+};
+
 export const updateAgeStatus = async (isBelowApplicableAge: boolean): Promise<void> => {
 	await privacySettingsStore.setChildPrivacyMode(isBelowApplicableAge);
 };

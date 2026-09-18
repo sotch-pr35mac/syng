@@ -1,5 +1,15 @@
 <script lang="ts">
 	import DictionaryLink from '@/components/DictionaryContent/DictionaryLink.svelte';
+	import SyTag from '@/components/SyTag/SyTag.svelte';
+	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+	import { isMobileLayout } from '@/utils/device.js';
+	import {
+		formatQualifierCategory,
+		type Definition,
+		type DictionaryDefinition,
+		type Qualifier,
+		type Sourced,
+	} from '@/types/dictionary.js';
 
 	type DictionaryLinkDetail = {
 		text: string;
@@ -12,11 +22,25 @@
 		| { kind: 'dictionary-link'; traditional: string; simplified: string };
 
 	interface Props {
-		value: string;
+		value: DictionaryDefinition;
 		onevent?: (detail: DictionaryLinkDetail) => void;
 	}
 
 	const { value, onevent }: Props = $props();
+
+	const definitionGloss = $derived(
+		typeof value === 'string'
+			? value
+			: typeof value?.gloss === 'string'
+				? value.gloss
+				: typeof value?.gloss?.value === 'string'
+					? value.gloss.value
+					: ''
+	);
+	const qualifiers = $derived(
+		dictionaryDisplaySettingsStore.settings.showQualifiers ? readQualifiers(value) : []
+	);
+	const showQualifierTooltips = !isMobileLayout();
 
 	// `Script=Han` deliberately excludes Latin abbreviations and initialisms that can
 	// appear in Wiktionary prose (for example, "T" and "YYDS").
@@ -88,14 +112,14 @@
 	 * lookup. Wiktionary's `traditional|simplified` convention is treated as one
 	 * preference-aware link; all other Han runs fall back to Chinese-text lookup.
 	 */
-	function scanDefinition(value: string): DefinitionSegment[] {
+	function scanDefinition(gloss: string): DefinitionSegment[] {
 		const segments: DefinitionSegment[] = [];
 		let currentIndex = 0;
 
-		while (currentIndex < value.length) {
-			const hanSegment = readHanSegment(value, currentIndex);
+		while (currentIndex < gloss.length) {
+			const hanSegment = readHanSegment(gloss, currentIndex);
 			if (!hanSegment.text) {
-				const codePoint = value.codePointAt(currentIndex);
+				const codePoint = gloss.codePointAt(currentIndex);
 				const character = codePoint === undefined ? '' : String.fromCodePoint(codePoint);
 				appendTextSegment(segments, character);
 				currentIndex += character.length;
@@ -104,12 +128,12 @@
 
 			const simplifiedStart = hanSegment.nextIndex + 1;
 			const simplifiedSegment =
-				value[hanSegment.nextIndex] === '|'
-					? readHanSegment(value, simplifiedStart)
+				gloss[hanSegment.nextIndex] === '|'
+					? readHanSegment(gloss, simplifiedStart)
 					: undefined;
 
-		let linkEndIndex: number;
-		if (simplifiedSegment?.text) {
+			let linkEndIndex: number;
+			if (simplifiedSegment?.text) {
 				segments.push({
 					kind: 'dictionary-link',
 					traditional: hanSegment.text,
@@ -125,13 +149,28 @@
 				linkEndIndex = hanSegment.nextIndex;
 			}
 
-			currentIndex = skipTrailingBracketAnnotation(value, linkEndIndex);
+			currentIndex = skipTrailingBracketAnnotation(gloss, linkEndIndex);
 		}
 
 		return segments;
 	}
 
-	const segments = $derived(scanDefinition(value));
+	function readQualifiers(definition: DictionaryDefinition): Sourced<Qualifier>[] {
+		if (
+			typeof definition === 'string' ||
+			!Array.isArray((definition as Definition).qualifiers)
+		) {
+			return [];
+		}
+		return (definition as Definition).qualifiers.filter(
+			(sourcedQualifier): sourcedQualifier is Sourced<Qualifier> =>
+				Boolean(sourcedQualifier?.value) &&
+				typeof sourcedQualifier.value.value === 'string' &&
+				sourcedQualifier.value.value.length > 0
+		);
+	}
+
+	const segments = $derived(scanDefinition(definitionGloss));
 
 	function handleOpenLink(event: { detail: DictionaryLinkDetail }): void {
 		onevent?.(event.detail);
@@ -139,22 +178,63 @@
 </script>
 
 <div class="dictionary-content--definition-item sy-text--selectable">
-	{#each segments as segment, segmentIndex (segmentIndex)}
-		{#if segment.kind === 'dictionary-link'}
-			<DictionaryLink
-				link={segment.traditional}
-				simplified={segment.simplified}
-				traditional={segment.traditional}
-				onopen={handleOpenLink}
-			/>
-		{:else}
-			{segment.text}
+	<div class="dictionary-content--definition-item__line">
+		<span class="dictionary-content--definition-item__gloss">
+			{#each segments as segment, segmentIndex (segmentIndex)}
+				{#if segment.kind === 'dictionary-link'}
+					<DictionaryLink
+						link={segment.traditional}
+						simplified={segment.simplified}
+						traditional={segment.traditional}
+						onopen={handleOpenLink}
+					/>
+				{:else}
+					{segment.text}
+				{/if}
+			{/each}
+		</span>
+		{#if qualifiers.length}
+			<span class="dictionary-content--definition-item__qualifiers">
+				{#each qualifiers as qualifier, qualifierIndex (qualifierIndex)}
+					<SyTag
+						variant="green"
+						tooltip={showQualifierTooltips
+							? formatQualifierCategory(qualifier.value.category)
+							: undefined}
+					>
+						{#if showQualifierTooltips}
+							{qualifier.value.value}
+						{:else}
+							{formatQualifierCategory(qualifier.value.category)}: {qualifier.value
+								.value}
+						{/if}
+					</SyTag>
+				{/each}
+			</span>
 		{/if}
-	{/each}
+	</div>
 </div>
 
 <style>
 	.dictionary-content--definition-item {
 		padding: var(--sy-space--large);
+	}
+	.dictionary-content--definition-item__line {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--sy-space--extra-large);
+		width: 100%;
+	}
+	.dictionary-content--definition-item__gloss {
+		min-width: 0;
+	}
+	.dictionary-content--definition-item__qualifiers {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--sy-space);
+		margin-left: auto;
 	}
 </style>
