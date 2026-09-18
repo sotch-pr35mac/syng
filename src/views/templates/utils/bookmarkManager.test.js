@@ -353,6 +353,17 @@ it('should add a new word entry to a list', async () => {
 	expect(wordEntry.lists).toEqual(['test-list-2']);
 });
 
+it('should preserve notes when adding a new word entry to a list', async () => {
+	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
+	await bookmarkManager.init();
+	await bookmarkManager.addToList('Test List 2', {
+		lexical_id: lexicalIdFor('999'),
+		notes: 'Imported note',
+	});
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('999'));
+	expect(wordEntry.notes).toBe('Imported note');
+});
+
 it('should ignore a request to add a word entry to a list that it is already apart of', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();

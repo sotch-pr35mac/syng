@@ -305,7 +305,10 @@ function importList(): Promise<boolean> {
 				.then(() => {
 					const seen: Record<string, BookmarkWordInput> = {};
 					for (const entry of importArchive.entries as BookmarkWordInput[]) {
-						seen[entry.lexical_id] = { lexical_id: entry.lexical_id };
+						seen[entry.lexical_id] = {
+							lexical_id: entry.lexical_id,
+							...(typeof entry.notes === 'string' ? { notes: entry.notes } : {}),
+						};
 					}
 					const entries = Object.values(seen);
 					const bulkImport = entries.map((entry) =>

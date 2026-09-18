@@ -676,6 +676,7 @@ export class BookmarkManager {
 		return {
 			...DEFAULT_BOOKMARK_DATA,
 			lexical_id: word.lexical_id,
+			notes: typeof word.notes === 'string' ? word.notes : DEFAULT_BOOKMARK_DATA.notes,
 			lists: [list],
 		};
 	}

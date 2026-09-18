@@ -19,7 +19,10 @@ export type BookmarkWordEntry = SearchEntry & {
  * Shape accepted by addToList/removeFromList. In practice callers pass a SearchEntry (or
  * an imported archive entry). The only field the manager requires is `lexical_id`.
  */
-export type BookmarkWordInput = { lexical_id: LexicalId };
+export type BookmarkWordInput = {
+	lexical_id: LexicalId;
+	notes?: string;
+};
 
 /**
  * Reactive, app-lifetime cache of bookmark list names, plus a façade around the rest of

@@ -688,9 +688,13 @@ function selectDictionaryResult(index: number): void {
 async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text: lookup.text,
-		});
+		const results = lookup.lexicalId
+			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
+					id: lookup.lexicalId,
+				}).then((result) => (result ? [result] : []))
+			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+					text: lookup.text,
+				});
 		if (!results.length) {
 			return;
 		}

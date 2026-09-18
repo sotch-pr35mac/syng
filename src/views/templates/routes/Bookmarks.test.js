@@ -77,7 +77,7 @@ const IMPORTED_WORD = {
 	pinyin_marks: 'huǒ chē',
 	tone_marks: [3, 1],
 	measure_words: [],
-	notes: '',
+	notes: 'Imported note',
 };
 
 let words;
@@ -184,4 +184,7 @@ it('navigates desktop bookmarks to the resolved imported list', async () => {
 	expect(container.querySelector('.bookmarks--header').textContent).toContain('Bookmarks 2');
 	expect(container.querySelector('.bookmarks--word-listing').textContent).toContain('火车');
 	expect(container.querySelector('.dictionary-content').textContent).not.toContain('Definitions');
+	expect(words.find((word) => word.lexical_id === IMPORTED_WORD.lexical_id).notes).toBe(
+		'Imported note'
+	);
 });
