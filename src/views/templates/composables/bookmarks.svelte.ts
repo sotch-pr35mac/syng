@@ -19,8 +19,10 @@ import {
 	type DictionaryLookupRequest,
 } from '@/composables/dictionaryPopover.svelte.js';
 import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
+import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 import {
 	BOOKMARK_LIST_MEMBERSHIP_OPERATIONS,
 	type BookmarkListMembershipEvent,
@@ -82,13 +84,13 @@ function getDropdownList() {
 
 function formatWordList(items: BookmarkWordEntry[]): WordListPreviewItem[] {
 	return items.map((item, index) => ({
-		key: item.hash,
+		key: lexicalDisplayId(item),
 		headline:
 			item.traditional === item.simplified
 				? item.simplified
 				: `${item.simplified} (${item.traditional})`,
-		subtitle: item.pinyin_marks,
-		content: item.english.join('; '),
+		subtitle: lexicalPinyin(item).marks,
+		content: lexicalGlosses(item).join('; '),
 		active: false,
 		sourceIndex: index,
 		word: item,
@@ -130,27 +132,38 @@ function updateListContent(): Promise<void> {
 		});
 }
 
-function getAdjacentWordHash(
+function getAdjacentLexicalId(
 	items: WordListPreviewItem[],
-	removedWordHash: string
+	removedLexicalId: string
 ): string | undefined {
-	const removedVisibleIndex = items.findIndex((item) => item.word.hash === removedWordHash);
+	const wordIdentity = (word: BookmarkWordEntry): string => word.lexical_id;
+	const removedVisibleIndex = items.findIndex(
+		(item) => wordIdentity(item.word) === removedLexicalId
+	);
 	if (removedVisibleIndex >= 0) {
 		return (
-			items[removedVisibleIndex + 1]?.word.hash ?? items[removedVisibleIndex - 1]?.word.hash
+			(items[removedVisibleIndex + 1]
+				? wordIdentity(items[removedVisibleIndex + 1].word)
+				: undefined) ??
+			(items[removedVisibleIndex - 1]
+				? wordIdentity(items[removedVisibleIndex - 1].word)
+				: undefined)
 		);
 	}
 
-	const removedSourceIndex = words.findIndex((word) => word.hash === removedWordHash);
+	const removedSourceIndex = words.findIndex((word) => wordIdentity(word) === removedLexicalId);
 	if (removedSourceIndex < 0) {
-		return items[0]?.word.hash;
+		return items[0] ? wordIdentity(items[0].word) : undefined;
 	}
 
 	const nextVisibleWord = items.find((item) => item.sourceIndex > removedSourceIndex);
 	if (nextVisibleWord) {
-		return nextVisibleWord.word.hash;
+		return wordIdentity(nextVisibleWord.word);
 	}
-	return [...items].reverse().find((item) => item.sourceIndex < removedSourceIndex)?.word.hash;
+	const previousVisibleWord = [...items]
+		.reverse()
+		.find((item) => item.sourceIndex < removedSourceIndex);
+	return previousVisibleWord ? wordIdentity(previousVisibleWord.word) : undefined;
 }
 
 async function reconcileMembershipChange(
@@ -161,20 +174,24 @@ async function reconcileMembershipChange(
 		return { clearFilter: false };
 	}
 
-	const selectedWordHash = activeWord?.hash;
+	const eventLexicalId = event.lexicalId;
+	if (!eventLexicalId) {
+		return { clearFilter: false };
+	}
+	const selectedLexicalId = activeWord?.lexical_id;
 	const selectedWordWasRemoved =
 		event.operation === BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED &&
-		selectedWordHash === event.wordHash;
-	const removedSourceIndex = words.findIndex((word) => word.hash === event.wordHash);
-	const visibleAdjacentHash = selectedWordWasRemoved
-		? getAdjacentWordHash(visibleItems, event.wordHash)
+		selectedLexicalId === eventLexicalId;
+	const removedSourceIndex = words.findIndex((word) => word.lexical_id === eventLexicalId);
+	const visibleAdjacentLexicalId = selectedWordWasRemoved
+		? getAdjacentLexicalId(visibleItems, eventLexicalId)
 		: undefined;
 
 	await updateListContent();
 
 	if (!selectedWordWasRemoved) {
-		if (selectedWordHash) {
-			const refreshedActiveWord = words.find((word) => word.hash === selectedWordHash);
+		if (selectedLexicalId) {
+			const refreshedActiveWord = words.find((word) => word.lexical_id === selectedLexicalId);
 			if (refreshedActiveWord) {
 				setActiveWord(refreshedActiveWord);
 			}
@@ -182,7 +199,7 @@ async function reconcileMembershipChange(
 		return { clearFilter: false };
 	}
 
-	const visibleAdjacentWord = words.find((word) => word.hash === visibleAdjacentHash);
+	const visibleAdjacentWord = words.find((word) => word.lexical_id === visibleAdjacentLexicalId);
 	if (visibleAdjacentWord) {
 		setActiveWord(visibleAdjacentWord);
 		return { clearFilter: false };
@@ -276,13 +293,19 @@ function importList(): Promise<boolean> {
 			if (!importArchive) {
 				return false;
 			}
+			if (
+				typeof importArchive.recovery_report === 'string' &&
+				importArchive.recovery_report
+			) {
+				bookmarkRecoveryStore.show(importArchive.recovery_report);
+			}
 			const listName = resolveNameConflict(importArchive.meta.name, bookmarksStore.lists);
 			return bookmarksStore
 				.createList(listName)
 				.then(() => {
 					const seen: Record<string, BookmarkWordInput> = {};
-					for (const entry of importArchive.entries as BookmarkWordEntry[]) {
-						seen[entry.hash] = { ...entry };
+					for (const entry of importArchive.entries as BookmarkWordInput[]) {
+						seen[entry.lexical_id] = { lexical_id: entry.lexical_id };
 					}
 					const entries = Object.values(seen);
 					const bulkImport = entries.map((entry) =>
@@ -336,9 +359,13 @@ async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<voi
 async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text: lookup.text,
-		});
+		const results = lookup.lexicalId
+			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
+					id: lookup.lexicalId,
+				}).then((unit) => (unit ? [unit] : []))
+			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+					text: lookup.text,
+				});
 		if (!results.length) {
 			return;
 		}
@@ -348,6 +375,9 @@ async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void
 		popoverResults = results;
 		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
 		popoverWord = popoverResults[popoverResultIndex];
+		if (lookup.anchor) {
+			popoverAnchor = lookup.anchor;
+		}
 		telemetry.trackEvent('bookmarks.dictionary_link_opened', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error looking up the dictionary word.', error);

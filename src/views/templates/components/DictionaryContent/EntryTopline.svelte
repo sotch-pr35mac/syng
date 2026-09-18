@@ -3,6 +3,7 @@
 	import ColorizedPinyinSyllables from '@/components/ColorizedText/ColorizedPinyinSyllables.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { isMobile } from '@/utils/device.js';
+	import { lexicalPinyin } from '@/types/dictionary.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -13,9 +14,8 @@
 	/** @type {Props} */
 	const { word = {}, separateTraditionalCharacters = isMobile() } = $props();
 
-	const pinyin = $derived(
-		Array.isArray(word.pinyin_marks) ? word.pinyin_marks.join(' ') : (word.pinyin_marks ?? '')
-	);
+	const pinyinData = $derived(lexicalPinyin(word));
+	const pinyin = $derived(pinyinData.marks);
 </script>
 
 <div class="chinese-characters--container">
@@ -27,7 +27,7 @@
 		<PreferredCharacters
 			simplified={word.simplified}
 			traditional={word.traditional}
-			tones={word.tone_marks}
+			tones={pinyinData.tones}
 			colorByTone={dictionaryDisplaySettingsStore.settings.colorCharactersByTone}
 			stacked={separateTraditionalCharacters}
 			lexicalTestIdPrefix="lexical"
@@ -36,7 +36,7 @@
 	<div>
 		<h3 class="chinese-characters--pinyin-container sy-text--selectable">
 			{#if dictionaryDisplaySettingsStore.settings.colorPinyinByTone}
-				<ColorizedPinyinSyllables {pinyin} tones={word.tone_marks} />
+				<ColorizedPinyinSyllables {pinyin} tones={pinyinData.tones} />
 			{:else}
 				{pinyin}
 			{/if}

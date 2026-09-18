@@ -75,6 +75,21 @@ const RESULTS = [
 	},
 ];
 
+const STRUCTURED_CLASSIFIER_RESULT = {
+	...RESULTS[0],
+	measure_words: [
+		{
+			value: {
+				traditional: '樖',
+				simplified: '樖',
+				lexical_id: '1:cantonese-measure-word',
+				varieties: ['cantonese'],
+			},
+			sources: ['wiktionary'],
+		},
+	],
+};
+
 it('should render a count-based result switcher for multiple results', () => {
 	const { container, getByText, queryByText } = render(DictionaryPopover, {
 		props: {
@@ -125,6 +140,25 @@ it('should select previous, next, and dotted results', async () => {
 	expect(onselect).toHaveBeenNthCalledWith(3, 2);
 });
 
+it('preserves a structured classifier lexical ID for nested popover lookups', async () => {
+	const user = userEvent.setup();
+	const onlink = vi.fn();
+	const { getByText } = render(DictionaryPopover, {
+		props: {
+			word: STRUCTURED_CLASSIFIER_RESULT,
+			results: [STRUCTURED_CLASSIFIER_RESULT],
+			anchor: ANCHOR,
+			onlink,
+		},
+	});
+
+	await user.click(getByText('樖'));
+	expect(onlink).toHaveBeenCalledWith({
+		text: '樖',
+		lexicalId: '1:cantonese-measure-word',
+	});
+});
+
 it('forwards list membership changes from its dictionary content', async () => {
 	const user = userEvent.setup();
 	const onmembershipchange = vi.fn();
@@ -153,7 +187,7 @@ it('forwards list membership changes from its dictionary content', async () => {
 	await waitFor(() => {
 		expect(onmembershipchange).toHaveBeenCalledWith({
 			listName: 'Bookmarks',
-			wordHash: RESULTS[0].hash,
+			lexicalId: RESULTS[0].hash,
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
 		});
 	});

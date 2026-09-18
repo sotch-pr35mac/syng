@@ -16,6 +16,7 @@
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
+	import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
@@ -52,13 +53,13 @@
 
 	const searchResultItems: SearchResultPreviewItem[] = $derived(
 		search.fullResults.map((entry, index) => ({
-			key: `${entry.word_id}:${index}`,
+			key: entry.id ? entry.id : `${lexicalDisplayId(entry)}:${index}`,
 			headline:
 				entry.simplified !== entry.traditional
 					? `${entry.simplified} (${entry.traditional})`
 					: entry.simplified,
-			subtitle: entry.pinyin_marks,
-			content: entry.english.slice(0, 2).join('; '),
+			subtitle: lexicalPinyin(entry).marks,
+			content: lexicalGlosses(entry).slice(0, 2).join('; '),
 			word: entry,
 		}))
 	);
@@ -92,7 +93,10 @@
 	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(request: DictionaryLookupRequest): void {
 		const lookup = normalizeDictionaryLookupRequest(request);
-		search.openPopoverDictionary(lookup.text, lookup.anchor ?? clickTracker.lastClickRect);
+		search.lookupPopoverWord({
+			...lookup,
+			anchor: lookup.anchor ?? clickTracker.lastClickRect,
+		});
 	}
 
 	function handleSearch(value: string): void {

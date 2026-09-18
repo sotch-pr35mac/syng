@@ -9,6 +9,7 @@
 	import { colorizeModeForOutput } from '@/composables/textConversionTools.js';
 	import { toolsStore } from '@/composables/tools.svelte.js';
 	import type { ToolName } from '@/types/tools.js';
+	import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js';
 
 	interface Props {
 		tool: ToolName;
@@ -27,14 +28,14 @@
 		{/if}
 	{:else}
 		{#each toolsStore.colorizeResult as segment, index (index)}
-			{#if segment.word_data}
+			{#if lexicalUnitFromToolSegment(segment)}
 				<ChineseCharacters
 					characters={toolsStore.colorizeResolvedScript === 'automatic'
 						? segment.source
 						: toolsStore.colorizeResolvedScript === 'simplified'
-							? segment.word_data.simplified
-							: segment.word_data.traditional}
-					tones={segment.word_data.tone_marks}
+							? lexicalUnitFromToolSegment(segment).simplified
+							: lexicalUnitFromToolSegment(segment).traditional}
+					tones={lexicalPinyin(lexicalUnitFromToolSegment(segment)).tones}
 				/>
 			{:else}
 				{segment.source}

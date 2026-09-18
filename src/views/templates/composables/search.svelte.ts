@@ -80,11 +80,11 @@ function setActiveWord(word: SearchEntry): void {
 }
 
 /**
- * Pushes a word onto the search history, deduplicating by word_id so the same entry
+ * Pushes a word onto the search history, deduplicating by lexical ID so the same entry
  * only ever appears once. Updates historyPosition to point at the new entry.
  */
 function pushHistory(word: SearchEntry): void {
-	const previousIndex = searchHistory.map((entry) => entry.word_id).indexOf(word.word_id);
+	const previousIndex = searchHistory.map((entry) => entry.id).indexOf(word.id);
 	if (previousIndex >= 0) {
 		searchHistory.splice(previousIndex, 1);
 		historyPosition -= 1;
@@ -129,9 +129,13 @@ async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<voi
 async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text: lookup.text,
-		});
+		const results = lookup.lexicalId
+			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
+					id: lookup.lexicalId,
+				}).then((unit) => (unit ? [unit] : []))
+			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+					text: lookup.text,
+				});
 		if (!results.length) {
 			return;
 		}
@@ -141,6 +145,9 @@ async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void
 		popoverResults = results;
 		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
 		popoverWord = popoverResults[popoverResultIndex];
+		if (lookup.anchor) {
+			popoverAnchor = lookup.anchor;
+		}
 		telemetry.trackEvent('search.dictionary_link_opened', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error looking up the dictionary word.', error);

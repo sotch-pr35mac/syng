@@ -20,22 +20,22 @@ vi.mock('@/utils/error.js', () => ({
 }));
 
 const segments: PinyinSegment[] = [
-	{ source: 'Hello', word_data: null },
+	{ source: 'Hello', lexical_unit: null },
 	{
 		source: '你好',
-		word_data: {
+		lexical_unit: {
+			id: '1:0000000000000000000000000000000000000000000000000000000000000000',
 			traditional: '你好',
 			simplified: '你好',
-			pinyin_marks: 'nǐ hǎo',
-			pinyin_numbers: 'ni3 hao3',
-			tone_marks: [THIRD_TONE, THIRD_TONE],
-			english: ['hello'],
-			hash: 1,
+			pinyin: { marks: 'nǐ hǎo', numbers: 'ni3hao3', tones: [THIRD_TONE, THIRD_TONE] },
+			commonness: 0,
+			alternative_pronunciations: [],
+			english: [],
+			measure_words: [],
 			hsk: { hsk_2015: ['One'], proficiency_standard_2021: [], hsk_exam_syllabus_2025: [] },
-			word_id: 1,
 		},
 	},
-	{ source: 'world', word_data: null },
+	{ source: 'world', lexical_unit: null },
 ];
 
 beforeEach(() => {
@@ -91,7 +91,7 @@ it('runs automatic character conversion and stores the decision', async () => {
 });
 
 it('colorizes raw pinyin automatically with native pinyin tokens', async () => {
-	const rawPinyinSegments = [{ source: 'ni3 hao3', word_data: null }];
+	const rawPinyinSegments = [{ source: 'ni3 hao3', lexical_unit: null }];
 	const rawPinyinTokens = [
 		{ text: 'ni3', tone: THIRD_TONE },
 		{ text: ' ', tone: null },

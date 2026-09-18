@@ -1,4 +1,5 @@
 import type { SearchEntry } from '@/types/search.js';
+import type { LexicalId } from '@/types/dictionary.js';
 import { getBookmarkManager } from '@/utils/appServices.js';
 import { handleError } from '@/utils/error.js';
 
@@ -9,15 +10,16 @@ import { handleError } from '@/utils/error.js';
 export type BookmarkWordEntry = SearchEntry & {
 	_id: string;
 	_rev: string;
+	lexical_id: LexicalId;
 	lists: string[];
 	notes: string;
 };
 
 /**
  * Shape accepted by addToList/removeFromList. In practice callers pass a SearchEntry (or
- * an imported archive entry). The only field the manager requires is `hash`.
+ * an imported archive entry). The only field the manager requires is `lexical_id`.
  */
-export type BookmarkWordInput = { hash: string } & Record<string, unknown>;
+export type BookmarkWordInput = { lexical_id: LexicalId };
 
 /**
  * Reactive, app-lifetime cache of bookmark list names, plus a façade around the rest of
@@ -91,14 +93,14 @@ async function removeFromList(listName: string, word: BookmarkWordInput): Promis
 	await getBookmarkManager().removeFromList(listName, word);
 }
 
-async function updateProperty(hash: string, name: string, value: unknown): Promise<void> {
+async function updateProperty(lexicalId: LexicalId, name: string, value: unknown): Promise<void> {
 	await ensureManagerReady();
-	await getBookmarkManager().updateProperty(hash, name, value);
+	await getBookmarkManager().updateProperty(lexicalId, name, value);
 }
 
-async function inList(hash: string): Promise<string[]> {
+async function inList(lexicalId: LexicalId): Promise<string[]> {
 	await ensureManagerReady();
-	return getBookmarkManager().inList(hash);
+	return getBookmarkManager().inList(lexicalId);
 }
 
 async function getContent(listName: string): Promise<BookmarkWordEntry[]> {
@@ -111,9 +113,9 @@ async function getEmptyLists(): Promise<string[]> {
 	return getBookmarkManager().getEmptyLists();
 }
 
-async function getWordByHash(hash: string): Promise<BookmarkWordEntry | undefined> {
+async function getWordByLexicalId(lexicalId: LexicalId): Promise<BookmarkWordEntry | undefined> {
 	await ensureManagerReady();
-	return getBookmarkManager().getWordByHash(hash);
+	return getBookmarkManager().getWordByLexicalId(lexicalId);
 }
 
 export const bookmarksStore = {
@@ -132,5 +134,5 @@ export const bookmarksStore = {
 	inList,
 	getContent,
 	getEmptyLists,
-	getWordByHash,
+	getWordByLexicalId,
 };

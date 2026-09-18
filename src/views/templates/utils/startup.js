@@ -28,6 +28,7 @@ import {
 	databaseMigrationStore,
 	MIGRATION_STATUS,
 } from '@/stores/databaseMigration.svelte.js';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -166,9 +167,12 @@ export const runStartupActions = () => {
 		readerDocumentManagerInit,
 	]).then(async () => {
 		try {
-			await bookmarkManager.prepareSchema(() => {
-				databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
-			});
+			await bookmarkManager.prepareSchema(
+				() => {
+					databaseMigrationStore.start(BOOKMARK_MIGRATION_COPY);
+				},
+				(report) => bookmarkRecoveryStore.show(report)
+			);
 			if (databaseMigrationStore.status === MIGRATION_STATUS.RUNNING) {
 				databaseMigrationStore.finish();
 			}

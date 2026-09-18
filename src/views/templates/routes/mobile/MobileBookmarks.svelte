@@ -38,6 +38,7 @@
 	let currentSnap = $state<SheetSnap>(mobileBookmarksSnapStore.value);
 	const activeList = $derived(bookmarksRoute.activeList);
 	const activeWord = $derived(bookmarksRoute.activeWord);
+	const activeWordKey = $derived(activeWord?.lexical_id ?? activeWord?.id ?? null);
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
@@ -102,10 +103,10 @@
 	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(request: DictionaryLookupRequest): void {
 		const lookup = normalizeDictionaryLookupRequest(request);
-		bookmarksRoute.openPopoverDictionary(
-			lookup.text,
-			lookup.anchor ?? clickTracker.lastClickRect
-		);
+		bookmarksRoute.lookupPopoverWord({
+			...lookup,
+			anchor: lookup.anchor ?? clickTracker.lastClickRect,
+		});
 	}
 
 	// Overflow menu
@@ -252,7 +253,7 @@
 				style="preview"
 				values={wordList}
 				component={DictionaryListPreviewContent}
-				activeKey={activeWord?.hash ?? null}
+				activeKey={activeWordKey}
 				bind:filterValue
 				onvisiblechange={handleVisibleWordListChange}
 				filterable={true}

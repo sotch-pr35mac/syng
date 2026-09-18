@@ -39,6 +39,37 @@ const TEST_WORD = {
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
 
+const STRUCTURED_CLASSIFIER_WORD = {
+	...TEST_WORD,
+	english: [
+		{
+			gloss: { value: 'test', sources: ['wiktionary'] },
+			measure_words: [
+				{
+					value: {
+						traditional: '隻',
+						simplified: '只',
+						lexical_id: null,
+						varieties: ['hakka'],
+					},
+					sources: ['wiktionary'],
+				},
+			],
+		},
+	],
+	measure_words: [
+		{
+			value: {
+				traditional: '樖',
+				simplified: '樖',
+				lexical_id: '1:cantonese-measure-word',
+				varieties: ['cantonese'],
+			},
+			sources: ['wiktionary'],
+		},
+	],
+};
+
 beforeEach(() => {
 	setPreferenceManagerForTest(mockPreferenceManager({}));
 	dictionaryDisplaySettingsStore.setCharacterSet('both');
@@ -114,6 +145,29 @@ it('should emit an event when dictionary link is clicked', async () => {
 	expect(handleOpenLink).toHaveBeenCalled();
 });
 
+it('renders structured classifier references directly without dropping their labels', async () => {
+	const user = userEvent.setup();
+	const handleOpenLink = vi.fn();
+	const { container, getAllByTestId } = render(DictionaryContent, {
+		word: STRUCTURED_CLASSIFIER_WORD,
+		onlink: handleOpenLink,
+	});
+
+	expect(container.textContent).toContain('樖 · Cantonese');
+	expect(container.textContent).toContain('只（隻） · Hakka');
+	expect(invoke).not.toHaveBeenCalledWith(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_IDS, {
+		ids: ['1:cantonese-measure-word'],
+	});
+
+	await user.click(getAllByTestId('dictionary-link')[0]);
+	expect(handleOpenLink).toHaveBeenCalledWith(
+		expect.objectContaining({
+			text: '樖',
+			lexicalId: '1:cantonese-measure-word',
+		})
+	);
+});
+
 it('reports a successful list membership change', async () => {
 	const user = userEvent.setup();
 	const onmembershipchange = vi.fn();
@@ -138,7 +192,7 @@ it('reports a successful list membership change', async () => {
 	await waitFor(() => {
 		expect(onmembershipchange).toHaveBeenCalledWith({
 			listName: 'Bookmarks',
-			wordHash: TEST_WORD.hash,
+			lexicalId: TEST_WORD.hash,
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
 		});
 	});
@@ -168,7 +222,7 @@ it('reports when a word is added to a list', async () => {
 	await waitFor(() => {
 		expect(onmembershipchange).toHaveBeenCalledWith({
 			listName: 'Bookmarks',
-			wordHash: TEST_WORD.hash,
+			lexicalId: TEST_WORD.hash,
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED,
 		});
 	});

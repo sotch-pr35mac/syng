@@ -1,4 +1,4 @@
-import type { BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
+import type { SearchEntry } from '@/types/search.js';
 
 export const PINYIN_QUESTIONS = 'Pinyin';
 export const ENGLISH_QUESTIONS = 'English';
@@ -29,7 +29,7 @@ export type MultipleChoiceQuestion = {
 	options: QuizOption[];
 	answer: string;
 	time_limit: number;
-	word_data: BookmarkWordEntry;
+	lexical_unit: SearchEntry;
 };
 
 export type QuizQuestion = {

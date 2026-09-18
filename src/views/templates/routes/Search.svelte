@@ -14,6 +14,7 @@
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
+	import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
@@ -35,13 +36,13 @@
 
 	const searchResults = $derived(
 		search.fullResults.map((entry) => ({
-			key: entry.hash,
+			key: lexicalDisplayId(entry),
 			headline:
 				entry.traditional === entry.simplified
 					? entry.simplified
 					: `${entry.simplified} (${entry.traditional})`,
-			subtitle: entry.pinyin_marks,
-			content: entry.english.join('; '),
+			subtitle: lexicalPinyin(entry).marks,
+			content: lexicalGlosses(entry).join('; '),
 			active: false,
 			word: entry,
 		}))
@@ -87,24 +88,26 @@
 		if (!search.activeWord) {
 			return -1;
 		}
-		return searchResults.findIndex((result) => result.word.hash === search.activeWord?.hash);
+		return searchResults.findIndex(
+			(result) => lexicalDisplayId(result.word) === lexicalDisplayId(search.activeWord)
+		);
 	};
 
-	let replayedWordHash = $state<string | undefined>(undefined);
+	let replayedWordId = $state<string | undefined>(undefined);
 	$effect(() => {
-		const activeWordHash = search.activeWord?.hash;
-		if (!activeWordHash) {
-			replayedWordHash = undefined;
+		const activeWordId = search.activeWord ? lexicalDisplayId(search.activeWord) : undefined;
+		if (!activeWordId) {
+			replayedWordId = undefined;
 			return;
 		}
-		if (replayedWordHash === activeWordHash) {
+		if (replayedWordId === activeWordId) {
 			return;
 		}
 		const resultIndex = getActiveWordResultIndex();
 		if (resultIndex < 0) {
 			return;
 		}
-		replayedWordHash = activeWordHash;
+		replayedWordId = activeWordId;
 		tick()
 			.then(() => {
 				selectElement(resultIndex);
@@ -118,7 +121,7 @@
 		if (!word) {
 			return;
 		}
-		replayedWordHash = word.hash;
+		replayedWordId = lexicalDisplayId(word);
 		search.setActiveWord(word);
 		search.pushHistory(word);
 		highlightActive = true;
@@ -131,7 +134,10 @@
 	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(request: DictionaryLookupRequest): void {
 		const lookup = normalizeDictionaryLookupRequest(request);
-		search.openPopoverDictionary(lookup.text, lookup.anchor ?? clickTracker.lastClickRect);
+		search.lookupPopoverWord({
+			...lookup,
+			anchor: lookup.anchor ?? clickTracker.lastClickRect,
+		});
 	}
 </script>
 

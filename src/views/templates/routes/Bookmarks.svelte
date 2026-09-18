@@ -110,10 +110,10 @@
 	const clickTracker = createClickPositionTracker();
 	const handleDictionaryLink = (request) => {
 		const lookup = normalizeDictionaryLookupRequest(request);
-		bookmarksRoute.openPopoverDictionary(
-			lookup.text,
-			lookup.anchor ?? clickTracker.lastClickRect
-		);
+		bookmarksRoute.lookupPopoverWord({
+			...lookup,
+			anchor: lookup.anchor ?? clickTracker.lastClickRect,
+		});
 	};
 
 	const actions = $derived([
@@ -187,7 +187,7 @@
 				style="preview"
 				values={wordList}
 				component={DictionaryListPreviewContent}
-				activeKey={activeWord?.hash ?? null}
+				activeKey={activeWord?.lexical_id ?? activeWord?.id ?? null}
 				bind:filterValue
 				onvisiblechange={handleVisibleWordListChange}
 				onselection={handleSelection}

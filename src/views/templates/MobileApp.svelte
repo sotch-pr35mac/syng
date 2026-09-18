@@ -16,6 +16,7 @@
 	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 
 	runStartupActions();
 
@@ -159,6 +160,13 @@
 			<Router {routes} />
 		</div>
 	</div>
+	{#if bookmarkRecoveryStore.active}
+		{#await import('@/components/BookmarkRecovery/BookmarkRecovery.svelte')}
+			<!-- Recovery details are already durable; load the blocking UI lazily. -->
+		{:then BookmarkRecoveryModule}
+			<BookmarkRecoveryModule.default />
+		{/await}
+	{/if}
 {/if}
 
 <style>

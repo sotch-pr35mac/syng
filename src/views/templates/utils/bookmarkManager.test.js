@@ -1,5 +1,10 @@
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+import { invoke } from '@tauri-apps/api/core';
 import { BookmarkManager } from '@/utils/bookmarkManager.js';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+
+const lexicalIdFor = (suffix) => `1:${suffix.padEnd(64, '0')}`;
 
 // Mock the PouchDB API
 const getRandomNumber = () => Math.floor(Math.random() * 1000000);
@@ -36,7 +41,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '123',
 						_rev: '1',
-						hash: '123',
+						lexical_id: lexicalIdFor('123'),
 						notes: '',
 						lists: ['test-list-1', 'test-list-2'],
 					},
@@ -45,7 +50,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '456',
 						_rev: '1',
-						hash: '456',
+						lexical_id: lexicalIdFor('456'),
 						notes: '',
 						lists: ['test-list-1'],
 					},
@@ -54,7 +59,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '789',
 						_rev: '1',
-						hash: '789',
+						lexical_id: lexicalIdFor('789'),
 						notes: '',
 						lists: ['test-list-2'],
 					},
@@ -63,7 +68,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '101112',
 						_rev: '1',
-						hash: '101112',
+						lexical_id: lexicalIdFor('101112'),
 						notes: '',
 						lists: ['test-list-1', 'test-list-2', 'bookmarks'],
 					},
@@ -72,7 +77,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '131415',
 						_rev: '1',
-						hash: '131415',
+						lexical_id: lexicalIdFor('131415'),
 						notes: '',
 						lists: ['bookmarks'],
 					},
@@ -81,7 +86,7 @@ const getDocuments = (dbName) => {
 					doc: {
 						_id: '161718',
 						_rev: '1',
-						hash: '161718',
+						lexical_id: lexicalIdFor('161718'),
 						notes: '',
 						lists: ['bookmarks', 'test-list-1'],
 					},
@@ -95,18 +100,42 @@ const getDocuments = (dbName) => {
 			];
 		case 'test-bookmarks-duplicate':
 			return [
-				{ doc: { _id: 'w1', _rev: '1', hash: 'w1', notes: '', lists: ['bookmarks-a'] } },
-				{ doc: { _id: 'w2', _rev: '1', hash: 'w2', notes: '', lists: ['bookmarks-b'] } },
+				{
+					doc: {
+						_id: 'w1',
+						_rev: '1',
+						lexical_id: lexicalIdFor('a1'),
+						notes: '',
+						lists: ['bookmarks-a'],
+					},
+				},
+				{
+					doc: {
+						_id: 'w2',
+						_rev: '1',
+						lexical_id: lexicalIdFor('a2'),
+						notes: '',
+						lists: ['bookmarks-b'],
+					},
+				},
 				{
 					doc: {
 						_id: 'w3',
 						_rev: '1',
-						hash: 'w3',
+						lexical_id: lexicalIdFor('a3'),
 						notes: '',
 						lists: ['bookmarks-a', 'bookmarks-b'],
 					},
 				},
-				{ doc: { _id: 'w4', _rev: '1', hash: 'w4', notes: '', lists: ['other'] } },
+				{
+					doc: {
+						_id: 'w4',
+						_rev: '1',
+						lexical_id: lexicalIdFor('a4'),
+						notes: '',
+						lists: ['other'],
+					},
+				},
 			];
 		default:
 			throw new Error(`Unknown database name: ${dbName}`);
@@ -193,6 +222,14 @@ global.PouchDB = class {
 	}
 };
 
+beforeEach(() => {
+	invoke.mockImplementation((_command, args = {}) =>
+		Promise.resolve(
+			Array.isArray(args.ids) ? args.ids.map((lexicalId) => ({ id: lexicalId })) : undefined
+		)
+	);
+});
+
 it('should create a bookmarks list if it does not exist', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists-empty', 'test-bookmarks-empty');
 	await bookmarkManager.init();
@@ -217,10 +254,14 @@ it('should collapse duplicate-named lists and merge their word references on ini
 
 	// Every word that referenced either 'Bookmarks' copy now resolves under the single list.
 	const bookmarksContent = await bookmarkManager.getListContent('Bookmarks');
-	expect(bookmarksContent.map((word) => word.hash).sort()).toEqual(['w1', 'w2', 'w3']);
+	expect(bookmarksContent.map((word) => word.lexical_id).sort()).toEqual([
+		lexicalIdFor('a1'),
+		lexicalIdFor('a2'),
+		lexicalIdFor('a3'),
+	]);
 
 	// A word that lived in both copies is merged onto the canonical id without duplication.
-	const mergedWord = await bookmarkManager.getWordByHash('w3');
+	const mergedWord = await bookmarkManager.getWordByLexicalId(lexicalIdFor('a3'));
 	expect(mergedWord.lists).toEqual(['bookmarks-a']);
 });
 
@@ -256,10 +297,10 @@ it('should remove word entries on list deletion', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
 	await bookmarkManager.deleteList('Test List 1');
-	const multiple = await bookmarkManager.getWordByHash('123');
+	const multiple = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(multiple.lists).toEqual(['test-list-2']);
 
-	const single = await bookmarkManager.getWordByHash('456');
+	const single = await bookmarkManager.getWordByLexicalId(lexicalIdFor('456'));
 	expect(single).toBeUndefined();
 });
 
@@ -267,96 +308,74 @@ it('should return word entries for a given list', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
 	const wordEntries = await bookmarkManager.getListContent('Test List 1');
-	expect(wordEntries).toEqual([
-		{
-			_id: '123',
-			_rev: '1',
-			hash: '123',
-			notes: '',
-			lists: ['test-list-1', 'test-list-2'],
-		},
-		{
-			_id: '456',
-			_rev: '1',
-			hash: '456',
-			notes: '',
-			lists: ['test-list-1'],
-		},
-		{
-			_id: '101112',
-			_rev: '1',
-			hash: '101112',
-			notes: '',
-			lists: ['test-list-1', 'test-list-2', 'bookmarks'],
-		},
-		{
-			_id: '161718',
-			_rev: '1',
-			hash: '161718',
-			notes: '',
-			lists: ['bookmarks', 'test-list-1'],
-		},
+	expect(wordEntries.map((word) => word.lexical_id)).toEqual([
+		lexicalIdFor('123'),
+		lexicalIdFor('456'),
+		lexicalIdFor('101112'),
+		lexicalIdFor('161718'),
 	]);
 });
 
-it('should return a word entry for a given word hash', async () => {
+it('should return a word entry for a given lexical ID', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	const wordEntry = await bookmarkManager.getWordByHash('123');
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(wordEntry).toEqual({
 		_id: '123',
 		_rev: '1',
-		hash: '123',
+		lexical_id: lexicalIdFor('123'),
 		notes: '',
 		lists: ['test-list-1', 'test-list-2'],
 	});
 });
 
-it('should return undefined for a word hash that does not exist', async () => {
+it('should return undefined for a lexical ID that does not exist', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	const wordEntry = await bookmarkManager.getWordByHash('nonexistent');
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('nonexistent'));
 	expect(wordEntry).toBeUndefined();
 });
 
 it('should add an existing word entry to a list', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	let wordEntry = await bookmarkManager.getWordByHash('456');
+	let wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('456'));
 	await bookmarkManager.addToList('Test List 2', wordEntry);
-	wordEntry = await bookmarkManager.getWordByHash('456');
+	wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('456'));
 	expect(wordEntry.lists).toEqual(['test-list-1', 'test-list-2']);
 });
 
 it('should add a new word entry to a list', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	await bookmarkManager.addToList('Test List 2', { hash: '999' });
-	const wordEntry = await bookmarkManager.getWordByHash('999');
+	await bookmarkManager.addToList('Test List 2', { lexical_id: lexicalIdFor('999') });
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('999'));
 	expect(wordEntry.lists).toEqual(['test-list-2']);
 });
 
 it('should ignore a request to add a word entry to a list that it is already apart of', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	let wordEntry = await bookmarkManager.getWordByHash('123');
+	let wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	await bookmarkManager.addToList('Test List 1', wordEntry);
-	wordEntry = await bookmarkManager.getWordByHash('123');
+	wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(wordEntry.lists).toEqual(['test-list-1', 'test-list-2']);
 });
 
 it('should refuse to add a word entry to a list that does not exist', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	await expect(bookmarkManager.addToList('Nonexistent List', { hash: '999' })).rejects.toThrow();
+	await expect(
+		bookmarkManager.addToList('Nonexistent List', { lexical_id: lexicalIdFor('999') })
+	).rejects.toThrow();
 });
 
 it('should remove a word entry from a list', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	let wordEntry = await bookmarkManager.getWordByHash('123');
+	let wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	await bookmarkManager.removeFromList('Test List 1', wordEntry);
-	wordEntry = await bookmarkManager.getWordByHash('123');
+	wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(wordEntry.lists).toEqual(['test-list-2']);
 });
 
@@ -364,49 +383,51 @@ it('should refuse to remove a word entry from a list that does not exist', async
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
 	await expect(
-		bookmarkManager.removeFromList('Nonexistent List', { hash: '999' })
+		bookmarkManager.removeFromList('Nonexistent List', { lexical_id: lexicalIdFor('999') })
 	).rejects.toThrow();
 });
 
 it('should refuse to remove a word entry that does not exist', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	await expect(bookmarkManager.removeFromList('Test List 1', { hash: '999' })).rejects.toThrow();
+	await expect(
+		bookmarkManager.removeFromList('Test List 1', { lexical_id: lexicalIdFor('999') })
+	).rejects.toThrow();
 });
 
-it('should return a word entry for a given word hash', async () => {
+it('should return the same lexical-ID bookmark on repeated reads', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	const wordEntry = await bookmarkManager.getWordByHash('123');
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(wordEntry).toEqual({
 		_id: '123',
 		_rev: '1',
-		hash: '123',
+		lexical_id: lexicalIdFor('123'),
 		notes: '',
 		lists: ['test-list-1', 'test-list-2'],
 	});
 });
 
-it('should return an empty array for a word hash that does not exist', async () => {
+it('should return undefined for an unknown lexical ID', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	const wordEntry = await bookmarkManager.getWordByHash('nonexistent');
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('nonexistent'));
 	expect(wordEntry).toBeUndefined();
 });
 
 it('should update a word entry property', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
-	await bookmarkManager.updateProperty('123', 'notes', 'new notes');
-	const wordEntry = await bookmarkManager.getWordByHash('123');
+	await bookmarkManager.updateProperty(lexicalIdFor('123'), 'notes', 'new notes');
+	const wordEntry = await bookmarkManager.getWordByLexicalId(lexicalIdFor('123'));
 	expect(wordEntry.notes).toEqual('new notes');
 });
 
-it('should refuse to update a word entry property for a word hash that does not exist', async () => {
+it('should refuse to update a word entry property for an unknown lexical ID', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
 	await expect(
-		bookmarkManager.updateProperty({ hash: '999' }, 'notes', 'new notes')
+		bookmarkManager.updateProperty(lexicalIdFor('999'), 'notes', 'new notes')
 	).rejects.toThrow();
 });
 
@@ -414,6 +435,6 @@ it('should refuse to update a word entry property for an unsupported property', 
 	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
 	await bookmarkManager.init();
 	await expect(
-		bookmarkManager.updateProperty({ hash: '123' }, 'unsupported', 'new notes')
+		bookmarkManager.updateProperty(lexicalIdFor('123'), 'unsupported', 'new notes')
 	).rejects.toThrow();
 });

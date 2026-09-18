@@ -191,9 +191,7 @@ it('adds a reader dictionary word to a selected list from the popup', async () =
 	await user.click(listTrigger);
 	await user.click(await screen.findByText('Test'));
 
-	await waitFor(() =>
-		expect(addToList).toHaveBeenCalledWith('Test', expect.objectContaining({ hash: 'nihao' }))
-	);
+	await waitFor(() => expect(addToList).toHaveBeenCalledWith('Test', { lexical_id: 'nihao' }));
 });
 
 it('toggles the reader settings popover from the header', async () => {

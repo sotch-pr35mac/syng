@@ -23,6 +23,12 @@
 	import SyTag from '@/components/SyTag/SyTag.svelte';
 	import { HSK_VARIANT_LABELS } from '@/types/dictionaryDisplay.js';
 	import { resolveHskLevels } from '@/utils/hsk.js';
+	import {
+		lexicalDisplayId,
+		lexicalGlosses,
+		lexicalLegacyMeasureWords,
+		lexicalMeasureWords,
+	} from '@/types/dictionary.js';
 
 	/* Background Color Prop */
 	/* Possible Values */
@@ -51,13 +57,14 @@
 	} = $props();
 
 	let memberLists = $state([]);
+	let measureWords = $state([]);
 
 	const updateListMembership = () => {
-		const requestedWordHash = word?.hash;
+		const requestedWordId = word ? lexicalDisplayId(word) : undefined;
 		bookmarksStore
-			.inList(requestedWordHash)
+			.inList(requestedWordId)
 			.then((lists) => {
-				if (word?.hash !== requestedWordHash) {
+				if (!word || lexicalDisplayId(word) !== requestedWordId) {
 					return undefined;
 				}
 				memberLists = lists;
@@ -77,7 +84,7 @@
 			});
 	};
 	const _modifyListMembership = (fnName, list, word) => {
-		if (!word?.hash) {
+		if (!word || !lexicalDisplayId(word)) {
 			handleError(
 				'There was an error modifying the list membership. Check the log for more details.',
 				{
@@ -87,11 +94,13 @@
 			);
 			return;
 		}
-		bookmarksStore[fnName](list, word)
+		bookmarksStore[fnName](list, {
+			lexical_id: lexicalDisplayId(word),
+		})
 			.then(() => {
 				onmembershipchange?.({
 					listName: list,
-					wordHash: word.hash,
+					lexicalId: lexicalDisplayId(word),
 					operation:
 						fnName === 'addToList'
 							? BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED
@@ -105,7 +114,7 @@
 					'There was an error modifying the list membership. Check the log for more details.',
 					{
 						message: e instanceof Error ? e.message : String(e),
-						word_hash: word?.hash,
+						lexical_id: word ? lexicalDisplayId(word) : undefined,
 						list,
 					}
 				);
@@ -122,9 +131,18 @@
 
 	// Update list membership when word changes
 	$effect(() => {
-		if (word) {
-			updateListMembership();
+		if (!word) {
+			measureWords = [];
+			return;
 		}
+
+		updateListMembership();
+		// References retain their variety labels and can intentionally have no
+		// lexical ID. Resolving them here would drop those Chinese-text fallbacks.
+		const structuredMeasureWords = lexicalMeasureWords(word);
+		measureWords = structuredMeasureWords.length
+			? structuredMeasureWords
+			: lexicalLegacyMeasureWords(word);
 	});
 
 	const getBookmarkIcon = () => (memberLists.length ? Check : Plus);
@@ -212,7 +230,7 @@
 		saveNotesDebounce = setTimeout(() => {
 			const notes = document.getElementById('dictionary-content--notes').value.trim();
 			bookmarksStore
-				.updateProperty(cachedWord.hash, 'notes', notes)
+				.updateProperty(lexicalDisplayId(cachedWord), 'notes', notes)
 				.then(() => {
 					cachedWord.notes = notes;
 					return undefined;
@@ -324,16 +342,16 @@
 		</section>
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">Definitions</h2>
-			<SyList values={word.english} component={DefinitionItem} onevent={handleOpenLink} />
+			<SyList
+				values={lexicalGlosses(word)}
+				component={DefinitionItem}
+				onevent={handleOpenLink}
+			/>
 		</section>
-		{#if word.measure_words.length}
+		{#if measureWords.length}
 			<section class="dictionary-content">
 				<h2 class="dictionary-content--section-title">Measure Words</h2>
-				<SyList
-					values={word.measure_words}
-					component={MeasureWord}
-					onevent={handleOpenLink}
-				/>
+				<SyList values={measureWords} component={MeasureWord} onevent={handleOpenLink} />
 			</section>
 		{/if}
 		{#if typeof word.notes === 'string'}

@@ -55,8 +55,7 @@ const WORDS = [
 	{
 		_id: 'word-1',
 		_rev: '1',
-		word_id: 1,
-		hash: 'xigua',
+		lexical_id: '1:xigua',
 		traditional: '西瓜',
 		simplified: '西瓜',
 		english: ['watermelon'],
@@ -69,8 +68,7 @@ const WORDS = [
 	{
 		_id: 'word-2',
 		_rev: '1',
-		word_id: 2,
-		hash: 'pingguo',
+		lexical_id: '1:pingguo',
 		traditional: '蘋果',
 		simplified: '苹果',
 		english: ['apple'],
@@ -83,7 +81,7 @@ const WORDS = [
 ];
 
 const IMPORTED_WORD = {
-	hash: 'huoche',
+	lexical_id: '1:huoche',
 	traditional: '火車',
 	simplified: '火车',
 	english: ['train'],
@@ -103,21 +101,23 @@ function mockBookmarkManager() {
 		getEmptyLists: () => Promise.resolve([]),
 		getListContent: (listName) =>
 			Promise.resolve(words.filter((word) => word.lists.includes(listName))),
-		inList: (hash) => Promise.resolve(words.find((word) => word.hash === hash)?.lists ?? []),
+		inList: (lexicalId) =>
+			Promise.resolve(words.find((word) => word.lexical_id === lexicalId)?.lists ?? []),
 		createList: (listName) => {
 			lists = [...lists, listName];
 			return Promise.resolve();
 		},
 		addToList: (listName, wordToAdd) => {
-			const word = words.find((item) => item.hash === wordToAdd.hash);
+			const word = words.find((item) => item.lexical_id === wordToAdd.lexical_id);
 			if (word && !word.lists.includes(listName)) {
 				word.lists = [...word.lists, listName];
 			} else if (!word) {
 				words = [
 					...words,
 					{
+						...IMPORTED_WORD,
 						...wordToAdd,
-						_id: `imported-${wordToAdd.hash}`,
+						_id: `imported-${wordToAdd.lexical_id}`,
 						_rev: '1',
 						lists: [listName],
 						notes: wordToAdd.notes ?? '',
@@ -127,7 +127,7 @@ function mockBookmarkManager() {
 			return Promise.resolve();
 		},
 		removeFromList: (listName, wordToRemove) => {
-			const word = words.find((item) => item.hash === wordToRemove.hash);
+			const word = words.find((item) => item.lexical_id === wordToRemove.lexical_id);
 			if (word) {
 				word.lists = word.lists.filter((item) => item !== listName);
 			}

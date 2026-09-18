@@ -196,7 +196,7 @@
 					<QuizDisplayText
 						text={quizRoute.currentQuestion.question}
 						characters={isCharacterQuestion
-							? quizRoute.currentQuestion.word_data
+							? quizRoute.currentQuestion.lexical_unit
 							: undefined}
 						variant="display"
 						stacked={isCharacterQuestion}

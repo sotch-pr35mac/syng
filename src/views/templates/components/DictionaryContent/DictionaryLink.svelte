@@ -6,12 +6,13 @@
 	 * @property {any} link - Required Link Prop
 	 * @property {string} [simplified] - Simplified characters to render according to preferences
 	 * @property {string} [traditional] - Traditional characters to render according to preferences
+	 * @property {string} [lexicalId] - Canonical lexical ID for direct dictionary lookup
 	 * @property {import('svelte').Snippet} [children]
 	 * @property {(detail: any) => void} [onopen] - Optional callback when link is opened
 	 */
 
 	/** @type {Props} */
-	const { link, simplified, traditional, children, onopen } = $props();
+	const { link, simplified, traditional, lexicalId, children, onopen } = $props();
 
 	const hasCharacterForms = $derived(
 		typeof simplified === 'string' && typeof traditional === 'string'
@@ -21,6 +22,7 @@
 		onopen?.({
 			detail: {
 				text: link,
+				...(lexicalId ? { lexicalId } : {}),
 				anchor:
 					event.currentTarget instanceof HTMLElement
 						? event.currentTarget.getBoundingClientRect()

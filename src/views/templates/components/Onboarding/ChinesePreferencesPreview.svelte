@@ -16,14 +16,25 @@
 	const YU_TONE = 3;
 	const PREVIEW_TONES = [HAN_TONE, YU_TONE];
 	const PREVIEW_LIST_ENTRY: SearchEntry = {
-		word_id: 0,
-		hash: 'hanyu-preview',
+		id: '1:0000000000000000000000000000000000000000000000000000000000000000',
 		simplified: PREVIEW_SIMPLIFIED,
 		traditional: PREVIEW_TRADITIONAL,
-		pinyin_marks: 'hàn yǔ',
-		tone_marks: PREVIEW_TONES,
-		english: ['Chinese language'],
+		pinyin: { marks: PREVIEW_PINYIN, numbers: 'han4yu3', tones: PREVIEW_TONES },
+		commonness: 0,
+		alternative_pronunciations: [],
 		measure_words: [],
+		english: [
+			{
+				gloss: { value: 'Chinese language', sources: ['cc-cedict'] },
+				examples: [],
+				commentary: [],
+				qualifiers: [],
+				lexical_kinds: [],
+				parts_of_speech: [],
+				alternative_pronunciations: [],
+				measure_words: [],
+			},
+		],
 		hsk: {
 			hsk_2015: [HSK_LEVELS.ONE],
 			proficiency_standard_2021: [HSK_LEVELS.ONE],
