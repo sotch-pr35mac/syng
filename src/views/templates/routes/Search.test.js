@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import {
 	mockBookmarkManager,
@@ -28,6 +28,7 @@ vi.mock('@tauri-apps/plugin-os', () => ({
 
 const QUERY_RESULTS = [
 	{
+		id: '1:test-watermelon',
 		traditional: '西瓜',
 		simplified: '西瓜',
 		english: ['watermelon'],
@@ -36,10 +37,34 @@ const QUERY_RESULTS = [
 		measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 	},
 ];
+const REORDER_RESULTS = [
+	QUERY_RESULTS[0],
+	{
+		id: '1:test-banana',
+		traditional: '香蕉',
+		simplified: '香蕉',
+		english: ['banana'],
+		pinyin_marks: ['xiāng', 'jiāo'],
+		tone_marks: [1, 1],
+		measure_words: [{ simplified: 'MWB', traditional: 'MWB' }],
+	},
+];
 
 // Mock @tauri-apps/api/core
 vi.mock('@tauri-apps/api/core', () => ({
-	invoke: vi.fn((cmd) => {
+	invoke: vi.fn((cmd, args) => {
+		if (args?.text === 'reorder' && cmd === 'query') {
+			return Promise.resolve(REORDER_RESULTS);
+		}
+		if (
+			args?.text === 'reorder' &&
+			['query_by_english', 'query_by_pinyin', 'query_by_chinese'].includes(cmd)
+		) {
+			return Promise.resolve([...REORDER_RESULTS].reverse());
+		}
+		if (cmd === 'query' && args?.text?.length > 10) {
+			return Promise.resolve([QUERY_RESULTS[0], { ...QUERY_RESULTS[0] }]);
+		}
 		switch (cmd) {
 			case 'classify':
 				return Promise.resolve('EN');
@@ -98,6 +123,29 @@ it('should populate the search result list after a query', async () => {
 		.closest('.sy-list-preview-item--headline')
 		.className.split(' ');
 	expect(searchResultItemClasses).toContain('sy-list-preview-item--headline');
+});
+it('should preserve repeated entries from a long query with unique result keys', async () => {
+	const user = userEvent.setup();
+	const { container, getByPlaceholderText, findAllByText } = render(Search, {});
+	await user.type(getByPlaceholderText('Search...'), '我的工作聚焦于人与产品、技术的交汇处。');
+
+	expect(await findAllByText('西瓜')).toHaveLength(2);
+	expect(container.querySelectorAll('.sy-list-preview__rows > *')).toHaveLength(2);
+});
+it('should preserve the selected result when result order changes', async () => {
+	const user = userEvent.setup();
+	const { container, getByPlaceholderText, getByText, findByText } = render(Search, {});
+	await user.type(getByPlaceholderText('Search...'), 'reorder');
+	await user.click(await findByText('西瓜'));
+
+	await user.click(getByText(/^(EN|PY|ZH)$/));
+	await findByText('香蕉');
+	await waitFor(() => {
+		const activeHeadline = container.querySelector(
+			'.sy-list-preview-item-container--active .sy-list-preview-item--headline'
+		);
+		expect(activeHeadline?.textContent).toContain('西瓜');
+	});
 });
 it('should display word details after clicking on the search result', async () => {
 	const user = userEvent.setup();

@@ -13,7 +13,7 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import type { SearchEntry } from '@/types/search.js';
+	import { searchResultKeys, type SearchEntry } from '@/types/search.js';
 	import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
@@ -34,9 +34,10 @@
 		input?.focus();
 	});
 
-	const searchResults = $derived(
-		search.fullResults.map((entry) => ({
-			key: lexicalDisplayId(entry),
+	const searchResults = $derived.by(() => {
+		const resultKeys = searchResultKeys(search.fullResults);
+		return search.fullResults.map((entry, index) => ({
+			key: resultKeys[index],
 			headline:
 				entry.traditional === entry.simplified
 					? entry.simplified
@@ -45,8 +46,8 @@
 			content: lexicalGlosses(entry).join('; '),
 			active: false,
 			word: entry,
-		}))
-	);
+		}));
+	});
 
 	function doSearch(text: string, clearable: boolean): void {
 		if (text) {

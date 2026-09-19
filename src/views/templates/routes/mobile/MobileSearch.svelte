@@ -15,8 +15,8 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import type { SearchEntry } from '@/types/search.js';
-	import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+	import { searchResultKeys, type SearchEntry } from '@/types/search.js';
+	import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
@@ -51,9 +51,10 @@
 		// If currentSnap is 'collapsed', the user manually dismissed the sheet — leave it closed.
 	});
 
-	const searchResultItems: SearchResultPreviewItem[] = $derived(
-		search.fullResults.map((entry, index) => ({
-			key: entry.id ? entry.id : `${lexicalDisplayId(entry)}:${index}`,
+	const searchResultItems: SearchResultPreviewItem[] = $derived.by(() => {
+		const resultKeys = searchResultKeys(search.fullResults);
+		return search.fullResults.map((entry, index) => ({
+			key: resultKeys[index],
 			headline:
 				entry.simplified !== entry.traditional
 					? `${entry.simplified} (${entry.traditional})`
@@ -61,8 +62,8 @@
 			subtitle: lexicalPinyin(entry).marks,
 			content: lexicalGlosses(entry).slice(0, 2).join('; '),
 			word: entry,
-		}))
-	);
+		}));
+	});
 
 	// Track the results array reference to detect when a new search completes. Initialised
 	// to the current reference so that on mount (with pre-existing results) the effect is a
