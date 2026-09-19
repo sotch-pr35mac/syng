@@ -37,7 +37,7 @@ const CHINESE_DICTIONARY_WORDNET_LICENSE: &str =
 const CHINESE_DICTIONARY_NOTICE: &str = include_str!("../../resources/licenses/NOTICE.md");
 const CHINESE_DICTIONARY_MANIFEST: &str = include_str!("../../resources/licenses/manifest.json");
 const WIKTIONARY_ATTRIBUTION_URL: &str =
-    "https://github.com/sotch-pr35mac/chinese_dictionary/blob/v4.1.0/data/wiktionary-attribution.json";
+    "https://github.com/sotch-pr35mac/chinese_dictionary/releases/download/v4.1.0/wiktionary-attribution-4.1.0.json";
 
 /// Returns the third-party attributions displayed in Settings → Acknowledgements, most relevant
 /// first. Syng's own license (with the App Store exception) is included so recipients always have
@@ -67,6 +67,12 @@ pub fn get_acknowledgements() -> Vec<Acknowledgement> {
             name: "Chinese dictionary sources and attribution".into(),
             license: "Source notices and manifest".into(),
             text: format!("{CHINESE_DICTIONARY_NOTICE}\n\n{CHINESE_DICTIONARY_MANIFEST}"),
+            url: None,
+        },
+        Acknowledgement {
+            name: "Wiktionary attribution".into(),
+            license: "chinese_dictionary v4.1.0 — contributor attribution".into(),
+            text: String::new(),
             url: Some(WIKTIONARY_ATTRIBUTION_URL.into()),
         },
         Acknowledgement {
@@ -187,7 +193,14 @@ mod tests {
             sources.text,
             format!("{CHINESE_DICTIONARY_NOTICE}\n\n{CHINESE_DICTIONARY_MANIFEST}")
         );
-        assert_eq!(sources.url.as_deref(), Some(WIKTIONARY_ATTRIBUTION_URL));
+        assert_eq!(sources.url, None);
+
+        let wiktionary = acknowledgements
+            .iter()
+            .find(|acknowledgement| acknowledgement.name == "Wiktionary attribution")
+            .expect("Wiktionary attribution acknowledgement");
+        assert_eq!(wiktionary.url.as_deref(), Some(WIKTIONARY_ATTRIBUTION_URL));
+        assert!(wiktionary.text.is_empty());
 
         let wordnet = acknowledgements
             .iter()

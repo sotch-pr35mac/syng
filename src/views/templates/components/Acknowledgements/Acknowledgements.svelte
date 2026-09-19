@@ -44,7 +44,12 @@
 		Syng is free and open-source software, built on the work of others. Each component below is
 		used under its own license; the full license texts also ship alongside the application.
 	</p>
-	<SyCollapsibleList items={acknowledgements} emptyText="No acknowledgements available.">
+	<SyCollapsibleList
+		items={acknowledgements}
+		emptyText="No acknowledgements available."
+		itemUrl={(item) => item.url}
+		onlinkclick={openAttribution}
+	>
 		{#snippet header(item)}
 			<span class="acknowledgements--heading">
 				<span class="acknowledgements--name">{item.name}</span>
@@ -53,15 +58,6 @@
 		{/snippet}
 		{#snippet detail(item)}
 			<pre class="acknowledgements--text sy-text--selectable">{item.text}</pre>
-			{#if item.url}
-				<a
-					class="acknowledgements--link"
-					href={item.url}
-					onclick={(event) => openAttribution(event, item)}
-				>
-					View attribution source
-				</a>
-			{/if}
 		{/snippet}
 	</SyCollapsibleList>
 </div>
@@ -103,10 +99,5 @@
 		word-break: break-word;
 		font-size: var(--sy-font-size--small);
 		line-height: 1.5;
-	}
-
-	.acknowledgements--link {
-		align-self: flex-start;
-		font-size: var(--sy-font-size--small);
 	}
 </style>

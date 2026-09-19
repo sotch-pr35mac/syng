@@ -6,7 +6,7 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 
 const WIKTIONARY_ATTRIBUTION_URL =
-	'https://github.com/sotch-pr35mac/chinese_dictionary/blob/v4.1.0/data/wiktionary-attribution.json';
+	'https://github.com/sotch-pr35mac/chinese_dictionary/releases/download/v4.1.0/wiktionary-attribution-4.1.0.json';
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 
@@ -24,14 +24,27 @@ beforeEach(() => {
 			name: 'Chinese dictionary sources and attribution',
 			license: 'Source notices and manifest',
 			text: 'Source notices',
+		},
+		{
+			name: 'Wiktionary attribution',
+			license: 'chinese_dictionary v4.1.0 — contributor attribution',
+			text: '',
 			url: WIKTIONARY_ATTRIBUTION_URL,
 		},
 	]);
 });
 
-it('renders an optional attribution link and opens it externally', async () => {
+it('opens the Wiktionary release artifact directly while keeping source notices expandable', async () => {
 	const user = userEvent.setup();
 	const acknowledgements = render(Acknowledgements);
+
+	const attributionLink = await waitFor(() =>
+		acknowledgements.getByRole('link', { name: /Wiktionary attribution/ })
+	);
+	expect(attributionLink.getAttribute('href')).toBe(WIKTIONARY_ATTRIBUTION_URL);
+	await user.click(attributionLink);
+	expect(openUrl).toHaveBeenCalledOnce();
+	expect(openUrl).toHaveBeenCalledWith(WIKTIONARY_ATTRIBUTION_URL);
 
 	const acknowledgementHeader = await waitFor(() =>
 		acknowledgements.getByRole('button', {
@@ -39,13 +52,5 @@ it('renders an optional attribution link and opens it externally', async () => {
 		})
 	);
 	await user.click(acknowledgementHeader);
-
-	const attributionLink = await waitFor(() =>
-		acknowledgements.getByRole('link', { name: 'View attribution source' })
-	);
-	expect(attributionLink.getAttribute('href')).toBe(WIKTIONARY_ATTRIBUTION_URL);
-
-	await user.click(attributionLink);
-	expect(openUrl).toHaveBeenCalledOnce();
-	expect(openUrl).toHaveBeenCalledWith(WIKTIONARY_ATTRIBUTION_URL);
+	expect(acknowledgements.getByText('Source notices')).toBeTruthy();
 });
