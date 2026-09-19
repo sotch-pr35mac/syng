@@ -13,6 +13,9 @@ beforeEach(async () => {
 		colorPinyinByTone: false,
 		colorListsByTone: false,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 	});
 	setPreferenceManagerForTest({
 		waitForInit: vi.fn(() => Promise.resolve()),
@@ -71,4 +74,29 @@ it('previews the selected HSK variant and hides the tag when HSK is disabled', a
 
 	dictionaryDisplaySettingsStore.setHskVariant('none');
 	await waitFor(() => expect(preview.queryByText(/^HSK:/)).toBeNull());
+});
+
+it('previews the selected dictionary metadata', async () => {
+	const preview = render(ChinesePreferencesPreview);
+
+	expect(preview.getByText('linguistics').getAttribute('title')).toBe('Domain');
+	expect(preview.getByText('Noun').closest('.chinese-preview__word')).toBeTruthy();
+	expect(preview.getByText('linguistics').closest('.chinese-preview__word')).toBeTruthy();
+	expect(preview.queryByLabelText('Alternative pronunciation')).toBeNull();
+
+	dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true);
+	await waitFor(() => {
+		expect(preview.getByLabelText('Alternative pronunciation')).toBeTruthy();
+		expect(
+			preview.container.querySelector('.chinese-preview__alternative-pronunciation')
+				?.textContent
+		).toContain('hàn yú');
+		expect(preview.getByText('(also pr.)')).toBeTruthy();
+	});
+
+	dictionaryDisplaySettingsStore.setShowQualifiers(false);
+	await waitFor(() => expect(preview.queryByText('linguistics')).toBeNull());
+
+	dictionaryDisplaySettingsStore.setShowPartsOfSpeech(false);
+	await waitFor(() => expect(preview.queryByText('Noun')).toBeNull());
 });
