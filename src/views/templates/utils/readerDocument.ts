@@ -55,7 +55,12 @@ export function tableCellTokenKey(blockId: string, row: number, col: number): st
 
 export type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
 
-/** Align the tokenizer's text or offset tokens with the source text used by reader rendering. */
+/**
+ * Converts native tokenizer output into UTF-16 offsets for a rendered block.
+ *
+ * Offset tokens preserve the native tokenizer's exact spans. Text-only tokens remain supported
+ * for compatibility with older native builds and are located in source order.
+ */
 export function alignReaderTokens(
 	text: string,
 	tokenTexts: Array<string | NativeReaderToken>,

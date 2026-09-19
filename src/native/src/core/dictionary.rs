@@ -69,6 +69,10 @@ pub fn query_by_ids(ids: Vec<String>) -> Vec<Option<dictionary::LexicalUnit>> {
     ids.into_iter().map(query_by_id).collect()
 }
 
+/// Field-based bookmark and import data from releases before schema 4.
+///
+/// Retained only to deserialize legacy records so they can be resolved to the current,
+/// versioned lexical IDs; new bookmarks and exports do not persist this representation.
 #[derive(Debug, Deserialize)]
 pub struct LegacyLexicalUnit {
     pub simplified: String,

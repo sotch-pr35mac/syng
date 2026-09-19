@@ -27,6 +27,7 @@ import {
 	LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 	parseLargeHtmlImportError,
 	tableCellTokenKey,
+	type NativeReaderToken,
 	type PrepareReaderImportInvokeArgs,
 } from '@/utils/readerDocument.js';
 import {
@@ -72,8 +73,6 @@ let lastPageTurnDirection = $state<'next' | 'previous' | undefined>(undefined);
 function participatesInLinearText(block: ReaderContentBlock): boolean {
 	return block.participates_in_linear_text !== false;
 }
-
-type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
 
 function getTelemetryErrorName(error: unknown): string {
 	return error instanceof Error ? error.name : typeof error;
