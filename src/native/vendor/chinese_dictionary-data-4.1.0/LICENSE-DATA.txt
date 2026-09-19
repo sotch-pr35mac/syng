@@ -1,0 +1,32 @@
+Syng combined dictionary bundle
+
+The selection, arrangement, schema, and build-authored metadata contributed by
+Syng Dictionary Creator are Copyright (C) 2026 Preston Wang-Stosur-Bassett.
+Upstream dictionary material remains copyright its respective contributors and
+licensors, as identified in NOTICE.md and manifest.json.
+
+The Syng-authored selection, arrangement, schema, metadata, and adapted
+material offered under compatible Creative Commons terms in the generated
+dictionary bundle are licensed under the Creative Commons
+Attribution-ShareAlike 4.0 International Public License (CC BY-SA 4.0):
+
+https://creativecommons.org/licenses/by-sa/4.0/
+
+You may share and adapt the CC-licensed material, including commercially, if
+you provide the required attribution, indicate changes, link to the license,
+and distribute adapted material under CC BY-SA 4.0 or another license
+permitted by its terms. Do not apply legal terms or effective technological
+measures that restrict the rights granted by the license. No warranties are
+given, and attribution does not imply endorsement.
+
+The English morphology mappings derived from Princeton WordNet 3.1 are not
+relicensed by this grant. They remain subject to the separate Princeton
+WordNet License, whose complete text is provided in LICENSE-WORDNET.txt.
+Redistributions containing WordNet-derived material must preserve that file,
+the WordNet copyright and disclaimer, and the attribution and citation
+information in NOTICE.md.
+
+This file is a notice and license grant, not a substitute for the legal code at
+the URL above. Redistributions must retain this file, LICENSE-WORDNET.txt,
+NOTICE.md, manifest.json, and wiktionary-attribution.json together with the
+dictionary data.

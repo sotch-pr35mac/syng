@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { handleError } from '@/utils/error.js';
 
@@ -10,6 +11,7 @@
 		name: string;
 		license: string;
 		text: string;
+		url?: string;
 	}
 
 	let acknowledgements = $state<Acknowledgement[]>([]);
@@ -24,6 +26,17 @@
 			handleError('Failed to load acknowledgements.', error);
 		}
 	});
+
+	function openAttribution(event: MouseEvent, acknowledgement: Acknowledgement): void {
+		event.preventDefault();
+		if (!acknowledgement.url) {
+			return;
+		}
+
+		openUrl(acknowledgement.url).catch((error) => {
+			handleError('Failed to open acknowledgement attribution.', error);
+		});
+	}
 </script>
 
 <div class="acknowledgements">
@@ -40,6 +53,15 @@
 		{/snippet}
 		{#snippet detail(item)}
 			<pre class="acknowledgements--text sy-text--selectable">{item.text}</pre>
+			{#if item.url}
+				<a
+					class="acknowledgements--link"
+					href={item.url}
+					onclick={(event) => openAttribution(event, item)}
+				>
+					View attribution source
+				</a>
+			{/if}
 		{/snippet}
 	</SyCollapsibleList>
 </div>
@@ -81,5 +103,10 @@
 		word-break: break-word;
 		font-size: var(--sy-font-size--small);
 		line-height: 1.5;
+	}
+
+	.acknowledgements--link {
+		align-self: flex-start;
+		font-size: var(--sy-font-size--small);
 	}
 </style>

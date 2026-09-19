@@ -549,8 +549,10 @@ mod tests {
     #[test]
     fn test_emit_event_skipped_when_globally_disabled() {
         let dir = TempDir::new().unwrap();
-        let mut prefs = TelemetryPrefs::default();
-        prefs.enabled = false;
+        let prefs = TelemetryPrefs {
+            enabled: false,
+            ..Default::default()
+        };
         let mut inner = make_inner(&dir, prefs);
 
         emit_event(EventFamily::Event, "test.event", json!({}), &mut inner).unwrap();
@@ -561,8 +563,10 @@ mod tests {
     #[test]
     fn test_emit_event_skipped_by_events_category() {
         let dir = TempDir::new().unwrap();
-        let mut prefs = TelemetryPrefs::default();
-        prefs.track_events = false;
+        let prefs = TelemetryPrefs {
+            track_events: false,
+            ..Default::default()
+        };
         let mut inner = make_inner(&dir, prefs);
 
         emit_event(EventFamily::Event, "test.event", json!({}), &mut inner).unwrap();
@@ -573,8 +577,10 @@ mod tests {
     #[test]
     fn test_emit_event_skipped_by_screen_view_category() {
         let dir = TempDir::new().unwrap();
-        let mut prefs = TelemetryPrefs::default();
-        prefs.track_screen_views = false;
+        let prefs = TelemetryPrefs {
+            track_screen_views: false,
+            ..Default::default()
+        };
         let mut inner = make_inner(&dir, prefs);
 
         emit_event(EventFamily::ScreenView, "home", json!({}), &mut inner).unwrap();
@@ -585,8 +591,10 @@ mod tests {
     #[test]
     fn test_emit_event_skipped_by_error_category() {
         let dir = TempDir::new().unwrap();
-        let mut prefs = TelemetryPrefs::default();
-        prefs.track_errors = false;
+        let prefs = TelemetryPrefs {
+            track_errors: false,
+            ..Default::default()
+        };
         let mut inner = make_inner(&dir, prefs);
 
         emit_event(EventFamily::Error, "crash", json!({}), &mut inner).unwrap();
@@ -650,8 +658,10 @@ mod tests {
     #[test]
     fn test_insert_event_omits_device_context_when_disabled() {
         let dir = TempDir::new().unwrap();
-        let mut prefs = TelemetryPrefs::default();
-        prefs.include_device_context = false;
+        let prefs = TelemetryPrefs {
+            include_device_context: false,
+            ..Default::default()
+        };
         let mut inner = make_inner(&dir, prefs);
 
         insert_event(EventFamily::Event, "test", json!({}), &mut inner).unwrap();
@@ -780,7 +790,7 @@ mod tests {
     #[test]
     fn test_device_id_is_valid_uuid() {
         let dir = TempDir::new().unwrap();
-        let id = get_or_create_device_id(&dir.path().to_path_buf()).unwrap();
+        let id = get_or_create_device_id(dir.path()).unwrap();
         assert!(uuid::Uuid::parse_str(&id).is_ok());
     }
 
@@ -791,9 +801,11 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let path = dir.path().to_path_buf();
 
-        let mut prefs = TelemetryPrefs::default();
-        prefs.enabled = false;
-        prefs.track_errors = false;
+        let prefs = TelemetryPrefs {
+            enabled: false,
+            track_errors: false,
+            ..Default::default()
+        };
 
         save_prefs(&path, &prefs).unwrap();
         let loaded = load_prefs(&path);
@@ -806,7 +818,7 @@ mod tests {
     #[test]
     fn test_load_prefs_returns_defaults_when_no_file() {
         let dir = TempDir::new().unwrap();
-        let prefs = load_prefs(&dir.path().to_path_buf());
+        let prefs = load_prefs(dir.path());
         let defaults = TelemetryPrefs::default();
 
         assert_eq!(prefs.enabled, defaults.enabled);

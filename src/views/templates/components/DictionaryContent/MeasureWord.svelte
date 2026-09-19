@@ -1,10 +1,6 @@
 <script lang="ts">
 	import DictionaryLink from '@/components/DictionaryContent/DictionaryLink.svelte';
-	import type {
-		ChineseVariety,
-		MeasureWordReference,
-		Sourced,
-	} from '@/types/dictionary.js';
+	import type { ChineseVariety, MeasureWordReference, Sourced } from '@/types/dictionary.js';
 
 	type DictionaryLinkDetail = {
 		text: string;
@@ -62,12 +58,8 @@
 		return 'value' in measureWord && typeof measureWord.value === 'object';
 	}
 
-	const measureWord = $derived(
-		isSourcedMeasureWord(value) ? value.value : value
-	);
-	const varieties = $derived(
-		(measureWord.varieties ?? []).map(formatVariety).filter(Boolean)
-	);
+	const measureWord = $derived(isSourcedMeasureWord(value) ? value.value : value);
+	const varieties = $derived((measureWord.varieties ?? []).map(formatVariety).filter(Boolean));
 
 	function handleOpenLink(event: { detail: DictionaryLinkDetail }): void {
 		onevent?.(event.detail);

@@ -1,0 +1,2 @@
+[env]
+CHINESE_DICTIONARY_DATA_DIR = { value = "vendor/chinese_dictionary-data-4.1.0", relative = true }
