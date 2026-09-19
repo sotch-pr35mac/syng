@@ -7,6 +7,7 @@
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
+	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
@@ -31,7 +32,7 @@
 		updateShowQualifiersPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
-	import { isIPad } from '@/utils/device.js';
+	import { isIPad, isMobile } from '@/utils/device.js';
 	import { getPreferenceManager } from '@/utils/appServices.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 
@@ -42,6 +43,19 @@
 	let isMasBuild = $state(false);
 
 	const preferences = [
+		...(isMobile()
+			? [
+					{
+						label: 'Bookmark Recovery',
+						devOnly: false,
+						hideOnIPad: false,
+						hideOnMas: false,
+						centerLabel: true,
+						component: BookmarkRecoverySettings,
+						props: {},
+					},
+				]
+			: []),
 		{
 			label: 'HSK',
 			devOnly: false,

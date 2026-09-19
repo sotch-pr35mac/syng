@@ -3,6 +3,7 @@
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 	import { handleError } from '@/utils/error.js';
+	import { isMobile } from '@/utils/device.js';
 
 	let saving = $state(false);
 	let copying = $state(false);
@@ -40,6 +41,9 @@
 			Some older bookmarks could not be matched to the current dictionary. Their details are
 			kept safely in this recovery report; review it, then re-add any words you still need.
 		</p>
+		{#if isMobile()}
+			<p>You can reopen saved reports in Settings under Bookmark Recovery.</p>
+		{/if}
 	{/snippet}
 	{#snippet footer()}
 		<SyButton onclick={copyReport} disabled={copying}>Copy</SyButton>

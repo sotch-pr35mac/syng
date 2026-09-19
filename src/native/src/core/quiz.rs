@@ -34,17 +34,14 @@ pub struct QuestionOption {
 }
 
 impl AnswerKind {
-    fn get_random(exclude: AnswerKind) -> Result<Self, String> {
-        let mut random = rng();
-        let options = match exclude {
+    fn get_random_order(exclude: AnswerKind) -> [Self; 2] {
+        let mut options = match exclude {
             AnswerKind::Pinyin => [AnswerKind::English, AnswerKind::Characters],
             AnswerKind::English => [AnswerKind::Pinyin, AnswerKind::Characters],
             AnswerKind::Characters => [AnswerKind::Pinyin, AnswerKind::English],
         };
+        options.shuffle(&mut rng());
         options
-            .choose(&mut random)
-            .copied()
-            .ok_or_else(|| "Could not choose a random answer type.".to_string())
     }
 }
 
@@ -100,12 +97,25 @@ fn get_question_answer_options(
     unit: &dictionary::LexicalUnit,
     units: &[dictionary::LexicalUnit],
 ) -> Result<QuestionAnswerOptions, String> {
-    let mut random = rng();
-    let answer_kind = AnswerKind::get_random(match question_kind {
+    let answer_kinds = AnswerKind::get_random_order(match question_kind {
         QuestionKind::Pinyin => AnswerKind::Pinyin,
         QuestionKind::English => AnswerKind::English,
         QuestionKind::Characters => AnswerKind::Characters,
-    })?;
+    });
+    for answer_kind in answer_kinds {
+        if let Ok(options) = build_question_answer_options(answer_kind, unit, units) {
+            return Ok(options);
+        }
+    }
+    Err("Not enough distinct answers in the list to generate quiz options.".to_string())
+}
+
+fn build_question_answer_options(
+    answer_kind: AnswerKind,
+    unit: &dictionary::LexicalUnit,
+    units: &[dictionary::LexicalUnit],
+) -> Result<QuestionAnswerOptions, String> {
+    let mut random = rng();
     let answer_option = build_question_option(answer_kind, unit, &mut random)?;
     let answer = answer_option.value.clone();
     let mut options = vec![answer_option];
@@ -218,8 +228,15 @@ pub fn generate_questions(
     let mut questions = Vec::new();
     for unit in units {
         for kind in kinds {
-            questions.extend(Question::new_multiple_choice(*kind, unit, units)?);
+            if let Ok(unit_questions) = Question::new_multiple_choice(*kind, unit, units) {
+                questions.extend(unit_questions);
+            }
         }
+    }
+    if questions.is_empty() {
+        return Err(
+            "Not enough distinct answers in the list to generate quiz questions.".to_string(),
+        );
     }
     questions.shuffle(&mut rng());
     Ok(questions)
@@ -408,6 +425,64 @@ mod tests {
         assert_eq!(option.value, "实验 (實驗)");
         assert!(option.characters.is_some());
     }
+
+    fn homophone_units() -> Vec<dictionary::LexicalUnit> {
+        ["他", "她", "我", "你"]
+            .into_iter()
+            .map(|characters| {
+                dictionary::query_by_chinese(characters)
+                    .into_iter()
+                    .next()
+                    .unwrap()
+                    .to_owned()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn homophones_fall_back_to_english_answers() {
+        let units = homophone_units();
+        assert!(build_question_answer_options(AnswerKind::Pinyin, &units[0], &units).is_err());
+        for _ in 0..100 {
+            let questions = generate_questions(&units, &[QuestionKind::Characters]).unwrap();
+            assert_eq!(questions.len(), units.len());
+            for question in questions {
+                let Question::MultipleChoice {
+                    answer, options, ..
+                } = question;
+                assert_eq!(options.len(), 4);
+                assert_eq!(
+                    options
+                        .iter()
+                        .filter(|option| option.value == answer)
+                        .count(),
+                    1
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn unconstructable_questions_do_not_discard_usable_questions() {
+        let mut units = homophone_units();
+        for unit in &mut units {
+            unit.simplified = "同".to_string();
+            unit.traditional = "同".to_string();
+            unit.pinyin.marks = "tóng".to_string();
+        }
+        let questions =
+            generate_questions(&units, &[QuestionKind::English, QuestionKind::Characters]).unwrap();
+        assert_eq!(questions.len(), units.len());
+        assert!(questions.iter().all(|question| matches!(
+            question,
+            Question::MultipleChoice {
+                kind: QuestionKind::Characters,
+                ..
+            }
+        )));
+        assert!(generate_questions(&units, &[QuestionKind::English]).is_err());
+    }
+
     #[test]
     fn invalid_lexical_id_is_rejected() {
         let config = QuizConfig {

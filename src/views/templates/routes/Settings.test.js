@@ -8,6 +8,9 @@ import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+import { isIPad, isMobile } from '@/utils/device.js';
+import { invoke } from '@tauri-apps/api/core';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 
 vi.mock('@/components/SettingsOption/UpdateChecker.svelte', async () => ({
 	default: (await import('@/components/__mocks__/FeatherIcon.svelte')).default,
@@ -23,8 +26,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@/utils/device.js', () => ({
-	isMobile: () => false,
-	isIPad: () => false,
+	isMobile: vi.fn(() => false),
+	isIPad: vi.fn(() => false),
 	isIos: () => false,
 	isAndroid: () => false,
 	isMobileLayout: () => false,
@@ -55,6 +58,9 @@ const toneColors = {
 let preferenceManager;
 
 beforeEach(async () => {
+	vi.mocked(isMobile).mockReturnValue(false);
+	vi.mocked(isIPad).mockReturnValue(false);
+	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
 	databaseMigrationStore.resetForTest();
 	const preferences = {
@@ -82,6 +88,18 @@ beforeEach(async () => {
 		completedOnboardingVersion: 1,
 	});
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('reopens saved recovery reports from iPad settings', async () => {
+	vi.mocked(isMobile).mockReturnValue(true);
+	vi.mocked(isIPad).mockReturnValue(true);
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'read_bookmark_recovery_report' ? 'Saved iPad report' : false
+	);
+	const user = userEvent.setup();
+	const { getByRole } = render(Settings);
+	await user.click(getByRole('button', { name: 'View recovery reports' }));
+	expect(bookmarkRecoveryStore.report).toBe('Saved iPad report');
 });
 
 it('starts a dismissible database migration preview from development settings', async () => {

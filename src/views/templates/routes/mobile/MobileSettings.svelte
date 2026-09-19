@@ -11,6 +11,7 @@
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
+	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import {
@@ -105,6 +106,10 @@
 			<section class="mobile-settings__section" aria-labelledby="tone-colors-heading">
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
+			</section>
+			<section class="mobile-settings__section" aria-labelledby="bookmark-recovery-heading">
+				<h2 id="bookmark-recovery-heading">Bookmark Recovery</h2>
+				<BookmarkRecoverySettings />
 			</section>
 			{#if showDevPreferences}
 				<section class="mobile-settings__section" aria-labelledby="migration-heading">

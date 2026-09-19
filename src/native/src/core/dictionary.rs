@@ -89,9 +89,8 @@ pub struct LegacyLexicalUnitResolution {
 
 /// Converts legacy bookmark/import fields into a canonical schema-4 unit.
 ///
-/// We always try `LexicalId::new` first and validate it against the current archive. The old
-/// matching heuristic is intentionally only a fallback for legacy records whose Pinyin cannot
-/// construct an identity, and it succeeds only when exactly one current unit matches.
+/// Validate a constructed lexical ID first, then use spelling, tones, and actual glosses
+/// to resolve legacy records without guessing between multiple readings.
 pub fn resolve_legacy_lexical_unit(legacy: LegacyLexicalUnit) -> LegacyLexicalUnitResolution {
     if let Ok(id) = dictionary::LexicalId::new(
         &legacy.simplified,
@@ -106,7 +105,7 @@ pub fn resolve_legacy_lexical_unit(legacy: LegacyLexicalUnit) -> LegacyLexicalUn
         }
     }
 
-    let matches = dictionary::query_by_chinese(&legacy.traditional)
+    let mut matches = dictionary::query_by_chinese(&legacy.traditional)
         .into_iter()
         .filter(|unit| {
             unit.simplified() == legacy.simplified && unit.traditional() == legacy.traditional
@@ -114,8 +113,21 @@ pub fn resolve_legacy_lexical_unit(legacy: LegacyLexicalUnit) -> LegacyLexicalUn
         .filter(|unit| {
             legacy.tone_marks.is_empty() || unit.pinyin().tones() == legacy.tone_marks.as_slice()
         })
-        .filter(|unit| legacy.english.is_empty() || unit.english().count() == legacy.english.len())
         .collect::<Vec<_>>();
+
+    if matches.len() > 1 {
+        let legacy_glosses = legacy
+            .english
+            .iter()
+            .map(|gloss| normalize_legacy_gloss(gloss))
+            .filter(|gloss| !gloss.is_empty())
+            .collect::<Vec<_>>();
+        matches.retain(|unit| {
+            unit.english().any(|definition| {
+                legacy_glosses.contains(&normalize_legacy_gloss(definition.gloss().value()))
+            })
+        });
+    }
 
     match matches.as_slice() {
         [unit] => LegacyLexicalUnitResolution {
@@ -135,6 +147,14 @@ pub fn resolve_legacy_lexical_unit(legacy: LegacyLexicalUnit) -> LegacyLexicalUn
     }
 }
 
+fn normalize_legacy_gloss(gloss: &str) -> String {
+    gloss
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
 #[tauri::command]
 pub fn resolve_legacy_lexical_units(
     entries: Vec<LegacyLexicalUnit>,
@@ -143,23 +163,6 @@ pub fn resolve_legacy_lexical_units(
         .into_iter()
         .map(resolve_legacy_lexical_unit)
         .collect()
-}
-
-#[cfg(test)]
-pub fn find_best_match(
-    traditional: &str,
-    simplified: &str,
-    tone_marks: &[u8],
-    en_len: usize,
-) -> Option<dictionary::LexicalUnitRef<'static>> {
-    dictionary::query_by_chinese(traditional)
-        .into_iter()
-        .find(|result| {
-            result.traditional() == traditional
-                && result.simplified() == simplified
-                && result.pinyin().tones() == tone_marks
-                && result.english().count() == en_len
-        })
 }
 
 #[cfg(test)]
@@ -237,17 +240,60 @@ mod tests {
     }
 
     #[test]
-    fn test_best_match() {
-        assert_eq!(
-            find_best_match("上水", "上水", &[4u8, 3u8], 4)
-                .unwrap()
-                .traditional(),
-            "上水"
-        );
+    fn legacy_bank_resolves_despite_expanded_definitions() {
+        for english in [vec!["bank".to_string()], vec![]] {
+            let resolution = resolve_legacy_lexical_unit(LegacyLexicalUnit {
+                simplified: "银行".to_string(),
+                traditional: "銀行".to_string(),
+                pinyin_numbers: String::new(),
+                tone_marks: vec![2, 2],
+                english,
+            });
+            assert_eq!(resolution.unit.unwrap().pinyin.numbers, "yin2hang2");
+        }
     }
+
     #[test]
-    fn test_best_match_no_match() {
-        assert_eq!(find_best_match("上水", "水上", &[], 1), None);
+    fn legacy_readings_are_disambiguated_by_glosses_not_counts() {
+        let resolution = resolve_legacy_lexical_unit(LegacyLexicalUnit {
+            simplified: "数".to_string(),
+            traditional: "數".to_string(),
+            pinyin_numbers: String::new(),
+            tone_marks: vec![4],
+            english: vec!["  NUMBER ".to_string(), "figure".to_string()],
+        });
+        assert_eq!(resolution.unit.unwrap().pinyin.numbers, "shu4");
+    }
+
+    #[test]
+    fn legacy_readings_without_unique_gloss_evidence_remain_unresolved() {
+        for english in [
+            vec![],
+            vec!["not a dictionary gloss".to_string()],
+            vec!["number".to_string(), "frequently".to_string()],
+        ] {
+            let resolution = resolve_legacy_lexical_unit(LegacyLexicalUnit {
+                simplified: "数".to_string(),
+                traditional: "數".to_string(),
+                pinyin_numbers: String::new(),
+                tone_marks: vec![4],
+                english,
+            });
+            assert!(resolution.unit.is_none());
+            assert!(resolution.reason.is_some());
+        }
+    }
+
+    #[test]
+    fn validated_lexical_identity_takes_precedence_over_legacy_glosses() {
+        let resolution = resolve_legacy_lexical_unit(LegacyLexicalUnit {
+            simplified: "数".to_string(),
+            traditional: "數".to_string(),
+            pinyin_numbers: "shu4".to_string(),
+            tone_marks: vec![4],
+            english: vec!["frequently".to_string()],
+        });
+        assert_eq!(resolution.unit.unwrap().pinyin.numbers, "shu4");
     }
 
     #[test]

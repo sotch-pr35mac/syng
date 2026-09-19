@@ -8,6 +8,16 @@ use tauri_plugin_fs::{FilePath, FsExt, OpenOptions};
 
 const RECOVERY_REPORT_FILE_NAME: &str = "Syng bookmark recovery report.txt";
 
+/// Reopens the durable mobile report, including reports saved by previous app versions.
+#[tauri::command]
+pub fn read_bookmark_recovery_report(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let directory = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Could not locate app data for the recovery report: {error}"))?;
+    super::migration::read_optional_text_file(&directory.join(RECOVERY_REPORT_FILE_NAME))
+}
+
 #[derive(Debug, Deserialize, Serialize, Clone, Copy, PartialEq, Eq)]
 pub enum BookmarksExportVersion {
     V1,
@@ -120,13 +130,29 @@ fn write_recovery_report_to_path(path: &Path, report: &str) -> Result<(), String
         std::fs::create_dir_all(parent)
             .map_err(|error| format!("Could not create the recovery report directory: {error}"))?;
     }
-    std::fs::write(path, report)
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|error| format!("Could not open the recovery report file: {error}"))?;
+    let separator = if file
+        .metadata()
+        .map_err(|error| format!("Could not inspect the recovery report file: {error}"))?
+        .len()
+        > 0
+    {
+        "\n\n==========\n\n"
+    } else {
+        ""
+    };
+    file.write_all(format!("{separator}{report}").as_bytes())
         .map_err(|error| format!("Could not write the recovery report: {error}"))
 }
 
 /// Persists recovery details before migration or import removes an unresolved legacy entry.
 /// Desktop prefers the user's Desktop and falls back to a Save dialog. Mobile uses app data,
 /// while the frontend immediately presents Copy and Save actions for a user-controlled copy.
+/// Automatic saves append to the report so earlier imports remain recoverable.
 #[tauri::command(async)]
 pub async fn persist_bookmark_recovery_report(
     app: tauri::AppHandle,
@@ -277,15 +303,27 @@ fn parse_legacy_archive(file: &str) -> Result<BookmarksExport, String> {
 }
 
 fn parse_v1_archive(file: &str) -> Result<BookmarksExport, String> {
+    let mut recognized_records = 0;
     let (resolved, unresolved): (Vec<_>, Vec<_>) = file
         .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| {
-            serde_json::from_str::<LegacyV1BookmarkEntry>(line)
-                .map_err(|error| format!("Could not read a V1 entry: {error}"))
-                .and_then(resolve_v1_entry)
-        })
+        .enumerate()
+        .filter(|(_, line)| !line.trim().is_empty())
+        .map(
+            |(index, line)| match serde_json::from_str::<LegacyV1BookmarkEntry>(line) {
+                Ok(entry) => {
+                    recognized_records += 1;
+                    resolve_v1_entry(entry)
+                }
+                Err(error) => Err(format!(
+                    "Could not read a V1 entry on line {}: {error}\nOriginal data:\n{line}",
+                    index + 1
+                )),
+            },
+        )
         .partition(Result::is_ok);
+    if recognized_records == 0 {
+        return Err("No recognizable V1 vocabulary records were found in this file.".to_string());
+    }
     let report = unresolved
         .into_iter()
         .filter_map(Result::err)
@@ -295,6 +333,21 @@ fn parse_v1_archive(file: &str) -> Result<BookmarksExport, String> {
         entries: merge_entries(resolved.into_iter().filter_map(Result::ok).collect()),
         recovery_report: (!report.is_empty()).then(|| format!("Some imported vocabulary could not be recovered. Please re-add these entries manually.\n\n{}", report.join("\n\n==========\n\n"))),
     })
+}
+
+fn parse_import_archive(file_name: &str, content: &str) -> Result<BookmarksExport, String> {
+    let file_name = file_name.to_ascii_lowercase();
+    if file_name.ends_with(".sld") {
+        parse_v1_archive(content)
+    } else if file_name.ends_with(".syli") {
+        parse_bookmarks_export(content)
+    } else {
+        parse_bookmarks_export(content).or_else(|archive_error| {
+            parse_v1_archive(content).map_err(|legacy_error| {
+                format!("Could not parse vocabulary archive: {archive_error}\n{legacy_error}")
+            })
+        })
+    }
 }
 
 fn parse_bookmarks_export(file: &str) -> Result<BookmarksExport, String> {
@@ -378,12 +431,7 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
         .fs()
         .read_to_string(file_path.clone())
         .map_err(|error| format!("Failed to read from file: {error}"))?;
-    let is_v1 = file_path.to_string().ends_with(".sld");
-    let export = if is_v1 {
-        parse_v1_archive(&content)
-    } else {
-        parse_bookmarks_export(&content).or_else(|_| parse_v1_archive(&content))
-    }?;
+    let export = parse_import_archive(&file_path.to_string(), &content)?;
     if let Some(report) = &export.recovery_report {
         persist_bookmark_recovery_report(app.clone(), report.clone()).await?;
     }
@@ -393,6 +441,116 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn automatic_recovery_reports_preserve_previous_imports() {
+        let directory = tempfile::tempdir().unwrap();
+        let report_path = directory
+            .path()
+            .join("reports")
+            .join(RECOVERY_REPORT_FILE_NAME);
+        let first_report = "First import: unresolved 他 with a personal note";
+        let second_report = "Second import: unresolved 她 with another note";
+
+        write_recovery_report_to_path(&report_path, first_report).unwrap();
+        assert_eq!(std::fs::read_to_string(&report_path).unwrap(), first_report);
+        write_recovery_report_to_path(&report_path, second_report).unwrap();
+        assert_eq!(
+            std::fs::read_to_string(&report_path).unwrap(),
+            format!("{first_report}\n\n==========\n\n{second_report}")
+        );
+        assert_eq!(
+            super::super::migration::read_optional_text_file(&report_path).unwrap(),
+            Some(format!("{first_report}\n\n==========\n\n{second_report}"))
+        );
+    }
+
+    #[test]
+    fn unreadable_recovery_report_is_an_error() {
+        let directory = tempfile::tempdir().unwrap();
+        assert!(super::super::migration::read_optional_text_file(directory.path()).is_err());
+    }
+
+    #[test]
+    fn malformed_archives_are_rejected_instead_of_imported_as_empty_lists() {
+        for file_name in [
+            "broken.syli",
+            "BROKEN.SYLI",
+            "broken.sld",
+            "document",
+            "document.bin",
+        ] {
+            for content in ["", " \n ", "not JSON", "{\"meta\":", "{}"] {
+                assert!(
+                    parse_import_archive(file_name, content).is_err(),
+                    "{file_name}: {content}"
+                );
+            }
+        }
+        let truncated = "{\"meta\": {\"version\": \"V4\"}, \"entries\": [";
+        assert_eq!(
+            parse_import_archive("broken.syli", truncated).unwrap_err(),
+            parse_bookmarks_export(truncated).unwrap_err()
+        );
+    }
+
+    #[test]
+    fn recognizable_v1_records_are_required_for_fallback() {
+        let record = serde_json::json!({
+            "traditional": "銀行", "simplified": "银行",
+            "definitions": ["bank"], "toneMarks": [2, 2], "notes": "My bank"
+        })
+        .to_string();
+        for file_name in ["bank.sld", "BANK.SLD", "document", "document.bin"] {
+            let archive = parse_import_archive(file_name, &record).unwrap();
+            assert_eq!(archive.entries.len(), 1);
+            assert_eq!(archive.entries[0].notes, "My bank");
+        }
+        assert!(parse_import_archive("bank.syli", &record).is_err());
+    }
+
+    #[test]
+    fn unresolved_v1_records_still_produce_a_recovery_report() {
+        let record = serde_json::json!({
+            "traditional": "not a word", "simplified": "not a word", "notes": "Keep my note"
+        })
+        .to_string();
+        let archive = parse_import_archive("document", &record).unwrap();
+        assert!(archive.entries.is_empty());
+        assert!(archive.recovery_report.unwrap().contains("Keep my note"));
+    }
+
+    #[test]
+    fn partially_malformed_v1_archives_preserve_original_lines() {
+        let record = serde_json::json!({
+            "traditional": "銀行", "simplified": "银行",
+            "definitions": ["bank"], "toneMarks": [2, 2]
+        });
+        let malformed = "{\"notes\": \"recover this truncated note";
+        let archive =
+            parse_import_archive("list.sld", &format!("{record}\n\n{malformed}")).unwrap();
+        assert_eq!(archive.entries.len(), 1);
+        let report = archive.recovery_report.unwrap();
+        assert!(report.contains("line 3"));
+        assert!(report.contains(malformed));
+    }
+
+    #[test]
+    fn empty_versioned_archives_remain_valid() {
+        for version in ["V2", "V3", "V4"] {
+            let archive = serde_json::json!({
+                "meta": {"version": version, "name": "Empty list"}, "entries": []
+            })
+            .to_string();
+            for file_name in ["empty.syli", "EMPTY.SYLI", "document"] {
+                let parsed = parse_import_archive(file_name, &archive).unwrap();
+                assert!(parsed.entries.is_empty());
+                assert!(parsed.recovery_report.is_none());
+                assert_eq!(parsed.meta.name, "Empty list");
+            }
+        }
+    }
+
     #[test]
     fn v4_export_contains_only_identity_and_notes() {
         let export = BookmarksExport {

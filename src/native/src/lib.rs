@@ -16,10 +16,11 @@ use core::{
     import_reader_document, init_dictionary, is_dev_build, is_mas_build,
     persist_bookmark_recovery_report, pinyinify, prepare_reader_import, prettify_pinyin, query,
     query_by_chinese, query_by_english, query_by_id, query_by_ids, query_by_pinyin,
-    read_legacy_migration_file, resolve_legacy_lexical_units, save_bookmark_recovery_report,
-    score_quiz, start_quiz, telemetry_get_prefs, telemetry_get_queued_events, telemetry_init,
-    telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
-    tokenize_pinyin, tokenize_reader_text, QuizState, TelemetryManager,
+    read_bookmark_recovery_report, read_legacy_migration_file, resolve_legacy_lexical_units,
+    save_bookmark_recovery_report, score_quiz, start_quiz, telemetry_get_prefs,
+    telemetry_get_queued_events, telemetry_init, telemetry_set_pref, telemetry_track_error,
+    telemetry_track_event, telemetry_track_screen, tokenize_pinyin, tokenize_reader_text,
+    QuizState, TelemetryManager,
 };
 #[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
@@ -95,6 +96,7 @@ pub fn run() {
             export_list_data,
             import_list_data,
             persist_bookmark_recovery_report,
+            read_bookmark_recovery_report,
             save_bookmark_recovery_report,
             import_reader_document,
             prepare_reader_import,
@@ -137,6 +139,7 @@ pub fn run() {
             export_list_data,
             import_list_data,
             persist_bookmark_recovery_report,
+            read_bookmark_recovery_report,
             save_bookmark_recovery_report,
             import_reader_document,
             prepare_reader_import,

@@ -34,6 +34,7 @@ export const NATIVE_COMMANDS = {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
 		PERSIST_RECOVERY_REPORT: 'persist_bookmark_recovery_report',
+		READ_RECOVERY_REPORT: 'read_bookmark_recovery_report',
 		SAVE_RECOVERY_REPORT: 'save_bookmark_recovery_report',
 	},
 	MIGRATION: {

@@ -17,6 +17,15 @@ async function save(): Promise<void> {
 	await invoke(NATIVE_COMMANDS.BOOKMARKS.SAVE_RECOVERY_REPORT, { report });
 }
 
+async function openSaved(): Promise<boolean> {
+	const savedReport = await invoke<string | null>(NATIVE_COMMANDS.BOOKMARKS.READ_RECOVERY_REPORT);
+	if (!savedReport?.trim()) {
+		return false;
+	}
+	report = savedReport;
+	return true;
+}
+
 export const bookmarkRecoveryStore = {
 	get active(): boolean {
 		return report !== null;
@@ -32,6 +41,7 @@ export const bookmarkRecoveryStore = {
 	},
 	copy,
 	save,
+	openSaved,
 	resetForTest(): void {
 		report = null;
 	},

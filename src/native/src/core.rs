@@ -33,7 +33,7 @@ pub use dictionary::{
 };
 pub use io::{
     export_list_data, import_list_data, persist_bookmark_recovery_report,
-    save_bookmark_recovery_report,
+    read_bookmark_recovery_report, save_bookmark_recovery_report,
 };
 pub use migration::read_legacy_migration_file;
 pub use quiz::{
