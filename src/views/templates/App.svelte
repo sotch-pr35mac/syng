@@ -19,6 +19,7 @@
 	import { updateStore } from '@/stores/update.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 
 	runStartupActions();
 
@@ -140,6 +141,13 @@
 		onaction={handleUpdateAction}
 		ondismiss={() => (showUpdateToast = false)}
 	/>
+	{#if bookmarkRecoveryStore.active}
+		{#await import('@/components/BookmarkRecovery/BookmarkRecovery.svelte')}
+			<!-- Recovery details are already durable; load the blocking UI lazily. -->
+		{:then BookmarkRecoveryModule}
+			<BookmarkRecoveryModule.default />
+		{/await}
+	{/if}
 {/if}
 
 <style>

@@ -76,6 +76,9 @@ beforeEach(async () => {
 		colorPinyinByTone: false,
 		colorListsByTone: false,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
 	});
@@ -141,6 +144,14 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 
 	expect(queryByLabelText('First Tone')).toBeNull();
 	expect(getByLabelText('Apply tone coloring to lists')).toBeTruthy();
+	expect(getByLabelText('Show qualifiers')).toBeTruthy();
+	expect(getByLabelText('Show parts of speech')).toBeTruthy();
+	expect(getByLabelText('Show alternative pronunciations')).toBeTruthy();
+	expect((getByLabelText('Show qualifiers') as HTMLInputElement).checked).toBe(true);
+	expect((getByLabelText('Show parts of speech') as HTMLInputElement).checked).toBe(true);
+	expect((getByLabelText('Show alternative pronunciations') as HTMLInputElement).checked).toBe(
+		false
+	);
 	expect(getByText('List result')).toBeTruthy();
 	expect(
 		(getByRole('radio', { name: 'HSK Exam Syllabus 2025' }) as HTMLInputElement).checked

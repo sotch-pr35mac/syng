@@ -19,6 +19,9 @@ export const NATIVE_COMMANDS = {
 		QUERY_BY_ENGLISH: 'query_by_english',
 		QUERY_BY_PINYIN: 'query_by_pinyin',
 		QUERY_BY_CHINESE: 'query_by_chinese',
+		QUERY_BY_ID: 'query_by_id',
+		QUERY_BY_IDS: 'query_by_ids',
+		RESOLVE_LEGACY_LEXICAL_UNITS: 'resolve_legacy_lexical_units',
 	},
 	QUIZ: {
 		START: 'start_quiz',
@@ -30,7 +33,9 @@ export const NATIVE_COMMANDS = {
 	BOOKMARKS: {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
-		GET_HSK_LEVELS: 'get_hsk_levels',
+		PERSIST_RECOVERY_REPORT: 'persist_bookmark_recovery_report',
+		READ_RECOVERY_REPORT: 'read_bookmark_recovery_report',
+		SAVE_RECOVERY_REPORT: 'save_bookmark_recovery_report',
 	},
 	MIGRATION: {
 		READ_LEGACY_MIGRATION_FILE: 'read_legacy_migration_file',

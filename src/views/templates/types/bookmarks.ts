@@ -9,6 +9,6 @@ export type BookmarkListMembershipOperation =
 /** Successful bookmark list-membership mutation reported by dictionary content. */
 export type BookmarkListMembershipEvent = {
 	listName: string;
-	wordHash: string;
+	lexicalId: string;
 	operation: BookmarkListMembershipOperation;
 };

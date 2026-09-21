@@ -7,7 +7,7 @@
 	import type { BookmarkListMembershipEvent } from '@/types/bookmarks.js';
 	import { isMobileLayout } from '@/utils/device.js';
 	import {
-		getDictionaryLookupText,
+		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
 
@@ -44,8 +44,13 @@
 	const showDots = $derived(!mobile && results.length <= MAX_DOT_RESULTS);
 	const handleContentLink = (request: DictionaryLookupRequest) => {
 		// Keep nested popover lookups anchored to the original trigger instead of
-		// moving the popover arrow to a link inside the popover itself.
-		onlink?.(getDictionaryLookupText(request));
+		// moving the popover arrow to a link inside the popover itself, while
+		// retaining a reference's direct lexical lookup when one is available.
+		const lookup = normalizeDictionaryLookupRequest(request);
+		onlink?.({
+			text: lookup.text,
+			...(lookup.lexicalId ? { lexicalId: lookup.lexicalId } : {}),
+		});
 	};
 </script>
 

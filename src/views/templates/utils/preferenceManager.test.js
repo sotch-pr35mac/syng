@@ -40,6 +40,9 @@ it('backfills newer settings into existing preference documents', async () => {
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
 	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
+	expect(manager.get('showQualifiers')).toBe(true);
+	expect(manager.get('showPartsOfSpeech')).toBe(true);
+	expect(manager.get('showAlternativePronunciations')).toBe(false);
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
@@ -80,6 +83,9 @@ it('uses dictionary display defaults for new preference documents', async () => 
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
 	expect(manager.get('hskVariant')).toBe('hsk_exam_syllabus_2025');
+	expect(manager.get('showQualifiers')).toBe(true);
+	expect(manager.get('showPartsOfSpeech')).toBe(true);
+	expect(manager.get('showAlternativePronunciations')).toBe(false);
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);

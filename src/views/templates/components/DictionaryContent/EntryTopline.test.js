@@ -16,6 +16,32 @@ const TEST_WORD_IDENTICAL = {
 	tone_marks: [1, 2],
 	pinyin_marks: 'a1 b2',
 };
+const TEST_WORD_WITH_ALTERNATIVES = {
+	...TEST_WORD_IDENTICAL,
+	alternative_pronunciations: [
+		{
+			value: {
+				pronunciation: { marks: 'hàn yǔ', numbers: 'han4 yu3', tones: [4, 3] },
+				label: 'Taiwan pr.',
+			},
+			sources: ['wiktionary'],
+		},
+	],
+	english: [
+		{
+			gloss: 'meaning',
+			alternative_pronunciations: [
+				{
+					value: {
+						pronunciation: { marks: 'should not show', numbers: '', tones: [] },
+						label: 'Gloss alternative',
+					},
+					sources: ['cc-cedict'],
+				},
+			],
+		},
+	],
+};
 
 let preferenceManager;
 
@@ -24,6 +50,7 @@ beforeEach(async () => {
 		characterSet: 'both',
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
+		showAlternativePronunciations: false,
 	};
 	preferenceManager = {
 		waitForInit: vi.fn(() => Promise.resolve()),
@@ -121,6 +148,28 @@ it('updates an already-mounted entry immediately when the character preference c
 
 	expect(getByTestId('lexical-traditional').textContent).toBe('CD');
 	expect(queryByTestId('lexical-simplified')).toBeNull();
+});
+
+it('renders only top-level alternative pronunciations when enabled', () => {
+	dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true);
+	const { container, getByTestId, getByText } = render(EntryTopline, {
+		word: TEST_WORD_WITH_ALTERNATIVES,
+	});
+
+	const alternativeLabel = getByTestId('alternative-pronunciation-label');
+	expect(alternativeLabel.textContent).toBe('alt');
+	expect(alternativeLabel.getAttribute('title')).toBeNull();
+	expect(getByText('hàn yǔ')).toBeTruthy();
+	expect(container.textContent).toContain('(Taiwan pr.)');
+	expect(container.textContent).not.toContain('should not show');
+});
+
+it('does not render alternative pronunciations by default', () => {
+	const { queryByTestId } = render(EntryTopline, {
+		word: TEST_WORD_WITH_ALTERNATIVES,
+	});
+
+	expect(queryByTestId('alternative-pronunciation-label')).toBeNull();
 });
 
 it.each([

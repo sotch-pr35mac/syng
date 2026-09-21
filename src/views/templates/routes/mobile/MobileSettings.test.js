@@ -8,6 +8,10 @@ import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+import { invoke } from '@tauri-apps/api/core';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
+
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(() => Promise.resolve(false)) }));
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
@@ -33,6 +37,7 @@ const toneColors = {
 let preferenceManager;
 
 beforeEach(async () => {
+	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
 	databaseMigrationStore.resetForTest();
 	preferenceManager = {
@@ -60,6 +65,16 @@ beforeEach(async () => {
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('reopens saved recovery reports from phone settings', async () => {
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'read_bookmark_recovery_report' ? 'Saved phone report' : false
+	);
+	const user = userEvent.setup();
+	const { getByRole } = render(MobileSettings);
+	await user.click(getByRole('button', { name: 'View recovery reports' }));
+	expect(bookmarkRecoveryStore.report).toBe('Saved phone report');
 });
 
 it('starts a dismissible database migration preview from development settings', async () => {

@@ -18,6 +18,7 @@ import {
 import { handleError, telemetry } from '@/utils';
 import {
 	applyReaderImportMetadata,
+	alignReaderTokens,
 	ensureReaderDocumentForRendering,
 	getTableExtension,
 	invokeImportReaderDocument,
@@ -26,6 +27,7 @@ import {
 	LARGE_HTML_IMPORT_CANCELED_MESSAGE,
 	parseLargeHtmlImportError,
 	tableCellTokenKey,
+	type NativeReaderToken,
 	type PrepareReaderImportInvokeArgs,
 } from '@/utils/readerDocument.js';
 import {
@@ -72,8 +74,6 @@ function participatesInLinearText(block: ReaderContentBlock): boolean {
 	return block.participates_in_linear_text !== false;
 }
 
-type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
-
 function getTelemetryErrorName(error: unknown): string {
 	return error instanceof Error ? error.name : typeof error;
 }
@@ -92,30 +92,6 @@ function trackImportFailed(
 		.catch(() => {});
 }
 
-function alignTokens(
-	text: string,
-	tokenTexts: Array<string | NativeReaderToken>,
-	blockId: string
-): ReaderToken[] {
-	const tokens: ReaderToken[] = [];
-	let cursor = 0;
-	for (const nativeToken of tokenTexts) {
-		if (typeof nativeToken !== 'string') {
-			tokens.push({ ...nativeToken, block_id: blockId });
-			continue;
-		}
-		const tokenText = nativeToken;
-		const start = text.indexOf(tokenText, cursor);
-		if (start < 0) {
-			continue;
-		}
-		const end = start + tokenText.length;
-		tokens.push({ text: tokenText, start, end, block_id: blockId });
-		cursor = end;
-	}
-	return tokens;
-}
-
 async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> {
 	if (!participatesInLinearText(block)) {
 		return [];
@@ -126,7 +102,7 @@ async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> 
 			text: block.text,
 		}
 	);
-	return alignTokens(block.text, tokenTexts, block.id);
+	return alignReaderTokens(block.text, tokenTexts, block.id);
 }
 
 async function tokenizeTableCell(
@@ -141,7 +117,7 @@ async function tokenizeTableCell(
 			text,
 		}
 	);
-	const base = alignTokens(text, tokenTexts, blockId);
+	const base = alignReaderTokens(text, tokenTexts, blockId);
 	return base.map((token) => ({
 		...token,
 		table_cell: { row, col },
@@ -711,9 +687,13 @@ function selectDictionaryResult(index: number): void {
 async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
 	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text: lookup.text,
-		});
+		const results = lookup.lexicalId
+			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
+					id: lookup.lexicalId,
+				}).then((result) => (result ? [result] : []))
+			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+					text: lookup.text,
+				});
 		if (!results.length) {
 			return;
 		}

@@ -1,26 +1,13 @@
-use super::hsk::levels_value;
 use chinese_dictionary as dictionary;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
-pub struct WordData {
-    pub traditional: String,
-    pub simplified: String,
-    pub pinyin_marks: String,
-    pub pinyin_numbers: String,
-    pub tone_marks: Vec<u8>,
-    pub english: Vec<String>,
-    pub hash: u64,
-    pub hsk: dictionary::HskLevels,
-    pub word_id: u32,
-}
-
-#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct PinyinSegment {
     pub source: String,
-    pub word_data: Option<WordData>,
+    /// A schema-4 lexical unit carries its persistent ID and structured Pinyin metadata.
+    pub lexical_unit: Option<dictionary::LexicalUnit>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
@@ -111,13 +98,13 @@ pub fn pinyinify(text: String) -> Vec<PinyinSegment> {
         }
 
         let token_end = token_start + token.len();
-        let word_data = dictionary::query_by_chinese(token)
+        let lexical_unit = dictionary::query_by_chinese(token)
             .first()
-            .map(|entry| WordData::from(*entry));
-        if word_data.is_some() {
+            .map(|entry| (*entry).to_owned());
+        if lexical_unit.is_some() {
             segments.push(PinyinSegment {
                 source: text[token_start..token_end].to_string(),
-                word_data,
+                lexical_unit,
             });
         } else {
             push_plain_segment(&mut segments, &text[token_start..token_end]);
@@ -204,29 +191,13 @@ pub fn tokenize_pinyin(text: String) -> Vec<PinyinToken> {
     tokens
 }
 
-impl From<&dictionary::WordEntry> for WordData {
-    fn from(entry: &dictionary::WordEntry) -> Self {
-        Self {
-            traditional: entry.traditional.clone(),
-            simplified: entry.simplified.clone(),
-            pinyin_marks: entry.pinyin_marks.clone(),
-            pinyin_numbers: entry.pinyin_numbers.clone(),
-            tone_marks: entry.tone_marks.clone(),
-            english: entry.english.clone(),
-            hash: entry.hash,
-            hsk: levels_value(&entry.simplified, &entry.pinyin_numbers),
-            word_id: entry.word_id,
-        }
-    }
-}
-
 fn push_plain_segment(segments: &mut Vec<PinyinSegment>, source: &str) {
     if source.is_empty() {
         return;
     }
 
     if let Some(last) = segments.last_mut() {
-        if last.word_data.is_none() {
+        if last.lexical_unit.is_none() {
             last.source.push_str(source);
             return;
         }
@@ -234,7 +205,7 @@ fn push_plain_segment(segments: &mut Vec<PinyinSegment>, source: &str) {
 
     segments.push(PinyinSegment {
         source: source.to_string(),
-        word_data: None,
+        lexical_unit: None,
     });
 }
 
@@ -772,8 +743,8 @@ fn syllable_set() -> &'static HashSet<&'static str> {
 mod tests {
     use super::*;
 
-    fn word_data(segment: &PinyinSegment) -> &WordData {
-        segment.word_data.as_ref().unwrap()
+    fn lexical_unit(segment: &PinyinSegment) -> &dictionary::LexicalUnit {
+        segment.lexical_unit.as_ref().unwrap()
     }
 
     #[test]
@@ -782,19 +753,16 @@ mod tests {
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].source, "你");
-        assert_eq!(word_data(&result[0]).pinyin_marks, "nǐ");
-        assert_eq!(word_data(&result[0]).tone_marks, vec![3]);
+        assert_eq!(lexical_unit(&result[0]).pinyin.marks, "nǐ");
+        assert_eq!(lexical_unit(&result[0]).pinyin.tones, vec![3]);
     }
 
     #[test]
-    fn word_data_preserves_dictionary_pinyin_for_polyphonic_hsk_lookups() {
+    fn pinyin_segments_preserve_structured_dictionary_data() {
         for entry in chinese_dictionary::query_by_chinese("长") {
-            let converted = WordData::from(entry);
-            assert_eq!(converted.pinyin_numbers, entry.pinyin_numbers);
-            assert_eq!(
-                converted.hsk,
-                levels_value(&entry.simplified, &entry.pinyin_numbers)
-            );
+            let converted = entry.to_owned();
+            assert_eq!(converted.pinyin.numbers, entry.pinyin().numbers());
+            assert_eq!(converted.hsk, entry.hsk().to_owned());
         }
     }
 
@@ -807,7 +775,7 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(sources, vec!["今天", "天气", "不错"]);
-        assert!(result.iter().all(|segment| segment.word_data.is_some()));
+        assert!(result.iter().all(|segment| segment.lexical_unit.is_some()));
     }
 
     #[test]
@@ -818,7 +786,7 @@ mod tests {
             assert_eq!(1, result.len(), "Unexpected tokenization for {headword:?}");
             assert_eq!(headword, result[0].source);
             assert!(
-                result[0].word_data.is_some(),
+                result[0].lexical_unit.is_some(),
                 "Missing dictionary entry for {headword:?}"
             );
         }
@@ -830,11 +798,11 @@ mod tests {
 
         assert_eq!(result.len(), 3);
         assert_eq!(result[0].source, "Hello");
-        assert!(result[0].word_data.is_none());
+        assert!(result[0].lexical_unit.is_none());
         assert_eq!(result[1].source, "你好");
-        assert!(result[1].word_data.is_some());
+        assert!(result[1].lexical_unit.is_some());
         assert_eq!(result[2].source, "world");
-        assert!(result[2].word_data.is_none());
+        assert!(result[2].lexical_unit.is_none());
     }
 
     #[test]
@@ -846,8 +814,8 @@ mod tests {
             .collect::<Vec<_>>();
 
         assert_eq!(sources, vec!["你好", "！", "再见", "。"]);
-        assert!(result[1].word_data.is_none());
-        assert!(result[3].word_data.is_none());
+        assert!(result[1].lexical_unit.is_none());
+        assert!(result[3].lexical_unit.is_none());
     }
 
     #[test]
@@ -855,7 +823,7 @@ mod tests {
         let result = pinyinify("我叫Preston".to_string());
 
         assert_eq!(result.last().unwrap().source, "Preston");
-        assert!(result.last().unwrap().word_data.is_none());
+        assert!(result.last().unwrap().lexical_unit.is_none());
     }
 
     #[test]

@@ -1,14 +1,24 @@
 <script lang="ts" generics="T extends { id: string | number }">
 	import type { Snippet } from 'svelte';
+	import { ExternalLink } from 'lucide-svelte';
 
 	interface Props {
 		items?: T[];
 		emptyText?: string;
 		header: Snippet<[T]>;
 		detail: Snippet<[T]>;
+		itemUrl?: (item: T) => string | undefined;
+		onlinkclick?: (event: MouseEvent, item: T) => void;
 	}
 
-	const { items = [], emptyText = 'No items.', header, detail }: Props = $props();
+	const {
+		items = [],
+		emptyText = 'No items.',
+		header,
+		detail,
+		itemUrl,
+		onlinkclick,
+	}: Props = $props();
 
 	let expandedId = $state<string | number | null>(null);
 
@@ -22,17 +32,31 @@
 {:else}
 	<div class="sy-collapsible-list">
 		{#each items as item (item.id)}
+			{@const url = itemUrl?.(item)}
 			<div class="sy-collapsible-list--item">
-				<button class="sy-collapsible-list--header" onclick={() => toggle(item.id)}>
-					{@render header(item)}
-					<span class="sy-collapsible-list--chevron">
-						{expandedId === item.id ? '▲' : '▼'}
-					</span>
-				</button>
-				{#if expandedId === item.id}
-					<div class="sy-collapsible-list--detail">
-						{@render detail(item)}
-					</div>
+				{#if url}
+					<a
+						class="sy-collapsible-list--header"
+						href={url}
+						onclick={(event) => onlinkclick?.(event, item)}
+					>
+						{@render header(item)}
+						<span class="sy-collapsible-list--chevron" aria-hidden="true">
+							<ExternalLink size={14} />
+						</span>
+					</a>
+				{:else}
+					<button class="sy-collapsible-list--header" onclick={() => toggle(item.id)}>
+						{@render header(item)}
+						<span class="sy-collapsible-list--chevron">
+							{expandedId === item.id ? '▲' : '▼'}
+						</span>
+					</button>
+					{#if expandedId === item.id}
+						<div class="sy-collapsible-list--detail">
+							{@render detail(item)}
+						</div>
+					{/if}
 				{/if}
 			</div>
 		{/each}
@@ -75,6 +99,8 @@
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--small);
 		text-align: left;
+		text-decoration: none;
+		box-sizing: border-box;
 	}
 
 	.sy-collapsible-list--header:hover {

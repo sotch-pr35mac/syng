@@ -9,6 +9,7 @@
 	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import DefinitionItem from '@/components/DictionaryContent/DefinitionItem.svelte';
+	import ExampleSentence from '@/components/DictionaryContent/ExampleSentence.svelte';
 	import EntryTopline from '@/components/DictionaryContent/EntryTopline.svelte';
 	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
 	import { invoke } from '@tauri-apps/api/core';
@@ -23,6 +24,15 @@
 	import SyTag from '@/components/SyTag/SyTag.svelte';
 	import { HSK_VARIANT_LABELS } from '@/types/dictionaryDisplay.js';
 	import { resolveHskLevels } from '@/utils/hsk.js';
+	import {
+		lexicalDisplayId,
+		formatPartOfSpeech,
+		lexicalDefinitions,
+		lexicalExamples,
+		lexicalLegacyMeasureWords,
+		lexicalMeasureWords,
+		lexicalPartsOfSpeech,
+	} from '@/types/dictionary.js';
 
 	/* Background Color Prop */
 	/* Possible Values */
@@ -51,13 +61,29 @@
 	} = $props();
 
 	let memberLists = $state([]);
+	let measureWords = $state([]);
+	let dictionaryContentElement = $state();
+	let previousWordId;
+
+	// Reset the dictionary's own scroll position whenever a different word replaces
+	// the current entry. Keep the position when the same entry is merely re-rendered.
+	$effect(() => {
+		const currentWordId = word ? lexicalDisplayId(word) : undefined;
+		if (currentWordId === previousWordId) {
+			return;
+		}
+		previousWordId = currentWordId;
+		if (dictionaryContentElement) {
+			dictionaryContentElement.scrollTop = 0;
+		}
+	});
 
 	const updateListMembership = () => {
-		const requestedWordHash = word?.hash;
+		const requestedWordId = word ? lexicalDisplayId(word) : undefined;
 		bookmarksStore
-			.inList(requestedWordHash)
+			.inList(requestedWordId)
 			.then((lists) => {
-				if (word?.hash !== requestedWordHash) {
+				if (!word || lexicalDisplayId(word) !== requestedWordId) {
 					return undefined;
 				}
 				memberLists = lists;
@@ -77,7 +103,7 @@
 			});
 	};
 	const _modifyListMembership = (fnName, list, word) => {
-		if (!word?.hash) {
+		if (!word || !lexicalDisplayId(word)) {
 			handleError(
 				'There was an error modifying the list membership. Check the log for more details.',
 				{
@@ -87,11 +113,13 @@
 			);
 			return;
 		}
-		bookmarksStore[fnName](list, word)
+		bookmarksStore[fnName](list, {
+			lexical_id: lexicalDisplayId(word),
+		})
 			.then(() => {
 				onmembershipchange?.({
 					listName: list,
-					wordHash: word.hash,
+					lexicalId: lexicalDisplayId(word),
 					operation:
 						fnName === 'addToList'
 							? BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED
@@ -105,7 +133,7 @@
 					'There was an error modifying the list membership. Check the log for more details.',
 					{
 						message: e instanceof Error ? e.message : String(e),
-						word_hash: word?.hash,
+						lexical_id: word ? lexicalDisplayId(word) : undefined,
 						list,
 					}
 				);
@@ -122,9 +150,18 @@
 
 	// Update list membership when word changes
 	$effect(() => {
-		if (word) {
-			updateListMembership();
+		if (!word) {
+			measureWords = [];
+			return;
 		}
+
+		updateListMembership();
+		// References retain their variety labels and can intentionally have no
+		// lexical ID. Resolving them here would drop those Chinese-text fallbacks.
+		const structuredMeasureWords = lexicalMeasureWords(word);
+		measureWords = structuredMeasureWords.length
+			? structuredMeasureWords
+			: lexicalLegacyMeasureWords(word);
 	});
 
 	const getBookmarkIcon = () => (memberLists.length ? Check : Plus);
@@ -212,7 +249,7 @@
 		saveNotesDebounce = setTimeout(() => {
 			const notes = document.getElementById('dictionary-content--notes').value.trim();
 			bookmarksStore
-				.updateProperty(cachedWord.hash, 'notes', notes)
+				.updateProperty(lexicalDisplayId(cachedWord), 'notes', notes)
 				.then(() => {
 					cachedWord.notes = notes;
 					return undefined;
@@ -259,9 +296,13 @@
 	};
 	const getHskLevels = () =>
 		resolveHskLevels(word?.hsk, dictionaryDisplaySettingsStore.settings.hskVariant);
+	const getPartsOfSpeech = () =>
+		word && dictionaryDisplaySettingsStore.settings.showPartsOfSpeech
+			? lexicalPartsOfSpeech(word)
+			: [];
 </script>
 
-<div class={getContainerClasses()}>
+<div class={getContainerClasses()} bind:this={dictionaryContentElement}>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
 			<EntryTopline {word} {separateTraditionalCharacters} />
@@ -308,30 +349,47 @@
 						{/if}
 					{/each}
 				</SyButtonBar>
-				{#if getHskLevels().length}
-					<div class="dictionary-content__hsk">
-						<SyTag
-							variant="yellow"
-							tooltip={HSK_VARIANT_LABELS[
-								dictionaryDisplaySettingsStore.settings.hskVariant
-							]}
-						>
-							HSK: {getHskLevels().join(', ')}
-						</SyTag>
+				{#if getHskLevels().length || getPartsOfSpeech().length}
+					<div class="dictionary-content__tags">
+						{#if getHskLevels().length}
+							<SyTag
+								variant="yellow"
+								tooltip={HSK_VARIANT_LABELS[
+									dictionaryDisplaySettingsStore.settings.hskVariant
+								]}
+							>
+								HSK: {getHskLevels().join(', ')}
+							</SyTag>
+						{/if}
+						{#each getPartsOfSpeech() as partOfSpeech (partOfSpeech.value)}
+							<SyTag variant="blue">
+								{formatPartOfSpeech(partOfSpeech.value)}
+							</SyTag>
+						{/each}
 					</div>
 				{/if}
 			</div>
 		</section>
 		<section class="dictionary-content">
 			<h2 class="dictionary-content--section-title">Definitions</h2>
-			<SyList values={word.english} component={DefinitionItem} onevent={handleOpenLink} />
+			<SyList
+				values={lexicalDefinitions(word)}
+				component={DefinitionItem}
+				onevent={handleOpenLink}
+			/>
 		</section>
-		{#if word.measure_words.length}
+		{#if measureWords.length}
 			<section class="dictionary-content">
 				<h2 class="dictionary-content--section-title">Measure Words</h2>
+				<SyList values={measureWords} component={MeasureWord} onevent={handleOpenLink} />
+			</section>
+		{/if}
+		{#if lexicalExamples(word).length}
+			<section class="dictionary-content">
+				<h2 class="dictionary-content--section-title">Examples</h2>
 				<SyList
-					values={word.measure_words}
-					component={MeasureWord}
+					values={lexicalExamples(word)}
+					component={ExampleSentence}
 					onevent={handleOpenLink}
 				/>
 			</section>
@@ -376,7 +434,11 @@
 		justify-content: space-between;
 		align-items: flex-start;
 	}
-	.dictionary-content__hsk {
+	.dictionary-content__tags {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--sy-space--small);
 		margin-left: auto;
 		padding: var(--sy-space--large);
 	}

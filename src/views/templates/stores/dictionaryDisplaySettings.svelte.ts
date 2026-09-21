@@ -15,6 +15,9 @@ export const DEFAULT_DICTIONARY_DISPLAY_SETTINGS: Readonly<DictionaryDisplaySett
 	colorPinyinByTone: false,
 	colorListsByTone: false,
 	hskVariant: HSK_VARIANTS.HSK_EXAM_SYLLABUS_2025,
+	showQualifiers: true,
+	showPartsOfSpeech: true,
+	showAlternativePronunciations: false,
 };
 
 let settings = $state<DictionaryDisplaySettings>({ ...DEFAULT_DICTIONARY_DISPLAY_SETTINGS });
@@ -54,6 +57,18 @@ async function loadSettings(): Promise<void> {
 				DEFAULT_DICTIONARY_DISPLAY_SETTINGS.colorListsByTone
 			),
 			hskVariant: normalizeHskVariant(preferenceManager.get('hskVariant')),
+			showQualifiers: normalizeBoolean(
+				preferenceManager.get('showQualifiers'),
+				DEFAULT_DICTIONARY_DISPLAY_SETTINGS.showQualifiers
+			),
+			showPartsOfSpeech: normalizeBoolean(
+				preferenceManager.get('showPartsOfSpeech'),
+				DEFAULT_DICTIONARY_DISPLAY_SETTINGS.showPartsOfSpeech
+			),
+			showAlternativePronunciations: normalizeBoolean(
+				preferenceManager.get('showAlternativePronunciations'),
+				DEFAULT_DICTIONARY_DISPLAY_SETTINGS.showAlternativePronunciations
+			),
 		};
 	} catch {
 		settings = { ...DEFAULT_DICTIONARY_DISPLAY_SETTINGS };
@@ -85,6 +100,21 @@ function setColorListsByTone(colorListsByTone: boolean): void {
 	getPreferenceManager().set('colorListsByTone', colorListsByTone);
 }
 
+function setShowQualifiers(showQualifiers: boolean): void {
+	settings.showQualifiers = showQualifiers;
+	getPreferenceManager().set('showQualifiers', showQualifiers);
+}
+
+function setShowPartsOfSpeech(showPartsOfSpeech: boolean): void {
+	settings.showPartsOfSpeech = showPartsOfSpeech;
+	getPreferenceManager().set('showPartsOfSpeech', showPartsOfSpeech);
+}
+
+function setShowAlternativePronunciations(showAlternativePronunciations: boolean): void {
+	settings.showAlternativePronunciations = showAlternativePronunciations;
+	getPreferenceManager().set('showAlternativePronunciations', showAlternativePronunciations);
+}
+
 export const dictionaryDisplaySettingsStore = {
 	get settings(): DictionaryDisplaySettings {
 		return settings;
@@ -95,4 +125,7 @@ export const dictionaryDisplaySettingsStore = {
 	setColorPinyinByTone,
 	setColorListsByTone,
 	setHskVariant,
+	setShowQualifiers,
+	setShowPartsOfSpeech,
+	setShowAlternativePronunciations,
 };

@@ -7,6 +7,7 @@ export type DictionaryLookupRequest =
 	| string
 	| {
 			text: string;
+			lexicalId?: string;
 			anchor?: DOMRect;
 	  };
 
@@ -23,6 +24,7 @@ export type DictionaryPopoverController = {
 
 export function normalizeDictionaryLookupRequest(request: DictionaryLookupRequest): {
 	text: string;
+	lexicalId?: string;
 	anchor?: DOMRect;
 } {
 	if (typeof request === 'string') {
@@ -51,9 +53,13 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 	async function lookup(request: DictionaryLookupRequest): Promise<void> {
 		const lookup = normalizeDictionaryLookupRequest(request);
 		try {
-			const found = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-				text: lookup.text,
-			});
+			const found = lookup.lexicalId
+				? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
+						id: lookup.lexicalId,
+					}).then((unit) => (unit ? [unit] : []))
+				: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+						text: lookup.text,
+					});
 			if (!found.length) {
 				return;
 			}

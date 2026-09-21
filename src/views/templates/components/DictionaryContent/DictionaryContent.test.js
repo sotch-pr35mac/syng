@@ -39,6 +39,71 @@ const TEST_WORD = {
 	measure_words: [{ simplified: 'MWA', traditional: 'MWA' }],
 };
 
+const STRUCTURED_CLASSIFIER_WORD = {
+	...TEST_WORD,
+	english: [
+		{
+			gloss: { value: 'test', sources: ['wiktionary'] },
+			measure_words: [
+				{
+					value: {
+						traditional: '隻',
+						simplified: '只',
+						lexical_id: null,
+						varieties: ['hakka'],
+					},
+					sources: ['wiktionary'],
+				},
+			],
+		},
+	],
+	measure_words: [
+		{
+			value: {
+				traditional: '樖',
+				simplified: '樖',
+				lexical_id: '1:cantonese-measure-word',
+				varieties: ['cantonese'],
+			},
+			sources: ['wiktionary'],
+		},
+	],
+};
+
+const STRUCTURED_METADATA_WORD = {
+	...TEST_WORD,
+	hsk: {
+		hsk_2015: [],
+		proficiency_standard_2021: [],
+		hsk_exam_syllabus_2025: ['One'],
+	},
+	english: [
+		{
+			gloss: { value: 'to test', sources: ['cc-cedict'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [],
+			lexical_kinds: [],
+			parts_of_speech: [
+				{ value: 'verb', sources: ['wiktionary'] },
+				{ value: 'noun', sources: ['cc-cedict'] },
+			],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+		{
+			gloss: { value: 'a test', sources: ['wiktionary'] },
+			examples: [],
+			commentary: [],
+			qualifiers: [],
+			lexical_kinds: [],
+			parts_of_speech: [{ value: 'verb', sources: ['cc-cedict', 'chinese-notes'] }],
+			alternative_pronunciations: [],
+			measure_words: [],
+		},
+	],
+};
+
 beforeEach(() => {
 	setPreferenceManagerForTest(mockPreferenceManager({}));
 	dictionaryDisplaySettingsStore.setCharacterSet('both');
@@ -81,6 +146,47 @@ it('should display the definitions', async () => {
 	expect(definition.textContent).toBe('test');
 });
 
+it('scrolls to the top when a different word replaces the current entry', async () => {
+	const nextWord = {
+		...TEST_WORD,
+		hash: 'next-test-word',
+		simplified: 'B',
+		traditional: 'B',
+	};
+	const { container, rerender } = render(DictionaryContent, {
+		word: TEST_WORD,
+	});
+	const dictionaryContentElement = container.querySelector('.dictionary-content-container');
+	dictionaryContentElement.scrollTop = 240;
+
+	await rerender({ word: nextWord });
+
+	expect(dictionaryContentElement.scrollTop).toBe(0);
+});
+
+it('renders HSK and aggregated POS tags with distinct colors', () => {
+	const { container, getByText } = render(DictionaryContent, {
+		word: STRUCTURED_METADATA_WORD,
+	});
+
+	expect(getByText('HSK: 1')).toBeTruthy();
+	expect(getByText('Verb')).toBeTruthy();
+	expect(getByText('Noun')).toBeTruthy();
+	expect(container.querySelectorAll('.sy-tag--yellow')).toHaveLength(1);
+	expect(container.querySelectorAll('.sy-tag--blue')).toHaveLength(2);
+	expect(getByText('Verb').getAttribute('title')).toBeNull();
+	expect(getByText('Noun').getAttribute('title')).toBeNull();
+});
+
+it('hides POS tags when dictionary POS display is disabled', () => {
+	dictionaryDisplaySettingsStore.setShowPartsOfSpeech(false);
+	const { container } = render(DictionaryContent, {
+		word: STRUCTURED_METADATA_WORD,
+	});
+
+	expect(container.querySelector('.sy-tag--blue')).toBeNull();
+});
+
 it('should display the pinyin', async () => {
 	const { getByText } = render(DictionaryContent, {
 		word: TEST_WORD,
@@ -114,6 +220,29 @@ it('should emit an event when dictionary link is clicked', async () => {
 	expect(handleOpenLink).toHaveBeenCalled();
 });
 
+it('renders structured classifier references directly without dropping their labels', async () => {
+	const user = userEvent.setup();
+	const handleOpenLink = vi.fn();
+	const { container, getAllByTestId } = render(DictionaryContent, {
+		word: STRUCTURED_CLASSIFIER_WORD,
+		onlink: handleOpenLink,
+	});
+
+	expect(container.textContent).toContain('樖 · Cantonese');
+	expect(container.textContent).toContain('只（隻） · Hakka');
+	expect(invoke).not.toHaveBeenCalledWith(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_IDS, {
+		ids: ['1:cantonese-measure-word'],
+	});
+
+	await user.click(getAllByTestId('dictionary-link')[0]);
+	expect(handleOpenLink).toHaveBeenCalledWith(
+		expect.objectContaining({
+			text: '樖',
+			lexicalId: '1:cantonese-measure-word',
+		})
+	);
+});
+
 it('reports a successful list membership change', async () => {
 	const user = userEvent.setup();
 	const onmembershipchange = vi.fn();
@@ -138,7 +267,7 @@ it('reports a successful list membership change', async () => {
 	await waitFor(() => {
 		expect(onmembershipchange).toHaveBeenCalledWith({
 			listName: 'Bookmarks',
-			wordHash: TEST_WORD.hash,
+			lexicalId: TEST_WORD.hash,
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
 		});
 	});
@@ -168,7 +297,7 @@ it('reports when a word is added to a list', async () => {
 	await waitFor(() => {
 		expect(onmembershipchange).toHaveBeenCalledWith({
 			listName: 'Bookmarks',
-			wordHash: TEST_WORD.hash,
+			lexicalId: TEST_WORD.hash,
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED,
 		});
 	});

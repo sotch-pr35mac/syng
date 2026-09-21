@@ -26,7 +26,7 @@ it('uses parenthetical inline forms for quiz questions and character answers', (
 		answer: 'píng guǒ',
 		options: [{ value: 'píng guǒ' }, { value: 'lí' }],
 		time_limit: 10,
-		word_data: {
+		lexical_unit: {
 			simplified: '苹果',
 			traditional: '蘋果',
 		} as never,
@@ -46,7 +46,7 @@ it('uses parenthetical inline forms for quiz questions and character answers', (
 			},
 		],
 		time_limit: 10,
-		word_data: {} as never,
+		lexical_unit: {} as never,
 	};
 	const { container, getAllByText } = render(QuizResults, {
 		score: 0,

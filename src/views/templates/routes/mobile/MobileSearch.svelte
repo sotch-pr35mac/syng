@@ -15,7 +15,8 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import type { SearchEntry } from '@/types/search.js';
+	import { searchResultKeys, type SearchEntry } from '@/types/search.js';
+	import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
@@ -50,18 +51,19 @@
 		// If currentSnap is 'collapsed', the user manually dismissed the sheet — leave it closed.
 	});
 
-	const searchResultItems: SearchResultPreviewItem[] = $derived(
-		search.fullResults.map((entry, index) => ({
-			key: `${entry.word_id}:${index}`,
+	const searchResultItems: SearchResultPreviewItem[] = $derived.by(() => {
+		const resultKeys = searchResultKeys(search.fullResults);
+		return search.fullResults.map((entry, index) => ({
+			key: resultKeys[index],
 			headline:
 				entry.simplified !== entry.traditional
 					? `${entry.simplified} (${entry.traditional})`
 					: entry.simplified,
-			subtitle: entry.pinyin_marks,
-			content: entry.english.slice(0, 2).join('; '),
+			subtitle: lexicalPinyin(entry).marks,
+			content: lexicalGlosses(entry).slice(0, 2).join('; '),
 			word: entry,
-		}))
-	);
+		}));
+	});
 
 	// Track the results array reference to detect when a new search completes. Initialised
 	// to the current reference so that on mount (with pre-existing results) the effect is a
@@ -92,7 +94,10 @@
 	const clickTracker = createClickPositionTracker();
 	function handleDictionaryLink(request: DictionaryLookupRequest): void {
 		const lookup = normalizeDictionaryLookupRequest(request);
-		search.openPopoverDictionary(lookup.text, lookup.anchor ?? clickTracker.lastClickRect);
+		search.lookupPopoverWord({
+			...lookup,
+			anchor: lookup.anchor ?? clickTracker.lastClickRect,
+		});
 	}
 
 	function handleSearch(value: string): void {

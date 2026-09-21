@@ -8,6 +8,9 @@ import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
+import { isIPad, isMobile } from '@/utils/device.js';
+import { invoke } from '@tauri-apps/api/core';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 
 vi.mock('@/components/SettingsOption/UpdateChecker.svelte', async () => ({
 	default: (await import('@/components/__mocks__/FeatherIcon.svelte')).default,
@@ -23,8 +26,8 @@ vi.mock('@tauri-apps/api/core', () => ({
 }));
 
 vi.mock('@/utils/device.js', () => ({
-	isMobile: () => false,
-	isIPad: () => false,
+	isMobile: vi.fn(() => false),
+	isIPad: vi.fn(() => false),
 	isIos: () => false,
 	isAndroid: () => false,
 	isMobileLayout: () => false,
@@ -55,6 +58,9 @@ const toneColors = {
 let preferenceManager;
 
 beforeEach(async () => {
+	vi.mocked(isMobile).mockReturnValue(false);
+	vi.mocked(isIPad).mockReturnValue(false);
+	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
 	databaseMigrationStore.resetForTest();
 	const preferences = {
@@ -63,6 +69,9 @@ beforeEach(async () => {
 		colorCharactersByTone: true,
 		colorPinyinByTone: false,
 		colorListsByTone: false,
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 		toneColors,
 	};
 	preferenceManager = {
@@ -79,6 +88,18 @@ beforeEach(async () => {
 		completedOnboardingVersion: 1,
 	});
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('reopens saved recovery reports from iPad settings', async () => {
+	vi.mocked(isMobile).mockReturnValue(true);
+	vi.mocked(isIPad).mockReturnValue(true);
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'read_bookmark_recovery_report' ? 'Saved iPad report' : false
+	);
+	const user = userEvent.setup();
+	const { getByRole } = render(Settings);
+	await user.click(getByRole('button', { name: 'View recovery reports' }));
+	expect(bookmarkRecoveryStore.report).toBe('Saved iPad report');
 });
 
 it('starts a dismissible database migration preview from development settings', async () => {
@@ -99,18 +120,28 @@ it('renders and updates desktop dictionary display settings', async () => {
 
 	expect(getByText('Tone Coloring')).toBeTruthy();
 	expect(getByText('Tone Colors')).toBeTruthy();
+	expect(getByText('Dictionary Metadata')).toBeTruthy();
 	expect(getByRole('radio', { name: 'Simplified + Traditional' }).checked).toBe(true);
 	expect(getByLabelText('Color characters by tone').checked).toBe(true);
 	expect(getByLabelText('Color pinyin by tone').checked).toBe(false);
 	expect(getByLabelText('Apply tone coloring to lists').checked).toBe(false);
+	expect(getByLabelText('Show qualifiers').checked).toBe(true);
+	expect(getByLabelText('Show parts of speech').checked).toBe(true);
+	expect(getByLabelText('Show alternative pronunciations').checked).toBe(false);
 
 	await user.click(getByRole('radio', { name: 'Traditional' }));
 	await user.click(getByLabelText('Color pinyin by tone'));
 	await user.click(getByLabelText('Apply tone coloring to lists'));
+	await user.click(getByLabelText('Show qualifiers'));
+	await user.click(getByLabelText('Show parts of speech'));
+	await user.click(getByLabelText('Show alternative pronunciations'));
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('characterSet', 'traditional');
 	expect(preferenceManager.set).toHaveBeenCalledWith('colorPinyinByTone', true);
 	expect(preferenceManager.set).toHaveBeenCalledWith('colorListsByTone', true);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showQualifiers', false);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showPartsOfSpeech', false);
+	expect(preferenceManager.set).toHaveBeenCalledWith('showAlternativePronunciations', true);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'characterSet',
 	});

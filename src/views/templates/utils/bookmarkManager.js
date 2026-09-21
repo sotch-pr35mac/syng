@@ -23,15 +23,24 @@ const MODIFIABLE_BOOKMARK_PROPERTIES = ['notes'];
 // Symbol for early exit from promise chains
 const EARLY_EXIT = Symbol('EARLY_EXIT');
 
-const EMPTY_HSK = {
-	hsk_2015: [],
-	proficiency_standard_2021: [],
-	hsk_exam_syllabus_2025: [],
-};
-
-export const BOOKMARK_SCHEMA_VERSION = 1;
+export const BOOKMARK_SCHEMA_VERSION = 2;
 export const BOOKMARK_SCHEMA_DOCUMENT_ID = '_local/syng-bookmark-schema';
+export const BOOKMARK_RECOVERY_DOCUMENT_ID = '_local/syng-bookmark-recovery';
 const NOT_FOUND_STATUS = 404;
+
+const isLexicalId = (value) => typeof value === 'string' && /^1:[0-9a-f]{64}$/.test(value);
+
+const joinDistinctNotes = (currentNotes, incomingNotes) => {
+	const current = typeof currentNotes === 'string' ? currentNotes.trim() : '';
+	const incoming = typeof incomingNotes === 'string' ? incomingNotes.trim() : '';
+	if (!current) {
+		return incoming;
+	}
+	if (!incoming || current.split('\n\n---\n\n').includes(incoming)) {
+		return current;
+	}
+	return `${current}\n\n---\n\n${incoming}`;
+};
 
 export class BookmarkManager {
 	/*
@@ -63,7 +72,7 @@ export class BookmarkManager {
 	 * The local marker is scoped to the bookmark PouchDB and is excluded from normal allDocs
 	 * reads and backups. `onMigrationStart` runs only for a populated database that needs work.
 	 */
-	async prepareSchema(onMigrationStart = () => {}) {
+	async prepareSchema(onMigrationStart = () => {}, onRecoveryReport = () => {}) {
 		await this.waitForInit();
 
 		let marker;
@@ -83,7 +92,7 @@ export class BookmarkManager {
 		const documents = await this._document_db.allDocs({ limit: 1 });
 		if (documents.rows.length) {
 			onMigrationStart();
-			await this.migrateHskLevels();
+			await this.migrateLegacyBookmarks(onRecoveryReport);
 		}
 
 		const markerResult = await this._document_db.put({
@@ -98,41 +107,102 @@ export class BookmarkManager {
 		return documents.rows.length > 0;
 	}
 
-	async migrateHskLevels() {
+	async migrateLegacyBookmarks(onRecoveryReport = () => {}) {
 		const documents = await this._document_db.allDocs({ include_docs: true });
-		const rows = documents.rows.map((row) => row.doc);
-		const lookupRows = [];
-		const lookupIndexes = [];
-		rows.forEach((word, index) => {
-			if (typeof word.simplified === 'string' && word.simplified.trim()) {
-				lookupIndexes.push(index);
-				lookupRows.push({
-					simplified: word.simplified,
-					pinyin_numbers:
-						typeof word.pinyin_numbers === 'string' ? word.pinyin_numbers : '',
-				});
-			}
-		});
-		const levels = lookupRows.length
-			? await invoke(NATIVE_COMMANDS.BOOKMARKS.GET_HSK_LEVELS, { entries: lookupRows })
+		const rows = documents.rows.map((row) => row.doc).filter(Boolean);
+		const legacyRows = rows.filter((word) => !isLexicalId(word.lexical_id));
+		const resolutions = legacyRows.length
+			? await invoke(NATIVE_COMMANDS.DICTIONARY.RESOLVE_LEGACY_LEXICAL_UNITS, {
+					entries: legacyRows.map((word) => ({
+						simplified: typeof word.simplified === 'string' ? word.simplified : '',
+						traditional: typeof word.traditional === 'string' ? word.traditional : '',
+						pinyin_numbers:
+							typeof word.pinyin_numbers === 'string'
+								? word.pinyin_numbers
+								: (word.pinyin?.numbers ?? ''),
+						tone_marks: Array.isArray(word.tone_marks)
+							? word.tone_marks
+							: (word.pinyin?.tones ?? []),
+						english: Array.isArray(word.english)
+							? word.english.map((definition) =>
+									typeof definition === 'string'
+										? definition
+										: (definition?.gloss?.value ?? '')
+								)
+							: [],
+					})),
+				})
 			: [];
-		if (!Array.isArray(levels) || levels.length !== lookupRows.length) {
-			throw new Error('HSK migration returned an invalid result.');
+		if (!Array.isArray(resolutions) || resolutions.length !== legacyRows.length) {
+			throw new Error('Bookmark conversion returned an invalid result.');
 		}
-		const levelByIndex = new Map(
-			lookupIndexes.map((index, resultIndex) => [index, levels[resultIndex]])
+
+		const resolutionByDocumentId = new Map(
+			legacyRows.map((word, index) => [word._id, resolutions[index]])
 		);
-		const changed = rows.reduce((updates, word, index) => {
-			const nextHsk = levelByIndex.get(index) ?? EMPTY_HSK;
-			if (JSON.stringify(word.hsk) !== JSON.stringify(nextHsk)) {
-				updates.push({ ...word, hsk: nextHsk });
+		const merged = new Map();
+		const deleted = [];
+		const unrecovered = [];
+		for (const word of rows) {
+			const resolution = resolutionByDocumentId.get(word._id);
+			const lexicalId = isLexicalId(word.lexical_id) ? word.lexical_id : resolution?.unit?.id;
+			if (!isLexicalId(lexicalId)) {
+				unrecovered.push({
+					reason: resolution?.reason ?? 'No usable lexical ID was found.',
+					legacy: word,
+				});
+				deleted.push({ ...word, _deleted: true });
+				continue;
 			}
-			return updates;
-		}, []);
-		if (changed.length) {
-			const results = await this._document_db.bulkDocs(changed);
+			const clean = {
+				_id: word._id,
+				...(word._rev ? { _rev: word._rev } : {}),
+				lexical_id: lexicalId,
+				lists: Array.isArray(word.lists) ? [...new Set(word.lists)] : [],
+				notes: typeof word.notes === 'string' ? word.notes : '',
+			};
+			const previous = merged.get(lexicalId);
+			if (previous) {
+				previous.lists = [...new Set([...previous.lists, ...clean.lists])];
+				previous.notes = joinDistinctNotes(previous.notes, clean.notes);
+				deleted.push({ ...clean, _deleted: true });
+			} else {
+				merged.set(lexicalId, clean);
+			}
+		}
+
+		if (unrecovered.length) {
+			const report = [
+				'Some bookmarks could not be matched to the current dictionary and were not migrated.',
+				'Re-add these words manually after reviewing the legacy data below.',
+				...unrecovered.map(
+					(entry) =>
+						`${entry.reason}\nLegacy data:\n${JSON.stringify(entry.legacy, null, 2)}`
+				),
+			].join('\n\n==========\n\n');
+			await invoke(NATIVE_COMMANDS.BOOKMARKS.PERSIST_RECOVERY_REPORT, { report });
+			const previousReport = await this._document_db
+				.get(BOOKMARK_RECOVERY_DOCUMENT_ID)
+				.catch((error) =>
+					error?.status === NOT_FOUND_STATUS ? undefined : Promise.reject(error)
+				);
+			const result = await this._document_db.put({
+				...(previousReport ?? {}),
+				_id: BOOKMARK_RECOVERY_DOCUMENT_ID,
+				report,
+				created_at: new Date().toISOString(),
+			});
+			if (result?.ok !== true) {
+				throw new Error('Bookmark recovery report could not be saved.');
+			}
+			onRecoveryReport(report);
+		}
+
+		const updates = [...merged.values(), ...deleted];
+		if (updates.length) {
+			const results = await this._document_db.bulkDocs(updates);
 			if (!Array.isArray(results) || results.some((result) => result?.ok !== true)) {
-				throw new Error('HSK migration could not persist every bookmark.');
+				throw new Error('Bookmark migration could not persist every bookmark.');
 			}
 		}
 	}
@@ -529,12 +599,27 @@ export class BookmarkManager {
 					listId = list.doc._id;
 					return this._document_db.allDocs({ include_docs: true });
 				})
-				.then((documents) => {
-					return Promise.all(
-						documents.rows
-							.filter((word) => word.doc.lists.includes(listId))
-							.map((word) => word.doc)
-					).then(resolve);
+				.then(async (documents) => {
+					const bookmarkDocuments = documents.rows
+						.map((row) => row.doc)
+						.filter((word) => word?.lists?.includes(listId));
+					if (bookmarkDocuments.some((word) => !isLexicalId(word.lexical_id))) {
+						throw new Error('Bookmark schema preparation did not produce lexical IDs.');
+					}
+					const units = await invoke(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_IDS, {
+						ids: bookmarkDocuments.map((word) => word.lexical_id),
+					});
+					if (!Array.isArray(units) || units.length !== bookmarkDocuments.length) {
+						throw new Error('Bookmark lookup returned an invalid result.');
+					}
+					resolve(
+						units
+							.map((unit, index) =>
+								unit ? { ...bookmarkDocuments[index], ...unit } : undefined
+							)
+							.filter(Boolean)
+					);
+					return undefined;
 				})
 				.catch((e) => {
 					if (e === EARLY_EXIT) {
@@ -554,24 +639,24 @@ export class BookmarkManager {
 	}
 
 	/*
-	 * Description: Get a word entry document by its hash.
-	 * Param: String: hash: The hash of the word entry to get.
+	 * Description: Get a word entry document by its versioned lexical ID.
+	 * Param: String: lexicalId: The lexical ID of the word entry to get.
 	 * Return: Promise<Object>: The word entry document. Returns undefined if the document
-	 * database doesn't contain a word with that hash.
+	 * database doesn't contain that lexical ID.
 	 */
-	getWordByHash(hash) {
+	getWordByLexicalId(lexicalId) {
 		return new Promise((resolve) => {
 			this._document_db
 				.allDocs({ include_docs: true })
 				.then((documents) => {
-					// Syng expects the entries in the document DB to be unique by hash.
+					// Schema-4 migration enforces one PouchDB document per lexical ID.
 					const word = documents.rows
-						.filter((entry) => entry.doc.hash === hash)
+						.filter((entry) => entry.doc.lexical_id === lexicalId)
 						.map((entry) => entry.doc)[0];
 					return resolve(word);
 				})
 				.catch((e) => {
-					handleError('There was an error fetching a bookmark by hash.', e, {
+					handleError('There was an error fetching a bookmark by lexical ID.', e, {
 						silent: true,
 					});
 					resolve(undefined);
@@ -585,12 +670,15 @@ export class BookmarkManager {
 	 * Return: Object: The word entry object.
 	 */
 	_createWordEntry(word, list) {
-		const wordEntry = {
+		if (!isLexicalId(word.lexical_id)) {
+			throw new Error('Cannot save a bookmark without a versioned lexical ID.');
+		}
+		return {
 			...DEFAULT_BOOKMARK_DATA,
-			...word,
+			lexical_id: word.lexical_id,
+			notes: typeof word.notes === 'string' ? word.notes : DEFAULT_BOOKMARK_DATA.notes,
+			lists: [list],
 		};
-		wordEntry.lists = [list];
-		return wordEntry;
 	}
 
 	/*
@@ -600,6 +688,11 @@ export class BookmarkManager {
 	 * Return: Promise: Resolves when the word has been added.
 	 */
 	addToList(listName, wordToAdd) {
+		if (!isLexicalId(wordToAdd?.lexical_id)) {
+			return Promise.reject(
+				new Error('Cannot save a bookmark without a versioned lexical ID.')
+			);
+		}
 		let listId = undefined;
 		return new Promise((resolve, reject) => {
 			this._list_db
@@ -622,7 +715,9 @@ export class BookmarkManager {
 				.then((documents) => {
 					// First, check if this word is already present.
 					const words = documents.rows.map((word) => word.doc);
-					let word = words.filter((word) => word.hash === wordToAdd.hash)[0];
+					let word = words.filter(
+						(candidate) => candidate.lexical_id === wordToAdd.lexical_id
+					)[0];
 					if (!word) {
 						// If the word doesn't exist yet, create it.
 						word = this._createWordEntry(wordToAdd, listId);
@@ -670,6 +765,11 @@ export class BookmarkManager {
 	 * Return: Promise: Resolves when the word has been removed from the list.
 	 */
 	removeFromList(listName, wordToRemove) {
+		if (!isLexicalId(wordToRemove?.lexical_id)) {
+			return Promise.reject(
+				new Error('Cannot remove a bookmark without a versioned lexical ID.')
+			);
+		}
 		let listId = undefined;
 		return new Promise((resolve, reject) => {
 			this._list_db
@@ -692,7 +792,9 @@ export class BookmarkManager {
 				.then((documents) => {
 					// First, check to make sure the word is present.
 					const words = documents.rows.map((word) => word.doc);
-					const word = words.filter((word) => word.hash === wordToRemove.hash)[0];
+					const word = words.filter(
+						(candidate) => candidate.lexical_id === wordToRemove.lexical_id
+					)[0];
 					if (!word) {
 						reject(
 							new Error(
@@ -736,14 +838,14 @@ export class BookmarkManager {
 	}
 
 	/*
-	 * Description: Check if a given word is in any list.
-	 * Param: String: hash: The hash field of the word to check for.
+	 * Description: Check if a given lexical unit is in any list.
+	 * Param: String: lexicalId: The lexical ID to check for.
 	 * Return: Promise<Array<String>>: The names of the lists the word is in.
 	 */
-	inList(hash) {
+	inList(lexicalId) {
 		let wordLists = undefined;
 		return new Promise((resolve, reject) => {
-			this.getWordByHash(hash)
+			this.getWordByLexicalId(lexicalId)
 				.then((word) => {
 					wordLists = word ? word.lists : [];
 					return this._list_db.allDocs({ include_docs: true });
@@ -769,15 +871,15 @@ export class BookmarkManager {
 
 	/*
 	 * Description: Update a given property for a word entry.
-	 * Param: String: hash: The hash field of the word to update.
+	 * Param: String: lexicalId: The lexical ID of the word to update.
 	 * Param: String: name: The property name to update the value for.
 	 * Param: Any: value: The property value to update with.
 	 * Return: Promise: Resolves when the document has been updated.
 	 * Rejects if there were any issues updating the document.
 	 */
-	updateProperty(hash, name, value) {
+	updateProperty(lexicalId, name, value) {
 		return new Promise((resolve, reject) => {
-			this.getWordByHash(hash)
+			this.getWordByLexicalId(lexicalId)
 				.then((wordEntry) => {
 					// Check to make sure the word is present in the cache
 					if (!wordEntry) {

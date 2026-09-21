@@ -30,4 +30,7 @@ export interface DictionaryDisplaySettings {
 	colorPinyinByTone: boolean;
 	colorListsByTone: boolean;
 	hskVariant: HskVariant;
+	showQualifiers: boolean;
+	showPartsOfSpeech: boolean;
+	showAlternativePronunciations: boolean;
 }

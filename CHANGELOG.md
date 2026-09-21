@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.4.0] - Unreleased
+### Added
+- Expanded dictionary support
+- Added stable bookmark migration and recovery
+- Added metadata display controls
+
 ## [2.3.0] - 2026-09-11
 ### Added
 - Added a guided first-run experience for choosing Chinese character and privacy preferences

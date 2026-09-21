@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { bookmarksStore, type BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
+import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
@@ -21,7 +21,7 @@ import {
 let quizActiveList = $state<string | null>(null);
 let quizQuestion = $state<QuizQuestion | undefined>(undefined);
 let quizShowAnswer = $state(false);
-let quizAnswer = $state<BookmarkWordEntry | undefined>(undefined);
+let quizAnswer = $state<SearchEntry | undefined>(undefined);
 let quizQuestionStartTime = 0;
 let quizQuestionsTotal = $state(0);
 let quizQuestionsCompleted = $state(0);
@@ -88,7 +88,7 @@ function startQuiz(activeList: string | null): void {
 
 			return invoke(NATIVE_COMMANDS.QUIZ.START, {
 				config: {
-					words: contents,
+					lexical_ids: contents.map((entry) => entry.lexical_id),
 					kind: SIMPLE_QUIZ,
 					question_kinds: [PINYIN_QUESTIONS, ENGLISH_QUESTIONS, CHARACTER_QUESTIONS],
 				},
@@ -131,7 +131,7 @@ function answerQuestion(response: string): Promise<boolean> {
 		},
 	})
 		.then((answerResponse) => {
-			quizAnswer = answerResponse.question.MultipleChoice.word_data;
+			quizAnswer = answerResponse.question.MultipleChoice.lexical_unit;
 			quizShowAnswer = true;
 			quizShowResult = true;
 			quizLastAnswerCorrect = answerResponse.correct;
@@ -205,7 +205,7 @@ export const quizRoute = {
 	get showAnswer(): boolean {
 		return quizShowAnswer;
 	},
-	get answer(): BookmarkWordEntry | undefined {
+	get answer(): SearchEntry | undefined {
 		return quizAnswer;
 	},
 	get questionsTotal(): number {

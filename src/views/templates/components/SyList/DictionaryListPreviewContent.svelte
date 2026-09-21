@@ -3,6 +3,7 @@
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
+	import { lexicalPinyin } from '@/types/dictionary.js';
 
 	interface Props {
 		value: { word: SearchEntry };
@@ -11,9 +12,8 @@
 
 	const { value, mobile = false }: Props = $props();
 	const word = $derived(value.word);
-	const pinyin = $derived(
-		Array.isArray(word.pinyin_marks) ? word.pinyin_marks.join(' ') : word.pinyin_marks
-	);
+	const pinyinData = $derived(lexicalPinyin(word));
+	const pinyin = $derived(pinyinData.marks);
 	const colorCharacters = $derived(
 		dictionaryDisplaySettingsStore.settings.colorListsByTone &&
 			dictionaryDisplaySettingsStore.settings.colorCharactersByTone
@@ -30,7 +30,7 @@
 			<PreferredCharacters
 				simplified={word.simplified}
 				traditional={word.traditional}
-				tones={word.tone_marks}
+				tones={pinyinData.tones}
 				colorByTone={colorCharacters}
 				variant="inline"
 			/>
@@ -38,7 +38,7 @@
 		{#if pinyin}
 			<span class="sy-list-preview-item--subtitle">
 				{#if colorPinyin}
-					<ColorizedPinyinSyllables {pinyin} tones={word.tone_marks} />
+					<ColorizedPinyinSyllables {pinyin} tones={pinyinData.tones} />
 				{:else}
 					{pinyin}
 				{/if}
@@ -50,14 +50,14 @@
 		<PreferredCharacters
 			simplified={word.simplified}
 			traditional={word.traditional}
-			tones={word.tone_marks}
+			tones={pinyinData.tones}
 			colorByTone={colorCharacters}
 			variant="inline"
 		/>
 	</p>
 	<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">
 		{#if colorPinyin}
-			<ColorizedPinyinSyllables {pinyin} tones={word.tone_marks} />
+			<ColorizedPinyinSyllables {pinyin} tones={pinyinData.tones} />
 		{:else}
 			{pinyin}
 		{/if}

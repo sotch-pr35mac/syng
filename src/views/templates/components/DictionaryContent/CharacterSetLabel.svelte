@@ -2,14 +2,35 @@
 	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
 
 	interface Props {
-		script: CharacterScript;
+		script?: CharacterScript;
+		label?: string;
+		description?: string;
+		testId?: string;
 		variant?: 'display' | 'inline';
 	}
 
-	const { script, variant = 'display' }: Props = $props();
-	const text = $derived(script === CHARACTER_SETS.SIMPLIFIED ? '简' : '繁');
+	const {
+		script,
+		label,
+		description: providedDescription,
+		testId,
+		variant = 'display',
+	}: Props = $props();
+	const text = $derived(
+		label ??
+			(script === CHARACTER_SETS.SIMPLIFIED
+				? '简'
+				: script === CHARACTER_SETS.TRADITIONAL
+					? '繁'
+					: '')
+	);
 	const description = $derived(
-		script === CHARACTER_SETS.SIMPLIFIED ? 'Simplified Chinese' : 'Traditional Chinese'
+		providedDescription ??
+			(script === CHARACTER_SETS.SIMPLIFIED
+				? 'Simplified Chinese'
+				: script === CHARACTER_SETS.TRADITIONAL
+					? 'Traditional Chinese'
+					: undefined)
 	);
 </script>
 
@@ -17,9 +38,9 @@
 	class="character-set-label"
 	class:character-set-label--inline={variant === 'inline'}
 	title={description}
-	aria-label={description}
+	aria-label={description ?? text}
 	style="user-select: none; -webkit-user-select: none;"
-	data-testid={`character-set-label-${script}`}>{text}</abbr
+	data-testid={testId ?? (script ? `character-set-label-${script}` : undefined)}>{text}</abbr
 >
 
 <style>

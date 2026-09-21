@@ -24,6 +24,9 @@ it('starts with compatibility-preserving defaults', () => {
 		colorPinyinByTone: false,
 		colorListsByTone: false,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 	});
 });
 
@@ -34,6 +37,9 @@ it('loads persisted settings', async () => {
 		colorPinyinByTone: true,
 		colorListsByTone: true,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 	});
 	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
 
@@ -45,6 +51,9 @@ it('loads persisted settings', async () => {
 		colorPinyinByTone: true,
 		colorListsByTone: true,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 	});
 });
 
@@ -63,6 +72,9 @@ it('normalizes missing or invalid persisted values to defaults', async () => {
 		colorPinyinByTone: false,
 		colorListsByTone: false,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: true,
+		showPartsOfSpeech: true,
+		showAlternativePronunciations: false,
 	});
 });
 
@@ -74,6 +86,9 @@ it('updates reactive state and persists each preference independently', () => {
 	dictionaryDisplaySettingsStore.setColorCharactersByTone(false);
 	dictionaryDisplaySettingsStore.setColorPinyinByTone(true);
 	dictionaryDisplaySettingsStore.setColorListsByTone(true);
+	dictionaryDisplaySettingsStore.setShowQualifiers(false);
+	dictionaryDisplaySettingsStore.setShowPartsOfSpeech(false);
+	dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true);
 
 	expect(dictionaryDisplaySettingsStore.settings).toEqual({
 		characterSet: 'simplified',
@@ -81,12 +96,18 @@ it('updates reactive state and persists each preference independently', () => {
 		colorPinyinByTone: true,
 		colorListsByTone: true,
 		hskVariant: 'hsk_exam_syllabus_2025',
+		showQualifiers: false,
+		showPartsOfSpeech: false,
+		showAlternativePronunciations: true,
 	});
 	expect(preferenceManager.set.mock.calls).toEqual([
 		['characterSet', 'simplified'],
 		['colorCharactersByTone', false],
 		['colorPinyinByTone', true],
 		['colorListsByTone', true],
+		['showQualifiers', false],
+		['showPartsOfSpeech', false],
+		['showAlternativePronunciations', true],
 	]);
 	expect(preferenceManager.set).not.toHaveBeenCalledWith('toneColors', expect.anything());
 });

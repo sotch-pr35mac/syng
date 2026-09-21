@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
 	import { invoke } from '@tauri-apps/api/core';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 	import { handleError } from '@/utils/error.js';
 
@@ -10,6 +11,7 @@
 		name: string;
 		license: string;
 		text: string;
+		url?: string;
 	}
 
 	let acknowledgements = $state<Acknowledgement[]>([]);
@@ -24,6 +26,17 @@
 			handleError('Failed to load acknowledgements.', error);
 		}
 	});
+
+	function openAttribution(event: MouseEvent, acknowledgement: Acknowledgement): void {
+		event.preventDefault();
+		if (!acknowledgement.url) {
+			return;
+		}
+
+		openUrl(acknowledgement.url).catch((error) => {
+			handleError('Failed to open acknowledgement attribution.', error);
+		});
+	}
 </script>
 
 <div class="acknowledgements">
@@ -31,7 +44,12 @@
 		Syng is free and open-source software, built on the work of others. Each component below is
 		used under its own license; the full license texts also ship alongside the application.
 	</p>
-	<SyCollapsibleList items={acknowledgements} emptyText="No acknowledgements available.">
+	<SyCollapsibleList
+		items={acknowledgements}
+		emptyText="No acknowledgements available."
+		itemUrl={(item) => item.url}
+		onlinkclick={openAttribution}
+	>
 		{#snippet header(item)}
 			<span class="acknowledgements--heading">
 				<span class="acknowledgements--name">{item.name}</span>

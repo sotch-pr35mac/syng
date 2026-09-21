@@ -45,3 +45,24 @@ it('clears the anchor when the popover closes', async () => {
 
 	expect(popover.anchor).toBeUndefined();
 });
+
+it('uses a lexical ID directly when a cross-reference provides one', async () => {
+	const popover = createDictionaryPopover();
+	vi.mocked(invoke).mockResolvedValueOnce(WORD);
+
+	await popover.lookup({ text: '把', lexicalId: '1:abc' });
+
+	expect(invoke).toHaveBeenCalledWith('query_by_id', { id: '1:abc' });
+	expect(popover.word).toEqual(WORD);
+});
+
+it('shows every Chinese match when a classifier reference has no lexical ID', async () => {
+	const popover = createDictionaryPopover();
+	const alternateReading = { ...WORD, hash: 'ba-alternate' };
+	vi.mocked(invoke).mockResolvedValueOnce([WORD, alternateReading]);
+
+	await popover.lookup({ text: '把' });
+
+	expect(invoke).toHaveBeenCalledWith('query_by_chinese', { text: '把' });
+	expect(popover.results).toEqual([WORD, alternateReading]);
+});

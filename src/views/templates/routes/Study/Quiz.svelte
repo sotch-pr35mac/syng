@@ -212,7 +212,7 @@
 							<QuizDisplayText
 								text={currentQuestion.question}
 								characters={currentQuestion.kind === CHARACTER_QUESTIONS
-									? currentQuestion.word_data
+									? currentQuestion.lexical_unit
 									: undefined}
 								variant="display"
 								lexicalTestIdPrefix="quiz-question"

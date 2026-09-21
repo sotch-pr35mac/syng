@@ -1,0 +1,14 @@
+/src/native/vendor/chinese_dictionary-data-*/*.json text eol=lf
+/src/native/vendor/chinese_dictionary-data-*/*.md text eol=lf
+/src/native/vendor/chinese_dictionary-data-*/*.txt text eol=lf
+/src/native/vendor/chinese_dictionary-data-*/*.zst binary
+
+/src/native/resources/licenses/*.json text eol=lf
+/src/native/resources/licenses/*.md text eol=lf
+/src/native/resources/licenses/*.txt text eol=lf
+/src/native/gen/apple/assets/resources/licenses/*.json text eol=lf
+/src/native/gen/apple/assets/resources/licenses/*.md text eol=lf
+/src/native/gen/apple/assets/resources/licenses/*.txt text eol=lf
+/src/native/gen/android/app/src/main/assets/resources/licenses/*.json text eol=lf
+/src/native/gen/android/app/src/main/assets/resources/licenses/*.md text eol=lf
+/src/native/gen/android/app/src/main/assets/resources/licenses/*.txt text eol=lf

@@ -4,12 +4,14 @@
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
+	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
 	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
+	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import {
@@ -20,6 +22,9 @@
 		updateColorListsByTonePreference,
 		updateColorPinyinByTonePreference,
 		updateHskVariantPreference,
+		updateShowAlternativePronunciationsPreference,
+		updateShowPartsOfSpeechPreference,
+		updateShowQualifiersPreference,
 		updateToneColorsPreference,
 	} from '@/composables/settings.js';
 
@@ -89,9 +94,22 @@
 					onlistschange={updateColorListsByTonePreference}
 				/>
 			</section>
+			<section class="mobile-settings__section" aria-labelledby="dictionary-metadata-heading">
+				<h2 id="dictionary-metadata-heading">Dictionary Metadata</h2>
+				<DictionaryMetadataSettings
+					variant="mobile"
+					onqualifierschange={updateShowQualifiersPreference}
+					onpartsofspeechchange={updateShowPartsOfSpeechPreference}
+					onalternativepronunciationschange={updateShowAlternativePronunciationsPreference}
+				/>
+			</section>
 			<section class="mobile-settings__section" aria-labelledby="tone-colors-heading">
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
+			</section>
+			<section class="mobile-settings__section" aria-labelledby="bookmark-recovery-heading">
+				<h2 id="bookmark-recovery-heading">Bookmark Recovery</h2>
+				<BookmarkRecoverySettings />
 			</section>
 			{#if showDevPreferences}
 				<section class="mobile-settings__section" aria-labelledby="migration-heading">

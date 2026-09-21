@@ -40,7 +40,7 @@
 	});
 
 	function questionCharacters(question: MultipleChoiceQuestion): QuizCharacterOption | undefined {
-		return question.kind === CHARACTER_QUESTIONS ? question.word_data : undefined;
+		return question.kind === CHARACTER_QUESTIONS ? question.lexical_unit : undefined;
 	}
 
 	function optionCharacters(

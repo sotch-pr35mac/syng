@@ -1409,7 +1409,7 @@ mod tests {
             .any(|block| block.kind == "blockquote"));
         assert!(payload.blocks.iter().any(|block| {
             block.kind == "table"
-                && block.participates_in_linear_text == false
+                && !block.participates_in_linear_text
                 && block
                     .extensions
                     .as_ref()
@@ -1418,7 +1418,7 @@ mod tests {
         }));
         assert!(payload.blocks.iter().any(|block| {
             block.kind == "image"
-                && block.participates_in_linear_text == false
+                && !block.participates_in_linear_text
                 && block
                     .extensions
                     .as_ref()

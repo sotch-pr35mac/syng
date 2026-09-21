@@ -1,21 +1,11 @@
 export type ToolName = 'pinyinify' | 'converter' | 'colorize' | 'prettify';
-import type { HskLevels } from '@/types/hsk.js';
-
-export interface WordData {
-	traditional: string;
-	simplified: string;
-	pinyin_marks: string;
-	pinyin_numbers: string;
-	tone_marks: number[];
-	english: string[];
-	hash: number;
-	hsk: HskLevels;
-	word_id: number;
-}
+import type { LexicalUnit } from '@/types/dictionary.js';
 
 export interface PinyinSegment {
 	source: string;
-	word_data: WordData | null;
+	lexical_unit?: LexicalUnit | null;
+	/** Render-only fallback for pre-schema-4 fixtures; native commands return lexical_unit. */
+	word_data?: unknown;
 }
 
 export interface PinyinToken {

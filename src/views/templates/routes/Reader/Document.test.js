@@ -163,6 +163,70 @@ it('opens the dictionary when a token is clicked', async () => {
 	await waitFor(() => expect(invoke).toHaveBeenCalledWith('query_by_chinese', { text: '你好' }));
 });
 
+it('uses a classifier lexical ID when opening a measure word from the dictionary popover', async () => {
+	const defaultInvoke = invoke.getMockImplementation();
+	const mainWord = {
+		word_id: 1,
+		hash: 'nihao',
+		traditional: '你好',
+		simplified: '你好',
+		english: [
+			{
+				gloss: { value: 'hello', sources: ['cc-cedict'] },
+				examples: [],
+				commentary: [],
+				qualifiers: [],
+				lexical_kinds: [],
+				parts_of_speech: [],
+				alternative_pronunciations: [],
+				measure_words: [
+					{
+						value: {
+							traditional: '樖',
+							simplified: '樖',
+							lexical_id: '1:cantonese-measure-word',
+							varieties: ['cantonese'],
+						},
+						sources: ['wiktionary'],
+					},
+				],
+			},
+		],
+		pinyin: { marks: 'nǐ hǎo', numbers: 'ni3 hao3', tones: [3, 3] },
+		measure_words: [],
+	};
+	const classifierWord = {
+		...mainWord,
+		word_id: 2,
+		hash: 'cantonese-measure-word',
+		traditional: '樖',
+		simplified: '樖',
+		english: ['classifier'],
+		measure_words: [],
+	};
+	invoke.mockClear();
+	invoke.mockImplementation((command, args) => {
+		if (command === 'query_by_chinese') {
+			return Promise.resolve([mainWord]);
+		}
+		if (command === 'query_by_id' && args?.id === '1:cantonese-measure-word') {
+			return Promise.resolve(classifierWord);
+		}
+		return defaultInvoke(command, args);
+	});
+
+	const { findByText, findAllByTestId } = renderReaderDocument('reader-1');
+	await fireEvent.click(await findByText('你好'));
+	const dictionaryLinks = await findAllByTestId('dictionary-link');
+	await fireEvent.click(dictionaryLinks.at(-1));
+
+	await waitFor(() =>
+		expect(invoke).toHaveBeenCalledWith('query_by_id', {
+			id: '1:cantonese-measure-word',
+		})
+	);
+});
+
 it('adds a reader dictionary word to a selected list from the popup', async () => {
 	const user = userEvent.setup();
 	const addToList = vi.fn(() => Promise.resolve());
@@ -191,9 +255,7 @@ it('adds a reader dictionary word to a selected list from the popup', async () =
 	await user.click(listTrigger);
 	await user.click(await screen.findByText('Test'));
 
-	await waitFor(() =>
-		expect(addToList).toHaveBeenCalledWith('Test', expect.objectContaining({ hash: 'nihao' }))
-	);
+	await waitFor(() => expect(addToList).toHaveBeenCalledWith('Test', { lexical_id: 'nihao' }));
 });
 
 it('toggles the reader settings popover from the header', async () => {

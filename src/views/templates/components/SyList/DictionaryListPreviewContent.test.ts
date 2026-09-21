@@ -5,14 +5,15 @@ import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettin
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 
 const word = {
-	word_id: 1,
-	hash: 'experiment',
+	id: '1:0000000000000000000000000000000000000000000000000000000000000000',
 	simplified: '实验',
 	traditional: '實驗',
-	pinyin_marks: 'shí yàn',
-	tone_marks: [2, 4],
-	english: ['experiment'],
+	pinyin: { marks: 'shí yàn', numbers: 'shi2yan4', tones: [2, 4] },
+	commonness: 0,
+	alternative_pronunciations: [],
+	english: [],
 	measure_words: [],
+	hsk: { hsk_2015: [], proficiency_standard_2021: [], hsk_exam_syllabus_2025: [] },
 };
 
 beforeEach(async () => {

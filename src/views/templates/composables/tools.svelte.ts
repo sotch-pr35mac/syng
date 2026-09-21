@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { handleError } from '@/utils/error.js';
+import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type {
 	CharacterScript,
@@ -90,7 +91,9 @@ function doColorize(): void {
 	// the syllables) — no separate front-end CJK detector needed.
 	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: colorizeInput })
 		.then((segments) => {
-			const hasChinese = segments.some((segment) => segment.word_data !== null);
+			const hasChinese = segments.some(
+				(segment) => lexicalUnitFromToolSegment(segment) !== null
+			);
 			const resolvedMode =
 				colorizeMode === 'automatic'
 					? hasChinese
@@ -165,11 +168,12 @@ function doPrettify(): void {
 export function segmentsToPinyinText(segments: PinyinSegment[]): string {
 	return segments
 		.map((segment, index) => {
-			if (!segment.word_data) {
+			const lexicalUnit = lexicalUnitFromToolSegment(segment);
+			if (!lexicalUnit) {
 				return segment.source;
 			}
 
-			return `${index > 0 && segments[index - 1].word_data ? ' ' : ''}${segment.word_data.pinyin_marks}`;
+			return `${index > 0 && lexicalUnitFromToolSegment(segments[index - 1]) ? ' ' : ''}${lexicalPinyin(lexicalUnit).marks}`;
 		})
 		.join('');
 }
@@ -180,15 +184,14 @@ export function segmentsToCharacterText(
 ): string {
 	return segments
 		.map((segment) => {
-			if (!segment.word_data) {
+			const lexicalUnit = lexicalUnitFromToolSegment(segment);
+			if (!lexicalUnit) {
 				return segment.source;
 			}
 			if (script === 'automatic') {
 				return segment.source;
 			}
-			return script === 'simplified'
-				? segment.word_data.simplified
-				: segment.word_data.traditional;
+			return script === 'simplified' ? lexicalUnit.simplified : lexicalUnit.traditional;
 		})
 		.join('');
 }
