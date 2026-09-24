@@ -1,7 +1,24 @@
 import { telemetry } from '@/utils/telemetry.js';
 
+const reportedErrors = new WeakSet();
+
+export function markErrorReported(error) {
+	if (error && typeof error === 'object') {
+		reportedErrors.add(error);
+	}
+	return error;
+}
+
+function wasReported(error, visited = new WeakSet()) {
+	if (!error || typeof error !== 'object' || visited.has(error)) {
+		return false;
+	}
+	visited.add(error);
+	return reportedErrors.has(error) || wasReported(error.cause, visited);
+}
+
 /**
- * Turn an unknown rejection / thrown value into a plain object safe for telemetry and logs.
+ * Describe an error for local logs. The telemetry boundary sanitizes this data separately.
  * @param {unknown} value
  * @returns {Record<string, string>}
  */
@@ -50,7 +67,11 @@ function safeJsonStringify(value) {
  * Param: message: String: The message to display to the user.
  * Param: moreInfo: Any: (Optional) Any additional information to log to the console.
  */
-export const handleError = (message, moreInfo, { silent = false } = {}) => {
+export const handleError = (
+	message,
+	moreInfo,
+	{ silent = false, telemetryMessage = message, privateValues = [] } = {}
+) => {
 	const details = describeUnknownError(moreInfo);
 	if (moreInfo !== undefined && moreInfo !== null) {
 		console.error('[handleError]', message, moreInfo);
@@ -60,7 +81,12 @@ export const handleError = (message, moreInfo, { silent = false } = {}) => {
 	} else {
 		console.error('[handleError]', message);
 	}
-	telemetry.trackError('app.error', message, details).catch(() => {});
+	if (!wasReported(moreInfo)) {
+		markErrorReported(moreInfo);
+		telemetry
+			.trackError('app.error', telemetryMessage, { ...details, private_text: privateValues })
+			.catch(() => {});
+	}
 	if (!silent) {
 		alert(message);
 	}

@@ -830,6 +830,54 @@ mod tests {
             defaults.include_device_context
         );
     }
+
+    #[test]
+    fn preference_events_only_record_persisted_changes_and_bypass_opt_out() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        set_preference(&mut inner, "enabled", true).unwrap();
+        assert_eq!(row_count(&inner), 0);
+        set_preference(&mut inner, "enabled", false).unwrap();
+        set_preference(&mut inner, "track_events", false).unwrap();
+        set_preference(&mut inner, "track_events", false).unwrap();
+        assert_eq!(row_count(&inner), 2);
+        assert!(!load_prefs(directory.path()).enabled);
+        emit_event(EventFamily::Event, "ignored", json!({}), &mut inner).unwrap();
+        assert_eq!(row_count(&inner), 2);
+    }
+
+    #[test]
+    fn preference_write_failure_does_not_change_state_or_emit_success() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        inner.data_dir = directory.path().join("missing-directory");
+        assert!(set_preference(&mut inner, "enabled", false).is_err());
+        assert!(inner.prefs.enabled);
+        assert_eq!(row_count(&inner), 0);
+    }
+
+    #[test]
+    fn opted_out_queues_still_drain_and_retries_preserve_ids() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        emit_event(
+            EventFamily::Event,
+            "search.query",
+            json!({ "term_length": 2 }),
+            &mut inner,
+        )
+        .unwrap();
+        set_preference(&mut inner, "enabled", false).unwrap();
+        let manager = TelemetryManager::default();
+        *manager.state.lock().unwrap() = Some(inner);
+        let (_, first_batch) = take_pending(&manager).unwrap();
+        let (_, retry_batch) = take_pending(&manager).unwrap();
+        assert_eq!(first_batch, retry_batch);
+        assert_eq!(first_batch.len(), 2);
+        let ids: Vec<String> = first_batch.into_iter().map(|(id, _)| id).collect();
+        delete_sent_events(&manager, &ids);
+        assert!(take_pending(&manager).unwrap().1.is_empty());
+    }
 }
 
 /// Checks opt-out prefs and, if the event is allowed, delegates to `insert_event`.
@@ -1001,57 +1049,36 @@ pub fn telemetry_set_pref(
 ) -> Result<(), String> {
     let mut lock = state.state.lock().map_err(|e| format!("Lock error: {e}"))?;
     if let Some(inner) = lock.as_mut() {
-        match key.as_str() {
-            "enabled" => {
-                // Emit before updating so the event fires regardless of the new state.
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.toggled",
-                    json!({ "enabled": value }),
-                    inner,
-                );
-                inner.prefs.enabled = value;
-            }
-            // Always record category changes so we can correlate event-volume drops in analytics.
-            "track_events" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_events", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_events = value;
-            }
-            "track_screen_views" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_screen_views", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_screen_views = value;
-            }
-            "track_errors" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_errors", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_errors = value;
-            }
-            "include_device_context" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "include_device_context", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.include_device_context = value;
-            }
-            _ => return Err(format!("Unknown preference key: {key}")),
-        }
-        save_prefs(&inner.data_dir, &inner.prefs)?;
+        set_preference(inner, &key, value)?;
     }
+    Ok(())
+}
+
+fn set_preference(inner: &mut TelemetryInner, key: &str, value: bool) -> Result<(), String> {
+    let mut next_prefs = inner.prefs.clone();
+    let preference = match key {
+        "enabled" => &mut next_prefs.enabled,
+        "track_events" => &mut next_prefs.track_events,
+        "track_screen_views" => &mut next_prefs.track_screen_views,
+        "track_errors" => &mut next_prefs.track_errors,
+        "include_device_context" => &mut next_prefs.include_device_context,
+        _ => return Err(format!("Unknown preference key: {key}")),
+    };
+    if *preference == value {
+        return Ok(());
+    }
+    *preference = value;
+    save_prefs(&inner.data_dir, &next_prefs)?;
+    inner.prefs = next_prefs;
+    // Preference changes deliberately bypass category gates. Previously queued events still drain.
+    let (name, payload) = if key == "enabled" {
+        ("telemetry.toggled", json!({ "enabled": value }))
+    } else {
+        (
+            "telemetry.category_toggled",
+            json!({ "category": key, "enabled": value }),
+        )
+    };
+    let _ = insert_event(EventFamily::Event, name, payload, inner);
     Ok(())
 }

@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
+import { telemetry } from '@/utils/index.js';
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
@@ -8,6 +9,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@/utils/index.js', () => ({
 	handleError: vi.fn(),
+	telemetry: { trackEvent: vi.fn(() => Promise.resolve()) },
 }));
 
 const WORD = {
@@ -21,8 +23,49 @@ const WORD = {
 };
 
 beforeEach(() => {
+	vi.mocked(telemetry.trackEvent).mockClear();
 	vi.mocked(invoke).mockReset();
 	vi.mocked(invoke).mockResolvedValue([WORD]);
+});
+
+it.each(['quiz', 'flashcards'] as const)(
+	'records successful %s links and explicit alternate selections only',
+	async (source) => {
+		const popover = createDictionaryPopover(source);
+		vi.mocked(invoke).mockResolvedValue([WORD, { ...WORD, hash: 'another' }]);
+		await popover.lookup('把');
+		expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('dictionary.word_opened', {
+			source,
+			interaction: 'link',
+		});
+		popover.select(0);
+		popover.select(9);
+		expect(telemetry.trackEvent).toHaveBeenCalledTimes(1);
+		popover.select(1);
+		expect(telemetry.trackEvent).toHaveBeenLastCalledWith('dictionary.word_opened', {
+			source,
+			interaction: 'popover_result',
+			result_position: 2,
+			result_count: 2,
+		});
+	}
+);
+
+it('does not open or count a lookup that completes after closing', async () => {
+	let finish!: (words: unknown) => void;
+	vi.mocked(invoke).mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			})
+	);
+	const popover = createDictionaryPopover('quiz');
+	const lookup = popover.lookup('把');
+	popover.close();
+	finish([WORD]);
+	await lookup;
+	expect(popover.word).toBeUndefined();
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
 });
 
 it('stores an anchor when lookup is opened from a dictionary link detail', async () => {

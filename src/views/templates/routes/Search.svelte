@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -22,6 +22,7 @@
 	let highlightActive = $state(true);
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
+	onMount(search.mount);
 
 	onMount(() => {
 		// Auto-focus the search field so the user can type immediately on launch and
@@ -48,6 +49,16 @@
 			word: entry,
 		}));
 	});
+	const activeResultKey = $derived(
+		searchResults.find((result) => result.key === search.activeResultKey)?.key ??
+			(search.activeWord
+				? searchResults.find(
+						(result) =>
+							lexicalDisplayId(result.word) === lexicalDisplayId(search.activeWord)
+					)?.key
+				: null) ??
+			null
+	);
 
 	function doSearch(text: string, clearable: boolean): void {
 		if (text) {
@@ -74,62 +85,18 @@
 		search.switchLang(input?.value ?? '');
 	};
 
-	const selectElement = (index: number): void => {
-		const container = document.querySelector('.search-results');
-		if (!container) {
-			return;
-		}
-		const elements = container.getElementsByClassName('sy-list-preview-item-container');
-		if (elements[index]) {
-			(elements[index] as HTMLElement).click();
-		}
-	};
-
-	const getActiveWordResultIndex = (): number => {
-		if (!search.activeWord) {
-			return -1;
-		}
-		return searchResults.findIndex(
-			(result) => lexicalDisplayId(result.word) === lexicalDisplayId(search.activeWord)
-		);
-	};
-
-	let replayedWordId = $state<string | undefined>(undefined);
-	$effect(() => {
-		const activeWordId = search.activeWord ? lexicalDisplayId(search.activeWord) : undefined;
-		if (!activeWordId) {
-			replayedWordId = undefined;
-			return;
-		}
-		if (replayedWordId === activeWordId) {
-			return;
-		}
-		const resultIndex = getActiveWordResultIndex();
-		if (resultIndex < 0) {
-			return;
-		}
-		replayedWordId = activeWordId;
-		tick()
-			.then(() => {
-				selectElement(resultIndex);
-				return undefined;
-			})
-			.catch(() => {});
-	});
-
-	const handleSelection = (data: { value: { word: SearchEntry } }): void => {
+	const handleSelection = (data: { index: number; value: { word: SearchEntry } }): void => {
 		const word = data.value.word;
 		if (!word) {
 			return;
 		}
-		replayedWordId = lexicalDisplayId(word);
-		search.setActiveWord(word);
-		search.pushHistory(word);
+		search.selectResult(data.index);
 		highlightActive = true;
 	};
 
 	const handleEnter = (): void => {
-		selectElement(0);
+		search.submitSearch();
+		highlightActive = true;
 	};
 
 	const clickTracker = createClickPositionTracker();
@@ -169,8 +136,8 @@
 			size="large"
 			placeholder="Search..."
 			id="search"
-			onchange={(value) => doSearch(value, true)}
-			onkeyup={(value) => doSearch(value, false)}
+			value={search.queryText}
+			oninput={(value) => doSearch(value, true)}
 			onenter={handleEnter}
 		/>
 	</div>
@@ -179,6 +146,7 @@
 			<SyList
 				style="preview"
 				values={searchResults}
+				activeKey={activeResultKey}
 				component={DictionaryListPreviewContent}
 				highlight={highlightActive}
 				onselection={handleSelection}

@@ -94,6 +94,7 @@
 
 	onMount(() => {
 		quizRoute.start(activeList);
+		return quizRoute.endSession;
 	});
 
 	const handleResultTimerComplete = () => {

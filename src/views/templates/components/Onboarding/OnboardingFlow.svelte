@@ -9,7 +9,6 @@
 	import { onboardingStore } from '@/stores/onboarding.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { telemetry } from '@/utils/telemetry.js';
-	import { handleError } from '@/utils/error.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
@@ -72,7 +71,7 @@
 				});
 			}
 		} catch (error) {
-			handleError('Failed to record onboarding completion.', error, { silent: true });
+			console.error('Failed to record onboarding completion.', error);
 		}
 	}
 </script>

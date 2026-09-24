@@ -117,6 +117,9 @@
 			lexical_id: lexicalDisplayId(word),
 		})
 			.then(() => {
+				telemetry
+					.trackEvent(fnName === 'addToList' ? 'bookmark.added' : 'bookmark.removed', {})
+					.catch(() => {});
 				onmembershipchange?.({
 					listName: list,
 					lexicalId: lexicalDisplayId(word),
@@ -133,6 +136,7 @@
 					'There was an error modifying the list membership. Check the log for more details.',
 					{
 						message: e instanceof Error ? e.message : String(e),
+						cause: e,
 						lexical_id: word ? lexicalDisplayId(word) : undefined,
 						list,
 					}
@@ -140,11 +144,9 @@
 			});
 	};
 	const removeListMembership = (list, word) => {
-		telemetry.trackEvent('bookmark.removed', {}).catch(() => {});
 		_modifyListMembership('removeFromList', list, word);
 	};
 	const addListMembership = (list, word) => {
-		telemetry.trackEvent('bookmark.added', {}).catch(() => {});
 		_modifyListMembership('addToList', list, word);
 	};
 
@@ -202,7 +204,6 @@
 			component: Brush,
 			tooltip: 'Write Characters',
 			action: () => {
-				telemetry.trackEvent('character_window.opened', {}).catch(() => {});
 				const characterSet = dictionaryDisplaySettingsStore.settings.characterSet;
 				const initialScript =
 					characterSet === CHARACTER_SETS.BOTH ? undefined : characterSet;
@@ -213,6 +214,7 @@
 					// otherwise it shows whatever word Search/Bookmarks last set.
 					mobileCharacterWindowWordStore.set(word, initialScript);
 					window.location.hash = '#/characters';
+					telemetry.trackEvent('character_window.opened', {}).catch(() => {});
 				} else {
 					invoke(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
 						word: {
@@ -220,12 +222,16 @@
 							simplified: word.simplified,
 							...(initialScript ? { initialScript } : {}),
 						},
-					}).catch((e) => {
-						handleError(
-							'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
-							e
-						);
-					});
+					})
+						.then(() =>
+							telemetry.trackEvent('character_window.opened', {}).catch(() => {})
+						)
+						.catch((e) => {
+							handleError(
+								'An unknown error occurred while trying to open the enlarged character window. Please check the log for more details.',
+								e
+							);
+						});
 				}
 			},
 		},

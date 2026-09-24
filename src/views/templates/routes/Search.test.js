@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import {
@@ -7,6 +7,12 @@ import {
 	mockPreferenceManager,
 } from '@test/utils/unitTestUtils.js';
 import Search from '@/routes/Search.svelte';
+import { searchStore } from '@/composables/search.svelte.js';
+
+beforeEach(() => {
+	searchStore.doSearch('');
+	searchStore.setActiveWord(undefined);
+});
 import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 
 // Mock must be defined inline because vi.mock is hoisted before imports
@@ -131,6 +137,31 @@ it('should preserve repeated entries from a long query with unique result keys',
 
 	expect(await findAllByText('西瓜')).toHaveLength(2);
 	expect(container.querySelectorAll('.sy-list-preview__rows > *')).toHaveLength(2);
+});
+it('should preserve the selected duplicate occurrence across remounts and select the first on Enter', async () => {
+	const user = userEvent.setup();
+	const view = render(Search, {});
+	await user.type(
+		view.getByPlaceholderText('Search...'),
+		'我的工作聚焦于人与产品、技术的交汇处。'
+	);
+	const results = await view.findAllByText('西瓜');
+	await user.click(results[1]);
+
+	const expectSelectedOccurrence = (container, index) => {
+		const rows = container.querySelectorAll('.sy-list-preview-item-container');
+		expect(rows).toHaveLength(2);
+		expect(container.querySelector('.sy-list-preview-item-container--active')).toBe(
+			rows[index]
+		);
+	};
+	await waitFor(() => expectSelectedOccurrence(view.container, 1));
+	view.unmount();
+
+	const restoredView = render(Search, {});
+	await waitFor(() => expectSelectedOccurrence(restoredView.container, 1));
+	await user.type(restoredView.getByPlaceholderText('Search...'), '{Enter}');
+	await waitFor(() => expectSelectedOccurrence(restoredView.container, 0));
 });
 it('should preserve the selected result when result order changes', async () => {
 	const user = userEvent.setup();

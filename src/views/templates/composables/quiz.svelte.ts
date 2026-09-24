@@ -37,8 +37,27 @@ let quizChosenAnswer = $state('');
 let quizLoading = $state(true);
 // Dictionary popover for cross-reference links (e.g. measure words) tapped inside the answer's
 // DictionaryContent. Shared with flashcards via createDictionaryPopover.
-const popover = createDictionaryPopover();
+const popover = createDictionaryPopover('quiz');
 const EMPTY_QUIZ_ERROR = new Error('EMPTY_QUIZ');
+let quizRequest = 0;
+let quizStarting = false;
+let quizContinuing = false;
+let quizAnswerPending = false;
+let sessionActive = false;
+let answeredCount = 0;
+
+function endSession(): void {
+	quizRequest += 1;
+	quizStarting = false;
+	quizContinuing = false;
+	quizAnswerPending = false;
+	popover.close();
+	if (!sessionActive) {
+		return;
+	}
+	sessionActive = false;
+	telemetry.trackEvent('quiz.abandoned', { answered_count: answeredCount }).catch(() => {});
+}
 
 function resetQuizState(): void {
 	quizFinalScore = undefined;
@@ -69,6 +88,12 @@ function handleQuestionChange(quizQuestionResponse: QuizQuestion): void {
 }
 
 function startQuiz(activeList: string | null): void {
+	if (quizStarting && quizActiveList === activeList) {
+		return;
+	}
+	endSession();
+	const requestId = ++quizRequest;
+	answeredCount = 0;
 	quizActiveList = activeList;
 	resetQuizState();
 	studySubRouteStore.set('quiz');
@@ -77,10 +102,16 @@ function startQuiz(activeList: string | null): void {
 		quizLoading = false;
 		return;
 	}
+	quizStarting = true;
+	let wordCount = 0;
 
-	bookmarksStore
+	void bookmarksStore
 		.getContent(quizActiveList)
 		.then((contents) => {
+			if (requestId !== quizRequest) {
+				return Promise.reject(EMPTY_QUIZ_ERROR);
+			}
+			wordCount = contents.length;
 			if (contents.length < MINIMUM_QUIZ_WORD_COUNT) {
 				quizLoading = false;
 				return Promise.reject(EMPTY_QUIZ_ERROR);
@@ -92,20 +123,25 @@ function startQuiz(activeList: string | null): void {
 					kind: SIMPLE_QUIZ,
 					question_kinds: [PINYIN_QUESTIONS, ENGLISH_QUESTIONS, CHARACTER_QUESTIONS],
 				},
-			}).then((result) => {
-				telemetry
-					.trackEvent('quiz.started', { word_count: contents.length })
-					.catch(() => {});
-				return result;
 			});
 		})
-		.then(() => invoke<QuizQuestion>(NATIVE_COMMANDS.QUIZ.NEXT_QUESTION))
+		.then(() => {
+			if (requestId !== quizRequest) {
+				return Promise.reject(EMPTY_QUIZ_ERROR);
+			}
+			return invoke<QuizQuestion>(NATIVE_COMMANDS.QUIZ.NEXT_QUESTION);
+		})
 		.then((nextQuestion) => {
+			if (requestId !== quizRequest) {
+				return undefined;
+			}
 			handleQuestionChange(nextQuestion);
+			sessionActive = true;
+			telemetry.trackEvent('quiz.started', { word_count: wordCount }).catch(() => {});
 			return undefined;
 		})
 		.catch((error) => {
-			if (error === EMPTY_QUIZ_ERROR) {
+			if (requestId !== quizRequest || error === EMPTY_QUIZ_ERROR) {
 				return;
 			}
 
@@ -114,15 +150,22 @@ function startQuiz(activeList: string | null): void {
 				'There was an error starting the quiz. Check the log for more details.',
 				error
 			);
+		})
+		.finally(() => {
+			if (requestId === quizRequest) {
+				quizStarting = false;
+			}
 		});
 }
 
 function answerQuestion(response: string): Promise<boolean> {
-	if (!quizQuestion || quizShowAnswer || quizFinalScore !== undefined) {
+	if (!quizQuestion || quizShowAnswer || quizAnswerPending || quizFinalScore !== undefined) {
 		return Promise.resolve(false);
 	}
 
 	quizChosenAnswer = response;
+	quizAnswerPending = true;
+	const requestId = quizRequest;
 	const answeredIn = Math.round((Date.now() - quizQuestionStartTime) / 1000);
 	return invoke<AnswerResponse>(NATIVE_COMMANDS.QUIZ.ANSWER, {
 		response: {
@@ -131,6 +174,10 @@ function answerQuestion(response: string): Promise<boolean> {
 		},
 	})
 		.then((answerResponse) => {
+			if (requestId !== quizRequest) {
+				return false;
+			}
+			answeredCount += 1;
 			quizAnswer = answerResponse.question.MultipleChoice.lexical_unit;
 			quizShowAnswer = true;
 			quizShowResult = true;
@@ -143,37 +190,73 @@ function answerQuestion(response: string): Promise<boolean> {
 				error
 			);
 			return false;
+		})
+		.finally(() => {
+			if (requestId === quizRequest) {
+				quizAnswerPending = false;
+			}
 		});
 }
 
 function continueQuiz(): void {
+	if (quizContinuing || !sessionActive || !quizShowAnswer || quizFinalScore !== undefined) {
+		return;
+	}
+	quizContinuing = true;
+	const requestId = quizRequest;
 	quizShowResult = quizQuestionsPending > 1 ? false : true;
 	if (quizQuestionsPending > 1) {
-		invoke<QuizQuestion>(NATIVE_COMMANDS.QUIZ.NEXT_QUESTION)
+		void invoke<QuizQuestion>(NATIVE_COMMANDS.QUIZ.NEXT_QUESTION)
 			.then((nextQuestion) => {
+				if (requestId !== quizRequest) {
+					return undefined;
+				}
 				handleQuestionChange(nextQuestion);
 				return undefined;
 			})
 			.catch((error) => {
 				handleError('There was an error getting the next question.', error);
+			})
+			.finally(() => {
+				if (requestId === quizRequest) {
+					quizContinuing = false;
+				}
 			});
 		return;
 	}
 
-	invoke<ScoreCard>(NATIVE_COMMANDS.QUIZ.SCORE)
+	void invoke<ScoreCard>(NATIVE_COMMANDS.QUIZ.SCORE)
 		.then((score) => {
+			if (requestId !== quizRequest) {
+				return [];
+			}
 			quizFinalScore = score.score;
 			quizFinalCorrect = score.correct;
 			quizFinalTotal = score.total;
-			telemetry.trackEvent('quiz.completed', {}).catch(() => {});
+			sessionActive = false;
+			telemetry
+				.trackEvent('quiz.completed', {
+					question_count: score.total,
+					correct_count: score.correct,
+					score: score.score,
+				})
+				.catch(() => {});
 			return invoke<IncorrectAnswer[]>(NATIVE_COMMANDS.QUIZ.INCORRECT);
 		})
 		.then((incorrect) => {
+			if (requestId !== quizRequest) {
+				return undefined;
+			}
 			quizFinalIncorrect = incorrect;
 			return undefined;
 		})
 		.catch((error) => {
 			handleError('There was an error getting the next question.', error);
+		})
+		.finally(() => {
+			if (requestId === quizRequest) {
+				quizContinuing = false;
+			}
 		});
 }
 
@@ -182,6 +265,7 @@ function retakeQuiz(): void {
 }
 
 function exitQuiz(): void {
+	endSession();
 	studySubRouteStore.set(null);
 	window.location.hash = '#/study';
 }
@@ -193,6 +277,7 @@ function studyFlashcardsFromQuiz(): void {
 }
 
 export const quizRoute = {
+	endSession,
 	get activeList(): string | null {
 		return quizActiveList;
 	},

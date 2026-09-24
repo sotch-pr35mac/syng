@@ -8,6 +8,14 @@ import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/
 import { BOOKMARK_LIST_MEMBERSHIP_OPERATIONS } from '@/types/bookmarks.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { telemetry } from '@/utils/telemetry.js';
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: {
+		trackEvent: vi.fn(() => Promise.resolve()),
+		trackError: vi.fn(() => Promise.resolve()),
+	},
+}));
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -105,6 +113,7 @@ const STRUCTURED_METADATA_WORD = {
 };
 
 beforeEach(() => {
+	vi.mocked(telemetry.trackEvent).mockClear();
 	setPreferenceManagerForTest(mockPreferenceManager({}));
 	dictionaryDisplaySettingsStore.setCharacterSet('both');
 	vi.mocked(invoke).mockClear();
@@ -271,6 +280,7 @@ it('reports a successful list membership change', async () => {
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.REMOVED,
 		});
 	});
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('bookmark.removed', {});
 });
 
 it('reports when a word is added to a list', async () => {
@@ -301,4 +311,28 @@ it('reports when a word is added to a list', async () => {
 			operation: BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED,
 		});
 	});
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('bookmark.added', {});
+});
+
+it('does not report bookmark success before persistence or after failure', async () => {
+	const user = userEvent.setup();
+	let failWrite;
+	setBookmarkManagerForTest({
+		waitForInit: () => Promise.resolve(),
+		inList: () => Promise.resolve([]),
+		addToList: () =>
+			new Promise((_resolve, reject) => {
+				failWrite = reject;
+			}),
+	});
+	const alert = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+	const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+	const { findByText } = render(DictionaryContent, { word: TEST_WORD, lists: ['Bookmarks'] });
+	await user.click((await findByText('Add to Bookmarks')).closest('button'));
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith('bookmark.added', expect.anything());
+	failWrite(new Error('write failed'));
+	await waitFor(() => expect(alert).toHaveBeenCalled());
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith('bookmark.added', expect.anything());
+	alert.mockRestore();
+	errorLog.mockRestore();
 });

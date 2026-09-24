@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
-import { handleError } from '@/utils/index.js';
+import { handleError, telemetry } from '@/utils/index.js';
+import type { WordOpeningSource } from '@/types/telemetry.js';
 
 export type DictionaryLookupRequest =
 	| string
@@ -43,7 +44,8 @@ export function getDictionaryLookupText(request: DictionaryLookupRequest): strin
  * partial when a new word is tapped while it's already open (see SySnapSheet); paging through
  * senses with the result arrows does not bump it.
  */
-export function createDictionaryPopover(): DictionaryPopoverController {
+export function createDictionaryPopover(source?: WordOpeningSource): DictionaryPopoverController {
+	let lookupRequest = 0;
 	let results = $state<SearchEntry[]>([]);
 	let resultIndex = $state(0);
 	let word = $state<SearchEntry | undefined>(undefined);
@@ -52,6 +54,7 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 
 	async function lookup(request: DictionaryLookupRequest): Promise<void> {
 		const lookup = normalizeDictionaryLookupRequest(request);
+		const requestId = ++lookupRequest;
 		try {
 			const found = lookup.lexicalId
 				? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
@@ -60,7 +63,7 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 				: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
 						text: lookup.text,
 					});
-			if (!found.length) {
+			if (requestId !== lookupRequest || !found.length) {
 				return;
 			}
 			const exactMatchIndex = found.findIndex(
@@ -73,17 +76,36 @@ export function createDictionaryPopover(): DictionaryPopoverController {
 				anchor = lookup.anchor;
 			}
 			reopenKey += 1;
+			if (source) {
+				telemetry
+					.trackEvent('dictionary.word_opened', { source, interaction: 'link' })
+					.catch(() => {});
+			}
 		} catch (error) {
 			handleError('There was an error looking up the dictionary word.', error);
 		}
 	}
 
 	function select(index: number): void {
+		if (!results[index] || index === resultIndex) {
+			return;
+		}
 		resultIndex = index;
 		word = results[index];
+		if (source) {
+			telemetry
+				.trackEvent('dictionary.word_opened', {
+					source,
+					interaction: 'popover_result',
+					result_position: index + 1,
+					result_count: results.length,
+				})
+				.catch(() => {});
+		}
 	}
 
 	function close(): void {
+		lookupRequest += 1;
 		word = undefined;
 		results = [];
 		resultIndex = 0;

@@ -67,6 +67,7 @@
 
 	onMount(() => {
 		quizRoute.start(activeList);
+		return quizRoute.endSession;
 	});
 
 	onDestroy(() => {

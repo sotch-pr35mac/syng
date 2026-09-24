@@ -27,6 +27,8 @@
 	});
 
 	let queuedEvents = $state<TelemetryEvent[]>([]);
+	let savingPreference = $state(false);
+	let preferenceError = $state('');
 	let refreshInterval: ReturnType<typeof setInterval>;
 	const telemetryLocked = $derived(privacySettingsStore.childPrivacyMode);
 
@@ -63,14 +65,25 @@
 		}
 	};
 
-	const setPref = async (key: string, value: boolean) => {
-		if (telemetryLocked) {
+	const setPref = async (key: keyof TelemetryPrefs, value: boolean) => {
+		if (telemetryLocked || savingPreference) {
 			return;
 		}
+		const previousValue = prefs[key];
+		savingPreference = true;
+		preferenceError = '';
 		prefs = { ...prefs, [key]: value };
-		await telemetry
-			.setPref(key, value)
-			.catch((e) => handleError('Failed to set telemetry preference.', e, { silent: true }));
+		try {
+			await telemetry.setPref(key, value);
+		} catch (error) {
+			// Native preferences remain unchanged when persistence fails.
+			prefs = { ...prefs, [key]: previousValue };
+			preferenceError =
+				'Could not save the telemetry setting. The previous setting is still active. Please try again.';
+			handleError('Failed to set telemetry preference.', error, { silent: true });
+		} finally {
+			savingPreference = false;
+		}
 	};
 
 	const formatTimestamp = (ms: number) => {
@@ -122,16 +135,23 @@
 		</p>
 	</div>
 
+	{#if preferenceError}
+		<p role="alert">{preferenceError}</p>
+	{/if}
+
 	<div class="telemetry--setting telemetry--setting--center">
 		<div>
 			<p class="telemetry--setting-label">Enable Telemetry</p>
-			<p class="telemetry--setting-description">Allow Syng to collect usage data</p>
+			<p class="telemetry--setting-description">
+				Allow Syng to collect usage data. Disabling stops new usage events; queued events
+				and preference changes can still be sent.
+			</p>
 		</div>
 		<SyToggle
 			value="enabled"
 			accessibleLabel="Enable Telemetry"
 			checked={telemetryLocked ? false : prefs.enabled}
-			disabled={telemetryLocked}
+			disabled={telemetryLocked || savingPreference}
 			onchange={(v) => setPref('enabled', v)}
 		/>
 	</div>
@@ -148,6 +168,7 @@
 				<SyToggle
 					value="track_events"
 					checked={prefs.track_events}
+					disabled={savingPreference}
 					onchange={(v) => setPref('track_events', v)}
 				/>
 			</div>
@@ -159,6 +180,7 @@
 				<SyToggle
 					value="track_screen_views"
 					checked={prefs.track_screen_views}
+					disabled={savingPreference}
 					onchange={(v) => setPref('track_screen_views', v)}
 				/>
 			</div>
@@ -170,6 +192,7 @@
 				<SyToggle
 					value="track_errors"
 					checked={prefs.track_errors}
+					disabled={savingPreference}
 					onchange={(v) => setPref('track_errors', v)}
 				/>
 			</div>
@@ -183,6 +206,7 @@
 				<SyToggle
 					value="include_device_context"
 					checked={prefs.include_device_context}
+					disabled={savingPreference}
 					onchange={(v) => setPref('include_device_context', v)}
 				/>
 			</div>
@@ -190,9 +214,10 @@
 	{/if}
 
 	<div class="telemetry--preview">
-		<h2 class="telemetry--preview-title">Recent Telemetry Events</h2>
+		<h2 class="telemetry--preview-title">Queued Telemetry Events</h2>
 		<p class="telemetry--preview-subtitle">
-			These are the actual payloads being sent to the telemetry backend.
+			These are queued payloads awaiting delivery. Successfully sent events disappear from
+			this preview.
 		</p>
 		<SyCollapsibleList items={queuedEvents} emptyText="No events recorded yet.">
 			{#snippet header(event)}

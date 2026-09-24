@@ -162,7 +162,7 @@ it('shows every telemetry option on the telemetry tab', async () => {
 	expect(getByText('Screen Views')).toBeTruthy();
 	expect(getByText('Error Reporting')).toBeTruthy();
 	expect(getByText('Device Context')).toBeTruthy();
-	expect(getByText('Recent Telemetry Events')).toBeTruthy();
+	expect(getByText('Queued Telemetry Events')).toBeTruthy();
 });
 
 it('restores the last active settings tab', async () => {

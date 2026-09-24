@@ -8,6 +8,13 @@ import {
 	toolsStore,
 } from '@/composables/tools.svelte.js';
 import type { PinyinSegment } from '@/types/tools.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { toolsRoute } from '@/composables/toolsRoute.svelte.js';
+import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(() => Promise.resolve()) },
+}));
 
 const THIRD_TONE = 3;
 
@@ -39,8 +46,54 @@ const segments: PinyinSegment[] = [
 ];
 
 beforeEach(() => {
+	vi.mocked(telemetry.trackEvent).mockClear();
 	resetToolsStoreForTest();
 	vi.mocked(invoke).mockReset();
+});
+
+it('captures operation inputs before asynchronous completion and excludes input text', async () => {
+	let finish!: (value: unknown) => void;
+	vi.mocked(invoke).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			})
+	);
+	toolsStore.setConverterInput('你好');
+	toolsStore.setConverterDirection('to_traditional');
+	toolsStore.doConvert();
+	toolsStore.setConverterInput('private replacement');
+	toolsStore.setConverterDirection('to_simplified');
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
+	finish({ text: '你好', direction: 'to_traditional', detected_script: 'simplified' });
+	await waitFor(() =>
+		expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('tools.completed', {
+			tool: 'converter',
+			mode: 'to_traditional',
+			input_length: 2,
+		})
+	);
+});
+
+it('does not record failed operations or failed copies as successful', async () => {
+	vi.mocked(invoke).mockRejectedValueOnce(new Error('failed'));
+	toolsStore.setPinyinifyInput('你好');
+	toolsStore.doPinyinify();
+	await Promise.resolve();
+	await Promise.resolve();
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
+	Object.defineProperty(navigator, 'clipboard', {
+		configurable: true,
+		value: { writeText: vi.fn().mockRejectedValue(new Error('denied')) },
+	});
+	await toolsRoute.copyText('private result');
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
+	vi.mocked(navigator.clipboard.writeText).mockResolvedValue(undefined);
+	toolsActiveTabStore.set('pinyinify');
+	await toolsRoute.copyText('private result');
+	expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('tools.copied', {
+		tool: 'pinyinify',
+	});
 });
 
 it('runs pinyinify and stores the returned segments', async () => {

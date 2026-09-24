@@ -5,6 +5,7 @@ import {
 } from '@/composables/textConversionTools.js';
 import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
 import { handleError } from '@/utils/error.js';
+import { telemetry } from '@/utils/telemetry.js';
 import type { ToolName } from '@/types/tools.js';
 import type { TextConversionToolConfig } from '@/types/textConversionTool.js';
 
@@ -48,9 +49,11 @@ function dismissToast(): void {
 }
 
 async function copyText(text: string): Promise<void> {
+	const tool = toolsActiveTabStore.value;
 	try {
 		await navigator.clipboard.writeText(text);
 		showCopyToast = true;
+		telemetry.trackEvent('tools.copied', { tool }).catch(() => {});
 	} catch (error) {
 		handleError('Copy failed.', error);
 	}

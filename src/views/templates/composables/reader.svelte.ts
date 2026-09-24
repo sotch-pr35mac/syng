@@ -44,6 +44,7 @@ const TEXT_CONTEXT_LENGTH = 32;
 const DELETE_CONFIRMATION_NAME_LIMIT = 5;
 const BYTES_PER_KIB = 1024;
 const BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB;
+const READING_ACTIVITY_INTERVAL_MS = 30_000;
 
 function navigateToReaderDocument(documentId: string): void {
 	window.location.hash = `#/read/document/${encodeURIComponent(documentId)}`;
@@ -69,6 +70,37 @@ let dictionaryAnchor = $state<DOMRect | undefined>(undefined);
 // when a new word is tapped while it's already open. Result-arrow nav does not bump it.
 let dictionaryOpenCount = $state(0);
 let lastPageTurnDirection = $state<'next' | 'previous' | undefined>(undefined);
+let dictionaryRequest = 0;
+let documentRequest = 0;
+let readingActivity = { next_count: 0, previous_count: 0 };
+let readingActivityTimer: ReturnType<typeof setTimeout> | undefined;
+
+function flushReadingActivity(): void {
+	clearTimeout(readingActivityTimer);
+	readingActivityTimer = undefined;
+	if (!readingActivity.next_count && !readingActivity.previous_count) {
+		return;
+	}
+	const payload = readingActivity;
+	readingActivity = { next_count: 0, previous_count: 0 };
+	telemetry.trackEvent('reader.reading_activity', payload).catch(() => {});
+}
+
+function mountTelemetry(): () => void {
+	const onVisibilityChange = () => {
+		if (document.visibilityState === 'hidden') {
+			flushReadingActivity();
+		}
+	};
+	document.addEventListener('visibilitychange', onVisibilityChange);
+	window.addEventListener('pagehide', flushReadingActivity);
+	return () => {
+		flushReadingActivity();
+		documentRequest += 1;
+		document.removeEventListener('visibilitychange', onVisibilityChange);
+		window.removeEventListener('pagehide', flushReadingActivity);
+	};
+}
 
 function participatesInLinearText(block: ReaderContentBlock): boolean {
 	return block.participates_in_linear_text !== false;
@@ -181,13 +213,14 @@ async function saveCurrentProgress(): Promise<void> {
 		if (activeDocument?._id === document._id) {
 			activeDocument = updatedDocument;
 		}
-		telemetry.trackEvent('reader.position_saved', {}).catch(() => {});
 	} catch (error) {
 		handleError('There was an error saving reader progress.', error);
 	}
 }
 
 async function openDocument(document: ReaderDocument): Promise<void> {
+	flushReadingActivity();
+	const requestId = ++documentRequest;
 	activeDocument = ensureReaderDocumentForRendering(document);
 	readerDocumentRouteStore.set(activeDocument._id);
 	tokenMap = {};
@@ -197,9 +230,12 @@ async function openDocument(document: ReaderDocument): Promise<void> {
 	pages = createPagesForCurrentLayout(activeDocument);
 	pageIndex = getPageIndexForLocator(activeDocument, pages);
 	await preparePageTokens();
+	if (requestId !== documentRequest) {
+		return;
+	}
 	telemetry
 		.trackEvent('reader.document_opened', {
-			source_type: activeDocument.source_type,
+			source_type: document.source_type,
 		})
 		.catch(() => {});
 }
@@ -233,7 +269,6 @@ async function importReaderPayload(
 				text_length_bucket: Math.ceil(document.text.length / 1000) * 1000,
 			})
 			.catch(() => {});
-		await openDocument(document);
 		navigateToReaderDocument(document._id);
 	} catch (error) {
 		trackImportFailed(importPayload.source_type, 'save', error);
@@ -362,6 +397,8 @@ async function deleteDocument(document: ReaderDocument): Promise<boolean> {
 	try {
 		await readerDocumentsStore.deleteDocument(document._id);
 		if (activeDocument?._id === document._id) {
+			flushReadingActivity();
+			documentRequest += 1;
 			activeDocument = undefined;
 			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
@@ -408,6 +445,8 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 			documents.map((document) => readerDocumentsStore.deleteDocument(document._id))
 		);
 		if (activeDocument && documents.some((document) => document._id === activeDocument?._id)) {
+			flushReadingActivity();
+			documentRequest += 1;
 			activeDocument = undefined;
 			readerDocumentRouteStore.set(null);
 			pageIndex = 0;
@@ -486,20 +525,17 @@ async function preparePageTokens(): Promise<void> {
 }
 
 async function goToPage(nextPageIndex: number): Promise<void> {
-	if (!activeDocument || !pages[nextPageIndex]) {
+	if (!activeDocument || !pages[nextPageIndex] || nextPageIndex === pageIndex) {
 		return;
 	}
 	const direction = nextPageIndex > pageIndex ? 'next' : 'previous';
 	lastPageTurnDirection = direction;
 	pageIndex = nextPageIndex;
+	readingActivity[direction === 'next' ? 'next_count' : 'previous_count'] += 1;
+	readingActivityTimer ??= setTimeout(flushReadingActivity, READING_ACTIVITY_INTERVAL_MS);
 	closeDictionary();
 	await preparePageTokens();
 	await saveCurrentProgress();
-	telemetry
-		.trackEvent('reader.page_changed', {
-			direction,
-		})
-		.catch(() => {});
 }
 
 function nextPage(): Promise<void> {
@@ -657,10 +693,14 @@ function getTableCellSegments(
 }
 
 async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<void> {
+	const requestId = ++dictionaryRequest;
 	try {
 		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
 			text: token.text,
 		});
+		if (requestId !== dictionaryRequest || !results.length) {
+			return;
+		}
 		const exactMatchIndex = results.findIndex(
 			(result) => result.simplified === token.text || result.traditional === token.text
 		);
@@ -670,22 +710,33 @@ async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<voi
 		dictionaryToken = token;
 		dictionaryAnchor = anchor;
 		dictionaryOpenCount += 1;
-		telemetry.trackEvent('reader.dictionary_opened', {}).catch(() => {});
+		telemetry
+			.trackEvent('dictionary.word_opened', { source: 'reader', interaction: 'token' })
+			.catch(() => {});
 	} catch (error) {
 		handleError('There was an error opening the dictionary popover.', error);
 	}
 }
 
 function selectDictionaryResult(index: number): void {
-	if (!dictionaryResults[index]) {
+	if (!dictionaryResults[index] || index === dictionaryResultIndex) {
 		return;
 	}
 	dictionaryResultIndex = index;
 	dictionaryWord = dictionaryResults[index];
+	telemetry
+		.trackEvent('dictionary.word_opened', {
+			source: 'reader',
+			interaction: 'popover_result',
+			result_position: index + 1,
+			result_count: dictionaryResults.length,
+		})
+		.catch(() => {});
 }
 
 async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
+	const requestId = ++dictionaryRequest;
 	try {
 		const results = lookup.lexicalId
 			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
@@ -694,7 +745,7 @@ async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<v
 			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
 					text: lookup.text,
 				});
-		if (!results.length) {
+		if (requestId !== dictionaryRequest || !results.length) {
 			return;
 		}
 		const exactMatchIndex = results.findIndex(
@@ -709,13 +760,16 @@ async function lookupDictionaryWord(request: DictionaryLookupRequest): Promise<v
 		// Bump so the mobile sheet re-pops to partial when a cross-link (e.g. a measure word)
 		// is tapped while the sheet is open. Mirrors openDictionary()'s behavior.
 		dictionaryOpenCount += 1;
-		telemetry.trackEvent('reader.dictionary_link_opened', {}).catch(() => {});
+		telemetry
+			.trackEvent('dictionary.word_opened', { source: 'reader', interaction: 'link' })
+			.catch(() => {});
 	} catch (error) {
 		handleError('There was an error looking up the dictionary word.', error);
 	}
 }
 
 function closeDictionary(): void {
+	dictionaryRequest += 1;
 	dictionaryResults = [];
 	dictionaryResultIndex = 0;
 	dictionaryWord = undefined;
@@ -724,6 +778,8 @@ function closeDictionary(): void {
 }
 
 function backToLibrary(): void {
+	flushReadingActivity();
+	documentRequest += 1;
 	saveCurrentProgress().catch(() => {});
 	activeDocument = undefined;
 	readerDocumentRouteStore.set(null);
@@ -780,6 +836,8 @@ function tokensMatchDictionarySelection(
 }
 
 export const readerRoute = {
+	mountTelemetry,
+	flushReadingActivity,
 	get documents(): ReaderDocument[] {
 		return readerDocumentsStore.documents;
 	},

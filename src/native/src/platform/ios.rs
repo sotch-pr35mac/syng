@@ -32,7 +32,7 @@ use crate::core::{track_event_native, TelemetryManager};
 const DID_BECOME_ACTIVE: &str = "UIApplicationDidBecomeActiveNotification";
 
 /// Telemetry event emitted each time a resume-time recovery reload fires.
-const RECOVERY_EVENT: &str = "app.ios_content_process_recovered";
+const RECOVERY_EVENT: &str = "app.ios_content_process_recovery_requested";
 
 /// Registers the resume-time recovery observer for the given webview window.
 ///
@@ -90,7 +90,7 @@ unsafe fn register_recovery_observer(platform_webview: PlatformWebview, app: App
         }
 
         let manager = app.state::<TelemetryManager>();
-        track_event_native(&manager, RECOVERY_EVENT, json!({ "recovered": true }));
+        track_event_native(&manager, RECOVERY_EVENT, json!({}));
     });
 
     let name = NSString::from_str(DID_BECOME_ACTIVE);
