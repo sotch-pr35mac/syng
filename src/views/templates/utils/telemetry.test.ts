@@ -10,9 +10,13 @@ beforeEach(async () => {
 	vi.useFakeTimers();
 	vi.resetModules();
 	vi.mocked(invoke).mockReset();
-	vi.mocked(invoke).mockImplementation(async (command) =>
-		command === 'telemetry_get_prefs' ? allEnabled : undefined
-	);
+	vi.mocked(invoke).mockImplementation(async (command, args) => {
+		if (command === 'telemetry_get_prefs') {
+			return allEnabled;
+		}
+		// Sanitization policy is tested in Rust. These grouping tests use safe fixtures.
+		return command === 'telemetry_sanitize_error' ? args : undefined;
+	});
 	telemetryModule = await import('@/utils/telemetry.js');
 });
 afterEach(() => {
@@ -89,40 +93,74 @@ it('does not recursively report initialization or bridge failures', async () => 
 	expect(invoke).toHaveBeenCalledTimes(1);
 });
 
-it('redacts known user content, credentials, paths and URLs without transmitting object dumps', async () => {
-	await telemetryModule.telemetry.trackError('app.error', 'Cannot open My Secret List', {
-		operation: 'getListContent',
-		error_message: 'My Secret List password=hunter2 Bearer abc.def',
-		error_stack:
-			'Error: failed\n at load (/Users/alice/private.txt:2:3)\n at fetch (https://example.test/private?q=secret)',
-		error_payload: JSON.stringify({
-			list: 'My Secret List',
-			nested: { notes: 'personal notes' },
-		}),
-		query: '你好',
-		lexical_id: '1:secret-entry',
-		nested: { token: 'abc.def' },
-		ms_since_foreground: 25,
+const errorCalls = () =>
+	vi.mocked(invoke).mock.calls.filter(([command]) => command === 'telemetry_track_error');
+
+it('delegates privacy policy to Rust and only retains the returned diagnostic data', async () => {
+	const safe = { name: 'app.error', message: '[redacted]', payload: { code: 'DB_CLOSED' } };
+	vi.mocked(invoke).mockResolvedValue(safe);
+	const shared = { title: 'private title' };
+	const payload: Record<string, unknown> = { code: 'DB_CLOSED', first: shared, second: shared };
+	payload.self = payload;
+	await telemetryModule.telemetry.trackError('app.error', 'private title', payload);
+	expect(invoke).toHaveBeenCalledWith('telemetry_sanitize_error', {
+		name: 'app.error',
+		message: 'private title',
+		payload: { code: 'DB_CLOSED', first: shared, second: shared, self: undefined },
 	});
-	const sent = JSON.stringify(vi.mocked(invoke).mock.calls);
-	expect(sent).not.toMatch(
-		/My Secret List|hunter2|abc\.def|alice|example\.test|你好|secret-entry|personal notes|error_payload/
-	);
-	expect(sent).toContain('getListContent');
-	expect(sent).toContain('at load');
-	expect(sent).toContain('ms_since_foreground');
+	expect(errorCalls()[0][1]).toEqual({
+		...safe,
+		payload: { code: 'DB_CLOSED', occurrence_count: 1 },
+	});
+	await telemetryModule.telemetry.trackError('app.error', 'private title', payload);
+	await vi.advanceTimersByTimeAsync(30_000);
+	expect(errorCalls()[1][1]).toEqual({
+		...safe,
+		payload: { code: 'DB_CLOSED', occurrence_count: 1, summary: true },
+	});
+	expect(JSON.stringify(errorCalls())).not.toContain('private title');
 });
 
-it('handles cyclic objects and Windows paths while keeping diagnostic codes', () => {
-	const payload: Record<string, unknown> = {
-		code: 'DB_CLOSED',
-		error_message: 'C:\\Users\\Alice\\private.db',
-	};
-	payload.self = payload;
-	expect(telemetryModule.sanitizeDiagnostics('Failed', payload)).toEqual({
-		message: 'Failed',
-		payload: { code: 'DB_CLOSED', error_message: '[redacted path]' },
-	});
+it('does not enqueue unsanitized diagnostics when native preparation fails', async () => {
+	vi.mocked(invoke).mockRejectedValue(new Error('bridge unavailable'));
+	await expect(telemetryModule.telemetry.trackError('app.error', 'private')).rejects.toThrow();
+	expect(errorCalls()).toHaveLength(0);
+});
+
+it.each([false, true])(
+	'does not retain an in-flight error across opt-out (reenabled: %s)',
+	async (reenabled) => {
+		let finish!: (safe: unknown) => void;
+		vi.mocked(invoke).mockImplementation((command) =>
+			command === 'telemetry_sanitize_error'
+				? new Promise((resolve) => {
+						finish = resolve;
+					})
+				: Promise.resolve(undefined)
+		);
+		const pending = telemetryModule.telemetry.trackError('app.error', 'failure');
+		await telemetryModule.telemetry.setPref('track_errors', false);
+		if (reenabled) {
+			await telemetryModule.telemetry.setPref('track_errors', true);
+		}
+		finish({ name: 'app.error', message: 'failure', payload: {} });
+		await pending;
+		await vi.advanceTimersByTimeAsync(30_000);
+		expect(errorCalls()).toHaveLength(0);
+	}
+);
+
+it('does not group distinct stages, statuses or underlying causes as repeats', async () => {
+	for (const payload of [
+		{ stage: 'check', status: 503 },
+		{ stage: 'check', status: 429 },
+		{ stage: 'download', status: 503 },
+		{ stage: 'check', error_causes: [{ code: 'ECONNREFUSED' }] },
+		{ stage: 'check', error_causes: [{ code: 'ETIMEDOUT' }] },
+	]) {
+		await telemetryModule.telemetry.trackError('app.error', 'Update failed', payload);
+	}
+	expect(errorCalls()).toHaveLength(5);
 });
 
 it('emits the first error immediately and a counted summary for repeats', async () => {
@@ -131,9 +169,9 @@ it('emits the first error immediately and a counted summary for repeats', async 
 			operation: 'read',
 		});
 	}
-	expect(invoke).toHaveBeenCalledTimes(1);
+	expect(errorCalls()).toHaveLength(1);
 	await vi.advanceTimersByTimeAsync(30_000);
-	expect(invoke).toHaveBeenCalledTimes(2);
+	expect(errorCalls()).toHaveLength(2);
 	expect(invoke).toHaveBeenLastCalledWith(
 		'telemetry_track_error',
 		expect.objectContaining({
@@ -143,7 +181,7 @@ it('emits the first error immediately and a counted summary for repeats', async 
 	await telemetryModule.telemetry.trackError('app.error', 'Database closed', {
 		operation: 'read',
 	});
-	expect(invoke).toHaveBeenCalledTimes(3);
+	expect(errorCalls()).toHaveLength(3);
 });
 
 it('flushes error repeats on background and does not combine different operations', async () => {
@@ -154,9 +192,9 @@ it('flushes error repeats on background and does not combine different operation
 	await telemetryModule.telemetry.trackError('app.error', 'Failed', { operation: 'read' });
 	window.dispatchEvent(new Event('pagehide'));
 	await vi.advanceTimersByTimeAsync(0);
-	expect(invoke).toHaveBeenCalledTimes(3);
+	expect(errorCalls()).toHaveLength(3);
 	await vi.advanceTimersByTimeAsync(30_000);
-	expect(invoke).toHaveBeenCalledTimes(3);
+	expect(errorCalls()).toHaveLength(3);
 });
 
 it('does not replay disabled errors or pending repeats after reenabling', async () => {

@@ -2,16 +2,19 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import type { Update } from '@tauri-apps/plugin-updater';
 
 const mocks = vi.hoisted(() => ({
-	check: vi.fn(),
+	invoke: vi.fn(),
+	handleError: vi.fn(),
 	relaunch: vi.fn(),
 	exportMigrationData: vi.fn(),
 	preferenceManager: {},
 	bookmarkManager: {},
 }));
 
-vi.mock('@tauri-apps/plugin-updater', () => ({
-	check: mocks.check,
+vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@tauri-apps/api/core')>()),
+	invoke: mocks.invoke,
 }));
+vi.mock('@/utils/error.js', () => ({ handleError: mocks.handleError }));
 
 vi.mock('@tauri-apps/plugin-process', () => ({
 	relaunch: mocks.relaunch,
@@ -27,7 +30,7 @@ vi.mock('@/utils/migrationManager.js', () => ({
 }));
 
 import { updateStore } from '@/stores/update.svelte.js';
-import { installPendingUpdate } from '@/utils/updateManager.js';
+import { checkForUpdate, installPendingUpdate } from '@/utils/updateManager.js';
 
 const makeUpdate = () =>
 	({
@@ -38,12 +41,96 @@ const makeUpdate = () =>
 
 beforeEach(() => {
 	updateStore.resetStatus();
-	mocks.check.mockReset();
+	mocks.invoke.mockReset();
+	mocks.handleError.mockReset();
 	mocks.relaunch.mockReset();
 	mocks.relaunch.mockResolvedValue(undefined);
 	mocks.exportMigrationData.mockReset();
 	mocks.exportMigrationData.mockResolvedValue(undefined);
 });
+
+it('uses the diagnostic native check and retains plugin update resources', async () => {
+	mocks.invoke.mockResolvedValue({
+		rid: 42,
+		currentVersion: '2.4.0',
+		version: '2.5.0',
+		rawJson: {},
+	});
+	const update = await checkForUpdate('startup');
+	expect(mocks.invoke).toHaveBeenCalledWith('check_for_update');
+	expect(update?.version).toBe('2.5.0');
+	expect(update?.rid).toBe(42);
+	expect(typeof update?.downloadAndInstall).toBe('function');
+	expect(updateStore.pendingUpdate).toBe(update);
+	expect(mocks.handleError).not.toHaveBeenCalled();
+});
+
+it('handles no available update without reporting an error', async () => {
+	mocks.invoke.mockResolvedValue(null);
+	await expect(checkForUpdate()).resolves.toBeNull();
+	expect(mocks.handleError).not.toHaveBeenCalled();
+});
+
+it('reports native check details, trigger and elapsed time before propagating the error', async () => {
+	const cause = {
+		message: 'connection failed',
+		code: 'connect',
+		cause: { message: 'DNS failed' },
+	};
+	mocks.invoke.mockRejectedValue(cause);
+	await expect(checkForUpdate('startup')).rejects.toMatchObject({ cause });
+	expect(mocks.handleError).toHaveBeenCalledWith(
+		'Update operation failed',
+		expect.objectContaining({ cause }),
+		{
+			silent: true,
+			context: {
+				operation: 'updater',
+				stage: 'check',
+				trigger: 'startup',
+				service: 'app_updates',
+				duration_ms: expect.any(Number),
+			},
+		}
+	);
+});
+
+it.each(['backup', 'download', 'install', 'relaunch'])(
+	'reports the %s failure stage exactly once',
+	async (stage) => {
+		const update = makeUpdate();
+		const error = new Error('failure');
+		updateStore.setCheckResult(update);
+		if (stage === 'backup') {
+			mocks.exportMigrationData.mockRejectedValue(error);
+		} else if (stage === 'relaunch') {
+			mocks.relaunch.mockRejectedValue(error);
+		} else {
+			update.downloadAndInstall.mockImplementation(async (onEvent) => {
+				if (stage === 'install') {
+					onEvent({ event: 'Finished' });
+				}
+				throw error;
+			});
+		}
+		await expect(installPendingUpdate()).rejects.toBe(error);
+		expect(mocks.handleError).toHaveBeenCalledOnce();
+		expect(mocks.handleError).toHaveBeenCalledWith(
+			'Update operation failed',
+			error,
+			expect.objectContaining({
+				context: expect.objectContaining({
+					stage,
+					operation: 'updater',
+					duration_ms: expect.any(Number),
+				}),
+			})
+		);
+		if (stage !== 'relaunch') {
+			expect(mocks.relaunch).not.toHaveBeenCalled();
+		}
+	}
+);
 
 it('exports migration data before installing a pending update', async () => {
 	const update = makeUpdate();

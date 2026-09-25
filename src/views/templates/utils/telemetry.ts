@@ -6,93 +6,49 @@ import type { TelemetryPayloads } from '@/types/telemetry.js';
 let initialization: Promise<void> | undefined;
 let masterEnabled = true;
 let errorsEnabled = true;
+let errorPreferenceRevision = 0;
 let diagnosticsListenersInstalled = false;
 const ERROR_WINDOW_MS = 30_000;
 const MAX_ERROR_GROUPS = 100;
-const MAX_DIAGNOSTIC_LENGTH = 8_000;
-const MAX_DIAGNOSTIC_DEPTH = 8;
+const MAX_TRANSPORT_DEPTH = 16;
 const SETTING_DEBOUNCE_MS = 500;
-const diagnosticFields = new Set([
-	'error_name',
-	'error_message',
-	'error_stack',
-	'operation',
-	'visibility_state',
-	'ms_since_foreground',
-	'code',
-	'status',
-	'stage',
-]);
-const privateFieldPattern =
-	/(?:text|query|word|lexical|list|document|title|notes|password|token|secret|authorization|path|url|filename)/i;
-
-/** Diagnostic prose is best-effort redacted; arbitrary object dumps never leave the app. */
-export function redactDiagnosticText(text: string, privateValues: readonly string[] = []): string {
-	let redacted = text;
-	for (const value of [...privateValues]
-		.filter(Boolean)
-		.sort((left, right) => right.length - left.length)) {
-		redacted = redacted.split(value).join('[redacted]');
-	}
-	return redacted
-		.replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+/gi, '[redacted credential]')
-		.replace(
-			/\b(?:password|token|secret|api[_-]?key|authorization)\s*[:=]\s*["']?[^\s,"'}]+/gi,
-			'[redacted credential]'
-		)
-		.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[redacted email]')
-		.replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s)"']+/gi, '[redacted URL]')
-		.replace(
-			/(?:[A-Za-z]:\\|\\\\|\/(?:Users|home|private|tmp|var|Volumes)\/)[^\n)"']+/g,
-			'[redacted path]'
-		)
-		.replace(/\/(?:[A-Za-z0-9_.~-]+\/)+[^\s)"']*/g, '[redacted path]')
-		.replace(/\b\d+:(?:[0-9a-f]{64}|[a-z][a-z0-9_-]+)\b/gi, '[redacted lexical ID]')
-		.slice(0, MAX_DIAGNOSTIC_LENGTH);
+interface SanitizedDiagnostics {
+	name: string;
+	message: string;
+	payload: Record<string, unknown>;
 }
 
-export function sanitizeDiagnostics(message: string, payload: Record<string, unknown>) {
-	const privateValues: string[] = [];
-	const visited = new WeakSet<object>();
-	const collect = (value: unknown, privateField = false, depth = 0): void => {
-		if (depth > MAX_DIAGNOSTIC_DEPTH) {
-			return;
-		}
-		if (typeof value === 'string' && privateField) {
-			privateValues.push(value);
-		}
-		if (!value || typeof value !== 'object' || visited.has(value)) {
-			return;
-		}
-		visited.add(value);
-		for (const [key, child] of Object.entries(value)) {
-			collect(child, privateField || privateFieldPattern.test(key), depth + 1);
-		}
-	};
-	collect(payload);
-	// Older callers serialize objects. Read only to discover content to redact, never send them.
-	if (typeof payload.error_payload === 'string') {
-		try {
-			collect(JSON.parse(payload.error_payload));
-		} catch {
-			/* Not structured diagnostics. */
-		}
+/** Make diagnostic values IPC-safe; Rust alone decides what may enter telemetry. */
+function diagnosticTransport(value: unknown, ancestors = new Set<object>(), depth = 0): unknown {
+	if (typeof value === 'function' || typeof value === 'symbol') {
+		return undefined;
 	}
-	const safePayload: Record<string, string | number | boolean> = {};
-	for (const [key, value] of Object.entries(payload)) {
-		if (!diagnosticFields.has(key)) {
-			continue;
-		}
-		if (typeof value === 'string') {
-			safePayload[key] = redactDiagnosticText(value, privateValues);
-		} else if (
-			typeof value === 'boolean' ||
-			(typeof value === 'number' && Number.isFinite(value))
-		) {
-			safePayload[key] = value;
-		}
+	if (depth > MAX_TRANSPORT_DEPTH) {
+		throw new Error('Diagnostic payload exceeds transport depth');
 	}
-	return { message: redactDiagnosticText(message, privateValues), payload: safePayload };
+	if (typeof value === 'bigint') {
+		return String(value);
+	}
+	if (!value || typeof value !== 'object') {
+		return value;
+	}
+	if (ancestors.has(value)) {
+		return undefined;
+	}
+	ancestors.add(value);
+	try {
+		if (Array.isArray(value)) {
+			return value.map((child) => diagnosticTransport(child, ancestors, depth + 1));
+		}
+		return Object.fromEntries(
+			Object.entries(value).map(([key, child]) => [
+				key,
+				diagnosticTransport(child, ancestors, depth + 1),
+			])
+		);
+	} finally {
+		ancestors.delete(value);
+	}
 }
 
 async function invokeTelemetry<Result>(
@@ -276,12 +232,26 @@ export const telemetry = {
 		if (!masterEnabled || !errorsEnabled) {
 			return;
 		}
-		const safe = sanitizeDiagnostics(message, payload);
+		const preferenceRevision = errorPreferenceRevision;
+		const safe = await invokeTelemetry<SanitizedDiagnostics>(
+			NATIVE_COMMANDS.TELEMETRY.SANITIZE_ERROR,
+			{ name, message, payload: diagnosticTransport(payload) }
+		);
+		// A preference can change while native sanitization is in flight.
+		if (!masterEnabled || !errorsEnabled || preferenceRevision !== errorPreferenceRevision) {
+			return;
+		}
 		const key = JSON.stringify([
-			name,
+			safe.name,
 			safe.payload.operation,
+			safe.payload.trigger,
 			safe.message,
+			safe.payload.error_name,
 			safe.payload.error_message,
+			safe.payload.stage,
+			safe.payload.code,
+			safe.payload.status,
+			safe.payload.error_causes,
 		]);
 		const existing = errorGroups.get(key);
 		if (existing) {
@@ -292,13 +262,11 @@ export const telemetry = {
 			flushErrorGroup(errorGroups.keys().next().value!);
 		}
 		errorGroups.set(key, {
-			name,
 			...safe,
 			repeats: 0,
 			timer: setTimeout(() => flushErrorGroup(key), ERROR_WINDOW_MS),
 		});
 		await invokeTelemetry(NATIVE_COMMANDS.TELEMETRY.TRACK_ERROR, {
-			name,
 			...safe,
 			payload: { ...safe.payload, occurrence_count: 1 },
 		});
@@ -308,6 +276,9 @@ export const telemetry = {
 	getPrefs: (): Promise<TelemetryPrefs> => invokeTelemetry(NATIVE_COMMANDS.TELEMETRY.GET_PREFS),
 	setPref: async (key: string, value: boolean): Promise<void> => {
 		await invokeTelemetry(NATIVE_COMMANDS.TELEMETRY.SET_PREF, { key, value });
+		if (key === 'enabled' || key === 'track_errors') {
+			errorPreferenceRevision += 1;
+		}
 		if (key === 'enabled') {
 			masterEnabled = value;
 		}

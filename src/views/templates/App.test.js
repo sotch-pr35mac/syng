@@ -2,6 +2,24 @@ import { beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import App from '@/App.svelte';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+import { telemetry } from '@/utils/telemetry.js';
+import { getResumeContext } from '@/utils/appLifecycle.js';
+
+it('refreshes desktop error resume context and removes listeners on unmount', () => {
+	const { unmount } = render(App);
+	const now = vi.spyOn(Date, 'now').mockReturnValue(123456);
+	try {
+		window.dispatchEvent(new Event('pageshow'));
+		expect(getResumeContext().ms_since_foreground).toBe(0);
+		expect(telemetry.trackEvent).toHaveBeenCalledWith('app.lifecycle', { state: 'pageshow' });
+		unmount();
+		vi.mocked(telemetry.trackEvent).mockClear();
+		window.dispatchEvent(new Event('pageshow'));
+		expect(telemetry.trackEvent).not.toHaveBeenCalled();
+	} finally {
+		now.mockRestore();
+	}
+});
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;

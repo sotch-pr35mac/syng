@@ -15,6 +15,7 @@
 	} from '@/utils/startup.js';
 	import { telemetry, getRouteScreenName } from '@/utils/telemetry.js';
 	import { handleError } from '@/utils/error.js';
+	import { startLifecycleDiagnostics } from '@/utils/appLifecycle.js';
 	import { installPendingUpdate } from '@/utils/updateManager.js';
 	import { updateStore } from '@/stores/update.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
@@ -100,6 +101,7 @@
 		waitForStartupComplete().catch(() => {
 			startupFailed = true;
 		});
+		return startLifecycleDiagnostics();
 	});
 </script>
 

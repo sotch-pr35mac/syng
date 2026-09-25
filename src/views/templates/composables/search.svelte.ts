@@ -144,7 +144,10 @@ function runSearch(rawText: string, language?: SearchLang): void {
 			fullResults = [];
 			displayedRequest = undefined;
 			request.outcome = 'error';
-			handleError('Search failed.', queried.reason, { privateValues: [request.text] });
+			handleError('Search failed.', queried.reason, {
+				privateValues: [request.text],
+				context: { operation: 'dictionary.search', stage: 'query' },
+			});
 		}
 		if (request.trigger) {
 			commitQuery(request, request.trigger);

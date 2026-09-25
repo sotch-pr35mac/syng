@@ -25,6 +25,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
+mod diagnostics;
+
 /// Total number of events retained in the local queue before oldest rows are dropped.
 /// This cap covers all statuses (pending, retrying, etc.) across the full backlog.
 const MAX_QUEUE_SIZE: i64 = 500;
@@ -166,6 +168,20 @@ fn insert_event(
     payload: Value,
     inner: &mut TelemetryInner,
 ) -> Result<(), String> {
+    // Enforce privacy at the persistence boundary, including callers that bypass JS
+    // preparation or emit errors directly from native code.
+    let (name, payload) = if family == EventFamily::Error {
+        let message = payload
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let mut safe = diagnostics::sanitize(name, message, &payload);
+        safe.payload
+            .insert("message".into(), Value::String(safe.message));
+        (safe.name, Value::Object(safe.payload))
+    } else {
+        (name.to_owned(), payload)
+    };
     let id = Uuid::new_v4().to_string();
     let timestamp_ms = now_unix_ms();
     let family_str = serde_json::to_value(family)
@@ -605,6 +621,69 @@ mod tests {
     // --- insert_event writes to DB ---
 
     #[test]
+    fn queue_boundary_sanitizes_unprepared_and_prepared_errors() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        let payload = json!({
+            "message": "private title https://secret.test/private",
+            "error_message": "password='secret phrase'",
+            "private_text": ["private title"],
+            "error_causes": [{"code": "connect", "error_message": "/Users/alice/file"}],
+            "operation": "updater", "stage": "check", "occurrence_count": 2, "summary": true,
+            "headers": {"authorization": "Bearer secret"}
+        });
+        // Direct native insertion cannot bypass the policy.
+        insert_event(
+            EventFamily::Error,
+            "private title",
+            payload.clone(),
+            &mut inner,
+        )
+        .unwrap();
+        let mut safe = telemetry_sanitize_error(
+            "private title".into(),
+            payload["message"].as_str().unwrap().into(),
+            payload,
+        );
+        safe.payload
+            .insert("message".into(), Value::String(safe.message));
+        emit_event(
+            EventFamily::Error,
+            &safe.name,
+            Value::Object(safe.payload),
+            &mut inner,
+        )
+        .unwrap();
+        let envelopes: Vec<String> = inner
+            .db
+            .prepare("SELECT envelope FROM events")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(envelopes.len(), 2);
+        for envelope in envelopes {
+            for private in [
+                "private title",
+                "secret.test",
+                "secret phrase",
+                "alice",
+                "headers",
+                "private_text",
+            ] {
+                assert!(!envelope.contains(private), "{private}");
+            }
+            let envelope: Value = serde_json::from_str(&envelope).unwrap();
+            assert_eq!(envelope["name"], "[redacted]");
+            assert_eq!(envelope["payload"]["operation"], "updater");
+            assert_eq!(envelope["payload"]["error_causes"][0]["code"], "connect");
+            assert_eq!(envelope["payload"]["occurrence_count"], 2);
+            assert_eq!(envelope["payload"]["summary"], true);
+        }
+    }
+
+    #[test]
     fn test_insert_event_writes_row() {
         let dir = TempDir::new().unwrap();
         let mut inner = make_inner(&dir, TelemetryPrefs::default());
@@ -981,6 +1060,17 @@ pub fn telemetry_track_screen(
         emit_event(EventFamily::ScreenView, &name, payload, inner)?;
     }
     Ok(())
+}
+
+/// Prepare diagnostics in memory so frontend repeat grouping only retains sanitized data.
+/// This does not persist or transmit anything; insert_event rechecks every error on write.
+#[tauri::command]
+pub fn telemetry_sanitize_error(
+    name: String,
+    message: String,
+    payload: Value,
+) -> diagnostics::SanitizedDiagnostics {
+    diagnostics::sanitize(&name, &message, &payload)
 }
 
 #[tauri::command]

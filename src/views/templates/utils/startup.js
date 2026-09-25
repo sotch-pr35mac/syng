@@ -220,7 +220,7 @@ export const runStartupActions = () => {
 			shouldRunStartupUpdateCheck()
 				.then((shouldCheck) => {
 					if (shouldCheck) {
-						return checkForUpdate();
+						return checkForUpdate('startup');
 					}
 					return undefined;
 				})

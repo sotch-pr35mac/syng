@@ -71,6 +71,8 @@
 				});
 			}
 		} catch (error) {
+			// This is a telemetry failure, not an onboarding failure. handleError would
+			// try to report it through the same telemetry system that just failed.
 			console.error('Failed to record onboarding completion.', error);
 		}
 	}

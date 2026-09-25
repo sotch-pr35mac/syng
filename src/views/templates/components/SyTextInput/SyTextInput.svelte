@@ -68,6 +68,9 @@
 			])
 			.join(' ');
 	};
+	// An Input Method Editor (e.g. Chinese pinyin) uses Enter to confirm a candidate.
+	// 229 is the legacy IME-processing key code, a fallback for composition event ordering
+	// where isComposing alone is insufficient. Confirmation must not also select a result.
 	const IME_KEY_CODE = 229;
 	let composing = false;
 	let suppressCompositionEnter = false;

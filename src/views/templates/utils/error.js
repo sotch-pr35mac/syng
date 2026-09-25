@@ -1,6 +1,8 @@
 import { telemetry } from '@/utils/telemetry.js';
+import { getResumeContext } from '@/utils/appLifecycle.js';
 
 const reportedErrors = new WeakSet();
+const MAX_ERROR_CAUSES = 5;
 
 export function markErrorReported(error) {
 	if (error && typeof error === 'object') {
@@ -9,45 +11,75 @@ export function markErrorReported(error) {
 	return error;
 }
 
-function wasReported(error, visited = new WeakSet()) {
-	if (!error || typeof error !== 'object' || visited.has(error)) {
-		return false;
+function wasReported(error) {
+	const visited = new WeakSet();
+	let current = error;
+	while (current && typeof current === 'object' && !visited.has(current)) {
+		if (reportedErrors.has(current)) {
+			return true;
+		}
+		visited.add(current);
+		current = current.cause;
 	}
-	visited.add(error);
-	return reportedErrors.has(error) || wasReported(error.cause, visited);
+	return false;
 }
 
 /**
  * Describe an error for local logs. The telemetry boundary sanitizes this data separately.
  * @param {unknown} value
- * @returns {Record<string, string>}
+ * @returns {Record<string, unknown>}
  */
 export function describeUnknownError(value) {
 	if (value === undefined || value === null) {
 		return {};
-	}
-	if (value instanceof Error) {
-		return {
-			error_name: value.name,
-			error_message: value.message,
-			error_stack: value.stack ?? '',
-		};
 	}
 	if (typeof value === 'string') {
 		return { error_message: value };
 	}
 	if (typeof value === 'object') {
 		const record = /** @type {Record<string, unknown>} */ (value);
-		const message = record.message;
-		if (typeof message === 'string') {
-			return {
-				error_message: message,
-				error_payload: safeJsonStringify(value),
-			};
+		const details = {};
+		for (const [source, target] of Object.entries({
+			name: 'error_name',
+			message: 'error_message',
+			stack: 'error_stack',
+			code: 'code',
+			status: 'status',
+		})) {
+			const field = record[source];
+			if (typeof field === 'string' || typeof field === 'number') {
+				details[target] = field;
+			}
 		}
-		return { error_payload: safeJsonStringify(value) };
+		// Traverse Error.cause explicitly: native Error properties are not enumerable.
+		const seen = new WeakSet([value]);
+		const causes = [];
+		let cause = record.cause;
+		while (cause !== null && cause !== undefined && causes.length < MAX_ERROR_CAUSES) {
+			if (typeof cause !== 'object') {
+				causes.push({ error_message: String(cause) });
+				break;
+			}
+			if (seen.has(cause)) {
+				break;
+			}
+			seen.add(cause);
+			const { cause: nextCause, ...causeDetails } = cause;
+			causes.push({
+				...causeDetails,
+				error_name: cause.name,
+				error_message: cause.message,
+			});
+			cause = nextCause;
+		}
+		if (causes.length) {
+			details.error_causes = causes;
+		}
+		// Kept only for private-value discovery at the telemetry boundary, never transmitted.
+		details.error_payload = safeJsonStringify(value);
+		return details;
 	}
-	return { error_detail: String(value) };
+	return { error_message: String(value) };
 }
 
 /**
@@ -70,7 +102,7 @@ function safeJsonStringify(value) {
 export const handleError = (
 	message,
 	moreInfo,
-	{ silent = false, telemetryMessage = message, privateValues = [] } = {}
+	{ silent = false, telemetryMessage = message, privateValues = [], context = {} } = {}
 ) => {
 	const details = describeUnknownError(moreInfo);
 	if (moreInfo !== undefined && moreInfo !== null) {
@@ -84,7 +116,13 @@ export const handleError = (
 	if (!wasReported(moreInfo)) {
 		markErrorReported(moreInfo);
 		telemetry
-			.trackError('app.error', telemetryMessage, { ...details, private_text: privateValues })
+			.trackError('app.error', telemetryMessage, {
+				...getResumeContext(),
+				online: typeof navigator !== 'undefined' ? navigator.onLine : undefined,
+				...context,
+				...details,
+				private_text: privateValues,
+			})
 			.catch(() => {});
 	}
 	if (!silent) {

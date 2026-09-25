@@ -10,6 +10,8 @@ mod platform;
 mod utils;
 mod windows;
 
+#[cfg(desktop)]
+use core::updater::check_for_update;
 use core::{
     answer_question, classify, convert_characters, export_list_data, get_acknowledgements,
     get_incorrect_questions, get_next_question, get_region_options, import_list_data,
@@ -18,9 +20,9 @@ use core::{
     query_by_chinese, query_by_english, query_by_id, query_by_ids, query_by_pinyin,
     read_bookmark_recovery_report, read_legacy_migration_file, resolve_legacy_lexical_units,
     save_bookmark_recovery_report, score_quiz, start_quiz, telemetry_get_prefs,
-    telemetry_get_queued_events, telemetry_init, telemetry_set_pref, telemetry_track_error,
-    telemetry_track_event, telemetry_track_screen, tokenize_pinyin, tokenize_reader_text,
-    QuizState, TelemetryManager,
+    telemetry_get_queued_events, telemetry_init, telemetry_sanitize_error, telemetry_set_pref,
+    telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_pinyin,
+    tokenize_reader_text, QuizState, TelemetryManager,
 };
 #[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
@@ -83,6 +85,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.invoke_handler(tauri::generate_handler!(
+            check_for_update,
             init_dictionary,
             classify,
             query,
@@ -110,6 +113,7 @@ pub fn run() {
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,
+            telemetry_sanitize_error,
             telemetry_get_queued_events,
             telemetry_get_prefs,
             telemetry_set_pref,
@@ -153,6 +157,7 @@ pub fn run() {
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,
+            telemetry_sanitize_error,
             telemetry_get_queued_events,
             telemetry_get_prefs,
             telemetry_set_pref,
