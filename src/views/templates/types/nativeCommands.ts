@@ -6,6 +6,9 @@
  * Structure: NATIVE_COMMANDS.<DOMAIN>.<ACTION>
  */
 export const NATIVE_COMMANDS = {
+	INTERVIEWS: {
+		SIGNUP: 'interview_signup',
+	},
 	APP: {
 		IS_DEV_BUILD: 'is_dev_build',
 		IS_MAS_BUILD: 'is_mas_build',

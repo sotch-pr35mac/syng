@@ -15,6 +15,8 @@ pub const SYRVER_PRODUCTION_BASE_URL: &str =
 pub const TELEMETRY_EVENTS_PATH: &str = "/v1/telemetry";
 /// Syrver endpoint path that mints a per-installation telemetry token.
 pub const TELEMETRY_INSTALLATIONS_PATH: &str = "/v1/telemetry/installations";
+/// Independent, explicitly consented interview contact collection.
+pub const INTERVIEW_SIGNUPS_PATH: &str = "/v1/interview-signups";
 
 /// Selects the Syrver base URL by build type.
 pub fn syrver_base_url() -> &'static str {

@@ -49,7 +49,7 @@ it('loads persisted privacy settings', async () => {
 	expect(privacySettingsStore.childPrivacyMode).toBe(true);
 	expect(privacySettingsStore.completedOnboardingVersion).toBe(1);
 	expect(privacySettingsStore.forceOnboardingReplay).toBe(false);
-	expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
 });
 
 it('forces telemetry off when entering child privacy mode and restores default-on when leaving', async () => {
@@ -91,7 +91,7 @@ it('uses the completed version without retaining a region', async () => {
 
 	expect(preferenceManager.set).not.toHaveBeenCalled();
 	expect(privacySettingsStore.completedOnboardingVersion).toBe(1);
-	expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
 });
 
 it('replays onboarding without wiping other privacy settings', async () => {

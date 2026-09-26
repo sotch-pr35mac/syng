@@ -102,6 +102,18 @@ impl Default for TelemetryManager {
     }
 }
 
+impl TelemetryManager {
+    /// Read the same identifier placed on event envelopes, without emitting an event,
+    /// registering an installation, or changing the user's telemetry preferences.
+    pub(super) fn interview_device_id(&self) -> Result<String, String> {
+        self.state
+            .lock()
+            .ok()
+            .and_then(|inner| inner.as_ref().map(|inner| inner.device_id.clone()))
+            .ok_or_else(|| "unavailable".to_string())
+    }
+}
+
 fn now_unix_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -549,6 +561,30 @@ mod tests {
     }
 
     // --- TelemetryPrefs defaults ---
+
+    #[test]
+    fn interview_id_matches_events_without_changing_preferences_or_queue() {
+        let dir = TempDir::new().unwrap();
+        let mut inner = make_inner(&dir, TelemetryPrefs::default());
+        emit_event(EventFamily::Event, "test.event", json!({}), &mut inner).unwrap();
+        let envelope: String = inner
+            .db
+            .query_row("SELECT envelope FROM events LIMIT 1", [], |row| row.get(0))
+            .unwrap();
+        let envelope: Value = serde_json::from_str(&envelope).unwrap();
+        inner.prefs.enabled = false;
+        let manager = TelemetryManager::default();
+        *manager.state.lock().unwrap() = Some(inner);
+        assert_eq!(
+            manager.interview_device_id().unwrap(),
+            envelope["device_id"].as_str().unwrap()
+        );
+        let guard = manager.state.lock().unwrap();
+        let inner = guard.as_ref().unwrap();
+        assert!(!inner.prefs.enabled);
+        assert_eq!(row_count(inner), 1);
+        assert!(!manager.flush_started.load(Ordering::SeqCst));
+    }
 
     #[test]
     fn test_prefs_default_all_enabled() {

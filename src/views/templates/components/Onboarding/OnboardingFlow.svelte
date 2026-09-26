@@ -6,6 +6,7 @@
 	import WelcomeStep from '@/components/Onboarding/WelcomeStep.svelte';
 	import ChinesePreferencesStep from '@/components/Onboarding/ChinesePreferencesStep.svelte';
 	import PrivacyStep from '@/components/Onboarding/PrivacyStep.svelte';
+	import InterviewStep from '@/components/Onboarding/InterviewStep.svelte';
 	import { onboardingStore } from '@/stores/onboarding.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { telemetry } from '@/utils/telemetry.js';
@@ -22,12 +23,16 @@
 	onboardingStore.reset();
 
 	let reduceMotion = $state(false);
+	let submittingInterview = $state(false);
+	const isInterview = $derived(onboardingStore.currentStepId === 'interview');
 	const transitionDuration = $derived(reduceMotion ? 0 : STEP_TRANSITION_MS);
 	const primaryLabel = $derived(onboardingStore.isLastStep ? 'Get Started' : 'Continue');
-	const primaryDisabled = $derived(onboardingStore.isLastStep && !onboardingStore.canContinue);
+	const primaryDisabled = $derived(!onboardingStore.canContinue || submittingInterview);
 
 	onMount(() => {
-		onboardingStore.reset();
+		if (onboardingStore.steps.length === 0) {
+			void completeOnboarding();
+		}
 		telemetry.trackEvent('onboarding.started', {}).catch(() => {});
 
 		const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -43,7 +48,9 @@
 
 	$effect(() => {
 		const step = onboardingStore.currentStepId;
-		telemetry.trackEvent('onboarding.step_viewed', { step }).catch(() => {});
+		if (step) {
+			telemetry.trackEvent('onboarding.step_viewed', { step }).catch(() => {});
+		}
 	});
 
 	function handleBack(): void {
@@ -51,14 +58,17 @@
 	}
 
 	async function handlePrimaryAction(): Promise<void> {
+		if (!onboardingStore.canContinue || submittingInterview) {
+			return;
+		}
 		if (!onboardingStore.isLastStep) {
 			onboardingStore.nextStep();
 			return;
 		}
-		if (!onboardingStore.canContinue) {
-			return;
-		}
+		await completeOnboarding();
+	}
 
+	async function completeOnboarding(): Promise<void> {
 		// Set Search before completing so the shell remounts the router at `#/`,
 		// not at a leftover hash, and not after awaiting telemetry.
 		window.location.hash = '#/';
@@ -95,31 +105,67 @@
 						<WelcomeStep />
 					{:else if onboardingStore.currentStepId === 'chinese_preferences'}
 						<ChinesePreferencesStep {variant} />
-					{:else}
+					{:else if onboardingStore.currentStepId === 'privacy'}
 						<PrivacyStep {variant} />
+					{:else if isInterview}
+						<InterviewStep
+							{variant}
+							bind:submitting={submittingInterview}
+							oncomplete={completeOnboarding}
+						/>
 					{/if}
 				</div>
 			{/key}
 		</div>
-		<div class="onboarding-flow__actions">
+		<div
+			class="onboarding-flow__actions"
+			class:onboarding-flow__actions--interview={isInterview}
+		>
 			<div class="onboarding-flow__back">
 				{#if !onboardingStore.isFirstStep}
-					<SyButton style="ghost" onclick={handleBack}>Back</SyButton>
+					<SyButton style="ghost" disabled={submittingInterview} onclick={handleBack}
+						>Back</SyButton
+					>
+				{/if}
+				{#if isInterview}
+					<SyButton
+						style="ghost"
+						disabled={submittingInterview}
+						onclick={() => {
+							void completeOnboarding();
+						}}>Skip</SyButton
+					>
 				{/if}
 			</div>
-			<OnboardingProgress currentStepIndex={onboardingStore.currentStepIndex} />
+			<OnboardingProgress
+				currentStepIndex={onboardingStore.currentStepIndex}
+				steps={onboardingStore.steps}
+			/>
 			<div class="onboarding-flow__primary">
-				<SyButton
-					style="filled"
-					color="blue"
-					classes={['onboarding-flow__continue']}
-					disabled={primaryDisabled}
-					onclick={() => {
-						handlePrimaryAction().catch(() => {});
-					}}
-				>
-					{primaryLabel}
-				</SyButton>
+				{#if isInterview}
+					<SyButton
+						type="submit"
+						form="interview-signup"
+						classes={['interview-signup-button']}
+						style="filled"
+						color="blue"
+						disabled={submittingInterview}
+					>
+						{submittingInterview ? 'Saving…' : 'Sign up and get started'}
+					</SyButton>
+				{:else}
+					<SyButton
+						style="filled"
+						color="blue"
+						classes={['onboarding-flow__continue']}
+						disabled={primaryDisabled}
+						onclick={() => {
+							handlePrimaryAction().catch(() => {});
+						}}
+					>
+						{primaryLabel}
+					</SyButton>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -127,6 +173,8 @@
 
 <style>
 	.onboarding-flow {
+		--sy-interview-accent: #2365b9;
+		--sy-interview-error: #b22156;
 		container-type: inline-size;
 		container-name: onboarding;
 		height: 100%;
@@ -201,12 +249,50 @@
 	}
 
 	.onboarding-flow__back {
+		display: flex;
 		min-width: 5rem;
 		justify-self: start;
 	}
 
 	.onboarding-flow__primary {
 		justify-self: end;
+	}
+
+	.onboarding-flow__actions :global(.sy-button:focus-visible) {
+		outline: 2px solid var(--sy-color--blue);
+		outline-offset: 3px;
+	}
+
+	.onboarding-flow__actions--interview {
+		--sy-color--blue-2: var(--sy-interview-accent);
+		--sy-color--blue: var(--sy-interview-accent);
+	}
+
+	.onboarding-flow__actions--interview
+		:global(.interview-signup-button.sy-button:not(:disabled)) {
+		background-color: var(--sy-interview-accent);
+		color: var(--sy-color--white);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.onboarding-flow {
+			--sy-interview-accent: #76aff9;
+			--sy-interview-error: #ff8eaf;
+		}
+	}
+
+	@container onboarding (max-width: 36rem) {
+		.onboarding-flow__actions--interview {
+			grid-template-columns: auto 1fr;
+		}
+		.onboarding-flow__actions--interview :global(.onboarding-progress) {
+			grid-row: 1;
+			grid-column: 1 / -1;
+		}
+		.onboarding-flow__actions--interview .onboarding-flow__back,
+		.onboarding-flow__actions--interview .onboarding-flow__primary {
+			grid-row: 2;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {

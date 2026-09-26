@@ -1,19 +1,20 @@
 <script lang="ts">
-	import { ONBOARDING_STEPS } from '@/types/onboarding.js';
+	import type { OnboardingStep } from '@/types/onboarding.js';
 
 	interface Props {
 		currentStepIndex: number;
+		steps: OnboardingStep[];
 	}
 
-	const { currentStepIndex }: Props = $props();
-	const stepCount = ONBOARDING_STEPS.length;
+	const { currentStepIndex, steps }: Props = $props();
+	const stepCount = $derived(steps.length);
 	const currentStepNumber = $derived(currentStepIndex + 1);
 </script>
 
 <div class="onboarding-progress" role="status" aria-label="Step {currentStepNumber} of {stepCount}">
 	<span class="onboarding-progress__label">Step {currentStepNumber} of {stepCount}</span>
 	<ol class="onboarding-progress__dots" aria-hidden="true">
-		{#each ONBOARDING_STEPS as step, index (step.id)}
+		{#each steps as step, index (step.id)}
 			<li
 				class="onboarding-progress__dot"
 				class:onboarding-progress__dot--current={index === currentStepIndex}
