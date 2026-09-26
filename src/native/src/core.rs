@@ -12,6 +12,8 @@ pub mod reader;
 pub mod regions;
 pub mod telemetry;
 pub mod tools;
+#[cfg(desktop)]
+pub mod updater;
 
 #[tauri::command]
 pub fn is_dev_build() -> bool {
@@ -44,7 +46,8 @@ pub use regions::get_region_options;
 #[cfg(target_os = "ios")]
 pub use telemetry::track_event_native;
 pub use telemetry::{
-    telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_set_pref,
-    telemetry_track_error, telemetry_track_event, telemetry_track_screen, TelemetryManager,
+    telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_sanitize_error,
+    telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
+    TelemetryManager,
 };
 pub use tools::{convert_characters, pinyinify, prettify_pinyin, tokenize_pinyin};

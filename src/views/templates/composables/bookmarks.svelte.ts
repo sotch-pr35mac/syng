@@ -43,6 +43,8 @@ export type WordListPreviewItem = SyListPreviewValue & {
 
 type WordSelection = {
 	index: number;
+	visibleIndex?: number;
+	visibleCount?: number;
 	value?: WordListPreviewItem;
 };
 
@@ -56,6 +58,7 @@ let words = $state<BookmarkWordEntry[]>([]);
 let wordList = $state<WordListPreviewItem[]>([]);
 let popoverResults = $state<SearchEntry[]>([]);
 let popoverResultIndex = $state(0);
+let popoverRequest = 0;
 let popoverWord = $state<SearchEntry | undefined>(undefined);
 let popoverAnchor = $state<DOMRect | undefined>(undefined);
 
@@ -113,6 +116,16 @@ function selectWord(selection: WordSelection): BookmarkWordEntry | undefined {
 	const selectedWord =
 		selection.value?.word ?? words[selection.value?.sourceIndex ?? selection.index];
 	setActiveWord(selectedWord);
+	if (selectedWord) {
+		telemetry
+			.trackEvent('dictionary.word_opened', {
+				source: 'bookmarks',
+				interaction: 'list',
+				result_position: (selection.visibleIndex ?? selection.index) + 1,
+				result_count: selection.visibleCount ?? wordList.length,
+			})
+			.catch(() => {});
+	}
 	return selectedWord;
 }
 
@@ -225,7 +238,11 @@ function setActiveList(nextList: string): Promise<void> {
 function createList(name: string): Promise<boolean> {
 	const newListName = name.trim();
 	if (!newListName || RESTRICTED_LIST_NAMES.includes(newListName)) {
-		handleError(`Cannot create new list with name ${newListName}.`);
+		handleError(
+			`Cannot create new list with name ${newListName}.`,
+			{ list: newListName },
+			{ telemetryMessage: 'Cannot create list with this name.' }
+		);
 		return Promise.resolve(false);
 	}
 
@@ -238,7 +255,8 @@ function createList(name: string): Promise<boolean> {
 		.catch((error: unknown) => {
 			handleError(
 				`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-				error
+				error,
+				{ telemetryMessage: 'List creation failed.', privateValues: [newListName] }
 			);
 			return false;
 		});
@@ -255,7 +273,8 @@ function deleteActiveList(): Promise<boolean> {
 		.catch((error: unknown) => {
 			handleError(
 				`There was an unexpected error deleting the list ${listToDelete}. Please check the log for more details.`,
-				error
+				error,
+				{ telemetryMessage: 'List deletion failed.', privateValues: [listToDelete] }
 			);
 			return false;
 		});
@@ -273,8 +292,11 @@ function confirmDeleteActiveList(): Promise<boolean> {
 }
 
 function exportActiveList(): Promise<boolean> {
-	return invoke(NATIVE_COMMANDS.BOOKMARKS.EXPORT_LIST, { name: activeList, data: words })
-		.then(() => {
+	return invoke<boolean>(NATIVE_COMMANDS.BOOKMARKS.EXPORT_LIST, { name: activeList, data: words })
+		.then((saved) => {
+			if (!saved) {
+				return false;
+			}
 			telemetry.trackEvent('list.exported', {}).catch(() => {});
 			return true;
 		})
@@ -339,28 +361,12 @@ function importList(): Promise<boolean> {
 }
 
 async function openPopoverDictionary(text: string, anchor: DOMRect): Promise<void> {
-	try {
-		const results = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-			text,
-		});
-		if (!results.length) {
-			return;
-		}
-		const exactMatchIndex = results.findIndex(
-			(result) => result.simplified === text || result.traditional === text
-		);
-		popoverResults = results;
-		popoverResultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
-		popoverWord = popoverResults[popoverResultIndex];
-		popoverAnchor = anchor;
-		telemetry.trackEvent('bookmarks.dictionary_link_opened', {}).catch(() => {});
-	} catch (error) {
-		handleError('There was an error looking up the dictionary word.', error);
-	}
+	await lookupPopoverWord({ text, anchor });
 }
 
 async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void> {
 	const lookup = normalizeDictionaryLookupRequest(request);
+	const requestId = ++popoverRequest;
 	try {
 		const results = lookup.lexicalId
 			? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
@@ -369,7 +375,7 @@ async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void
 			: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
 					text: lookup.text,
 				});
-		if (!results.length) {
+		if (requestId !== popoverRequest || !results.length) {
 			return;
 		}
 		const exactMatchIndex = results.findIndex(
@@ -381,18 +387,32 @@ async function lookupPopoverWord(request: DictionaryLookupRequest): Promise<void
 		if (lookup.anchor) {
 			popoverAnchor = lookup.anchor;
 		}
-		telemetry.trackEvent('bookmarks.dictionary_link_opened', {}).catch(() => {});
+		telemetry
+			.trackEvent('dictionary.word_opened', { source: 'bookmarks', interaction: 'link' })
+			.catch(() => {});
 	} catch (error) {
 		handleError('There was an error looking up the dictionary word.', error);
 	}
 }
 
 function selectPopoverResult(index: number): void {
+	if (!popoverResults[index] || index === popoverResultIndex) {
+		return;
+	}
 	popoverResultIndex = index;
 	popoverWord = popoverResults[index];
+	telemetry
+		.trackEvent('dictionary.word_opened', {
+			source: 'bookmarks',
+			interaction: 'popover_result',
+			result_position: index + 1,
+			result_count: popoverResults.length,
+		})
+		.catch(() => {});
 }
 
 function closePopoverDictionary(): void {
+	popoverRequest += 1;
 	popoverWord = undefined;
 	popoverResults = [];
 	popoverResultIndex = 0;

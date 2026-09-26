@@ -2,6 +2,8 @@
 	import type { Snippet } from 'svelte';
 	import { ExternalLink } from 'lucide-svelte';
 
+	const EXTERNAL_LINK_ICON_SIZE = 14;
+
 	interface Props {
 		items?: T[];
 		emptyText?: string;
@@ -42,7 +44,7 @@
 					>
 						{@render header(item)}
 						<span class="sy-collapsible-list--chevron" aria-hidden="true">
-							<ExternalLink size={14} />
+							<ExternalLink size={EXTERNAL_LINK_ICON_SIZE} />
 						</span>
 					</a>
 				{:else}

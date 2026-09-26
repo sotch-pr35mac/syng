@@ -68,14 +68,34 @@
 			])
 			.join(' ');
 	};
+	// An Input Method Editor (e.g. Chinese pinyin) uses Enter to confirm a candidate.
+	// 229 is the legacy IME-processing key code, a fallback for composition event ordering
+	// where isComposing alone is insufficient. Confirmation must not also select a result.
+	const IME_KEY_CODE = 229;
+	let composing = false;
+	let suppressCompositionEnter = false;
 	const handleKeyup = (event) => {
+		if (composing || event.isComposing || event.keyCode === IME_KEY_CODE) {
+			return;
+		}
 		if (event.code === 'Enter') {
+			if (suppressCompositionEnter) {
+				return;
+			}
 			onenter(event);
 		} else {
 			onkeyup(event.currentTarget.value);
 		}
 	};
 	const handleInput = (event) => {
+		if (composing || event.isComposing) {
+			return;
+		}
+		oninput(event.currentTarget.value);
+	};
+	const handleCompositionEnd = (event) => {
+		composing = false;
+		suppressCompositionEnter = true;
 		oninput(event.currentTarget.value);
 	};
 </script>
@@ -95,6 +115,15 @@
 	{spellcheck}
 	onchange={(e) => onchange(e.currentTarget.value)}
 	oninput={handleInput}
+	oncompositionstart={() => {
+		composing = true;
+	}}
+	oncompositionend={handleCompositionEnd}
+	onkeydown={(event) => {
+		if (!composing && !event.isComposing) {
+			suppressCompositionEnter = false;
+		}
+	}}
 	onkeyup={handleKeyup}
 />
 

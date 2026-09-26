@@ -2,18 +2,17 @@ import { telemetry } from '@/utils/telemetry.js';
 
 /**
  * App lifecycle telemetry: records foreground/background/pageshow breadcrumbs as the
- * mobile app is suspended and resumed (emitted as `app.lifecycle` events). It also
+ * app is suspended and resumed (emitted as `app.lifecycle` events). It also
  * exposes a resume context (`getResumeContext`) that error reports attach so failures can
- * be correlated with a recent resume from suspension — currently used by the open
- * resume-time bookmark/DB investigation (see utils/bookmarkManager.js). Telemetry only;
- * no behavior change.
+ * be correlated with a recent resume from suspension. Used by desktop and mobile
+ * shells, the shared error handler, and bookmark diagnostics. Telemetry only.
  */
 
 // When the app last came to the foreground (or first loaded).
 let lastForegroundAt = Date.now();
 
 /**
- * Snapshot attached to database error reports so they can be correlated with a recent
+ * Snapshot attached to error reports so they can be correlated with a recent
  * resume from suspension.
  */
 export function getResumeContext(): { visibility_state: string; ms_since_foreground: number } {

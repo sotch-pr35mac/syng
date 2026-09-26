@@ -9,6 +9,7 @@ export const NATIVE_COMMANDS = {
 	APP: {
 		IS_DEV_BUILD: 'is_dev_build',
 		IS_MAS_BUILD: 'is_mas_build',
+		CHECK_FOR_UPDATE: 'check_for_update',
 		GET_ACKNOWLEDGEMENTS: 'get_acknowledgements',
 		GET_REGION_OPTIONS: 'get_region_options',
 	},
@@ -55,6 +56,7 @@ export const NATIVE_COMMANDS = {
 		OPEN_CHARACTER_WINDOW: 'open_character_window',
 	},
 	TELEMETRY: {
+		SANITIZE_ERROR: 'telemetry_sanitize_error',
 		INIT: 'telemetry_init',
 		TRACK_EVENT: 'telemetry_track_event',
 		TRACK_ERROR: 'telemetry_track_error',

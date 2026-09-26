@@ -25,6 +25,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Manager, State};
 use uuid::Uuid;
 
+mod diagnostics;
+
 /// Total number of events retained in the local queue before oldest rows are dropped.
 /// This cap covers all statuses (pending, retrying, etc.) across the full backlog.
 const MAX_QUEUE_SIZE: i64 = 500;
@@ -166,6 +168,20 @@ fn insert_event(
     payload: Value,
     inner: &mut TelemetryInner,
 ) -> Result<(), String> {
+    // Enforce privacy at the persistence boundary, including callers that bypass JS
+    // preparation or emit errors directly from native code.
+    let (name, payload) = if family == EventFamily::Error {
+        let message = payload
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let mut safe = diagnostics::sanitize(name, message, &payload);
+        safe.payload
+            .insert("message".into(), Value::String(safe.message));
+        (safe.name, Value::Object(safe.payload))
+    } else {
+        (name.to_owned(), payload)
+    };
     let id = Uuid::new_v4().to_string();
     let timestamp_ms = now_unix_ms();
     let family_str = serde_json::to_value(family)
@@ -605,6 +621,69 @@ mod tests {
     // --- insert_event writes to DB ---
 
     #[test]
+    fn queue_boundary_sanitizes_unprepared_and_prepared_errors() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        let payload = json!({
+            "message": "private title https://secret.test/private",
+            "error_message": "password='secret phrase'",
+            "private_text": ["private title"],
+            "error_causes": [{"code": "connect", "error_message": "/Users/alice/file"}],
+            "operation": "updater", "stage": "check", "occurrence_count": 2, "summary": true,
+            "headers": {"authorization": "Bearer secret"}
+        });
+        // Direct native insertion cannot bypass the policy.
+        insert_event(
+            EventFamily::Error,
+            "private title",
+            payload.clone(),
+            &mut inner,
+        )
+        .unwrap();
+        let mut safe = telemetry_sanitize_error(
+            "private title".into(),
+            payload["message"].as_str().unwrap().into(),
+            payload,
+        );
+        safe.payload
+            .insert("message".into(), Value::String(safe.message));
+        emit_event(
+            EventFamily::Error,
+            &safe.name,
+            Value::Object(safe.payload),
+            &mut inner,
+        )
+        .unwrap();
+        let envelopes: Vec<String> = inner
+            .db
+            .prepare("SELECT envelope FROM events")
+            .unwrap()
+            .query_map([], |row| row.get(0))
+            .unwrap()
+            .map(Result::unwrap)
+            .collect();
+        assert_eq!(envelopes.len(), 2);
+        for envelope in envelopes {
+            for private in [
+                "private title",
+                "secret.test",
+                "secret phrase",
+                "alice",
+                "headers",
+                "private_text",
+            ] {
+                assert!(!envelope.contains(private), "{private}");
+            }
+            let envelope: Value = serde_json::from_str(&envelope).unwrap();
+            assert_eq!(envelope["name"], "[redacted]");
+            assert_eq!(envelope["payload"]["operation"], "updater");
+            assert_eq!(envelope["payload"]["error_causes"][0]["code"], "connect");
+            assert_eq!(envelope["payload"]["occurrence_count"], 2);
+            assert_eq!(envelope["payload"]["summary"], true);
+        }
+    }
+
+    #[test]
     fn test_insert_event_writes_row() {
         let dir = TempDir::new().unwrap();
         let mut inner = make_inner(&dir, TelemetryPrefs::default());
@@ -830,6 +909,54 @@ mod tests {
             defaults.include_device_context
         );
     }
+
+    #[test]
+    fn preference_events_only_record_persisted_changes_and_bypass_opt_out() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        set_preference(&mut inner, "enabled", true).unwrap();
+        assert_eq!(row_count(&inner), 0);
+        set_preference(&mut inner, "enabled", false).unwrap();
+        set_preference(&mut inner, "track_events", false).unwrap();
+        set_preference(&mut inner, "track_events", false).unwrap();
+        assert_eq!(row_count(&inner), 2);
+        assert!(!load_prefs(directory.path()).enabled);
+        emit_event(EventFamily::Event, "ignored", json!({}), &mut inner).unwrap();
+        assert_eq!(row_count(&inner), 2);
+    }
+
+    #[test]
+    fn preference_write_failure_does_not_change_state_or_emit_success() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        inner.data_dir = directory.path().join("missing-directory");
+        assert!(set_preference(&mut inner, "enabled", false).is_err());
+        assert!(inner.prefs.enabled);
+        assert_eq!(row_count(&inner), 0);
+    }
+
+    #[test]
+    fn opted_out_queues_still_drain_and_retries_preserve_ids() {
+        let directory = TempDir::new().unwrap();
+        let mut inner = make_inner(&directory, TelemetryPrefs::default());
+        emit_event(
+            EventFamily::Event,
+            "search.query",
+            json!({ "term_length": 2 }),
+            &mut inner,
+        )
+        .unwrap();
+        set_preference(&mut inner, "enabled", false).unwrap();
+        let manager = TelemetryManager::default();
+        *manager.state.lock().unwrap() = Some(inner);
+        let (_, first_batch) = take_pending(&manager).unwrap();
+        let (_, retry_batch) = take_pending(&manager).unwrap();
+        assert_eq!(first_batch, retry_batch);
+        assert_eq!(first_batch.len(), 2);
+        let ids: Vec<String> = first_batch.into_iter().map(|(id, _)| id).collect();
+        delete_sent_events(&manager, &ids);
+        assert!(take_pending(&manager).unwrap().1.is_empty());
+    }
 }
 
 /// Checks opt-out prefs and, if the event is allowed, delegates to `insert_event`.
@@ -935,6 +1062,17 @@ pub fn telemetry_track_screen(
     Ok(())
 }
 
+/// Prepare diagnostics in memory so frontend repeat grouping only retains sanitized data.
+/// This does not persist or transmit anything; insert_event rechecks every error on write.
+#[tauri::command]
+pub fn telemetry_sanitize_error(
+    name: String,
+    message: String,
+    payload: Value,
+) -> diagnostics::SanitizedDiagnostics {
+    diagnostics::sanitize(&name, &message, &payload)
+}
+
 #[tauri::command]
 pub fn telemetry_track_error(
     name: String,
@@ -1001,57 +1139,36 @@ pub fn telemetry_set_pref(
 ) -> Result<(), String> {
     let mut lock = state.state.lock().map_err(|e| format!("Lock error: {e}"))?;
     if let Some(inner) = lock.as_mut() {
-        match key.as_str() {
-            "enabled" => {
-                // Emit before updating so the event fires regardless of the new state.
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.toggled",
-                    json!({ "enabled": value }),
-                    inner,
-                );
-                inner.prefs.enabled = value;
-            }
-            // Always record category changes so we can correlate event-volume drops in analytics.
-            "track_events" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_events", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_events = value;
-            }
-            "track_screen_views" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_screen_views", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_screen_views = value;
-            }
-            "track_errors" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "track_errors", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.track_errors = value;
-            }
-            "include_device_context" => {
-                let _ = insert_event(
-                    EventFamily::Event,
-                    "telemetry.category_toggled",
-                    json!({ "category": "include_device_context", "enabled": value }),
-                    inner,
-                );
-                inner.prefs.include_device_context = value;
-            }
-            _ => return Err(format!("Unknown preference key: {key}")),
-        }
-        save_prefs(&inner.data_dir, &inner.prefs)?;
+        set_preference(inner, &key, value)?;
     }
+    Ok(())
+}
+
+fn set_preference(inner: &mut TelemetryInner, key: &str, value: bool) -> Result<(), String> {
+    let mut next_prefs = inner.prefs.clone();
+    let preference = match key {
+        "enabled" => &mut next_prefs.enabled,
+        "track_events" => &mut next_prefs.track_events,
+        "track_screen_views" => &mut next_prefs.track_screen_views,
+        "track_errors" => &mut next_prefs.track_errors,
+        "include_device_context" => &mut next_prefs.include_device_context,
+        _ => return Err(format!("Unknown preference key: {key}")),
+    };
+    if *preference == value {
+        return Ok(());
+    }
+    *preference = value;
+    save_prefs(&inner.data_dir, &next_prefs)?;
+    inner.prefs = next_prefs;
+    // Preference changes deliberately bypass category gates. Previously queued events still drain.
+    let (name, payload) = if key == "enabled" {
+        ("telemetry.toggled", json!({ "enabled": value }))
+    } else {
+        (
+            "telemetry.category_toggled",
+            json!({ "category": key, "enabled": value }),
+        )
+    };
+    let _ = insert_event(EventFamily::Event, name, payload, inner);
     Ok(())
 }

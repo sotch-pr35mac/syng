@@ -61,6 +61,8 @@
 		selectedKey = getItemKey(selectedValue, sourceIndex);
 		onselection?.({
 			index: sourceIndex,
+			visibleIndex: event.detail,
+			visibleCount: filteredValues.length,
 			value: selectedValue,
 		});
 	};

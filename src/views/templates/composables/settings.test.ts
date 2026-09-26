@@ -85,6 +85,29 @@ it('updates the tone colors preference and tracks the settings event', () => {
 	});
 });
 
+it('persists successive edits to the same picker array while ignoring unchanged colors', () => {
+	let storedColors = { hasCustomColors: false, colors: ['#111111', '#222222'] };
+	preferenceManager.get.mockImplementation(() => storedColors);
+	preferenceManager.set.mockImplementation((_property, value) => {
+		storedColors = value;
+	});
+	const pickerColors = [...storedColors.colors];
+
+	pickerColors[0] = '#333333';
+	updateToneColorsPreference({ hasCustomColors: true, colors: pickerColors });
+	const firstWrite = storedColors;
+	pickerColors[1] = '#444444';
+	updateToneColorsPreference({ hasCustomColors: true, colors: pickerColors });
+
+	expect(preferenceManager.set).toHaveBeenCalledTimes(2);
+	expect(firstWrite.colors).toEqual(['#333333', '#222222']);
+	expect(storedColors.colors).toEqual(['#333333', '#444444']);
+	expect(storedColors.colors).not.toBe(pickerColors);
+	updateToneColorsPreference({ hasCustomColors: true, colors: pickerColors });
+	expect(preferenceManager.set).toHaveBeenCalledTimes(2);
+	expect(telemetry.trackEvent).toHaveBeenCalledTimes(2);
+});
+
 it.each([
 	{
 		update: () => updateCharacterSetPreference('traditional'),

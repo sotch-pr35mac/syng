@@ -4,7 +4,7 @@
  * An instance of BookmarkManager class is created from a desired pouchdb.
  * Raw initialization is separate from schema readiness so restoration can run first.
  */
-import { describeUnknownError, handleError } from '@/utils/error.js';
+import { describeUnknownError, handleError, markErrorReported } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
 import { invoke } from '@tauri-apps/api/core';
@@ -364,15 +364,17 @@ export class BookmarkManager {
 	 * Param: String: operation: The manager method that failed (e.g. 'inList').
 	 * Param: Any: error: The original error caught from PouchDB.
 	 */
-	_reportDbError(operation, error) {
+	_reportDbError(operation, error, publicMessage, privateValues = []) {
 		console.error(error);
 		telemetry
 			.trackError('bookmarks.db_error', error?.message ?? 'unknown error', {
 				operation,
 				...describeUnknownError(error),
 				...getResumeContext(),
+				private_text: privateValues,
 			})
 			.catch(() => {});
+		return markErrorReported(new Error(publicMessage, { cause: error }));
 	}
 
 	/*
@@ -389,8 +391,13 @@ export class BookmarkManager {
 					return undefined;
 				})
 				.catch((e) => {
-					this._reportDbError('getLists', e);
-					reject(new Error('There was an error fetching the available word lists.'));
+					reject(
+						this._reportDbError(
+							'getLists',
+							e,
+							'There was an error fetching the available word lists.'
+						)
+					);
 				});
 		});
 	}
@@ -628,10 +635,12 @@ export class BookmarkManager {
 					throw e;
 				})
 				.catch((e) => {
-					this._reportDbError('getListContent', e);
 					reject(
-						new Error(
-							`There was an error loading the list ${listName}. Check the log for more details.`
+						this._reportDbError(
+							'getListContent',
+							e,
+							`There was an error loading the list ${listName}. Check the log for more details.`,
+							[listName]
 						)
 					);
 				});
@@ -859,9 +868,10 @@ export class BookmarkManager {
 					return undefined;
 				})
 				.catch((e) => {
-					this._reportDbError('inList', e);
 					reject(
-						new Error(
+						this._reportDbError(
+							'inList',
+							e,
 							'There was an error fetching bookmarks data. Please check the log for more details.'
 						)
 					);

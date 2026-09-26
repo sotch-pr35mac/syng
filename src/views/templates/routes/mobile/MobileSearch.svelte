@@ -28,6 +28,7 @@
 	// returning to this screen restores the previous state.
 	let currentSnap = $state<SheetSnap>(mobileSearchSnapStore.value);
 	let searchQuery = $state(mobileSearchQueryStore.value);
+	onMount(search.mount);
 
 	type SearchResultPreviewItem = SyListPreviewValue & {
 		word: SearchEntry;
@@ -85,8 +86,8 @@
 		mobileSearchSnapStore.set(snap);
 	}
 
-	function handleSelectResult(data: { value: { word: SearchEntry } }): void {
-		search.setActiveWord(data.value.word);
+	function handleSelectResult(data: { index: number; value: { word: SearchEntry } }): void {
+		search.selectResult(data.index);
 		mobileCharacterWindowWordStore.set(data.value.word);
 		sheetRef?.collapse();
 	}
@@ -148,8 +149,13 @@
 				placeholder="Search..."
 				id="mobile-search-input"
 				spellcheck={false}
-				onkeyup={handleSearch}
-				onchange={handleSearch}
+				oninput={handleSearch}
+				onenter={() => {
+					search.submitSearch();
+					if (search.activeWord) {
+						mobileCharacterWindowWordStore.set(search.activeWord);
+					}
+				}}
 			/>
 		</div>
 

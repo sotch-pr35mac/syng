@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 # CHINESE_DICTIONARY_DATA_DIR; see .cargo/config.toml.
 chinese_dictionary = "=4.1.0"
 serde_json = "1.0"
+regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 rust_iso3166 = "0.2.0"
 tauri = { version = "2", features = [] }

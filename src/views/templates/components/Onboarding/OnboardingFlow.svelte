@@ -9,7 +9,6 @@
 	import { onboardingStore } from '@/stores/onboarding.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { telemetry } from '@/utils/telemetry.js';
-	import { handleError } from '@/utils/error.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
@@ -72,7 +71,9 @@
 				});
 			}
 		} catch (error) {
-			handleError('Failed to record onboarding completion.', error, { silent: true });
+			// This is a telemetry failure, not an onboarding failure. handleError would
+			// try to report it through the same telemetry system that just failed.
+			console.error('Failed to record onboarding completion.', error);
 		}
 	}
 </script>

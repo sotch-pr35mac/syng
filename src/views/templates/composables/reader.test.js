@@ -1,4 +1,5 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { telemetry } from '@/utils';
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve([])),
@@ -68,7 +69,9 @@ async function setup(overrides = {}) {
 
 beforeEach(() => {
 	vi.stubGlobal('alert', vi.fn());
+	vi.mocked(telemetry.trackEvent).mockClear();
 });
+afterEach(() => vi.useRealTimers());
 
 it('navigates to an imported document after saving it', async () => {
 	const { manager, readerDocumentsStore, readerRoute } = await setup({
@@ -91,8 +94,69 @@ it('navigates to an imported document after saving it', async () => {
 	);
 
 	expect(manager.createDocument).toHaveBeenCalled();
-	expect(readerRoute.activeDocument?._id).toBe(document._id);
+	expect(readerRoute.activeDocument).toBeUndefined();
 	expect(window.location.hash).toBe('#/read/document/reader-1');
+	await readerRoute.openDocumentById(document._id);
+	expect(readerRoute.activeDocument?._id).toBe(document._id);
+	expect(
+		vi
+			.mocked(telemetry.trackEvent)
+			.mock.calls.filter(([name]) => name === 'reader.document_opened')
+	).toHaveLength(1);
+});
+
+it('aggregates only actual page turns and flushes on time, background and exit', async () => {
+	vi.useFakeTimers();
+	const text = '你好'.repeat(4000);
+	const longDocument = {
+		...document,
+		text,
+		blocks: [
+			{ id: 'paragraph', kind: 'paragraph', text, start_offset: 0, end_offset: text.length },
+		],
+	};
+	const { readerRoute, manager } = await setup({
+		updateProgress: vi.fn(() => Promise.resolve(longDocument)),
+	});
+	const unmount = readerRoute.mountTelemetry();
+	await readerRoute.openDocument(longDocument);
+	expect(readerRoute.pageCount).toBeGreaterThan(2);
+	await readerRoute.goToPage(0);
+	await readerRoute.nextPage();
+	await readerRoute.nextPage();
+	await readerRoute.previousPage();
+	expect(manager.updateProgress).toHaveBeenCalledTimes(3);
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith(
+		'reader.position_saved',
+		expect.anything()
+	);
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith(
+		'reader.reading_activity',
+		expect.anything()
+	);
+	await vi.advanceTimersByTimeAsync(30_000);
+	expect(telemetry.trackEvent).toHaveBeenLastCalledWith('reader.reading_activity', {
+		next_count: 2,
+		previous_count: 1,
+	});
+	await readerRoute.nextPage();
+	window.dispatchEvent(new Event('pagehide'));
+	expect(telemetry.trackEvent).toHaveBeenLastCalledWith('reader.reading_activity', {
+		next_count: 1,
+		previous_count: 0,
+	});
+	await readerRoute.previousPage();
+	unmount();
+	expect(telemetry.trackEvent).toHaveBeenLastCalledWith('reader.reading_activity', {
+		next_count: 0,
+		previous_count: 1,
+	});
+	await vi.advanceTimersByTimeAsync(30_000);
+	expect(
+		vi
+			.mocked(telemetry.trackEvent)
+			.mock.calls.filter(([name]) => name === 'reader.reading_activity')
+	).toHaveLength(3);
 });
 
 it('returns to the library when a routed document cannot be loaded', async () => {

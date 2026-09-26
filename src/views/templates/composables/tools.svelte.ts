@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { handleError } from '@/utils/error.js';
+import { telemetry } from '@/utils/telemetry.js';
 import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type {
@@ -42,9 +43,17 @@ function doPinyinify(): void {
 		return;
 	}
 
-	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: pinyinifyInput })
+	const input = pinyinifyInput;
+	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: input })
 		.then((result) => {
 			pinyinifyResult = result;
+			telemetry
+				.trackEvent('tools.completed', {
+					tool: 'pinyinify',
+					mode: 'automatic',
+					input_length: Array.from(input.trim()).length,
+				})
+				.catch(() => {});
 			return undefined;
 		})
 		.catch((error) => handleError('Pinyinify failed.', error));
@@ -58,12 +67,21 @@ function doConvert(): void {
 		return;
 	}
 
+	const input = converterInput;
+	const direction = converterDirection;
 	invoke<ConvertCharactersResult>(NATIVE_COMMANDS.TOOLS.CONVERT_CHARACTERS, {
-		text: converterInput,
-		direction: converterDirection,
+		text: input,
+		direction,
 	})
 		.then((result) => {
 			converterResult = result.text;
+			telemetry
+				.trackEvent('tools.completed', {
+					tool: 'converter',
+					mode: direction,
+					input_length: Array.from(input.trim()).length,
+				})
+				.catch(() => {});
 			converterResolvedDirection = result.direction;
 			converterDecision =
 				converterDirection === 'automatic'
@@ -86,22 +104,29 @@ function doColorize(): void {
 		return;
 	}
 
+	const input = colorizeInput;
+	const mode = colorizeMode;
+	const script = colorizeScript;
+	const trackCompletion = () =>
+		telemetry
+			.trackEvent('tools.completed', {
+				tool: 'colorize',
+				mode: `${mode}:${script}`,
+				input_length: Array.from(input.trim()).length,
+			})
+			.catch(() => {});
 	// Segment first; whether any token resolved to a dictionary word tells us if the
 	// input is Chinese characters (color the characters) or free-form pinyin (color
 	// the syllables) — no separate front-end CJK detector needed.
-	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: colorizeInput })
+	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: input })
 		.then((segments) => {
 			const hasChinese = segments.some(
 				(segment) => lexicalUnitFromToolSegment(segment) !== null
 			);
 			const resolvedMode =
-				colorizeMode === 'automatic'
-					? hasChinese
-						? 'characters'
-						: 'pinyin'
-					: colorizeMode;
+				mode === 'automatic' ? (hasChinese ? 'characters' : 'pinyin') : mode;
 			colorizeResolvedMode = resolvedMode;
-			colorizeResolvedScript = resolvedMode === 'characters' ? colorizeScript : 'automatic';
+			colorizeResolvedScript = resolvedMode === 'characters' ? script : 'automatic';
 			colorizeDecision = describeColorizeDecision(resolvedMode);
 			colorizeResult = segments;
 
@@ -109,14 +134,16 @@ function doColorize(): void {
 			// is colored by its tone.
 			if (resolvedMode === 'pinyin' && !hasChinese) {
 				return invoke<PinyinToken[]>(NATIVE_COMMANDS.TOOLS.TOKENIZE_PINYIN, {
-					text: colorizeInput,
+					text: input,
 				}).then((tokens) => {
 					colorizeTokens = tokens;
+					void trackCompletion();
 					return undefined;
 				});
 			}
 
 			colorizeTokens = [];
+			void trackCompletion();
 			return undefined;
 		})
 		.catch((error) => handleError('Colorize failed.', error));
@@ -147,12 +174,21 @@ function doPrettify(): void {
 		return;
 	}
 
+	const input = prettifyInput;
+	const direction = prettifyDirection;
 	invoke<PrettifyPinyinResult>(NATIVE_COMMANDS.TOOLS.PRETTIFY_PINYIN, {
-		text: prettifyInput,
-		direction: prettifyDirection,
+		text: input,
+		direction,
 	})
 		.then((result) => {
 			prettifyResult = result.text;
+			telemetry
+				.trackEvent('tools.completed', {
+					tool: 'prettify',
+					mode: direction,
+					input_length: Array.from(input.trim()).length,
+				})
+				.catch(() => {});
 			prettifyResolvedDirection = result.direction;
 			prettifyDecision =
 				prettifyDirection === 'automatic'

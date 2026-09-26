@@ -10,6 +10,14 @@ import {
 	bookmarksActiveWordStore,
 } from '@/stores/bookmarksRoute.svelte.js';
 import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import { telemetry } from '@/utils/telemetry.js';
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: {
+		trackEvent: vi.fn(() => Promise.resolve()),
+		trackError: vi.fn(() => Promise.resolve()),
+	},
+}));
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -84,6 +92,7 @@ let words;
 let lists;
 
 beforeEach(async () => {
+	vi.mocked(telemetry.trackEvent).mockClear();
 	invoke.mockResolvedValue(null);
 	words = WORDS.map((word) => ({ ...word, lists: [...word.lists] }));
 	lists = ['Bookmarks'];
@@ -148,6 +157,46 @@ it('removes the active row and advances the desktop details pane', async () => {
 	expect(
 		container.querySelector('.sy-list-preview-item-container--active').textContent
 	).toContain('苹果');
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('dictionary.word_opened', {
+		source: 'bookmarks',
+		interaction: 'list',
+		result_position: 1,
+		result_count: 2,
+	});
+	expect(
+		vi
+			.mocked(telemetry.trackEvent)
+			.mock.calls.filter(([name]) => name === 'dictionary.word_opened')
+	).toHaveLength(1);
+});
+
+it('reports the visible position when selecting from a filtered bookmark list', async () => {
+	const user = userEvent.setup();
+	const { findByPlaceholderText, findByText } = render(Bookmarks);
+	await user.type(await findByPlaceholderText('Filter'), 'apple');
+	await user.click(await findByText('苹果'));
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('dictionary.word_opened', {
+		source: 'bookmarks',
+		interaction: 'list',
+		result_position: 1,
+		result_count: 1,
+	});
+});
+
+it('does not count canceled or failed exports as saved', async () => {
+	invoke.mockResolvedValueOnce(false);
+	await expect(bookmarksRoute.exportActiveList()).resolves.toBe(false);
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith('list.exported', expect.anything());
+	const alert = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+	const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+	invoke.mockRejectedValueOnce(new Error('write failed'));
+	await expect(bookmarksRoute.exportActiveList()).resolves.toBe(false);
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith('list.exported', expect.anything());
+	invoke.mockResolvedValueOnce(true);
+	await expect(bookmarksRoute.exportActiveList()).resolves.toBe(true);
+	expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('list.exported', {});
+	alert.mockRestore();
+	errorLog.mockRestore();
 });
 
 it('preserves the current desktop state when list import is cancelled', async () => {

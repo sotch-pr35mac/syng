@@ -46,6 +46,7 @@
 
 	onMount(() => {
 		flashcardsRoute.load(listFromUrl);
+		return flashcardsRoute.endSession;
 	});
 </script>
 

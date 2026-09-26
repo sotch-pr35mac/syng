@@ -391,7 +391,7 @@ pub async fn export_list_data(
     app: tauri::AppHandle,
     name: String,
     data: Vec<BookmarkEntry>,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     let file_path = app
         .dialog()
         .file()
@@ -412,8 +412,9 @@ pub async fn export_list_data(
             .map_err(|error| format!("Could not prepare data for export: {error}"))?;
         write_report_to_file(&app, file_path, &export_data)
             .map_err(|error| error.replace("recovery report", "export file"))?;
+        return Ok(true);
     }
-    Ok(())
+    Ok(false)
 }
 
 #[tauri::command(async)]

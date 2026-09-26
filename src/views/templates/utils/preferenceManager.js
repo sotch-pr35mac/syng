@@ -136,7 +136,9 @@ export class PreferenceManager {
 
 		const preference = this._config[property];
 		if (!preference) {
-			handleError(`Requested preference ${property} does not exist!`);
+			handleError(`Requested preference ${property} does not exist!`, undefined, {
+				telemetryMessage: 'Requested preference does not exist.',
+			});
 			return undefined;
 		}
 		return preference.value;
@@ -155,7 +157,9 @@ export class PreferenceManager {
 
 		const preference = this._config[property];
 		if (!preference) {
-			handleError(`Requested preference ${property} does not exist!`);
+			handleError(`Requested preference ${property} does not exist!`, undefined, {
+				telemetryMessage: 'Requested preference does not exist.',
+			});
 			return;
 		}
 		if (preference.requiresRestart) {

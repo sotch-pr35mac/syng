@@ -18,6 +18,8 @@
 	}
 
 	const { variant = 'desktop' }: Props = $props();
+	let savingPreference = $state(false);
+	let preferenceError = $state('');
 
 	let telemetryPrefs = $state<TelemetryPrefs>({
 		enabled: true,
@@ -68,16 +70,25 @@
 			.catch(() => {});
 	});
 
-	function handleTelemetryPref(key: keyof TelemetryPrefs, enabled: boolean): void {
-		if (telemetryLocked) {
+	async function handleTelemetryPref(key: keyof TelemetryPrefs, enabled: boolean): Promise<void> {
+		if (telemetryLocked || savingPreference) {
 			return;
 		}
+		const previousValue = telemetryPrefs[key];
+		savingPreference = true;
+		preferenceError = '';
 		telemetryPrefs = { ...telemetryPrefs, [key]: enabled };
-		telemetry
-			.setPref(key, enabled)
-			.catch((error) =>
-				handleError('Failed to set telemetry preference.', error, { silent: true })
-			);
+		try {
+			await telemetry.setPref(key, enabled);
+		} catch (error) {
+			// Native preferences remain unchanged when persistence fails.
+			telemetryPrefs = { ...telemetryPrefs, [key]: previousValue };
+			preferenceError =
+				'Could not save the telemetry setting. The previous setting is still active. Please try again.';
+			handleError('Failed to set telemetry preference.', error, { silent: true });
+		} finally {
+			savingPreference = false;
+		}
 	}
 
 	async function handleAgeClassification(isBelowApplicableAge: boolean): Promise<void> {
@@ -170,7 +181,7 @@
 					value="enabled"
 					accessibleLabel="Enable Telemetry"
 					checked={telemetryLocked ? false : telemetryPrefs.enabled}
-					disabled={telemetryLocked}
+					disabled={telemetryLocked || savingPreference}
 					onchange={(enabled) => handleTelemetryPref('enabled', enabled)}
 				/>
 			</div>
@@ -187,6 +198,7 @@
 							value="track_events"
 							accessibleLabel="Event Tracking"
 							checked={telemetryPrefs.track_events}
+							disabled={savingPreference}
 							onchange={(enabled) => handleTelemetryPref('track_events', enabled)}
 						/>
 					</div>
@@ -201,6 +213,7 @@
 							value="track_screen_views"
 							accessibleLabel="Screen Views"
 							checked={telemetryPrefs.track_screen_views}
+							disabled={savingPreference}
 							onchange={(enabled) =>
 								handleTelemetryPref('track_screen_views', enabled)}
 						/>
@@ -216,6 +229,7 @@
 							value="track_errors"
 							accessibleLabel="Error Reporting"
 							checked={telemetryPrefs.track_errors}
+							disabled={savingPreference}
 							onchange={(enabled) => handleTelemetryPref('track_errors', enabled)}
 						/>
 					</div>
@@ -231,11 +245,15 @@
 							value="include_device_context"
 							accessibleLabel="Device Context"
 							checked={telemetryPrefs.include_device_context}
+							disabled={savingPreference}
 							onchange={(enabled) =>
 								handleTelemetryPref('include_device_context', enabled)}
 						/>
 					</div>
 				</div>
+			{/if}
+			{#if preferenceError}
+				<p role="alert">{preferenceError}</p>
 			{/if}
 			<div class="privacy-step__payloads">
 				<p class="privacy-step__payloads-label">Example payloads</p>

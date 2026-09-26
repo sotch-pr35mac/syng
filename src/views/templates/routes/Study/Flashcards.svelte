@@ -20,6 +20,7 @@
 
 	onMount(() => {
 		flashcardsRoute.load(listFromUrl);
+		return flashcardsRoute.endSession;
 	});
 
 	// Derive left actions based on current state

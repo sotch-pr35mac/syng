@@ -153,6 +153,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	);
 
 	onMount(() => {
+		const stopTelemetry = readerRoute.mountTelemetry();
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
 
@@ -164,6 +165,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		colorSchemeQuery.addEventListener('change', updateSystemColorScheme);
 
 		return () => {
+			stopTelemetry();
 			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
 		};
 	});

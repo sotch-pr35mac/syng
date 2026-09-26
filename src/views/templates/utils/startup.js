@@ -111,7 +111,7 @@ export const runStartupActions = () => {
 	const bookmarkManagerInit = bookmarkManager.init();
 	const readerDocumentManagerInit = readerDocumentManager.init();
 	const telemetryInit = telemetry.init().catch((error) => {
-		handleError('Telemetry initialization failed', error, { silent: true });
+		console.error('Telemetry initialization failed', error);
 	});
 
 	const initializeStyles = () => {
@@ -220,7 +220,7 @@ export const runStartupActions = () => {
 			shouldRunStartupUpdateCheck()
 				.then((shouldCheck) => {
 					if (shouldCheck) {
-						return checkForUpdate();
+						return checkForUpdate('startup');
 					}
 					return undefined;
 				})
