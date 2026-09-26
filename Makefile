@@ -78,6 +78,12 @@ package-windows:
 	cargo tauri build --target i686-pc-windows-msvc
 	cargo tauri build --target x86_64-pc-windows-msvc
 
+# Build on Windows with the MSVC ARM64 tools installed. NSIS avoids the
+# WiX/VBScript requirements on Windows ARM runners.
+package-windows-arm64:
+	rustup target add aarch64-pc-windows-msvc
+	cd src/native && cargo tauri build --target aarch64-pc-windows-msvc --bundles nsis
+
 package-macos:
 	rustup target add aarch64-apple-darwin
 	rustup target add x86_64-apple-darwin
@@ -86,7 +92,7 @@ package-macos:
 
 package-linux-arm64:
 	rustup target add aarch64-unknown-linux-gnu
-	cargo tauri build --target aarch64-unknown-linux-gnu
+	cd src/native && cargo tauri build --target aarch64-unknown-linux-gnu
 
 package-linux-amd64:
 	rustup target add x86_64-unknown-linux-gnu
