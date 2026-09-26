@@ -22,7 +22,6 @@
 	let submissionId = '';
 	let previousPayload = '';
 	const privacyUrl = 'https://getsyng.com/privacy';
-	const contactUrl = 'mailto:hello@bytecraft.xyz?subject=Syng%20interview%20signup';
 
 	$effect(() => {
 		if (errorMessage && errorElement) {
@@ -64,8 +63,7 @@
 		try {
 			await openUrl(url);
 		} catch {
-			errorMessage =
-				'The link couldn’t be opened. Visit getsyng.com/privacy or email hello@bytecraft.xyz directly.';
+			errorMessage = 'The link couldn’t be opened. Visit getsyng.com/privacy directly.';
 		}
 	}
 </script>
@@ -77,54 +75,44 @@
 	</header>
 	<form id="interview-signup" onsubmit={submit} aria-busy={submitting}>
 		<fieldset disabled={submitting}>
-			<div class="interview-step__field">
-				<label for="interview-name">What would you like us to call you?</label>
-				<p id="interview-name-help">A first name or nickname is fine.</p>
-				<input
-					id="interview-name"
-					name="preferred-name"
-					autocomplete="given-name"
-					required
-					maxlength="80"
-					aria-describedby="interview-name-help"
-					bind:value={preferredName}
-				/>
-			</div>
-			<div class="interview-step__field">
-				<label for="interview-email">Email address</label>
-				<input
-					id="interview-email"
-					name="email"
-					type="email"
-					inputmode="email"
-					autocomplete="email"
-					autocapitalize="none"
-					spellcheck="false"
-					required
-					maxlength="254"
-					bind:value={email}
-				/>
-			</div>
-			<div class="interview-step__disclosure" id="interview-disclosure">
-				<p>{INTERVIEW_CONSENT.linkage}</p>
-				<p>{INTERVIEW_CONSENT.retention}</p>
-				<p class="interview-step__links">
-					<a href={privacyUrl} onclick={(event) => openLink(event, privacyUrl)}
-						>Privacy policy</a
-					>
-					<a href={contactUrl} onclick={(event) => openLink(event, contactUrl)}
-						>Contact us about your signup</a
-					>
-				</p>
+			<div class="interview-step__fields">
+				<div class="interview-step__field">
+					<label for="interview-name">Preferred name</label>
+					<input
+						id="interview-name"
+						name="preferred-name"
+						autocomplete="given-name"
+						required
+						maxlength="80"
+						aria-describedby="interview-name-help"
+						bind:value={preferredName}
+					/>
+					<p id="interview-name-help">A first name or nickname is fine.</p>
+				</div>
+				<div class="interview-step__field">
+					<label for="interview-email">Email address</label>
+					<input
+						id="interview-email"
+						name="email"
+						type="email"
+						inputmode="email"
+						autocomplete="email"
+						autocapitalize="none"
+						spellcheck="false"
+						required
+						maxlength="254"
+						bind:value={email}
+					/>
+				</div>
 			</div>
 			<label class="interview-step__consent">
-				<input
-					type="checkbox"
-					required
-					bind:checked={consent}
-					aria-describedby="interview-disclosure"
-				/>
-				<span>{INTERVIEW_CONSENT.checkbox}</span>
+				<input type="checkbox" required bind:checked={consent} />
+				<span
+					>{INTERVIEW_CONSENT.checkbox}
+					<a href={privacyUrl} onclick={(event) => openLink(event, privacyUrl)}
+						>Privacy Policy</a
+					>.</span
+				>
 			</label>
 		</fieldset>
 		{#if errorMessage}<p
@@ -154,6 +142,9 @@
 		padding: 0;
 		min-width: 0;
 	}
+	header {
+		gap: var(--sy-space--large);
+	}
 	h2 {
 		margin: 0;
 		font-size: var(--sy-font-size--heading);
@@ -169,15 +160,15 @@
 	.interview-step__field {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--large);
+		gap: var(--sy-space);
+		min-width: 0;
 	}
 	.interview-step__field label {
 		font-weight: var(--sy-font-weight--bold);
 	}
-	.interview-step__field p,
-	.interview-step__disclosure {
+	.interview-step__field p {
 		color: var(--sy-text--dark);
-		font-size: var(--sy-font-size--small);
+		font-size: var(--sy-font-size--mobile-small);
 	}
 	.interview-step__field input {
 		width: 100%;
@@ -192,15 +183,10 @@
 		font-size: 16px;
 		user-select: text;
 	}
-	.interview-step__disclosure {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space--large);
-	}
-	.interview-step__links {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--sy-space--large);
+	.interview-step__fields {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--sy-space--extra-large);
 	}
 	a {
 		color: var(--sy-interview-accent);
@@ -212,6 +198,8 @@
 		gap: var(--sy-space--large);
 		line-height: var(--sy-line-height--body);
 		cursor: pointer;
+		font-size: var(--sy-font-size--mobile-small);
+		min-height: 44px;
 	}
 	.interview-step__consent input {
 		flex-shrink: 0;
@@ -234,8 +222,9 @@
 	.interview-step--mobile .interview-step__intro {
 		font-size: var(--sy-font-size--mobile-medium);
 	}
-	.interview-step--mobile .interview-step__disclosure,
-	.interview-step--mobile .interview-step__field p {
-		font-size: var(--sy-font-size--mobile-small);
+	@container onboarding (max-width: 36rem) {
+		.interview-step__fields {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

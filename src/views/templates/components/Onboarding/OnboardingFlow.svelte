@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { platform } from '@tauri-apps/plugin-os';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import OnboardingProgress from '@/components/Onboarding/OnboardingProgress.svelte';
@@ -19,6 +20,7 @@
 	const STEP_TRANSITION_X = 16;
 
 	const { variant = 'desktop' }: Props = $props();
+	const canDragWindow = $derived(variant === 'desktop' && platform() === 'macos');
 
 	onboardingStore.reset();
 
@@ -92,8 +94,13 @@
 	class="onboarding-flow"
 	class:onboarding-flow--desktop={variant === 'desktop'}
 	class:onboarding-flow--mobile={variant === 'mobile'}
+	class:onboarding-flow--draggable={canDragWindow}
+	data-tauri-drag-region={canDragWindow ? true : undefined}
 	data-testid="onboarding-flow"
 >
+	{#if canDragWindow}
+		<div class="onboarding-flow__titlebar" data-tauri-drag-region aria-hidden="true"></div>
+	{/if}
 	<div class="onboarding-flow__card">
 		<div class="onboarding-flow__body">
 			{#key onboardingStore.currentStepId}
@@ -197,6 +204,18 @@
 		background-color: var(--sy-color--white);
 	}
 
+	.onboarding-flow--draggable {
+		padding-top: 40px;
+	}
+
+	.onboarding-flow__titlebar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 32px;
+	}
+
 	.onboarding-flow__card {
 		display: flex;
 		flex-direction: column;
@@ -210,6 +229,10 @@
 		border-radius: var(--sy-border-radius);
 		box-shadow: var(--sy-box-shadow);
 		overflow: hidden;
+	}
+
+	.onboarding-flow--draggable .onboarding-flow__card {
+		max-height: calc(100vh - 60px);
 	}
 
 	.onboarding-flow--mobile .onboarding-flow__card {

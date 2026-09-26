@@ -8,6 +8,7 @@
 export const NATIVE_COMMANDS = {
 	INTERVIEWS: {
 		SIGNUP: 'interview_signup',
+		INIT: 'interviews_init',
 	},
 	APP: {
 		IS_DEV_BUILD: 'is_dev_build',

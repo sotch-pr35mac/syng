@@ -1,4 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { initializeInterviews } from '@/utils/interviews.js';
+
+vi.mock('@/utils/interviews.js', () => ({ initializeInterviews: vi.fn(() => Promise.resolve()) }));
 
 const telemetry = vi.hoisted(() => ({
 	setPref: vi.fn(() => Promise.resolve()),
@@ -33,6 +36,7 @@ const buildPreferenceManager = (preferences: Record<string, unknown> = {}) => ({
 beforeEach(async () => {
 	vi.resetModules();
 	telemetry.setPref.mockClear();
+	vi.mocked(initializeInterviews).mockReset().mockResolvedValue(undefined);
 	({ setPreferenceManagerForTest } = await import('@/utils/appServices.js'));
 	({ privacySettingsStore } = await import('@/stores/privacySettings.svelte.js'));
 });
@@ -63,11 +67,13 @@ it('forces telemetry off when entering child privacy mode and restores default-o
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
+	expect(initializeInterviews).toHaveBeenCalledWith(true);
 
 	await privacySettingsStore.setChildPrivacyMode(false);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', false);
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
+	expect(initializeInterviews).toHaveBeenCalledWith(false);
 });
 
 it('does not treat child privacy mode as an alias for the telemetry flag when already eligible', async () => {
@@ -77,6 +83,20 @@ it('does not treat child privacy mode as an alias for the telemetry flag when al
 	await privacySettingsStore.setChildPrivacyMode(false);
 
 	expect(telemetry.setPref).not.toHaveBeenCalled();
+});
+
+it('still requires the telemetry restriction when optional interview storage is unavailable', async () => {
+	const preferenceManager = buildPreferenceManager();
+	setPreferenceManagerForTest(preferenceManager as unknown as PreferenceManagerForTest);
+	vi.mocked(initializeInterviews).mockRejectedValue('unavailable');
+	telemetry.setPref.mockRejectedValueOnce(new Error('Preference write failed'));
+
+	await expect(privacySettingsStore.setChildPrivacyMode(true)).rejects.toThrow(
+		'Preference write failed'
+	);
+	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', false);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('childPrivacyMode', true);
+	expect(privacySettingsStore.childPrivacyMode).toBe(false);
 });
 
 it('uses the completed version without retaining a region', async () => {

@@ -34,7 +34,7 @@ pub use dictionary::{
     classify, init_dictionary, query, query_by_chinese, query_by_english, query_by_id,
     query_by_ids, query_by_pinyin, resolve_legacy_lexical_units,
 };
-pub use interviews::interview_signup;
+pub use interviews::{interview_signup, interviews_init, InterviewManager};
 pub use io::{
     export_list_data, import_list_data, persist_bookmark_recovery_report,
     read_bookmark_recovery_report, save_bookmark_recovery_report,

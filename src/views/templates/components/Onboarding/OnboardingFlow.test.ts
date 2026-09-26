@@ -7,7 +7,14 @@ import { onboardingStore } from '@/stores/onboarding.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
-import { submitInterviewSignup, INTERVIEW_CONSENT } from '@/utils/interviews.js';
+import {
+	initializeInterviews,
+	submitInterviewSignup,
+	INTERVIEW_CONSENT,
+} from '@/utils/interviews.js';
+
+vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
+vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn(() => Promise.resolve()) }));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() =>
@@ -20,7 +27,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 vi.mock('@/utils/interviews.js', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('@/utils/interviews.js')>();
-	return { ...actual, submitInterviewSignup: vi.fn(() => Promise.resolve()) };
+	return {
+		...actual,
+		submitInterviewSignup: vi.fn(() => Promise.resolve()),
+		initializeInterviews: vi.fn(() => Promise.resolve()),
+	};
 });
 
 vi.mock('lucide-svelte', async () => {
@@ -103,6 +114,7 @@ beforeEach(async () => {
 	});
 	onboardingStore.reset();
 	vi.mocked(submitInterviewSignup).mockReset().mockResolvedValue(undefined);
+	vi.mocked(initializeInterviews).mockReset().mockResolvedValue(undefined);
 	vi.mocked(telemetry.trackEvent).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
 	window.location.hash = '';
@@ -211,7 +223,7 @@ it('walks Welcome → Preferences → Privacy → Interview and persists version
 
 	await user.click(getByRole('button', { name: 'Continue' }));
 
-	await waitFor(() => expect(getByText('Help shape Syng')).toBeTruthy());
+	await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
 	await user.click(getByRole('button', { name: 'Skip' }));
 	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('onboarding.started', {});
@@ -229,6 +241,42 @@ it('walks Welcome → Preferences → Privacy → Interview and persists version
 	});
 	expect(window.location.hash).toBe('#/');
 }, 15000);
+
+it.each([
+	{ region: 'CN', ageAnswer: null, childMode: false },
+	{ region: 'US', ageAnswer: 'Yes', childMode: false },
+	{ region: 'US', ageAnswer: 'No', childMode: true },
+])(
+	'completes onboarding with unavailable interview storage: $region / $ageAnswer',
+	async ({ region, ageAnswer, childMode }) => {
+		vi.mocked(initializeInterviews).mockRejectedValue('unavailable');
+		const user = userEvent.setup();
+		const { getByRole, getByText, getByLabelText, queryByRole } =
+			await continueFromWelcome(user);
+		await user.click(getByRole('button', { name: 'Continue' }));
+		await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
+		await user.selectOptions(getByLabelText('Country or region'), region);
+		await waitFor(() => expect(onboardingStore.regionCode).toBe(region));
+		if (ageAnswer) {
+			await user.click(getByRole('button', { name: ageAnswer }));
+		}
+		const action = getByRole('button', {
+			name: childMode ? 'Get Started' : 'Continue',
+		}) as HTMLButtonElement;
+		await waitFor(() => expect(action.disabled).toBe(false));
+		expect(privacySettingsStore.childPrivacyMode).toBe(childMode);
+		expect(telemetryState.enabled).toBe(!childMode);
+		expect(initializeInterviews).toHaveBeenCalledWith(childMode);
+		await user.click(action);
+		if (!childMode) {
+			await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
+			await user.click(getByRole('button', { name: 'Skip' }));
+		}
+		expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
+		expect(submitInterviewSignup).not.toHaveBeenCalled();
+		expect(queryByRole('alert')).toBeNull();
+	}
+);
 
 it('progressively discloses privacy controls and locks telemetry in child mode', async () => {
 	const user = userEvent.setup();
@@ -356,7 +404,7 @@ it('skips the age question for other regions and allows disabling telemetry', as
 	);
 
 	await user.click(getByRole('button', { name: 'Continue' }));
-	await waitFor(() => expect(getByText('Help shape Syng')).toBeTruthy());
+	await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
 	await user.click(getByRole('button', { name: 'Skip' }));
 	expect(telemetry.trackEvent).not.toHaveBeenCalledWith(
 		'onboarding.completed',
@@ -378,7 +426,7 @@ it('shows only the invitation for existing users, with explicit consent and no r
 	expect(queryByText('Country or region')).toBeNull();
 	expect(getByRole('status', { name: 'Step 1 of 1' })).toBeTruthy();
 	expect((getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
-	await user.type(getByLabelText('What would you like us to call you?'), 'River');
+	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
@@ -406,7 +454,7 @@ it('skips the invitation entirely for existing child-mode users', async () => {
 	});
 	telemetryState.enabled = false;
 	const { queryByText, queryByLabelText } = render(OnboardingFlow);
-	expect(queryByText('Help shape Syng')).toBeNull();
+	expect(queryByText('Help Shape Syng')).toBeNull();
 	expect(queryByLabelText('Email address')).toBeNull();
 	await waitFor(() =>
 		expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2)
@@ -414,7 +462,7 @@ it('skips the invitation entirely for existing child-mode users', async () => {
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
 });
 
-it('keeps retries idempotent, changes the ID for edited details, and permits skipping after failure', async () => {
+it('keeps local save retries idempotent, changes the ID for edited details, and permits skipping after storage failure', async () => {
 	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
 	telemetryState.enabled = false;
 	vi.mocked(submitInterviewSignup).mockRejectedValue('Error echoing private@example.invalid');
@@ -422,18 +470,20 @@ it('keeps retries idempotent, changes the ID for edited details, and permits ski
 	const { getByRole, getByLabelText, queryByText } = render(OnboardingFlow, {
 		variant: 'mobile',
 	});
-	await user.type(getByLabelText('What would you like us to call you?'), 'River');
+	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
 	await user.click(getByRole('checkbox'));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(getByRole('alert')).toBeTruthy());
 	expect(queryByText(/Error echoing/)).toBeNull();
+	expect(getByRole('alert').textContent).toContain('couldn’t be saved on this device');
+	expect(getByRole('alert').textContent).not.toContain('withdraw');
 	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
 	const first = vi.mocked(submitInterviewSignup).mock.calls[0][0];
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(submitInterviewSignup).toHaveBeenCalledTimes(2));
 	expect(vi.mocked(submitInterviewSignup).mock.calls[1][0].signup_id).toBe(first.signup_id);
-	await user.type(getByLabelText('What would you like us to call you?'), ' Two');
+	await user.type(getByLabelText('Preferred name'), ' Two');
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(submitInterviewSignup).toHaveBeenCalledTimes(3));
 	expect(vi.mocked(submitInterviewSignup).mock.calls[2][0].signup_id).not.toBe(first.signup_id);
@@ -442,7 +492,7 @@ it('keeps retries idempotent, changes the ID for edited details, and permits ski
 	expect(telemetry.setPref).not.toHaveBeenCalled();
 });
 
-it('prevents duplicate clicks while saving and accepts a signup with telemetry disabled', async () => {
+it('prevents duplicate clicks during local storage and completes as soon as the signup is queued with telemetry disabled', async () => {
 	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
 	telemetryState.enabled = false;
 	let finish!: () => void;
@@ -454,7 +504,7 @@ it('prevents duplicate clicks while saving and accepts a signup with telemetry d
 	);
 	const user = userEvent.setup();
 	const { getByRole, getByLabelText } = render(OnboardingFlow);
-	await user.type(getByLabelText('What would you like us to call you?'), 'River');
+	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'invalid');
 	await user.click(getByRole('checkbox'));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));

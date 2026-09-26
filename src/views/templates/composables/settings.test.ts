@@ -22,6 +22,10 @@ vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
 }));
 
+vi.mock('@/utils/interviews.js', () => ({
+	initializeInterviews: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: {
 		trackEvent: vi.fn(() => Promise.resolve()),

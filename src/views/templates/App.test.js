@@ -5,6 +5,8 @@ import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
 
+vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
+
 it('refreshes desktop error resume context and removes listeners on unmount', () => {
 	const { unmount } = render(App);
 	const now = vi.spyOn(Date, 'now').mockReturnValue(123456);

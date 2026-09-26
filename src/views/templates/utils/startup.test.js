@@ -1,4 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { initializeInterviews } from '@/utils/interviews.js';
+
+vi.mock('@/utils/interviews.js', () => ({
+	initializeInterviews: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('elastic-scroll-polyfill', () => ({
 	default: vi.fn(),
@@ -25,6 +30,7 @@ vi.mock('@/stores/dictionaryDisplaySettings.svelte.js', () => ({
 vi.mock('@/stores/privacySettings.svelte.js', () => ({
 	privacySettingsStore: {
 		hasCompletedOnboarding: true,
+		childPrivacyMode: false,
 		loadSettings: vi.fn().mockResolvedValue(undefined),
 	},
 }));
@@ -169,6 +175,7 @@ it('restores storage before preparing the bookmark schema and starts the app aft
 	document.addEventListener('init', initialized, { once: true });
 
 	await runStartupActions();
+	expect(initializeInterviews).toHaveBeenCalledWith(false);
 
 	expect(order).toEqual(['restore', 'schema', 'init-event']);
 	expect(bookmarkManager.prepareSchema).toHaveBeenCalledOnce();
