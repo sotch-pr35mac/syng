@@ -9,7 +9,8 @@ const ENTRY_FILE = join(BUILD_DIRECTORY, 'bundle.js');
 // Gzip totals are useful for web builds; raw sizes matter to Tauri because they also affect parsing.
 const BUDGETS = {
 	entryBytes: 200 * 1024,
-	initialShellBytes: 275 * 1024,
+	// The offline indicator and connectivity synchronization are intentionally part of the app shell.
+	initialShellBytes: 280 * 1024,
 	largestChunkBytes: 200 * 1024,
 	totalBytes: 650 * 1024,
 	totalGzipBytes: 230 * 1024,
