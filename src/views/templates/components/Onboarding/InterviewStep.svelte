@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { openUrl } from '@tauri-apps/plugin-opener';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import {
 		INTERVIEW_CONSENT,
@@ -22,6 +23,8 @@
 	let submissionId = '';
 	let previousPayload = '';
 	const privacyUrl = 'https://getsyng.com/privacy';
+	const preferredNameMaxLength = 80;
+	const emailMaxLength = 254;
 
 	$effect(() => {
 		if (errorMessage && errorElement) {
@@ -78,21 +81,24 @@
 			<div class="interview-step__fields">
 				<div class="interview-step__field">
 					<label for="interview-name">Preferred name</label>
-					<input
+					<SyTextInput
 						id="interview-name"
+						size="large"
 						name="preferred-name"
 						autocomplete="given-name"
 						required
-						maxlength="80"
-						aria-describedby="interview-name-help"
-						bind:value={preferredName}
+						maxlength={preferredNameMaxLength}
+						ariaDescribedby="interview-name-help"
+						value={preferredName}
+						oninput={(value) => (preferredName = value)}
 					/>
 					<p id="interview-name-help">A first name or nickname is fine.</p>
 				</div>
 				<div class="interview-step__field">
 					<label for="interview-email">Email address</label>
-					<input
+					<SyTextInput
 						id="interview-email"
+						size="large"
 						name="email"
 						type="email"
 						inputmode="email"
@@ -100,8 +106,9 @@
 						autocapitalize="none"
 						spellcheck="false"
 						required
-						maxlength="254"
-						bind:value={email}
+						maxlength={emailMaxLength}
+						value={email}
+						oninput={(value) => (email = value)}
 					/>
 				</div>
 			</div>
@@ -170,26 +177,13 @@
 		color: var(--sy-text--dark);
 		font-size: var(--sy-font-size--mobile-small);
 	}
-	.interview-step__field input {
-		width: 100%;
-		min-height: 44px;
-		box-sizing: border-box;
-		border: 1px solid var(--sy-color--grey-3);
-		border-radius: var(--sy-border-radius);
-		background: var(--sy-color--white);
-		color: var(--sy-text--dark);
-		padding: var(--sy-space--large);
-		font: inherit;
-		font-size: 16px;
-		user-select: text;
-	}
 	.interview-step__fields {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: var(--sy-space--extra-large);
 	}
 	a {
-		color: var(--sy-interview-accent);
+		color: var(--sy-color--blue);
 		text-decoration: underline;
 	}
 	.interview-step__consent {
@@ -206,15 +200,10 @@
 		width: 20px;
 		height: 20px;
 		margin: 2px 0 0;
-		accent-color: var(--sy-interview-accent);
-	}
-	input:focus-visible,
-	a:focus-visible {
-		outline: 2px solid var(--sy-interview-accent);
-		outline-offset: 3px;
+		accent-color: var(--sy-color--blue);
 	}
 	.interview-step__error {
-		color: var(--sy-interview-error);
+		color: var(--sy-color--red);
 	}
 	.interview-step--mobile h2 {
 		font-size: var(--sy-font-size--mobile-heading);

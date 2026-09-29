@@ -1,7 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 
-// This notice is still unreleased. Freeze its copy/version when interviews-v1 ships.
 export const INTERVIEW_CONSENT = {
 	version: 'interviews-v1',
 	title: 'Help Shape Syng',

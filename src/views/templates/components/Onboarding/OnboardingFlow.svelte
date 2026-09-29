@@ -153,7 +153,6 @@
 					<SyButton
 						type="submit"
 						form="interview-signup"
-						classes={['interview-signup-button']}
 						style="filled"
 						color="blue"
 						disabled={submittingInterview}
@@ -180,8 +179,6 @@
 
 <style>
 	.onboarding-flow {
-		--sy-interview-accent: #2365b9;
-		--sy-interview-error: #b22156;
 		container-type: inline-size;
 		container-name: onboarding;
 		height: 100%;
@@ -284,24 +281,6 @@
 	.onboarding-flow__actions :global(.sy-button:focus-visible) {
 		outline: 2px solid var(--sy-color--blue);
 		outline-offset: 3px;
-	}
-
-	.onboarding-flow__actions--interview {
-		--sy-color--blue-2: var(--sy-interview-accent);
-		--sy-color--blue: var(--sy-interview-accent);
-	}
-
-	.onboarding-flow__actions--interview
-		:global(.interview-signup-button.sy-button:not(:disabled)) {
-		background-color: var(--sy-interview-accent);
-		color: var(--sy-color--white);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.onboarding-flow {
-			--sy-interview-accent: #76aff9;
-			--sy-interview-error: #ff8eaf;
-		}
 	}
 
 	@container onboarding (max-width: 36rem) {

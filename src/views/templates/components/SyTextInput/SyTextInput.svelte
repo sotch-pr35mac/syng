@@ -21,6 +21,9 @@
 	 * @property {string} [autocapitalize] - Autocapitalize Prop ('off' by default)
 	 * @property {string} [inputmode] - Input mode Prop
 	 * @property {any} id - ID Prop
+	 * @property {string} [name] - Form field name
+	 * @property {boolean} [required] - Whether the form field is required
+	 * @property {string} [ariaDescribedby] - ID of descriptive helper text
 	 * @property {any} [spellcheck] - Spellcheck Prop
 	 * @property {any[]} [classes] - Additional class names
 	 * @property {number} [maxlength] - Maximum character length
@@ -50,6 +53,9 @@
 		autocapitalize = 'off',
 		inputmode = undefined,
 		id,
+		name = undefined,
+		required = false,
+		ariaDescribedby = undefined,
 		maxlength = undefined,
 		spellcheck = false,
 		classes = [],
@@ -111,6 +117,9 @@
 	{inputmode}
 	class={getClasses()}
 	{id}
+	{name}
+	{required}
+	aria-describedby={ariaDescribedby}
 	{maxlength}
 	{spellcheck}
 	onchange={(e) => onchange(e.currentTarget.value)}
