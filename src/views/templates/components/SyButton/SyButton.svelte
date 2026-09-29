@@ -51,6 +51,7 @@
 	 * @property {boolean} [disableHoverActions] - false
 	 * @property {any} [classes] - A list of classes
 	 * @property {string} [type] - Native button type
+	 * @property {string} [form] - Associated native form ID
 	 * @property {string} [aria-label] - Accessible label
 	 * @property {boolean | 'true' | 'false'} [aria-pressed] - Pressed state
 	 * @property {string} [title] - Native title

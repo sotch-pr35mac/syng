@@ -1,4 +1,4 @@
-import { ONBOARDING_STEPS, type OnboardingStepId } from '@/types/onboarding.js';
+import { pendingOnboardingSteps, type OnboardingStepId } from '@/types/onboarding.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { isPrivacyStepComplete, normalizeRegionCode } from '@/utils/privacyPolicy.js';
 
@@ -9,9 +9,15 @@ let applyingRegionSelection = $state(false);
 let regionSelectionApplied = $state(false);
 let applyingAgeClassification = $state(false);
 let ageClassificationApplied = $state(false);
+let startingVersion = $state(0);
+const steps = $derived(
+	pendingOnboardingSteps(startingVersion).filter(
+		(step) => step.id !== 'interview' || !privacySettingsStore.childPrivacyMode
+	)
+);
 
 function nextStep(): void {
-	if (currentStepIndex < ONBOARDING_STEPS.length - 1) {
+	if (currentStepIndex < steps.length - 1) {
 		currentStepIndex += 1;
 	}
 }
@@ -52,6 +58,9 @@ async function selectRegion(nextRegionCode: string): Promise<void> {
 }
 
 function reset(): void {
+	startingVersion = privacySettingsStore.forceOnboardingReplay
+		? 0
+		: privacySettingsStore.completedOnboardingVersion;
 	currentStepIndex = 0;
 	regionCode = null;
 	isBelowApplicableAge = null;
@@ -62,11 +71,14 @@ function reset(): void {
 }
 
 export const onboardingStore = {
+	get steps() {
+		return steps;
+	},
 	get currentStepIndex(): number {
 		return currentStepIndex;
 	},
-	get currentStepId(): OnboardingStepId {
-		return ONBOARDING_STEPS[currentStepIndex].id;
+	get currentStepId(): OnboardingStepId | null {
+		return steps[currentStepIndex]?.id ?? null;
 	},
 	get regionCode(): string | null {
 		return regionCode;
@@ -84,10 +96,10 @@ export const onboardingStore = {
 		return currentStepIndex === 0;
 	},
 	get isLastStep(): boolean {
-		return currentStepIndex === ONBOARDING_STEPS.length - 1;
+		return currentStepIndex >= steps.length - 1;
 	},
 	get canContinue(): boolean {
-		if (ONBOARDING_STEPS[currentStepIndex].id !== 'privacy') {
+		if (steps[currentStepIndex]?.id !== 'privacy') {
 			return true;
 		}
 		if (

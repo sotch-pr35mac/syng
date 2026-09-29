@@ -21,6 +21,7 @@ import { checkForUpdate } from '@/utils/updateManager.js';
 import { isMobile } from '@/utils/device.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { initializeInterviews } from '@/utils/interviews.js';
 import { createAppServices } from '@/utils/appServices.js';
 import { resolveIsMasBuild } from '@/composables/settings.js';
 import {
@@ -156,6 +157,9 @@ export const runStartupActions = () => {
 			await migrationPromise;
 			await loadDisplayPreferences();
 		}
+		// Resume delivery only after persisted/migrated age preferences have been loaded.
+		// A signup-storage failure must not prevent the dictionary from opening.
+		await initializeInterviews(privacySettingsStore.childPrivacyMode).catch(() => {});
 		return undefined;
 	});
 

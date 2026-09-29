@@ -84,7 +84,7 @@ beforeEach(() => {
 	window.location.hash = '#/';
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
-		completedOnboardingVersion: 1,
+		completedOnboardingVersion: 2,
 	});
 	window.matchMedia = vi.fn().mockImplementation(() => ({
 		matches: false,

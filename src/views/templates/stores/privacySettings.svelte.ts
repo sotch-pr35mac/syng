@@ -3,6 +3,7 @@ import type { PrivacySettings } from '@/types/privacy.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 import { childPrivacyModeFrom } from '@/utils/privacyPolicy.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { initializeInterviews } from '@/utils/interviews.js';
 
 const DEFAULT_PRIVACY_SETTINGS: PrivacySettings = {
 	childPrivacyMode: false,
@@ -47,11 +48,17 @@ async function loadSettings(): Promise<void> {
 async function setChildPrivacyMode(nextChildPrivacyMode: boolean): Promise<void> {
 	const wasChildPrivacyMode = childPrivacyMode;
 	if (nextChildPrivacyMode) {
+		// Native initialization blocks delivery before touching storage, even if cleanup fails.
+		// Optional interview storage must not prevent applying mandatory privacy settings.
+		await initializeInterviews(true).catch(() => {});
 		// Apply the native telemetry restriction before publishing/persisting child mode so
 		// onboarding cannot complete while the privacy write is still in flight.
 		await telemetry.setPref('enabled', false);
 	} else if (wasChildPrivacyMode) {
 		await telemetry.setPref('enabled', true);
+	}
+	if (!nextChildPrivacyMode) {
+		await initializeInterviews(false).catch(() => {});
 	}
 	childPrivacyMode = nextChildPrivacyMode;
 	getPreferenceManager().set('childPrivacyMode', nextChildPrivacyMode);
@@ -68,6 +75,7 @@ async function resetAgeClassification(): Promise<void> {
 	// A new region intentionally resets telemetry to its default. Await this before accepting an
 	// age answer so this enable cannot finish after a subsequent child-mode disable.
 	await telemetry.setPref('enabled', true);
+	await initializeInterviews(false).catch(() => {});
 	childPrivacyMode = false;
 	getPreferenceManager().set('childPrivacyMode', false);
 }

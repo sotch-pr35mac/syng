@@ -15,14 +15,14 @@ use core::updater::check_for_update;
 use core::{
     answer_question, classify, convert_characters, export_list_data, get_acknowledgements,
     get_incorrect_questions, get_next_question, get_region_options, import_list_data,
-    import_reader_document, init_dictionary, is_dev_build, is_mas_build,
-    persist_bookmark_recovery_report, pinyinify, prepare_reader_import, prettify_pinyin, query,
-    query_by_chinese, query_by_english, query_by_id, query_by_ids, query_by_pinyin,
-    read_bookmark_recovery_report, read_legacy_migration_file, resolve_legacy_lexical_units,
-    save_bookmark_recovery_report, score_quiz, start_quiz, telemetry_get_prefs,
-    telemetry_get_queued_events, telemetry_init, telemetry_sanitize_error, telemetry_set_pref,
-    telemetry_track_error, telemetry_track_event, telemetry_track_screen, tokenize_pinyin,
-    tokenize_reader_text, QuizState, TelemetryManager,
+    import_reader_document, init_dictionary, interview_signup, interviews_init, is_dev_build,
+    is_mas_build, persist_bookmark_recovery_report, pinyinify, prepare_reader_import,
+    prettify_pinyin, query, query_by_chinese, query_by_english, query_by_id, query_by_ids,
+    query_by_pinyin, read_bookmark_recovery_report, read_legacy_migration_file,
+    resolve_legacy_lexical_units, save_bookmark_recovery_report, score_quiz, start_quiz,
+    telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_sanitize_error,
+    telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
+    tokenize_pinyin, tokenize_reader_text, InterviewManager, QuizState, TelemetryManager,
 };
 #[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
@@ -75,6 +75,7 @@ pub fn run() {
             Ok(())
         })
         .manage(QuizState::default())
+        .manage(InterviewManager::default())
         .manage(TelemetryManager::default());
 
     #[cfg(desktop)]
@@ -110,6 +111,8 @@ pub fn run() {
             score_quiz,
             get_incorrect_questions,
             telemetry_init,
+            interview_signup,
+            interviews_init,
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,
@@ -154,6 +157,8 @@ pub fn run() {
             score_quiz,
             get_incorrect_questions,
             telemetry_init,
+            interview_signup,
+            interviews_init,
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,

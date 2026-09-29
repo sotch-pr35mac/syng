@@ -1,36 +1,69 @@
 name: Build & Test
 
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-
-  workflow_dispatch:
+    push:
+        branches: [master]
+    pull_request:
+    workflow_dispatch:
 
 jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Prepare Environment
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
-      - name: Install Dependencies (Ubuntu Only)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt update
-          sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
-          make install-dev
-      - name: Install Dependencies (macOS & Windows)
-        if: matrix.platform != 'ubuntu-latest'
-        run: make install-dev
-      - name: Build
-        run: make build-ci
-      - name: Test
-        run: make test
+    test:
+        name: Test on ${{ matrix.platform }}
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - platform: macos-latest
+                    - platform: ubuntu-22.04
+                    - platform: windows-latest
+                    - platform: ubuntu-22.04-arm
+                      target: aarch64-unknown-linux-gnu
+                      bundles: deb,rpm,appimage
+                    - platform: windows-11-arm
+                      target: aarch64-pc-windows-msvc
+                      bundles: nsis
+        runs-on: ${{ matrix.platform }}
+        defaults:
+            run:
+                shell: bash
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  submodules: true
+            - name: Prepare Node Environment
+              uses: actions/setup-node@v5
+              with:
+                  node-version: 24
+                  cache: npm
+            - name: Install Dependencies (Linux Only)
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 xdg-utils
+            - name: Install Frontend Dependencies
+              run: npm ci
+            - name: Select Native Windows ARM64 Toolchain
+              if: matrix.target == 'aarch64-pc-windows-msvc'
+              run: rustup default stable-aarch64-pc-windows-msvc
+            - name: Verify ARM64 Toolchain
+              if: matrix.target != ''
+              run: |
+                  rustc -vV | grep -Fx 'host: ${{ matrix.target }}'
+            - name: Build Frontend
+              run: npm run build
+            - name: Build Native
+              working-directory: src/native
+              run: cargo build --locked
+            - name: Test Native
+              working-directory: src/native
+              run: cargo test --locked
+            - name: Test Frontend
+              run: npm test
+            # Exercise the new installers on PRs without needing release signing secrets.
+            - name: Install Tauri CLI (ARM64 Only)
+              if: matrix.target != ''
+              run: cargo install tauri-cli --version 2.9.6 --locked
+            - name: Check ARM64 Packaging
+              if: matrix.target != ''
+              working-directory: src/native
+              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config '{"bundle":{"createUpdaterArtifacts":false}}'

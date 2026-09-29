@@ -7,6 +7,14 @@ import { onboardingStore } from '@/stores/onboarding.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
+import {
+	initializeInterviews,
+	submitInterviewSignup,
+	INTERVIEW_CONSENT,
+} from '@/utils/interviews.js';
+
+vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
+vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn(() => Promise.resolve()) }));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() =>
@@ -16,6 +24,15 @@ vi.mock('@tauri-apps/api/core', () => ({
 		])
 	),
 }));
+
+vi.mock('@/utils/interviews.js', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('@/utils/interviews.js')>();
+	return {
+		...actual,
+		submitInterviewSignup: vi.fn(() => Promise.resolve()),
+		initializeInterviews: vi.fn(() => Promise.resolve()),
+	};
+});
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -96,6 +113,8 @@ beforeEach(async () => {
 		completedOnboardingVersion: 0,
 	});
 	onboardingStore.reset();
+	vi.mocked(submitInterviewSignup).mockReset().mockResolvedValue(undefined);
+	vi.mocked(initializeInterviews).mockReset().mockResolvedValue(undefined);
 	vi.mocked(telemetry.trackEvent).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
 	window.location.hash = '';
@@ -137,7 +156,7 @@ async function continueFromWelcome(user: ReturnType<typeof userEvent.setup>) {
 	return view;
 }
 
-it('walks Welcome → Preferences → Privacy → complete and persists version 1', async () => {
+it('walks Welcome → Preferences → Privacy → Interview and persists version 2 after skipping', async () => {
 	const user = userEvent.setup();
 	const { getByRole, getByText, queryByLabelText, getByLabelText } =
 		await continueFromWelcome(user);
@@ -172,7 +191,7 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	await user.click(getByRole('button', { name: 'Continue' }));
 	await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
 
-	expect((getByRole('button', { name: 'Get Started' }) as HTMLButtonElement).disabled).toBe(true);
+	expect((getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(true);
 	await user.click(getByRole('button', { name: 'Back' }));
 	await waitFor(() =>
 		expect((getByRole('radio', { name: 'Traditional' }) as HTMLInputElement).checked).toBe(true)
@@ -189,7 +208,7 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 			button.textContent?.trim()
 		)
 	).toEqual(['No', 'Yes']);
-	expect((getByRole('button', { name: 'Get Started' }) as HTMLButtonElement).disabled).toBe(true);
+	expect((getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(true);
 
 	await user.click(getByRole('button', { name: 'Yes' }));
 	await waitFor(() => expect(getByLabelText('Enable Telemetry')).toBeTruthy());
@@ -200,13 +219,13 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	expect(getByLabelText('Device Context')).toBeTruthy();
 	expect(getByText('Example payloads')).toBeTruthy();
 	expect(getByText(/onboarding.step_viewed/)).toBeTruthy();
-	expect((getByRole('button', { name: 'Get Started' }) as HTMLButtonElement).disabled).toBe(
-		false
-	);
+	expect((getByRole('button', { name: 'Continue' }) as HTMLButtonElement).disabled).toBe(false);
 
-	await user.click(getByRole('button', { name: 'Get Started' }));
+	await user.click(getByRole('button', { name: 'Continue' }));
 
-	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 1);
+	await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
+	await user.click(getByRole('button', { name: 'Skip' }));
+	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('onboarding.started', {});
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('onboarding.step_viewed', {
 		step: 'welcome',
@@ -222,6 +241,42 @@ it('walks Welcome → Preferences → Privacy → complete and persists version 
 	});
 	expect(window.location.hash).toBe('#/');
 }, 15000);
+
+it.each([
+	{ region: 'CN', ageAnswer: null, childMode: false },
+	{ region: 'US', ageAnswer: 'Yes', childMode: false },
+	{ region: 'US', ageAnswer: 'No', childMode: true },
+])(
+	'completes onboarding with unavailable interview storage: $region / $ageAnswer',
+	async ({ region, ageAnswer, childMode }) => {
+		vi.mocked(initializeInterviews).mockRejectedValue('unavailable');
+		const user = userEvent.setup();
+		const { getByRole, getByText, getByLabelText, queryByRole } =
+			await continueFromWelcome(user);
+		await user.click(getByRole('button', { name: 'Continue' }));
+		await waitFor(() => expect(getByText('Privacy')).toBeTruthy());
+		await user.selectOptions(getByLabelText('Country or region'), region);
+		await waitFor(() => expect(onboardingStore.regionCode).toBe(region));
+		if (ageAnswer) {
+			await user.click(getByRole('button', { name: ageAnswer }));
+		}
+		const action = getByRole('button', {
+			name: childMode ? 'Get Started' : 'Continue',
+		}) as HTMLButtonElement;
+		await waitFor(() => expect(action.disabled).toBe(false));
+		expect(privacySettingsStore.childPrivacyMode).toBe(childMode);
+		expect(telemetryState.enabled).toBe(!childMode);
+		expect(initializeInterviews).toHaveBeenCalledWith(childMode);
+		await user.click(action);
+		if (!childMode) {
+			await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
+			await user.click(getByRole('button', { name: 'Skip' }));
+		}
+		expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
+		expect(submitInterviewSignup).not.toHaveBeenCalled();
+		expect(queryByRole('alert')).toBeNull();
+	}
+);
 
 it('progressively discloses privacy controls and locks telemetry in child mode', async () => {
 	const user = userEvent.setup();
@@ -273,17 +328,17 @@ it('waits for the child-privacy telemetry write before allowing completion', asy
 	);
 
 	await user.click(getByRole('button', { name: 'No' }));
-	const getStarted = getByRole('button', { name: 'Get Started' }) as HTMLButtonElement;
+	const getStarted = getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
 	expect(getStarted.disabled).toBe(true);
 	expect(preferenceManager.set).not.toHaveBeenCalledWith('childPrivacyMode', true);
-	expect(preferenceManager.set).not.toHaveBeenCalledWith('completedOnboardingVersion', 1);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('completedOnboardingVersion', 2);
 
 	finishPrivacyWrite();
 	await waitFor(() => expect(getStarted.disabled).toBe(false));
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
 
 	await user.click(getStarted);
-	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 1);
+	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2);
 });
 
 it('waits for the region telemetry reset before accepting an age answer', async () => {
@@ -304,7 +359,7 @@ it('waits for the region telemetry reset before accepting an age answer', async 
 	const regionSelect = getByLabelText('Country or region') as HTMLSelectElement;
 	await user.selectOptions(regionSelect, 'US');
 	const ageNo = getByRole('button', { name: 'No' }) as HTMLButtonElement;
-	const getStarted = getByRole('button', { name: 'Get Started' }) as HTMLButtonElement;
+	const getStarted = getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
 
 	expect(telemetry.setPref).toHaveBeenCalledWith('enabled', true);
 	expect(regionSelect.disabled).toBe(true);
@@ -348,7 +403,9 @@ it('skips the age question for other regions and allows disabling telemetry', as
 		expect(getByText('No telemetry is sent with these settings.')).toBeTruthy()
 	);
 
-	await user.click(getByRole('button', { name: 'Get Started' }));
+	await user.click(getByRole('button', { name: 'Continue' }));
+	await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
+	await user.click(getByRole('button', { name: 'Skip' }));
 	expect(telemetry.trackEvent).not.toHaveBeenCalledWith(
 		'onboarding.completed',
 		expect.anything()
@@ -359,4 +416,106 @@ it('uses mobile layout classes when requested', () => {
 	const { container } = render(OnboardingFlow, { props: { variant: 'mobile' } });
 	expect(container.querySelector('.onboarding-flow--mobile')).toBeTruthy();
 	expect(container.querySelector('.onboarding-flow--desktop')).toBeNull();
+});
+
+it('shows only the invitation for existing users, with explicit consent and no repeat prompt', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+	const user = userEvent.setup();
+	const { getByRole, getByLabelText, queryByText } = render(OnboardingFlow);
+	expect(queryByText('Welcome to Syng')).toBeNull();
+	expect(queryByText('Country or region')).toBeNull();
+	expect(getByRole('status', { name: 'Step 1 of 1' })).toBeTruthy();
+	expect((getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
+	await user.type(getByLabelText('Preferred name'), 'River');
+	await user.type(getByLabelText('Email address'), 'river@example.invalid');
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	expect(submitInterviewSignup).not.toHaveBeenCalled();
+	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
+	expect(submitInterviewSignup).toHaveBeenCalledWith({
+		signup_id: expect.any(String),
+		preferred_name: 'River',
+		email: 'river@example.invalid',
+		consent: true,
+		consent_version: INTERVIEW_CONSENT.version,
+	});
+	expect(telemetry.setPref).not.toHaveBeenCalled();
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain(
+		'river@example.invalid'
+	);
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain('River');
+});
+
+it('skips the invitation entirely for existing child-mode users', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({
+		completedOnboardingVersion: 1,
+		childPrivacyMode: true,
+	});
+	telemetryState.enabled = false;
+	const { queryByText, queryByLabelText } = render(OnboardingFlow);
+	expect(queryByText('Help Shape Syng')).toBeNull();
+	expect(queryByLabelText('Email address')).toBeNull();
+	await waitFor(() =>
+		expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2)
+	);
+	expect(submitInterviewSignup).not.toHaveBeenCalled();
+});
+
+it('keeps local save retries idempotent, changes the ID for edited details, and permits skipping after storage failure', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+	telemetryState.enabled = false;
+	vi.mocked(submitInterviewSignup).mockRejectedValue('Error echoing private@example.invalid');
+	const user = userEvent.setup();
+	const { getByRole, getByLabelText, queryByText } = render(OnboardingFlow, {
+		variant: 'mobile',
+	});
+	await user.type(getByLabelText('Preferred name'), 'River');
+	await user.type(getByLabelText('Email address'), 'river@example.invalid');
+	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	await waitFor(() => expect(getByRole('alert')).toBeTruthy());
+	expect(queryByText(/Error echoing/)).toBeNull();
+	expect(getByRole('alert').textContent).toContain('couldn’t be saved on this device');
+	expect(getByRole('alert').textContent).not.toContain('withdraw');
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
+	const first = vi.mocked(submitInterviewSignup).mock.calls[0][0];
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	await waitFor(() => expect(submitInterviewSignup).toHaveBeenCalledTimes(2));
+	expect(vi.mocked(submitInterviewSignup).mock.calls[1][0].signup_id).toBe(first.signup_id);
+	await user.type(getByLabelText('Preferred name'), ' Two');
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	await waitFor(() => expect(submitInterviewSignup).toHaveBeenCalledTimes(3));
+	expect(vi.mocked(submitInterviewSignup).mock.calls[2][0].signup_id).not.toBe(first.signup_id);
+	await user.click(getByRole('button', { name: 'Skip' }));
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(true);
+	expect(telemetry.setPref).not.toHaveBeenCalled();
+});
+
+it('prevents duplicate clicks during local storage and completes as soon as the signup is queued with telemetry disabled', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+	telemetryState.enabled = false;
+	let finish!: () => void;
+	vi.mocked(submitInterviewSignup).mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			})
+	);
+	const user = userEvent.setup();
+	const { getByRole, getByLabelText } = render(OnboardingFlow);
+	await user.type(getByLabelText('Preferred name'), 'River');
+	await user.type(getByLabelText('Email address'), 'invalid');
+	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('button', { name: 'Sign up and get started' }));
+	expect(submitInterviewSignup).not.toHaveBeenCalled();
+	await user.clear(getByLabelText('Email address'));
+	await user.type(getByLabelText('Email address'), 'river@example.invalid');
+	await user.dblClick(getByRole('button', { name: 'Sign up and get started' }));
+	expect(submitInterviewSignup).toHaveBeenCalledTimes(1);
+	expect((getByRole('button', { name: 'Skip' }) as HTMLButtonElement).disabled).toBe(true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
+	finish();
+	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
+	expect(telemetry.setPref).not.toHaveBeenCalled();
 });

@@ -23,6 +23,19 @@ it('allows autocorrect to be opted back in', () => {
 	expect(input.getAttribute('spellcheck')).toBe('true');
 });
 
+it('forwards form validation and descriptive attributes', () => {
+	const { container } = render(SyTextInput, {
+		id: 'signup-name',
+		name: 'preferred-name',
+		required: true,
+		ariaDescribedby: 'signup-name-help',
+	});
+	const input = container.querySelector('input');
+	expect(input.getAttribute('name')).toBe('preferred-name');
+	expect(input.required).toBe(true);
+	expect(input.getAttribute('aria-describedby')).toBe('signup-name-help');
+});
+
 it('waits for committed IME input and does not submit the composition-confirming Enter', async () => {
 	const oninput = vi.fn();
 	const onenter = vi.fn();

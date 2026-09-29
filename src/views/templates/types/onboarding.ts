@@ -1,9 +1,10 @@
-export const ONBOARDING_VERSION = 1;
+export const ONBOARDING_VERSION = 2;
 
 export const ONBOARDING_STEPS = [
 	{ id: 'welcome', introducedIn: 1 },
 	{ id: 'chinese_preferences', introducedIn: 1 },
 	{ id: 'privacy', introducedIn: 1 },
+	{ id: 'interview', introducedIn: 2 },
 ] as const;
 
 export type OnboardingStepId = (typeof ONBOARDING_STEPS)[number]['id'];

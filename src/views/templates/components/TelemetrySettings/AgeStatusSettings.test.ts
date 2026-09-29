@@ -8,6 +8,8 @@ import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 
+vi.mock('@/utils/interviews.js', () => ({ initializeInterviews: vi.fn(() => Promise.resolve()) }));
+
 const telemetryState = vi.hoisted(() => ({
 	enabled: false,
 }));
