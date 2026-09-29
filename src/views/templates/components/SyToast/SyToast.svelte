@@ -26,6 +26,7 @@
 		corner?: Corner;
 		onaction?: () => void;
 		ondismiss?: () => void;
+		bottomOffset?: string;
 	}
 
 	const {
@@ -35,6 +36,7 @@
 		corner = 'top-right',
 		onaction = () => {},
 		ondismiss = () => {},
+		bottomOffset = '',
 	}: Props = $props();
 
 	const DISMISS_TIMEOUT_MS = 8000;
@@ -51,6 +53,7 @@
 <div
 	class="sy-toast sy-toast--{corner}"
 	class:sy-toast--visible={visible}
+	style:--sy-toast-bottom-offset={bottomOffset}
 	role="status"
 	aria-live="polite"
 >
@@ -96,12 +99,12 @@
 		transform: translateY(calc(-100% - var(--sy-space--extra-large)));
 	}
 	.sy-toast--bottom-right {
-		bottom: var(--sy-space--extra-large);
+		bottom: calc(var(--sy-space--extra-large) + var(--sy-toast-bottom-offset, 0px));
 		right: var(--sy-space--extra-large);
 		transform: translateY(calc(100% + var(--sy-space--extra-large)));
 	}
 	.sy-toast--bottom-left {
-		bottom: var(--sy-space--extra-large);
+		bottom: calc(var(--sy-space--extra-large) + var(--sy-toast-bottom-offset, 0px));
 		left: var(--sy-space--extra-large);
 		transform: translateY(calc(100% + var(--sy-space--extra-large)));
 	}

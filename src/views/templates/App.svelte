@@ -4,6 +4,7 @@
 	import Navigation from '@/components/Navigation/Navigation.svelte';
 	import Search from '@/routes/Search.svelte';
 	import SyToast from '@/components/SyToast/SyToast.svelte';
+	import OfflineIndicator from '@/components/NetworkStatus/OfflineIndicator.svelte';
 	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
 	import LoadingScreen from '@/components/LoadingScreen/LoadingScreen.svelte';
 	import RouteLoadError from '@/components/RouteLoading/RouteLoadError.svelte';
@@ -21,6 +22,7 @@
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
+	import { networkStatus } from '@/utils/networkStatus.svelte.js';
 
 	runStartupActions();
 
@@ -138,11 +140,13 @@
 	<SyToast
 		visible={showUpdateToast}
 		message={buildToastMessage()}
-		actionLabel="Update now"
+		actionLabel={networkStatus.isOnline ? 'Update now' : ''}
 		corner="bottom-right"
+		bottomOffset={networkStatus.isOffline ? '52px' : ''}
 		onaction={handleUpdateAction}
 		ondismiss={() => (showUpdateToast = false)}
 	/>
+	<OfflineIndicator />
 	{#if bookmarkRecoveryStore.active}
 		{#await import('@/components/BookmarkRecovery/BookmarkRecovery.svelte')}
 			<!-- Recovery details are already durable; load the blocking UI lazily. -->

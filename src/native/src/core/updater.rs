@@ -1,12 +1,13 @@
 //! Preserve updater errors before the plugin's IPC serializer flattens them to a string.
 //! Download/install still use the plugin's resources and signature verification.
 
+use crate::core::network::NetworkStatus;
 use serde::Serialize;
 #[cfg(any(not(feature = "mas"), test))]
 use std::error::Error as StdError;
 #[cfg(not(feature = "mas"))]
 use tauri::Manager;
-use tauri::{ResourceId, Webview};
+use tauri::{ResourceId, State, Webview};
 #[cfg(not(feature = "mas"))]
 use tauri_plugin_updater::UpdaterExt;
 
@@ -96,7 +97,13 @@ pub struct UpdateMetadata {
 }
 
 #[tauri::command]
-pub async fn check_for_update(webview: Webview) -> Result<Option<UpdateMetadata>, UpdateFailure> {
+pub async fn check_for_update(
+    webview: Webview,
+    network_status: State<'_, NetworkStatus>,
+) -> Result<Option<UpdateMetadata>, UpdateFailure> {
+    if !network_status.is_online() {
+        return Ok(None);
+    }
     #[cfg(feature = "mas")]
     {
         let _ = webview;

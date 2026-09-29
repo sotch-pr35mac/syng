@@ -1,6 +1,7 @@
 export * from '@/utils/bookmarkManager.js';
 export * from '@/utils/appServices.js';
 export * from '@/utils/device.js';
+export * from '@/utils/networkStatus.svelte.js';
 export * from '@/utils/telemetry.js';
 export * from '@/utils/color.js';
 export * from '@/utils/error.js';

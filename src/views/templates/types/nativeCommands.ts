@@ -13,6 +13,7 @@ export const NATIVE_COMMANDS = {
 	APP: {
 		IS_DEV_BUILD: 'is_dev_build',
 		IS_MAS_BUILD: 'is_mas_build',
+		SET_NETWORK_ONLINE: 'set_network_online',
 		CHECK_FOR_UPDATE: 'check_for_update',
 		GET_ACKNOWLEDGEMENTS: 'get_acknowledgements',
 		GET_REGION_OPTIONS: 'get_region_options',

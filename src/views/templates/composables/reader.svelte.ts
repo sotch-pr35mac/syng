@@ -16,6 +16,7 @@ import {
 	type DictionaryLookupRequest,
 } from '@/composables/dictionaryPopover.svelte.js';
 import { handleError, telemetry } from '@/utils';
+import { networkStatus } from '@/utils/networkStatus.svelte.js';
 import {
 	applyReaderImportMetadata,
 	alignReaderTokens,
@@ -324,6 +325,9 @@ async function importWebpageDocument(
 	color: string,
 	preparedPayload?: ReaderImportPayload
 ): Promise<void> {
+	if (!preparedPayload && networkStatus.isOffline) {
+		return;
+	}
 	try {
 		const importPayload =
 			preparedPayload ??

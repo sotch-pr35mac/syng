@@ -19,6 +19,7 @@ import {
 import { invoke } from '@tauri-apps/api/core';
 import { checkForUpdate } from '@/utils/updateManager.js';
 import { isMobile } from '@/utils/device.js';
+import { initializeNetworkStatus, networkStatus } from '@/utils/networkStatus.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { initializeInterviews } from '@/utils/interviews.js';
@@ -72,6 +73,9 @@ const scheduleIdleWork = (task) => {
 };
 
 export const shouldRunStartupUpdateCheck = async () => {
+	if (networkStatus.isOffline) {
+		return false;
+	}
 	// isMobile() intentionally includes iPad, even though iPad uses the desktop UI.
 	if (isMobile()) {
 		return false;
@@ -95,6 +99,7 @@ window.onload = () => {
 
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
+	initializeNetworkStatus();
 	// app.js resolves and stores debug mode before mounting the shell. Reading it synchronously here
 	// keeps service creation ordered when the shell starts initialization. A bare inDebugMode()
 	// returns a Promise (always truthy), which would incorrectly select the development databases.

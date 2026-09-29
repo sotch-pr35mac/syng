@@ -19,10 +19,11 @@ use core::{
     is_mas_build, persist_bookmark_recovery_report, pinyinify, prepare_reader_import,
     prettify_pinyin, query, query_by_chinese, query_by_english, query_by_id, query_by_ids,
     query_by_pinyin, read_bookmark_recovery_report, read_legacy_migration_file,
-    resolve_legacy_lexical_units, save_bookmark_recovery_report, score_quiz, start_quiz,
-    telemetry_get_prefs, telemetry_get_queued_events, telemetry_init, telemetry_sanitize_error,
-    telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
-    tokenize_pinyin, tokenize_reader_text, InterviewManager, QuizState, TelemetryManager,
+    resolve_legacy_lexical_units, save_bookmark_recovery_report, score_quiz, set_network_online,
+    start_quiz, telemetry_get_prefs, telemetry_get_queued_events, telemetry_init,
+    telemetry_sanitize_error, telemetry_set_pref, telemetry_track_error, telemetry_track_event,
+    telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, InterviewManager, NetworkStatus,
+    QuizState, TelemetryManager,
 };
 #[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
@@ -76,7 +77,8 @@ pub fn run() {
         })
         .manage(QuizState::default())
         .manage(InterviewManager::default())
-        .manage(TelemetryManager::default());
+        .manage(TelemetryManager::default())
+        .manage(NetworkStatus::default());
 
     #[cfg(desktop)]
     {
@@ -87,6 +89,7 @@ pub fn run() {
     {
         builder = builder.invoke_handler(tauri::generate_handler!(
             check_for_update,
+            set_network_online,
             init_dictionary,
             classify,
             query,
@@ -134,6 +137,7 @@ pub fn run() {
     #[cfg(mobile)]
     {
         builder = builder.invoke_handler(tauri::generate_handler!(
+            set_network_online,
             init_dictionary,
             classify,
             query,

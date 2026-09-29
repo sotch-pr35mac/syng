@@ -12,6 +12,7 @@
 		parseLargeHtmlImportError,
 		type PrepareReaderImportInvokeArgs,
 	} from '@/utils/readerDocument.js';
+	import { networkStatus } from '@/utils/networkStatus.svelte.js';
 
 	type Props = {
 		visible?: boolean;
@@ -43,9 +44,23 @@
 	let fetchError = $state('');
 	let preparedUrl = $state('');
 	let preparedPayload = $state<ReaderImportPayload | undefined>(undefined);
-	const canImport = $derived(url.trim().length > 0 && !submitting && !importing);
-	const canFetch = $derived(url.trim().length > 0 && !fetching && !submitting && !importing);
 	const preparedPayloadIsValid = $derived(Boolean(preparedPayload && preparedUrl === url.trim()));
+	// A prepared preview is already local, so it remains saveable after connectivity drops.
+	const canImport = $derived(
+		(networkStatus.isOnline || preparedPayloadIsValid) &&
+			url.trim().length > 0 &&
+			!submitting &&
+			!importing
+	);
+	const canFetch = $derived(
+		networkStatus.isOnline && url.trim().length > 0 && !fetching && !submitting && !importing
+	);
+	const offlineImportUnavailable = $derived(networkStatus.isOffline && !preparedPayloadIsValid);
+	const disabledImportTooltip = $derived(
+		offlineImportUnavailable
+			? 'You are offline. Fetch a preview while online before importing.'
+			: ''
+	);
 	const previewText = $derived(preparedPayload?.text.trim().slice(0, PREVIEW_TEXT_LIMIT) ?? '');
 
 	function reset(): void {
@@ -96,8 +111,6 @@
 		}
 		fetching = true;
 		fetchError = '';
-		preparedPayload = undefined;
-		preparedUrl = '';
 		try {
 			const nextPayload = await prepareWithLargeHtmlConfirmation({
 				url: url.trim(),
@@ -140,6 +153,7 @@
 	{visible}
 	disabled={!canImport}
 	busy={importing || submitting}
+	disabledConfirmTooltip={disabledImportTooltip}
 	onclose={close}
 	onconfirm={submit}
 >
@@ -162,16 +176,39 @@
 					}}
 					onenter={fetchPreview}
 				/>
-				<SyButton
-					size="medium"
-					classes={['reader-webpage-import__fetch-button']}
-					disabled={!canFetch}
-					onclick={fetchPreview}
-				>
-					{fetching ? 'Fetching...' : 'Fetch Preview'}
-				</SyButton>
+				{#if networkStatus.isOffline}
+					<span class="sy-tooltip--container">
+						<SyButton
+							size="medium"
+							classes={['reader-webpage-import__fetch-button']}
+							disabled={!canFetch}
+							onclick={fetchPreview}
+						>
+							{fetching ? 'Fetching...' : 'Fetch Preview'}
+						</SyButton>
+						<span class="sy-tooltip--body sy-tooltip--body-top"
+							><p>
+								You are offline. Connect to the internet to fetch a preview.
+							</p></span
+						>
+					</span>
+				{:else}
+					<SyButton
+						size="medium"
+						classes={['reader-webpage-import__fetch-button']}
+						disabled={!canFetch}
+						onclick={fetchPreview}
+					>
+						{fetching ? 'Fetching...' : 'Fetch Preview'}
+					</SyButton>
+				{/if}
 			</div>
 		</div>
+		{#if networkStatus.isOffline}
+			<p class="reader-webpage-import__offline-status" role="status">
+				You are offline. Connect to the internet to fetch a preview before importing.
+			</p>
+		{/if}
 		<ReaderMetadataFields
 			idPrefix="reader-webpage-import"
 			{title}
@@ -231,6 +268,18 @@
 	.reader-webpage-import__error {
 		margin: var(--sy-space--none);
 		color: var(--sy-color--red);
+	}
+
+	.reader-webpage-import__offline-status {
+		display: none;
+		margin: var(--sy-space--none);
+		color: var(--sy-color--grey-4);
+	}
+
+	@media (hover: none) {
+		.reader-webpage-import__offline-status {
+			display: block;
+		}
 	}
 
 	.reader-webpage-import__preview {

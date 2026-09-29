@@ -11,6 +11,7 @@ mod pdf;
 mod rtf;
 mod text;
 
+use crate::core::network::NetworkStatus;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine;
 use encoding_rs::{BIG5, GBK, UTF_16BE, UTF_16LE, UTF_8};
@@ -22,6 +23,7 @@ use std::net::{IpAddr, Ipv4Addr, ToSocketAddrs};
 use std::path::Path;
 use std::time::Duration;
 use tauri::Manager;
+use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::FsExt;
 use tauri_plugin_http::reqwest;
@@ -698,7 +700,17 @@ fn prepare_from_bytes(
 }
 
 #[tauri::command]
-pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImportPayload, String> {
+pub fn prepare_reader_import(
+    args: PrepareReaderImportArgs,
+    network_status: State<'_, NetworkStatus>,
+) -> Result<ReaderImportPayload, String> {
+    prepare_reader_import_with_online(args, network_status.is_online())
+}
+
+fn prepare_reader_import_with_online(
+    args: PrepareReaderImportArgs,
+    network_online: bool,
+) -> Result<ReaderImportPayload, String> {
     if args
         .path
         .as_ref()
@@ -717,6 +729,11 @@ pub fn prepare_reader_import(args: PrepareReaderImportArgs) -> Result<ReaderImpo
         .filter(|value| !value.is_empty());
 
     if let Some(url) = url {
+        if !network_online {
+            return Err(
+                "You are offline. Connect to the internet to import a webpage.".to_string(),
+            );
+        }
         if args.source_base64.is_some() || args.path.is_some() || args.html.is_some() {
             return Err("URL import must not include path, sourceBase64, or html.".to_string());
         }
@@ -1085,23 +1102,50 @@ mod tests {
 
     #[test]
     fn prepare_reader_import_html_produces_text() {
-        let payload = prepare_reader_import(PrepareReaderImportArgs {
-            path: None,
-            source_base64: None,
-            file_name: None,
-            mime_type: None,
-            html: Some("<article><p>Alpha <strong>Beta</strong></p></article>".to_string()),
-            text: None,
-            title: Some("T".to_string()),
-            url: None,
-            allow_large_html: false,
-        })
+        let payload = prepare_reader_import_with_online(
+            PrepareReaderImportArgs {
+                path: None,
+                source_base64: None,
+                file_name: None,
+                mime_type: None,
+                html: Some("<article><p>Alpha <strong>Beta</strong></p></article>".to_string()),
+                text: None,
+                title: Some("T".to_string()),
+                url: None,
+                allow_large_html: false,
+            },
+            true,
+        )
         .expect("html import");
 
         assert_eq!(payload.title, "T");
         assert!(payload.text.contains("Alpha"));
         assert!(payload.text.contains("Beta"));
         assert_eq!(payload.source_type, "webpage");
+    }
+
+    #[test]
+    fn prepare_reader_import_rejects_webpage_urls_while_offline() {
+        let error = prepare_reader_import_with_online(
+            PrepareReaderImportArgs {
+                path: None,
+                source_base64: None,
+                file_name: None,
+                mime_type: None,
+                html: None,
+                text: None,
+                title: None,
+                url: Some("https://example.com/article".to_string()),
+                allow_large_html: false,
+            },
+            false,
+        )
+        .expect_err("offline webpage imports should not start a network request");
+
+        assert_eq!(
+            error,
+            "You are offline. Connect to the internet to import a webpage."
+        );
     }
 
     #[test]
@@ -1375,13 +1419,14 @@ mod tests {
 
     #[test]
     fn html_import_preserves_structural_blocks() {
-        let payload = prepare_reader_import(PrepareReaderImportArgs {
-            path: None,
-            source_base64: None,
-            file_name: None,
-            mime_type: None,
-            html: Some(
-                r#"
+        let payload = prepare_reader_import_with_online(
+            PrepareReaderImportArgs {
+                path: None,
+                source_base64: None,
+                file_name: None,
+                mime_type: None,
+                html: Some(
+                    r#"
                 <article>
                     <h2>Chapter</h2>
                     <p>First paragraph.</p>
@@ -1391,13 +1436,15 @@ mod tests {
                     <img src="https://example.com/image.png" alt="Cover">
                 </article>
                 "#
-                .to_string(),
-            ),
-            text: None,
-            title: None,
-            url: None,
-            allow_large_html: false,
-        })
+                    .to_string(),
+                ),
+                text: None,
+                title: None,
+                url: None,
+                allow_large_html: false,
+            },
+            true,
+        )
         .expect("html import");
 
         assert_eq!(payload.blocks[0].kind, "heading");
@@ -2213,17 +2260,20 @@ mod tests {
     fn prepare_reader_import_plain_base64_sets_sha256() {
         let utf8 = "Line one\n\nLine two.";
         let encoded = BASE64_STANDARD.encode(utf8);
-        let payload = prepare_reader_import(PrepareReaderImportArgs {
-            path: None,
-            source_base64: Some(encoded),
-            file_name: Some("note.txt".to_string()),
-            mime_type: Some("text/plain".to_string()),
-            html: None,
-            text: None,
-            title: None,
-            url: None,
-            allow_large_html: false,
-        })
+        let payload = prepare_reader_import_with_online(
+            PrepareReaderImportArgs {
+                path: None,
+                source_base64: Some(encoded),
+                file_name: Some("note.txt".to_string()),
+                mime_type: Some("text/plain".to_string()),
+                html: None,
+                text: None,
+                title: None,
+                url: None,
+                allow_large_html: false,
+            },
+            true,
+        )
         .expect("txt import");
 
         assert_eq!(payload.source_sha256, Some(sha256_hex(utf8.as_bytes())));
@@ -2236,17 +2286,20 @@ mod tests {
         let file_path = temp.path().join("path-import.txt");
         std::fs::write(&file_path, "Line one\n\nLine two.").expect("write test file");
 
-        let error = prepare_reader_import(PrepareReaderImportArgs {
-            path: Some(file_path.to_string_lossy().to_string()),
-            source_base64: None,
-            file_name: Some("path-import.txt".to_string()),
-            mime_type: Some("text/plain".to_string()),
-            html: None,
-            text: None,
-            title: None,
-            url: None,
-            allow_large_html: false,
-        })
+        let error = prepare_reader_import_with_online(
+            PrepareReaderImportArgs {
+                path: Some(file_path.to_string_lossy().to_string()),
+                source_base64: None,
+                file_name: Some("path-import.txt".to_string()),
+                mime_type: Some("text/plain".to_string()),
+                html: None,
+                text: None,
+                title: None,
+                url: None,
+                allow_large_html: false,
+            },
+            true,
+        )
         .expect_err("renderer path import should be rejected");
 
         assert!(error.contains("native reader file picker"));

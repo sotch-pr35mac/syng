@@ -4,6 +4,7 @@
 	import DOMPurify from 'dompurify';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { updateStore } from '@/stores/update.svelte.js';
+	import { networkStatus } from '@/utils/networkStatus.svelte.js';
 	import { getVersion } from '@tauri-apps/api/app';
 
 	const currentVersion = $derived(updateStore.currentVersion);
@@ -11,6 +12,7 @@
 	const releaseNotes = $derived(updateStore.releaseNotes);
 	const knownStatus = $derived(updateStore.knownStatus);
 	const updateAvailable = $derived(updateStore.updateAvailable);
+	const offline = $derived(networkStatus.isOffline);
 	let checking = $state(false);
 	let updating = $state(false);
 
@@ -64,7 +66,9 @@
 
 <div class="update-checker">
 	{#if !knownStatus}
-		{#if checking}
+		{#if offline}
+			<SyButton disabled={true} size="large">You are Offline</SyButton>
+		{:else if checking}
 			<!-- Disabled button indicating to user we're fetching the update status -->
 			<SyButton disabled={true} size="large">Checking for updates...</SyButton>
 		{:else}
@@ -87,7 +91,7 @@
 					color="green"
 					size="large"
 					onclick={() => fetchUpdate()}
-					disabled={updating}
+					disabled={updating || offline}
 				>
 					{#if !updating}
 						Update
