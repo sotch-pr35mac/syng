@@ -52,7 +52,7 @@ beforeEach(() => {
 it('uses the diagnostic native check and retains plugin update resources', async () => {
 	mocks.invoke.mockResolvedValue({
 		rid: 42,
-		currentVersion: '2.4.0',
+		currentVersion: '2.5.0',
 		version: '2.5.0',
 		rawJson: {},
 	});
