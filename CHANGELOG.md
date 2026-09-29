@@ -1,6 +1,18 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.5.0] - 2026-09-29
+### Added
+- Added an offline status indicator and network-aware remote operations
+- Added interview signup support to onboarding
+- Added Windows ARM64 and Linux ARM64 build support
+
+### Changed
+- Improved telemetry behavior, diagnostics, and update handling
+
+### Fixed
+- Fixed scrolling on the study page
+
 ## [2.4.0] - 2026-09-21
 ### Added
 - Expanded dictionary support
