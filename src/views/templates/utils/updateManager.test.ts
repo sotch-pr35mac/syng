@@ -31,6 +31,7 @@ vi.mock('@/utils/migrationManager.js', () => ({
 
 import { updateStore } from '@/stores/update.svelte.js';
 import { checkForUpdate, installPendingUpdate } from '@/utils/updateManager.js';
+import { networkStatus } from '@/utils/networkStatus.svelte.js';
 
 const makeUpdate = () =>
 	({
@@ -69,6 +70,30 @@ it('handles no available update without reporting an error', async () => {
 	mocks.invoke.mockResolvedValue(null);
 	await expect(checkForUpdate()).resolves.toBeNull();
 	expect(mocks.handleError).not.toHaveBeenCalled();
+});
+
+it('does not start update work or error telemetry while offline', async () => {
+	const onlineDescriptor = Object.getOwnPropertyDescriptor(networkStatus, 'isOnline');
+	const offlineDescriptor = Object.getOwnPropertyDescriptor(networkStatus, 'isOffline');
+	Object.defineProperty(networkStatus, 'isOnline', { configurable: true, get: () => false });
+	Object.defineProperty(networkStatus, 'isOffline', { configurable: true, get: () => true });
+	try {
+		const update = makeUpdate();
+		updateStore.setCheckResult(update);
+		await expect(checkForUpdate()).resolves.toBeNull();
+		await expect(installPendingUpdate()).resolves.toBeUndefined();
+		expect(mocks.invoke).not.toHaveBeenCalled();
+		expect(mocks.exportMigrationData).not.toHaveBeenCalled();
+		expect(update.downloadAndInstall).not.toHaveBeenCalled();
+		expect(mocks.handleError).not.toHaveBeenCalled();
+	} finally {
+		if (onlineDescriptor) {
+			Object.defineProperty(networkStatus, 'isOnline', onlineDescriptor);
+		}
+		if (offlineDescriptor) {
+			Object.defineProperty(networkStatus, 'isOffline', offlineDescriptor);
+		}
+	}
 });
 
 it('reports native check details, trigger and elapsed time before propagating the error', async () => {

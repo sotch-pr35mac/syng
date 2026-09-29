@@ -35,6 +35,7 @@ vi.mock('lucide-svelte', async () => {
 		Search: mockIcon,
 		Settings: mockIcon,
 		SquareStack: mockIcon,
+		WifiOff: mockIcon,
 		X: mockIcon,
 	};
 });

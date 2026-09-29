@@ -6,6 +6,7 @@ import { getBookmarkManager, getPreferenceManager } from '@/utils/appServices.js
 import { exportMigrationData } from '@/utils/migrationManager.js';
 import { handleError } from '@/utils/error.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { networkStatus } from '@/utils/networkStatus.svelte.js';
 
 async function updateStep<Result>(
 	stage: string | (() => string),
@@ -42,6 +43,9 @@ async function updateStep<Result>(
 export const checkForUpdate = (
 	trigger: 'startup' | 'manual' = 'manual'
 ): Promise<Update | null> => {
+	if (networkStatus.isOffline) {
+		return Promise.resolve(null);
+	}
 	return updateStep(
 		'check',
 		async () => {
@@ -61,6 +65,9 @@ export const checkForUpdate = (
  * Rejects if there is no pending update.
  */
 export const installPendingUpdate = (): Promise<void> => {
+	if (networkStatus.isOffline) {
+		return Promise.resolve();
+	}
 	// Snapshot the update object before the async backup runs; UI error handling can reset the store.
 	const pendingUpdate = updateStore.pendingUpdate;
 	if (!pendingUpdate) {

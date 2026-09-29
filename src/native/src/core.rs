@@ -8,6 +8,7 @@ pub mod dictionary;
 pub mod interviews;
 pub mod io;
 pub mod migration;
+pub mod network;
 pub mod quiz;
 pub mod reader;
 pub mod regions;
@@ -40,6 +41,7 @@ pub use io::{
     read_bookmark_recovery_report, save_bookmark_recovery_report,
 };
 pub use migration::read_legacy_migration_file;
+pub use network::{set_network_online, NetworkStatus};
 pub use quiz::{
     answer_question, get_incorrect_questions, get_next_question, score_quiz, start_quiz, QuizState,
 };

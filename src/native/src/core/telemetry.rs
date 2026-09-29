@@ -13,6 +13,7 @@
 //! 4. `insert_event` wraps the payload in a JSON envelope and INSERTs it into SQLite.
 //! 5. After each insert the oldest rows beyond `MAX_QUEUE_SIZE` are pruned.
 
+use crate::core::network::NetworkStatus;
 use crate::utils::syrver::{syrver_url, TELEMETRY_EVENTS_PATH, TELEMETRY_INSTALLATIONS_PATH};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
@@ -29,7 +30,7 @@ mod diagnostics;
 
 /// Total number of events retained in the local queue before oldest rows are dropped.
 /// This cap covers all statuses (pending, retrying, etc.) across the full backlog.
-const MAX_QUEUE_SIZE: i64 = 500;
+const MAX_QUEUE_SIZE: i64 = 2_000;
 
 /// Filename (under the app-data dir) holding the persisted installation token and its expiry.
 const INSTALLATION_FILE: &str = "telemetry_installation.json";
@@ -38,7 +39,7 @@ const TELEMETRY_PREFS_FILE: &str = "telemetry_prefs.json";
 const TELEMETRY_QUEUE_FILE: &str = "telemetry_queue.db";
 
 /// How long the background flush loop waits between send attempts.
-const FLUSH_INTERVAL: Duration = Duration::from_secs(60);
+const FLUSH_INTERVAL: Duration = Duration::from_secs(30);
 /// Maximum number of queued events pulled from SQLite and sent in a single POST.
 const FLUSH_BATCH_SIZE: i64 = 50;
 /// Per-request timeout for the outbound HTTP call.
@@ -85,6 +86,8 @@ struct TelemetryInner {
     os_version: String,
     timezone: String,
     data_dir: PathBuf,
+    /// Shared browser-reported connectivity, read when each event is enqueued.
+    network_status: NetworkStatus,
 }
 
 pub struct TelemetryManager {
@@ -250,6 +253,7 @@ fn insert_event(
             "arch": inner.arch,
             "os_version": inner.os_version,
             "timezone": inner.timezone,
+            "online": inner.network_status.is_online(),
         });
     }
 
@@ -504,6 +508,9 @@ async fn send_batch(client: &reqwest::Client, token: &str, body: &Value) -> Send
 /// success. A 401 clears the stored token, re-registers once, and retries the batch once. Any other
 /// failure leaves the rows in place for the next tick (still bounded by `MAX_QUEUE_SIZE` pruning).
 async fn flush_once(app: &AppHandle, client: &reqwest::Client) {
+    if !app.state::<NetworkStatus>().is_online() {
+        return;
+    }
     let manager = app.state::<TelemetryManager>();
     let Some((context, batch)) = take_pending(&manager) else {
         return;
@@ -554,8 +561,11 @@ fn start_flush_loop(app: &AppHandle, manager: &TelemetryManager) {
         };
 
         loop {
-            tokio::time::sleep(FLUSH_INTERVAL).await;
-            flush_once(&app, &client).await;
+            let network_status = app.state::<NetworkStatus>();
+            tokio::select! {
+                _ = tokio::time::sleep(FLUSH_INTERVAL) => flush_once(&app, &client).await,
+                _ = network_status.wait_for_change() => flush_once(&app, &client).await,
+            }
         }
     });
 }
@@ -583,6 +593,7 @@ mod tests {
             os_version: "1.0".to_string(),
             timezone: "America/New_York".to_string(),
             data_dir,
+            network_status: NetworkStatus::default(),
         }
     }
 
@@ -828,6 +839,23 @@ mod tests {
         let envelope: Value = serde_json::from_str(&envelope_str).unwrap();
 
         assert_eq!(envelope["device_context"]["timezone"], "America/New_York");
+        assert_eq!(envelope["device_context"]["online"], false);
+    }
+
+    #[test]
+    fn test_insert_event_captures_online_status_when_enqueued() {
+        let dir = TempDir::new().unwrap();
+        let mut inner = make_inner(&dir, TelemetryPrefs::default());
+        inner.network_status.set_online(true);
+
+        insert_event(EventFamily::Event, "test", json!({}), &mut inner).unwrap();
+
+        let envelope_str: String = inner
+            .db
+            .query_row("SELECT envelope FROM events LIMIT 1", [], |row| row.get(0))
+            .unwrap();
+        let envelope: Value = serde_json::from_str(&envelope_str).unwrap();
+        assert_eq!(envelope["device_context"]["online"], true);
     }
 
     #[test]
@@ -1094,6 +1122,7 @@ pub fn track_event_native(manager: &TelemetryManager, name: &str, payload: Value
 pub fn telemetry_init(
     app: AppHandle,
     state: State<'_, TelemetryManager>,
+    network_status: State<'_, NetworkStatus>,
     os_version: String,
     timezone: String,
 ) -> Result<(), String> {
@@ -1123,6 +1152,7 @@ pub fn telemetry_init(
             os_version,
             timezone,
             data_dir,
+            network_status: network_status.inner().clone(),
         });
     }
 

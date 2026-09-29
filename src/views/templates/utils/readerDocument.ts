@@ -9,6 +9,7 @@ import type {
 	ReaderToken,
 } from '@/types/reader.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { networkStatus } from '@/utils/networkStatus.svelte.js';
 
 // --- Supported-format labels (import UI) ---
 
@@ -173,6 +174,11 @@ export function canUseNativeReaderPrepareImport(): boolean {
 export async function invokePrepareReaderImport(
 	args: PrepareReaderImportInvokeArgs
 ): Promise<ReaderImportPayload> {
+	if (args.url && networkStatus.isOffline) {
+		return Promise.reject(
+			new Error('You are offline. Connect to the internet to import a webpage.')
+		);
+	}
 	return await invoke<ReaderImportPayload>(NATIVE_COMMANDS.READER.PREPARE_IMPORT, { args });
 }
 

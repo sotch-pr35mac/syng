@@ -11,6 +11,7 @@
 		confirmLabel?: string;
 		busyLabel?: string;
 		cancelLabel?: string;
+		disabledConfirmTooltip?: string;
 		width?: string;
 		onclose?: () => void;
 		onconfirm?: () => Promise<void> | void;
@@ -25,6 +26,7 @@
 		confirmLabel = 'Import',
 		busyLabel = 'Importing...',
 		cancelLabel = 'Cancel',
+		disabledConfirmTooltip = '',
 		width = 'var(--sy-reader-import-modal-width)',
 		onclose = () => {},
 		onconfirm = () => {},
@@ -40,9 +42,20 @@
 	{/snippet}
 	{#snippet footer()}
 		<SyButton size="large" onclick={onclose}>{cancelLabel}</SyButton>
-		<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
-			{busy ? busyLabel : confirmLabel}
-		</SyButton>
+		{#if disabled && disabledConfirmTooltip}
+			<span class="sy-tooltip--container">
+				<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
+					{busy ? busyLabel : confirmLabel}
+				</SyButton>
+				<span class="sy-tooltip--body sy-tooltip--body-top"
+					><p>{disabledConfirmTooltip}</p></span
+				>
+			</span>
+		{:else}
+			<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
+				{busy ? busyLabel : confirmLabel}
+			</SyButton>
+		{/if}
 	{/snippet}
 </SyModal>
 
