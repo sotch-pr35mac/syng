@@ -1,7 +1,7 @@
 //! Explicit interview signups. Contact details never pass through the telemetry queue.
 
 use crate::core::TelemetryManager;
-use crate::utils::syrver::{syrver_url, INTERVIEW_SIGNUPS_PATH};
+use crate::utils::syrver::{syrver_url, INTERVIEWS_PATH};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -61,22 +61,51 @@ struct SignupRequest {
     device_id: String,
 }
 
+/// The backend contract deliberately excludes the local consent checkbox value: validating true
+/// consent happens before this record is queued, and the accepted consent version is transmitted.
+#[derive(Serialize)]
+struct InterviewRequest<'a> {
+    signup_id: &'a str,
+    preferred_name: &'a str,
+    email: &'a str,
+    device_id: &'a str,
+    consent_version: &'a str,
+}
+
+impl<'a> From<&'a SignupRequest> for InterviewRequest<'a> {
+    fn from(request: &'a SignupRequest) -> Self {
+        Self {
+            signup_id: &request.signup.signup_id,
+            preferred_name: &request.signup.preferred_name,
+            email: &request.signup.email,
+            device_id: &request.device_id,
+            consent_version: &request.signup.consent_version,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 enum Delivery {
     Delivered,
     Rejected,
+    Unauthorized,
     Retry(u64),
 }
 
-async fn send_signup(url: &str, request: &SignupRequest) -> Delivery {
-    let Ok(client) = reqwest::Client::builder()
-        .timeout(Duration::from_secs(15))
-        .redirect(reqwest::redirect::Policy::none())
-        .build()
+async fn send_signup(
+    client: &reqwest::Client,
+    url: &str,
+    request: &SignupRequest,
+    token: &str,
+) -> Delivery {
+    let payload = InterviewRequest::from(request);
+    let Ok(response) = client
+        .post(url)
+        .bearer_auth(token)
+        .json(&payload)
+        .send()
+        .await
     else {
-        return Delivery::Retry(0);
-    };
-    let Ok(response) = client.post(url).json(request).send().await else {
         return Delivery::Retry(0);
     };
     // Never read or log response bodies: they may echo contact details.
@@ -94,6 +123,7 @@ async fn send_signup(url: &str, request: &SignupRequest) -> Delivery {
         .unwrap_or(0);
     match response.status().as_u16() {
         200 => Delivery::Delivered,
+        401 => Delivery::Unauthorized,
         429 => Delivery::Retry(retry_after.max(3600)),
         408 | 500..=599 => Delivery::Retry(retry_after),
         _ => Delivery::Rejected,
@@ -263,18 +293,23 @@ impl Queue {
                     .execute("DELETE FROM pending WHERE id = ?1", [id])
                     .map_err(unavailable)?;
             }
-            Delivery::Retry(delay) => {
-                self.db
-                    .execute(
-                        "UPDATE pending SET next_attempt = MAX(next_attempt, ?1) WHERE id = ?2",
-                        params![
-                            timestamp.saturating_add(delay.min(i64::MAX as u64) as i64),
-                            id
-                        ],
-                    )
-                    .map_err(unavailable)?;
-            }
+            Delivery::Retry(delay) => self.defer(id, delay, timestamp)?,
+            // Keep consented contact details if a caller fails to refresh a rejected credential.
+            Delivery::Unauthorized => self.defer(id, 0, timestamp)?,
         }
+        Ok(())
+    }
+
+    fn defer(&self, id: &str, delay: u64, timestamp: i64) -> Result<(), String> {
+        self.db
+            .execute(
+                "UPDATE pending SET next_attempt = MAX(next_attempt, ?1) WHERE id = ?2",
+                params![
+                    timestamp.saturating_add(delay.min(i64::MAX as u64) as i64),
+                    id
+                ],
+            )
+            .map_err(unavailable)?;
         Ok(())
     }
 }
@@ -300,9 +335,35 @@ async fn flush_pending(app: &AppHandle) -> Result<(), String> {
             return Ok(());
         };
         let id = request.signup.signup_id.clone();
+        let app = app.clone();
         // Register cancellation while holding the same lock used to cancel/replace the queue.
         let task = tokio::spawn(async move {
-            send_signup(&syrver_url(INTERVIEW_SIGNUPS_PATH), &request).await
+            let Ok(client) = reqwest::Client::builder()
+                .timeout(Duration::from_secs(15))
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+            else {
+                return Delivery::Retry(0);
+            };
+            let telemetry = app.state::<TelemetryManager>();
+            let Some(token) = telemetry.interview_token(&client).await else {
+                return Delivery::Retry(0);
+            };
+            let url = syrver_url(INTERVIEWS_PATH);
+            match send_signup(&client, &url, &request, &token).await {
+                Delivery::Unauthorized => {
+                    let Some(token) = telemetry.refresh_interview_token(&client).await else {
+                        return Delivery::Retry(0);
+                    };
+                    match send_signup(&client, &url, &request, &token).await {
+                        // A second authorization failure is transient from the signup queue's
+                        // perspective: retain the explicit consent rather than discarding it.
+                        Delivery::Unauthorized => Delivery::Retry(0),
+                        outcome => outcome,
+                    }
+                }
+                outcome => outcome,
+            }
         });
         queue.in_flight = Some(task.abort_handle());
         (id, task)
@@ -449,6 +510,24 @@ mod tests {
         );
     }
 
+    #[test]
+    fn unauthorized_delivery_keeps_the_signup_for_a_later_retry() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("queue.sqlite");
+        let mut queue = Queue::open(&path).unwrap();
+        queue.set_child_mode(false, 100).unwrap();
+        let input = request();
+        queue.enqueue(&input, 100).unwrap();
+
+        queue
+            .finish(&input.signup.signup_id, Delivery::Unauthorized, 100)
+            .unwrap();
+
+        let pending = queue.due(100).unwrap().unwrap();
+        assert_eq!(pending.signup.signup_id, input.signup.signup_id);
+        assert_eq!(pending.signup.email, input.signup.email);
+    }
+
     #[tokio::test]
     async fn cancellation_aborts_in_flight_delivery_and_child_mode_rejects_new_signups() {
         let dir = tempfile::tempdir().unwrap();
@@ -582,13 +661,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sends_contacts_only_to_signup_endpoint_and_sanitizes_failures() {
+    async fn sends_authenticated_contacts_to_interviews_endpoint_and_sanitizes_failures() {
         use std::io::{Read, Write};
         use std::net::TcpListener;
         for (status, retry_after, expected) in [
             (200, "", Delivery::Delivered),
             (400, "", Delivery::Rejected),
             (409, "", Delivery::Rejected),
+            (401, "", Delivery::Unauthorized),
             (429, "", Delivery::Retry(3600)),
             (429, "Retry-After: 7200\r\n", Delivery::Retry(7200)),
             (503, "Retry-After: 300\r\n", Delivery::Retry(300)),
@@ -622,18 +702,35 @@ mod tests {
                     assert_ne!(n, 0);
                 }
                 let text = String::from_utf8(received).unwrap();
-                assert!(text.starts_with("POST /v1/interview-signups "));
-                assert!(text.contains("\"device_id\":\"test-device\""));
-                assert!(!text.to_lowercase().contains("authorization:"));
+                let (headers, body) = text.split_once("\r\n\r\n").unwrap();
+                assert!(headers.starts_with("POST /v1/interviews "));
+                assert!(headers
+                    .to_lowercase()
+                    .contains("authorization: bearer syrv_tlm_test"));
+                let body: serde_json::Value = serde_json::from_str(body).unwrap();
+                assert_eq!(body.as_object().unwrap().len(), 5);
+                assert_eq!(body["device_id"], "d91f63f7-02c7-43d8-a406-f5e7a08fb37f");
+                assert_eq!(body["consent_version"], CONSENT_VERSION);
+                assert!(body.get("consent").is_none());
                 let body = "sensitive@example.invalid";
                 write!(stream, "HTTP/1.1 {status} Status\r\n{retry_after}Content-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len()).unwrap();
             });
             let request = SignupRequest {
                 signup: signup(),
-                device_id: "test-device".into(),
+                device_id: "d91f63f7-02c7-43d8-a406-f5e7a08fb37f".into(),
             };
+            let client = reqwest::Client::builder()
+                .redirect(reqwest::redirect::Policy::none())
+                .build()
+                .unwrap();
             assert_eq!(
-                send_signup(&format!("http://{address}/v1/interview-signups"), &request).await,
+                send_signup(
+                    &client,
+                    &format!("http://{address}/v1/interviews"),
+                    &request,
+                    "syrv_tlm_test",
+                )
+                .await,
                 expected
             );
             server.join().unwrap();

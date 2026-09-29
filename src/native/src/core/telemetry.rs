@@ -112,6 +112,39 @@ impl TelemetryManager {
             .and_then(|inner| inner.as_ref().map(|inner| inner.device_id.clone()))
             .ok_or_else(|| "unavailable".to_string())
     }
+
+    /// Returns an installation credential for an explicitly consented interview signup.
+    /// This shares the normal token lifecycle without emitting telemetry, changing preferences,
+    /// or including optional device context in a new registration.
+    pub(super) async fn interview_token(&self, client: &reqwest::Client) -> Option<String> {
+        let context = self.interview_installation_context()?;
+        ensure_installation(client, &context)
+            .await
+            .map(|installation| installation.telemetry_token)
+    }
+
+    /// Replaces an installation credential the interviews endpoint rejected. The caller retries
+    /// the same explicitly consented signup once with this fresh token.
+    pub(super) async fn refresh_interview_token(&self, client: &reqwest::Client) -> Option<String> {
+        let context = self.interview_installation_context()?;
+        clear_installation(&context.data_dir);
+        register_installation(client, &context)
+            .await
+            .map(|installation| installation.telemetry_token)
+    }
+
+    fn interview_installation_context(&self) -> Option<FlushContext> {
+        let lock = self.state.lock().ok()?;
+        let inner = lock.as_ref()?;
+        Some(FlushContext {
+            data_dir: inner.data_dir.clone(),
+            app_version: inner.app_version.clone(),
+            platform: inner.platform.clone(),
+            arch: inner.arch.clone(),
+            os_version: inner.os_version.clone(),
+            include_device_context: false,
+        })
+    }
 }
 
 fn now_unix_ms() -> i64 {
@@ -584,6 +617,33 @@ mod tests {
         assert!(!inner.prefs.enabled);
         assert_eq!(row_count(inner), 1);
         assert!(!manager.flush_started.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn interview_registration_uses_minimal_context_without_changing_preferences() {
+        let dir = TempDir::new().unwrap();
+        let prefs = TelemetryPrefs {
+            enabled: false,
+            include_device_context: true,
+            ..Default::default()
+        };
+        let manager = TelemetryManager::default();
+        *manager.state.lock().unwrap() = Some(make_inner(&dir, prefs));
+
+        let context = manager.interview_installation_context().unwrap();
+        assert_eq!(context.data_dir, dir.path());
+        assert_eq!(context.app_version, "0.0.0");
+        assert_eq!(context.platform, "test");
+        assert!(!context.include_device_context);
+        assert!(build_registration_body(&context)
+            .get("device_context")
+            .is_none());
+
+        let guard = manager.state.lock().unwrap();
+        let inner = guard.as_ref().unwrap();
+        assert!(!inner.prefs.enabled);
+        assert!(inner.prefs.include_device_context);
+        assert_eq!(row_count(inner), 0);
     }
 
     #[test]
