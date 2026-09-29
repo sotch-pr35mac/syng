@@ -74,6 +74,8 @@
 
 <style>
 	.study--container {
+		display: flex;
+		flex-direction: column;
 		padding: 0px var(--sy-space--extra-large);
 		background-color: var(--sy-color--white);
 		overflow: hidden;
@@ -85,6 +87,12 @@
 	.study--title--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
 		padding-bottom: var(--sy-space--large);
+	}
+	.study--content {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
 	}
 	.study--empty {
 		display: flex;
