@@ -9,7 +9,7 @@ default-run = "syng"
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2.7.0", features = [] }
 
 [dependencies]
 # The v4.1.0 crate validates this version-matched bundle through
@@ -19,7 +19,7 @@ serde_json = "1.0"
 regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 rust_iso3166 = "0.2.0"
-tauri = { version = "2", features = [] }
+tauri = { version = "2.12.0", features = [] }
 rand = "0.9"
 uuid = { version = "1.23.1", features = ["v4"] }
 rusqlite = { version = "0.39", features = ["bundled"] }

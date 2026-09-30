@@ -61,7 +61,7 @@ jobs:
             - name: Prepare Tauri Environment
               run: |
                   rustup target add ${{ matrix.target }}
-                  cargo install tauri-cli --version 2.9.6 --locked
+                  cargo install tauri-cli --version 2.12.0 --locked
             - name: Build & Package (macOS Only)
               if: runner.os == 'macOS'
               working-directory: src/native
@@ -75,14 +75,14 @@ jobs:
                   APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
             - name: Build & Package (Linux & Windows)
               if: runner.os != 'macOS'
               working-directory: src/native
               env:
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
             - name: Upload Packages and Updater Signatures
               uses: actions/upload-artifact@v5
               with:

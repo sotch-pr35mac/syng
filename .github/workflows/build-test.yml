@@ -15,7 +15,9 @@ jobs:
                 include:
                     - platform: macos-latest
                     - platform: ubuntu-22.04
+                    - platform: ubuntu-22.04-arm
                     - platform: windows-latest
+                    - platform: windows-11-arm
         runs-on: ${{ matrix.platform }}
         defaults:
             run:
@@ -38,6 +40,9 @@ jobs:
               run: npm ci
             - name: Build Frontend
               run: npm run build
+            - name: Select Native Windows ARM64 Toolchain
+              if: matrix.platform == 'windows-11-arm'
+              run: rustup default stable-aarch64-pc-windows-msvc
             - name: Build Native
               working-directory: src/native
               run: cargo build --locked

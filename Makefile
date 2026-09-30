@@ -13,7 +13,7 @@ IOS_OFFLINE_CONFIG ?= tauri.ios.offline.conf.json
 ANDROID_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
 ANDROID_KEYSTORE_PROPERTIES := src/native/gen/android/keystore.properties
 ANDROID_AAB := src/native/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab
-TAURI_CLI_VERSION := 2.9.6
+TAURI_CLI_VERSION := 2.12.0
 
 build:
 	npm run build
