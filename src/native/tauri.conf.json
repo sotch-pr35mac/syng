@@ -23,6 +23,9 @@
 			"timestampUrl": ""
 		},
 		"longDescription": "",
+		"iOS": {
+			"minimumSystemVersion": "15.0"
+		},
 		"macOS": {
 			"entitlements": null,
 			"exceptionDomain": "",
