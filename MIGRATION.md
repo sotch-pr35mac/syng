@@ -37,6 +37,26 @@ Known app-data backup locations:
 - Current Linux: `~/.local/share/xyz.bytecraft.syng/syng-migration-data.json`
 - Legacy Linux: `~/.local/share/org.syng.app/syng-migration-data.json`
 
+### Linux AppImage profiles
+
+AppImage bundles WebKitGTK, while RPM/DEB uses the system version. These versions
+can have incompatible IndexedDB formats. AppImage therefore uses its own persistent
+profile at `~/.local/share/xyz.bytecraft.syng.appimage` (or under `XDG_DATA_HOME`
+when set). RPM/DEB keeps `xyz.bytecraft.syng`. The application identifier is unchanged.
+Extracted AppImages launched through `AppRun` use the same AppImage profile.
+
+Before creating any windows, the first AppImage launch copies an available
+`syng-migration-data.json` and `telemetry_prefs.json` from the old shared profile.
+It never copies IndexedDB files or the old migration completion marker. The copied
+current backup takes priority over an older beta backup. The normal JSON import
+then restores preferences, word lists and bookmarks once. Subsequent changes and
+backups stay separate; the two package formats do not synchronize their libraries.
+
+The original profile remains untouched. Reader documents and attachments are not
+part of this JSON backup and remain accessible through the original RPM/DEB profile;
+they must be reimported to use them in the AppImage. If no backup exists, AppImage
+opens first-run setup. Explicit app-directory overrides are respected.
+
 On startup, the app:
 
 1. Initializes preference and bookmark managers.

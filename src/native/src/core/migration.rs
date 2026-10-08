@@ -71,6 +71,19 @@ pub(crate) fn read_optional_text_file(path: &Path) -> Result<Option<String>, Str
 /// Read the legacy identifier's migration JSON file for the JavaScript migration manager.
 #[tauri::command]
 pub fn read_legacy_migration_file(app: AppHandle) -> Result<Option<String>, String> {
+    // A newly isolated AppImage may have a JSON backup from the previously
+    // shared profile. Prefer it to a much older org.syng.app beta backup.
+    #[cfg(target_os = "linux")]
+    if crate::platform::linux::uses_appimage_storage(app.config())
+        && app
+            .path()
+            .app_data_dir()
+            .map_err(|error| error.to_string())?
+            .join(MIGRATION_FILE_NAME)
+            .is_file()
+    {
+        return Ok(None);
+    }
     let file_path = legacy_app_data_dir(&app)?.join(MIGRATION_FILE_NAME);
     read_optional_text_file(&file_path)
 }
