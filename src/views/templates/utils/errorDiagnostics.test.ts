@@ -62,6 +62,40 @@ it('extracts JS and native causes and private context for the Rust privacy bound
 	expect(telemetry.trackError).toHaveBeenCalledTimes(1);
 });
 
+it('keeps alerts simple while reporting detailed errors and nested stacks', () => {
+	const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+	const databaseError = Object.assign(new Error('Unable to open database'), {
+		reason: 'Permission denied',
+		code: 'DB_OPEN',
+		status: 500,
+	});
+	const error = Object.assign(new Error('Loading preferences', { cause: databaseError }), {
+		reason: 'Initialization failed',
+	});
+
+	handleError('Please restart Syng.', error);
+
+	expect(alertSpy).toHaveBeenCalledExactlyOnceWith('Please restart Syng.');
+	expect(telemetry.trackError).toHaveBeenCalledWith(
+		'app.error',
+		'Please restart Syng.',
+		expect.objectContaining({
+			error_message: 'Loading preferences',
+			error_reason: 'Initialization failed',
+			error_stack: expect.any(String),
+			error_causes: [
+				expect.objectContaining({
+					error_message: 'Unable to open database',
+					error_reason: 'Permission denied',
+					error_stack: expect.any(String),
+					code: 'DB_OPEN',
+					status: 500,
+				}),
+			],
+		})
+	);
+});
+
 it('handles circular causes and primitive rejections', () => {
 	const error = new Error('cyclic');
 	error.cause = error;

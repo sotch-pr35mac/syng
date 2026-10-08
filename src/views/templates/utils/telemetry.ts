@@ -248,6 +248,7 @@ export const telemetry = {
 			safe.message,
 			safe.payload.error_name,
 			safe.payload.error_message,
+			safe.payload.error_reason,
 			safe.payload.stage,
 			safe.payload.code,
 			safe.payload.status,

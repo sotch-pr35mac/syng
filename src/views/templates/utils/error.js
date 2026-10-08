@@ -70,6 +70,8 @@ export function describeUnknownError(value) {
 				...causeDetails,
 				error_name: cause.name,
 				error_message: cause.message,
+				error_reason: cause.reason,
+				error_stack: cause.stack,
 			});
 			cause = nextCause;
 		}
