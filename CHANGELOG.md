@@ -1,6 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.5.1] - 2026-10-09
+### Changed
+- Improved startup error details to help diagnose loading failures
+
+### Fixed
+- Isolated Linux AppImage profiles to avoid database conflicts with RPM and DEB installations
+- Fixed character animations failing to restart or overlapping after closing the window or switching character forms
+
 ## [2.5.0] - 2026-09-29
 ### Added
 - Added an offline status indicator and network-aware remote operations

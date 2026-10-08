@@ -5076,7 +5076,7 @@ dependencies = [
 
 [[package]]
 name = "syng"
-version = "2.5.0"
+version = "2.5.1"
 dependencies = [
  "base64 0.22.1",
  "block2",

@@ -54,12 +54,12 @@ it('uses the diagnostic native check and retains plugin update resources', async
 	mocks.invoke.mockResolvedValue({
 		rid: 42,
 		currentVersion: '2.5.0',
-		version: '2.5.0',
+		version: '2.5.1',
 		rawJson: {},
 	});
 	const update = await checkForUpdate('startup');
 	expect(mocks.invoke).toHaveBeenCalledWith('check_for_update');
-	expect(update?.version).toBe('2.5.0');
+	expect(update?.version).toBe('2.5.1');
 	expect(update?.rid).toBe(42);
 	expect(typeof update?.downloadAndInstall).toBe('function');
 	expect(updateStore.pendingUpdate).toBe(update);
