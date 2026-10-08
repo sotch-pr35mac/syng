@@ -42,7 +42,7 @@
 				"depends": []
 			}
 		},
-		"createUpdaterArtifacts": "v1Compatible"
+		"createUpdaterArtifacts": true
 	},
 	"productName": "Syng",
 	"mainBinaryName": "Syng",

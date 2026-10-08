@@ -53,6 +53,18 @@ jobs:
                   sudo apt-get install -y libssl-dev libwebkit2gtk-4.1-dev build-essential curl wget libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 xdg-utils
             - name: Install Frontend Dependencies
               run: npm ci
+            - name: Test Updater Artifact Validation
+              run: node --test scripts/check-updater-artifacts.test.ts
+            - name: Configure Bridge Artifacts
+              run: |
+                  node --input-type=module <<'NODE'
+                  import { appendFileSync, readFileSync } from 'node:fs';
+                  const config = JSON.parse(readFileSync('src/native/tauri.conf.json', 'utf8'));
+                  const override = config.version === '2.5.2'
+                    ? { bundle: { createUpdaterArtifacts: 'v1Compatible' } }
+                    : {};
+                  appendFileSync(process.env.GITHUB_ENV, `TAURI_UPDATER_CONFIG=${JSON.stringify(override)}\n`);
+                  NODE
             - name: Build Frontend
               run: npm run build
             - name: Select Native Windows ARM64 Toolchain
@@ -75,14 +87,16 @@ jobs:
                   APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config "$TAURI_UPDATER_CONFIG" -- --locked
             - name: Build & Package (Linux & Windows)
               if: runner.os != 'macOS'
               working-directory: src/native
               env:
                   TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
                   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+              run: cargo tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config "$TAURI_UPDATER_CONFIG" -- --locked
+            - name: Validate Packages and Updater Signatures
+              run: node scripts/check-updater-artifacts.ts '${{ matrix.target }}' 'src/native/target/${{ matrix.target }}/release/bundle'
             - name: Upload Packages and Updater Signatures
               uses: actions/upload-artifact@v5
               with:
