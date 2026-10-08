@@ -25,3 +25,11 @@ src/native/gen/apple/syng_iOS/Signing.local.xcconfig
 src/native/gen/android/keystore.properties
 *.jks
 *.keystore
+
+# Project-local AI skills and context (not backed up by Git)
+/.agents/
+/.codex/
+/.impeccable/
+/.impeccable.md
+/PRODUCT.md
+/DESIGN.md
