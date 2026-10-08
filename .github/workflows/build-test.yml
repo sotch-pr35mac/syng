@@ -21,11 +21,11 @@ jobs:
             run:
                 shell: bash
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v7
               with:
                   submodules: true
             - name: Prepare Node Environment
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@v7
               with:
                   node-version: 24
                   cache: npm
@@ -36,6 +36,8 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 xdg-utils
             - name: Install Frontend Dependencies
               run: npm ci
+            - name: Test Updater Artifact Validation
+              run: node --test scripts/check-updater-artifacts.test.ts
             - name: Build Frontend
               run: npm run build
             - name: Select Native Windows ARM64 Toolchain
