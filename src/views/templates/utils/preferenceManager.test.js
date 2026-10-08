@@ -175,5 +175,6 @@ it('rejects waitForInit when loading preferences fails instead of hanging', asyn
 	await expect(manager.waitForInit()).rejects.toThrow(
 		'There was an error loading user preferences.'
 	);
+	await expect(manager.waitForInit()).rejects.toMatchObject({ cause: { name: 'unauthorized' } });
 	expect(manager.initialized).toBe(false);
 });

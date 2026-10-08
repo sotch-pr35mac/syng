@@ -241,6 +241,34 @@ it('does not show migration UI when the current schema requires no work', async 
 	expect(databaseMigrationStore.active).toBe(false);
 });
 
+it.each([
+	['preferenceManager', 'loading preferences'],
+	['bookmarkManager', 'loading bookmarks'],
+	['readerDocumentManager', 'loading reader documents'],
+])('identifies a failed %s initialization and preserves its cause', async (serviceName, step) => {
+	const services = startupServices();
+	const failure = { name: 'UnknownError', message: 'Unable to open database' };
+	services[serviceName].init.mockRejectedValueOnce(failure);
+	const startup = runStartupActions();
+	await expect(waitForStartupComplete()).rejects.toMatchObject({
+		message: `Startup failed while ${step}.`,
+		cause: failure,
+	});
+	await startup;
+	expect(exportMigrationData).not.toHaveBeenCalled();
+});
+
+it('identifies dictionary initialization failures from native string rejections', async () => {
+	startupServices();
+	vi.mocked(invoke).mockRejectedValueOnce('native initialization failed');
+	const startup = runStartupActions();
+	await expect(waitForStartupComplete()).rejects.toMatchObject({
+		message: 'Startup failed while initializing the dictionary.',
+		cause: 'native initialization failed',
+	});
+	await startup;
+});
+
 it('retains the migration error and stops startup backup and init on failure', async () => {
 	startupServices({
 		prepareSchema: vi.fn(async (onStart) => {

@@ -196,7 +196,7 @@ export class ReaderDocumentManager {
 			})
 			.catch((error: unknown) => {
 				console.error(error);
-				throw new Error('There was an error loading reader documents.');
+				throw new Error('There was an error loading reader documents.', { cause: error });
 			});
 		return this._initPromise;
 	}

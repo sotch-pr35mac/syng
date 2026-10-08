@@ -1,4 +1,4 @@
-import { beforeEach, vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { wait } from '@test/utils/unitTestUtils.js';
@@ -7,7 +7,13 @@ import HanziWriter from 'hanzi-writer';
 
 const eventMocks = vi.hoisted(() => ({
 	displayCharactersListener: undefined,
+	hiddenListener: undefined,
+	unlisten: vi.fn(),
 }));
+
+vi.mock('@/utils/error.js', () => ({ handleError: vi.fn() }));
+
+afterEach(() => vi.unstubAllGlobals());
 
 // Mock must be defined with async factory because vi.mock is hoisted before imports
 vi.mock('lucide-svelte', async () => {
@@ -49,16 +55,44 @@ vi.mock('@tauri-apps/api/event', () => ({
 			eventMocks.displayCharactersListener = callback;
 			wait(() => callback({ payload: WORD }));
 		}
-		return Promise.resolve(() => {});
+		if (event === 'character-window-hidden') {
+			eventMocks.hiddenListener = callback;
+		}
+		return Promise.resolve(eventMocks.unlisten);
 	}),
 }));
 
 const mockMatchMedia = vi.fn().mockReturnValue({
 	addEventListener: (event, callback) => undefined, // eslint-disable-line no-unused-vars
+	removeEventListener: vi.fn(),
 });
 
 beforeEach(() => {
 	vi.mocked(HanziWriter.create).mockClear();
+	eventMocks.unlisten.mockClear();
+});
+
+it('starts a new word immediately after closing during playback and ignores the old completion', async () => {
+	window.matchMedia = mockMatchMedia;
+	const user = userEvent.setup();
+	const { getByTestId, unmount } = render(CharacterWindow);
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(2));
+	const previousWriter = vi.mocked(HanziWriter.create).mock.results[0].value;
+	await user.click(getByTestId('control-button'));
+	const previousCompletion = previousWriter.animateCharacter.mock.calls[0][0].onComplete;
+	eventMocks.hiddenListener();
+	eventMocks.displayCharactersListener({ payload: { simplified: '中国', traditional: '中國' } });
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(4));
+	expect(getByTestId('tooltip-text').textContent).toBe('Play Stroke Order');
+	const nextWriter = vi.mocked(HanziWriter.create).mock.results[2].value;
+	const followingWriter = vi.mocked(HanziWriter.create).mock.results[3].value;
+	await user.click(getByTestId('control-button'));
+	expect(nextWriter.animateCharacter).toHaveBeenCalledTimes(1);
+	previousCompletion({ canceled: false });
+	expect(followingWriter.animateCharacter).not.toHaveBeenCalled();
+	expect(previousWriter.hideCharacter).toHaveBeenLastCalledWith({ duration: 0 });
+	unmount();
+	expect(eventMocks.unlisten).toHaveBeenCalledTimes(2);
 });
 
 it('should highlight the tab that you click on', async () => {
@@ -141,4 +175,21 @@ it('keeps the current script when no initial script is requested', async () => {
 		)
 	);
 	expect(getByText('Traditional').className).toContain('script-selector--active');
+});
+
+it('shows missing character data with the real writer and recovers when switching scripts', async () => {
+	const { default: RealHanziWriter } = await vi.importActual('hanzi-writer');
+	vi.mocked(HanziWriter.create)
+		.mockImplementationOnce(RealHanziWriter.create)
+		.mockImplementationOnce(RealHanziWriter.create);
+	vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 404 }));
+	window.matchMedia = mockMatchMedia;
+	const user = userEvent.setup();
+	const { getByText, queryByTestId, queryByText } = render(CharacterWindow);
+	await waitFor(() => expect(getByText('Character Data Not Found')).toBeTruthy());
+	expect(queryByTestId('control-button')).toBeNull();
+	await user.click(getByText('Traditional'));
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(4));
+	expect(queryByText('Character Data Not Found')).toBeNull();
+	expect(queryByTestId('control-button')).toBeTruthy();
 });

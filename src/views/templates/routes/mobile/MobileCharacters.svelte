@@ -1,117 +1,19 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import HanziWriter from 'hanzi-writer';
+	import { onMount } from 'svelte';
 	import { ChevronLeft, Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { isIPad } from '@/utils/device.js';
-	import { handleError } from '@/utils/error.js';
+	import { createCharacterAnimation } from '@/composables/characterAnimation.svelte.js';
 	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
 
-	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
-	const LIGHT_MODE_OUTLINE_COLOR = '#DDDDDD';
-	const DARK_MODE_TEXT_COLOR = '#FFFFFF';
-	const DARK_MODE_OUTLINE_COLOR = '#999999';
-	const CHARACTER_SIZE = 200;
-	const CHARACTER_PADDING = 5;
-
+	const animation = createCharacterAnimation();
 	let activeScript = $state<CharacterScript>(
 		mobileCharacterWindowWordStore.initialScript ?? CHARACTER_SETS.SIMPLIFIED
 	);
-	let activeAnimation = $state(false);
-	let pausedAnimation = $state(false);
-	let currentlyAnimating = 0;
-	let characterWriters: HanziWriter[] = [];
-	let characterNotFound = $state(false);
-
 	const word = $derived(mobileCharacterWindowWordStore.value);
-	const characters = $derived(
-		word
-			? (activeScript === CHARACTER_SETS.SIMPLIFIED
-					? word.simplified
-					: word.traditional
-				).split('')
-			: []
-	);
-
-	const inDarkMode = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-	function loadCharacter(character: string): void {
-		const writer = HanziWriter.create('character-target', character, {
-			width: CHARACTER_SIZE,
-			height: CHARACTER_SIZE,
-			padding: CHARACTER_PADDING,
-			strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
-			outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
-			charDataLoader: (char, onComplete) => {
-				fetch(`resources/hanzi-writer-data/data/${char}.json`)
-					.then((file) => file.json())
-					.then((data) => {
-						onComplete(data);
-						return undefined;
-					})
-					.catch((error) => {
-						characterNotFound = true;
-						console.log(error);
-					});
-			},
-		});
-		characterWriters.push(writer);
-	}
-
-	function loadAllCharacters(chars: string[]): void {
-		characterNotFound = false;
-		activeAnimation = false;
-		pausedAnimation = false;
-		tick()
-			.then(() => {
-				const target = document.getElementById('character-target');
-				if (target) {
-					target.innerHTML = '';
-				}
-				characterWriters = [];
-				for (const char of chars) {
-					loadCharacter(char);
-				}
-				return undefined;
-			})
-			.catch((error) => {
-				handleError('Error loading characters.', error, { silent: true });
-			});
-	}
-
-	function animateCharacter(index: number, isInitialCall: boolean): void {
-		if (isInitialCall) {
-			activeAnimation = true;
-			for (const writer of characterWriters) {
-				writer.hideCharacter();
-			}
-		}
-		if (index >= 0 && index < characterWriters.length) {
-			currentlyAnimating = index;
-			characterWriters[index].animateCharacter({
-				onComplete: () => animateCharacter(index + 1, false),
-			});
-		} else {
-			activeAnimation = false;
-			pausedAnimation = false;
-		}
-	}
-
-	function handleControlButtonClick(): void {
-		if (activeAnimation) {
-			pausedAnimation = true;
-			activeAnimation = false;
-			characterWriters[currentlyAnimating].pauseAnimation();
-		} else if (pausedAnimation) {
-			pausedAnimation = false;
-			activeAnimation = true;
-			characterWriters[currentlyAnimating].resumeAnimation();
-		} else {
-			animateCharacter(0, true);
-		}
-	}
+	const characters = $derived(word?.[activeScript] ?? '');
 
 	function switchScript(script: CharacterScript): void {
 		activeScript = script;
@@ -129,17 +31,18 @@
 	}
 
 	$effect(() => {
-		loadAllCharacters(characters);
+		void animation.load(characters);
 	});
 
 	onMount(() => {
 		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		function handleColorSchemeChange() {
-			loadAllCharacters(characters);
+			void animation.load(characters);
 		}
 		colorSchemeQuery.addEventListener('change', handleColorSchemeChange);
 
 		return () => {
+			animation.stop();
 			colorSchemeQuery.removeEventListener('change', handleColorSchemeChange);
 		};
 	});
@@ -182,15 +85,15 @@
 		</div>
 
 		<div class="mobile-characters__controls">
-			{#if word && !characterNotFound}
+			{#if word && !animation.characterNotFound}
 				<SyButton
 					shape="circle"
 					center={true}
 					classes={['mobile-characters__icon-button', 'sy-tooltip--container']}
-					onclick={handleControlButtonClick}
+					onclick={animation.toggle}
 				>
 					<span class="animate-button--icon-container" data-testid="control-button">
-						{#if !activeAnimation}
+						{#if !animation.active}
 							<Play size="18" />
 						{:else}
 							<Pause size="18" />
@@ -198,9 +101,9 @@
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-bottom">
 						<p data-testid="tooltip-text">
-							{#if activeAnimation}
+							{#if animation.active}
 								Pause
-							{:else if pausedAnimation}
+							{:else if animation.paused}
 								Resume
 							{:else}
 								Play Stroke Order
@@ -217,7 +120,7 @@
 			<div class="mobile-characters__empty">
 				<p>Select a word from Search to view stroke order</p>
 			</div>
-		{:else if characterNotFound}
+		{:else if animation.characterNotFound}
 			<div class="mobile-characters__not-found">
 				<h1>Character Data Not Found</h1>
 				<p>

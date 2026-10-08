@@ -42,6 +42,7 @@ export function describeUnknownError(value) {
 		for (const [source, target] of Object.entries({
 			name: 'error_name',
 			message: 'error_message',
+			reason: 'error_reason',
 			stack: 'error_stack',
 			code: 'code',
 			status: 'status',
@@ -80,6 +81,31 @@ export function describeUnknownError(value) {
 		return details;
 	}
 	return { error_message: String(value) };
+}
+
+/** Format a failure and its causes for selectable, local troubleshooting details. */
+export function formatErrorDetails(error) {
+	const details = describeUnknownError(error);
+	const entries = [details, ...(details.error_causes ?? [])];
+	return (
+		entries
+			.map((entry) =>
+				[
+					entry.error_name,
+					entry.error_message,
+					typeof (entry.error_reason ?? entry.reason) === 'string'
+						? `reason: ${entry.error_reason ?? entry.reason}`
+						: undefined,
+					entry.code !== undefined ? `code: ${entry.code}` : undefined,
+					entry.status !== undefined ? `status: ${entry.status}` : undefined,
+				]
+					.filter((value) => value !== undefined && value !== '')
+					.join(': ')
+			)
+			.filter(Boolean)
+			.join('\nCaused by: ') ||
+		(error !== undefined && error !== null ? 'No additional error details were provided.' : '')
+	);
 }
 
 /**

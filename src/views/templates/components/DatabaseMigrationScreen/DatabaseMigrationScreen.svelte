@@ -2,12 +2,15 @@
 	import LoadingScreen from '@/components/LoadingScreen/LoadingScreen.svelte';
 	import { databaseMigrationStore, MIGRATION_STATUS } from '@/stores/databaseMigration.svelte.js';
 
+	const { error }: { error?: unknown } = $props();
+
 	const migrationFailed = $derived(databaseMigrationStore.status === MIGRATION_STATUS.FAILED);
 </script>
 
 <LoadingScreen
 	testId="database-migration-screen"
 	status={migrationFailed ? 'error' : 'loading'}
+	{error}
 	title={migrationFailed ? 'Bookmarks couldn’t be updated.' : databaseMigrationStore.title}
 	detail={migrationFailed ? databaseMigrationStore.errorMessage : databaseMigrationStore.detail}
 	secondaryDetail={migrationFailed

@@ -4,6 +4,7 @@ import App from '@/App.svelte';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
+import { waitForStartupComplete } from '@/utils/startup.js';
 
 vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
 
@@ -71,7 +72,8 @@ vi.mock('@/utils/telemetry.js', () => ({
 vi.mock('@/components/SyToast/SyToast.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
-vi.mock('@/utils/error.js', () => ({
+vi.mock('@/utils/error.js', async (importOriginal) => ({
+	...(await importOriginal()),
 	handleError: vi.fn(),
 }));
 vi.mock('@/components/Navigation/Navigation.svelte', async () => ({
@@ -161,4 +163,16 @@ it('shows onboarding when replay is requested for an existing install', async ()
 
 	await waitFor(() => expect(getByText('Welcome to Syng')).toBeTruthy());
 	expect(queryByTestId('route-mock')).toBeNull();
+});
+
+it('keeps the original startup failure available on the error screen', async () => {
+	vi.mocked(waitForStartupComplete).mockRejectedValueOnce(
+		new Error('Startup failed while loading preferences.', {
+			cause: { name: 'UnknownError', message: 'Unable to open database', status: 500 },
+		})
+	);
+	const { getByText, container } = render(App);
+	await waitFor(() => expect(getByText('Error details')).toBeTruthy());
+	expect(container.querySelector('details pre').textContent).toContain('Unable to open database');
+	expect(container.querySelector('details pre').textContent).toContain('status: 500');
 });

@@ -57,6 +57,16 @@ const BACKUP_IDLE_FALLBACK_DELAY_MS = 250;
 const requireStartupPromise = (promise, phase) =>
 	promise ?? Promise.reject(new Error(`${phase} requested before startup began.`));
 
+// Keep the failed step and original rejection available in packaged builds, where
+// users cannot rely on the WebView console to troubleshoot startup.
+const runStartupStep = async (step, task) => {
+	try {
+		return await task();
+	} catch (error) {
+		throw new Error(`Startup failed while ${step}.`, { cause: error });
+	}
+};
+
 export const waitForOnboardingReady = () =>
 	requireStartupPromise(onboardingReadyPromise, 'Onboarding readiness');
 export const waitForStartupComplete = () =>
@@ -112,10 +122,16 @@ export const runStartupActions = () => {
 		readerDocumentDb
 	);
 
-	const dictionaryInit = invoke(NATIVE_COMMANDS.DICTIONARY.INIT);
-	const preferenceManagerInit = preferenceManager.init();
-	const bookmarkManagerInit = bookmarkManager.init();
-	const readerDocumentManagerInit = readerDocumentManager.init();
+	const dictionaryInit = runStartupStep('initializing the dictionary', () =>
+		invoke(NATIVE_COMMANDS.DICTIONARY.INIT)
+	);
+	const preferenceManagerInit = runStartupStep('loading preferences', () =>
+		preferenceManager.init()
+	);
+	const bookmarkManagerInit = runStartupStep('loading bookmarks', () => bookmarkManager.init());
+	const readerDocumentManagerInit = runStartupStep('loading reader documents', () =>
+		readerDocumentManager.init()
+	);
 	const telemetryInit = telemetry.init().catch((error) => {
 		console.error('Telemetry initialization failed', error);
 	});
@@ -189,7 +205,7 @@ export const runStartupActions = () => {
 			databaseMigrationStore.fail(
 				'The update could not be completed. No schema version was saved.'
 			);
-			throw error;
+			throw new Error('Startup failed while updating the bookmark schema.', { cause: error });
 		}
 		return undefined;
 	});
@@ -239,10 +255,10 @@ export const runStartupActions = () => {
 
 			return undefined;
 		})
-		.catch((e) => {
+		.catch((error) => {
 			handleError(
 				'There was an error starting Syng. Please quit and try again. If this problem persists please file a bug report.',
-				e
+				error
 			);
 		});
 };

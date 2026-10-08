@@ -30,3 +30,18 @@ it('renders a configurable error and action', async () => {
 	await user.click(getByRole('button', { name: 'Try again' }));
 	expect(onaction).toHaveBeenCalledOnce();
 });
+
+it('provides expandable text details for failures in packaged builds', async () => {
+	const user = userEvent.setup();
+	const { getByText, container } = render(LoadingScreen, {
+		status: 'error',
+		title: 'Syng couldn’t start.',
+		error: new Error('Loading preferences', { cause: 'Database unavailable' }),
+		messages: [],
+	});
+	const details = container.querySelector('details');
+	expect(details?.open).toBe(false);
+	await user.click(getByText('Error details'));
+	expect(details?.open).toBe(true);
+	expect(details?.querySelector('pre')?.textContent).toContain('Caused by: Database unavailable');
+});
