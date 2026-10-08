@@ -96,7 +96,7 @@ releases use native artifacts; the server's legacy catalog stays pinned to 2.5.2
 The old beta static manifest, migration-file readers, backup-before-update step,
 and mobile/Mac App Store updater exclusions are unchanged.
 
-Before uploading a release, the workflow runs:
+Before uploading a release, the workflow runs these checks with Node.js 24:
 
 ```sh
 node --test scripts/check-updater-artifacts.test.ts
@@ -115,6 +115,12 @@ Syrver's modern catalog remains empty (`204 No Content`) until actual signed
 artifacts pass these gates. Its existing 2.5.0 legacy metadata is retained meanwhile.
 Building 2.5.2 does not publish or promote it automatically. The coordinated
 Syrver README describes the separate catalog promotion and deployment procedure.
+
+The dependency updates retain Svelte 5.56.4 because 5.57.2 exceeds the existing
+280 KiB initial-shell budget. Dictionary data, PouchDB storage, and the vendored
+PDF extraction patch are unchanged. Larger migrations (TypeScript 7, Vitest 5,
+jsdom 30, reqwest 0.13, zip 8, and major Android build tooling) are deferred to
+keep this release focused on compatible updates.
 
 ## Migration File Format
 

@@ -7,6 +7,7 @@
 		"build": "vite build",
 		"bundle:check": "npm run build && node scripts/check-bundle-size.mjs",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
+		"typecheck:updater": "tsc --ignoreConfig --noEmit --strict --target ES2022 --module NodeNext --allowImportingTsExtensions --types node scripts/check-updater-artifacts.ts scripts/check-updater-artifacts.test.ts",
 		"lint": "eslint src/views",
 		"fix-lint": "eslint src/views --fix",
 		"format": "prettier --write \"src/views/**/*.{js,ts,svelte}\"",
