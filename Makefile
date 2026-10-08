@@ -10,7 +10,9 @@ IOS_APP_BUNDLE ?= src/native/gen/apple/build/syng_iOS.xcarchive/Products/Applica
 IOS_BUNDLE_ID ?= xyz.bytecraft.syng
 IOS_DEVICE ?=
 IOS_OFFLINE_CONFIG ?= tauri.ios.offline.conf.json
-ANDROID_JAVA_HOME ?= /Applications/Android Studio.app/Contents/jbr/Contents/Home
+# Gradle 8.14.3 cannot run on the Java 25 bundled with newer Android Studio releases.
+# Install with `brew install openjdk@21`, or override with a compatible JDK path.
+ANDROID_JAVA_HOME ?= $(shell brew --prefix openjdk@21 2>/dev/null)/libexec/openjdk.jdk/Contents/Home
 ANDROID_KEYSTORE_PROPERTIES := src/native/gen/android/keystore.properties
 ANDROID_AAB := src/native/gen/android/app/build/outputs/bundle/universalRelease/app-universal-release.aab
 TAURI_CLI_VERSION := 2.12.0
@@ -44,9 +46,16 @@ run-ios-device:
 	xcrun devicectl device install app --device "$$device" "$(IOS_APP_BUNDLE)" && \
 	xcrun devicectl device process launch --device "$$device" --terminate-existing "$(IOS_BUNDLE_ID)"
 
-start-android:
+.PHONY: check-android-java
+check-android-java:
+	@if [ ! -x "$(ANDROID_JAVA_HOME)/bin/java" ]; then \
+		printf 'Android JDK not found at %s. Install with brew install openjdk@21 or set ANDROID_JAVA_HOME to a JDK 21 installation.\n' "$(ANDROID_JAVA_HOME)"; \
+		exit 1; \
+	fi
+
+start-android: check-android-java
 	npm run build
-	cd src/native && cargo tauri android dev --config tauri.mobile.conf.json
+	cd src/native && JAVA_HOME="$(ANDROID_JAVA_HOME)" cargo tauri android dev --config tauri.mobile.conf.json
 
 check:
 	cd src/native && cargo fmt --check
@@ -108,13 +117,9 @@ package-mas:
 package-ios:
 	@echo "iOS packaging not currently implemented"
 
-release-android:
+release-android: check-android-java
 	@if [ "$$(uname -s)" != "Darwin" ]; then \
 		printf 'release-android is a local macOS release target.\n'; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(ANDROID_JAVA_HOME)" ]; then \
-		printf 'Android JDK not found at %s. Install Android Studio or set ANDROID_JAVA_HOME.\n' "$(ANDROID_JAVA_HOME)"; \
 		exit 1; \
 	fi
 	@if [ ! -f "$(ANDROID_KEYSTORE_PROPERTIES)" ]; then \
