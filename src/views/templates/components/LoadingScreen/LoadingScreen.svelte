@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { formatErrorDetails } from '@/utils/error.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import {
 		LOADING_MESSAGES,
@@ -14,6 +15,7 @@
 		detail?: string;
 		secondaryDetail?: string;
 		status?: LoadingState;
+		error?: unknown;
 		messages?: readonly string[];
 		actionLabel?: string;
 		onaction?: () => void;
@@ -25,6 +27,7 @@
 		detail,
 		secondaryDetail,
 		status = 'loading',
+		error,
 		messages = LOADING_MESSAGES,
 		actionLabel,
 		onaction,
@@ -32,6 +35,7 @@
 	}: Props = $props();
 
 	let messageIndex = $state(0);
+	const errorDetails = $derived(formatErrorDetails(error));
 
 	onMount(() => {
 		messageIndex = randomMessageIndex(messages.length);
@@ -65,6 +69,13 @@
 			{#if secondaryDetail}<p>{secondaryDetail}</p>{/if}
 		</div>
 
+		{#if status === 'error' && errorDetails}
+			<details class="loading-screen__error-details">
+				<summary>Error details</summary>
+				<pre>{errorDetails}</pre>
+			</details>
+		{/if}
+
 		{#if messages.length > 0}
 			<p class="loading-screen__message" aria-hidden="true">
 				{messages[messageIndex]}
@@ -94,6 +105,7 @@
 		color: var(--sy-color--white);
 		font-family: var(--sy-font-family);
 		text-align: center;
+		overflow-y: auto;
 	}
 
 	.loading-screen__content {
@@ -152,6 +164,25 @@
 
 	.loading-screen__controls {
 		margin-top: var(--sy-space--large);
+	}
+
+	.loading-screen__error-details {
+		width: 100%;
+		margin-top: var(--sy-space--large);
+		text-align: left;
+	}
+
+	.loading-screen__error-details summary {
+		cursor: pointer;
+	}
+
+	.loading-screen__error-details pre {
+		max-height: 200px;
+		overflow: auto;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		user-select: text;
+		-webkit-user-select: text;
 	}
 
 	@media (prefers-color-scheme: dark) {

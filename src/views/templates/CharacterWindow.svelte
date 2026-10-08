@@ -1,125 +1,83 @@
-<script>
-	import HanziWriter from 'hanzi-writer';
-	import { tick } from 'svelte';
+<script lang="ts">
+	import { onMount } from 'svelte';
 	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { listen } from '@tauri-apps/api/event';
-	import { CHARACTER_SETS } from '@/types/dictionaryDisplay.js';
+	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
 	import { handleError } from '@/utils/error.js';
+	import { createCharacterAnimation } from '@/composables/characterAnimation.svelte.js';
 
-	// Constants
-	const LIGHT_MODE_TEXT_COLOR = '#474C5A';
-	const LIGHT_MODE_OUTLINE_COLOR = '#DDDDDD';
-	const DARK_MODE_TEXT_COLOR = '#FFFFFF';
-	const DARK_MODE_OUTLINE_COLOR = '#999999';
-	const CHARACTER_SIZE = 200;
-	const CHARACTER_PADDING = 5;
+	type CharacterWindowWord = {
+		simplified: string;
+		traditional: string;
+		initialScript?: CharacterScript;
+	};
 
-	// Variables
 	const enableDrag = platform() === 'macos';
-	let word;
-	let activeCharacters = [];
-	let activeScript = $state(CHARACTER_SETS.SIMPLIFIED);
-	let activeAnimation = $state(false);
-	let pausedAnimation = $state(false);
-	let currentlyAnimating; // The index of the character currently being animated
-	let characterWriter;
-	let characterNotFound = $state(false);
+	const animation = createCharacterAnimation();
+	let word: CharacterWindowWord | undefined;
+	let activeScript = $state<CharacterScript>(CHARACTER_SETS.SIMPLIFIED);
 
-	// Functions
-	const inDarkMode = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-	const switchScript = (script) => {
+	function switchScript(script: CharacterScript): void {
 		activeScript = script;
-		activeAnimation = false;
-		pausedAnimation = false;
-		loadAllCharacters(word[activeScript]);
-	};
-	const loadCharacter = (character) => {
-		characterWriter = HanziWriter.create('character-target', character, {
-			width: CHARACTER_SIZE,
-			height: CHARACTER_SIZE,
-			padding: CHARACTER_PADDING,
-			strokeColor: inDarkMode() ? DARK_MODE_TEXT_COLOR : LIGHT_MODE_TEXT_COLOR,
-			outlineColor: inDarkMode() ? DARK_MODE_OUTLINE_COLOR : LIGHT_MODE_OUTLINE_COLOR,
-			charDataLoader: (char, onComplete) => {
-				fetch(`resources/hanzi-writer-data/data/${char}.json`)
-					.then((file) => file.json())
-					.then((data) => {
-						onComplete(data);
-						return undefined;
-					})
-					.catch((error) => {
-						characterNotFound = true;
-						console.log(error);
-					});
-			},
-		});
-		activeCharacters.push(characterWriter);
-	};
-	const loadAllCharacters = (characters) => {
-		characterNotFound = false;
-		// Wait for the DOM to finish updating from the change from the line above before proceeding
-		tick()
-			.then(() => {
-				const target = document.getElementById('character-target');
-				if (target) {
-					target.innerHTML = '';
-				}
-				activeCharacters = [];
-				for (let i = 0; i < characters.length; i++) {
-					loadCharacter(characters[i]);
-				}
-				return undefined;
-			})
-			.catch((error) => {
-				handleError('Error loading characters.', error, { silent: true });
-			});
-	};
-	const animateCharacter = (index, is_initial_call) => {
-		if (is_initial_call) {
-			activeAnimation = true;
-			for (let i = 0; i < activeCharacters.length; i++) {
-				activeCharacters[i].hideCharacter();
-			}
+		if (word) {
+			void animation.load(word[activeScript]);
 		}
-		if (index >= 0 && index < activeCharacters.length) {
-			currentlyAnimating = index;
-			activeCharacters[index].animateCharacter({
-				onComplete: () => animateCharacter(index + 1, false),
-			});
-		} else {
-			activeAnimation = false;
-			pausedAnimation = false;
-		}
-	};
-	const handleControlButtonClick = () => {
-		if (activeAnimation) {
-			// Pause the animation
-			pausedAnimation = true;
-			activeAnimation = false;
-			activeCharacters[currentlyAnimating].pauseAnimation();
-		} else if (pausedAnimation) {
-			// Resume a previosly playing animation
-			pausedAnimation = false;
-			activeAnimation = true;
-			activeCharacters[currentlyAnimating].resumeAnimation();
-		} else {
-			// Start the animation
-			animateCharacter(0, true);
-		}
-	};
+	}
 
-	// Event Listeners
-	listen('display-characters', (requestedWord) => {
-		word = requestedWord.payload;
-		if (word.initialScript) {
-			activeScript = word.initialScript;
+	onMount(() => {
+		let disposed = false;
+		const unlisteners: UnlistenFn[] = [];
+		function register(subscription: Promise<UnlistenFn>): void {
+			subscription
+				.then((unlisten) => {
+					if (disposed) {
+						unlisten();
+					} else {
+						unlisteners.push(unlisten);
+					}
+					return undefined;
+				})
+				.catch((error) => {
+					handleError('Error listening for character window changes.', error, {
+						silent: true,
+					});
+				});
 		}
-		loadAllCharacters(word[activeScript]);
-	});
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-		loadAllCharacters(word[activeScript]);
+		register(
+			listen<CharacterWindowWord>('display-characters', (event) => {
+				if (disposed) {
+					return;
+				}
+				word = event.payload;
+				if (word.initialScript) {
+					activeScript = word.initialScript;
+				}
+				void animation.load(word[activeScript]);
+			})
+		);
+		register(
+			listen('character-window-hidden', () => {
+				animation.stop();
+				word = undefined;
+			})
+		);
+		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const handleColorSchemeChange = () => {
+			if (word) {
+				void animation.load(word[activeScript]);
+			}
+		};
+		colorSchemeQuery.addEventListener('change', handleColorSchemeChange);
+		return () => {
+			disposed = true;
+			animation.stop();
+			for (const unlisten of unlisteners) {
+				unlisten();
+			}
+			colorSchemeQuery.removeEventListener('change', handleColorSchemeChange);
+		};
 	});
 </script>
 
@@ -145,7 +103,7 @@
 		</SyButton>
 	</div>
 	<div class="character-window--content">
-		{#if characterNotFound}
+		{#if animation.characterNotFound}
 			<div class="character-window--character-not-found--container">
 				<h1>Character Data Not Found</h1>
 				<p>
@@ -155,12 +113,9 @@
 			</div>
 		{:else}
 			<div class="character-actions">
-				<SyButton
-					classes={['sy-tooltip--container']}
-					onclick={() => handleControlButtonClick()}
-				>
+				<SyButton classes={['sy-tooltip--container']} onclick={animation.toggle}>
 					<span class="animate-button--icon-container" data-testid="control-button">
-						{#if !activeAnimation}
+						{#if !animation.active}
 							<Play size="18" />
 						{:else}
 							<Pause size="18" />
@@ -168,10 +123,10 @@
 					</span>
 					<div class="sy-tooltip--body sy-tooltip--body-bottom">
 						<p data-testid="tooltip-text">
-							{#if activeAnimation}
+							{#if animation.active}
 								<!-- An animation is currently playing -->
 								Pause
-							{:else if pausedAnimation}
+							{:else if animation.paused}
 								<!-- No animation is playing, but a previous animation has been paused -->
 								Resume
 							{:else}

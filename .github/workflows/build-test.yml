@@ -38,6 +38,9 @@ jobs:
               run: npm ci
             - name: Build Frontend
               run: npm run build
+            - name: Select Native Windows ARM64 Toolchain
+              if: matrix.platform == 'windows-11-arm'
+              run: rustup default stable-aarch64-pc-windows-msvc
             - name: Build Native
               working-directory: src/native
               run: cargo build --locked

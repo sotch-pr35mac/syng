@@ -1,6 +1,6 @@
 {
 	"name": "syng",
-	"version": "2.5.0",
+	"version": "2.5.1",
 	"description": "An open source, cross platform, Chinese study app.",
 	"type": "module",
 	"scripts": {
@@ -44,7 +44,7 @@
 		"vitest": "^4.1.5"
 	},
 	"dependencies": {
-		"@tauri-apps/api": "^2.9.1",
+		"@tauri-apps/api": "^2.12.0",
 		"@tauri-apps/plugin-cli": "^2.4.1",
 		"@tauri-apps/plugin-dialog": "^2.7.0",
 		"@tauri-apps/plugin-fs": "^2.4.4",

@@ -248,6 +248,7 @@ export const telemetry = {
 			safe.message,
 			safe.payload.error_name,
 			safe.payload.error_message,
+			safe.payload.error_reason,
 			safe.payload.stage,
 			safe.payload.code,
 			safe.payload.status,
@@ -304,7 +305,7 @@ const EXAMPLE_DEVICE_CONTEXT = {
 
 const EXAMPLE_ENVELOPE_BASE = {
 	device_id: 'example-device',
-	app_version: '2.5.0',
+	app_version: '2.5.1',
 	platform: 'macos',
 	timestamp_ms: 0,
 };

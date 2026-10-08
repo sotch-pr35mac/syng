@@ -23,6 +23,9 @@
 			"timestampUrl": ""
 		},
 		"longDescription": "",
+		"iOS": {
+			"minimumSystemVersion": "15.0"
+		},
 		"macOS": {
 			"entitlements": null,
 			"exceptionDomain": "",
@@ -43,7 +46,7 @@
 	},
 	"productName": "Syng",
 	"mainBinaryName": "Syng",
-	"version": "2.5.0",
+	"version": "2.5.1",
 	"identifier": "xyz.bytecraft.syng",
 	"plugins": {
 		"updater": {

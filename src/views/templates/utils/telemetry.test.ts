@@ -150,17 +150,19 @@ it.each([false, true])(
 	}
 );
 
-it('does not group distinct stages, statuses or underlying causes as repeats', async () => {
+it('does not group distinct stages, statuses, reasons or underlying causes as repeats', async () => {
 	for (const payload of [
 		{ stage: 'check', status: 503 },
 		{ stage: 'check', status: 429 },
 		{ stage: 'download', status: 503 },
 		{ stage: 'check', error_causes: [{ code: 'ECONNREFUSED' }] },
 		{ stage: 'check', error_causes: [{ code: 'ETIMEDOUT' }] },
+		{ stage: 'check', error_reason: 'Permission denied' },
+		{ stage: 'check', error_reason: 'Database closed' },
 	]) {
 		await telemetryModule.telemetry.trackError('app.error', 'Update failed', payload);
 	}
-	expect(errorCalls()).toHaveLength(5);
+	expect(errorCalls()).toHaveLength(7);
 });
 
 it('emits the first error immediately and a counted summary for repeats', async () => {

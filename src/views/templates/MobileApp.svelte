@@ -23,6 +23,7 @@
 	let keyboardInset = $state(0);
 	let onboardingReady = $state(false);
 	let startupFailed = $state(false);
+	let startupError = $state<unknown>(undefined);
 
 	const routes = {
 		'/': MobileSearch,
@@ -85,11 +86,13 @@
 				onboardingReady = true;
 				return undefined;
 			})
-			.catch(() => {
+			.catch((error) => {
+				startupError = error;
 				startupFailed = true;
 			});
 
-		waitForStartupComplete().catch(() => {
+		waitForStartupComplete().catch((error) => {
+			startupError = error;
 			startupFailed = true;
 		});
 
@@ -130,10 +133,11 @@
 </script>
 
 {#if databaseMigrationStore.active}
-	<DatabaseMigrationScreen />
+	<DatabaseMigrationScreen error={startupError} />
 {:else if startupFailed}
 	<LoadingScreen
 		status="error"
+		error={startupError}
 		title="Syng couldn’t start."
 		detail="Please restart the app. If this keeps happening, please file a bug report."
 		actionLabel="Reload Syng"

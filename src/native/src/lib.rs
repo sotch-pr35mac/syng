@@ -35,6 +35,19 @@ pub fn run() {
     let app_context = tauri::generate_context!();
     let mut builder = tauri::Builder::default();
 
+    #[cfg(target_os = "linux")]
+    let app_context = {
+        let mut context = app_context;
+        if platform::linux::configure_appimage_storage(
+            context.config_mut(),
+            std::env::var_os("APPIMAGE").as_deref(),
+            std::env::var_os("APPDIR").as_deref(),
+        ) {
+            builder = builder.plugin(platform::linux::storage_plugin());
+        }
+        context
+    };
+
     #[cfg(desktop)]
     {
         // The self-updater is excluded from Mac App Store builds (Apple forbids self-updating

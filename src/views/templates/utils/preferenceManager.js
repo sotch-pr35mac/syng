@@ -92,13 +92,14 @@ export class PreferenceManager {
 		this._db = new PouchDB(this._name);
 		this._initPromise = this._db
 			.get('config')
-			.catch((err) => {
-				if (err.name === 'not_found') {
+			.catch((error) => {
+				if (error.name === 'not_found') {
 					return createDefaultPreferences();
 				}
-				console.error(err);
+				console.error(error);
 				throw new Error(
-					'There was an error loading user preferences. Check the logs for more details.'
+					'There was an error loading user preferences. Check the logs for more details.',
+					{ cause: error }
 				);
 			})
 			.then((configuration) => {

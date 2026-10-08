@@ -57,6 +57,7 @@ pub fn setup(character_window: &WebviewWindow) {
         if let WindowEvent::CloseRequested { api, .. } = event {
             api.prevent_close();
             let _ = window.hide();
+            let _ = window.emit("character-window-hidden", ());
         }
     });
 }

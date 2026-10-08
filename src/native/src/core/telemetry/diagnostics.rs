@@ -12,6 +12,7 @@ const MAX_CAUSES: usize = 5;
 const FIELDS: &[&str] = &[
     "error_name",
     "error_message",
+    "error_reason",
     "error_stack",
     "operation",
     "visibility_state",
@@ -27,7 +28,14 @@ const FIELDS: &[&str] = &[
     "occurrence_count",
     "summary",
 ];
-const CAUSE_FIELDS: &[&str] = &["error_name", "error_message", "code", "status"];
+const CAUSE_FIELDS: &[&str] = &[
+    "error_name",
+    "error_message",
+    "error_reason",
+    "error_stack",
+    "code",
+    "status",
+];
 
 static PRIVATE_FIELD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)text|query|word|lexical|list|document|title|notes|password|token|secret|authorization|path|url|filename").unwrap()
@@ -239,6 +247,35 @@ mod tests {
         ] {
             assert!(!serialized.contains(private), "{private}");
         }
+    }
+
+    #[test]
+    fn preserves_reasons_and_nested_stacks_with_private_values_redacted() {
+        let safe = sanitize(
+            "app.error",
+            "Please restart Syng.",
+            &json!({
+                "error_reason": "Cannot open private book",
+                "error_causes": [{
+                    "error_name": "DatabaseError",
+                    "error_reason": "Permission denied for private book at https://host.test/db",
+                    "error_stack": "Error\n at open (/Users/alice/private.db:2:3)",
+                    "document_title": "private book"
+                }]
+            }),
+        );
+        assert_eq!(safe.payload["error_reason"], "Cannot open [redacted]");
+        assert_eq!(
+            safe.payload["error_causes"][0]["error_reason"],
+            "Permission denied for [redacted] at [redacted URL]"
+        );
+        assert_eq!(
+            safe.payload["error_causes"][0]["error_stack"],
+            "Error\n at open ([redacted path])"
+        );
+        assert!(safe.payload["error_causes"][0]
+            .get("document_title")
+            .is_none());
     }
 
     #[test]

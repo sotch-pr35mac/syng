@@ -85,10 +85,13 @@ it('clears its rotation timer when it closes', () => {
 
 it('renders the retained error state without an indeterminate loader', () => {
 	databaseMigrationStore.fail('Migration failed.');
-	const { getByRole, queryByRole } = render(DatabaseMigrationScreen);
+	const { getByRole, queryByRole, getByText } = render(DatabaseMigrationScreen, {
+		error: new Error('Bookmark schema write failed'),
+	});
 
 	expect(getByRole('alert').textContent).toContain('Migration failed.');
 	expect(queryByRole('progressbar')).toBeNull();
+	expect(getByText('Error: Bookmark schema write failed')).toBeTruthy();
 });
 
 it('allows a settings preview to close without making real migrations dismissible', async () => {

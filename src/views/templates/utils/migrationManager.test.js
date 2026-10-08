@@ -206,6 +206,33 @@ it('uses the legacy identifier migration file when current stores are empty', as
 	expect(mocks.fsFiles.has(MIGRATION_COMPLETION_FILE_NAME)).toBe(true);
 });
 
+it('restores a seeded current-profile backup once without replacing later preferences', async () => {
+	const { preferenceManager, bookmarkManager, configDb } = createManagers();
+	mocks.fsFiles.set(
+		MIGRATION_FILE_NAME,
+		migrationData({
+			config: [{ _id: 'prefs', language: 'zh-Hant' }],
+			wordLists: [],
+			bookmarks: [],
+		})
+	);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(true);
+	expect(await configDb.get('prefs')).toMatchObject({ language: 'zh-Hant' });
+	expect(JSON.parse(mocks.fsFiles.get(MIGRATION_COMPLETION_FILE_NAME)).source).toBe(
+		'xyz.bytecraft.syng'
+	);
+	mocks.fsFiles.set(
+		MIGRATION_FILE_NAME,
+		migrationData({
+			config: [{ _id: 'prefs', language: 'zh-Hans' }],
+			wordLists: [],
+			bookmarks: [],
+		})
+	);
+	await expect(checkAndPerformMigration(preferenceManager, bookmarkManager)).resolves.toBe(false);
+	expect(await configDb.get('prefs')).toMatchObject({ language: 'zh-Hant' });
+});
+
 it('skips legacy import when current user data is not empty', async () => {
 	const { preferenceManager, bookmarkManager, bookmarkDb } = createManagers({
 		bookmarks: [{ _id: 'bookmark:current', simplified: '现' }],
