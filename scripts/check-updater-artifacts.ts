@@ -62,8 +62,9 @@ function textField(bytes: Buffer): string {
 	return bytes.toString('utf8').replace(/\0.*$/s, '');
 }
 
-// Tauri wraps one completed AppImage in a tar archive. Reject extra regular
-// files so a similarly named or stale package cannot pass the bridge check.
+// Tauri wraps one completed, dense AppImage in a tar archive. Accept the plain
+// regular-file archive emitted by tar::Builder::append_file; fail closed on
+// sparse files, extension records, or extra files instead of guessing payloads.
 function tarPayload(archive: Buffer, expectedName: string): Buffer {
 	const contents = gunzipSync(archive);
 	let payload: Buffer | undefined;

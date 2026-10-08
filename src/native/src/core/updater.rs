@@ -149,6 +149,55 @@ mod tests {
     }
 
     #[test]
+    fn plugin_parses_legacy_bridge_metadata() {
+        let release: tauri_plugin_updater::RemoteRelease =
+            serde_json::from_value(serde_json::json!({
+                "version": "2.5.2",
+                "notes": "Bridge fixture",
+                "pub_date": "2026-10-09T00:00:00Z",
+                "url": "https://example.invalid/Syng.AppImage.tar.gz",
+                "signature": "legacy-fixture-signature"
+            }))
+            .unwrap();
+        assert_eq!(release.version.to_string(), "2.5.2");
+        assert_eq!(
+            release.download_url("linux-x86_64").unwrap().as_str(),
+            "https://example.invalid/Syng.AppImage.tar.gz"
+        );
+        assert_eq!(
+            release.signature("linux-x86_64").unwrap(),
+            "legacy-fixture-signature"
+        );
+    }
+
+    #[test]
+    fn plugin_parses_package_manifest_without_generic_fallback() {
+        let release: tauri_plugin_updater::RemoteRelease = serde_json::from_value(serde_json::json!({
+            "version": "2.6.0",
+            "platforms": {
+                "linux-x86_64-appimage": { "url": "https://example.invalid/Syng.AppImage", "signature": "appimage-fixture" },
+                "linux-x86_64-deb": { "url": "https://example.invalid/Syng.deb", "signature": "deb-fixture" },
+                "linux-x86_64-rpm": { "url": "https://example.invalid/Syng.rpm", "signature": "rpm-fixture" }
+            }
+        })).unwrap();
+        for (bundle, extension) in [("appimage", "AppImage"), ("deb", "deb"), ("rpm", "rpm")] {
+            let target = format!("linux-x86_64-{bundle}");
+            assert_eq!(
+                release.download_url(&target).unwrap().as_str(),
+                format!("https://example.invalid/Syng.{extension}")
+            );
+            assert_eq!(
+                release.signature(&target).unwrap(),
+                &format!("{bundle}-fixture")
+            );
+        }
+        for missing in ["linux-x86_64", "linux-x86_64-unknown", "linux-aarch64-deb"] {
+            assert!(release.download_url(missing).is_err());
+            assert!(release.signature(missing).is_err());
+        }
+    }
+
+    #[test]
     fn preserves_bounded_source_details() {
         let source = std::io::Error::other("connection refused");
         let cause = error_cause(Some(&source), 0).unwrap();
