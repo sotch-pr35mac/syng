@@ -73,7 +73,7 @@ jobs:
             - name: Prepare Tauri Environment
               run: |
                   rustup target add ${{ matrix.target }}
-                  cargo install tauri-cli --version 2.12.0 --locked
+                  cargo install tauri-cli --version 2.12.1 --locked
             - name: Build & Package (macOS Only)
               if: runner.os == 'macOS'
               working-directory: src/native
