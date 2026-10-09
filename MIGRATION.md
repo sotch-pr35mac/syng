@@ -122,6 +122,11 @@ PDF extraction patch are unchanged. Larger migrations (TypeScript 7, Vitest 5,
 jsdom 30, reqwest 0.13, zip 8, and major Android build tooling) are deferred to
 keep this release focused on compatible updates.
 
+The updated npm and Cargo locks pass their vulnerability audits. Cargo still
+reports upstream maintenance warnings for `bincode`, `proc-macro-error`, and
+`ttf-parser`, plus the GLib iterator soundness advisory `RUSTSEC-2024-0429` in the
+Linux framework dependency chain. These warnings have not been suppressed.
+
 ## Migration File Format
 
 Version 1 was the original Tauri 1 to Tauri 2 bridge. Version 2 adds identifier
