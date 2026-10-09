@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.5.2] - 2026-10-09
+## [2.5.2] - 2026-10-10
 ### Changed
 - Updated compatible frontend, native, and build dependencies in validated stages
 - Prepared package-aware Tauri 2 updates with a 2.5.2 compatibility bridge for older clients
