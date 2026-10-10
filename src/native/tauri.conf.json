@@ -42,11 +42,11 @@
 				"depends": []
 			}
 		},
-		"createUpdaterArtifacts": "v1Compatible"
+		"createUpdaterArtifacts": true
 	},
 	"productName": "Syng",
 	"mainBinaryName": "Syng",
-	"version": "2.5.1",
+	"version": "2.5.2",
 	"identifier": "xyz.bytecraft.syng",
 	"plugins": {
 		"updater": {

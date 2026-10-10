@@ -1,6 +1,6 @@
 [package]
 name = "syng"
-version = "2.5.1"
+version = "2.5.2"
 description = "An open source, cross platform, Chinese study toolkit."
 authors = ["Preston Wang-Stosur-Bassett"]
 license = "GPL-3.0"
@@ -9,7 +9,7 @@ default-run = "syng"
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "2.7.0", features = [] }
+tauri-build = { version = "2.7.1", features = [] }
 
 [dependencies]
 # The v4.1.0 crate validates this version-matched bundle through
@@ -19,8 +19,8 @@ serde_json = "1.0"
 regex = "1"
 serde = { version = "1.0", features = ["derive"] }
 rust_iso3166 = "0.2.0"
-tauri = { version = "2.12.0", features = [] }
-rand = "0.9"
+tauri = { version = "2.12.2", features = [] }
+rand = "0.10.3"
 uuid = { version = "1.23.1", features = ["v4"] }
 rusqlite = { version = "0.39", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
@@ -41,8 +41,8 @@ html2text = "0.17.1"
 encoding_rs = "0.8.35"
 rbook = "0.7.9"
 pdf-extract = "0.10.0"
-scraper = "0.23.1"
-ego-tree = "0.10.0"
+scraper = "0.27.0"
+ego-tree = "0.11.0"
 quick-xml = "0.41.0"
 zip = { version = "3.0.0", default-features = false, features = ["deflate-flate2-zlib-rs"] }
 

@@ -2,7 +2,7 @@ use crate::utils::word_utils;
 use chinese_dictionary as dictionary;
 use rand::prelude::IndexedRandom;
 use rand::seq::SliceRandom;
-use rand::{rng, Rng};
+use rand::{rng, Rng, RngExt};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 

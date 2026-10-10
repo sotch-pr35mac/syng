@@ -69,6 +69,64 @@ On startup, the app:
 The updater also exports a fresh migration backup before `downloadAndInstall()`.
 If that backup fails, the update install is rejected.
 
+## 2.5.2 Updater Bridge
+
+The updater service selects its response using the installed app version:
+
+- Below 2.5.2, clients keep the legacy dynamic response and compatibility archives.
+  Once the bridge is published and promoted, these clients are pinned to 2.5.2.
+- At or above 2.5.2, clients receive package-specific manifest entries, including
+  DEB, RPM, and AppImage on Linux and MSI/NSIS on Windows. Tauri uses the package
+  marker embedded by the bundler. Unknown or missing package entries never fall
+  back to another format.
+
+Pre-2.5.2 Linux requests do not identify their installed package type, so their
+legacy AppImage selection is intentionally unchanged. **DEB and RPM users must
+manually install the matching 2.5.2 package** once that release is published. Close
+Syng normally, install the package for the existing format and architecture using
+the system package installer, and reopen Syng. Keep the existing app-data directory;
+changing to AppImage would select its separate profile described above. Subsequent
+updates from 2.5.2 use the installed package format.
+
+The default build creates Tauri 2 artifacts. The desktop release workflow applies
+`createUpdaterArtifacts: "v1Compatible"` specifically to 2.5.2, producing native
+packages and legacy archives in the same build with the same updater signing key.
+Both sets must remain available while the legacy bridge is supported. Later
+releases use native artifacts; the server's legacy catalog stays pinned to 2.5.2.
+The old beta static manifest, migration-file readers, backup-before-update step,
+and mobile/Mac App Store updater exclusions are unchanged.
+
+Before uploading a release, the workflow runs these checks with Node.js 24:
+
+```sh
+node --test scripts/check-updater-artifacts.test.ts
+node scripts/check-updater-artifacts.ts TARGET src/native/target/TARGET/release/bundle
+```
+
+The validator requires every expected package and its own signature, rejects a
+signature key ID that differs from the configured public key, and compares legacy
+archive payloads with the native AppImage/MSI/NSIS bytes. It checks signature
+encoding/key IDs, **not cryptographic signature validity**. Real packaged install
+and update tests must still verify signature acceptance/rejection, bundle markers,
+data preservation, privilege cancellation, and restart before service promotion.
+A missing bundle marker blocks promotion; it is not resolved by a generic fallback.
+
+Syrver's modern catalog remains empty (`204 No Content`) until actual signed
+artifacts pass these gates. Its existing 2.5.0 legacy metadata is retained meanwhile.
+Building 2.5.2 does not publish or promote it automatically. The coordinated
+Syrver README describes the separate catalog promotion and deployment procedure.
+
+The dependency updates retain Svelte 5.56.4 because 5.57.2 exceeds the existing
+280 KiB initial-shell budget. Dictionary data, PouchDB storage, and the vendored
+PDF extraction patch are unchanged. Larger migrations (TypeScript 7, Vitest 5,
+jsdom 30, reqwest 0.13, zip 8, and major Android build tooling) are deferred to
+keep this release focused on compatible updates.
+
+The updated npm and Cargo locks pass their vulnerability audits. Cargo still
+reports upstream maintenance warnings for `bincode`, `proc-macro-error`, and
+`ttf-parser`, plus the GLib iterator soundness advisory `RUSTSEC-2024-0429` in the
+Linux framework dependency chain. These warnings have not been suppressed.
+
 ## Migration File Format
 
 Version 1 was the original Tauri 1 to Tauri 2 bridge. Version 2 adds identifier
