@@ -2,6 +2,11 @@
 //! Download/install still use the plugin's resources and signature verification.
 
 use crate::core::network::NetworkStatus;
+#[cfg(not(feature = "mas"))]
+use crate::utils::{
+    build::is_development,
+    syrver::{syrver_url, UPDATES_PATH},
+};
 use serde::Serialize;
 #[cfg(any(not(feature = "mas"), test))]
 use std::error::Error as StdError;
@@ -112,7 +117,18 @@ pub async fn check_for_update(
     }
     #[cfg(not(feature = "mas"))]
     {
-        let updater = webview.updater().map_err(describe_failure)?;
+        let mut builder = webview.updater_builder();
+        if is_development() {
+            // Replace the configured endpoints so local failures never fall back to production.
+            // The plugin permits HTTP in debug builds; release transport checks stay enabled.
+            let endpoint = syrver_url(UPDATES_PATH)
+                .parse()
+                .map_err(|error| describe_failure(tauri_plugin_updater::Error::UrlParse(error)))?;
+            builder = builder
+                .endpoints(vec![endpoint])
+                .map_err(describe_failure)?;
+        }
+        let updater = builder.build().map_err(describe_failure)?;
         let Some(update) = updater.check().await.map_err(describe_failure)? else {
             return Ok(None);
         };

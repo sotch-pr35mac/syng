@@ -1,7 +1,12 @@
 //! Error privacy policy. Raw context may cross local IPC, but only this allowlisted,
 //! redacted representation may be retained in the queue or sent to the backend.
 
+use crate::utils::syrver::{
+    INTERVIEWS_PATH, SYRVER_LOCAL_BASE_URL, SYRVER_PRODUCTION_BASE_URL, TELEMETRY_EVENTS_PATH,
+    TELEMETRY_INSTALLATIONS_PATH,
+};
 use regex::Regex;
+use reqwest::Url;
 use serde::Serialize;
 use serde_json::{Map, Value};
 use std::sync::LazyLock;
@@ -40,12 +45,34 @@ const CAUSE_FIELDS: &[&str] = &[
 static PRIVATE_FIELD: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"(?i)text|query|word|lexical|list|document|title|notes|password|token|secret|authorization|path|url|filename").unwrap()
 });
+static URL_OR_CREDENTIAL: LazyLock<Regex> = LazyLock::new(|| {
+    // Credentials that contain URLs must be consumed in full before considering
+    // URL exceptions (for example, password='words https://host.test more words').
+    Regex::new(&format!(
+        r#"(?:{})|(?:{})|(?P<url>(?i:\b[a-z][a-z0-9+.-]*://[^\s)"'<>]+))"#,
+        REDACTIONS[0].0.as_str(),
+        REDACTIONS[1].0.as_str(),
+    ))
+    .unwrap()
+});
+static UPDATE_ROUTE: LazyLock<Regex> = LazyLock::new(|| {
+    // Only public release coordinates, never arbitrary path segments or prerelease labels.
+    Regex::new(r"^/v1/updates/stable/(darwin|linux|windows)/(aarch64|x86_64|i686|armv7)/[0-9]+\.[0-9]+\.[0-9]+$").unwrap()
+});
+static BUNDLED_SCRIPT: LazyLock<Regex> = LazyLock::new(|| {
+    // Match the entry points and hashed chunks emitted by vite.config.js.
+    Regex::new(
+        r"^/templates/build/(?:bundle|splash-init|assets/[A-Za-z0-9_.-]+-[A-Za-z0-9_-]{8})\.js$",
+    )
+    .unwrap()
+});
+static STACK_LOCATION: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r":[0-9]+(?::[0-9]+)?$").unwrap());
 static REDACTIONS: LazyLock<Vec<(Regex, &'static str)>> = LazyLock::new(|| {
     [
         (r"(?i)\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/=-]+", "[redacted credential]"),
         (r#"(?i)\b(?:password|token|secret|api[_-]?key|authorization)\s*[:=]\s*(?:"[^"]*"|'[^']*'|[^\s,"'}]+)"#, "[redacted credential]"),
         (r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", "[redacted email]"),
-        (r#"(?i)\b[a-z][a-z0-9+.-]*://[^\s)"']+"#, "[redacted URL]"),
         (r#"(?:[A-Za-z]:\\|\\\\|/(?:Users|home|private|tmp|var|Volumes)/)[^\n)"']+|/(?:[A-Za-z0-9_.~-]+/)+[^\s)"']*"#, "[redacted path]"),
         (r"(?i)\b\d+:(?:[0-9a-f]{64}|[a-z][a-z0-9_-]+)\b", "[redacted lexical ID]"),
     ]
@@ -91,13 +118,91 @@ fn collect_private(value: &Value, private: bool, depth: usize, values: &mut Vec<
     true
 }
 
-fn redact(text: &str, private_values: &[String]) -> String {
+fn redact_prose(text: &str, private_values: &[String]) -> String {
     let mut redacted = text.to_owned();
     for private in private_values {
         redacted = redacted.replace(private, "[redacted]");
     }
     for (pattern, replacement) in REDACTIONS.iter() {
         redacted = pattern.replace_all(&redacted, *replacement).into_owned();
+    }
+    redacted
+}
+
+fn diagnostic_url(text: &str) -> Option<String> {
+    let mut url = Url::parse(text).ok()?;
+    url.set_username("").ok()?;
+    url.set_password(None).ok()?;
+    url.set_query(None);
+    url.set_fragment(None);
+
+    for base in [SYRVER_PRODUCTION_BASE_URL, SYRVER_LOCAL_BASE_URL] {
+        let base_url = Url::parse(base).ok()?;
+        if url.origin() != base_url.origin() {
+            continue;
+        }
+        let route = url
+            .path()
+            .strip_prefix(base_url.path().trim_end_matches('/'))?;
+        if [
+            TELEMETRY_EVENTS_PATH,
+            TELEMETRY_INSTALLATIONS_PATH,
+            INTERVIEWS_PATH,
+        ]
+        .contains(&route)
+            || UPDATE_ROUTE.is_match(route)
+        {
+            return Some(url.to_string());
+        }
+    }
+
+    let bundled_origin = matches!(
+        (url.scheme(), url.host_str(), url.port()),
+        ("tauri", Some("localhost"), None) | ("http" | "https", Some("tauri.localhost"), None)
+    );
+    if bundled_origin {
+        // A stack location can follow the path, query, or fragment. Keep only its digits.
+        let location = STACK_LOCATION
+            .find(text)
+            .map_or("", |location| location.as_str());
+        let script_path = STACK_LOCATION.replace(url.path(), "");
+        if BUNDLED_SCRIPT.is_match(&script_path) {
+            let script_path = script_path.into_owned();
+            url.set_path(&script_path);
+            // Keep the app origin so the queue's second sanitization pass recognizes it.
+            return Some(format!("{url}{location}"));
+        }
+    }
+    None
+}
+
+fn redact(text: &str, private_values: &[String]) -> String {
+    let mut text = text.to_owned();
+    for private in private_values {
+        text = text.replace(private, "[redacted]");
+    }
+    // Process URLs separately so generic path rules cannot erase approved routes or
+    // script locations. No placeholders: user text cannot impersonate an approved URL.
+    let mut redacted = String::new();
+    let mut previous_end = 0;
+    for captures in URL_OR_CREDENTIAL.captures_iter(&text) {
+        let matched = captures.get(0).unwrap();
+        redacted.push_str(&redact_prose(
+            &text[previous_end..matched.start()],
+            private_values,
+        ));
+        if let Some(url) = captures.name("url") {
+            redacted
+                .push_str(&diagnostic_url(url.as_str()).unwrap_or_else(|| "[redacted URL]".into()));
+        } else {
+            redacted.push_str("[redacted credential]");
+        }
+        previous_end = matched.end();
+    }
+    redacted.push_str(&redact_prose(&text[previous_end..], private_values));
+    // Explicit private context always wins, including inside otherwise approved URLs.
+    for private in private_values {
+        redacted = redacted.replace(private, "[redacted]");
     }
     redacted.chars().take(MAX_TEXT_CHARS).collect()
 }
@@ -159,6 +264,113 @@ pub fn sanitize(name: &str, message: &str, payload: &Value) -> SanitizedDiagnost
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn preserves_service_routes_without_credentials_queries_or_fragments() {
+        for base in [SYRVER_PRODUCTION_BASE_URL, SYRVER_LOCAL_BASE_URL] {
+            for route in [
+                "/v1/updates/stable/darwin/aarch64/2.5.2",
+                "/v1/updates/stable/linux/x86_64/2.5.2",
+                "/v1/updates/stable/windows/i686/2.5.2",
+                TELEMETRY_EVENTS_PATH,
+                TELEMETRY_INSTALLATIONS_PATH,
+                INTERVIEWS_PATH,
+            ] {
+                let expected = format!("{base}{route}");
+                let mut url = Url::parse(&expected).unwrap();
+                url.set_username("alice").unwrap();
+                url.set_password(Some("private-password")).unwrap();
+                url.set_query(Some("token=private-token&query=private-query"));
+                url.set_fragment(Some("private-fragment"));
+                let safe = sanitize(
+                    "app.error",
+                    &format!("request failed ({url})"),
+                    &json!({
+                        "error_causes": [{"error_message": format!("request failed ({url})")}]
+                    }),
+                );
+                assert_eq!(safe.message, format!("request failed ({expected})"));
+                assert_eq!(
+                    safe.payload["error_causes"][0]["error_message"],
+                    safe.message
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_origins_routes_and_private_path_segments() {
+        for url in [
+            "https://example.test/v1/updates/stable/darwin/aarch64/2.5.2",
+            "https://v3k460rfi6.execute-api.us-west-2.amazonaws.com.evil.test/production/v1/telemetry",
+            "https://v3k460rfi6.execute-api.us-west-2.amazonaws.com@evil.test/production/v1/telemetry",
+            "https://v3k460rfi6.execute-api.us-west-2.amazonaws.com:444/production/v1/telemetry",
+            "http://localhost:8788/v1/telemetry",
+            "http://localhost:8787/v1/telemetry/private-user",
+            "http://localhost:8787/v1/updates/private-channel/darwin/aarch64/2.5.2",
+            "http://localhost:8787/v1/updates/stable/private-user/aarch64/2.5.2",
+            "http://localhost:8787/v1/updates/stable/darwin/aarch64/2.5.2-private-label",
+            "http://localhost:8787/v1/updates/stable/darwin/aarch64/2.5.2/private-user",
+            "http://localhost:8787/v1/updates/stable/darwin/aarch64/%32.5.2",
+            "file:///Users/alice/private.js:2:3",
+            "tauri://localhost/templates/private.js:2:3",
+            "tauri://localhost/templates/build/private.js:2:3",
+            "https://example.test/templates/build/bundle.js:2:3",
+        ] {
+            assert_eq!(redact(url, &[]), "[redacted URL]", "{url}");
+        }
+    }
+
+    #[test]
+    fn preserves_bundled_stack_locations_and_redacts_neighboring_private_data() {
+        for origin in [
+            "tauri://localhost",
+            "https://tauri.localhost",
+            "http://tauri.localhost",
+        ] {
+            for script in [
+                "bundle.js",
+                "splash-init.js",
+                "assets/reader.svelte-CbDqxujL.js",
+            ] {
+                for suffix in [
+                    ":12:345",
+                    "?token=private-token:12:345",
+                    "#private-fragment:12:345",
+                ] {
+                    let stack = format!("Error\npi@{origin}/templates/build/{script}{suffix}\n at open (/Users/alice/private.db:2:3)\n at fetch (https://private.test/book)");
+                    let safe = sanitize("app.error", "failure", &json!({"error_stack": stack}));
+                    assert_eq!(safe.payload["error_stack"], format!("Error\npi@{origin}/templates/build/{script}:12:345\n at open ([redacted path])\n at fetch ([redacted URL])"));
+                    let persisted = sanitize(&safe.name, &safe.message, &json!(safe.payload));
+                    assert_eq!(persisted.payload, safe.payload);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn explicit_private_context_overrides_url_exceptions() {
+        let url = format!("{SYRVER_PRODUCTION_BASE_URL}/v1/updates/stable/darwin/aarch64/2.5.2");
+        let safe = sanitize("app.error", &format!("failed {url}"), &json!({"url": url}));
+        assert_eq!(safe.message, "failed [redacted]");
+        let private = format!("private title {url} more private words");
+        let safe = sanitize("app.error", &private, &json!({"title": private}));
+        assert_eq!(safe.message, "[redacted]");
+    }
+
+    #[test]
+    fn redacts_entire_credentials_containing_urls() {
+        for url in [
+            "https://private.test/book",
+            "http://localhost:8787/v1/telemetry",
+        ] {
+            for quote in ["'", "\""] {
+                let message =
+                    format!("failed password={quote}private words {url} more secrets{quote}");
+                assert_eq!(redact(&message, &[]), "failed [redacted credential]");
+            }
+        }
+    }
 
     #[test]
     fn redacts_prose_and_never_returns_discovery_context() {

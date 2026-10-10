@@ -17,6 +17,8 @@ pub const TELEMETRY_EVENTS_PATH: &str = "/v1/telemetry";
 pub const TELEMETRY_INSTALLATIONS_PATH: &str = "/v1/telemetry/installations";
 /// Authenticated, explicitly consented interview contact collection.
 pub const INTERVIEWS_PATH: &str = "/v1/interviews";
+/// Stable update checks; placeholders are expanded by the Tauri updater.
+pub const UPDATES_PATH: &str = "/v1/updates/stable/{{target}}/{{arch}}/{{current_version}}";
 
 /// Selects the Syrver base URL by build type.
 pub fn syrver_base_url() -> &'static str {
@@ -68,5 +70,22 @@ mod tests {
             syrver_url(TELEMETRY_EVENTS_PATH),
             format!("{}{}", syrver_base_url(), TELEMETRY_EVENTS_PATH)
         );
+    }
+
+    #[test]
+    fn updater_route_matches_production_config_and_selects_local_in_development() {
+        let config: serde_json::Value =
+            serde_json::from_str(include_str!("../../tauri.conf.json")).unwrap();
+        let production_endpoint = format!("{SYRVER_PRODUCTION_BASE_URL}{UPDATES_PATH}");
+        assert_eq!(
+            config["plugins"]["updater"]["endpoints"],
+            serde_json::json!([production_endpoint])
+        );
+        let expected = if is_development() {
+            "http://localhost:8787/v1/updates/stable/{{target}}/{{arch}}/{{current_version}}"
+        } else {
+            &production_endpoint
+        };
+        assert_eq!(syrver_url(UPDATES_PATH), expected);
     }
 }
