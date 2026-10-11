@@ -33,11 +33,12 @@
 	 * @property {(event: Event) => void} [onenter] - Enter key handler
 	 */
 
-	import { isMobile } from '@/utils/device.js';
+	import { isAndroid, isMobile } from '@/utils/device.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
 	const mobile = isMobile();
+	const android = isAndroid();
 
 	/** @type {Props} */
 	const {
@@ -78,15 +79,19 @@
 	// 229 is the legacy IME-processing key code, a fallback for composition event ordering
 	// where isComposing alone is insufficient. Confirmation must not also select a result.
 	const IME_KEY_CODE = 229;
+	const ENTER_KEY_CODE = 13;
 	let composing = false;
 	let suppressCompositionEnter = false;
 	const handleKeyup = (event) => {
 		if (composing || event.isComposing || event.keyCode === IME_KEY_CODE) {
 			return;
 		}
-		if (event.code === 'Enter') {
+		if (event.key === 'Enter' || event.code === 'Enter' || event.keyCode === ENTER_KEY_CODE) {
 			if (suppressCompositionEnter) {
 				return;
+			}
+			if (android) {
+				event.currentTarget.blur();
 			}
 			onenter(event);
 		} else {

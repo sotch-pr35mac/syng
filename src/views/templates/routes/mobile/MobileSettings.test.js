@@ -37,6 +37,11 @@ const toneColors = {
 let preferenceManager;
 
 beforeEach(async () => {
+	vi.mocked(invoke)
+		.mockReset()
+		.mockImplementation(async (command) =>
+			command === 'read_bookmark_recovery_report' ? null : false
+		);
 	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
 	databaseMigrationStore.resetForTest();
@@ -72,10 +77,24 @@ it('reopens saved recovery reports from phone settings', async () => {
 		command === 'read_bookmark_recovery_report' ? 'Saved phone report' : false
 	);
 	const user = userEvent.setup();
-	const { getByRole } = render(MobileSettings);
+	const { getByRole, queryByRole } = render(MobileSettings);
+	expect(queryByRole('heading', { name: 'Bookmark Recovery' })).toBeNull();
+	await waitFor(() => expect(getByRole('heading', { name: 'Bookmark Recovery' })).toBeTruthy());
 	await user.click(getByRole('button', { name: 'View recovery reports' }));
 	expect(bookmarkRecoveryStore.report).toBe('Saved phone report');
 });
+
+it.each([null, '', ' \n '])(
+	'hides recovery settings when no saved report exists (%s)',
+	async (report) => {
+		vi.mocked(invoke).mockResolvedValue(report);
+		const { queryByRole } = render(MobileSettings);
+
+		await waitFor(() => expect(invoke).toHaveBeenCalledWith('read_bookmark_recovery_report'));
+		expect(queryByRole('heading', { name: 'Bookmark Recovery' })).toBeNull();
+		expect(queryByRole('button', { name: 'View recovery reports' })).toBeNull();
+	}
+);
 
 it('starts a dismissible database migration preview from development settings', async () => {
 	const user = userEvent.setup();

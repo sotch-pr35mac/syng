@@ -12,6 +12,8 @@
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
+	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
+	import { handleError } from '@/utils/error.js';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import {
@@ -32,6 +34,7 @@
 
 	let activeTab = $state(settingsActiveTabStore.value as SettingsTab);
 	let showDevPreferences = $state(isDevBuild());
+	let hasSavedRecoveryReport = $state(false);
 
 	function setActiveTab(tab: SettingsTab): void {
 		activeTab = tab;
@@ -39,12 +42,27 @@
 	}
 
 	onMount(() => {
+		let mounted = true;
+		bookmarkRecoveryStore
+			.hasSaved()
+			.then((hasSaved) => {
+				if (mounted) {
+					hasSavedRecoveryReport = hasSaved;
+				}
+				return undefined;
+			})
+			.catch((error) => {
+				handleError('Could not check for bookmark recovery reports.', error);
+			});
 		resolveIsDevBuild()
 			.then((devBuild) => {
 				showDevPreferences = devBuild;
 				return undefined;
 			})
 			.catch(() => {});
+		return () => {
+			mounted = false;
+		};
 	});
 </script>
 
@@ -107,10 +125,15 @@
 				<h2 id="tone-colors-heading">Tone Colors</h2>
 				<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
 			</section>
-			<section class="mobile-settings__section" aria-labelledby="bookmark-recovery-heading">
-				<h2 id="bookmark-recovery-heading">Bookmark Recovery</h2>
-				<BookmarkRecoverySettings />
-			</section>
+			{#if hasSavedRecoveryReport}
+				<section
+					class="mobile-settings__section"
+					aria-labelledby="bookmark-recovery-heading"
+				>
+					<h2 id="bookmark-recovery-heading">Bookmark Recovery</h2>
+					<BookmarkRecoverySettings />
+				</section>
+			{/if}
 			{#if showDevPreferences}
 				<section class="mobile-settings__section" aria-labelledby="migration-heading">
 					<h2 id="migration-heading">Database Migration</h2>
