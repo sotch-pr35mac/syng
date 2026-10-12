@@ -312,7 +312,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
-				DEVELOPMENT_TEAM = "GQL2C94T8A";
 			};
 			name = debug;
 		};
@@ -355,7 +354,6 @@
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
-				DEVELOPMENT_TEAM = "GQL2C94T8A";
 			};
 			name = release;
 		};
