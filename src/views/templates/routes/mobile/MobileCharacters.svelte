@@ -213,10 +213,8 @@
 
 	.mobile-characters__content {
 		flex: 1;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
+		min-height: 0;
+		overflow-y: auto;
 	}
 
 	.mobile-characters__empty,
@@ -225,6 +223,8 @@
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		box-sizing: border-box;
+		min-height: 100%;
 		text-align: center;
 		padding: var(--sy-space--large);
 		color: var(--sy-color--grey-4);
@@ -241,12 +241,22 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		height: 100%;
+		box-sizing: border-box;
+		min-height: 100%;
+		padding: var(--sy-space--large);
 	}
 
 	#character-target {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	#character-target :global(svg) {
+		max-width: 100%;
+		height: auto;
 	}
 </style>

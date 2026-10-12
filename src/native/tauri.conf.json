@@ -46,7 +46,7 @@
 	},
 	"productName": "Syng",
 	"mainBinaryName": "Syng",
-	"version": "2.5.2",
+	"version": "2.5.3",
 	"identifier": "xyz.bytecraft.syng",
 	"plugins": {
 		"updater": {

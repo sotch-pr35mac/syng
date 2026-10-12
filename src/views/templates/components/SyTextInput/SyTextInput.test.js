@@ -1,6 +1,16 @@
 import { render, fireEvent } from '@testing-library/svelte';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+import { isAndroid } from '@/utils/device.js';
+
+vi.mock('@/utils/device.js', () => ({
+	isMobile: () => true,
+	isAndroid: vi.fn(() => false),
+}));
+
+beforeEach(() => {
+	vi.mocked(isAndroid).mockReturnValue(false);
+});
 
 it('disables autocorrect, autocapitalize and spellcheck by default', () => {
 	const { container } = render(SyTextInput, { id: 'test-input' });
@@ -37,10 +47,12 @@ it('forwards form validation and descriptive attributes', () => {
 });
 
 it('waits for committed IME input and does not submit the composition-confirming Enter', async () => {
+	vi.mocked(isAndroid).mockReturnValue(true);
 	const oninput = vi.fn();
 	const onenter = vi.fn();
 	const { container } = render(SyTextInput, { id: 'ime-input', oninput, onenter });
 	const input = container.querySelector('input');
+	input.focus();
 	await fireEvent.compositionStart(input);
 	await fireEvent.input(input, { target: { value: 'ni' }, isComposing: true });
 	await fireEvent.keyDown(input, { code: 'Enter', isComposing: true });
@@ -50,9 +62,38 @@ it('waits for committed IME input and does not submit the composition-confirming
 	await fireEvent.keyUp(input, { code: 'Enter' });
 	expect(oninput).toHaveBeenCalledExactlyOnceWith('你');
 	expect(onenter).not.toHaveBeenCalled();
+	expect(document.activeElement).toBe(input);
 	await fireEvent.keyDown(input, { code: 'Enter' });
 	await fireEvent.keyUp(input, { code: 'Enter' });
 	expect(onenter).toHaveBeenCalledTimes(1);
+	expect(document.activeElement).not.toBe(input);
+});
+
+it('dismisses the Android keyboard on Enter before invoking the callback', async () => {
+	vi.mocked(isAndroid).mockReturnValue(true);
+	const onenter = vi.fn(() => expect(document.activeElement).not.toBe(input));
+	const { container } = render(SyTextInput, { onenter });
+	const input = container.querySelector('input');
+	input.focus();
+
+	await fireEvent.keyUp(input, { key: 'Enter', code: 'Unidentified' });
+
+	expect(onenter).toHaveBeenCalledOnce();
+	expect(document.activeElement).not.toBe(input);
+});
+
+it('dismisses Android fields without an Enter callback and leaves desktop focus alone', async () => {
+	vi.mocked(isAndroid).mockReturnValue(true);
+	const androidInput = render(SyTextInput).container.querySelector('input');
+	androidInput.focus();
+	await fireEvent.keyUp(androidInput, { keyCode: 13 });
+	expect(document.activeElement).not.toBe(androidInput);
+
+	vi.mocked(isAndroid).mockReturnValue(false);
+	const desktopInput = render(SyTextInput).container.querySelector('input');
+	desktopInput.focus();
+	await fireEvent.keyUp(desktopInput, { key: 'Enter' });
+	expect(document.activeElement).toBe(desktopInput);
 });
 
 it('ignores the legacy IME key code even when isComposing is false', async () => {

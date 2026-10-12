@@ -133,7 +133,7 @@ release-android: check-android-java
 		exit 1; \
 	fi
 	npm run build
-	cd src/native && JAVA_HOME="$(ANDROID_JAVA_HOME)" cargo tauri android build --config tauri.mobile.conf.json --aab true --apk false --target aarch64 armv7 i686 x86_64
+	cd src/native && JAVA_HOME="$(ANDROID_JAVA_HOME)" cargo tauri android build --config tauri.mobile.conf.json --aab --target aarch64 armv7 i686 x86_64
 	@if [ ! -f "$(ANDROID_AAB)" ]; then \
 		printf 'Expected Android App Bundle was not created: %s\n' "$(ANDROID_AAB)"; \
 		exit 1; \

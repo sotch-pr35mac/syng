@@ -8,6 +8,8 @@
 	import UpdateChecker from '@/components/SettingsOption/UpdateChecker.svelte';
 	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
 	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
+	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
+	import { handleError } from '@/utils/error.js';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
@@ -41,6 +43,7 @@
 	let activeTab = $state(settingsActiveTabStore.value);
 	let showDevPreferences = $state(isDevBuild());
 	let isMasBuild = $state(false);
+	let hasSavedRecoveryReport = $state(false);
 
 	const preferences = [
 		...(isMobile()
@@ -50,6 +53,7 @@
 						devOnly: false,
 						hideOnIPad: false,
 						hideOnMas: false,
+						requiresSavedRecoveryReport: true,
 						centerLabel: true,
 						component: BookmarkRecoverySettings,
 						props: {},
@@ -156,12 +160,27 @@
 		preferences.filter(
 			(preference) =>
 				(!preference.devOnly || showDevPreferences) &&
+				(!preference.requiresSavedRecoveryReport || hasSavedRecoveryReport) &&
 				(!preference.hideOnIPad || !isIPad()) &&
 				(!preference.hideOnMas || !isMasBuild)
 		)
 	);
 
 	onMount(() => {
+		let mounted = true;
+		if (isMobile()) {
+			bookmarkRecoveryStore
+				.hasSaved()
+				.then((hasSaved) => {
+					if (mounted) {
+						hasSavedRecoveryReport = hasSaved;
+					}
+					return undefined;
+				})
+				.catch((error) => {
+					handleError('Could not check for bookmark recovery reports.', error);
+				});
+		}
 		resolveIsDevBuild()
 			.then((devBuild) => {
 				showDevPreferences = devBuild;
@@ -174,6 +193,9 @@
 				return undefined;
 			})
 			.catch(() => {});
+		return () => {
+			mounted = false;
+		};
 	});
 </script>
 
