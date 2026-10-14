@@ -104,11 +104,11 @@ it('normal launches clear a previous bookmark origin and still exit to Study', a
 	expect(window.location.hash).toBe('#/study');
 });
 
-it('falls back to default Bookmarks when the originating list was deleted', async () => {
+it('defers validation of a missing originating list to Bookmarks', async () => {
 	flashcards.load('Deleted list', 'bookmarks');
 	await vi.advanceTimersByTimeAsync(0);
 	flashcards.exit();
-	expect(window.location.hash).toBe('#/bookmarks?list=Bookmarks');
+	expect(window.location.hash).toBe('#/bookmarks?list=Deleted%20list');
 });
 
 it('preserves flashcard restoration and clears the index on explicit exit', async () => {

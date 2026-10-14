@@ -19,7 +19,8 @@ export const studyOriginStore = createRouteState<StudyOrigin>(null);
 export function exitStudy(list: string | null): void {
 	studySubRouteStore.set(null);
 	if (studyOriginStore.value === 'bookmarks') {
-		const returnList = list && bookmarksStore.lists.includes(list) ? list : 'Bookmarks';
+		// The cache may still be loading; Bookmarks validates the list after initialization.
+		const returnList = list || 'Bookmarks';
 		window.location.hash = `#/bookmarks?list=${encodeURIComponent(returnList)}`;
 	} else {
 		window.location.hash = '#/study';
