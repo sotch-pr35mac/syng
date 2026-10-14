@@ -52,6 +52,7 @@ export type MembershipReconciliation = {
 	clearFilter: boolean;
 };
 
+let creationError = $state('');
 let activeList = $state(bookmarksActiveListStore.value);
 let activeWord = $state<BookmarkWordEntry | undefined>(bookmarksActiveWordStore.value);
 let words = $state<BookmarkWordEntry[]>([]);
@@ -235,31 +236,43 @@ function setActiveList(nextList: string): Promise<void> {
 	return updateListContent();
 }
 
-function createList(name: string): Promise<boolean> {
+function clearCreationError(): void {
+	creationError = '';
+}
+
+async function createList(name: string): Promise<boolean> {
 	const newListName = name.trim();
-	if (!newListName || RESTRICTED_LIST_NAMES.includes(newListName)) {
-		handleError(
-			`Cannot create new list with name ${newListName}.`,
-			{ list: newListName },
-			{ telemetryMessage: 'Cannot create list with this name.' }
-		);
-		return Promise.resolve(false);
+	clearCreationError();
+	if (!newListName) {
+		creationError = 'Enter a name for your list.';
+		return false;
+	}
+	if (RESTRICTED_LIST_NAMES.includes(newListName)) {
+		creationError = 'This name is reserved. Choose another name.';
+		return false;
+	}
+	if (bookmarksStore.lists.includes(newListName)) {
+		creationError = 'A list with this name already exists.';
+		return false;
 	}
 
-	return bookmarksStore
-		.createList(newListName)
-		.then(() => {
-			telemetry.trackEvent('list.created', {}).catch(() => {});
-			return true;
-		})
-		.catch((error: unknown) => {
-			handleError(
-				`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-				error,
-				{ telemetryMessage: 'List creation failed.', privateValues: [newListName] }
-			);
-			return false;
-		});
+	try {
+		await bookmarksStore.createList(newListName);
+		telemetry.trackEvent('list.created', {}).catch(() => {});
+		return true;
+	} catch (error: unknown) {
+		creationError = 'Could not create this list. Please try again.';
+		handleError(
+			`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
+			error,
+			{
+				silent: true,
+				telemetryMessage: 'List creation failed.',
+				privateValues: [newListName],
+			}
+		);
+		return false;
+	}
 }
 
 function deleteActiveList(): Promise<boolean> {
@@ -424,6 +437,9 @@ function getNewPlaceholder(): string {
 }
 
 export const bookmarksRoute = {
+	get creationError(): string {
+		return creationError;
+	},
 	get activeList(): string {
 		return activeList;
 	},
@@ -461,6 +477,7 @@ export const bookmarksRoute = {
 	reconcileMembershipChange,
 	clearActiveWord,
 	createList,
+	clearCreationError,
 	deleteActiveList,
 	confirmDeleteActiveList,
 	exportActiveList,

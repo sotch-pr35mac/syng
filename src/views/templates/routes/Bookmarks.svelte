@@ -38,6 +38,7 @@
 	// Handle active list selection
 	const handleListSelection = (id) => {
 		if (id === CREATE_NEW_LIST_ID) {
+			bookmarksRoute.clearCreationError();
 			createNewModalVisible = true;
 			return;
 		}
@@ -45,25 +46,48 @@
 		bookmarksRoute.setActiveList(id).catch(() => {});
 	};
 
-	// Create New Modal
+	// Create New List modal
 	let createNewModalVisible = $state(false);
 	let createNewButtonDisabled = $state(false);
-	const closeNewModal = () => {
+	let newListName = $state('');
+	let createNewFormVersion = 0;
+
+	function closeNewModal() {
 		createNewModalVisible = false;
-		document.getElementById('create-new-list-input').value = '';
-		createNewButtonDisabled = false;
-	};
-	const createNewList = () => {
+		newListName = '';
+		createNewFormVersion += 1;
+		bookmarksRoute.clearCreationError();
+	}
+
+	function handleNewListName(value) {
+		newListName = value;
+		bookmarksRoute.clearCreationError();
+	}
+
+	async function createNewList() {
+		if (createNewButtonDisabled) {
+			return;
+		}
 		createNewButtonDisabled = true;
-		const newListName = document.getElementById('create-new-list-input').value.trim();
-		bookmarksRoute
-			.createList(newListName)
-			.then(() => {
+		const submittedName = newListName.trim();
+		const submittedFormVersion = createNewFormVersion;
+		try {
+			const created = await bookmarksRoute.createList(submittedName);
+			if (submittedFormVersion !== createNewFormVersion) {
+				bookmarksRoute.clearCreationError();
+				return;
+			}
+			if (created) {
+				filterValue = '';
 				closeNewModal();
-				return undefined;
-			})
-			.catch(() => {});
-	};
+				await bookmarksRoute.setActiveList(submittedName);
+			} else if (submittedName !== newListName.trim()) {
+				bookmarksRoute.clearCreationError();
+			}
+		} finally {
+			createNewButtonDisabled = false;
+		}
+	}
 
 	// Word Selection
 	const handleSelection = (data) => {
@@ -211,7 +235,12 @@
 					size="large"
 					placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 					id="create-new-list-input"
+					value={newListName}
+					oninput={handleNewListName}
 				/>
+				{#if bookmarksRoute.creationError}
+					<p class="bookmarks--creation-error">{bookmarksRoute.creationError}</p>
+				{/if}
 			</div>
 		{/snippet}
 		{#snippet footer()}
@@ -241,6 +270,10 @@
 </div>
 
 <style>
+	.bookmarks--creation-error {
+		color: var(--sy-color--red);
+		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
+	}
 	.bookmarks--container {
 		display: flex;
 		flex-direction: column;
