@@ -44,7 +44,10 @@
 			</div>
 		{:else}
 			<div class="mobile-study__empty">
-				<p>To study, add vocab words to your lists.</p>
+				<p>Add words to a list to start studying.</p>
+				<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+					Search for words
+				</SyButton>
 			</div>
 		{/if}
 	</div>
@@ -72,6 +75,7 @@
 	}
 
 	.mobile-study__empty {
+		flex-direction: column;
 		position: absolute;
 		inset: 0;
 		display: flex;

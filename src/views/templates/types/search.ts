@@ -4,6 +4,7 @@ import type { LexicalUnit } from '@/types/dictionary.js';
 
 export const SEARCH_LANGS = ['EN', 'PY', 'ZH'] as const;
 export type SearchLang = (typeof SEARCH_LANGS)[number];
+export type SearchStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export const LANG_COMMANDS: Record<SearchLang, string> = {
 	EN: NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ENGLISH,

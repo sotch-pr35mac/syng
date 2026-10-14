@@ -233,6 +233,23 @@
 				onselection={handleSelection}
 				filterable={true}
 			/>
+			{#if bookmarksRoute.contentStatus === 'ready'}
+				{#if !wordList.length}
+					<div class="bookmarks--list-empty">
+						<p>This list is empty. Search for a word, then add it to this list.</p>
+						<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+							Search for words
+						</SyButton>
+					</div>
+				{:else if filterValue && !visibleWordList.length}
+					<div class="bookmarks--list-empty">
+						<p>No words match your filter.</p>
+						<SyButton color="blue" onclick={() => (filterValue = '')}
+							>Clear filter</SyButton
+						>
+					</div>
+				{/if}
+			{/if}
 		</div>
 		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
@@ -286,6 +303,11 @@
 </div>
 
 <style>
+	.bookmarks--list-empty {
+		padding: var(--sy-space--large);
+		color: var(--sy-color--grey-5);
+	}
+
 	.bookmarks--creation-error {
 		color: var(--sy-color--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));

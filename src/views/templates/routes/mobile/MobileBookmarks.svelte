@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -67,6 +67,16 @@
 			sheetRef?.openPartial();
 		} else if (currentSnap === 'full') {
 			sheetRef?.openFull();
+		}
+	});
+
+	$effect(() => {
+		if (bookmarksRoute.contentStatus === 'ready' && !wordList.length) {
+			untrack(() => {
+				if (currentSnap === 'collapsed') {
+					sheetRef?.openPartial();
+				}
+			});
 		}
 	});
 
@@ -243,7 +253,7 @@
 					onmembershipchange={handleMembershipChange}
 				/>
 			</div>
-		{:else}
+		{:else if bookmarksRoute.contentStatus === 'ready' && wordList.length}
 			<div class="mobile-bookmarks__empty">
 				<p>Select a word from your bookmarks</p>
 			</div>
@@ -295,6 +305,23 @@
 				filterable={true}
 				onselection={handleSelectWord}
 			/>
+			{#if bookmarksRoute.contentStatus === 'ready'}
+				{#if !wordList.length}
+					<div class="mobile-bookmarks__list-empty">
+						<p>This list is empty. Search for a word, then add it to this list.</p>
+						<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+							Search for words
+						</SyButton>
+					</div>
+				{:else if filterValue && !visibleWordList.length}
+					<div class="mobile-bookmarks__list-empty">
+						<p>No words match your filter.</p>
+						<SyButton color="blue" onclick={() => (filterValue = '')}
+							>Clear filter</SyButton
+						>
+					</div>
+				{/if}
+			{/if}
 		</div>
 	</SySnapSheet>
 </div>
@@ -364,6 +391,11 @@
 />
 
 <style>
+	.mobile-bookmarks__list-empty {
+		padding: var(--sy-space--large);
+		color: var(--sy-color--grey-5);
+	}
+
 	.mobile-bookmarks__creation-error {
 		color: var(--sy-color--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));

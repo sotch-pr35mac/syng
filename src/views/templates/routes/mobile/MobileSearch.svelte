@@ -2,11 +2,11 @@
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
+	import SearchEmptyState from '@/components/Search/SearchEmptyState.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
-	import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 	import { type SheetSnap } from '@/types/snapSheet.js';
 	import { untrack } from 'svelte';
 	import { searchStore as search } from '@/composables/search.svelte.js';
@@ -15,8 +15,7 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import { searchResultKeys, type SearchEntry } from '@/types/search.js';
-	import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+	import type { SearchEntry } from '@/types/search.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSearch.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
@@ -29,10 +28,6 @@
 	let currentSnap = $state<SheetSnap>(mobileSearchSnapStore.value);
 	let searchQuery = $state(mobileSearchQueryStore.value);
 	onMount(search.mount);
-
-	type SearchResultPreviewItem = SyListPreviewValue & {
-		word: SearchEntry;
-	};
 
 	onMount(() => {
 		// SyTextInput is uncontrolled so we restore the value imperatively after mount.
@@ -52,19 +47,7 @@
 		// If currentSnap is 'collapsed', the user manually dismissed the sheet — leave it closed.
 	});
 
-	const searchResultItems: SearchResultPreviewItem[] = $derived.by(() => {
-		const resultKeys = searchResultKeys(search.fullResults);
-		return search.fullResults.map((entry, index) => ({
-			key: resultKeys[index],
-			headline:
-				entry.simplified !== entry.traditional
-					? `${entry.simplified} (${entry.traditional})`
-					: entry.simplified,
-			subtitle: lexicalPinyin(entry).marks,
-			content: lexicalGlosses(entry).slice(0, 2).join('; '),
-			word: entry,
-		}));
-	});
+	const searchResultItems = $derived(search.getResultPreviews(2));
 
 	// Track the results array reference to detect when a new search completes. Initialised
 	// to the current reference so that on mount (with pre-existing results) the effect is a
@@ -76,7 +59,7 @@
 			return;
 		}
 		prevResultsRef = currentResults;
-		if (currentResults.length > 0 && untrack(() => currentSnap) === 'collapsed') {
+		if (search.status === 'ready' && untrack(() => currentSnap) === 'collapsed') {
 			sheetRef?.openPartial();
 		}
 	});
@@ -160,6 +143,7 @@
 		</div>
 
 		<div class="mobile-search__results" use:scrollRestore={'mobile-search-results'}>
+			<SearchEmptyState />
 			<SyList
 				style="preview"
 				values={searchResultItems}

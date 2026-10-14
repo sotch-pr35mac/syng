@@ -263,7 +263,7 @@ it('clears an exhausted filter and selects from the remaining bookmarks', async 
 	);
 });
 
-it('shows the default empty state after removing the final bookmark', async () => {
+it('shows the empty-list next step after removing the final bookmark', async () => {
 	words = [words[0]];
 	const user = userEvent.setup();
 	const { findByText } = render(MobileBookmarks);
@@ -272,7 +272,9 @@ it('shows the default empty state after removing the final bookmark', async () =
 	const removeAction = await findByText('Remove from Bookmarks');
 	await user.click(removeAction.closest('button'));
 
-	expect(await findByText('Select a word from your bookmarks')).toBeTruthy();
+	expect(
+		await findByText('This list is empty. Search for a word, then add it to this list.')
+	).toBeTruthy();
 });
 
 it('navigates mobile bookmarks to a successfully imported list', async () => {

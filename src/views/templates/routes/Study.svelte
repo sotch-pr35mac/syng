@@ -56,7 +56,10 @@
 			/>
 		{:else}
 			<div class="study--empty">
-				<span> To take a quiz or study flashcards, add vocab words to your lists. </span>
+				<p>Add words to a list to start studying.</p>
+				<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+					Search for words
+				</SyButton>
 			</div>
 		{/if}
 	</div>
@@ -85,6 +88,8 @@
 		overflow-x: hidden;
 	}
 	.study--empty {
+		flex-direction: column;
+		align-items: center;
 		display: flex;
 		justify-content: center;
 	}

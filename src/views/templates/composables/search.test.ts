@@ -201,3 +201,70 @@ it('cancels pending telemetry on background and route exit without replaying on 
 	expect(events('search.query')).toHaveLength(0);
 	unmountAgain();
 });
+
+it('exposes idle, loading, ready, and error without clearing the selected detail', async () => {
+	expect(search.status).toBe('idle');
+	search.setActiveWord(words[0]);
+	search.doSearch('first');
+	expect(search.status).toBe('loading');
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.status).toBe('ready');
+	vi.mocked(invoke).mockImplementation(async (command) => (command === 'classify' ? 'EN' : []));
+	search.doSearch('empty');
+	expect(search.status).toBe('loading');
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.status).toBe('ready');
+	expect(search.fullResults).toEqual([]);
+	expect(search.activeWord).toEqual(words[0]);
+	vi.mocked(invoke).mockRejectedValue(new Error('Query unavailable'));
+	search.doSearch('failed');
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.status).toBe('error');
+	expect(search.activeWord).toEqual(words[0]);
+	search.doSearch('  ');
+	expect(search.status).toBe('idle');
+	expect(search.activeWord).toEqual(words[0]);
+});
+
+it.each(['resolve', 'reject'] as const)(
+	'ignores a stale %s response while the current query is loading',
+	async (outcome) => {
+		let settleOldQuery!: (value: unknown) => void;
+		vi.mocked(invoke).mockImplementation((command, args) => {
+			if (command === 'classify') {
+				return Promise.resolve('EN');
+			}
+			if (args && 'text' in args && args.text === 'old') {
+				return new Promise((resolve, reject) => {
+					settleOldQuery = outcome === 'resolve' ? resolve : reject;
+				});
+			}
+			return new Promise(() => {});
+		});
+		search.doSearch('old');
+		search.doSearch('current');
+		settleOldQuery(outcome === 'resolve' ? words : new Error('Stale failure'));
+		await vi.advanceTimersByTimeAsync(0);
+		expect(search.status).toBe('loading');
+		expect(search.fullResults).toEqual([]);
+		search.doSearch('');
+		expect(search.status).toBe('idle');
+	}
+);
+
+it('does not revive an empty result after the query is cleared', async () => {
+	let resolveQuery!: (value: SearchEntry[]) => void;
+	vi.mocked(invoke).mockImplementation((command) =>
+		command === 'classify'
+			? Promise.resolve('EN')
+			: new Promise((resolve) => {
+					resolveQuery = resolve;
+				})
+	);
+	search.doSearch('pending');
+	search.doSearch('');
+	resolveQuery([]);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.status).toBe('idle');
+	expect(search.fullResults).toEqual([]);
+});

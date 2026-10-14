@@ -5,6 +5,7 @@
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
+	import SearchEmptyState from '@/components/Search/SearchEmptyState.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { searchStore as search } from '@/composables/search.svelte.js';
@@ -13,8 +14,8 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import { searchResultKeys, type SearchEntry } from '@/types/search.js';
-	import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+	import type { SearchEntry } from '@/types/search.js';
+	import { lexicalDisplayId } from '@/types/dictionary.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
@@ -35,20 +36,7 @@
 		input?.focus();
 	});
 
-	const searchResults = $derived.by(() => {
-		const resultKeys = searchResultKeys(search.fullResults);
-		return search.fullResults.map((entry, index) => ({
-			key: resultKeys[index],
-			headline:
-				entry.traditional === entry.simplified
-					? entry.simplified
-					: `${entry.simplified} (${entry.traditional})`,
-			subtitle: lexicalPinyin(entry).marks,
-			content: lexicalGlosses(entry).join('; '),
-			active: false,
-			word: entry,
-		}));
-	});
+	const searchResults = $derived(search.getResultPreviews());
 	const activeResultKey = $derived(
 		searchResults.find((result) => result.key === search.activeResultKey)?.key ??
 			(search.activeWord
@@ -143,6 +131,7 @@
 	</div>
 	<div class="search-content-container">
 		<div class="search-results" data-elastic use:scrollRestore={'search-results'}>
+			<SearchEmptyState />
 			<SyList
 				style="preview"
 				values={searchResults}
