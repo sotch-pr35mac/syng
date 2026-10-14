@@ -80,9 +80,13 @@
 			<div class="flashcard--status" data-testid="flashcard-status">
 				<span class="flashcard--status--list">{flashcardsRoute.activeList}</span>
 				<span class="flashcard--status--count">
-					· {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent.length}
+					<span
+						>· {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent
+							.length}</span
+					>
 					{#if !flashcardsRoute.canGoNext}
-						· Last card{/if}
+						<span>· Last card</span>
+					{/if}
 				</span>
 			</div>
 		{/if}
@@ -193,7 +197,10 @@
 		white-space: nowrap;
 	}
 	.flashcard--status--count {
-		flex-shrink: 0;
+		min-width: min-content;
+		text-align: center;
+	}
+	.flashcard--status--count > span {
 		white-space: nowrap;
 	}
 	.flashcard--content {
