@@ -45,7 +45,7 @@
 	]);
 
 	onMount(() => {
-		flashcardsRoute.load(listFromUrl);
+		flashcardsRoute.load(listFromUrl, params.get('from'));
 		return flashcardsRoute.endSession;
 	});
 </script>
@@ -74,7 +74,9 @@
 					{:else}
 						{flashcardsRoute.loading
 							? LOADING_STUDY_MESSAGE
-							: EMPTY_FLASHCARDS_LIST_MESSAGE}
+							: flashcardsRoute.error
+								? 'Unable to load flashcards. Please try again.'
+								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					{/if}
 				</h1>
 			</div>

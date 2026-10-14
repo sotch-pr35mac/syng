@@ -2,6 +2,8 @@
 	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import StudyDropdown from '@/components/StudyListItem/StudyDropdown.svelte';
+	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
@@ -32,7 +34,16 @@
 	let visibleWordList = $state([]);
 
 	onMount(() => {
-		bookmarksRoute.updateListContent().catch(() => {});
+		const requestedList = new URLSearchParams(router.querystring).get('list');
+		if (requestedList && requestedList !== activeList) {
+			bookmarksRoute
+				.setActiveList(
+					lists.includes(requestedList) ? requestedList : DEFAULT_BOOKMARKS_LIST
+				)
+				.catch(() => {});
+		} else {
+			bookmarksRoute.updateListContent().catch(() => {});
+		}
 	});
 
 	// Handle active list selection
@@ -181,6 +192,11 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
+			<StudyDropdown
+				list={activeList}
+				wordCount={wordList.length}
+				status={bookmarksRoute.contentStatus}
+			/>
 			{#each actions as action (action.tooltip)}
 				{#if !action.exclude.includes(activeList)}
 					<span class="bookmarks--header--action-item">

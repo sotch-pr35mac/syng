@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
-import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { studySubRouteStore, studyOriginStore, exitStudy } from '@/stores/studyRoute.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
 import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
@@ -12,6 +12,8 @@ import {
 	MINIMUM_QUIZ_WORD_COUNT,
 	PINYIN_QUESTIONS,
 	SIMPLE_QUIZ,
+	studyHref,
+	EMPTY_QUIZ_MESSAGE,
 	type AnswerResponse,
 	type IncorrectAnswer,
 	type QuizQuestion,
@@ -35,6 +37,8 @@ let quizShowResult = $state(false);
 let quizLastAnswerCorrect = $state(false);
 let quizChosenAnswer = $state('');
 let quizLoading = $state(true);
+let quizWordCount = $state(0);
+let quizError = $state(false);
 // Dictionary popover for cross-reference links (e.g. measure words) tapped inside the answer's
 // DictionaryContent. Shared with flashcards via createDictionaryPopover.
 const popover = createDictionaryPopover('quiz');
@@ -73,6 +77,8 @@ function resetQuizState(): void {
 	quizShowResult = false;
 	quizChosenAnswer = '';
 	quizLoading = true;
+	quizWordCount = 0;
+	quizError = false;
 }
 
 function handleQuestionChange(quizQuestionResponse: QuizQuestion): void {
@@ -87,11 +93,12 @@ function handleQuestionChange(quizQuestionResponse: QuizQuestion): void {
 	quizQuestionStartTime = Date.now();
 }
 
-function startQuiz(activeList: string | null): void {
+function startQuiz(activeList: string | null, origin: string | null = null): void {
 	if (quizStarting && quizActiveList === activeList) {
 		return;
 	}
 	endSession();
+	studyOriginStore.set(origin === 'bookmarks' ? 'bookmarks' : null);
 	const requestId = ++quizRequest;
 	answeredCount = 0;
 	quizActiveList = activeList;
@@ -112,6 +119,7 @@ function startQuiz(activeList: string | null): void {
 				return Promise.reject(EMPTY_QUIZ_ERROR);
 			}
 			wordCount = contents.length;
+			quizWordCount = wordCount;
 			if (contents.length < MINIMUM_QUIZ_WORD_COUNT) {
 				quizLoading = false;
 				return Promise.reject(EMPTY_QUIZ_ERROR);
@@ -146,6 +154,7 @@ function startQuiz(activeList: string | null): void {
 			}
 
 			quizLoading = false;
+			quizError = true;
 			handleError(
 				'There was an error starting the quiz. Check the log for more details.',
 				error
@@ -261,18 +270,18 @@ function continueQuiz(): void {
 }
 
 function retakeQuiz(): void {
-	startQuiz(quizActiveList);
+	startQuiz(quizActiveList, studyOriginStore.value);
 }
 
 function exitQuiz(): void {
 	endSession();
 	studySubRouteStore.set(null);
-	window.location.hash = '#/study';
+	exitStudy(quizActiveList);
 }
 
 function studyFlashcardsFromQuiz(): void {
 	if (quizActiveList) {
-		window.location.hash = `#/study/flashcards?list=${encodeURIComponent(quizActiveList)}`;
+		window.location.hash = studyHref('flashcards', quizActiveList, studyOriginStore.value);
 	}
 }
 
@@ -328,6 +337,15 @@ export const quizRoute = {
 	},
 	get chosenAnswer(): string {
 		return quizChosenAnswer;
+	},
+	get unavailableMessage(): string {
+		return quizError ? 'Unable to start this quiz. Please try again.' : EMPTY_QUIZ_MESSAGE;
+	},
+	get canStudyFlashcards(): boolean {
+		return !quizLoading && !quizError && quizWordCount > 0;
+	},
+	get error(): boolean {
+		return quizError;
 	},
 	get loading(): boolean {
 		return quizLoading;

@@ -4,7 +4,7 @@ import {
 	flashcardsActiveListStore,
 	flashcardsShowDetailsStore,
 } from '@/stores/flashcards.svelte.js';
-import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { studySubRouteStore, studyOriginStore, exitStudy } from '@/stores/studyRoute.svelte.js';
 import { handleError, telemetry } from '@/utils/index.js';
 import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
 import type { SearchEntry } from '@/types/search.js';
@@ -14,6 +14,7 @@ let flashcardsActiveIndex = $state(flashcardsActiveIndexStore.value);
 let flashcardsShowDetails = $state(flashcardsShowDetailsStore.value);
 let flashcardsListContent = $state<BookmarkWordEntry[]>([]);
 let flashcardsLoading = $state(true);
+let flashcardsError = $state(false);
 // Dictionary popover for cross-reference links (e.g. measure words) tapped inside the
 // flashcard's DictionaryContent. Shared with quiz via createDictionaryPopover.
 const popover = createDictionaryPopover('flashcards');
@@ -41,7 +42,8 @@ function endSession(): void {
 	revealedCards.clear();
 }
 
-function loadFlashcards(listFromUrl: string | null): void {
+function loadFlashcards(listFromUrl: string | null, origin: string | null = null): void {
+	studyOriginStore.set(origin === 'bookmarks' ? 'bookmarks' : null);
 	endSession();
 	const requestId = ++loadRequest;
 	const storedList = flashcardsActiveListStore.value;
@@ -54,6 +56,7 @@ function loadFlashcards(listFromUrl: string | null): void {
 	flashcardsShowDetails = isRestoringSession ? storedShowDetails : false;
 	flashcardsListContent = [];
 	flashcardsLoading = true;
+	flashcardsError = false;
 
 	if (listFromUrl) {
 		flashcardsActiveListStore.set(listFromUrl);
@@ -90,6 +93,11 @@ function loadFlashcards(listFromUrl: string | null): void {
 			return undefined;
 		})
 		.catch((error) => {
+			if (requestId !== loadRequest) {
+				return;
+			}
+			flashcardsLoading = false;
+			flashcardsError = true;
 			handleError(
 				'There was an error fetching list content. Check the log for more details.',
 				error
@@ -111,7 +119,7 @@ function exitFlashcards(): void {
 	studySubRouteStore.set(null);
 	flashcardsActiveIndexStore.set(0);
 	flashcardsShowDetailsStore.set(false);
-	window.location.hash = '#/study';
+	exitStudy(flashcardsActiveList);
 }
 
 function previousFlashcard(): void {
@@ -158,6 +166,9 @@ export const flashcardsRoute = {
 	},
 	get activeWord(): BookmarkWordEntry | undefined {
 		return flashcardsListContent[flashcardsActiveIndex];
+	},
+	get error(): boolean {
+		return flashcardsError;
 	},
 	get loading(): boolean {
 		return flashcardsLoading;

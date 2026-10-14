@@ -19,7 +19,7 @@
 	const activeWord = $derived(flashcardsRoute.activeWord);
 
 	onMount(() => {
-		flashcardsRoute.load(listFromUrl);
+		flashcardsRoute.load(listFromUrl, params.get('from'));
 		return flashcardsRoute.endSession;
 	});
 
@@ -92,7 +92,7 @@
 		</div>
 	</div>
 	<div class="flashcard--content" use:scrollRestore={'flashcard-content'}>
-		{#if flashcardsRoute.showDetails}
+		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">
 					<DictionaryContent
@@ -117,7 +117,9 @@
 					<h1>
 						{flashcardsRoute.loading
 							? LOADING_STUDY_MESSAGE
-							: EMPTY_FLASHCARDS_LIST_MESSAGE}
+							: flashcardsRoute.error
+								? 'Unable to load flashcards. Please try again.'
+								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					</h1>
 				{/if}
 			</div>

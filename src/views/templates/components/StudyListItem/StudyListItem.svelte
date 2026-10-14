@@ -1,49 +1,56 @@
-<script>
+<script lang="ts">
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { SquareStack, Award } from 'lucide-svelte';
+	import {
+		getStudyEligibility,
+		type StudyAction,
+		type StudyListSummary,
+	} from '@/composables/study.js';
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} value - Required Value Prop
-	 * @property {'default' | 'mobile'} [variant] - Visual variant
-	 * @property {(data: {action: string, list: any}) => void} [onselection] - Selection callback
-	 */
-
-	/** @type {Props} */
-	const { value, variant = 'default', onselection = () => {} } = $props();
-
-	const handleSelection = (actionType) => {
-		if (value) {
-			onselection({
-				action: actionType,
-				list: value,
-			});
+	const {
+		value,
+		variant = 'default',
+		onselection = () => {},
+	} = $props<{
+		value: StudyListSummary;
+		variant?: 'default' | 'mobile';
+		onselection?: (data: { action: StudyAction; list: string }) => void;
+	}>();
+	const eligibility = $derived(getStudyEligibility(value.wordCount));
+	function handleSelection(action: StudyAction): void {
+		if (eligibility[action]) {
+			onselection({ action, list: value.name });
 		}
-	};
-
+	}
 	const actions = $derived([
 		{
 			icon: SquareStack,
 			action: () => handleSelection('flashcards'),
-			tooltip: `Flashcards for ${value}`,
+			tooltip: `Flashcards for ${value.name}`,
+			disabled: !eligibility.flashcards,
 		},
 		{
 			icon: Award,
 			action: () => handleSelection('quiz'),
-			tooltip: `Start quiz for ${value}`,
+			tooltip: `Start quiz for ${value.name}`,
+			disabled: !eligibility.quiz,
 		},
 	]);
 </script>
 
 <div class="study-list-item" class:study-list-item--mobile={variant === 'mobile'}>
 	<span class="study-list-item--name">
-		{value}
+		{value.name}
+		{#if eligibility.message}<small class="study-list-item--requirement"
+				>{eligibility.message}</small
+			>{/if}
 	</span>
 	<span class="study-list-item--actions">
 		{#each actions as action (action.tooltip)}
 			<SyButton
 				center={true}
 				onclick={action.action}
+				disabled={action.disabled}
 				size={variant === 'mobile' ? 'small' : 'large'}
 				style={variant === 'mobile' ? 'ghost' : 'filled'}
 				classes={[
@@ -63,6 +70,12 @@
 </div>
 
 <style>
+	.study-list-item--requirement {
+		display: block;
+		margin-top: var(--sy-space);
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
+	}
 	.study-list-item {
 		padding: var(--sy-space--large);
 		display: flex;

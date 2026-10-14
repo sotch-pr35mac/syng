@@ -1,47 +1,44 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
-	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import {
+		createStudyListState,
+		studySubRouteStore,
+		studyOriginStore,
+	} from '@/stores/studyRoute.svelte.js';
 	import { flashcardsActiveListStore } from '@/stores/flashcards.svelte.js';
-	import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
-	import { handleError } from '@/utils/index.js';
-
-	let emptyLists = $state<string[]>([]);
-
-	const lists = $derived([...bookmarksStore.lists].sort((a, b) => a.localeCompare(b)));
-	const populatedLists = $derived(lists.filter((list) => !emptyLists.includes(list)));
-
+	import { studyHref, type StudyAction } from '@/composables/study.js';
+	const studyLists = createStudyListState();
+	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
 		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
-			window.location.hash = `#/study/flashcards?list=${encodeURIComponent(flashcardsActiveListStore.value)}`;
-			return;
+			window.location.hash = studyHref(
+				'flashcards',
+				flashcardsActiveListStore.value,
+				studyOriginStore.value
+			);
+			return undefined;
 		}
-
-		bookmarksStore
-			.getEmptyLists()
-			.then((fetchedLists) => {
-				emptyLists = fetchedLists;
-				return undefined;
-			})
-			.catch((error) => {
-				handleError(
-					'There was an error fetching the empty lists. Check the log for more details.',
-					error
-				);
-			});
+		void studyLists.load();
+		return studyLists.cancel;
 	});
-
-	function handleSelection(event: { action: string; list: string }): void {
-		const route = event.action === 'quiz' ? 'quiz' : 'flashcards';
-		window.location.hash = `#/study/${route}?list=${encodeURIComponent(event.list)}`;
+	function handleSelection(event: { action: StudyAction; list: string }): void {
+		studyOriginStore.set(null);
+		window.location.hash = studyHref(event.action, event.list);
 	}
 </script>
 
 <div class="mobile-study">
 	<div class="mobile-study__content">
-		{#if populatedLists.length}
+		{#if studyLists.status === 'loading'}
+			<p>Loading...</p>
+		{:else if studyLists.status === 'error'}
+			<p>Unable to load your lists. Please try again.</p>
+			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
+		{:else if populatedLists.length}
 			<div class="mobile-study__list">
-				{#each populatedLists as list (list)}
+				{#each populatedLists as list (list.name)}
 					<StudyListItem value={list} variant="mobile" onselection={handleSelection} />
 				{/each}
 			</div>

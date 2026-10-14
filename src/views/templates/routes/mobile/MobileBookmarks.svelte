@@ -8,6 +8,8 @@
 		FolderUp,
 		Trash2,
 	} from 'lucide-svelte';
+	import StudyDropdown from '@/components/StudyListItem/StudyDropdown.svelte';
+	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
@@ -50,7 +52,16 @@
 	const OVERFLOW_MENU_OFFSET_PX = 4;
 
 	onMount(() => {
-		bookmarksRoute.updateListContent().catch(() => {});
+		const requestedList = new URLSearchParams(router.querystring).get('list');
+		if (requestedList && requestedList !== activeList) {
+			bookmarksRoute
+				.setActiveList(
+					lists.includes(requestedList) ? requestedList : DEFAULT_BOOKMARKS_LIST
+				)
+				.catch(() => {});
+		} else {
+			bookmarksRoute.updateListContent().catch(() => {});
+		}
 
 		if (currentSnap === 'partial') {
 			sheetRef?.openPartial();
@@ -249,12 +260,19 @@
 			>
 				{#snippet children(open)}
 					<SyButton style="ghost" size="small">
-						{activeList}&nbsp;
+						<span class="mobile-bookmarks__list-name">{activeList}</span>&nbsp;
 						{#if open}<ChevronUp size="16" />{:else}<ChevronDown size="16" />{/if}
 					</SyButton>
 				{/snippet}
 			</SyDropdown>
 
+			<StudyDropdown
+				list={activeList}
+				wordCount={wordList.length}
+				status={bookmarksRoute.contentStatus}
+				mobile={true}
+				direction={dropdownDirection}
+			/>
 			<div class="mobile-bookmarks__overflow-anchor" bind:this={overflowAnchorElement}>
 				<SyButton style="ghost" size="small" onclick={toggleOverflowMenu}>
 					<EllipsisVertical size="20" />
@@ -390,6 +408,26 @@
 		padding: 0 var(--sy-mobile-space--medium) var(--sy-mobile-space--small);
 		gap: var(--sy-mobile-space--small);
 		flex-shrink: 0;
+	}
+
+	.mobile-bookmarks__header-row > :global(.sy-dropdown--container) {
+		flex-shrink: 0;
+	}
+
+	.mobile-bookmarks__header-row > :global(.sy-dropdown--container:first-child) {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.mobile-bookmarks__header-row :global(.sy-dropdown--container:first-child .sy-button) {
+		max-width: 100%;
+	}
+
+	.mobile-bookmarks__list-name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.mobile-bookmarks__overflow-anchor {

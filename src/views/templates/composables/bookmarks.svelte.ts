@@ -57,6 +57,8 @@ let activeList = $state(bookmarksActiveListStore.value);
 let activeWord = $state<BookmarkWordEntry | undefined>(bookmarksActiveWordStore.value);
 let words = $state<BookmarkWordEntry[]>([]);
 let wordList = $state<WordListPreviewItem[]>([]);
+let contentStatus = $state<'loading' | 'ready' | 'error'>('loading');
+let contentRequest = 0;
 let popoverResults = $state<SearchEntry[]>([]);
 let popoverResultIndex = $state(0);
 let popoverRequest = 0;
@@ -131,14 +133,24 @@ function selectWord(selection: WordSelection): BookmarkWordEntry | undefined {
 }
 
 function updateListContent(): Promise<void> {
+	const requestId = ++contentRequest;
+	contentStatus = 'loading';
 	return bookmarksStore
 		.getContent(activeList)
 		.then((activeListWords) => {
+			if (requestId !== contentRequest) {
+				return undefined;
+			}
+			contentStatus = 'ready';
 			words = activeListWords;
 			wordList = formatWordList(activeListWords);
 			return undefined;
 		})
 		.catch((error) => {
+			if (requestId !== contentRequest) {
+				return;
+			}
+			contentStatus = 'error';
 			handleError(
 				'There was an error fetching the word list content. Check the logs for more details.',
 				error
@@ -437,6 +449,9 @@ function getNewPlaceholder(): string {
 }
 
 export const bookmarksRoute = {
+	get contentStatus(): 'loading' | 'ready' | 'error' {
+		return contentStatus;
+	},
 	get creationError(): string {
 		return creationError;
 	},
