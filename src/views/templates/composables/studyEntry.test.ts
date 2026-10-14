@@ -116,6 +116,51 @@ it('preserves flashcard restoration and clears the index on explicit exit', asyn
 	expect(flashcardsState.flashcardsShowDetailsStore.value).toBe(false);
 });
 
+it('resumes a newly selected list from its own reset state', async () => {
+	flashcards.load('Alpha', 'bookmarks');
+	await vi.advanceTimersByTimeAsync(0);
+	flashcards.next();
+	flashcards.next();
+	flashcards.flip();
+	flashcards.endSession();
+	flashcards.load('Beta', 'bookmarks');
+	await vi.advanceTimersByTimeAsync(0);
+	expect(flashcards.activeIndex).toBe(0);
+	expect(flashcards.showDetails).toBe(false);
+	flashcards.endSession();
+	flashcards.load(null, 'bookmarks');
+	await vi.advanceTimersByTimeAsync(0);
+	expect(flashcards.activeList).toBe('Beta');
+	expect(flashcards.activeIndex).toBe(0);
+	expect(flashcards.showDetails).toBe(false);
+});
+
+it('resumes the front of a card after moving away from a flipped card', async () => {
+	flashcards.load('词 & # 1');
+	await vi.advanceTimersByTimeAsync(0);
+	flashcards.flip();
+	flashcards.next();
+	flashcards.endSession();
+	flashcards.load(null);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(flashcards.activeIndex).toBe(1);
+	expect(flashcards.showDetails).toBe(false);
+});
+
+it('persists the clamped position when the resumed list has fewer words', async () => {
+	flashcardsState.flashcardsActiveListStore.set('词 & # 1');
+	flashcardsState.flashcardsActiveIndexStore.set(3);
+	vi.mocked(bookmarksStore.getContent).mockResolvedValueOnce(words.slice(0, 2) as never);
+	flashcards.load(null);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(flashcards.activeIndex).toBe(1);
+	expect(flashcardsState.flashcardsActiveIndexStore.value).toBe(1);
+	flashcards.endSession();
+	flashcards.load(null);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(flashcards.activeIndex).toBe(1);
+});
+
 it('distinguishes a failed quiz read from a short list and can retry', async () => {
 	vi.mocked(bookmarksStore.getContent).mockRejectedValueOnce(new Error('Storage unavailable'));
 	quiz.start('词 & # 1', 'bookmarks');

@@ -61,6 +61,10 @@ function loadFlashcards(listFromUrl: string | null, origin: string | null = null
 	if (listFromUrl) {
 		flashcardsActiveListStore.set(listFromUrl);
 	}
+	if (!isRestoringSession) {
+		flashcardsActiveIndexStore.set(0);
+		flashcardsShowDetailsStore.set(false);
+	}
 
 	studySubRouteStore.set('flashcards');
 
@@ -78,6 +82,7 @@ function loadFlashcards(listFromUrl: string | null, origin: string | null = null
 			flashcardsListContent = contents;
 			if (flashcardsActiveIndex > Math.max(contents.length - 1, 0)) {
 				flashcardsActiveIndex = Math.max(contents.length - 1, 0);
+				flashcardsActiveIndexStore.set(flashcardsActiveIndex);
 			}
 			flashcardsLoading = false;
 			if (contents.length) {
@@ -108,6 +113,7 @@ function loadFlashcards(listFromUrl: string | null, origin: string | null = null
 function persistFlashcardsIndex(): void {
 	flashcardsActiveIndexStore.set(flashcardsActiveIndex);
 	flashcardsShowDetails = false;
+	flashcardsShowDetailsStore.set(false);
 }
 
 function persistFlashcardsDetails(): void {
