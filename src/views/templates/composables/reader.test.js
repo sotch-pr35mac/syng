@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { telemetry } from '@/utils';
+import { handleError, telemetry } from '@/utils';
+import { invoke } from '@tauri-apps/api/core';
+import { ask } from '@tauri-apps/plugin-dialog';
+import { LARGE_HTML_IMPORT_ERROR_CODE } from '@/utils/readerDocument.js';
+
+const network = vi.hoisted(() => ({ isOffline: false }));
+
+vi.mock('@/utils/networkStatus.svelte.js', () => ({ networkStatus: network }));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve([])),
@@ -70,6 +77,10 @@ async function setup(overrides = {}) {
 beforeEach(() => {
 	vi.stubGlobal('alert', vi.fn());
 	vi.mocked(telemetry.trackEvent).mockClear();
+	vi.mocked(handleError).mockClear();
+	vi.mocked(invoke).mockReset().mockResolvedValue([]);
+	vi.mocked(ask).mockReset().mockResolvedValue(true);
+	network.isOffline = false;
 });
 afterEach(() => vi.useRealTimers());
 
@@ -79,7 +90,7 @@ it('navigates to an imported document after saving it', async () => {
 	});
 	await readerDocumentsStore.refresh();
 
-	await readerRoute.importReaderPayload(
+	const result = await readerRoute.importReaderPayload(
 		{
 			title: 'Story',
 			file_name: 'story.txt',
@@ -94,6 +105,8 @@ it('navigates to an imported document after saving it', async () => {
 	);
 
 	expect(manager.createDocument).toHaveBeenCalled();
+	expect(result).toEqual({ status: 'success' });
+	expect(readerRoute.importing).toBe(false);
 	expect(readerRoute.activeDocument).toBeUndefined();
 	expect(window.location.hash).toBe('#/read/document/reader-1');
 	await readerRoute.openDocumentById(document._id);
@@ -103,6 +116,114 @@ it('navigates to an imported document after saving it', async () => {
 			.mocked(telemetry.trackEvent)
 			.mock.calls.filter(([name]) => name === 'reader.document_opened')
 	).toHaveLength(1);
+});
+
+it('returns a recoverable save error, logs silently, and allows the same prepared payload to retry', async () => {
+	const failure = new Error('Storage unavailable');
+	const createDocument = vi.fn().mockRejectedValueOnce(failure).mockResolvedValueOnce(document);
+	const { readerRoute } = await setup({ createDocument });
+
+	const result = await readerRoute.importReaderPayload(document, 'My title', '#ffffff');
+	expect(result).toEqual({
+		status: 'error',
+		message: 'There was an error importing the reader document.',
+	});
+	expect(handleError).toHaveBeenCalledWith(result.message, failure, { silent: true });
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('reader.document_import_failed', {
+		source_type: 'plain_text',
+		stage: 'save',
+		error_name: 'Error',
+	});
+	expect(readerRoute.importing).toBe(false);
+	expect(window.location.hash).toBe('#/read');
+	expect(await readerRoute.importReaderPayload(document, 'My title', '#ffffff')).toEqual({
+		status: 'success',
+	});
+	expect(createDocument.mock.calls[1]).toEqual(createDocument.mock.calls[0]);
+});
+
+it('returns clipboard preparation errors and releases the import busy state', async () => {
+	const { readerRoute, manager } = await setup();
+	const failure = new Error('Could not process text');
+	vi.mocked(invoke).mockRejectedValueOnce(failure);
+	const pending = readerRoute.importPlainTextDocument('Title', 'Keep my pasted text', '#ffffff');
+	expect(readerRoute.importing).toBe(true);
+	const result = await pending;
+	expect(result.status).toBe('error');
+	expect(handleError).toHaveBeenCalledWith(result.message, failure, { silent: true });
+	expect(readerRoute.importing).toBe(false);
+	expect(manager.createDocument).not.toHaveBeenCalled();
+});
+
+it('returns clipboard storage failures without incorrectly reporting a second preparation failure', async () => {
+	const { readerRoute } = await setup({
+		createDocument: vi.fn().mockRejectedValue(new Error('Storage unavailable')),
+	});
+	vi.mocked(invoke).mockResolvedValueOnce(document);
+	const result = await readerRoute.importPlainTextDocument(
+		'Title',
+		'Keep my pasted text',
+		'#ffffff'
+	);
+	expect(result.status).toBe('error');
+	expect(handleError).toHaveBeenCalledTimes(1);
+	expect(
+		vi
+			.mocked(telemetry.trackEvent)
+			.mock.calls.filter(([name]) => name === 'reader.document_import_failed')
+	).toEqual([
+		[
+			'reader.document_import_failed',
+			{ source_type: 'plain_text', stage: 'save', error_name: 'Error' },
+		],
+	]);
+	expect(readerRoute.importing).toBe(false);
+});
+
+it('returns cancelled when a large webpage is declined without reporting it as an error', async () => {
+	const { readerRoute, manager } = await setup();
+	vi.mocked(invoke).mockRejectedValueOnce(
+		JSON.stringify({ code: LARGE_HTML_IMPORT_ERROR_CODE, receivedBytes: 2097152 })
+	);
+	vi.mocked(ask).mockResolvedValueOnce(false);
+	const result = await readerRoute.importWebpageDocument(
+		'Title',
+		'https://example.com',
+		'#ffffff'
+	);
+	expect(result).toEqual({ status: 'cancelled' });
+	expect(readerRoute.importing).toBe(false);
+	expect(handleError).not.toHaveBeenCalled();
+	expect(manager.createDocument).not.toHaveBeenCalled();
+	expect(telemetry.trackEvent).not.toHaveBeenCalledWith(
+		'reader.document_import_failed',
+		expect.anything()
+	);
+});
+
+it('explains offline webpage import while allowing a prepared preview to save offline', async () => {
+	const { readerRoute, manager } = await setup();
+	network.isOffline = true;
+	const unavailable = await readerRoute.importWebpageDocument(
+		'Title',
+		'https://example.com',
+		'#ffffff'
+	);
+	expect(unavailable).toEqual({
+		status: 'error',
+		message: 'You are offline. Connect to the internet to import a webpage.',
+	});
+	expect(readerRoute.importing).toBe(false);
+	expect(manager.createDocument).not.toHaveBeenCalled();
+	const saved = await readerRoute.importWebpageDocument(
+		'Title',
+		'https://example.com',
+		'#ffffff',
+		document
+	);
+	expect(saved).toEqual({ status: 'success' });
+	expect(manager.createDocument).toHaveBeenCalledTimes(1);
+	expect(invoke).not.toHaveBeenCalled();
 });
 
 it('aggregates only actual page turns and flushes on time, background and exit', async () => {

@@ -7,6 +7,7 @@ import type {
 	ReaderContentBlock,
 	ReaderDocument,
 	ReaderImportPayload,
+	ReaderImportResult,
 	ReaderLocator,
 	ReaderToken,
 } from '@/types/reader.js';
@@ -258,7 +259,7 @@ async function importReaderPayload(
 	importPayload: ReaderImportPayload,
 	title: string,
 	color: string
-): Promise<void> {
+): Promise<ReaderImportResult> {
 	importing = true;
 	try {
 		const document = await readerDocumentsStore.importDocument(
@@ -271,15 +272,23 @@ async function importReaderPayload(
 			})
 			.catch(() => {});
 		navigateToReaderDocument(document._id);
+		return { status: 'success' };
 	} catch (error) {
 		trackImportFailed(importPayload.source_type, 'save', error);
-		handleError('There was an error importing the reader document.', error);
+		const message = 'There was an error importing the reader document.';
+		handleError(message, error, { silent: true });
+		return { status: 'error', message };
 	} finally {
 		importing = false;
 	}
 }
 
-async function importPlainTextDocument(title: string, text: string, color: string): Promise<void> {
+async function importPlainTextDocument(
+	title: string,
+	text: string,
+	color: string
+): Promise<ReaderImportResult> {
+	importing = true;
 	try {
 		const importPayload = await invokePrepareReaderImport({
 			text,
@@ -287,10 +296,14 @@ async function importPlainTextDocument(title: string, text: string, color: strin
 			fileName: 'clipboard.txt',
 			mimeType: 'text/plain',
 		});
-		await importReaderPayload(importPayload, title || importPayload.title, color);
+		return await importReaderPayload(importPayload, title || importPayload.title, color);
 	} catch (error) {
 		trackImportFailed('plain_text', 'prepare', error);
-		handleError('There was an error importing the reader document.', error);
+		const message = 'There was an error importing the reader document.';
+		handleError(message, error, { silent: true });
+		return { status: 'error', message };
+	} finally {
+		importing = false;
 	}
 }
 
@@ -324,10 +337,14 @@ async function importWebpageDocument(
 	url: string,
 	color: string,
 	preparedPayload?: ReaderImportPayload
-): Promise<void> {
+): Promise<ReaderImportResult> {
 	if (!preparedPayload && networkStatus.isOffline) {
-		return;
+		return {
+			status: 'error',
+			message: 'You are offline. Connect to the internet to import a webpage.',
+		};
 	}
+	importing = true;
 	try {
 		const importPayload =
 			preparedPayload ??
@@ -335,13 +352,17 @@ async function importWebpageDocument(
 				url,
 				title,
 			}));
-		await importReaderPayload(importPayload, title || importPayload.title, color);
+		return await importReaderPayload(importPayload, title || importPayload.title, color);
 	} catch (error) {
 		if (error instanceof Error && error.message === LARGE_HTML_IMPORT_CANCELED_MESSAGE) {
-			return;
+			return { status: 'cancelled' };
 		}
 		trackImportFailed('webpage', 'prepare', error);
-		handleError('There was an error importing the webpage.', error);
+		const message = 'There was an error importing the webpage.';
+		handleError(message, error, { silent: true });
+		return { status: 'error', message };
+	} finally {
+		importing = false;
 	}
 }
 

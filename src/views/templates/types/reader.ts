@@ -272,6 +272,9 @@ export interface ReaderImportPayload {
 	asset_attachments?: ReaderAssetAttachmentInput[];
 }
 
+export type ReaderImportResult =
+	{ status: 'success' } | { status: 'cancelled' } | { status: 'error'; message: string };
+
 export interface ReaderTextPosition {
 	start: number;
 	end: number;
