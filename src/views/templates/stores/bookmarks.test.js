@@ -16,7 +16,7 @@ const buildManager = (overrides = {}) => ({
 	updateProperty: vi.fn(() => Promise.resolve()),
 	inList: vi.fn(() => Promise.resolve(['Bookmarks'])),
 	getListContent: vi.fn(() => Promise.resolve([])),
-	getEmptyLists: vi.fn(() => Promise.resolve([])),
+	getListSummaries: vi.fn(() => Promise.resolve([])),
 	getWordByHash: vi.fn(() => Promise.resolve(undefined)),
 	...overrides,
 });
@@ -36,6 +36,46 @@ it('refresh() should populate lists from the manager', async () => {
 	setBookmarkManagerForTest(buildManager());
 	await bookmarksStore.refresh();
 	expect(bookmarksStore.lists).toEqual(['Bookmarks', 'Test List']);
+});
+
+it('shares the in-flight refresh between startup and a returning route', async () => {
+	let finishLoading;
+	const manager = buildManager({
+		getLists: vi.fn(
+			() =>
+				new Promise((resolve) => {
+					finishLoading = resolve;
+				})
+		),
+	});
+	setBookmarkManagerForTest(manager);
+	const startupRefresh = bookmarksStore.refresh();
+	const routeRefresh = bookmarksStore.refresh();
+	expect(routeRefresh).toBe(startupRefresh);
+	await vi.waitFor(() => expect(manager.getLists).toHaveBeenCalledTimes(1));
+	finishLoading(['Bookmarks', 'Existing']);
+	await routeRefresh;
+	expect(bookmarksStore.lists).toContain('Existing');
+	manager.getLists.mockResolvedValueOnce(['Bookmarks', 'Existing']);
+	await bookmarksStore.refresh();
+	expect(manager.getLists).toHaveBeenCalledTimes(2);
+});
+
+it('waits for schema readiness before reading batched list summaries', async () => {
+	let finishMigration;
+	const ready = new Promise((resolve) => {
+		finishMigration = resolve;
+	});
+	const summaries = [{ name: 'Bookmarks', wordCount: 4 }];
+	const manager = buildManager({
+		waitForReady: () => ready,
+		getListSummaries: vi.fn().mockResolvedValue(summaries),
+	});
+	setBookmarkManagerForTest(manager);
+	const result = bookmarksStore.getListSummaries();
+	expect(manager.getListSummaries).not.toHaveBeenCalled();
+	finishMigration();
+	expect(await result).toEqual(summaries);
 });
 
 it('createList() should call the manager and add the name to the store', async () => {

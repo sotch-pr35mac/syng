@@ -248,6 +248,38 @@ function setActiveList(nextList: string): Promise<void> {
 	return updateListContent();
 }
 
+function initialize(requestedList: string | null): () => void {
+	const requestId = ++contentRequest;
+	let mounted = true;
+	contentStatus = 'loading';
+	async function load(): Promise<void> {
+		if (requestedList && !bookmarksStore.initialized) {
+			await bookmarksStore.refresh();
+		}
+		if (!mounted || requestId !== contentRequest) {
+			return;
+		}
+		if (requestedList && !bookmarksStore.initialized) {
+			contentStatus = 'error';
+			return;
+		}
+		const nextList = requestedList
+			? bookmarksStore.lists.includes(requestedList)
+				? requestedList
+				: DEFAULT_BOOKMARKS_LIST
+			: activeList;
+		if (nextList === activeList) {
+			await updateListContent();
+		} else {
+			await setActiveList(nextList);
+		}
+	}
+	void load();
+	return () => {
+		mounted = false;
+	};
+}
+
 function clearCreationError(): void {
 	creationError = '';
 }
@@ -449,6 +481,7 @@ function getNewPlaceholder(): string {
 }
 
 export const bookmarksRoute = {
+	initialize,
 	get contentStatus(): 'loading' | 'ready' | 'error' {
 		return contentStatus;
 	},

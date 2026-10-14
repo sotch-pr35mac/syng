@@ -35,15 +35,8 @@
 
 	onMount(() => {
 		const requestedList = new URLSearchParams(router.querystring).get('list');
-		if (requestedList && requestedList !== activeList) {
-			bookmarksRoute
-				.setActiveList(
-					lists.includes(requestedList) ? requestedList : DEFAULT_BOOKMARKS_LIST
-				)
-				.catch(() => {});
-		} else {
-			bookmarksRoute.updateListContent().catch(() => {});
-		}
+		const cancelInitialization = bookmarksRoute.initialize(requestedList);
+		return cancelInitialization;
 	});
 
 	// Handle active list selection

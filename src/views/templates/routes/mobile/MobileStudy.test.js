@@ -150,7 +150,11 @@ function mockBookmarkManager() {
 	return {
 		waitForInit: () => Promise.resolve(),
 		getLists: () => Promise.resolve(['Bookmarks', 'Empty List']),
-		getEmptyLists: () => Promise.resolve(['Empty List']),
+		getListSummaries: () =>
+			Promise.resolve([
+				{ name: 'Bookmarks', wordCount: WORDS.length },
+				{ name: 'Empty List', wordCount: 0 },
+			]),
 		getListContent: (listName) =>
 			Promise.resolve(WORDS.filter((word) => word.lists.includes(listName))),
 		inList: (hash) => Promise.resolve(WORDS.find((word) => word.hash === hash)?.lists ?? []),

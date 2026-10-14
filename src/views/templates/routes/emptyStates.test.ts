@@ -19,6 +19,7 @@ import { mobileSearchQueryStore, mobileSearchSnapStore } from '@/stores/mobileSe
 import { mobileBookmarksSnapStore } from '@/stores/mobileBookmarks.svelte.js';
 import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
 import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+import type { BookmarkListSummary } from '@/types/bookmarks.js';
 
 const device = vi.hoisted(() => ({ mobile: false, ipad: false }));
 vi.mock('@/utils/device.js', () => ({
@@ -54,6 +55,7 @@ const emptyBookmarks = 'This list is empty. Search for a word, then add it to th
 const emptyStudy = 'Add words to a list to start studying.';
 const emptySearch = 'No results found. Try another word in Chinese, English, or pinyin.';
 const getListContent = vi.fn<() => Promise<BookmarkWordEntry[]>>();
+const getListSummaries = vi.fn<() => Promise<BookmarkListSummary[]>>();
 
 beforeEach(async () => {
 	vi.clearAllMocks();
@@ -61,10 +63,12 @@ beforeEach(async () => {
 	device.ipad = false;
 	vi.mocked(invoke).mockImplementation(async (command) => (command === 'classify' ? 'EN' : []));
 	getListContent.mockResolvedValue([]);
+	getListSummaries.mockResolvedValue([]);
 	setBookmarkManagerForTest({
 		waitForInit: () => Promise.resolve(),
 		getLists: () => Promise.resolve(['Bookmarks']),
 		getListContent,
+		getListSummaries,
 		inList: () => Promise.resolve(['Bookmarks']),
 	} as unknown as Parameters<typeof setBookmarkManagerForTest>[0]);
 	searchStore.doSearch('');
@@ -161,8 +165,8 @@ describe.each(surfaces)('$name empty states', (surface) => {
 
 	it('offers Search from an empty Study picker only after loading', async () => {
 		window.location.hash = '#/study';
-		let resolveLoad!: (words: BookmarkWordEntry[]) => void;
-		getListContent.mockImplementation(
+		let resolveLoad!: (lists: BookmarkListSummary[]) => void;
+		getListSummaries.mockImplementation(
 			() =>
 				new Promise((resolve) => {
 					resolveLoad = resolve;
@@ -178,7 +182,7 @@ describe.each(surfaces)('$name empty states', (surface) => {
 	});
 
 	it('keeps failed Study loading separate from an empty picker', async () => {
-		getListContent.mockRejectedValue(new Error('Storage unavailable'));
+		getListSummaries.mockRejectedValue(new Error('Storage unavailable'));
 		const view = render(surface.study);
 		expect(await view.findByText('Unable to load your lists. Please try again.')).toBeTruthy();
 		expect(view.queryByText(emptyStudy)).toBeNull();

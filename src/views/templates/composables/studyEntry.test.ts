@@ -10,7 +10,12 @@ vi.mock('@/utils/index.js', () => ({
 	telemetry: { trackEvent: vi.fn(() => Promise.resolve()) },
 }));
 vi.mock('@/stores/bookmarks.svelte.js', () => ({
-	bookmarksStore: { getContent: vi.fn(), lists: ['词 & # 1'], initialized: true },
+	bookmarksStore: {
+		getContent: vi.fn(),
+		getListSummaries: vi.fn(),
+		lists: ['词 & # 1'],
+		initialized: true,
+	},
 }));
 
 let flashcards: typeof import('@/composables/flashcards.svelte.js').flashcardsRoute;
@@ -33,6 +38,9 @@ beforeEach(async () => {
 	vi.mocked(bookmarksStore.getContent)
 		.mockReset()
 		.mockResolvedValue(words as never);
+	vi.mocked(bookmarksStore.getListSummaries)
+		.mockReset()
+		.mockResolvedValue([{ name: '词 & # 1', wordCount: 4 }]);
 	vi.mocked(invoke)
 		.mockReset()
 		.mockImplementation(async (command) => {
@@ -177,10 +185,28 @@ it('distinguishes a failed quiz read from a short list and can retry', async () 
 it('does not report picker loading or failure as an empty list', async () => {
 	const picker = studyState.createStudyListState();
 	expect(picker.status).toBe('loading');
-	vi.mocked(bookmarksStore.getContent).mockRejectedValueOnce(new Error('Storage unavailable'));
+	vi.mocked(bookmarksStore.getListSummaries).mockRejectedValueOnce(
+		new Error('Storage unavailable')
+	);
 	await picker.load();
 	expect(picker.status).toBe('error');
 	await picker.load();
 	expect(picker.status).toBe('ready');
 	expect(picker.lists).toEqual([{ name: '词 & # 1', wordCount: 4 }]);
+});
+
+it('uses batched summaries to sort populated lists without fetching their contents', async () => {
+	vi.mocked(bookmarksStore.getListSummaries).mockResolvedValueOnce([
+		{ name: 'Zulu', wordCount: 4 },
+		{ name: 'Empty', wordCount: 0 },
+		{ name: 'Alpha', wordCount: 1 },
+	]);
+	const picker = studyState.createStudyListState();
+	await picker.load();
+	expect(picker.lists).toEqual([
+		{ name: 'Alpha', wordCount: 1 },
+		{ name: 'Zulu', wordCount: 4 },
+	]);
+	expect(bookmarksStore.getListSummaries).toHaveBeenCalledTimes(1);
+	expect(bookmarksStore.getContent).not.toHaveBeenCalled();
 });

@@ -244,6 +244,48 @@ it('should return an array of list names', async () => {
 	expect(listNames).toEqual(['Bookmarks', 'Test List 1', 'Test List 2']);
 });
 
+it('summarizes many lists with one scan per database and one shared dictionary lookup', async () => {
+	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks');
+	await bookmarkManager.init();
+	for (let index = 0; index < 50; index += 1) {
+		await bookmarkManager.createList(`Empty ${index}`);
+	}
+	bookmarkManager._list_db.allDocs.mockClear();
+	bookmarkManager._document_db.allDocs.mockClear();
+	invoke.mockClear();
+	invoke.mockImplementationOnce((_command, { ids }) =>
+		Promise.resolve(
+			ids.map((lexicalId) => (lexicalId === lexicalIdFor('123') ? null : { id: lexicalId }))
+		)
+	);
+
+	const summaries = await bookmarkManager.getListSummaries();
+	expect(summaries.slice(0, 3)).toEqual([
+		{ name: 'Bookmarks', wordCount: 3 },
+		{ name: 'Test List 1', wordCount: 3 },
+		{ name: 'Test List 2', wordCount: 2 },
+	]);
+	expect(summaries.slice(3)).toHaveLength(50);
+	expect(summaries.slice(3).every((list) => list.wordCount === 0)).toBe(true);
+	expect(bookmarkManager._list_db.allDocs).toHaveBeenCalledTimes(1);
+	expect(bookmarkManager._document_db.allDocs).toHaveBeenCalledTimes(1);
+	expect(invoke).toHaveBeenCalledExactlyOnceWith('query_by_ids', {
+		ids: ['123', '456', '789', '101112', '131415', '161718'].map(lexicalIdFor),
+	});
+});
+
+it('returns zero counts without a dictionary lookup for an empty library', async () => {
+	const bookmarkManager = new BookmarkManager('test-lists', 'test-bookmarks-empty');
+	await bookmarkManager.init();
+	invoke.mockClear();
+	expect(await bookmarkManager.getListSummaries()).toEqual([
+		{ name: 'Bookmarks', wordCount: 0 },
+		{ name: 'Test List 1', wordCount: 0 },
+		{ name: 'Test List 2', wordCount: 0 },
+	]);
+	expect(invoke).not.toHaveBeenCalled();
+});
+
 it('should collapse duplicate-named lists and merge their word references on init', async () => {
 	const bookmarkManager = new BookmarkManager('test-lists-duplicate', 'test-bookmarks-duplicate');
 	await bookmarkManager.init();

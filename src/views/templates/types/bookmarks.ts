@@ -12,3 +12,5 @@ export type BookmarkListMembershipEvent = {
 	lexicalId: string;
 	operation: BookmarkListMembershipOperation;
 };
+
+export type BookmarkListSummary = { name: string; wordCount: number };

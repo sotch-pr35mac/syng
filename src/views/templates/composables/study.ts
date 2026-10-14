@@ -63,7 +63,7 @@ export type IncorrectAnswer = {
 export type StudyAction = 'flashcards' | 'quiz';
 export type StudyOrigin = 'bookmarks' | null;
 export type StudyContentStatus = 'loading' | 'ready' | 'error';
-export type StudyListSummary = { name: string; wordCount: number };
+export type { BookmarkListSummary as StudyListSummary } from '@/types/bookmarks.js';
 
 export function getStudyEligibility(wordCount: number, status: StudyContentStatus = 'ready') {
 	const ready = status === 'ready';

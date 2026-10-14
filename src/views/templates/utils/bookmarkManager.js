@@ -27,8 +27,14 @@ export const BOOKMARK_SCHEMA_VERSION = 2;
 export const BOOKMARK_SCHEMA_DOCUMENT_ID = '_local/syng-bookmark-schema';
 export const BOOKMARK_RECOVERY_DOCUMENT_ID = '_local/syng-bookmark-recovery';
 const NOT_FOUND_STATUS = 404;
+const LIST_READ_ERROR_MESSAGE = 'There was an error fetching the available word lists.';
 
 const isLexicalId = (value) => typeof value === 'string' && /^1:[0-9a-f]{64}$/.test(value);
+
+const readBookmarkDocuments = async (database) => {
+	const { rows } = await database.allDocs({ include_docs: true });
+	return rows.map(({ doc }) => doc);
+};
 
 const joinDistinctNotes = (currentNotes, incomingNotes) => {
 	const current = typeof currentNotes === 'string' ? currentNotes.trim() : '';
@@ -382,61 +388,62 @@ export class BookmarkManager {
 	 * Return: Promise<Array<String>>: Returns a Promise that resolves with a list of
 	 * strings representing the names of the available word lists.
 	 */
-	getLists() {
-		return new Promise((resolve, reject) => {
-			this._list_db
-				.allDocs({ include_docs: true })
-				.then((documents) => {
-					resolve(documents.rows.map((list) => list.doc.name));
-					return undefined;
-				})
-				.catch((e) => {
-					reject(
-						this._reportDbError(
-							'getLists',
-							e,
-							'There was an error fetching the available word lists.'
-						)
-					);
-				});
-		});
+	async getLists() {
+		try {
+			const documents = await readBookmarkDocuments(this._list_db);
+			return documents.map((list) => list.name);
+		} catch (error) {
+			throw this._reportDbError('getLists', error, LIST_READ_ERROR_MESSAGE);
+		}
 	}
 
-	/*
-	 * Description: Get a list of the empty lists (lists with no contents).
-	 * Return: Promise<Array<String>>: Returns a Promise that resolves to a list
-	 * of strings representing the names of the lists without contents.
+	/**
+	 * Count available words for every list with one scan per database and one dictionary
+	 * lookup. Shared words are looked up once, and missing dictionary entries do not count.
+	 * @returns {Promise<import('@/types/bookmarks.js').BookmarkListSummary[]>}
 	 */
-	getEmptyLists() {
-		let lists = undefined;
-		return new Promise((resolve, reject) => {
-			this._list_db
-				.allDocs({ include_docs: true })
-				.then((documents) => {
-					lists = documents.rows.map((list) => list.doc);
-					return this._document_db.allDocs({ include_docs: true });
-				})
-				.then((wordsResult) => {
-					const wordDocs = wordsResult.rows.map((word) => word.doc);
+	async getListSummaries() {
+		try {
+			const [listDocuments, wordDocuments] = await Promise.all([
+				readBookmarkDocuments(this._list_db),
+				readBookmarkDocuments(this._document_db),
+			]);
+			const summaries = new Map(
+				listDocuments.map((list) => [list._id, { name: list.name, wordCount: 0 }])
+			);
+			const bookmarks = wordDocuments.filter((word) =>
+				word?.lists?.some((listId) => summaries.has(listId))
+			);
+			const units = await this._lookupBookmarkUnits(bookmarks);
+			bookmarks.forEach((word, index) => {
+				if (units[index]) {
+					for (const listId of new Set(word.lists)) {
+						const summary = summaries.get(listId);
+						if (summary) {
+							summary.wordCount += 1;
+						}
+					}
+				}
+			});
+			return [...summaries.values()];
+		} catch (error) {
+			throw this._reportDbError('getListSummaries', error, LIST_READ_ERROR_MESSAGE);
+		}
+	}
 
-					const emptyLists = lists
-						.filter((list) => {
-							const listId = list._id;
-							const listContents = wordDocs.filter((word) =>
-								word.lists.includes(listId)
-							);
-							return !listContents.length;
-						})
-						.map((list) => list.name);
-
-					resolve(emptyLists);
-					return undefined;
+	async _lookupBookmarkUnits(bookmarks) {
+		if (bookmarks.some((word) => !isLexicalId(word.lexical_id))) {
+			throw new Error('Bookmark schema preparation did not produce lexical IDs.');
+		}
+		const units = bookmarks.length
+			? await invoke(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_IDS, {
+					ids: bookmarks.map((word) => word.lexical_id),
 				})
-				.catch((e) => {
-					console.error(e);
-					reject(new Error('There was an error trying to fetch empty lists.'));
-				});
-		});
+			: [];
+		if (!Array.isArray(units) || units.length !== bookmarks.length) {
+			throw new Error('Bookmark lookup returned an invalid result.');
+		}
+		return units;
 	}
 
 	/*
@@ -586,65 +593,27 @@ export class BookmarkManager {
 	 * Param: String: listName: The name of the list to get the content of.
 	 * Return: Promise<Array<Object>>: The content of the list.
 	 */
-	getListContent(listName) {
-		let listId = undefined;
-		return new Promise((resolve, reject) => {
-			this._list_db
-				.allDocs({ include_docs: true })
-				.then((documents) => {
-					const list = documents.rows.filter((list) => list.doc.name === listName)[0];
-					if (!list) {
-						console.error(documents);
-						reject(
-							new Error(
-								`There was an error fetching the contents of ${listName}. List does not exist! Check the log for more details.`
-							)
-						);
-						throw EARLY_EXIT;
-					}
-
-					listId = list.doc._id;
-					return this._document_db.allDocs({ include_docs: true });
-				})
-				.then(async (documents) => {
-					const bookmarkDocuments = documents.rows
-						.map((row) => row.doc)
-						.filter((word) => word?.lists?.includes(listId));
-					if (bookmarkDocuments.some((word) => !isLexicalId(word.lexical_id))) {
-						throw new Error('Bookmark schema preparation did not produce lexical IDs.');
-					}
-					const units = await invoke(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_IDS, {
-						ids: bookmarkDocuments.map((word) => word.lexical_id),
-					});
-					if (!Array.isArray(units) || units.length !== bookmarkDocuments.length) {
-						throw new Error('Bookmark lookup returned an invalid result.');
-					}
-					resolve(
-						units
-							.map((unit, index) =>
-								unit ? { ...bookmarkDocuments[index], ...unit } : undefined
-							)
-							.filter(Boolean)
-					);
-					return undefined;
-				})
-				.catch((e) => {
-					if (e === EARLY_EXIT) {
-						return;
-					}
-					throw e;
-				})
-				.catch((e) => {
-					reject(
-						this._reportDbError(
-							'getListContent',
-							e,
-							`There was an error loading the list ${listName}. Check the log for more details.`,
-							[listName]
-						)
-					);
-				});
-		});
+	async getListContent(listName) {
+		try {
+			const lists = await readBookmarkDocuments(this._list_db);
+			const list = lists.find((list) => list.name === listName);
+			if (!list) {
+				throw new Error('List does not exist.');
+			}
+			const documents = await readBookmarkDocuments(this._document_db);
+			const bookmarks = documents.filter((word) => word?.lists?.includes(list._id));
+			const units = await this._lookupBookmarkUnits(bookmarks);
+			return units
+				.map((unit, index) => (unit ? { ...bookmarks[index], ...unit } : undefined))
+				.filter(Boolean);
+		} catch (error) {
+			throw this._reportDbError(
+				'getListContent',
+				error,
+				`There was an error loading the list ${listName}. Check the log for more details.`,
+				[listName]
+			);
+		}
 	}
 
 	/*

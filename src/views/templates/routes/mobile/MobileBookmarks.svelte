@@ -53,21 +53,14 @@
 
 	onMount(() => {
 		const requestedList = new URLSearchParams(router.querystring).get('list');
-		if (requestedList && requestedList !== activeList) {
-			bookmarksRoute
-				.setActiveList(
-					lists.includes(requestedList) ? requestedList : DEFAULT_BOOKMARKS_LIST
-				)
-				.catch(() => {});
-		} else {
-			bookmarksRoute.updateListContent().catch(() => {});
-		}
+		const cancelInitialization = bookmarksRoute.initialize(requestedList);
 
 		if (currentSnap === 'partial') {
 			sheetRef?.openPartial();
 		} else if (currentSnap === 'full') {
 			sheetRef?.openFull();
 		}
+		return cancelInitialization;
 	});
 
 	$effect(() => {

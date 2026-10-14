@@ -42,18 +42,7 @@ export function createStudyListState() {
 			const requestId = ++loadRequest;
 			status = 'loading';
 			try {
-				if (!bookmarksStore.initialized) {
-					await bookmarksStore.refresh();
-					if (!bookmarksStore.initialized) {
-						throw new Error('Bookmark lists unavailable');
-					}
-				}
-				const summaries = await Promise.all(
-					bookmarksStore.lists.map(async (name) => ({
-						name,
-						wordCount: (await bookmarksStore.getContent(name)).length,
-					}))
-				);
+				const summaries = await bookmarksStore.getListSummaries();
 				if (requestId !== loadRequest) {
 					return;
 				}
