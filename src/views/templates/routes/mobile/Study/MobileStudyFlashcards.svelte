@@ -85,6 +85,16 @@
 
 	<div class="mobile-flashcards__bar">
 		<div class="mobile-flashcards__exit-row">
+			{#if !flashcardsRoute.loading && flashcardsRoute.listContent.length > 0}
+				<div class="mobile-flashcards__status" data-testid="flashcard-status">
+					<span class="mobile-flashcards__status-list">{flashcardsRoute.activeList}</span>
+					<span class="mobile-flashcards__status-count">
+						· {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent.length}
+						{#if !flashcardsRoute.canGoNext}
+							· Last card{/if}
+					</span>
+				</div>
+			{/if}
 			<SyButton
 				style="ghost"
 				size="large"
@@ -199,9 +209,32 @@
 
 	.mobile-flashcards__exit-row {
 		display: flex;
+		align-items: center;
 		justify-content: center;
+		gap: var(--sy-mobile-space--small);
 		min-height: var(--sy-mobile-bar-exit-row-height);
 		border-bottom: var(--sy-border);
+	}
+
+	.mobile-flashcards__status {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		gap: var(--sy-mobile-space--extra-small);
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
+	}
+
+	.mobile-flashcards__status-list {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mobile-flashcards__status-count {
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 
 	.mobile-flashcards__actions-row {
@@ -214,7 +247,7 @@
 
 	:global(.mobile-flashcards__exit-button) {
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
-		width: 100%;
+		flex-shrink: 0;
 		margin: 0;
 		color: var(--sy-color--grey-5);
 	}

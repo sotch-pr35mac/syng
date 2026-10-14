@@ -76,6 +76,16 @@
 				</SyButton>
 			{/each}
 		</div>
+		{#if !flashcardsRoute.loading && flashcardsRoute.listContent.length > 0}
+			<div class="flashcard--status" data-testid="flashcard-status">
+				<span class="flashcard--status--list">{flashcardsRoute.activeList}</span>
+				<span class="flashcard--status--count">
+					· {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent.length}
+					{#if !flashcardsRoute.canGoNext}
+						· Last card{/if}
+				</span>
+			</div>
+		{/if}
 		<div class="flashcard--header--section">
 			{#each rightActions as action (action.label)}
 				<SyButton
@@ -162,8 +172,29 @@
 	}
 	.flashcard--header--section {
 		display: flex;
+		flex-shrink: 0;
 		align-items: center;
 		justify-content: space-around;
+	}
+	.flashcard--status {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		justify-content: center;
+		gap: var(--sy-space--small);
+		margin: 0 var(--sy-space--large);
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
+	}
+	.flashcard--status--list {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.flashcard--status--count {
+		flex-shrink: 0;
+		white-space: nowrap;
 	}
 	.flashcard--content {
 		display: flex;
