@@ -1,6 +1,9 @@
-import HanziWriter from 'hanzi-writer';
+import type HanziWriter from 'hanzi-writer';
 import { tick } from 'svelte';
 import { handleError } from '@/utils/error.js';
+
+// Share the engine load across views and overlapping word/script changes.
+let writerModule: Promise<typeof import('hanzi-writer')> | undefined;
 
 /** Owns one word's writers and playback callbacks for desktop and mobile. */
 export function createCharacterAnimation() {
@@ -54,9 +57,18 @@ export function createCharacterAnimation() {
 		target.replaceChildren();
 		const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 		try {
+			// Keep the stroke-order engine out of the initial application shell.
+			const { default: CharacterWriter } = await (writerModule ??=
+				import('hanzi-writer').catch((error) => {
+					writerModule = undefined;
+					throw error;
+				}));
+			if (currentGeneration !== generation) {
+				return;
+			}
 			for (const character of characters) {
 				writers.push(
-					HanziWriter.create('character-target', character, {
+					CharacterWriter.create('character-target', character, {
 						width: 200,
 						height: 200,
 						padding: 5,

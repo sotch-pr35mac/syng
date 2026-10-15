@@ -3,6 +3,7 @@
 	import { handleError, telemetry } from '@/utils';
 	import { isMobile } from '@/utils/device.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import Awa from '@/components/Awa/Awa.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
 	import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
@@ -44,6 +45,9 @@
 	 * @property {any} [lists] - Lists Prop
 	 * @property {string} [backgroundColor] - 'white' - White Background
 	 * @property {boolean} [fixedActions] - Render action dropdowns with fixed positioning
+	 * @property {boolean} [showEmptyState] - Show Awa in an unselected page detail pane
+	 * @property {'search' | 'collect' | 'dictionary'} [emptyStatePose] - Match Awa to the page's empty state
+	 * @property {string} [emptyStateMessage] - Optional guidance below Awa
 	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
 	 * @property {(event: import('@/types/bookmarks.js').BookmarkListMembershipEvent) => void} [onmembershipchange] - Callback after list membership changes
@@ -55,6 +59,9 @@
 		lists = [],
 		backgroundColor = 'grey',
 		fixedActions = false,
+		showEmptyState = false,
+		emptyStatePose = 'dictionary',
+		emptyStateMessage = '',
 		separateTraditionalCharacters,
 		onlink,
 		onmembershipchange,
@@ -417,6 +424,13 @@
 				>
 			</section>
 		{/if}
+	{:else if showEmptyState}
+		<div class="dictionary-content__empty">
+			<Awa pose={emptyStatePose} />
+			{#if emptyStateMessage}
+				<p>{emptyStateMessage}</p>
+			{/if}
+		</div>
 	{/if}
 </div>
 
@@ -431,6 +445,22 @@
 	}
 	.dictionary-content--background-white {
 		background-color: var(--sy-color--white);
+	}
+	.dictionary-content__empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space--large);
+		min-height: 100%;
+		padding: var(--sy-space--extra-large);
+		box-sizing: border-box;
+		color: var(--sy-color--grey-4);
+		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+	.dictionary-content__empty p {
+		margin: 0;
 	}
 	.dictionary-content {
 		padding: var(--sy-space--extra-large);

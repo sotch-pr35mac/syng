@@ -5,6 +5,7 @@
 	import SearchEmptyState from '@/components/Search/SearchEmptyState.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import { type SheetSnap } from '@/types/snapSheet.js';
@@ -116,6 +117,7 @@
 			</div>
 		{:else}
 			<div class="mobile-search__empty">
+				<Awa pose="search" size={AWA_SIZES.detail} />
 				<p>Search for a word to get started</p>
 			</div>
 		{/if}
@@ -142,8 +144,13 @@
 			/>
 		</div>
 
-		<div class="mobile-search__results" use:scrollRestore={'mobile-search-results'}>
-			<SearchEmptyState />
+		<div
+			class="mobile-search__results"
+			class:mobile-search__results--empty={search.status === 'ready' &&
+				!search.fullResults.length}
+			use:scrollRestore={'mobile-search-results'}
+		>
+			<SearchEmptyState variant="mobile" />
 			<SyList
 				style="preview"
 				values={searchResultItems}
@@ -186,6 +193,11 @@
 	}
 
 	.mobile-search__empty {
+		flex-direction: column;
+		gap: var(--sy-mobile-space--medium);
+		padding: var(--sy-mobile-space--large);
+		box-sizing: border-box;
+		overflow-y: auto;
 		position: absolute;
 		top: 0;
 		left: 0;
@@ -212,5 +224,14 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.mobile-search__results--empty {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		/* The sheet is rendered at full height even when only partly revealed. */
+		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 </style>

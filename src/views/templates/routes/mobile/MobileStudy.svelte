@@ -2,7 +2,8 @@
 	import { onMount } from 'svelte';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import { GraduationCap, Search } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
+	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import {
 		createStudyListState,
 		studySubRouteStore,
@@ -49,7 +50,7 @@
 		{:else}
 			<div class="mobile-study__empty">
 				<div class="mobile-study__empty-copy">
-					<GraduationCap size="38" />
+					<Awa pose="practice" size={AWA_SIZES.mobile} />
 					<p>Add words to a list to start studying.</p>
 				</div>
 				<SyButton

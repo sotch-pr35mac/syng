@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Awa from '@/components/Awa/Awa.svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
-		Library,
 		Trash2,
 	} from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
@@ -112,7 +112,7 @@
 		{:else}
 			<div class="reader-library__empty">
 				<div class="reader-library__empty-copy">
-					<Library size="42" />
+					<Awa pose="read" />
 					<p>Your reading library is empty</p>
 				</div>
 				<div class="reader-library__empty-actions" aria-label="Import options">

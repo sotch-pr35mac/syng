@@ -144,6 +144,10 @@
 		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
 				word={search.activeWord}
+				showEmptyState={search.status === 'idle' ||
+					(search.status === 'ready' && searchResults.length > 0)}
+				emptyStatePose="search"
+				emptyStateMessage="Search for a word to get started"
 				lists={search.bookmarks}
 				onlink={handleDictionaryLink}
 			/>

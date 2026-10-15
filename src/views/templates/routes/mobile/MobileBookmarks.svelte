@@ -16,6 +16,7 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
+	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
@@ -275,9 +276,12 @@
 					onmembershipchange={handleMembershipChange}
 				/>
 			</div>
-		{:else if bookmarksRoute.contentStatus === 'ready' && wordList.length}
+		{:else if bookmarksRoute.contentStatus === 'ready'}
 			<div class="mobile-bookmarks__empty">
-				<p>Select a word from your bookmarks</p>
+				<Awa pose="collect" size={AWA_SIZES.detail} />
+				{#if wordList.length}
+					<p>Select a word from your bookmarks</p>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -478,6 +482,11 @@
 	}
 
 	.mobile-bookmarks__empty {
+		flex-direction: column;
+		gap: var(--sy-mobile-space--medium);
+		padding: var(--sy-mobile-space--large);
+		box-sizing: border-box;
+		overflow-y: auto;
 		position: absolute;
 		top: 0;
 		left: 0;
