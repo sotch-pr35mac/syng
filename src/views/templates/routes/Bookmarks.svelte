@@ -1,8 +1,16 @@
 <script>
-	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
+	import {
+		ChevronDown,
+		ChevronUp,
+		FolderDown,
+		Trash2,
+		FolderUp,
+		SquareStack,
+		Award,
+	} from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
-	import StudyDropdown from '@/components/StudyListItem/StudyDropdown.svelte';
+	import { getStudyEligibility, studyHref } from '@/composables/study.js';
 	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
@@ -30,6 +38,9 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
+	const studyEligibility = $derived(
+		getStudyEligibility(wordList.length, bookmarksRoute.contentStatus)
+	);
 	let filterValue = $state('');
 	let visibleWordList = $state([]);
 
@@ -146,6 +157,30 @@
 
 	const actions = $derived([
 		{
+			icon: SquareStack,
+			action: () => {
+				if (studyEligibility.flashcards) {
+					window.location.hash = studyHref('flashcards', activeList, 'bookmarks');
+				}
+			},
+			tooltip: 'Flashcards',
+			description: studyEligibility.flashcards ? '' : studyEligibility.message,
+			exclude: [],
+			disabled: !studyEligibility.flashcards,
+		},
+		{
+			icon: Award,
+			action: () => {
+				if (studyEligibility.quiz) {
+					window.location.hash = studyHref('quiz', activeList, 'bookmarks');
+				}
+			},
+			tooltip: 'Quiz',
+			description: studyEligibility.quiz ? '' : studyEligibility.message,
+			exclude: [],
+			disabled: !studyEligibility.quiz,
+		},
+		{
 			icon: FolderDown,
 			action: importList,
 			tooltip: 'Import',
@@ -185,16 +220,13 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
-			<StudyDropdown
-				list={activeList}
-				wordCount={wordList.length}
-				status={bookmarksRoute.contentStatus}
-			/>
 			{#each actions as action (action.tooltip)}
 				{#if !action.exclude.includes(activeList)}
 					<span class="bookmarks--header--action-item">
 						<SyButton
 							style="ghost"
+							aria-label={action.tooltip}
+							title={action.description || action.tooltip}
 							onclick={action.action}
 							disabled={action.disabled}
 							hover={action.hover}
@@ -202,7 +234,7 @@
 						>
 							<action.icon size="20" />
 							<div class="sy-tooltip--body sy-tooltip--body-bottom">
-								<p>{action.tooltip}</p>
+								<p>{action.description || action.tooltip}</p>
 							</div>
 						</SyButton>
 					</span>
@@ -297,8 +329,22 @@
 
 <style>
 	.bookmarks--list-empty {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space--large);
 		padding: var(--sy-space--large);
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--dark);
+		text-align: center;
+	}
+
+	.bookmarks--list-empty p {
+		margin: 0;
+		font-size: 13px;
+		font-weight: var(--sy-font-weight--normal);
+		line-height: var(--sy-line-height--body);
 	}
 
 	.bookmarks--creation-error {

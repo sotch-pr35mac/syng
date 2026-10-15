@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { GraduationCap, Search } from 'lucide-svelte';
 	import {
 		createStudyListState,
 		studySubRouteStore,
@@ -42,7 +43,10 @@
 	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
-	<div class="study--content">
+	<div
+		class="study--content"
+		class:study--content-empty={studyLists.status === 'ready' && !populatedLists.length}
+	>
 		{#if studyLists.status === 'loading'}
 			<p>Loading...</p>
 		{:else if studyLists.status === 'error'}
@@ -56,9 +60,17 @@
 			/>
 		{:else}
 			<div class="study--empty">
-				<p>Add words to a list to start studying.</p>
-				<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
-					Search for words
+				<div class="study--empty-copy">
+					<GraduationCap size="42" />
+					<p>Add words to a list to start studying.</p>
+				</div>
+				<SyButton
+					size="large"
+					classes={['study--empty-action']}
+					onclick={() => (window.location.hash = '#/')}
+				>
+					<Search size="20" />
+					<span>Search for words</span>
 				</SyButton>
 			</div>
 		{/if}
@@ -88,9 +100,37 @@
 		overflow-x: hidden;
 	}
 	.study--empty {
+		display: flex;
 		flex-direction: column;
 		align-items: center;
-		display: flex;
 		justify-content: center;
+		gap: var(--sy-space--extra-large);
+		width: 100%;
+		color: var(--sy-color--grey-4);
+		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+	.study--content-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--sy-space--extra-large) var(--sy-space--large);
+		box-sizing: border-box;
+	}
+	.study--empty-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sy-space--large);
+	}
+	.study--empty p {
+		margin: 0;
+	}
+	:global(.study--empty-action) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space);
+		margin: 0;
 	}
 </style>

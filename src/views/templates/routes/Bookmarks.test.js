@@ -22,6 +22,7 @@ vi.mock('@/utils/telemetry.js', () => ({
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
+		Award: mockIcon,
 		Brush: mockIcon,
 		Check: mockIcon,
 		ChevronDown: mockIcon,
@@ -31,6 +32,7 @@ vi.mock('lucide-svelte', async () => {
 		FolderDown: mockIcon,
 		FolderUp: mockIcon,
 		Plus: mockIcon,
+		SquareStack: mockIcon,
 		Trash2: mockIcon,
 		X: mockIcon,
 	};
@@ -92,6 +94,7 @@ let words;
 let lists;
 
 beforeEach(async () => {
+	window.location.hash = '#/bookmarks';
 	vi.mocked(telemetry.trackEvent).mockClear();
 	invoke.mockResolvedValue(null);
 	words = WORDS.map((word) => ({ ...word, lists: [...word.lists] }));
@@ -138,6 +141,58 @@ beforeEach(async () => {
 	bookmarksActiveWordStore.set(undefined);
 	await bookmarksStore.refresh();
 	await bookmarksRoute.setActiveList('Bookmarks');
+});
+
+it.each([
+	{ count: 0, flashcards: false, quiz: false },
+	{ count: 1, flashcards: true, quiz: false },
+	{ count: 3, flashcards: true, quiz: false },
+	{ count: 4, flashcards: true, quiz: true },
+])('enables study buttons for a list with $count words', async ({ count, flashcards, quiz }) => {
+	words = Array.from({ length: count }, (_, index) => ({
+		...WORDS[index % WORDS.length],
+		_id: `study-word-${index}`,
+		lexical_id: `study-word-${index}`,
+	}));
+	await bookmarksRoute.updateListContent();
+	const view = render(Bookmarks);
+	await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('ready'));
+	const flashcardsButton = view.getByRole('button', { name: 'Flashcards' });
+	const quizButton = view.getByRole('button', { name: 'Quiz' });
+	expect(flashcardsButton.disabled).toBe(!flashcards);
+	expect(quizButton.disabled).toBe(!quiz);
+	if (!quiz) {
+		expect(quizButton.title).toBe(
+			count === 0
+				? 'Add words to this list to start studying.'
+				: 'Quiz needs at least 4 words'
+		);
+		await userEvent.click(quizButton);
+		expect(window.location.hash).toBe('#/bookmarks');
+	}
+});
+
+it.each([
+	{ label: 'Flashcards', route: 'flashcards' },
+	{ label: 'Quiz', route: 'quiz' },
+])('starts $label for the full active list from its toolbar button', async ({ label, route }) => {
+	const listName = '词 & # 1';
+	lists.push(listName);
+	words = Array.from({ length: 4 }, (_, index) => ({
+		...WORDS[index % WORDS.length],
+		_id: `study-word-${index}`,
+		lexical_id: `study-word-${index}`,
+		lists: [listName],
+	}));
+	await bookmarksStore.refresh();
+	await bookmarksRoute.setActiveList(listName);
+	const view = render(Bookmarks);
+	await userEvent.type(view.getByPlaceholderText('Filter'), 'no-match');
+	expect(await view.findByText('No words match your filter.')).toBeTruthy();
+	await userEvent.click(view.getByRole('button', { name: label }));
+	expect(window.location.hash).toBe(
+		`#/study/${route}?list=${encodeURIComponent(listName)}&from=bookmarks`
+	);
 });
 
 it('removes the active row and advances the desktop details pane', async () => {
