@@ -336,6 +336,8 @@
 		justify-content: center;
 		gap: var(--sy-space--large);
 		padding: var(--sy-space--large);
+		/* Balance the header and filter above the empty state. */
+		padding-bottom: calc(var(--sy-space--large) + min(12vh, 100px));
 		color: var(--sy-text--dark);
 		text-align: center;
 	}

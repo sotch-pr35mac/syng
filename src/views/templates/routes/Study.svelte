@@ -115,6 +115,8 @@
 		align-items: center;
 		justify-content: center;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
+		/* Balance the title above the empty state. */
+		padding-bottom: calc(var(--sy-space--extra-large) + min(12vh, 100px));
 		box-sizing: border-box;
 	}
 	.study--empty-copy {
