@@ -13,7 +13,6 @@
 	import QuizDisplayText from '@/components/QuizText/QuizDisplayText.svelte';
 	import {
 		CHARACTER_QUESTIONS,
-		EMPTY_QUIZ_MESSAGE,
 		LOADING_STUDY_MESSAGE,
 		QUIZ_RESULT_DISPLAY_TIME,
 	} from '@/composables/study.js';
@@ -66,7 +65,7 @@
 	});
 
 	onMount(() => {
-		quizRoute.start(activeList);
+		quizRoute.start(activeList, params.get('from'));
 		return quizRoute.endSession;
 	});
 
@@ -221,7 +220,11 @@
 			</div>
 		{:else}
 			<div class="mobile-quiz__empty">
-				<h1>{quizRoute.loading ? LOADING_STUDY_MESSAGE : EMPTY_QUIZ_MESSAGE}</h1>
+				<h1>{quizRoute.loading ? LOADING_STUDY_MESSAGE : quizRoute.unavailableMessage}</h1>
+				{#if quizRoute.canStudyFlashcards}<SyButton onclick={studyFlashcards}
+						>Flashcards</SyButton
+					>{/if}
+				{#if quizRoute.error}<SyButton onclick={retakeQuiz}>Try again</SyButton>{/if}
 			</div>
 		{/if}
 	</div>
@@ -435,6 +438,7 @@
 	}
 
 	.mobile-quiz__empty {
+		flex-direction: column;
 		min-height: 100%;
 		display: flex;
 		align-items: center;

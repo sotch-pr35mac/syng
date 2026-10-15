@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -7,7 +7,11 @@
 		FolderDown,
 		FolderUp,
 		Trash2,
+		SquareStack,
+		Award,
 	} from 'lucide-svelte';
+	import { getStudyEligibility, studyHref, type StudyAction } from '@/composables/study.js';
+	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
@@ -42,20 +46,53 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
+	const studyEligibility = $derived(
+		getStudyEligibility(wordList.length, bookmarksRoute.contentStatus)
+	);
+	const studyActions = $derived([
+		{
+			id: 'flashcards' as const,
+			icon: SquareStack,
+			label: 'Flashcards',
+			disabled: !studyEligibility.flashcards,
+		},
+		{
+			id: 'quiz' as const,
+			icon: Award,
+			label: 'Quiz',
+			disabled: !studyEligibility.quiz,
+		},
+	]);
 	let filterValue = $state('');
 	let visibleWordList = $state<WordListPreviewItem[]>([]);
+	const showEmptyState = $derived(
+		bookmarksRoute.contentStatus === 'ready' &&
+			(!wordList.length || (Boolean(filterValue) && !visibleWordList.length))
+	);
 	const dropdownDirection = $derived(
 		currentSnap === 'full' ? DROPDOWN_DIRECTIONS.DOWN : DROPDOWN_DIRECTIONS.UP
 	);
 	const OVERFLOW_MENU_OFFSET_PX = 4;
 
 	onMount(() => {
-		bookmarksRoute.updateListContent().catch(() => {});
+		const requestedList = new URLSearchParams(router.querystring).get('list');
+		const cancelInitialization = bookmarksRoute.initialize(requestedList);
 
 		if (currentSnap === 'partial') {
 			sheetRef?.openPartial();
 		} else if (currentSnap === 'full') {
 			sheetRef?.openFull();
+		}
+		return cancelInitialization;
+	});
+
+	$effect(() => {
+		if (bookmarksRoute.contentStatus === 'ready' && !wordList.length) {
+			untrack(() => {
+				if (currentSnap === 'collapsed') {
+					sheetRef?.openPartial();
+				}
+			});
 		}
 	});
 
@@ -64,8 +101,15 @@
 		mobileBookmarksSnapStore.set(snap);
 	}
 
+	function startStudy(action: StudyAction): void {
+		if (studyEligibility[action]) {
+			window.location.hash = studyHref(action, activeList, 'bookmarks');
+		}
+	}
+
 	function handleListSelection(id: string): void {
 		if (id === CREATE_NEW_LIST_ID) {
+			bookmarksRoute.clearCreationError();
 			createNewModalVisible = true;
 			return;
 		}
@@ -176,27 +220,44 @@
 	// Create New List modal
 	let createNewModalVisible = $state(false);
 	let createNewButtonDisabled = $state(false);
+	let newListName = $state('');
+	let createNewFormVersion = 0;
 
 	function closeNewModal(): void {
 		createNewModalVisible = false;
-		const input = document.getElementById('create-new-list-input') as HTMLInputElement | null;
-		if (input) {
-			input.value = '';
-		}
-		createNewButtonDisabled = false;
+		newListName = '';
+		createNewFormVersion += 1;
+		bookmarksRoute.clearCreationError();
 	}
 
-	function createNewList(): void {
+	function handleNewListName(value: string): void {
+		newListName = value;
+		bookmarksRoute.clearCreationError();
+	}
+
+	async function createNewList(): Promise<void> {
+		if (createNewButtonDisabled) {
+			return;
+		}
 		createNewButtonDisabled = true;
-		const input = document.getElementById('create-new-list-input') as HTMLInputElement | null;
-		const newListName = input?.value.trim() ?? '';
-		bookmarksRoute
-			.createList(newListName)
-			.then(() => {
+		const submittedName = newListName.trim();
+		const submittedFormVersion = createNewFormVersion;
+		try {
+			const created = await bookmarksRoute.createList(submittedName);
+			if (submittedFormVersion !== createNewFormVersion) {
+				bookmarksRoute.clearCreationError();
+				return;
+			}
+			if (created) {
+				filterValue = '';
 				closeNewModal();
-				return undefined;
-			})
-			.catch(() => {});
+				await bookmarksRoute.setActiveList(submittedName);
+			} else if (submittedName !== newListName.trim()) {
+				bookmarksRoute.clearCreationError();
+			}
+		} finally {
+			createNewButtonDisabled = false;
+		}
 	}
 </script>
 
@@ -214,7 +275,7 @@
 					onmembershipchange={handleMembershipChange}
 				/>
 			</div>
-		{:else}
+		{:else if bookmarksRoute.contentStatus === 'ready' && wordList.length}
 			<div class="mobile-bookmarks__empty">
 				<p>Select a word from your bookmarks</p>
 			</div>
@@ -231,21 +292,40 @@
 			>
 				{#snippet children(open)}
 					<SyButton style="ghost" size="small">
-						{activeList}&nbsp;
+						<span class="mobile-bookmarks__list-name">{activeList}</span>&nbsp;
 						{#if open}<ChevronUp size="16" />{:else}<ChevronDown size="16" />{/if}
 					</SyButton>
 				{/snippet}
 			</SyDropdown>
 
+			<div class="mobile-bookmarks__study-actions">
+				{#each studyActions as action (action.id)}
+					<SyButton
+						style="ghost"
+						size="small"
+						aria-label={action.label}
+						title={action.disabled ? studyEligibility.message : action.label}
+						disabled={action.disabled}
+						onclick={() => startStudy(action.id)}
+						classes={['mobile-bookmarks__study-action']}
+					>
+						<action.icon size="20" />
+					</SyButton>
+				{/each}
+			</div>
 			<div class="mobile-bookmarks__overflow-anchor" bind:this={overflowAnchorElement}>
 				<SyButton style="ghost" size="small" onclick={toggleOverflowMenu}>
 					<EllipsisVertical size="20" />
 				</SyButton>
 			</div>
 		</div>
+		{#if studyEligibility.flashcards && !studyEligibility.quiz}
+			<p class="mobile-bookmarks__study-requirement">{studyEligibility.message}</p>
+		{/if}
 
 		<div
 			class="mobile-bookmarks__results"
+			class:mobile-bookmarks__results--empty={showEmptyState}
 			onfocusin={handleFilterFocus}
 			use:scrollRestore={'mobile-bookmarks-results'}
 		>
@@ -259,6 +339,23 @@
 				filterable={true}
 				onselection={handleSelectWord}
 			/>
+			{#if bookmarksRoute.contentStatus === 'ready'}
+				{#if !wordList.length}
+					<div class="mobile-bookmarks__list-empty">
+						<p>This list is empty. Search for a word, then add it to this list.</p>
+						<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+							Search for words
+						</SyButton>
+					</div>
+				{:else if filterValue && !visibleWordList.length}
+					<div class="mobile-bookmarks__list-empty">
+						<p>No words match your filter.</p>
+						<SyButton color="blue" onclick={() => (filterValue = '')}
+							>Clear filter</SyButton
+						>
+					</div>
+				{/if}
+			{/if}
 		</div>
 	</SySnapSheet>
 </div>
@@ -293,7 +390,12 @@
 				size="large"
 				placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 				id="create-new-list-input"
+				value={newListName}
+				oninput={handleNewListName}
 			/>
+			{#if bookmarksRoute.creationError}
+				<p class="mobile-bookmarks__creation-error">{bookmarksRoute.creationError}</p>
+			{/if}
 		</div>
 	{/snippet}
 	{#snippet footer()}
@@ -323,6 +425,39 @@
 />
 
 <style>
+	.mobile-bookmarks__list-empty {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		padding: var(--sy-space--large);
+		color: var(--sy-text--dark);
+		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+
+	/* Bias upward only when the visible sheet has room around the message and action. */
+	.mobile-bookmarks__list-empty::before,
+	.mobile-bookmarks__list-empty::after {
+		content: '';
+		flex: 2;
+	}
+
+	.mobile-bookmarks__list-empty::after {
+		flex: 3;
+	}
+
+	.mobile-bookmarks__list-empty p {
+		margin: 0 0 var(--sy-space--large);
+		font-size: 13px;
+		font-weight: var(--sy-font-weight--normal);
+		line-height: var(--sy-line-height--body);
+	}
+
+	.mobile-bookmarks__creation-error {
+		color: var(--sy-color--red);
+		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
+	}
 	.mobile-bookmarks {
 		position: relative;
 		height: 100%;
@@ -363,6 +498,44 @@
 		padding: 0 var(--sy-mobile-space--medium) var(--sy-mobile-space--small);
 		gap: var(--sy-mobile-space--small);
 		flex-shrink: 0;
+	}
+
+	.mobile-bookmarks__header-row > :global(.sy-dropdown--container) {
+		flex-shrink: 0;
+	}
+
+	.mobile-bookmarks__header-row > :global(.sy-dropdown--container:first-child) {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.mobile-bookmarks__header-row :global(.sy-dropdown--container:first-child .sy-button) {
+		max-width: 100%;
+	}
+
+	.mobile-bookmarks__list-name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mobile-bookmarks__study-actions {
+		display: flex;
+		flex-shrink: 0;
+	}
+
+	:global(.mobile-bookmarks__study-action) {
+		margin: 0;
+	}
+
+	.mobile-bookmarks__study-requirement {
+		flex-shrink: 0;
+		margin: 0 var(--sy-mobile-space--large) var(--sy-mobile-space--small);
+		color: var(--sy-color--grey-4);
+		font-family: var(--sy-font-family);
+		font-size: 13px;
+		text-align: right;
 	}
 
 	.mobile-bookmarks__overflow-anchor {
@@ -411,6 +584,15 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.mobile-bookmarks__results--empty {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		/* The sheet is rendered at full height even when only partly revealed. */
+		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	.mobile-bookmarks__modal-content {

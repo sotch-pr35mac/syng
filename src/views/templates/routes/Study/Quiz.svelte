@@ -11,11 +11,7 @@
 	import QuizResults from '@/components/QuizResults/QuizResults.svelte';
 	import QuizDisplayText from '@/components/QuizText/QuizDisplayText.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
-	import {
-		CHARACTER_QUESTIONS,
-		EMPTY_QUIZ_MESSAGE,
-		LOADING_STUDY_MESSAGE,
-	} from '@/composables/study.js';
+	import { CHARACTER_QUESTIONS, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { quizRoute } from '@/composables/quiz.svelte.js';
 	import { isIPad } from '@/utils/device.js';
 
@@ -93,7 +89,7 @@
 	});
 
 	onMount(() => {
-		quizRoute.start(activeList);
+		quizRoute.start(activeList, params.get('from'));
 		return quizRoute.endSession;
 	});
 
@@ -236,8 +232,16 @@
 					{:else}
 						<div class="title-message--container">
 							<h1 class="title-message">
-								{quizRoute.loading ? LOADING_STUDY_MESSAGE : EMPTY_QUIZ_MESSAGE}
+								{quizRoute.loading
+									? LOADING_STUDY_MESSAGE
+									: quizRoute.unavailableMessage}
 							</h1>
+							{#if quizRoute.canStudyFlashcards}<SyButton
+									onclick={quizRoute.studyFlashcards}>Flashcards</SyButton
+								>{/if}
+							{#if quizRoute.error}<SyButton onclick={quizRoute.retake}
+									>Try again</SyButton
+								>{/if}
 						</div>
 					{/if}
 				</div>
@@ -345,6 +349,8 @@
 		transition-duration: var(--sy-transition-duration);
 	}
 	.title-message--container {
+		flex-direction: column;
+		align-items: center;
 		display: flex;
 		justify-content: center;
 		width: 100%;

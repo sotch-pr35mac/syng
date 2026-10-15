@@ -4,7 +4,8 @@
 	import ReaderMetadataFields from '@/components/Reader/ReaderMetadataFields.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
-	import type { ReaderImportPayload } from '@/types/reader.js';
+	import type { ReaderImportPayload, ReaderImportResult } from '@/types/reader.js';
+	import { handleError } from '@/utils/error.js';
 	import {
 		DEFAULT_READER_DOCUMENT_COLOR,
 		invokePrepareReaderImport,
@@ -23,14 +24,14 @@
 			_url: string,
 			_color: string,
 			_preparedPayload?: ReaderImportPayload
-		) => Promise<void> | void;
+		) => Promise<ReaderImportResult> | ReaderImportResult;
 	};
 
 	const {
 		visible = false,
 		importing = false,
 		onclose = () => {},
-		onimport = () => {},
+		onimport = () => ({ status: 'cancelled' }),
 	}: Props = $props();
 
 	const PREVIEW_TEXT_LIMIT = 600;
@@ -42,6 +43,9 @@
 	let submitting = $state(false);
 	let fetching = $state(false);
 	let fetchError = $state('');
+	let importError = $state('');
+	let importRequest = 0;
+	let previewRequest = 0;
 	let preparedUrl = $state('');
 	let preparedPayload = $state<ReaderImportPayload | undefined>(undefined);
 	const preparedPayloadIsValid = $derived(Boolean(preparedPayload && preparedUrl === url.trim()));
@@ -49,6 +53,7 @@
 	const canImport = $derived(
 		(networkStatus.isOnline || preparedPayloadIsValid) &&
 			url.trim().length > 0 &&
+			!fetching &&
 			!submitting &&
 			!importing
 	);
@@ -71,11 +76,14 @@
 		submitting = false;
 		fetching = false;
 		fetchError = '';
+		importError = '';
 		preparedUrl = '';
 		preparedPayload = undefined;
 	}
 
 	function close(): void {
+		importRequest += 1;
+		previewRequest += 1;
 		reset();
 		onclose();
 	}
@@ -111,17 +119,25 @@
 		}
 		fetching = true;
 		fetchError = '';
+		const request = ++previewRequest;
+		const requestedUrl = url.trim();
 		try {
 			const nextPayload = await prepareWithLargeHtmlConfirmation({
-				url: url.trim(),
+				url: requestedUrl,
 				title: titleEdited ? title : undefined,
 			});
+			if (request !== previewRequest || requestedUrl !== url.trim()) {
+				return;
+			}
 			preparedPayload = nextPayload;
-			preparedUrl = url.trim();
+			preparedUrl = requestedUrl;
 			if (!titleEdited) {
 				title = nextPayload.title;
 			}
 		} catch (error) {
+			if (request !== previewRequest || requestedUrl !== url.trim()) {
+				return;
+			}
 			if (error instanceof Error && error.message === LARGE_HTML_IMPORT_CANCELED_MESSAGE) {
 				fetchError = '';
 				return;
@@ -129,7 +145,9 @@
 			fetchError =
 				error instanceof Error ? error.message : 'Could not fetch webpage preview.';
 		} finally {
-			fetching = false;
+			if (request === previewRequest) {
+				fetching = false;
+			}
 		}
 	}
 
@@ -138,13 +156,34 @@
 			return;
 		}
 		submitting = true;
-		await onimport(
-			titleEdited ? title : title.trim(),
-			url.trim(),
-			color,
-			preparedPayloadIsValid ? preparedPayload : undefined
-		);
-		close();
+		importError = '';
+		const request = ++importRequest;
+		try {
+			const result = await onimport(
+				titleEdited ? title : title.trim(),
+				url.trim(),
+				color,
+				preparedPayloadIsValid ? preparedPayload : undefined
+			);
+			if (request !== importRequest) {
+				return;
+			}
+			if (result.status === 'success') {
+				close();
+			} else if (result.status === 'error') {
+				importError = result.message;
+			}
+		} catch (error) {
+			const message = 'There was an error importing the webpage.';
+			handleError(message, error, { silent: true });
+			if (request === importRequest) {
+				importError = message;
+			}
+		} finally {
+			if (request === importRequest) {
+				submitting = false;
+			}
+		}
 	}
 </script>
 
@@ -153,6 +192,7 @@
 	{visible}
 	disabled={!canImport}
 	busy={importing || submitting}
+	errorMessage={importError}
 	disabledConfirmTooltip={disabledImportTooltip}
 	onclose={close}
 	onconfirm={submit}
@@ -222,7 +262,7 @@
 		{#if fetchError}
 			<p class="reader-webpage-import__error">{fetchError}</p>
 		{/if}
-		{#if previewText}
+		{#if preparedPayloadIsValid && previewText}
 			<div class="reader-webpage-import__field">
 				<label for="reader-webpage-import-preview">Preview</label>
 				<section

@@ -19,7 +19,7 @@
 	const activeWord = $derived(flashcardsRoute.activeWord);
 
 	onMount(() => {
-		flashcardsRoute.load(listFromUrl);
+		flashcardsRoute.load(listFromUrl, params.get('from'));
 		return flashcardsRoute.endSession;
 	});
 
@@ -76,6 +76,20 @@
 				</SyButton>
 			{/each}
 		</div>
+		{#if !flashcardsRoute.loading && flashcardsRoute.listContent.length > 0}
+			<div class="flashcard--status" data-testid="flashcard-status">
+				<span class="flashcard--status--list">{flashcardsRoute.activeList}</span>
+				<span class="flashcard--status--count">
+					<span
+						>· {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent
+							.length}</span
+					>
+					{#if !flashcardsRoute.canGoNext}
+						<span>· Last card</span>
+					{/if}
+				</span>
+			</div>
+		{/if}
 		<div class="flashcard--header--section">
 			{#each rightActions as action (action.label)}
 				<SyButton
@@ -92,7 +106,7 @@
 		</div>
 	</div>
 	<div class="flashcard--content" use:scrollRestore={'flashcard-content'}>
-		{#if flashcardsRoute.showDetails}
+		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">
 					<DictionaryContent
@@ -117,7 +131,9 @@
 					<h1>
 						{flashcardsRoute.loading
 							? LOADING_STUDY_MESSAGE
-							: EMPTY_FLASHCARDS_LIST_MESSAGE}
+							: flashcardsRoute.error
+								? 'Unable to load flashcards. Please try again.'
+								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					</h1>
 				{/if}
 			</div>
@@ -160,8 +176,32 @@
 	}
 	.flashcard--header--section {
 		display: flex;
+		flex-shrink: 0;
 		align-items: center;
 		justify-content: space-around;
+	}
+	.flashcard--status {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		justify-content: center;
+		gap: var(--sy-space--small);
+		margin: 0 var(--sy-space--large);
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
+	}
+	.flashcard--status--list {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.flashcard--status--count {
+		min-width: min-content;
+		text-align: center;
+	}
+	.flashcard--status--count > span {
+		white-space: nowrap;
 	}
 	.flashcard--content {
 		display: flex;

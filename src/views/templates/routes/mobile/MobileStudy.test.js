@@ -11,7 +11,7 @@ import {
 	flashcardsActiveListStore,
 	flashcardsShowDetailsStore,
 } from '@/stores/flashcards.svelte.js';
-import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
+import { studySubRouteStore, studyOriginStore } from '@/stores/studyRoute.svelte.js';
 import { quizRoute } from '@/composables/quiz.svelte.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -150,7 +150,11 @@ function mockBookmarkManager() {
 	return {
 		waitForInit: () => Promise.resolve(),
 		getLists: () => Promise.resolve(['Bookmarks', 'Empty List']),
-		getEmptyLists: () => Promise.resolve(['Empty List']),
+		getListSummaries: () =>
+			Promise.resolve([
+				{ name: 'Bookmarks', wordCount: WORDS.length },
+				{ name: 'Empty List', wordCount: 0 },
+			]),
 		getListContent: (listName) =>
 			Promise.resolve(WORDS.filter((word) => word.lists.includes(listName))),
 		inList: (hash) => Promise.resolve(WORDS.find((word) => word.hash === hash)?.lists ?? []),
@@ -183,6 +187,7 @@ beforeEach(async () => {
 	await dictionaryDisplaySettingsStore.loadSettings();
 	window.location.hash = '#/study';
 	studySubRouteStore.set(null);
+	studyOriginStore.set(null);
 	flashcardsActiveListStore.set(null);
 	flashcardsActiveIndexStore.set(0);
 	flashcardsShowDetailsStore.set(false);
@@ -260,7 +265,17 @@ it('does not start the mobile quiz timer when the list cannot generate questions
 	window.dispatchEvent(new HashChangeEvent('hashchange'));
 	const { findByText, queryByRole } = render(MobileStudyQuiz);
 
-	expect(await findByText('No Questions Available')).toBeTruthy();
+	expect(await findByText('Quiz needs at least 4 words')).toBeTruthy();
 	expect(queryByRole('button', { name: 'Pause timer' })).toBeFalsy();
 	expect(invoke).not.toHaveBeenCalledWith('start_quiz', expect.anything());
+});
+
+it('restores the Bookmarks origin when reopening a flashcard session through Study', () => {
+	studySubRouteStore.set('flashcards');
+	studyOriginStore.set('bookmarks');
+	flashcardsActiveListStore.set('词 & # 1');
+	render(MobileStudy);
+	expect(window.location.hash).toBe(
+		'#/study/flashcards?list=%E8%AF%8D%20%26%20%23%201&from=bookmarks'
+	);
 });

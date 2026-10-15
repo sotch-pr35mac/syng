@@ -1,52 +1,38 @@
-<script>
-	import { onMount } from 'svelte';
+<script lang="ts">
 	import SyList from '@/components/SyList/SyList.svelte';
-	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
-	import { handleError } from '@/utils';
 	import { platform } from '@tauri-apps/plugin-os';
-	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
-	import { studySubRouteStore } from '@/stores/studyRoute.svelte.js';
-	import { flashcardsActiveListStore } from '@/stores/flashcards.svelte.js';
 	import { isIPad } from '@/utils/device.js';
-
-	const isMacos = platform() === 'macos';
-	const isIPadDevice = isIPad();
-	let emptyLists = $state([]);
-
+	import { onMount } from 'svelte';
+	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { GraduationCap, Search } from 'lucide-svelte';
+	import {
+		createStudyListState,
+		studySubRouteStore,
+		studyOriginStore,
+	} from '@/stores/studyRoute.svelte.js';
+	import { flashcardsActiveListStore } from '@/stores/flashcards.svelte.js';
+	import { studyHref, type StudyAction } from '@/composables/study.js';
+	const studyLists = createStudyListState();
+	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
 		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
-			window.location.hash = `#/study/flashcards?list=${flashcardsActiveListStore.value}`;
-		}
-	});
-
-	// List names come reactively from the shared bookmarks store; only emptyLists needs
-	// to be fetched here because it scans list contents which are not cached.
-	const lists = $derived([...bookmarksStore.lists].sort((a, b) => a.localeCompare(b)));
-	const populatedLists = $derived(lists.filter((list) => !emptyLists.includes(list)));
-
-	bookmarksStore
-		.getEmptyLists()
-		.then((fetchedLists) => {
-			emptyLists = fetchedLists;
-			return undefined;
-		})
-		.catch((e) => {
-			handleError(
-				'There was an error fetching the empty lists. Check the log for more details.',
-				e
+			window.location.hash = studyHref(
+				'flashcards',
+				flashcardsActiveListStore.value,
+				studyOriginStore.value
 			);
-		});
-
-	const handleSelection = (data) => {
-		const { list, action } = data;
-		let url;
-		if (action === 'quiz') {
-			url = `#/study/quiz?list=${list}`;
-		} else {
-			url = `#/study/flashcards?list=${list}`;
+			return undefined;
 		}
-		document.location.href = url;
-	};
+		void studyLists.load();
+		return studyLists.cancel;
+	});
+	function handleSelection(event: { action: StudyAction; list: string }): void {
+		studyOriginStore.set(null);
+		window.location.hash = studyHref(event.action, event.list);
+	}
+	const isMacos = platform() === 'macos';
+	const isIPadDevice = isIPad();
 </script>
 
 <div class="study--container">
@@ -57,8 +43,16 @@
 	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
-	<div class="study--content">
-		{#if populatedLists.length}
+	<div
+		class="study--content"
+		class:study--content-empty={studyLists.status === 'ready' && !populatedLists.length}
+	>
+		{#if studyLists.status === 'loading'}
+			<p>Loading...</p>
+		{:else if studyLists.status === 'error'}
+			<p>Unable to load your lists. Please try again.</p>
+			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
+		{:else if populatedLists.length}
 			<SyList
 				values={populatedLists}
 				component={StudyListItem}
@@ -66,7 +60,18 @@
 			/>
 		{:else}
 			<div class="study--empty">
-				<span> To take a quiz or study flashcards, add vocab words to your lists. </span>
+				<div class="study--empty-copy">
+					<GraduationCap size="42" />
+					<p>Add words to a list to start studying.</p>
+				</div>
+				<SyButton
+					size="large"
+					classes={['study--empty-action']}
+					onclick={() => (window.location.hash = '#/')}
+				>
+					<Search size="20" />
+					<span>Search for words</span>
+				</SyButton>
 			</div>
 		{/if}
 	</div>
@@ -96,6 +101,38 @@
 	}
 	.study--empty {
 		display: flex;
+		flex-direction: column;
+		align-items: center;
 		justify-content: center;
+		gap: var(--sy-space--extra-large);
+		width: 100%;
+		color: var(--sy-color--grey-4);
+		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+	.study--content-empty {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--sy-space--extra-large) var(--sy-space--large);
+		/* Balance the title above the empty state. */
+		padding-bottom: calc(var(--sy-space--extra-large) + min(12vh, 100px));
+		box-sizing: border-box;
+	}
+	.study--empty-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sy-space--large);
+	}
+	.study--empty p {
+		margin: 0;
+	}
+	:global(.study--empty-action) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space);
+		margin: 0;
 	}
 </style>

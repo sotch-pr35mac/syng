@@ -7,9 +7,12 @@ import {
 	searchResultKeys,
 	type SearchEntry,
 	type SearchLang,
+	type SearchStatus,
 } from '@/types/search.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 import type { QueryTrigger, SearchQueryTelemetry } from '@/types/telemetry.js';
 import {
 	normalizeDictionaryLookupRequest,
@@ -18,11 +21,14 @@ import {
 
 const SEARCH_TRACK_DEBOUNCE_MS = 800;
 
+type SearchResultPreviewItem = SyListPreviewValue & { word: SearchEntry };
+
 /**
  * Module-scoped reactive state. Lives for the app session — survives component
  * mount/unmount so Search state is preserved when the user navigates away and returns.
  */
 let searchLang = $state<SearchLang>('EN');
+let status = $state<SearchStatus>('idle');
 let fullResults = $state<SearchEntry[]>([]);
 let activeWord = $state<SearchEntry | undefined>(undefined);
 // Lexical IDs alone cannot identify a selected occurrence in repeated query results.
@@ -98,6 +104,7 @@ function runSearch(rawText: string, language?: SearchLang): void {
 		currentRequest = undefined;
 		displayedRequest = undefined;
 		fullResults = [];
+		status = 'idle';
 		return;
 	}
 	const request: QueryRequest = {
@@ -111,6 +118,7 @@ function runSearch(rawText: string, language?: SearchLang): void {
 		outcome: 'success',
 	};
 	currentRequest = request;
+	status = 'loading';
 	searchTrackDebounce = setTimeout(() => commitQuery(request, 'pause'), SEARCH_TRACK_DEBOUNCE_MS);
 	const classification = language
 		? Promise.resolve(language)
@@ -137,6 +145,7 @@ function runSearch(rawText: string, language?: SearchLang): void {
 			searchLang = request.language;
 		}
 		if (queried.status === 'fulfilled') {
+			status = 'ready';
 			fullResults = queried.value;
 			request.resultCount = queried.value.length;
 			displayedRequest = request;
@@ -144,6 +153,7 @@ function runSearch(rawText: string, language?: SearchLang): void {
 			fullResults = [];
 			displayedRequest = undefined;
 			request.outcome = 'error';
+			status = 'error';
 			handleError('Search failed.', queried.reason, {
 				privateValues: [request.text],
 				context: { operation: 'dictionary.search', stage: 'query' },
@@ -154,6 +164,21 @@ function runSearch(rawText: string, language?: SearchLang): void {
 		}
 		return undefined;
 	});
+}
+
+function getResultPreviews(glossLimit?: number): SearchResultPreviewItem[] {
+	const resultKeys = searchResultKeys(fullResults);
+	return fullResults.map((entry, index) => ({
+		key: resultKeys[index],
+		headline:
+			entry.traditional === entry.simplified
+				? entry.simplified
+				: `${entry.simplified} (${entry.traditional})`,
+		subtitle: lexicalPinyin(entry).marks,
+		content: lexicalGlosses(entry).slice(0, glossLimit).join('; '),
+		active: false,
+		word: entry,
+	}));
 }
 
 function doSearch(text: string): void {
@@ -328,6 +353,10 @@ function closePopoverDictionary(): void {
  * so state is preserved across navigation for the lifetime of the app session.
  */
 export const searchStore = {
+	getResultPreviews,
+	get status(): SearchStatus {
+		return status;
+	},
 	get queryText(): string {
 		return queryText;
 	},

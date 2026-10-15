@@ -3,7 +3,7 @@ import { ClipboardPaste, FilePlus2, Globe2, Info } from 'lucide-svelte';
 import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 import { readerRoute } from '@/composables/reader.svelte.js';
-import type { ReaderDocument, ReaderImportPayload } from '@/types/reader.js';
+import type { ReaderDocument, ReaderImportPayload, ReaderImportResult } from '@/types/reader.js';
 
 const READER_IMPORT_ACTIONS = {
 	FILE: 'file',
@@ -130,12 +130,19 @@ export function createReaderLibrary() {
 		pendingImportPayload = undefined;
 	}
 
-	async function importPendingDocument(title: string, color: string): Promise<void> {
-		if (!pendingImportPayload) {
-			return;
+	async function importPendingDocument(
+		title: string,
+		color: string
+	): Promise<ReaderImportResult> {
+		const importPayload = pendingImportPayload;
+		if (!importPayload) {
+			return { status: 'cancelled' };
 		}
-		await readerRoute.importReaderPayload(pendingImportPayload, title, color);
-		pendingImportPayload = undefined;
+		const result = await readerRoute.importReaderPayload(importPayload, title, color);
+		if (result.status === 'success' && pendingImportPayload === importPayload) {
+			pendingImportPayload = undefined;
+		}
+		return result;
 	}
 
 	function openDocumentDetails(event: MouseEvent, document: ReaderDocument): void {

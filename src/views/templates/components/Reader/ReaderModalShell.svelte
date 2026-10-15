@@ -12,6 +12,7 @@
 		busyLabel?: string;
 		cancelLabel?: string;
 		disabledConfirmTooltip?: string;
+		errorMessage?: string;
 		width?: string;
 		onclose?: () => void;
 		onconfirm?: () => Promise<void> | void;
@@ -27,6 +28,7 @@
 		busyLabel = 'Importing...',
 		cancelLabel = 'Cancel',
 		disabledConfirmTooltip = '',
+		errorMessage = '',
 		width = 'var(--sy-reader-import-modal-width)',
 		onclose = () => {},
 		onconfirm = () => {},
@@ -38,6 +40,9 @@
 	{#snippet body()}
 		<div class="reader-modal-shell__body" style={`width: ${width};`}>
 			{@render bodySnippet?.()}
+			{#if errorMessage}
+				<p class="reader-modal-shell__error">{errorMessage}</p>
+			{/if}
 		</div>
 	{/snippet}
 	{#snippet footer()}
@@ -60,6 +65,11 @@
 </SyModal>
 
 <style>
+	.reader-modal-shell__error {
+		margin: var(--sy-space--none);
+		color: var(--sy-color--red);
+	}
+
 	.reader-modal-shell__body {
 		display: flex;
 		flex-direction: column;

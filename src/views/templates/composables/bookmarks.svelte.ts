@@ -52,10 +52,13 @@ export type MembershipReconciliation = {
 	clearFilter: boolean;
 };
 
+let creationError = $state('');
 let activeList = $state(bookmarksActiveListStore.value);
 let activeWord = $state<BookmarkWordEntry | undefined>(bookmarksActiveWordStore.value);
 let words = $state<BookmarkWordEntry[]>([]);
 let wordList = $state<WordListPreviewItem[]>([]);
+let contentStatus = $state<'loading' | 'ready' | 'error'>('loading');
+let contentRequest = 0;
 let popoverResults = $state<SearchEntry[]>([]);
 let popoverResultIndex = $state(0);
 let popoverRequest = 0;
@@ -130,14 +133,24 @@ function selectWord(selection: WordSelection): BookmarkWordEntry | undefined {
 }
 
 function updateListContent(): Promise<void> {
+	const requestId = ++contentRequest;
+	contentStatus = 'loading';
 	return bookmarksStore
 		.getContent(activeList)
 		.then((activeListWords) => {
+			if (requestId !== contentRequest) {
+				return undefined;
+			}
+			contentStatus = 'ready';
 			words = activeListWords;
 			wordList = formatWordList(activeListWords);
 			return undefined;
 		})
 		.catch((error) => {
+			if (requestId !== contentRequest) {
+				return;
+			}
+			contentStatus = 'error';
 			handleError(
 				'There was an error fetching the word list content. Check the logs for more details.',
 				error
@@ -235,31 +248,75 @@ function setActiveList(nextList: string): Promise<void> {
 	return updateListContent();
 }
 
-function createList(name: string): Promise<boolean> {
+function initialize(requestedList: string | null): () => void {
+	const requestId = ++contentRequest;
+	let mounted = true;
+	contentStatus = 'loading';
+	async function load(): Promise<void> {
+		if (requestedList && !bookmarksStore.initialized) {
+			await bookmarksStore.refresh();
+		}
+		if (!mounted || requestId !== contentRequest) {
+			return;
+		}
+		if (requestedList && !bookmarksStore.initialized) {
+			contentStatus = 'error';
+			return;
+		}
+		const nextList = requestedList
+			? bookmarksStore.lists.includes(requestedList)
+				? requestedList
+				: DEFAULT_BOOKMARKS_LIST
+			: activeList;
+		if (nextList === activeList) {
+			await updateListContent();
+		} else {
+			await setActiveList(nextList);
+		}
+	}
+	void load();
+	return () => {
+		mounted = false;
+	};
+}
+
+function clearCreationError(): void {
+	creationError = '';
+}
+
+async function createList(name: string): Promise<boolean> {
 	const newListName = name.trim();
-	if (!newListName || RESTRICTED_LIST_NAMES.includes(newListName)) {
-		handleError(
-			`Cannot create new list with name ${newListName}.`,
-			{ list: newListName },
-			{ telemetryMessage: 'Cannot create list with this name.' }
-		);
-		return Promise.resolve(false);
+	clearCreationError();
+	if (!newListName) {
+		creationError = 'Enter a name for your list.';
+		return false;
+	}
+	if (RESTRICTED_LIST_NAMES.includes(newListName)) {
+		creationError = 'This name is reserved. Choose another name.';
+		return false;
+	}
+	if (bookmarksStore.lists.includes(newListName)) {
+		creationError = 'A list with this name already exists.';
+		return false;
 	}
 
-	return bookmarksStore
-		.createList(newListName)
-		.then(() => {
-			telemetry.trackEvent('list.created', {}).catch(() => {});
-			return true;
-		})
-		.catch((error: unknown) => {
-			handleError(
-				`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
-				error,
-				{ telemetryMessage: 'List creation failed.', privateValues: [newListName] }
-			);
-			return false;
-		});
+	try {
+		await bookmarksStore.createList(newListName);
+		telemetry.trackEvent('list.created', {}).catch(() => {});
+		return true;
+	} catch (error: unknown) {
+		creationError = 'Could not create this list. Please try again.';
+		handleError(
+			`There was an unexpected error while attempting to create the list ${newListName}. Check the log for more details.`,
+			error,
+			{
+				silent: true,
+				telemetryMessage: 'List creation failed.',
+				privateValues: [newListName],
+			}
+		);
+		return false;
+	}
 }
 
 function deleteActiveList(): Promise<boolean> {
@@ -424,6 +481,13 @@ function getNewPlaceholder(): string {
 }
 
 export const bookmarksRoute = {
+	initialize,
+	get contentStatus(): 'loading' | 'ready' | 'error' {
+		return contentStatus;
+	},
+	get creationError(): string {
+		return creationError;
+	},
 	get activeList(): string {
 		return activeList;
 	},
@@ -461,6 +525,7 @@ export const bookmarksRoute = {
 	reconcileMembershipChange,
 	clearActiveWord,
 	createList,
+	clearCreationError,
 	deleteActiveList,
 	confirmDeleteActiveList,
 	exportActiveList,

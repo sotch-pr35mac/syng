@@ -6,19 +6,25 @@
 		inferPlainTextReaderTitle,
 	} from '@/utils/readerDocument.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
+	import type { ReaderImportResult } from '@/types/reader.js';
+	import { handleError } from '@/utils/error.js';
 
 	type Props = {
 		visible?: boolean;
 		importing?: boolean;
 		onclose?: () => void;
-		onimport?: (_title: string, _text: string, _color: string) => Promise<void> | void;
+		onimport?: (
+			_title: string,
+			_text: string,
+			_color: string
+		) => Promise<ReaderImportResult> | ReaderImportResult;
 	};
 
 	const {
 		visible = false,
 		importing = false,
 		onclose = () => {},
-		onimport = () => {},
+		onimport = () => ({ status: 'cancelled' }),
 	}: Props = $props();
 
 	let title = $state('');
@@ -26,6 +32,8 @@
 	let color = $state(DEFAULT_READER_DOCUMENT_COLOR);
 	let titleEdited = $state(false);
 	let submitting = $state(false);
+	let importError = $state('');
+	let importRequest = 0;
 	const canImport = $derived(
 		title.trim().length > 0 && text.trim().length > 0 && !submitting && !importing
 	);
@@ -36,9 +44,11 @@
 		color = DEFAULT_READER_DOCUMENT_COLOR;
 		titleEdited = false;
 		submitting = false;
+		importError = '';
 	}
 
 	function close(): void {
+		importRequest += 1;
 		reset();
 		onclose();
 	}
@@ -58,8 +68,29 @@
 			return;
 		}
 		submitting = true;
-		await onimport(title, text, color);
-		close();
+		importError = '';
+		const request = ++importRequest;
+		try {
+			const result = await onimport(title, text, color);
+			if (request !== importRequest) {
+				return;
+			}
+			if (result.status === 'success') {
+				close();
+			} else if (result.status === 'error') {
+				importError = result.message;
+			}
+		} catch (error) {
+			const message = 'There was an error importing the reader document.';
+			handleError(message, error, { silent: true });
+			if (request === importRequest) {
+				importError = message;
+			}
+		} finally {
+			if (request === importRequest) {
+				submitting = false;
+			}
+		}
 	}
 </script>
 
@@ -68,6 +99,7 @@
 	{visible}
 	disabled={!canImport}
 	busy={importing || submitting}
+	errorMessage={importError}
 	onclose={close}
 	onconfirm={submit}
 >

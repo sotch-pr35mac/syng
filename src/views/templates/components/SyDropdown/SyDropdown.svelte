@@ -121,11 +121,12 @@
 	<div class="sy-dropdown--list--content">
 		{#each values as value (value.id)}
 			<value.component
-				text={value.text}
-				icon={value.icon}
-				color={value.color}
-				hover={value.hover}
-				onclick={(e) => handleSelect(value.id, e)}
+				{...value}
+				onclick={() => {
+					if (!value.disabled) {
+						handleSelect(value.id);
+					}
+				}}
 			/>
 		{/each}
 	</div>

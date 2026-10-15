@@ -1,5 +1,6 @@
 import type { SearchEntry } from '@/types/search.js';
 import type { LexicalId } from '@/types/dictionary.js';
+import type { BookmarkListSummary } from '@/types/bookmarks.js';
 import { getBookmarkManager } from '@/utils/appServices.js';
 import { handleError } from '@/utils/error.js';
 
@@ -46,6 +47,7 @@ export type BookmarkWordInput = {
 
 let lists = $state<string[]>([]);
 let initialized = $state(false);
+let refreshRequest: Promise<void> | undefined;
 
 async function ensureManagerReady(): Promise<void> {
 	// Bookmark readiness includes schema migrations, while waitForInit only means the raw
@@ -59,7 +61,7 @@ async function ensureManagerReady(): Promise<void> {
 	}
 }
 
-async function refresh(): Promise<void> {
+async function loadLists(): Promise<void> {
 	try {
 		await ensureManagerReady();
 		lists = await getBookmarkManager().getLists();
@@ -70,6 +72,13 @@ async function refresh(): Promise<void> {
 			error
 		);
 	}
+}
+
+function refresh(): Promise<void> {
+	refreshRequest ??= loadLists().finally(() => {
+		refreshRequest = undefined;
+	});
+	return refreshRequest;
 }
 
 async function createList(name: string): Promise<void> {
@@ -111,9 +120,9 @@ async function getContent(listName: string): Promise<BookmarkWordEntry[]> {
 	return getBookmarkManager().getListContent(listName);
 }
 
-async function getEmptyLists(): Promise<string[]> {
+async function getListSummaries(): Promise<BookmarkListSummary[]> {
 	await ensureManagerReady();
-	return getBookmarkManager().getEmptyLists();
+	return getBookmarkManager().getListSummaries();
 }
 
 async function getWordByLexicalId(lexicalId: LexicalId): Promise<BookmarkWordEntry | undefined> {
@@ -136,6 +145,6 @@ export const bookmarksStore = {
 	updateProperty,
 	inList,
 	getContent,
-	getEmptyLists,
+	getListSummaries,
 	getWordByLexicalId,
 };

@@ -1,7 +1,17 @@
 <script>
-	import { ChevronDown, ChevronUp, FolderDown, Trash2, FolderUp } from 'lucide-svelte';
+	import {
+		ChevronDown,
+		ChevronUp,
+		FolderDown,
+		Trash2,
+		FolderUp,
+		SquareStack,
+		Award,
+	} from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
+	import { getStudyEligibility, studyHref } from '@/composables/study.js';
+	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
@@ -28,16 +38,22 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
+	const studyEligibility = $derived(
+		getStudyEligibility(wordList.length, bookmarksRoute.contentStatus)
+	);
 	let filterValue = $state('');
 	let visibleWordList = $state([]);
 
 	onMount(() => {
-		bookmarksRoute.updateListContent().catch(() => {});
+		const requestedList = new URLSearchParams(router.querystring).get('list');
+		const cancelInitialization = bookmarksRoute.initialize(requestedList);
+		return cancelInitialization;
 	});
 
 	// Handle active list selection
 	const handleListSelection = (id) => {
 		if (id === CREATE_NEW_LIST_ID) {
+			bookmarksRoute.clearCreationError();
 			createNewModalVisible = true;
 			return;
 		}
@@ -45,25 +61,48 @@
 		bookmarksRoute.setActiveList(id).catch(() => {});
 	};
 
-	// Create New Modal
+	// Create New List modal
 	let createNewModalVisible = $state(false);
 	let createNewButtonDisabled = $state(false);
-	const closeNewModal = () => {
+	let newListName = $state('');
+	let createNewFormVersion = 0;
+
+	function closeNewModal() {
 		createNewModalVisible = false;
-		document.getElementById('create-new-list-input').value = '';
-		createNewButtonDisabled = false;
-	};
-	const createNewList = () => {
+		newListName = '';
+		createNewFormVersion += 1;
+		bookmarksRoute.clearCreationError();
+	}
+
+	function handleNewListName(value) {
+		newListName = value;
+		bookmarksRoute.clearCreationError();
+	}
+
+	async function createNewList() {
+		if (createNewButtonDisabled) {
+			return;
+		}
 		createNewButtonDisabled = true;
-		const newListName = document.getElementById('create-new-list-input').value.trim();
-		bookmarksRoute
-			.createList(newListName)
-			.then(() => {
+		const submittedName = newListName.trim();
+		const submittedFormVersion = createNewFormVersion;
+		try {
+			const created = await bookmarksRoute.createList(submittedName);
+			if (submittedFormVersion !== createNewFormVersion) {
+				bookmarksRoute.clearCreationError();
+				return;
+			}
+			if (created) {
+				filterValue = '';
 				closeNewModal();
-				return undefined;
-			})
-			.catch(() => {});
-	};
+				await bookmarksRoute.setActiveList(submittedName);
+			} else if (submittedName !== newListName.trim()) {
+				bookmarksRoute.clearCreationError();
+			}
+		} finally {
+			createNewButtonDisabled = false;
+		}
+	}
 
 	// Word Selection
 	const handleSelection = (data) => {
@@ -118,6 +157,30 @@
 
 	const actions = $derived([
 		{
+			icon: SquareStack,
+			action: () => {
+				if (studyEligibility.flashcards) {
+					window.location.hash = studyHref('flashcards', activeList, 'bookmarks');
+				}
+			},
+			tooltip: 'Flashcards',
+			description: studyEligibility.flashcards ? '' : studyEligibility.message,
+			exclude: [],
+			disabled: !studyEligibility.flashcards,
+		},
+		{
+			icon: Award,
+			action: () => {
+				if (studyEligibility.quiz) {
+					window.location.hash = studyHref('quiz', activeList, 'bookmarks');
+				}
+			},
+			tooltip: 'Quiz',
+			description: studyEligibility.quiz ? '' : studyEligibility.message,
+			exclude: [],
+			disabled: !studyEligibility.quiz,
+		},
+		{
 			icon: FolderDown,
 			action: importList,
 			tooltip: 'Import',
@@ -162,6 +225,8 @@
 					<span class="bookmarks--header--action-item">
 						<SyButton
 							style="ghost"
+							aria-label={action.tooltip}
+							title={action.description || action.tooltip}
 							onclick={action.action}
 							disabled={action.disabled}
 							hover={action.hover}
@@ -169,7 +234,7 @@
 						>
 							<action.icon size="20" />
 							<div class="sy-tooltip--body sy-tooltip--body-bottom">
-								<p>{action.tooltip}</p>
+								<p>{action.description || action.tooltip}</p>
 							</div>
 						</SyButton>
 					</span>
@@ -193,6 +258,23 @@
 				onselection={handleSelection}
 				filterable={true}
 			/>
+			{#if bookmarksRoute.contentStatus === 'ready'}
+				{#if !wordList.length}
+					<div class="bookmarks--list-empty">
+						<p>This list is empty. Search for a word, then add it to this list.</p>
+						<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
+							Search for words
+						</SyButton>
+					</div>
+				{:else if filterValue && !visibleWordList.length}
+					<div class="bookmarks--list-empty">
+						<p>No words match your filter.</p>
+						<SyButton color="blue" onclick={() => (filterValue = '')}
+							>Clear filter</SyButton
+						>
+					</div>
+				{/if}
+			{/if}
 		</div>
 		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
@@ -211,7 +293,12 @@
 					size="large"
 					placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 					id="create-new-list-input"
+					value={newListName}
+					oninput={handleNewListName}
 				/>
+				{#if bookmarksRoute.creationError}
+					<p class="bookmarks--creation-error">{bookmarksRoute.creationError}</p>
+				{/if}
 			</div>
 		{/snippet}
 		{#snippet footer()}
@@ -241,6 +328,31 @@
 </div>
 
 <style>
+	.bookmarks--list-empty {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-space--large);
+		padding: var(--sy-space--large);
+		/* Balance the header and filter above the empty state. */
+		padding-bottom: calc(var(--sy-space--large) + min(12vh, 100px));
+		color: var(--sy-text--dark);
+		text-align: center;
+	}
+
+	.bookmarks--list-empty p {
+		margin: 0;
+		font-size: 13px;
+		font-weight: var(--sy-font-weight--normal);
+		line-height: var(--sy-line-height--body);
+	}
+
+	.bookmarks--creation-error {
+		color: var(--sy-color--red);
+		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
+	}
 	.bookmarks--container {
 		display: flex;
 		flex-direction: column;
