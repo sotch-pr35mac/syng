@@ -157,9 +157,21 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		const view = render(surface.bookmarks);
 		await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('loading'));
 		expect(view.queryByText(emptyBookmarks)).toBeNull();
+		expect(
+			(view.getByRole('button', { name: 'Flashcards' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect((view.getByRole('button', { name: 'Quiz' }) as HTMLButtonElement).disabled).toBe(
+			true
+		);
 		await act(() => rejectLoad(new Error('Storage unavailable')));
 		await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('error'));
 		expect(view.queryByText(emptyBookmarks)).toBeNull();
+		expect(
+			(view.getByRole('button', { name: 'Flashcards' }) as HTMLButtonElement).disabled
+		).toBe(true);
+		expect((view.getByRole('button', { name: 'Quiz' }) as HTMLButtonElement).disabled).toBe(
+			true
+		);
 		expect(view.queryByRole('button', { name: 'Search for words' })).toBeNull();
 	});
 

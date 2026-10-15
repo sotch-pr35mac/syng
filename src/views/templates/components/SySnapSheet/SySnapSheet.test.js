@@ -8,12 +8,12 @@ const DRAG_START_Y = 700;
 const DRAG_END_Y = 100;
 
 // The sheet is rendered at full height and revealed by translating down, so the snap position
-// is encoded in the transform (translateY = fullHeight - snapHeight) rather than the height.
+// is encoded in the hidden-height property used by the transform and empty-state layout.
 const FULL_HEIGHT = Math.round(window.innerHeight * FULL_HEIGHT_RATIO);
 const PARTIAL_HEIGHT = Math.round(window.innerHeight * PARTIAL_HEIGHT_RATIO);
 const expectSnapHeight = (sheet, height) => {
 	const offset = Math.max(0, FULL_HEIGHT - height);
-	expect(sheet.getAttribute('style')).toContain(`translate3d(0, ${offset}px, 0)`);
+	expect(sheet.style.getPropertyValue('--sy-snap-sheet-hidden-height')).toBe(`${offset}px`);
 };
 
 it('should render at the collapsed height by default', () => {

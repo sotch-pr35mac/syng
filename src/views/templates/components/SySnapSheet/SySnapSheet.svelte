@@ -172,7 +172,7 @@
 <div
 	class="sy-snap-sheet"
 	class:sy-snap-sheet--transitioning={transitioning}
-	style="height: {fullSheetHeight}px; transform: translate3d(0, {sheetTranslateY}px, 0)"
+	style="height: {fullSheetHeight}px; --sy-snap-sheet-hidden-height: {sheetTranslateY}px;"
 	use:snapSheetDrag={{
 		getCurrentHeight: () => sheetHeight,
 		getMinHeight: () => COLLAPSED_HEIGHT,
@@ -200,6 +200,7 @@
 
 <style>
 	.sy-snap-sheet {
+		transform: translate3d(0, var(--sy-snap-sheet-hidden-height), 0);
 		position: fixed;
 		bottom: 0;
 		left: 0;

@@ -19,6 +19,7 @@ const THIRD_TONE = 3;
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
+		Award: mockIcon,
 		Brush: mockIcon,
 		Check: mockIcon,
 		ChevronDown: mockIcon,
@@ -27,6 +28,7 @@ vi.mock('lucide-svelte', async () => {
 		FolderDown: mockIcon,
 		FolderUp: mockIcon,
 		Plus: mockIcon,
+		SquareStack: mockIcon,
 		Trash2: mockIcon,
 		X: mockIcon,
 	};
@@ -137,6 +139,7 @@ function mockBookmarkManager() {
 }
 
 beforeEach(async () => {
+	window.location.hash = '#/bookmarks';
 	invoke.mockResolvedValue(null);
 	words = WORDS.map((word) => ({ ...word, lists: [...word.lists] }));
 	lists = ['Bookmarks'];
@@ -146,6 +149,59 @@ beforeEach(async () => {
 	mobileBookmarksSnapStore.set('partial');
 	await bookmarksStore.refresh();
 	await bookmarksRoute.setActiveList('Bookmarks');
+});
+
+it.each([
+	{ count: 0, flashcards: false, quiz: false },
+	{ count: 1, flashcards: true, quiz: false },
+	{ count: 3, flashcards: true, quiz: false },
+	{ count: 4, flashcards: true, quiz: true },
+])('enables mobile study buttons for $count words', async ({ count, flashcards, quiz }) => {
+	words = Array.from({ length: count }, (_, index) => ({
+		...WORDS[index % WORDS.length],
+		_id: `study-word-${index}`,
+		lexical_id: `study-word-${index}`,
+	}));
+	await bookmarksRoute.updateListContent();
+	const view = render(MobileBookmarks);
+	await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('ready'));
+	const flashcardsButton = view.getByRole('button', { name: 'Flashcards' });
+	const quizButton = view.getByRole('button', { name: 'Quiz' });
+	expect(flashcardsButton.disabled).toBe(!flashcards);
+	expect(quizButton.disabled).toBe(!quiz);
+	if (flashcards && !quiz) {
+		expect(view.getByText('Quiz needs at least 4 words')).toBeTruthy();
+	}
+	if (!quiz) {
+		await userEvent.click(quizButton);
+		expect(window.location.hash).toBe('#/bookmarks');
+	}
+});
+
+it.each([
+	{ label: 'Flashcards', route: 'flashcards', snap: 'partial' },
+	{ label: 'Quiz', route: 'quiz', snap: 'partial' },
+	{ label: 'Flashcards', route: 'flashcards', snap: 'full' },
+	{ label: 'Quiz', route: 'quiz', snap: 'full' },
+])('starts $label from the $snap sheet using the full list', async ({ label, route, snap }) => {
+	const listName = '词 & # 1';
+	lists.push(listName);
+	words = Array.from({ length: 4 }, (_, index) => ({
+		...WORDS[index % WORDS.length],
+		_id: `study-word-${index}`,
+		lexical_id: `study-word-${index}`,
+		lists: [listName],
+	}));
+	await bookmarksStore.refresh();
+	await bookmarksRoute.setActiveList(listName);
+	mobileBookmarksSnapStore.set(snap);
+	const view = render(MobileBookmarks);
+	await userEvent.type(view.getByPlaceholderText('Filter'), 'no-match');
+	expect(await view.findByText('No words match your filter.')).toBeTruthy();
+	await userEvent.click(view.getByRole('button', { name: label }));
+	expect(window.location.hash).toBe(
+		`#/study/${route}?list=${encodeURIComponent(listName)}&from=bookmarks`
+	);
 });
 
 it('renders bookmark list content and opens word details', async () => {

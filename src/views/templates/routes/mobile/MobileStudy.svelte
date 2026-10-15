@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { GraduationCap, Search } from 'lucide-svelte';
 	import {
 		createStudyListState,
 		studySubRouteStore,
@@ -30,7 +31,10 @@
 </script>
 
 <div class="mobile-study">
-	<div class="mobile-study__content">
+	<div
+		class="mobile-study__content"
+		class:mobile-study__content--empty={studyLists.status === 'ready' && !populatedLists.length}
+	>
 		{#if studyLists.status === 'loading'}
 			<p>Loading...</p>
 		{:else if studyLists.status === 'error'}
@@ -44,9 +48,17 @@
 			</div>
 		{:else}
 			<div class="mobile-study__empty">
-				<p>Add words to a list to start studying.</p>
-				<SyButton color="blue" onclick={() => (window.location.hash = '#/')}>
-					Search for words
+				<div class="mobile-study__empty-copy">
+					<GraduationCap size="38" />
+					<p>Add words to a list to start studying.</p>
+				</div>
+				<SyButton
+					size="large"
+					classes={['mobile-study__empty-action']}
+					onclick={() => (window.location.hash = '#/')}
+				>
+					<Search size="20" />
+					<span>Search for words</span>
 				</SyButton>
 			</div>
 		{/if}
@@ -76,15 +88,51 @@
 
 	.mobile-study__empty {
 		flex-direction: column;
-		position: absolute;
-		inset: 0;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: calc(var(--sy-mobile-space--medium) * 3);
+		gap: var(--sy-mobile-space--large);
+		width: 100%;
 		text-align: center;
 		color: var(--sy-color--grey-4);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-medium);
+	}
+
+	.mobile-study__content--empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom, 0px));
+	}
+
+	/* Keep the upward adjustment proportional to the available space on small screens. */
+	.mobile-study__content--empty::before,
+	.mobile-study__content--empty::after {
+		content: '';
+		flex: 2;
+	}
+
+	.mobile-study__content--empty::after {
+		flex: 3;
+	}
+
+	.mobile-study__empty-copy {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--sy-mobile-space--medium);
+	}
+
+	.mobile-study__empty p {
+		margin: 0;
+	}
+
+	:global(.mobile-study__empty-action) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--sy-mobile-space--medium);
+		margin: 0;
 	}
 </style>

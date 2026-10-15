@@ -7,8 +7,10 @@
 		FolderDown,
 		FolderUp,
 		Trash2,
+		SquareStack,
+		Award,
 	} from 'lucide-svelte';
-	import StudyDropdown from '@/components/StudyListItem/StudyDropdown.svelte';
+	import { getStudyEligibility, studyHref, type StudyAction } from '@/composables/study.js';
 	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
@@ -44,8 +46,29 @@
 	const lists = $derived(bookmarksRoute.lists);
 	const dropdownList = $derived(bookmarksRoute.dropdownList);
 	const wordList = $derived(bookmarksRoute.wordList);
+	const studyEligibility = $derived(
+		getStudyEligibility(wordList.length, bookmarksRoute.contentStatus)
+	);
+	const studyActions = $derived([
+		{
+			id: 'flashcards' as const,
+			icon: SquareStack,
+			label: 'Flashcards',
+			disabled: !studyEligibility.flashcards,
+		},
+		{
+			id: 'quiz' as const,
+			icon: Award,
+			label: 'Quiz',
+			disabled: !studyEligibility.quiz,
+		},
+	]);
 	let filterValue = $state('');
 	let visibleWordList = $state<WordListPreviewItem[]>([]);
+	const showEmptyState = $derived(
+		bookmarksRoute.contentStatus === 'ready' &&
+			(!wordList.length || (Boolean(filterValue) && !visibleWordList.length))
+	);
 	const dropdownDirection = $derived(
 		currentSnap === 'full' ? DROPDOWN_DIRECTIONS.DOWN : DROPDOWN_DIRECTIONS.UP
 	);
@@ -76,6 +99,12 @@
 	function handleSnapChange(snap: SheetSnap): void {
 		currentSnap = snap;
 		mobileBookmarksSnapStore.set(snap);
+	}
+
+	function startStudy(action: StudyAction): void {
+		if (studyEligibility[action]) {
+			window.location.hash = studyHref(action, activeList, 'bookmarks');
+		}
 	}
 
 	function handleListSelection(id: string): void {
@@ -269,22 +298,34 @@
 				{/snippet}
 			</SyDropdown>
 
-			<StudyDropdown
-				list={activeList}
-				wordCount={wordList.length}
-				status={bookmarksRoute.contentStatus}
-				mobile={true}
-				direction={dropdownDirection}
-			/>
+			<div class="mobile-bookmarks__study-actions">
+				{#each studyActions as action (action.id)}
+					<SyButton
+						style="ghost"
+						size="small"
+						aria-label={action.label}
+						title={action.disabled ? studyEligibility.message : action.label}
+						disabled={action.disabled}
+						onclick={() => startStudy(action.id)}
+						classes={['mobile-bookmarks__study-action']}
+					>
+						<action.icon size="20" />
+					</SyButton>
+				{/each}
+			</div>
 			<div class="mobile-bookmarks__overflow-anchor" bind:this={overflowAnchorElement}>
 				<SyButton style="ghost" size="small" onclick={toggleOverflowMenu}>
 					<EllipsisVertical size="20" />
 				</SyButton>
 			</div>
 		</div>
+		{#if studyEligibility.flashcards && !studyEligibility.quiz}
+			<p class="mobile-bookmarks__study-requirement">{studyEligibility.message}</p>
+		{/if}
 
 		<div
 			class="mobile-bookmarks__results"
+			class:mobile-bookmarks__results--empty={showEmptyState}
 			onfocusin={handleFilterFocus}
 			use:scrollRestore={'mobile-bookmarks-results'}
 		>
@@ -385,8 +426,32 @@
 
 <style>
 	.mobile-bookmarks__list-empty {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
 		padding: var(--sy-space--large);
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--dark);
+		font-family: var(--sy-font-family);
+		text-align: center;
+	}
+
+	/* Bias upward only when the visible sheet has room around the message and action. */
+	.mobile-bookmarks__list-empty::before,
+	.mobile-bookmarks__list-empty::after {
+		content: '';
+		flex: 2;
+	}
+
+	.mobile-bookmarks__list-empty::after {
+		flex: 3;
+	}
+
+	.mobile-bookmarks__list-empty p {
+		margin: 0 0 var(--sy-space--large);
+		font-size: 13px;
+		font-weight: var(--sy-font-weight--normal);
+		line-height: var(--sy-line-height--body);
 	}
 
 	.mobile-bookmarks__creation-error {
@@ -455,6 +520,24 @@
 		white-space: nowrap;
 	}
 
+	.mobile-bookmarks__study-actions {
+		display: flex;
+		flex-shrink: 0;
+	}
+
+	:global(.mobile-bookmarks__study-action) {
+		margin: 0;
+	}
+
+	.mobile-bookmarks__study-requirement {
+		flex-shrink: 0;
+		margin: 0 var(--sy-mobile-space--large) var(--sy-mobile-space--small);
+		color: var(--sy-color--grey-4);
+		font-family: var(--sy-font-family);
+		font-size: 13px;
+		text-align: right;
+	}
+
 	.mobile-bookmarks__overflow-anchor {
 		position: relative;
 	}
@@ -501,6 +584,15 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.mobile-bookmarks__results--empty {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		/* The sheet is rendered at full height even when only partly revealed. */
+		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	.mobile-bookmarks__modal-content {
