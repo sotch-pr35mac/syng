@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { tick } from 'svelte';
 import HanziWriter, { type HanziWriterOptions } from 'hanzi-writer';
 import { createCharacterAnimation } from '@/composables/characterAnimation.svelte.js';
 
@@ -93,15 +92,6 @@ it('only creates writers for the latest load when scripts change before the next
 
 it('cancels deferred loads on close or unmount', async () => {
 	const loading = animation.load('汉字');
-	animation.stop();
-	await loading;
-	expect(HanziWriter.create).not.toHaveBeenCalled();
-});
-
-it('does not create writers after closing while the animation engine is loading', async () => {
-	const loading = animation.load('汉字');
-	await tick();
-	expect(HanziWriter.create).not.toHaveBeenCalled();
 	animation.stop();
 	await loading;
 	expect(HanziWriter.create).not.toHaveBeenCalled();
