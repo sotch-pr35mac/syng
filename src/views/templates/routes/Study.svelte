@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import SyList from '@/components/SyList/SyList.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
@@ -17,7 +21,11 @@
 	const studyLists = createStudyListState();
 	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
-		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
+		if (
+			!walkthroughStore.isOverview('/study') &&
+			studySubRouteStore.value === 'flashcards' &&
+			flashcardsActiveListStore.value
+		) {
 			window.location.hash = studyHref(
 				'flashcards',
 				flashcardsActiveListStore.value,
@@ -44,7 +52,9 @@
 	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
+	<WalkthroughHelp guide="study" />
 	<div
+		use:walkthroughTarget={'study-lists'}
 		class="study--content"
 		class:study--content-empty={studyLists.status === 'ready' && !populatedLists.length}
 	>

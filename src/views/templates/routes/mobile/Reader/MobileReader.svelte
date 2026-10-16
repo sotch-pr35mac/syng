@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount } from 'svelte';
 	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import { responsiveLayout } from '@/actions/responsiveLayout.js';
@@ -62,7 +65,13 @@
 						onselection={library.handleImportSelection}
 					>
 						{#snippet children(open, triggerProps)}
-							<SyButton {...triggerProps} style="ghost" size="small" center={true}>
+							<SyButton
+								{...triggerProps}
+								guideTarget="reader-import"
+								style="ghost"
+								size="small"
+								center={true}
+							>
 								Import
 								{#if open}<ChevronUp size="18" />{:else}<ChevronDown
 										size="18"
@@ -84,7 +93,11 @@
 			</div>
 		</div>
 	{/if}
+	<div class="mobile-reader__help">
+		<WalkthroughHelp guide="reader-library" />
+	</div>
 	<section
+		use:walkthroughTarget={'reader-library'}
 		aria-label="Reading library"
 		aria-busy={readerRoute.importing}
 		class="mobile-reader__library"
@@ -114,7 +127,12 @@
 					<Awa pose="read" size={AWA_SIZES.mobile} />
 					<p>Your reading library is empty</p>
 				</div>
-				<div class="mobile-reader__empty-actions" role="group" aria-label="Import options">
+				<div
+					class="mobile-reader__empty-actions"
+					use:walkthroughTarget={'reader-import'}
+					role="group"
+					aria-label="Import options"
+				>
 					<SyButton
 						size="small"
 						classes={['mobile-reader__empty-action']}
@@ -203,6 +221,7 @@
 
 	.mobile-reader__library-header {
 		display: flex;
+		flex-shrink: 0;
 		align-items: center;
 		justify-content: space-between;
 		min-height: 54px;
@@ -240,6 +259,11 @@
 		box-sizing: border-box;
 		padding: var(--sy-mobile-space--large);
 		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom));
+	}
+
+	.mobile-reader__help {
+		display: flex;
+		flex-shrink: 0;
 	}
 
 	.mobile-reader__library--empty {

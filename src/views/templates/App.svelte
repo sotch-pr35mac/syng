@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughGate from '@/components/Walkthrough/WalkthroughGate.svelte';
+
 	import { onMount } from 'svelte';
 	import Router, { router } from 'svelte-spa-router';
 	import Navigation from '@/components/Navigation/Navigation.svelte';
@@ -29,6 +32,7 @@
 
 	let showUpdateToast = $state(false);
 	let onboardingReady = $state(false);
+	let startupReady = $state(false);
 	let startupFailed = $state(false);
 	let startupError = $state<unknown>(undefined);
 
@@ -103,10 +107,15 @@
 			});
 
 		// Report late database/schema failures without holding the visible shell behind them.
-		waitForStartupComplete().catch((error) => {
-			startupError = error;
-			startupFailed = true;
-		});
+		waitForStartupComplete()
+			.then(() => {
+				startupReady = true;
+				return undefined;
+			})
+			.catch((error) => {
+				startupError = error;
+				startupFailed = true;
+			});
 		return startLifecycleDiagnostics();
 	});
 </script>
@@ -157,7 +166,7 @@
 	</div>
 
 	<SyToast
-		visible={showUpdateToast}
+		visible={showUpdateToast && !walkthroughStore.visible}
 		message={buildToastMessage()}
 		actionLabel={networkStatus.isOnline ? 'Update now' : ''}
 		corner="bottom-right"
@@ -174,6 +183,12 @@
 		{/await}
 	{/if}
 {/if}
+
+<WalkthroughGate
+	{startupReady}
+	ready={onboardingReady && privacySettingsStore.hasCompletedOnboarding}
+	blocked={databaseMigrationStore.active || startupFailed || bookmarkRecoveryStore.active}
+/>
 
 <style>
 	.app-container {

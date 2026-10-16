@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -69,6 +72,8 @@
 				size="large"
 				center={true}
 				classes={['reader__library-back-button']}
+				guideTarget="reader-back"
+				aria-label="Return to library"
 				onclick={reader.backToLibrary}
 			>
 				<ChevronLeft size="20" />
@@ -77,11 +82,13 @@
 			<h1 class="reader__document-title">{activeDocument?.title ?? 'Reader'}</h1>
 		</div>
 		<div class="reader__header-actions">
+			<WalkthroughHelp guide="reader-document" context={{ documentId: params.id }} />
 			<SyButton
 				style="ghost"
 				size="large"
 				center={true}
 				disabled={!activeDocument}
+				guideTarget="reader-settings"
 				aria-label="Reader settings"
 				aria-expanded={reader.readerSettingsPopoverVisible}
 				aria-haspopup="dialog"
@@ -102,7 +109,7 @@
 				mobileTitle="Reader settings"
 				onclose={reader.closeReaderSettingsPopover}
 			>
-				<div class="reader__settings-popover">
+				<div class="reader__settings-popover" data-walkthrough-secondary="true">
 					<div class="reader__settings-section">
 						<span class="reader__settings-label">Theme</span>
 						<ReaderThemeSelector
@@ -149,6 +156,7 @@
 				{reader.characterMeasureSample}
 			</span>
 			<article
+				use:walkthroughTarget={'reader-page'}
 				bind:this={pageElement}
 				class="reader__page reader__page--base"
 				class:reader__page--turning={reader.turningPage}
@@ -361,6 +369,7 @@
 				type="button"
 				class="reader__page-turn reader__page-turn--next"
 				disabled={!readerRoute.canGoNext || reader.turningPage}
+				use:walkthroughTarget={'reader-pages'}
 				aria-label="Next page"
 				onclick={() => reader.turnPage('next')}
 			>

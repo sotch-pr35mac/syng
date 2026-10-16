@@ -1,4 +1,7 @@
 <script>
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -219,6 +222,7 @@
 			{#snippet children(open, triggerProps)}
 				<SyButton
 					{...triggerProps}
+					guideTarget="bookmarks-lists"
 					size="large"
 					style="ghost"
 					center={true}
@@ -230,6 +234,7 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
+			<WalkthroughHelp guide="bookmarks" />
 			{#each actions as action (action.tooltip)}
 				{#if !action.exclude.includes(activeList)}
 					<span class="bookmarks--header--action-item">
@@ -255,6 +260,7 @@
 	</div>
 	<div class="bookmarks--content">
 		<div
+			use:walkthroughTarget={'bookmarks-words'}
 			class="bookmarks--word-listing"
 			role="region"
 			aria-label="Saved words"

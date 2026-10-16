@@ -27,6 +27,7 @@
 	 * @property {any} [timer] - Timer component reference for external control (bindable)
 	 * @property {'x' | 'y'} [slideAxis] - Axis used for the slide transition
 	 * @property {boolean} [timerVisible] - Render the built-in result countdown timer
+	 * @property {boolean} [suspended] - Suspend the result countdown for instructions
 	 */
 
 	/* eslint-disable prefer-const -- timer uses $bindable() which requires let for the entire destructuring */
@@ -39,6 +40,7 @@
 		timer = $bindable(),
 		slideAxis = 'x',
 		timerVisible = true,
+		suspended = false,
 	} = $props();
 	/* eslint-enable prefer-const */
 </script>
@@ -72,6 +74,7 @@
 			<div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
 				<!-- eslint-disable @typescript-eslint/no-magic-numbers -->
 				<SyTimer
+					{suspended}
 					bind:this={timer}
 					duration={QUIZ_RESULT_DISPLAY_TIME}
 					size={32}

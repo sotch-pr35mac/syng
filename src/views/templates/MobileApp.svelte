@@ -1,4 +1,6 @@
 <script lang="ts">
+	import WalkthroughGate from '@/components/Walkthrough/WalkthroughGate.svelte';
+
 	import { onMount } from 'svelte';
 	import Router, { router } from 'svelte-spa-router';
 	import { routeAccessibility } from '@/actions/routeAccessibility.js';
@@ -23,6 +25,7 @@
 
 	let keyboardInset = $state(0);
 	let onboardingReady = $state(false);
+	let startupReady = $state(false);
 	let startupFailed = $state(false);
 	let startupError = $state<unknown>(undefined);
 
@@ -92,10 +95,15 @@
 				startupFailed = true;
 			});
 
-		waitForStartupComplete().catch((error) => {
-			startupError = error;
-			startupFailed = true;
-		});
+		waitForStartupComplete()
+			.then(() => {
+				startupReady = true;
+				return undefined;
+			})
+			.catch((error) => {
+				startupError = error;
+				startupFailed = true;
+			});
 
 		// Diagnostics for the resume-time database failure; correlates DB errors with
 		// recent foreground/background transitions. No behavior change.
@@ -187,6 +195,12 @@
 		{/await}
 	{/if}
 {/if}
+
+<WalkthroughGate
+	{startupReady}
+	ready={onboardingReady && privacySettingsStore.hasCompletedOnboarding}
+	blocked={databaseMigrationStore.active || startupFailed || bookmarkRecoveryStore.active}
+/>
 
 <style>
 	.mobile-app {

@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount } from 'svelte';
 	import Awa from '@/components/Awa/Awa.svelte';
 	import {
@@ -33,10 +38,15 @@
 	const isIPadDevice = isIPad();
 
 	onMount(() => {
+		const restoreDocument = !walkthroughStore.isOverview('/read');
 		readerRoute
 			.refresh()
 			.then(() => {
-				if (readerDocumentRouteStore.value) {
+				if (
+					restoreDocument &&
+					window.location.hash === '#/read' &&
+					readerDocumentRouteStore.value
+				) {
 					window.location.hash = `#/read/document/${encodeURIComponent(readerDocumentRouteStore.value)}`;
 				}
 				return undefined;
@@ -80,7 +90,13 @@
 					onselection={library.handleImportSelection}
 				>
 					{#snippet children(open, triggerProps)}
-						<SyButton {...triggerProps} style="ghost" size="large" center={true}>
+						<SyButton
+							{...triggerProps}
+							guideTarget="reader-import"
+							style="ghost"
+							size="large"
+							center={true}
+						>
 							Import
 							{#if open}<ChevronUp size="20" />{:else}<ChevronDown size="20" />{/if}
 						</SyButton>
@@ -100,7 +116,9 @@
 		</div>
 	</div>
 
+	<WalkthroughHelp guide="reader-library" />
 	<section
+		use:walkthroughTarget={'reader-library'}
 		aria-label="Reading library"
 		aria-busy={readerRoute.importing}
 		class="reader-library"
@@ -124,7 +142,12 @@
 					<Awa pose="read" />
 					<p>Your reading library is empty</p>
 				</div>
-				<div class="reader-library__empty-actions" role="group" aria-label="Import options">
+				<div
+					class="reader-library__empty-actions"
+					use:walkthroughTarget={'reader-import'}
+					role="group"
+					aria-label="Import options"
+				>
 					<div class="reader-library__empty-action-group">
 						<SyButton
 							size="large"

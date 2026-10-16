@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount } from 'svelte';
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
@@ -30,7 +34,7 @@
 		// Auto-focus the search field so the user can type immediately on launch and
 		// on every navigation back to this route. Skipped on iPad (desktop UI, but a
 		// hardware keyboard isn't guaranteed and focus would raise the on-screen one).
-		if (isIPadDevice) {
+		if (isIPadDevice || walkthroughStore.visible) {
 			return;
 		}
 		const input = document.getElementById('search') as HTMLInputElement | null;
@@ -109,6 +113,7 @@
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<SyButton
+			guideTarget="search-history"
 			aria-label="Previous word"
 			style="ghost"
 			size="large"
@@ -127,6 +132,7 @@
 			<ChevronRight size="20" />
 		</SyButton>
 		<SyButton
+			guideTarget="search-language"
 			aria-label={`Search language: ${search.searchLang} (${search.searchLang === 'EN' ? 'English' : search.searchLang === 'PY' ? 'Pinyin' : 'Chinese'}). Change language`}
 			style="ghost"
 			size="large"
@@ -141,16 +147,19 @@
 				size="large"
 				placeholder="Search..."
 				id="search"
+				guideTarget="search-field"
 				aria-label="Search dictionary"
 				value={search.queryText}
 				oninput={(value) => doSearch(value, true)}
 				onenter={handleEnter}
 			/>
 		</div>
+		<WalkthroughHelp guide="dictionary" />
 	</div>
 	<p class="sy-sr-only" role="status" aria-atomic="true">{search.statusMessage}</p>
 	<div class="search-content-container">
 		<div
+			use:walkthroughTarget={'search-results'}
 			class="search-results"
 			role="region"
 			aria-label="Search results"

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+
 	import { onMount } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
@@ -24,7 +26,13 @@
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Extras</h1>
 	</div>
 
-	<div class="tools__tabs" role="tablist" aria-label="Extras tools" use:tabNavigation>
+	<div
+		class="tools__tabs"
+		role="tablist"
+		aria-label="Extras tools"
+		use:tabNavigation
+		use:walkthroughTarget={'extras-tabs'}
+	>
 		{#each textConversionTabs as tab (tab.name)}
 			<SyTab
 				role="tab"

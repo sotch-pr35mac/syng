@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+
 	import { onMount } from 'svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import { tabNavigation } from '@/actions/tabNavigation.js';
@@ -18,7 +20,13 @@
 
 <div class="mobile-tools">
 	<header class="mobile-tools__header">
-		<div class="mobile-tools__tabs" role="tablist" aria-label="Extras tools" use:tabNavigation>
+		<div
+			class="mobile-tools__tabs"
+			role="tablist"
+			aria-label="Extras tools"
+			use:tabNavigation
+			use:walkthroughTarget={'extras-tabs'}
+		>
 			{#each textConversionTabs as tab (tab.name)}
 				<SyTab
 					variant="mobile"

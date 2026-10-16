@@ -18,6 +18,7 @@
 	 * @property {number} [duration] - Duration in seconds
 	 * @property {number} [size] - Size of the timer in pixels
 	 * @property {boolean} [autoStart] - false
+	 * @property {boolean} [suspended] - Pause for instructions without changing manual pause
 	 * @property {any} [progressColor] - Custom progress color, if null uses default grey
 	 * @property {() => void} [oncomplete] - Complete handler
 	 */
@@ -27,6 +28,7 @@
 		duration = 10,
 		size = 40,
 		autoStart = false,
+		suspended = false,
 		progressColor = null,
 		oncomplete = () => {},
 	} = $props();
@@ -38,6 +40,15 @@
 	let hovering = $state(false);
 	let isPaused = $state(false);
 	let pausedTime = 0;
+	let suspensionStarted;
+	$effect(() => {
+		if (suspended) {
+			suspensionStarted = Date.now();
+		} else if (suspensionStarted !== undefined) {
+			startTime += Date.now() - suspensionStarted;
+			suspensionStarted = undefined;
+		}
+	});
 
 	// Theme colors
 	const lightGrey = 'var(--sy-color--grey-2)';
@@ -58,14 +69,14 @@
 	export function pause() {
 		if (!isPaused) {
 			isPaused = true;
-			pausedTime = Date.now() - startTime;
+			pausedTime = (suspensionStarted ?? Date.now()) - startTime;
 		}
 	}
 
 	export function resume() {
 		if (isPaused) {
 			isPaused = false;
-			startTime = Date.now() - pausedTime;
+			startTime = (suspensionStarted ?? Date.now()) - pausedTime;
 			startTimer();
 		}
 	}
@@ -77,7 +88,7 @@
 		}
 
 		intervalId = setInterval(() => {
-			if (!isPaused) {
+			if (!isPaused && !suspended) {
 				const elapsed = Date.now() - startTime;
 				progress = Math.min(elapsed / (duration * 1000), 1);
 

@@ -1,4 +1,6 @@
 <script>
+	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
+
 	import { onMount } from 'svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
@@ -270,6 +272,7 @@
 			class="settings--panel"
 		>
 			{#if activeTab === 'general'}
+				<WalkthroughSettings />
 				{#each visiblePreferences as preference (preference.label)}
 					<div
 						class="settings--setting"

@@ -48,6 +48,7 @@ it('backfills newer settings into existing preference documents', async () => {
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
+	expect(manager.get('walkthrough')).toMatchObject({ version: 1, invitation: 'unavailable' });
 });
 
 it('does not mark existing preference documents as having completed onboarding', async () => {
@@ -127,6 +128,7 @@ it('uses dictionary display defaults for new preference documents', async () => 
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
+	expect(manager.get('walkthrough')).toMatchObject({ version: 1, invitation: 'eligible' });
 });
 
 it('serializes rapid preference writes so overlapping puts do not conflict', async () => {

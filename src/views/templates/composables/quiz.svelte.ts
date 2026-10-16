@@ -49,6 +49,22 @@ let quizContinuing = false;
 let quizAnswerPending = false;
 let sessionActive = false;
 let answeredCount = 0;
+let instructionPaused = false;
+let instructionPauseStarted = 0;
+let instructionPauseTotal = 0;
+
+function setInstructionPaused(paused: boolean): void {
+	if (instructionPaused === paused) {
+		return;
+	}
+	if (paused) {
+		instructionPauseStarted = Date.now();
+	} else {
+		instructionPauseTotal += Date.now() - instructionPauseStarted;
+		instructionPauseStarted = 0;
+	}
+	instructionPaused = paused;
+}
 
 function endSession(): void {
 	quizRequest += 1;
@@ -91,6 +107,8 @@ function handleQuestionChange(quizQuestionResponse: QuizQuestion): void {
 	quizShowAnswer = false;
 	quizShowResult = false;
 	quizQuestionStartTime = Date.now();
+	instructionPauseTotal = 0;
+	instructionPauseStarted = instructionPaused ? quizQuestionStartTime : 0;
 }
 
 function startQuiz(activeList: string | null, origin: string | null = null): void {
@@ -175,7 +193,13 @@ function answerQuestion(response: string): Promise<boolean> {
 	quizChosenAnswer = response;
 	quizAnswerPending = true;
 	const requestId = quizRequest;
-	const answeredIn = Math.round((Date.now() - quizQuestionStartTime) / 1000);
+	const now = Date.now();
+	const pauseDuration =
+		instructionPauseTotal + (instructionPaused ? now - instructionPauseStarted : 0);
+	const answeredIn = Math.max(
+		0,
+		Math.round((now - quizQuestionStartTime - pauseDuration) / 1000)
+	);
 	return invoke<AnswerResponse>(NATIVE_COMMANDS.QUIZ.ANSWER, {
 		response: {
 			response,
@@ -286,6 +310,7 @@ function studyFlashcardsFromQuiz(): void {
 }
 
 export const quizRoute = {
+	setInstructionPaused,
 	endSession,
 	get activeList(): string | null {
 		return quizActiveList;

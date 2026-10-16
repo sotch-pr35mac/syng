@@ -1,4 +1,6 @@
 <script lang="ts">
+	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
+
 	import { onMount } from 'svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -118,6 +120,7 @@
 			class="mobile-settings__panel"
 		>
 			{#if activeTab === 'general'}
+				<WalkthroughSettings />
 				<section
 					class="mobile-settings__section mobile-settings__section--toggle"
 					aria-labelledby="contrast-heading"

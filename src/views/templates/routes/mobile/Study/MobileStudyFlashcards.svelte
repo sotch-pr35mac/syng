@@ -1,7 +1,9 @@
 <script lang="ts">
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { ArrowLeft, ArrowRight, RotateCcw, RotateCw, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
-	import { onMount } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -10,8 +12,8 @@
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 
-	const params = new URLSearchParams(router.querystring);
-	const listFromUrl = params.get('list');
+	const listFromUrl = $derived(new URLSearchParams(router.querystring).get('list'));
+	const originFromUrl = $derived(new URLSearchParams(router.querystring).get('from'));
 
 	const lists = $derived(flashcardsRoute.lists);
 	const activeWord = $derived(flashcardsRoute.activeWord);
@@ -44,10 +46,16 @@
 		},
 	]);
 
-	onMount(() => {
-		flashcardsRoute.load(listFromUrl, params.get('from'));
-		return flashcardsRoute.endSession;
+	$effect(() => {
+		// Route changes can arrive before unmount; exiting must not reload the saved list.
+		if (router.location !== '/study/flashcards') {
+			return;
+		}
+		const selectedList = listFromUrl;
+		// Reload only when the list changes, preserving card navigation and flip state.
+		untrack(() => flashcardsRoute.load(selectedList, originFromUrl));
 	});
+	onDestroy(flashcardsRoute.endSession);
 </script>
 
 <div class="mobile-flashcards">
@@ -104,10 +112,12 @@
 					</span>
 				</div>
 			{/if}
+			<WalkthroughHelp guide="flashcards" context={{ listName: listFromUrl ?? undefined }} />
 			<SyButton
 				style="ghost"
 				size="large"
 				center={true}
+				guideTarget="study-exit"
 				onclick={flashcardsRoute.exit}
 				classes={['mobile-flashcards__exit-button']}
 			>
@@ -123,6 +133,9 @@
 					size="large"
 					center={true}
 					disabled={action.disabled}
+					guideTarget={action.label === 'Flip'
+						? 'flashcards-flip'
+						: 'flashcards-navigation'}
 					onclick={action.action}
 					classes={action.classes}
 				>
@@ -214,8 +227,9 @@
 
 	.mobile-flashcards__exit-row {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		gap: var(--sy-mobile-space--small);
 		min-height: var(--sy-mobile-bar-exit-row-height);
 		border-bottom: var(--sy-border);
@@ -223,7 +237,7 @@
 
 	.mobile-flashcards__status {
 		display: flex;
-		flex: 1;
+		flex: 1 1 100%;
 		min-width: 0;
 		gap: var(--sy-mobile-space--extra-small);
 		color: var(--sy-color--grey-5);

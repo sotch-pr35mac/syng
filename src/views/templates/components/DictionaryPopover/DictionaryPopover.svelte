@@ -69,7 +69,7 @@
 	mobileTitle="Dictionary"
 	{onclose}
 >
-	<div class="dictionary-popover__body">
+	<div class="dictionary-popover__body" data-walkthrough-secondary="true">
 		{#if !mobile}
 			<div class="dictionary-popover__header">
 				<span class="dictionary-popover__title">Dictionary</span>

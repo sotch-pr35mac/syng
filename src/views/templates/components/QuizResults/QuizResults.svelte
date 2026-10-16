@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+
 	import {
 		CHARACTER_QUESTIONS,
 		GOOD_SCORE_THRESHOLD,
@@ -51,7 +53,11 @@
 	}
 </script>
 
-<div class="quiz-results" class:quiz-results--mobile={variant === 'mobile'}>
+<div
+	use:walkthroughTarget={'quiz-results'}
+	class="quiz-results"
+	class:quiz-results--mobile={variant === 'mobile'}
+>
 	<div class="quiz-results__score-container">
 		<div class="quiz-results__score">
 			<span class="quiz-results__score-text">{score}%</span>

@@ -1,7 +1,11 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { ArrowRight, RotateCw, SquareStack, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
@@ -21,8 +25,8 @@
 	const RESULT_TOAST_DISPLAY_TIME = 3000;
 	const TIMER_SIZE = 44;
 
-	const params = new URLSearchParams(router.querystring);
-	const activeList = params.get('list');
+	const activeList = $derived(new URLSearchParams(router.querystring).get('list'));
+	const originFromUrl = $derived(new URLSearchParams(router.querystring).get('from'));
 
 	let showResultToast = $state(false);
 	let timerRef = $state<any>(undefined);
@@ -64,13 +68,27 @@
 		iconAfter: true,
 	});
 
-	onMount(() => {
-		quizRoute.start(activeList, params.get('from'));
-		return quizRoute.endSession;
+	$effect(() => {
+		quizRoute.setInstructionPaused(walkthroughStore.quizSuspended);
+	});
+
+	$effect(() => {
+		if (router.location !== '/study/quiz') {
+			return;
+		}
+		const selectedList = activeList;
+		// Only list changes start a session; guide and question updates must preserve it.
+		untrack(() => {
+			hideResultToast();
+			quizRoute.setInstructionPaused(walkthroughStore.quizSuspended);
+			quizRoute.start(selectedList, originFromUrl);
+		});
 	});
 
 	onDestroy(() => {
 		hideResultToast();
+		quizRoute.setInstructionPaused(false);
+		quizRoute.endSession();
 	});
 
 	function hideResultToast(): void {
@@ -91,6 +109,7 @@
 	}
 
 	function answerQuestion(response: string): void {
+		walkthroughStore.suspend();
 		quizRoute
 			.answerQuestion(response)
 			.then((answered) => {
@@ -103,16 +122,22 @@
 	}
 
 	function handleQuestionTimerComplete(): void {
-		answerQuestion('N/A');
+		if (!walkthroughStore.quizSuspended) {
+			answerQuestion('N/A');
+		}
 	}
 
 	function continueQuiz(): void {
+		walkthroughStore.suspend();
 		hideResultToast();
 		quizRoute.continue();
 		timerRef = undefined;
 	}
 
 	function handleResultTimerComplete(): void {
+		if (walkthroughStore.quizSuspended) {
+			return;
+		}
 		quizRoute.showResult = false;
 		hideResultToast();
 		if (quizRoute.showAnswer) {
@@ -129,7 +154,7 @@
 		if (!(target instanceof Element)) {
 			return;
 		}
-		if (target.closest('.mobile-timer')) {
+		if (target.closest('.mobile-timer, .walkthrough-help')) {
 			return;
 		}
 		if (
@@ -146,6 +171,7 @@
 	}
 
 	function retakeQuiz(): void {
+		walkthroughStore.suspend();
 		hideResultToast();
 		quizRoute.retake();
 	}
@@ -178,7 +204,7 @@
 				variant="mobile"
 			/>
 		{:else if quizRoute.showAnswer && quizRoute.answer}
-			<div class="mobile-quiz__answer">
+			<div use:walkthroughTarget={'quiz-answer'} class="mobile-quiz__answer">
 				<DictionaryContent
 					word={quizRoute.answer}
 					backgroundColor="white"
@@ -188,7 +214,7 @@
 			</div>
 		{:else if quizRoute.currentQuestion}
 			<div class="mobile-quiz__question-view">
-				<h1>
+				<h1 use:walkthroughTarget={'quiz-question'}>
 					<QuizDisplayText
 						text={quizRoute.currentQuestion.question}
 						characters={isCharacterQuestion
@@ -199,7 +225,7 @@
 						lexicalTestIdPrefix="quiz-question"
 					/>
 				</h1>
-				<div class="mobile-quiz__options">
+				<div use:walkthroughTarget={'quiz-options'} class="mobile-quiz__options">
 					{#each quizRoute.currentQuestion.options as option (option.value)}
 						<button
 							type="button"
@@ -233,6 +259,7 @@
 				transition:fly|global={{ y: 16, duration: 250 }}
 			>
 				<ResultIndicator
+					suspended={walkthroughStore.quizSuspended}
 					show={showResultToast}
 					isCorrect={quizRoute.lastAnswerCorrect}
 					chosenAnswer={quizRoute.chosenAnswer}
@@ -243,7 +270,7 @@
 			</div>
 		{/if}
 		{#if !quizRoute.showFinalResults}
-			<div class="mobile-quiz__progress">
+			<div use:walkthroughTarget={'quiz-progress'} class="mobile-quiz__progress">
 				<SyProgressLine
 					completed={quizRoute.questionsCompleted}
 					total={quizRoute.questionsTotal || 1}
@@ -254,10 +281,12 @@
 
 		<div class="mobile-quiz__bar">
 			<div class="mobile-quiz__exit-row">
+				<WalkthroughHelp guide="quiz" context={{ listName: activeList ?? undefined }} />
 				<SyButton
 					style="ghost"
 					size="large"
 					center={true}
+					guideTarget="study-exit"
 					onclick={exitQuiz}
 					classes={['mobile-quiz__exit-button']}
 				>
@@ -267,6 +296,9 @@
 			</div>
 
 			<div
+				use:walkthroughTarget={quizRoute.showFinalResults
+					? 'quiz-results-actions'
+					: 'quiz-timer'}
 				class="mobile-quiz__actions-row"
 				class:mobile-quiz__actions-row--final={quizRoute.showFinalResults}
 			>
@@ -298,6 +330,7 @@
 					<div class="mobile-quiz__bar-cell mobile-quiz__bar-cell--left">
 						{#if quizRoute.showResult}
 							<MobileTimer
+								suspended={walkthroughStore.quizSuspended}
 								bind:this={timerRef}
 								duration={QUIZ_RESULT_DISPLAY_TIME}
 								autoStart={true}
@@ -306,6 +339,7 @@
 							/>
 						{:else if quizRoute.showQuestionTimer}
 							<MobileTimer
+								suspended={walkthroughStore.quizSuspended}
 								bind:this={timerRef}
 								duration={quizRoute.questionDuration}
 								autoStart={true}
@@ -322,6 +356,7 @@
 								style="ghost"
 								size="large"
 								center={true}
+								guideTarget="quiz-continue"
 								onclick={continueAction.action}
 								classes={continueAction.classes}
 							>

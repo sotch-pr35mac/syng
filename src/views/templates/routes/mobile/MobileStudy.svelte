@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount } from 'svelte';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -14,7 +18,11 @@
 	const studyLists = createStudyListState();
 	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
-		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
+		if (
+			!walkthroughStore.isOverview('/study') &&
+			studySubRouteStore.value === 'flashcards' &&
+			flashcardsActiveListStore.value
+		) {
 			window.location.hash = studyHref(
 				'flashcards',
 				flashcardsActiveListStore.value,
@@ -32,7 +40,11 @@
 </script>
 
 <div class="mobile-study">
+	<div class="mobile-study__help">
+		<WalkthroughHelp guide="study" />
+	</div>
 	<div
+		use:walkthroughTarget={'study-lists'}
 		class="mobile-study__content"
 		class:mobile-study__content--empty={studyLists.status === 'ready' && !populatedLists.length}
 	>
@@ -68,13 +80,21 @@
 
 <style>
 	.mobile-study {
+		display: flex;
+		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 		background-color: var(--sy-color--grey-2);
 	}
 
+	.mobile-study__help {
+		display: flex;
+		flex-shrink: 0;
+	}
+
 	.mobile-study__content {
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		padding: var(--sy-mobile-space--large);

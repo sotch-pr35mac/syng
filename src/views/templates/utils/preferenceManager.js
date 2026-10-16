@@ -10,6 +10,7 @@ import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
+import { createWalkthroughPreferences } from '@/types/walkthrough.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -49,6 +50,7 @@ const createDefaultPreferences = () => ({
 	childPrivacyMode: createPreference(false, false),
 	completedOnboardingVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
+	walkthrough: createPreference(false, createWalkthroughPreferences(true)),
 });
 
 const backfillPreferences = (configuration) => {
@@ -58,7 +60,10 @@ const backfillPreferences = (configuration) => {
 			continue;
 		}
 		if (!configuration[key]) {
-			configuration[key] = preference;
+			configuration[key] =
+				key === 'walkthrough'
+					? createPreference(false, createWalkthroughPreferences())
+					: preference;
 		}
 	}
 	return configuration;

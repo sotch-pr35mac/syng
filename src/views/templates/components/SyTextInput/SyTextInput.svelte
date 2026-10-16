@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import type { WalkthroughTargetId } from '@/types/walkthrough.js';
+
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - 'Invisible' text box
@@ -11,6 +14,7 @@
 
 	/**
 	 * @typedef {Object} Props
+	 * @property {import('@/types/walkthrough.js').WalkthroughTargetId} [guideTarget] - Optional guide anchor
 	 * @property {string} [style] - 'standard' - Standard text box styling
 	 * @property {string} [size] - 'extra-large' - Extra large text field
 	 * @property {string} [placeholder] - Placeholder Prop
@@ -41,6 +45,7 @@
 		HTMLInputAttributes,
 		'style' | 'size' | 'value' | 'onchange' | 'onkeyup' | 'oninput'
 	> {
+		guideTarget?: WalkthroughTargetId;
 		style?: string;
 		size?: string;
 		value?: string;
@@ -67,6 +72,7 @@
 
 	/** @type {Props} */
 	const {
+		guideTarget = undefined,
 		style = 'standard',
 		size = 'medium',
 		placeholder = '',
@@ -144,6 +150,7 @@
 </script>
 
 <input
+	use:walkthroughTarget={guideTarget}
 	use:cursorToEnd
 	{...restProps}
 	{placeholder}

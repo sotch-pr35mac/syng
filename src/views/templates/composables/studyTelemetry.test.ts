@@ -126,3 +126,31 @@ it('records abandonment only for a started, unfinished quiz', async () => {
 	await vi.advanceTimersByTimeAsync(0);
 	expect(events('quiz.started')).toHaveLength(1);
 });
+
+it('excludes time spent reading instructions, including an answer while instructions are open', async () => {
+	quiz.start('Private list');
+	await vi.advanceTimersByTimeAsync(0);
+	await vi.advanceTimersByTimeAsync(2000);
+	quiz.setInstructionPaused(true);
+	await vi.advanceTimersByTimeAsync(30000);
+	quiz.setInstructionPaused(false);
+	await vi.advanceTimersByTimeAsync(1000);
+	quiz.setInstructionPaused(true);
+	await vi.advanceTimersByTimeAsync(10000);
+	await quiz.answerQuestion('response');
+	expect(invoke).toHaveBeenCalledWith(NATIVE_COMMANDS.QUIZ.ANSWER, {
+		response: { response: 'response', answered_in: 3 },
+	});
+});
+
+it('starts a question suspended when its guide opens from another screen', async () => {
+	quiz.setInstructionPaused(true);
+	quiz.start('Private list');
+	await vi.advanceTimersByTimeAsync(60000);
+	quiz.setInstructionPaused(false);
+	await vi.advanceTimersByTimeAsync(2000);
+	await quiz.answerQuestion('response');
+	expect(invoke).toHaveBeenCalledWith(NATIVE_COMMANDS.QUIZ.ANSWER, {
+		response: { response: 'response', answered_in: 2 },
+	});
+});

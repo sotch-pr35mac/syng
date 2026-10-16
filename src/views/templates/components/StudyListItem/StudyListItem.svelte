@@ -26,12 +26,14 @@
 		{
 			icon: SquareStack,
 			action: () => handleSelection('flashcards'),
+			guideTarget: 'study-flashcards' as const,
 			tooltip: `Flashcards for ${value.name}`,
 			disabled: !eligibility.flashcards,
 		},
 		{
 			icon: Award,
 			action: () => handleSelection('quiz'),
+			guideTarget: 'study-quiz' as const,
 			tooltip: `Start quiz for ${value.name}`,
 			disabled: !eligibility.quiz,
 		},
@@ -48,6 +50,8 @@
 	<span class="study-list-item--actions">
 		{#each actions as action (action.tooltip)}
 			<SyButton
+				guideTarget={action.guideTarget}
+				aria-label={action.tooltip}
 				center={true}
 				onclick={action.action}
 				disabled={action.disabled}

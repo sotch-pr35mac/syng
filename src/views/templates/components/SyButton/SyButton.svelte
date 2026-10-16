@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import type { WalkthroughTargetId } from '@/types/walkthrough.js';
+
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - No background or shadow
@@ -44,6 +47,7 @@
 
 	/**
 	 * @typedef {Object} Props
+	 * @property {import('@/types/walkthrough.js').WalkthroughTargetId} [guideTarget] - Optional guide anchor
 	 * @property {string} [style] - 'filled' - With background and shadow
 	 * @property {string} [size] - 'large' - Large button; defaults to 'medium'
 	 * @property {string} [shape] - 'circle' - Circular; defaults to 'rectangle'
@@ -63,6 +67,7 @@
 	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
 	 */
 	interface Props extends Omit<HTMLButtonAttributes, 'style' | 'children'> {
+		guideTarget?: WalkthroughTargetId;
 		style?: string;
 		size?: string;
 		shape?: string;
@@ -80,6 +85,7 @@
 
 	/** @type {Props} */
 	const {
+		guideTarget = undefined,
 		style = 'filled',
 		size = 'medium',
 		shape = 'rectangle',
@@ -116,6 +122,7 @@
 </script>
 
 <button
+	use:walkthroughTarget={guideTarget}
 	{...restProps}
 	class={[getClasses(), className]}
 	{type}

@@ -82,6 +82,7 @@
 	{#if filterable}
 		<div class="sy-list-preview__filter">
 			<SyTextInput
+				guideTarget="bookmarks-filter"
 				spellcheck={false}
 				placeholder="Filter"
 				aria-label="Filter words"

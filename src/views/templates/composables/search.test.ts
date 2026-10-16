@@ -33,6 +33,43 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
+it('prepares an example entry without recording an automatic lookup as user activity', async () => {
+	const example = { id: '1:learning', simplified: '学习', traditional: '學習' } as SearchEntry;
+	vi.mocked(invoke).mockResolvedValue([example]);
+	await search.prepareWalkthroughExample(() => true);
+	await vi.advanceTimersByTimeAsync(1000);
+	expect(search.activeWord).toEqual(example);
+	expect(search.queryText).toBe('学习');
+	expect(search.status).toBe('ready');
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
+});
+
+it('does not replace an existing search when starting a guide', async () => {
+	search.doSearch('my word');
+	await vi.advanceTimersByTimeAsync(0);
+	vi.mocked(invoke).mockClear();
+	await search.prepareWalkthroughExample(() => true);
+	expect(search.queryText).toBe('my word');
+	expect(invoke).not.toHaveBeenCalled();
+});
+
+it('discards an example lookup after its guide is skipped', async () => {
+	let finish: (entries: SearchEntry[]) => void;
+	let active = true;
+	vi.mocked(invoke).mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			})
+	);
+	const pending = search.prepareWalkthroughExample(() => active);
+	active = false;
+	finish([{ id: '1:learning', simplified: '学习', traditional: '學習' } as SearchEntry]);
+	await pending;
+	expect(search.queryText).toBe('');
+	expect(search.activeWord).toBeUndefined();
+});
+
 it('counts a typing burst once and ignores unchanged callbacks', async () => {
 	search.doSearch('w');
 	await vi.advanceTimersByTimeAsync(400);
