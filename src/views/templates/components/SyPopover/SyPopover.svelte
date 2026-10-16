@@ -5,11 +5,13 @@
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 	import type { SheetSnap } from '@/types/snapSheet.js';
 	import { isMobileLayout } from '@/utils/device.js';
+	import { overlayFocus } from '@/actions/overlayFocus.js';
 
 	type PopoverPlacement = 'below' | 'above' | 'right' | 'left';
 	type PopoverHorizontalAlign = 'center' | 'start' | 'end';
 
 	const {
+		id = undefined,
 		visible = false,
 		anchor = undefined,
 		ignoreElement = undefined,
@@ -19,6 +21,8 @@
 		offset = 10,
 		horizontalAlign = 'center',
 		mobileTitle = 'Options',
+		accessibleName = undefined,
+		returnFocus = undefined,
 		mobileSnap = 'partial',
 		reopenKey = undefined,
 		children,
@@ -33,8 +37,11 @@
 		offset?: number;
 		horizontalAlign?: PopoverHorizontalAlign;
 		mobileTitle?: string;
+		accessibleName?: string;
+		returnFocus?: HTMLElement;
 		mobileSnap?: SheetSnap;
 		reopenKey?: number | string;
+		id?: string;
 		children?: Snippet;
 		onclose?: () => void;
 	} = $props();
@@ -180,45 +187,18 @@
 			resizeObserver.disconnect();
 		};
 	});
-
-	$effect(() => {
-		if (!visible || mobile || !popoverElement) {
-			return undefined;
-		}
-		let removed = false;
-		const handleOutsideClick = (event: MouseEvent) => {
-			const eventPath = event.composedPath();
-			if (popoverElement && eventPath.includes(popoverElement)) {
-				return;
-			}
-			if (
-				eventPath.some(
-					(item) => item instanceof HTMLElement && item.dataset.syPortalOverlay === 'true'
-				)
-			) {
-				return;
-			}
-			if (ignoreElement && eventPath.includes(ignoreElement)) {
-				return;
-			}
-			onclose();
-		};
-		const timer = setTimeout(() => {
-			if (!removed) {
-				document.addEventListener('click', handleOutsideClick, { capture: true });
-			}
-		}, 0);
-		return () => {
-			removed = true;
-			clearTimeout(timer);
-			document.removeEventListener('click', handleOutsideClick, { capture: true });
-		};
-	});
 </script>
 
 {#if visible}
 	{#if mobile}
-		<SySnapSheet initialSnap={mobileSnap} {reopenKey}>
+		<SySnapSheet
+			{id}
+			initialSnap={mobileSnap}
+			{reopenKey}
+			accessibleName={accessibleName ?? mobileTitle}
+			returnFocus={returnFocus ?? ignoreElement}
+			{onclose}
+		>
 			<div class="sy-popover__mobile-header">
 				<span class="sy-popover__mobile-title">{mobileTitle}</span>
 				<SyButton style="ghost" size="small" aria-label="Close" onclick={onclose}>
@@ -231,7 +211,18 @@
 		</SySnapSheet>
 	{:else}
 		<div
+			{id}
 			bind:this={popoverElement}
+			role="dialog"
+			aria-label={accessibleName ?? mobileTitle}
+			tabindex="-1"
+			use:overlayFocus={{
+				initialFocus: 'keyboard',
+				returnFocus: returnFocus ?? ignoreElement,
+				ignoreElement,
+				closeOnOutside: true,
+				onclose,
+			}}
 			class="sy-popover"
 			class:sy-popover--below={placement === 'below'}
 			class:sy-popover--above={placement === 'above'}
@@ -331,7 +322,7 @@
 	.sy-popover__mobile-title {
 		font-family: var(--sy-font-family);
 		font-weight: var(--sy-font-weight--medium);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.sy-popover__mobile-content {

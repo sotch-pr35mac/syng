@@ -51,6 +51,15 @@
 </script>
 
 <div class="mobile-flashcards">
+	<p class="sy-sr-only" role="status" aria-atomic="true">
+		{#if flashcardsRoute.loading}
+			{LOADING_STUDY_MESSAGE}
+		{:else if activeWord}
+			Card {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent.length}. {flashcardsRoute.showDetails
+				? 'Details shown.'
+				: 'Front shown.'}
+		{/if}
+	</p>
 	<div class="mobile-flashcards__content" use:scrollRestore={'mobile-flashcards-content'}>
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="mobile-flashcards__back">
@@ -157,7 +166,6 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		-webkit-overflow-scrolling: touch;
-		padding-bottom: calc(126px + env(safe-area-inset-bottom));
 		box-sizing: border-box;
 	}
 
@@ -190,10 +198,7 @@
 	}
 
 	.mobile-flashcards__bar {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-mobile-space--small);
@@ -249,17 +254,18 @@
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
 		flex-shrink: 0;
 		margin: 0;
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 	}
 
 	:global(.mobile-flashcards__bar-button) {
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
 		margin: 0;
 		color: var(--sy-color--grey-6);
-		white-space: nowrap;
+		white-space: normal;
+		flex-wrap: wrap;
 	}
 
 	:global(.mobile-flashcards__flip-button) {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 </style>

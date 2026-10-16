@@ -25,7 +25,7 @@
 </script>
 
 {#if mobile}
-	<p class="sy-list-preview-item--text sy-list-preview-item--topline">
+	<span class="sy-list-preview-item--text sy-list-preview-item--topline">
 		<span class="sy-list-preview-item--headline">
 			<PreferredCharacters
 				simplified={word.simplified}
@@ -44,9 +44,9 @@
 				{/if}
 			</span>
 		{/if}
-	</p>
+	</span>
 {:else}
-	<p class="sy-list-preview-item--text sy-list-preview-item--headline">
+	<span class="sy-list-preview-item--text sy-list-preview-item--headline">
 		<PreferredCharacters
 			simplified={word.simplified}
 			traditional={word.traditional}
@@ -54,12 +54,12 @@
 			colorByTone={colorCharacters}
 			variant="inline"
 		/>
-	</p>
-	<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">
+	</span>
+	<span class="sy-list-preview-item--text sy-list-preview-item--subtitle">
 		{#if colorPinyin}
 			<ColorizedPinyinSyllables {pinyin} tones={pinyinData.tones} />
 		{:else}
 			{pinyin}
 		{/if}
-	</p>
+	</span>
 {/if}

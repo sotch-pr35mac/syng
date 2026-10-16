@@ -183,7 +183,7 @@
 		gap: var(--sy-space--extra-large);
 	}
 	a {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 		text-decoration: underline;
 	}
 	.interview-step__consent {
@@ -200,10 +200,10 @@
 		width: 20px;
 		height: 20px;
 		margin: 2px 0 0;
-		accent-color: var(--sy-color--blue);
+		accent-color: var(--sy-fill--blue);
 	}
 	.interview-step__error {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 	}
 	.interview-step--mobile h2 {
 		font-size: var(--sy-font-size--mobile-heading);
@@ -211,9 +211,7 @@
 	.interview-step--mobile .interview-step__intro {
 		font-size: var(--sy-font-size--mobile-medium);
 	}
-	@container onboarding (max-width: 36rem) {
-		.interview-step__fields {
-			grid-template-columns: 1fr;
-		}
+	:global(.onboarding-flow--compact) .interview-step__fields {
+		grid-template-columns: 1fr;
 	}
 </style>

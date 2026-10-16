@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import OnboardingFlow from '@/components/Onboarding/OnboardingFlow.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { onboardingStore } from '@/stores/onboarding.svelte.js';
+import { appearanceStore } from '@/stores/appearance.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -107,6 +108,7 @@ beforeEach(async () => {
 		}),
 	};
 	setPreferenceManagerForTest(preferenceManager as never);
+	await appearanceStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
@@ -129,6 +131,20 @@ beforeEach(async () => {
 		addEventListener: vi.fn(),
 		removeEventListener: vi.fn(),
 	});
+});
+
+it('offers Increase Contrast before completion and retains it between onboarding steps', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getByText } = render(OnboardingFlow);
+	const contrast = getByRole('checkbox', { name: 'Increase Contrast' }) as HTMLInputElement;
+	expect(contrast.checked).toBe(false);
+	await user.click(contrast);
+	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
+	await user.click(getByRole('button', { name: 'Continue' }));
+	await waitFor(() => expect(getByText('Chinese display')).toBeTruthy());
+	expect(getByRole('checkbox', { name: 'Increase Contrast' })).toBe(contrast);
+	expect(contrast.checked).toBe(true);
 });
 
 async function continueFromWelcome(user: ReturnType<typeof userEvent.setup>) {
@@ -425,12 +441,14 @@ it('shows only the invitation for existing users, with explicit consent and no r
 	expect(queryByText('Welcome to Syng')).toBeNull();
 	expect(queryByText('Country or region')).toBeNull();
 	expect(getByRole('status', { name: 'Step 1 of 1' })).toBeTruthy();
-	expect((getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
+	expect(
+		(getByRole('checkbox', { name: /I agree to be contacted/ }) as HTMLInputElement).checked
+	).toBe(false);
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
 	expect(submitInterviewSignup).toHaveBeenCalledWith({
@@ -472,7 +490,7 @@ it('keeps local save retries idempotent, changes the ID for edited details, and 
 	});
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(getByRole('alert')).toBeTruthy());
 	expect(queryByText(/Error echoing/)).toBeNull();
@@ -506,7 +524,7 @@ it('prevents duplicate clicks during local storage and completes as soon as the 
 	const { getByRole, getByLabelText } = render(OnboardingFlow);
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'invalid');
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
 	await user.clear(getByLabelText('Email address'));

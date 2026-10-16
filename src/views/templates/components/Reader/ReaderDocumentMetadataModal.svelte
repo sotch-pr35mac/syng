@@ -58,7 +58,7 @@
 	busyLabel="Saving..."
 	disabled={!canSave}
 	busy={busy || submitting}
-	width="min(420px, 68vw)"
+	width="26.25rem"
 	{onclose}
 	onconfirm={save}
 >

@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
 	import ColorizedToolOutput from '@/components/Tools/ColorizedToolOutput.svelte';
 	import TextConversionToolPanel from '@/components/Tools/TextConversionToolPanel.svelte';
 	import ToolsOverlays from '@/components/Tools/ToolsOverlays.svelte';
@@ -23,9 +24,12 @@
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Extras</h1>
 	</div>
 
-	<div class="tools__tabs" aria-label="Extras tools">
+	<div class="tools__tabs" role="tablist" aria-label="Extras tools" use:tabNavigation>
 		{#each textConversionTabs as tab (tab.name)}
 			<SyTab
+				role="tab"
+				id={`tools-${tab.name}-tab`}
+				aria-controls="tools-panel"
 				active={toolsRoute.activeTab === tab.name}
 				onclick={() => toolsRoute.setActiveTab(tab.name)}
 			>
@@ -34,9 +38,18 @@
 		{/each}
 	</div>
 
-	<div class="tools__content" use:scrollRestore={'tools-content'}>
+	<div
+		role="tabpanel"
+		id="tools-panel"
+		aria-labelledby={`tools-${toolsRoute.activeTab}-tab`}
+		tabindex="0"
+		class="tools__content"
+		use:scrollRestore={'tools-content'}
+	>
 		<TextConversionToolPanel
 			tool={toolsRoute.activeTool.name}
+			busy={toolsRoute.operationState.busy}
+			status={toolsRoute.operationState.status}
 			label={toolsRoute.activeTool.label}
 			headingId={textConversionHeadingId(toolsRoute.activeTool.name, 'desktop')}
 			inputLabel={toolsRoute.activeTool.inputLabel}
@@ -76,6 +89,7 @@
 		padding: var(--sy-space--extra-large) var(--sy-space);
 	}
 	.tools__tabs {
+		flex-wrap: wrap;
 		display: flex;
 		gap: var(--sy-space--large);
 		padding: 0 var(--sy-space);

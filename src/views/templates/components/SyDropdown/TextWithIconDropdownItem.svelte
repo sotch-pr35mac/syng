@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	/* Icon Prop */
 
 	/* Text Prop */
@@ -16,22 +16,20 @@
 	// Possible Values:
 	// 'blue'
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} [icon] - The icon component to use
-	 * @property {string} [text] - The text value to display
-	 * @property {string} [hover] - 'red'
-	 * @property {string} [color] - 'black'
-	 * @property {(e: Event) => void} [onclick] - Click handler
-	 */
-
-	/** @type {Props} */
 	const {
-		icon = undefined,
 		text = '',
-		hover = 'blue',
 		color = 'black',
+		hover = 'blue',
+		icon = undefined,
+		disabled = false,
 		onclick = () => {},
+	}: {
+		text?: string;
+		color?: string;
+		hover?: string;
+		icon?: import('svelte').Component<any> | import('svelte').ComponentType;
+		disabled?: boolean;
+		onclick?: (_event: MouseEvent) => void;
 	} = $props();
 
 	const getClasses = () => {
@@ -41,21 +39,34 @@
 			`twi-dropdown-item--hover--${hover}`,
 		].join(' ');
 	};
-	const handleClick = (e) => {
-		onclick(e);
+	const handleClick = (event: MouseEvent) => {
+		onclick(event);
 	};
 
 	const SvelteComponent = $derived(icon);
 </script>
 
-<span class={getClasses()} role="button" tabindex="0" onclick={handleClick} onkeyup={handleClick}>
-	<SvelteComponent size="14" />
+<button
+	type="button"
+	class={getClasses()}
+	role="menuitem"
+	tabindex="-1"
+	{disabled}
+	onclick={handleClick}
+>
+	{#if SvelteComponent}<SvelteComponent size="14" aria-hidden="true" />{/if}
 	&nbsp;
 	<span>{text}</span>
-</span>
+</button>
 
 <style>
 	.twi-dropdown-item--container {
+		border: 0;
+		background: transparent;
+		font: inherit;
+		text-align: left;
+		min-width: 0;
+		white-space: normal;
 		display: flex;
 		align-items: center;
 		cursor: pointer;
@@ -64,19 +75,19 @@
 		transition-duration: var(--sy-transition-duration) / 2;
 	}
 	.twi-dropdown-item--color--blue {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 	.twi-dropdown-item--color--black {
 		color: var(--sy-color--black);
 	}
 	.twi-dropdown-item--hover--blue:hover {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 	.twi-dropdown-item--hover--green:hover {
-		color: var(--sy-color--green-2);
+		color: var(--sy-text--green);
 	}
 	.twi-dropdown-item--hover--red:hover {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 	}
 	.twi-dropdown-item--container:first-child,
 	.twi-dropdown-item--container:last-child {

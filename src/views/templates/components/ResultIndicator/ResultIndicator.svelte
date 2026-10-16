@@ -54,13 +54,13 @@
 			<div class="indicator-content">
 				{#if isCorrect}
 					<div class="icon-container" class:correct={isCorrect}>
-						<Check size="20" />
+						<Check size="20" aria-hidden="true" />
 					</div>
 					<span class="text">Correct!</span>
 				{:else}
 					<span class="text answer-text">{chosenAnswer} |</span>
 					<div class="icon-container" class:incorrect={!isCorrect}>
-						<X size="20" />
+						<X size="20" aria-hidden="true" />
 					</div>
 					<span class="text">Incorrect</span>
 				{/if}
@@ -95,14 +95,14 @@
 	.result-indicator {
 		position: relative;
 		min-width: 0;
-		flex-shrink: 0;
+		flex-shrink: 1;
 	}
 	.indicator-content {
 		display: flex;
 		align-items: center;
 		gap: var(--sy-space);
-		white-space: nowrap;
-		color: var(--sy-color--grey-dark);
+		flex-wrap: wrap;
+		color: var(--sy-color--black);
 	}
 	.icon-container {
 		display: flex;
@@ -113,21 +113,20 @@
 		border-radius: var(--sy-border-radius);
 	}
 	.correct {
-		background-color: var(--sy-color--green);
-		color: var(--sy-color--white);
+		background-color: var(--sy-fill--green);
+		color: var(--sy-text--on-fill);
 	}
 	.incorrect {
-		background-color: var(--sy-color--red);
-		color: var(--sy-color--white);
+		background-color: var(--sy-fill--red);
+		color: var(--sy-text--on-fill);
 	}
 	.text {
 		font-size: var(--sy-font-size--result-caption);
 		font-family: var(--sy-font-family);
 	}
 	.answer-text {
-		max-width: 200px;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		max-width: 100%;
+		overflow-wrap: anywhere;
 	}
 	.timer-wrapper {
 		margin-left: var(--sy-space);

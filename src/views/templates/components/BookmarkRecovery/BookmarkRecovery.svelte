@@ -34,6 +34,7 @@
 <SyModal
 	title="Some bookmarks need your attention"
 	visible={bookmarkRecoveryStore.active}
+	dismissible={false}
 	onclose={() => {}}
 >
 	{#snippet body()}

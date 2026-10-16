@@ -27,6 +27,6 @@
 		border-radius: 50%;
 		background: var(--sy-color--white);
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 </style>

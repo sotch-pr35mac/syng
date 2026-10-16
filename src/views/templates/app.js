@@ -6,6 +6,9 @@ import { isMobile, isIPad } from '@/utils/device.js';
 import { handleError } from '@/utils/error.js';
 import { inDebugMode } from '@/utils/process.js';
 import { setDebugMode } from '@/utils/startup.js';
+import { initializeAccessibility } from '@/composables/accessibility.js';
+import { initializeSystemTypography } from '@/composables/systemTypography.js';
+import { appearanceStore } from '@/stores/appearance.svelte.js';
 
 const appContainer = document.getElementById('app');
 const charactersContainer = document.getElementById('characters');
@@ -47,6 +50,7 @@ function dismissMobileSplashAfterPaint() {
 }
 
 async function bootstrap() {
+	initializeAccessibility();
 	if (appContainer) {
 		let useMobile = false;
 		try {
@@ -66,13 +70,18 @@ async function bootstrap() {
 		// creates the app services with the correct (production vs development_*) database names.
 		// inDebugMode() never rejects (getArgs swallows errors and returns {}), so this defaults
 		// to false — the production databases — on any failure.
-		setDebugMode(await inDebugMode());
+		const debugMode = await inDebugMode();
+		setDebugMode(debugMode);
+		appearanceStore.initialize(debugMode);
+		await initializeSystemTypography();
 		const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
 		await dismissMobileSplashAfterPaint();
 		document.getElementById('syng-bootstrap-launch-screen')?.remove();
 		return mountedApp;
 	}
 	if (charactersContainer) {
+		appearanceStore.initialize(await inDebugMode());
+		await initializeSystemTypography();
 		return mount(CharacterWindow, { target: charactersContainer });
 	}
 	return undefined;

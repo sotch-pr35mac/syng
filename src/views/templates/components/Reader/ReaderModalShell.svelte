@@ -34,25 +34,33 @@
 		onconfirm = () => {},
 		body: bodySnippet,
 	}: Props = $props();
+	const disabledReasonId = `reader-confirm-disabled-${crypto.randomUUID()}`;
 </script>
 
 <SyModal {title} {visible} {onclose}>
 	{#snippet body()}
-		<div class="reader-modal-shell__body" style={`width: ${width};`}>
+		<div class="reader-modal-shell__body" style={`width: ${width};`} aria-busy={busy}>
 			{@render bodySnippet?.()}
 			{#if errorMessage}
 				<p class="reader-modal-shell__error">{errorMessage}</p>
 			{/if}
 		</div>
+		<span class="sy-sr-only" role="status">{busy ? busyLabel : ''}</span>
 	{/snippet}
 	{#snippet footer()}
 		<SyButton size="large" onclick={onclose}>{cancelLabel}</SyButton>
 		{#if disabled && disabledConfirmTooltip}
 			<span class="sy-tooltip--container">
-				<SyButton size="large" color="green" {disabled} onclick={onconfirm}>
+				<SyButton
+					size="large"
+					color="green"
+					{disabled}
+					onclick={onconfirm}
+					aria-describedby={disabledReasonId}
+				>
 					{busy ? busyLabel : confirmLabel}
 				</SyButton>
-				<span class="sy-tooltip--body sy-tooltip--body-top"
+				<span class="sy-tooltip--body sy-tooltip--body-top" id={disabledReasonId}
 					><p>{disabledConfirmTooltip}</p></span
 				>
 			</span>
@@ -75,5 +83,7 @@
 		flex-direction: column;
 		gap: var(--sy-space--large);
 		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 	}
 </style>

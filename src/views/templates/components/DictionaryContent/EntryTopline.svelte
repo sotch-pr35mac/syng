@@ -26,6 +26,7 @@
 
 <div class="chinese-characters--container">
 	<h1
+		tabindex="-1"
 		class="chinese-characters--character-container chinese-characters--character"
 		class:chinese-characters--character-container--stacked={separateTraditionalCharacters}
 		data-testid="chinese-characters"
@@ -98,11 +99,11 @@
 		font-size: 1.6em;
 		font-weight: 300;
 		margin: var(--sy-space--small) var(--sy-space--large);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 	.chinese-characters--alternative-pronunciations {
 		margin: var(--sy-space--small) var(--sy-space--large);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 	.chinese-characters--alternative-pronunciation {
 		display: flex;

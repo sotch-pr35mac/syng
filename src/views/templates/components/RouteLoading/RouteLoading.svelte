@@ -12,7 +12,7 @@
 		align-items: center;
 		justify-content: center;
 		gap: var(--sy-space--small);
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 	}
 
 	.route-loading__dot {

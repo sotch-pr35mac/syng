@@ -58,7 +58,7 @@ it('switches tabs and persists the active tab state', async () => {
 	const user = userEvent.setup();
 	const { getByRole, unmount } = render(MobileTools);
 
-	await user.click(getByRole('button', { name: 'Convert' }));
+	await user.click(getByRole('tab', { name: 'Convert' }));
 	expect(toolsActiveTabStore.value).toBe('converter');
 	unmount();
 

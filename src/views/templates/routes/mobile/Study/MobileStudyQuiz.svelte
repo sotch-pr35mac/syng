@@ -120,7 +120,11 @@
 		}
 	}
 
-	function handlePageClick(event: MouseEvent | KeyboardEvent): void {
+	function handlePageClick(event: MouseEvent): void {
+		// Native keyboard activation belongs to its button, not the pointer pause shortcut.
+		if (event.detail === 0) {
+			return;
+		}
 		const target = event.target;
 		if (!(target instanceof Element)) {
 			return;
@@ -151,26 +155,18 @@
 	}
 </script>
 
-<div
-	class="mobile-quiz"
-	onclick={handlePageClick}
-	onkeydown={handlePageClick}
-	role="button"
-	tabindex="0"
-	aria-label="Quiz content"
->
-	{#if showResultToast && !quizRoute.showFinalResults}
-		<div class="mobile-quiz__result-banner" transition:fly|global={{ y: 16, duration: 250 }}>
-			<ResultIndicator
-				show={showResultToast}
-				isCorrect={quizRoute.lastAnswerCorrect}
-				chosenAnswer={quizRoute.chosenAnswer}
-				onComplete={handleResultTimerComplete}
-				slideAxis="y"
-				timerVisible={false}
-			/>
-		</div>
-	{/if}
+<!-- Pointer pause shortcut; the timer button provides the keyboard action. -->
+<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
+<div class="mobile-quiz" onclick={handlePageClick} role="region" aria-label="Quiz content">
+	<p class="sy-sr-only" role="status" aria-atomic="true">
+		{#if quizRoute.showFinalResults}
+			Quiz complete. {quizRoute.finalCorrect} of {quizRoute.finalTotal} correct.
+		{:else if quizRoute.showResult}
+			{quizRoute.lastAnswerCorrect ? 'Correct answer.' : 'Incorrect answer.'}
+		{:else if quizRoute.currentQuestion}
+			Question {quizRoute.questionsCompleted + 1} of {quizRoute.questionsTotal}.
+		{/if}
+	</p>
 
 	<div class="mobile-quiz__content" bind:this={contentElement}>
 		{#if quizRoute.showFinalResults}
@@ -206,6 +202,7 @@
 				<div class="mobile-quiz__options">
 					{#each quizRoute.currentQuestion.options as option (option.value)}
 						<button
+							type="button"
 							class="mobile-quiz__option"
 							onclick={() => answerQuestion(option.value)}
 						>
@@ -230,6 +227,21 @@
 	</div>
 
 	<div class="mobile-quiz__dock">
+		{#if showResultToast && !quizRoute.showFinalResults}
+			<div
+				class="mobile-quiz__result-banner"
+				transition:fly|global={{ y: 16, duration: 250 }}
+			>
+				<ResultIndicator
+					show={showResultToast}
+					isCorrect={quizRoute.lastAnswerCorrect}
+					chosenAnswer={quizRoute.chosenAnswer}
+					onComplete={handleResultTimerComplete}
+					slideAxis="y"
+					timerVisible={false}
+				/>
+			</div>
+		{/if}
 		{#if !quizRoute.showFinalResults}
 			<div class="mobile-quiz__progress">
 				<SyProgressLine
@@ -350,13 +362,9 @@
 		background-color: var(--sy-color--white);
 	}
 
-	.mobile-quiz:focus {
-		outline: none;
-	}
-
 	.mobile-quiz__result-banner {
 		position: absolute;
-		bottom: calc(136px + env(safe-area-inset-bottom));
+		bottom: calc(100% + var(--sy-mobile-space--small));
 		left: calc(var(--sy-mobile-space--small) * 3);
 		right: calc(var(--sy-mobile-space--small) * 3);
 		display: flex;
@@ -377,7 +385,6 @@
 		overflow-y: auto;
 		overflow-x: hidden;
 		-webkit-overflow-scrolling: touch;
-		padding-bottom: calc(142px + env(safe-area-inset-bottom));
 		box-sizing: border-box;
 	}
 
@@ -413,9 +420,9 @@
 		padding: calc(var(--sy-mobile-space--extra-small) * 7) var(--sy-mobile-space--large);
 		border: none;
 		border-radius: var(--sy-border-radius);
-		background-color: var(--sy-color--blue);
+		background-color: var(--sy-fill--blue);
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--white);
+		color: var(--sy-text--on-fill);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-extra-large);
 		line-height: 1.25;
@@ -423,7 +430,7 @@
 	}
 
 	.mobile-quiz__option:active {
-		background-color: rgba(118, 175, 249, 0.65);
+		background-color: var(--sy-fill--blue);
 		box-shadow: var(--sy-shadow--active);
 	}
 
@@ -451,14 +458,12 @@
 	.mobile-quiz__empty h1 {
 		font-size: var(--sy-font-size--display-small);
 		font-weight: 200;
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 	}
 
 	.mobile-quiz__dock {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
+		position: relative;
+		flex-shrink: 0;
 		z-index: var(--sy-z-index--base-2);
 	}
 
@@ -516,20 +521,22 @@
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
 		width: 100%;
 		margin: 0;
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 	}
 
 	:global(.mobile-quiz__bar-button) {
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
 		margin: 0;
 		color: var(--sy-color--grey-6);
-		white-space: nowrap;
+		white-space: normal;
+		flex-wrap: wrap;
 	}
 
 	:global(.mobile-quiz__continue-button) {
 		gap: calc(var(--sy-mobile-space--extra-small) * 3);
 		margin: 0;
-		color: var(--sy-color--blue);
-		white-space: nowrap;
+		color: var(--sy-text--blue);
+		white-space: normal;
+		flex-wrap: wrap;
 	}
 </style>

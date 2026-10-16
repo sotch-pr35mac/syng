@@ -1,30 +1,25 @@
-<script>
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import type { HTMLAttributes } from 'svelte/elements';
+
 	/* FAQ
 	 * Q: How do I get a button within a drodown trigger to respect first-child/last-child behavior?
 	 * A: You can add the `sy-button--grouped--first` / `sy-button--grouped--last` directly to the button.
 	 */
 
-	/* Size Prop */
-	/* Possible Values */
-	/* large */
-	/* medium */
+	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+		size?: string;
+		children?: Snippet;
+	}
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {string} [size] - small
-	 * @property {string} [aria-label] - Accessible label
-	 * @property {import('svelte').Snippet} [children]
-	 */
-
-	/** @type {Props} */
-	const { size = 'medium', children, ...restProps } = $props();
+	const { size = 'medium', class: className, children, ...restProps }: Props = $props();
 
 	const getClasses = () => {
 		return ['sy-button-bar--container', `sy-button-bar--container--${size}`].join(' ');
 	};
 </script>
 
-<div {...restProps} class={getClasses()}>
+<div {...restProps} class={[getClasses(), className]}>
 	{@render children?.()}
 </div>
 
@@ -32,6 +27,10 @@
 	.sy-button-bar--container {
 		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
 		padding: var(--sy-space--large);
 	}
 	:global(.sy-button-bar--container .sy-button--grouped) {
@@ -72,58 +71,31 @@
 	}
 
 	/* Styles for a button placed within a dropdown trigger within a button bar */
-	:global(
-		.sy-button-bar--container--small
-			> .sy-dropdown--container
-			> .sy-dropdown--trigger
-			> .sy-button
-	) {
+	:global(.sy-button-bar--container--small > .sy-dropdown--container > .sy-button) {
 		padding: var(--sy-space--small) var(--sy-space);
 	}
-	:global(
-		.sy-button-bar--container--medium
-			> .sy-dropdown--container
-			> .sy-dropdown--trigger
-			> .sy-button
-	) {
+	:global(.sy-button-bar--container--medium > .sy-dropdown--container > .sy-button) {
 		padding: var(--sy-space) var(--sy-space--large);
 	}
-	:global(
-		.sy-button-bar--container--large
-			> .sy-dropdown--container
-			> .sy-dropdown--trigger
-			> .sy-button
-	) {
+	:global(.sy-button-bar--container--large > .sy-dropdown--container > .sy-button) {
 		padding: var(--sy-space--large) var(--sy-space--extra-large);
 	}
-	:global(
-		.sy-button-bar--container
-			> .sy-dropdown--container
-			> .sy-dropdown--trigger
-			> .sy-button--grouped--first
-	) {
+	:global(.sy-button-bar--container > .sy-dropdown--container > .sy-button--grouped--first) {
 		border-radius: var(--sy-space) 0px 0px var(--sy-space);
 	}
 	:global(
 		.sy-button-bar--container
 			> .sy-dropdown--container
-			> .sy-dropdown--trigger
 			> .sy-button--grouped--first:not(.sy-button--mobile)
 	) {
 		border-right: none;
 	}
-	:global(
-		.sy-button-bar--container
-			> .sy-dropdown--container
-			> .sy-dropdown--trigger
-			> .sy-button--grouped--last
-	) {
+	:global(.sy-button-bar--container > .sy-dropdown--container > .sy-button--grouped--last) {
 		border-radius: 0px var(--sy-space) var(--sy-space) 0px;
 	}
 	:global(
 		.sy-button-bar--container
 			> .sy-dropdown--container
-			> .sy-dropdown--trigger
 			> .sy-button--grouped--last:not(.sy-button--mobile)
 	) {
 		border-left: none;
@@ -131,7 +103,6 @@
 	:global(
 		.sy-button-bar--container
 			> .sy-dropdown--container
-			> .sy-dropdown--trigger
 			> .sy-button--grouped:not(.sy-button--grouped--first):not(.sy-button--grouped--last)
 	) {
 		border-radius: 0px;
@@ -139,11 +110,9 @@
 	:global(
 		.sy-button-bar--container
 			> .sy-dropdown--container
-			> .sy-dropdown--trigger
 			> .sy-button--grouped:not(.sy-button--mobile):not(.sy-button--grouped--first),
 		.sy-button-bar--container
 			> .sy-dropdown--container
-			> .sy-dropdown--trigger
 			> .sy-button--grouped:not(.sy-button--mobile):not(.sy-button--grouped--last)
 	) {
 		border-left: none;

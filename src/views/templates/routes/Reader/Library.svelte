@@ -79,8 +79,8 @@
 					position={DROPDOWN_POSITIONS.RIGHT}
 					onselection={library.handleImportSelection}
 				>
-					{#snippet children(open)}
-						<SyButton style="ghost" size="large" center={true}>
+					{#snippet children(open, triggerProps)}
+						<SyButton {...triggerProps} style="ghost" size="large" center={true}>
 							Import
 							{#if open}<ChevronUp size="20" />{:else}<ChevronDown size="20" />{/if}
 						</SyButton>
@@ -88,14 +88,24 @@
 				</SyDropdown>
 			{/if}
 			{#if library.editingLibrary || library.documents.length}
-				<SyButton style="ghost" size="large" onclick={library.toggleEditing}>
+				<SyButton
+					style="ghost"
+					size="large"
+					onclick={library.toggleEditing}
+					aria-pressed={library.editingLibrary}
+				>
 					{library.editingLibrary ? 'Done' : 'Edit'}
 				</SyButton>
 			{/if}
 		</div>
 	</div>
 
-	<main class="reader-library" class:reader-library--empty={!library.documents.length}>
+	<section
+		aria-label="Reading library"
+		aria-busy={readerRoute.importing}
+		class="reader-library"
+		class:reader-library--empty={!library.documents.length}
+	>
 		{#if library.documents.length}
 			<div class="reader-library__grid">
 				{#each library.documents as document (document._id)}
@@ -104,7 +114,6 @@
 						editing={library.editingLibrary}
 						selected={library.selectedDocumentIds.has(document._id)}
 						onclick={() => library.handleDocumentCardClick(document)}
-						onkeyup={(event) => library.handleDocumentCardKey(event, document)}
 						onedit={(event) => library.openDocumentDetails(event, document)}
 					/>
 				{/each}
@@ -115,7 +124,7 @@
 					<Awa pose="read" />
 					<p>Your reading library is empty</p>
 				</div>
-				<div class="reader-library__empty-actions" aria-label="Import options">
+				<div class="reader-library__empty-actions" role="group" aria-label="Import options">
 					<div class="reader-library__empty-action-group">
 						<SyButton
 							size="large"
@@ -152,7 +161,10 @@
 				</div>
 			</div>
 		{/if}
-	</main>
+		<span class="sy-sr-only" role="status"
+			>{readerRoute.importing ? 'Importing document…' : ''}</span
+		>
+	</section>
 </div>
 
 <ReaderClipboardImportModal
@@ -207,6 +219,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: var(--sy-space);
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		background-color: var(--sy-color--white);
 		box-shadow: var(--sy-box-shadow);
@@ -224,7 +238,7 @@
 		align-items: center;
 		gap: var(--sy-space--large);
 		min-width: 0;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.reader-library-route__header-actions {
@@ -237,9 +251,7 @@
 		color: var(--sy-color--black);
 		font-size: var(--sy-font-size--large);
 		font-weight: var(--sy-font-weight--bold);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 
 	:global(.reader-library-route__delete-button) {
@@ -262,19 +274,20 @@
 
 	.reader-library__grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.375rem), 1fr));
 		gap: clamp(18px, 3vw, 34px);
 		align-items: start;
 	}
 
 	.reader-library__empty {
+		margin: auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: var(--sy-space--extra-large);
 		width: 100%;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		text-align: center;
 	}
@@ -316,7 +329,7 @@
 
 	.reader-library__empty-action-hint {
 		max-width: 220px;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--small);
 		line-height: 1.4;
 	}

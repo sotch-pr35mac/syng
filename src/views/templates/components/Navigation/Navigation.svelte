@@ -10,6 +10,7 @@
 		GraduationCap,
 	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
+	import { router } from 'svelte-spa-router';
 	import { handleError } from '@/utils';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
@@ -114,14 +115,26 @@
 		});
 </script>
 
-<div class="navigation-container">
+<nav class="navigation-container" aria-label="Primary navigation">
 	<div
 		class="navigation--primary-nav"
 		class:navigation--primary-nav--traffic-light-inset={trafficLightInset}
 	>
 		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
-				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
+				<a
+					href={`#/${navItem.link}`}
+					class="sy-tooltip--container"
+					data-sy-fixed-tooltip
+					aria-label={navItem.title}
+					aria-current={(
+						navItem.pattern
+							? navItem.pattern.test(router.location)
+							: router.location === `/${navItem.link}`
+					)
+						? 'page'
+						: undefined}
+				>
 					<span
 						class="navigation--item"
 						use:active={{
@@ -129,9 +142,9 @@
 							className: 'navigation--item-active',
 						}}
 					>
-						<navItem.icon size="24" />
+						<navItem.icon size="24" aria-hidden="true" />
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-right">
+					<div class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
 						<p>
 							{navItem.title}
 						</p>
@@ -143,7 +156,15 @@
 	<div class="navigation--secondary-nav">
 		{#each secondaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
-				<a href={`#/${navItem.link}`} class="sy-tooltip--container">
+				<a
+					href={`#/${navItem.link}`}
+					class="sy-tooltip--container"
+					data-sy-fixed-tooltip
+					aria-label={navItem.link === 'settings' && updateAvailable
+						? `${navItem.title}, update available`
+						: navItem.title}
+					aria-current={router.location === `/${navItem.link}` ? 'page' : undefined}
+				>
 					<span
 						class="navigation--item"
 						use:active={{
@@ -151,12 +172,13 @@
 							className: 'navigation--item-active',
 						}}
 					>
-						<navItem.icon size={navItem.size} />
+						<navItem.icon size={navItem.size} aria-hidden="true" />
 						{#if navItem.link === 'settings' && updateAvailable}
-							<span class="navigation--badge"></span>
+							<span class="navigation--badge" aria-hidden="true"></span>
+							<span class="sy-sr-only">Update available</span>
 						{/if}
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-right">
+					<div class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
 						<p>
 							{navItem.title}
 						</p>
@@ -165,7 +187,7 @@
 			{/if}
 		{/each}
 	</div>
-</div>
+</nav>
 
 <style>
 	.navigation-container {
@@ -177,6 +199,7 @@
 		align-items: center;
 		justify-content: space-between;
 		box-shadow: inset 0px 0px 4px rgba(0, 0, 0, 0.1);
+		overflow-y: auto;
 	}
 	.navigation--primary-nav {
 		display: flex;
@@ -193,7 +216,7 @@
 		align-items: center;
 	}
 	.navigation--item {
-		color: var(--sy-color--grey-4);
+		color: var(--sy-navigation-icon, var(--sy-icon--muted));
 		margin: var(--sy-space);
 		padding: var(--sy-space--large);
 		height: 30px;
@@ -203,6 +226,10 @@
 		justify-content: center;
 		position: relative;
 	}
+	.navigation--secondary-nav a[href='#/settings'] .navigation--item {
+		--sy-navigation-icon: var(--sy-icon--settings);
+		--sy-navigation-icon-hover: var(--sy-icon--settings-hover);
+	}
 	.navigation--badge {
 		position: absolute;
 		top: 4px;
@@ -210,12 +237,12 @@
 		width: 8px;
 		height: 8px;
 		border-radius: 50%;
-		background-color: var(--sy-color--blue);
+		background-color: var(--sy-icon--hover);
 		pointer-events: none;
 	}
 	@media (hover: hover) {
 		.navigation--item:hover {
-			color: var(--sy-color--blue);
+			color: var(--sy-navigation-icon-hover, var(--sy-icon--hover));
 			transition-property: color;
 			transition-duration: var(--sy-transition-duration);
 		}
@@ -224,7 +251,7 @@
 		background-color: var(--sy-color--white);
 		border-radius: 100%;
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--grey-4) !important;
+		color: var(--sy-navigation-icon, var(--sy-icon--muted)) !important;
 		transition-property: background-color, box-shadow, border-radius, color !important;
 		transition-duration: var(--sy-transition-duration) !important;
 	}

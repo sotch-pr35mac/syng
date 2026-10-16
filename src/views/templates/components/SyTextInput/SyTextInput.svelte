@@ -1,46 +1,36 @@
-<script>
-	/* Style Prop */
-	/* Possible Values */
-	// 'ghost' - 'Invisible' text box
-
-	/* Size Prop */
-	/* Possible Values */
-	// 'small' - Small text field
-	// 'medium' - Medium text field (Default Value)
-	// 'large' - Large text field
-
-	/**
-	 * @typedef {Object} Props
-	 * @property {string} [style] - 'standard' - Standard text box styling
-	 * @property {string} [size] - 'extra-large' - Extra large text field
-	 * @property {string} [placeholder] - Placeholder Prop
-	 * @property {string} [value] - Controlled input value
-	 * @property {string} [type] - Type Prop
-	 * @property {string} [autocomplete] - Autocomplete Prop
-	 * @property {string} [autocorrect] - Autocorrect Prop ('off' by default to stop pinyin being "corrected")
-	 * @property {string} [autocapitalize] - Autocapitalize Prop ('off' by default)
-	 * @property {string} [inputmode] - Input mode Prop
-	 * @property {any} id - ID Prop
-	 * @property {string} [name] - Form field name
-	 * @property {boolean} [required] - Whether the form field is required
-	 * @property {string} [ariaDescribedby] - ID of descriptive helper text
-	 * @property {any} [spellcheck] - Spellcheck Prop
-	 * @property {any[]} [classes] - Additional class names
-	 * @property {number} [maxlength] - Maximum character length
-	 * @property {(value: string) => void} [onchange] - Change handler
-	 * @property {(value: string) => void} [onkeyup] - Keyup handler
-	 * @property {(value: string) => void} [oninput] - Input handler
-	 * @property {(event: Event) => void} [onenter] - Enter key handler
-	 */
-
+<script lang="ts">
+	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { isAndroid, isMobile } from '@/utils/device.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
+
+	interface Props extends Omit<
+		HTMLInputAttributes,
+		'style' | 'size' | 'value' | 'onchange' | 'onkeyup' | 'oninput'
+	> {
+		style?: string;
+		size?: string;
+		value?: string;
+		ariaDescribedby?: string;
+		classes?: string[];
+		onchange?: (value: string) => void;
+		onkeyup?: (value: string) => void;
+		oninput?: (value: string) => void;
+		onenter?: (event: KeyboardEvent) => void;
+	}
+
+	type InputKeyboardEvent = KeyboardEvent & { currentTarget: EventTarget & HTMLInputElement };
+	type InputValueEvent = Event & {
+		currentTarget: EventTarget & HTMLInputElement;
+		isComposing?: boolean;
+	};
+	type InputCompositionEvent = CompositionEvent & {
+		currentTarget: EventTarget & HTMLInputElement;
+	};
 
 	// Optimized for mobile: 16px minimum font size prevents iOS auto-zoom on focus.
 	const mobile = isMobile();
 	const android = isAndroid();
 
-	/** @type {Props} */
 	const {
 		style = 'standard',
 		size = 'medium',
@@ -57,14 +47,20 @@
 		name = undefined,
 		required = false,
 		ariaDescribedby = undefined,
+		'aria-describedby': nativeDescribedby = undefined,
 		maxlength = undefined,
 		spellcheck = false,
 		classes = [],
+		class: className,
 		onchange = () => {},
 		onkeyup = () => {},
 		oninput = () => {},
 		onenter = () => {},
-	} = $props();
+		onkeydown,
+		oncompositionstart,
+		oncompositionend,
+		...restProps
+	}: Props = $props();
 	const getClasses = () => {
 		return classes
 			.concat([
@@ -82,7 +78,7 @@
 	const ENTER_KEY_CODE = 13;
 	let composing = false;
 	let suppressCompositionEnter = false;
-	const handleKeyup = (event) => {
+	const handleKeyup = (event: InputKeyboardEvent) => {
 		if (composing || event.isComposing || event.keyCode === IME_KEY_CODE) {
 			return;
 		}
@@ -98,21 +94,23 @@
 			onkeyup(event.currentTarget.value);
 		}
 	};
-	const handleInput = (event) => {
+	const handleInput = (event: InputValueEvent) => {
 		if (composing || event.isComposing) {
 			return;
 		}
 		oninput(event.currentTarget.value);
 	};
-	const handleCompositionEnd = (event) => {
+	const handleCompositionEnd = (event: InputCompositionEvent) => {
 		composing = false;
 		suppressCompositionEnter = true;
 		oninput(event.currentTarget.value);
+		oncompositionend?.(event);
 	};
 </script>
 
 <input
 	use:cursorToEnd
+	{...restProps}
 	{placeholder}
 	{value}
 	{type}
@@ -120,23 +118,25 @@
 	{autocorrect}
 	{autocapitalize}
 	{inputmode}
-	class={getClasses()}
+	class={[getClasses(), className]}
 	{id}
 	{name}
 	{required}
-	aria-describedby={ariaDescribedby}
+	aria-describedby={nativeDescribedby ?? ariaDescribedby}
 	{maxlength}
 	{spellcheck}
-	onchange={(e) => onchange(e.currentTarget.value)}
+	onchange={(event) => onchange(event.currentTarget.value)}
 	oninput={handleInput}
-	oncompositionstart={() => {
+	oncompositionstart={(event) => {
 		composing = true;
+		oncompositionstart?.(event);
 	}}
 	oncompositionend={handleCompositionEnd}
 	onkeydown={(event) => {
 		if (!composing && !event.isComposing) {
 			suppressCompositionEnter = false;
 		}
+		onkeydown?.(event);
 	}}
 	onkeyup={handleKeyup}
 />
@@ -149,13 +149,18 @@
 			calc(var(--sy-space--small) + var(--sy-space));
 		background-color: var(--sy-color--white);
 		color: var(--sy-color--black);
+		font-size: 0.833333rem;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 	.sy-text-input::placeholder {
-		color: var(--sy-color--grey-1);
+		color: var(--sy-text--placeholder);
+		opacity: 1;
 	}
 	.sy-text-input--standard {
 		border-radius: var(--sy-border-radius);
-		border: var(--sy-border);
+		border: var(--sy-input--border);
 		padding: var(--sy-space);
 		box-shadow: var(--sy-inner-shadow);
 	}
@@ -164,21 +169,23 @@
 		display: flex;
 		flex: 1;
 	}
-	.sy-text-input--ghost:focus {
+	/* Ghost fields are intentionally unbounded; retain their caret without a focus box. */
+	.sy-text-input--ghost:focus,
+	.sy-text-input--ghost:global(.sy-focus-visible) {
 		outline: none;
 	}
 	.sy-text-input--large {
-		font-size: 16px;
+		font-size: 1rem;
 	}
 	.sy-text-input--extra-large {
-		font-size: 18px;
+		font-size: 1.125rem;
 	}
 	.sy-text-input--mobile {
 		font-size: var(--sy-font-size--mobile-large);
 		min-height: var(--sy-mobile-touch-target);
 	}
 	.sy-text-input--mobile.sy-text-input--standard {
-		border: var(--sy-mobile-surface-border);
+		border: var(--sy-input--border-mobile);
 		box-shadow: none;
 	}
 </style>

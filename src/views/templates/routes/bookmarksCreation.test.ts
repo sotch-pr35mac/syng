@@ -62,14 +62,19 @@ describe.each([
 	['desktop', Bookmarks],
 	['mobile', MobileBookmarks],
 ] as const)('%s list creation', (_surface, component) => {
-	async function openCreateDialog() {
+	async function openCreateDialog(filterValue = '') {
 		const user = userEvent.setup();
 		const view = render(component);
-		const trigger = view.container.querySelector('.sy-dropdown--trigger') as HTMLElement;
+		if (filterValue) {
+			await user.type(screen.getByPlaceholderText('Filter'), filterValue);
+		}
+		const trigger = screen.getByRole('button', { name: 'Choose list: Bookmarks' });
 		await user.click(trigger);
-		await user.click(await screen.findByText('Create New'));
-		const input = view.container.querySelector('#create-new-list-input') as HTMLInputElement;
-		const modal = view.container.querySelector('.sy-modal--container') as HTMLElement;
+		await user.click(await screen.findByRole('menuitem', { name: 'Create New' }));
+		const input = screen.getByRole('textbox', {
+			name: 'What would you like to call this list?',
+		}) as HTMLInputElement;
+		const modal = screen.getByRole('dialog', { name: 'Create List' }).parentElement!;
 		const createButton = screen.getByRole('button', { name: /^Create$/ });
 		return { ...view, user, input, modal, createButton };
 	}
@@ -96,10 +101,9 @@ describe.each([
 	});
 
 	it('opens the trimmed new list and clears the prior filter and selected word', async () => {
-		const { user, input, modal, createButton } = await openCreateDialog();
+		const { user, input, modal, createButton } = await openCreateDialog('watermelon');
 		bookmarksRoute.setActiveWord(savedWord);
 		const filterInput = screen.getByPlaceholderText('Filter') as HTMLInputElement;
-		await user.type(filterInput, 'watermelon');
 		await user.type(input, '  existing  ');
 		await user.click(createButton);
 
@@ -154,12 +158,12 @@ describe.each([
 					completeSave = resolve;
 				})
 		);
-		const { user, input, modal, createButton, container } = await openCreateDialog();
+		const { user, input, modal, createButton } = await openCreateDialog();
 		await user.type(input, 'First list');
 		await user.click(createButton);
 		await user.click(screen.getByRole('button', { name: 'Cancel' }));
-		await user.click(container.querySelector('.sy-dropdown--trigger') as HTMLElement);
-		await user.click(await screen.findByText('Create New'));
+		await user.click(screen.getByRole('button', { name: 'Choose list: Bookmarks' }));
+		await user.click(await screen.findByRole('menuitem', { name: 'Create New' }));
 		await user.type(input, 'Second list');
 		completeSave();
 

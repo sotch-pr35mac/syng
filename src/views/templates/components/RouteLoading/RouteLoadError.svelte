@@ -23,8 +23,8 @@
 
 	.route-load-error button {
 		font: inherit;
-		color: var(--sy-color--white);
-		background: var(--sy-color--blue-2);
+		color: var(--sy-text--on-fill);
+		background: var(--sy-fill--blue);
 		border: 0;
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space--large) var(--sy-space--extra-large);

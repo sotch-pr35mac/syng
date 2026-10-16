@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
@@ -34,6 +35,7 @@ it('reopens durable history after Continue and a fresh session, with copy and sa
 	const recovery = render(BookmarkRecovery);
 
 	bookmarkRecoveryStore.show('Second import: 数');
+	await tick();
 	await user.click(recovery.getByRole('button', { name: 'Continue' }));
 	expect(bookmarkRecoveryStore.active).toBe(false);
 
@@ -45,6 +47,7 @@ it('reopens durable history after Continue and a fresh session, with copy and sa
 	expect(invoke).toHaveBeenCalledWith('save_bookmark_recovery_report', { report: history });
 
 	bookmarkRecoveryStore.resetForTest();
+	await tick();
 	await user.click(settings.getByRole('button', { name: 'View recovery reports' }));
 	expect(bookmarkRecoveryStore.active).toBe(true);
 	expect(bookmarkRecoveryStore.report).toBe(history);

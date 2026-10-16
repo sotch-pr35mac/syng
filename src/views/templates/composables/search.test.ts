@@ -268,3 +268,45 @@ it('does not revive an empty result after the query is cleared', async () => {
 	expect(search.status).toBe('idle');
 	expect(search.fullResults).toEqual([]);
 });
+
+it('keeps the latest search busy until its result arrives, ignoring stale responses', async () => {
+	const pendingQueries = new Map<string, (results: SearchEntry[]) => void>();
+	vi.mocked(invoke).mockImplementation((command, argumentsValue) => {
+		if (command === 'classify') {
+			return Promise.resolve('EN');
+		}
+		return new Promise((resolve) => {
+			pendingQueries.set((argumentsValue as { text: string }).text, resolve);
+		});
+	});
+	search.doSearch('old');
+	search.doSearch('new');
+	expect(search.isSearching).toBe(true);
+	expect(search.statusMessage).toBe('');
+	pendingQueries.get('old')?.(words);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.isSearching).toBe(true);
+	expect(search.statusMessage).toBe('');
+	pendingQueries.get('new')?.([words[1]]);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.isSearching).toBe(false);
+	expect(search.statusMessage).toBe('1 result.');
+});
+
+it('clearing a pending search clears its busy state and prevents a stale announcement', async () => {
+	let resolveQuery!: (results: SearchEntry[]) => void;
+	vi.mocked(invoke).mockImplementation((command) =>
+		command === 'classify'
+			? Promise.resolve('EN')
+			: new Promise((resolve) => {
+					resolveQuery = resolve;
+				})
+	);
+	search.doSearch('pending');
+	search.doSearch('');
+	resolveQuery(words);
+	await vi.advanceTimersByTimeAsync(0);
+	expect(search.isSearching).toBe(false);
+	expect(search.statusMessage).toBe('');
+	expect(search.fullResults).toEqual([]);
+});

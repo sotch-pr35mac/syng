@@ -124,7 +124,7 @@ it('should ignore outside clicks on the ignored element', async () => {
 	ignoredElement.remove();
 });
 
-it('should ignore outside clicks inside portaled overlay content', async () => {
+it('should close for unrelated portaled overlay content', async () => {
 	const onclose = vi.fn();
 	const overlayElement = document.createElement('button');
 	overlayElement.dataset.syPortalOverlay = 'true';
@@ -141,6 +141,6 @@ it('should ignore outside clicks inside portaled overlay content', async () => {
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	await fireEvent.click(overlayElement);
 
-	expect(onclose).not.toHaveBeenCalled();
+	expect(onclose).toHaveBeenCalledOnce();
 	overlayElement.remove();
 });

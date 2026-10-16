@@ -1,0 +1,22 @@
+/// <reference types="vite/client" />
+import { mount } from 'svelte';
+import '@/styles/theme.css';
+import '@/styles/syui.css';
+import { initializeAccessibility } from '@/composables/accessibility.js';
+import { appearanceStore } from '@/stores/appearance.svelte.js';
+
+Reflect.set(window, '__TAURI_OS_PLUGIN_INTERNALS__', {
+	platform: new URLSearchParams(location.search).has('mobile') ? 'android' : 'linux',
+});
+initializeAccessibility();
+appearanceStore.initialize();
+if (new URLSearchParams(location.search).get('appearance') === 'contrast') {
+	document.documentElement.dataset.appearance = 'contrast';
+}
+const fontSize = Number(new URLSearchParams(location.search).get('fontSize')) || 16;
+document.documentElement.style.setProperty('--sy-system-font-size', `${fontSize}px`);
+document.documentElement.style.setProperty('--sy-system-text-scale', `${fontSize / 16}`);
+const { default: Fixture } = new URLSearchParams(location.search).has('palette')
+	? await import('@test/accessibility/PaletteFixture.svelte')
+	: await import('@test/accessibility/Fixture.svelte');
+mount(Fixture, { target: document.getElementById('fixture')! });

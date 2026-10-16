@@ -13,18 +13,23 @@
 //! `objc2-web-kit` only models the macOS (NSView-based) `WKWebView`, so on iOS we message
 //! the webview pointer through objc2's runtime instead of a typed class binding.
 
+use std::cell::RefCell;
 use std::ptr::NonNull;
 
 use block2::RcBlock;
-use objc2::msg_send;
 use objc2::rc::Retained;
-use objc2::runtime::AnyObject;
-use objc2_foundation::{NSNotification, NSNotificationCenter, NSString, NSURLRequest, NSURL};
+use objc2::runtime::{AnyObject, ProtocolObject};
+use objc2::{class, msg_send};
+use objc2_foundation::{
+    NSNotification, NSNotificationCenter, NSObjectProtocol, NSOperationQueue, NSString,
+    NSURLRequest, NSURL,
+};
 use serde_json::json;
 use tauri::webview::PlatformWebview;
 use tauri::{AppHandle, Manager, WebviewWindow};
 
 use crate::core::{track_event_native, TelemetryManager};
+use crate::system_typography::{update_system_typography, DEFAULT_ROOT_FONT_SIZE_PX};
 
 /// Cocoa notification posted (on the main thread) whenever the app becomes active.
 /// The string value of `UIApplicationDidBecomeActiveNotification` equals its symbol name,
@@ -33,6 +38,83 @@ const DID_BECOME_ACTIVE: &str = "UIApplicationDidBecomeActiveNotification";
 
 /// Telemetry event emitted each time a resume-time recovery reload fires.
 const RECOVERY_EVENT: &str = "app.ios_content_process_recovery_requested";
+
+const CONTENT_SIZE_CATEGORY_CHANGED: &str = "UIContentSizeCategoryDidChangeNotification";
+
+struct SystemTypographyObservers {
+    tokens: Vec<Retained<ProtocolObject<dyn NSObjectProtocol>>>,
+}
+
+impl Drop for SystemTypographyObservers {
+    fn drop(&mut self) {
+        let center = NSNotificationCenter::defaultCenter();
+        for token in &self.tokens {
+            // Observer registration and removal both occur on the main thread.
+            unsafe { center.removeObserver((**token).as_ref()) };
+        }
+    }
+}
+
+thread_local! {
+    // UIKit objects stay on the UI thread instead of asserting Send/Sync for Cocoa objects.
+    static SYSTEM_TYPOGRAPHY_OBSERVERS: RefCell<Option<SystemTypographyObservers>> = const {
+        RefCell::new(None)
+    };
+}
+
+/// Connect Dynamic Type to the application UI while leaving Reader content sizing alone.
+pub fn install_system_typography(app: &AppHandle) {
+    let app_for_main_thread = app.clone();
+    if let Err(error) = app.run_on_main_thread(move || {
+        unsafe { refresh_system_typography(&app_for_main_thread) };
+        SYSTEM_TYPOGRAPHY_OBSERVERS.with(|observers| {
+            if observers.borrow().is_some() {
+                return;
+            }
+            let center = NSNotificationCenter::defaultCenter();
+            let queue = NSOperationQueue::mainQueue();
+            let mut tokens = Vec::new();
+            for notification_name in [CONTENT_SIZE_CATEGORY_CHANGED, DID_BECOME_ACTIVE] {
+                let callback_app = app_for_main_thread.clone();
+                let block = RcBlock::new(move |_notification: NonNull<NSNotification>| {
+                    // The main operation queue guarantees UIKit's required thread.
+                    unsafe { refresh_system_typography(&callback_app) };
+                });
+                let name = NSString::from_str(notification_name);
+                let token = unsafe {
+                    center.addObserverForName_object_queue_usingBlock(
+                        Some(&name),
+                        None,
+                        Some(&queue),
+                        &block,
+                    )
+                };
+                tokens.push(token);
+            }
+            *observers.borrow_mut() = Some(SystemTypographyObservers { tokens });
+        });
+    }) {
+        eprintln!("[system typography] could not install Dynamic Type observers: {error}");
+    }
+}
+
+/// Called on the main thread during application shutdown.
+pub fn remove_system_typography_observers() {
+    SYSTEM_TYPOGRAPHY_OBSERVERS.with(|observers| {
+        observers.borrow_mut().take();
+    });
+}
+
+/// # Safety
+/// UIFontMetrics must be queried on the main thread.
+unsafe fn refresh_system_typography(app: &AppHandle) {
+    // UIFontMetrics preserves Syng's 16px baseline and Montserrat family while following
+    // the system's body-text curve, including the larger accessibility categories.
+    let metrics: Retained<AnyObject> = msg_send![class!(UIFontMetrics), defaultMetrics];
+    let root_font_size_px: f64 =
+        msg_send![&*metrics, scaledValueForValue: DEFAULT_ROOT_FONT_SIZE_PX];
+    update_system_typography(app, root_font_size_px);
+}
 
 /// Registers the resume-time recovery observer for the given webview window.
 ///

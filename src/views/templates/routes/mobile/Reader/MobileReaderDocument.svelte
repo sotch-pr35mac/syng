@@ -55,6 +55,7 @@
 	const activeDocument = $derived(reader.activeDocument);
 	const currentPage = $derived(reader.currentPage);
 	const pageCurl = $derived(reader.pageCurl);
+	const settingsPopoverId = `reader-settings-${crypto.randomUUID()}`;
 </script>
 
 <div
@@ -63,16 +64,25 @@
 >
 	{#if activeDocument && currentPage}
 		<div class="mobile-reader-document__reader-header">
-			<SyButton style="ghost" size="small" onclick={reader.backToLibrary}>
+			<SyButton
+				style="ghost"
+				size="small"
+				aria-label="Back to Library"
+				onclick={reader.backToLibrary}
+			>
 				<ChevronLeft size="18" />
 			</SyButton>
-			<span class="mobile-reader-document__document-title">{activeDocument.title}</span>
+			<h1 class="mobile-reader-document__document-title">{activeDocument.title}</h1>
 			<div class="mobile-reader-document__header-actions">
 				<SyButton
 					style="ghost"
 					size="small"
 					aria-label="Reader settings"
-					aria-pressed={reader.readerSettingsPopoverVisible}
+					aria-expanded={reader.readerSettingsPopoverVisible}
+					aria-haspopup="dialog"
+					aria-controls={reader.readerSettingsPopoverVisible
+						? settingsPopoverId
+						: undefined}
 					onclick={reader.toggleReaderSettingsPopover}
 				>
 					<SlidersHorizontal size="18" />
@@ -80,6 +90,9 @@
 			</div>
 		</div>
 		<SyPopover
+			id={settingsPopoverId}
+			accessibleName="Reader settings"
+			returnFocus={reader.readerSettingsButtonElement}
 			visible={reader.readerSettingsPopoverVisible}
 			anchor={reader.readerSettingsPopoverAnchor}
 			ignoreElement={reader.readerSettingsButtonElement}
@@ -87,7 +100,7 @@
 			mobileTitle="Reader settings"
 			onclose={reader.closeReaderSettingsPopover}
 		>
-			<div class="mobile-reader-document__settings-popover" aria-label="Reader settings">
+			<div class="mobile-reader-document__settings-popover">
 				<div class="mobile-reader-document__settings-section">
 					<span class="mobile-reader-document__settings-label">Theme</span>
 					<ReaderThemeSelector
@@ -107,7 +120,8 @@
 				</div>
 			</div>
 		</SyPopover>
-		<main
+		<section
+			aria-label="Reading document"
 			class="mobile-reader-document__stage"
 			class:mobile-reader-document__stage--android={isAndroid()}
 			use:readerPageSwipe={reader.readerPageSwipeOptions}
@@ -154,6 +168,9 @@
 															{#if segment.type === 'token'}
 																<button
 																	class="mobile-reader-document__token"
+																	type="button"
+																	lang="zh"
+																	aria-haspopup="dialog"
 																	class:mobile-reader-document__token--active={readerRoute.tokensMatchDictionarySelection(
 																		segment.token,
 																		readerRoute.dictionaryToken
@@ -242,6 +259,9 @@
 								{#if segment.type === 'token'}
 									<button
 										class="mobile-reader-document__token"
+										type="button"
+										lang="zh"
+										aria-haspopup="dialog"
 										class:mobile-reader-document__token--active={readerRoute.tokensMatchDictionarySelection(
 											segment.token,
 											readerRoute.dictionaryToken
@@ -271,14 +291,23 @@
 					/>
 				</div>
 			{/if}
-			<span class="mobile-reader-document__page-count">
-				{readerRoute.pageIndex + 1}/{readerRoute.pageCount}
+			<span
+				class="mobile-reader-document__page-count"
+				role="status"
+				aria-live="polite"
+				aria-atomic="true"
+			>
+				<span aria-hidden="true">{readerRoute.pageIndex + 1}/{readerRoute.pageCount}</span>
+				<span class="sy-sr-only"
+					>Page {readerRoute.pageIndex + 1} of {readerRoute.pageCount}</span
+				>
 			</span>
-		</main>
+		</section>
 	{/if}
 </div>
 
 <DictionaryPopover
+	returnFocus={reader.dictionaryTriggerElement}
 	word={readerRoute.dictionaryWord}
 	results={readerRoute.dictionaryResults}
 	resultIndex={readerRoute.dictionaryResultIndex}
@@ -293,6 +322,8 @@
 <style>
 	.mobile-reader-document {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 		background-color: var(--reader-stage-background, var(--sy-color--grey-2));
@@ -303,7 +334,8 @@
 		display: flex;
 		align-items: center;
 		gap: var(--sy-mobile-space--small);
-		height: 54px;
+		min-height: 54px;
+		flex-shrink: 0;
 		padding: 0 var(--sy-mobile-space--small);
 		background: var(--sy-color--white);
 		border-bottom: var(--sy-border);
@@ -323,7 +355,7 @@
 		gap: var(--sy-mobile-space--large);
 		padding: var(--sy-mobile-space--large);
 		box-sizing: border-box;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.mobile-reader-document__settings-section {
@@ -336,17 +368,17 @@
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-small);
 		font-weight: var(--sy-font-weight--medium);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.mobile-reader-document__document-title {
+		margin: 0;
+		font-size: 1rem;
 		flex: 1;
 		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		color: var(--sy-color--grey-4);
+		overflow-wrap: anywhere;
+		color: var(--sy-text--muted);
 		font-weight: var(--sy-font-weight--medium);
-		white-space: nowrap;
 	}
 
 	.mobile-reader-document__page-count {
@@ -354,16 +386,18 @@
 		bottom: var(--sy-mobile-space--large);
 		left: 50%;
 		transform: translateX(-50%);
-		color: var(--reader-muted-text, var(--sy-color--grey-3));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-size: var(--sy-font-size--mobile-small);
 		white-space: nowrap;
 	}
 
 	.mobile-reader-document__stage {
+		--sy-focus-color: var(--reader-page-text, var(--sy-color--black));
 		--mobile-reader-stage-padding: var(--sy-mobile-space--medium);
 
 		position: relative;
-		height: calc(100% - 54px);
+		flex: 1;
+		min-height: 0;
 		padding: var(--mobile-reader-stage-padding);
 		box-sizing: border-box;
 		overflow: hidden;
@@ -523,7 +557,7 @@
 	}
 
 	.mobile-reader-document__image-caption {
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-size: 0.9em;
 		font-style: italic;
 	}
@@ -543,7 +577,7 @@
 		position: absolute;
 		left: var(--reader-list-depth-offset, 0);
 		top: 0;
-		color: var(--reader-muted-text, var(--sy-color--grey-3));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 	}
 
 	.mobile-reader-document__block--list-ordered {
@@ -558,7 +592,7 @@
 		top: 0;
 		min-width: 1.35em;
 		text-align: start;
-		color: var(--reader-muted-text, var(--sy-color--grey-3));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -567,7 +601,7 @@
 		margin: 0 0 1.1em;
 		padding: 0.35em 0 0.35em 1em;
 		border-left: 0.28em solid var(--reader-border-color, var(--sy-color--grey-2));
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-style: italic;
 	}
 
@@ -579,7 +613,7 @@
 	h6.mobile-reader-document__block {
 		white-space: normal;
 		line-height: 1.35;
-		color: var(--reader-page-text, var(--sy-color--grey-4));
+		color: var(--reader-page-text, var(--sy-text--muted));
 		margin: 0 0 0.75em;
 	}
 
@@ -622,5 +656,11 @@
 		background: var(--reader-selection-background, #dbeafe);
 		color: var(--reader-selection-text, #111827);
 		border-radius: 3px;
+	}
+
+	@media (forced-colors: active) {
+		.mobile-reader-document__stage {
+			--sy-focus-color: Highlight;
+		}
 	}
 </style>

@@ -5,6 +5,8 @@ npm-debug.log
 .buildconfig
 .DS_Store
 coverage/
+playwright-report/
+test-results/
 
 # Build artifacts
 src/views/templates/build/*

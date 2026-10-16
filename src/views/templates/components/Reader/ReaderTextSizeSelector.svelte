@@ -13,7 +13,7 @@
 	const { fontSizePercent, canDecrease = true, canIncrease = true, onchange }: Props = $props();
 </script>
 
-<SyButtonBar size="large" aria-label="Reader font size">
+<SyButtonBar size="large" role="group" aria-label="Reader font size">
 	<SyButton
 		grouped={true}
 		center={true}
@@ -30,7 +30,7 @@
 		disabled={true}
 		disableHoverActions={true}
 		classes={['reader-text-size-selector__value']}
-		aria-label={`Reader font size: ${fontSizePercent}%`}
+		aria-hidden="true"
 	>
 		{fontSizePercent}%
 	</SyButton>
@@ -45,10 +45,13 @@
 		<span>A</span>
 	</SyButton>
 </SyButtonBar>
+<span class="sy-sr-only" role="status" aria-live="polite" aria-atomic="true"
+	>Reader font size: {fontSizePercent}%</span
+>
 
 <style>
 	:global(.reader-text-size-selector__value) {
-		min-width: 64px;
+		min-width: 4rem;
 		color: var(--sy-color--black);
 	}
 </style>

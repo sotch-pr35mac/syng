@@ -41,7 +41,7 @@
 
 	// Theme colors
 	const lightGrey = 'var(--sy-color--grey-2)';
-	const darkGrey = 'var(--sy-color--grey-1)';
+	const darkGrey = 'var(--sy-control--border)';
 
 	// Reactive values
 	const angle = $derived(progress * 360);
@@ -122,36 +122,38 @@
 	/* eslint-enable @typescript-eslint/no-magic-numbers */
 </script>
 
-<div
+<button
+	type="button"
 	class="timer"
 	style="width: {size}px; height: {size}px;"
 	onclick={handleClick}
-	onkeydown={(e) => e.key === ' ' && handleClick(e)}
 	onmouseenter={() => (hovering = true)}
 	onmouseleave={() => (hovering = false)}
-	role="button"
-	tabindex="0"
 	aria-label={isPaused ? 'Resume timer' : 'Pause timer'}
 >
 	{#if isPaused}
-		<svg viewBox="0 0 40 40">
+		<svg viewBox="0 0 40 40" aria-hidden="true">
 			<path d="M15 12L29 20L15 28V12Z" fill={darkGrey} />
 		</svg>
 	{:else if hovering}
-		<svg viewBox="0 0 40 40">
+		<svg viewBox="0 0 40 40" aria-hidden="true">
 			<rect x="13" y="13" width="5" height="14" fill={darkGrey} rx="1" />
 			<rect x="22" y="13" width="5" height="14" fill={darkGrey} rx="1" />
 		</svg>
 	{:else}
-		<svg viewBox="0 0 40 40">
+		<svg viewBox="0 0 40 40" aria-hidden="true">
 			<circle cx="20" cy="20" r="16" fill={getProgressColor(progress)} />
 			<path d={pathD} fill={lightGrey} />
 		</svg>
 	{/if}
-</div>
+</button>
 
 <style>
 	.timer {
+		border: 0;
+		background: transparent;
+		padding: 0;
+		flex-shrink: 0;
 		position: relative;
 		cursor: pointer;
 		border-radius: 50%;

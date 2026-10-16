@@ -238,7 +238,7 @@ it('opens the mobile overflow actions', async () => {
 	const { container, findByText } = render(MobileBookmarks);
 
 	await waitFor(() => expect(container.querySelector('.mobile-bookmarks__results')).toBeTruthy());
-	const overflowButton = container.querySelector('.mobile-bookmarks__overflow-anchor button');
+	const overflowButton = container.querySelector('button[aria-label="List actions"]');
 	await user.click(overflowButton);
 
 	expect(await findByText('Import')).toBeTruthy();
@@ -344,7 +344,7 @@ it('navigates mobile bookmarks to a successfully imported list', async () => {
 	await user.click(await findByText('西瓜'));
 	const filterInput = await findByPlaceholderText('Filter');
 	await user.type(filterInput, 'water');
-	const overflowButton = container.querySelector('.mobile-bookmarks__overflow-anchor button');
+	const overflowButton = container.querySelector('button[aria-label="List actions"]');
 	await user.click(overflowButton);
 	await user.click(await findByText('Import'));
 
@@ -356,4 +356,19 @@ it('navigates mobile bookmarks to a successfully imported list', async () => {
 	);
 	expect(container.querySelector('.mobile-bookmarks__results').textContent).toContain('火车');
 	expect(await findByText('Select a word from your bookmarks')).toBeTruthy();
+});
+
+it('moves keyboard focus from a selected sheet row to its dictionary heading', async () => {
+	const user = userEvent.setup();
+	mobileBookmarksSnapStore.set('full');
+	const { findByRole } = render(MobileBookmarks);
+	const row = await findByRole('button', { name: /西瓜.*watermelon/ });
+	row.focus();
+	await user.keyboard('{Enter}');
+	await waitFor(() => {
+		expect(document.activeElement).toBe(
+			document.querySelector('.mobile-bookmarks__dict-wrapper h1')
+		);
+	});
+	expect(mobileBookmarksSnapStore.value).toBe('collapsed');
 });

@@ -1,4 +1,4 @@
-import HanziWriter from 'hanzi-writer';
+import type HanziWriter from 'hanzi-writer';
 import { tick } from 'svelte';
 import { handleError } from '@/utils/error.js';
 
@@ -54,6 +54,11 @@ export function createCharacterAnimation() {
 		target.replaceChildren();
 		const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 		try {
+			// Load the stroke engine only when characters are requested, not with the app shell.
+			const { default: HanziWriter } = await import('hanzi-writer');
+			if (currentGeneration !== generation) {
+				return;
+			}
 			for (const character of characters) {
 				writers.push(
 					HanziWriter.create('character-target', character, {

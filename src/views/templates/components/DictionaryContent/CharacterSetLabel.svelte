@@ -47,7 +47,7 @@
 	.character-set-label {
 		flex: none;
 		margin-right: var(--sy-space);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--character-set-label);
 		font-weight: var(--sy-font-weight--normal);
 		line-height: 1;

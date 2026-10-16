@@ -64,19 +64,21 @@ it('preserves webpage details and a prepared preview after a failed save, includ
 	const onimport = vi.fn<() => Promise<ReaderImportResult>>();
 	onimport.mockResolvedValueOnce({ status: 'error', message: 'Could not save this webpage.' });
 	onimport.mockResolvedValueOnce({ status: 'success' });
-	const { container, getByRole, getByText } = render(ReaderWebpageImportModal, {
+	const { baseElement, getByRole, getByText } = render(ReaderWebpageImportModal, {
 		visible: true,
 		onclose,
 		onimport,
 	});
-	const urlInput = container.querySelector('#reader-webpage-import-url') as HTMLInputElement;
-	const titleInput = container.querySelector('#reader-webpage-import-title') as HTMLInputElement;
+	const urlInput = baseElement.querySelector('#reader-webpage-import-url') as HTMLInputElement;
+	const titleInput = baseElement.querySelector(
+		'#reader-webpage-import-title'
+	) as HTMLInputElement;
 	await fireEvent.input(urlInput, { target: { value: 'https://example.com/article' } });
 	await fireEvent.click(getByRole('button', { name: 'Fetch Preview' }));
 	await waitFor(() => expect(getByText('A locally prepared webpage preview.')).toBeTruthy());
 	await fireEvent.input(titleInput, { target: { value: 'My article' } });
 	const selectedColor = READER_DOCUMENT_COLORS[1];
-	await fireEvent.click(getByRole('button', { name: `Use ${selectedColor}` }));
+	await fireEvent.click(getByRole('button', { name: 'Use Blue document color' }));
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
 
 	await waitFor(() => expect(getByText('Could not save this webpage.')).toBeTruthy());
@@ -84,9 +86,9 @@ it('preserves webpage details and a prepared preview after a failed save, includ
 	expect(urlInput.value).toBe('https://example.com/article');
 	expect(titleInput.value).toBe('My article');
 	expect(getByText('A locally prepared webpage preview.')).toBeTruthy();
-	expect(getByRole('button', { name: `Use ${selectedColor}` }).getAttribute('aria-pressed')).toBe(
-		'true'
-	);
+	expect(
+		getByRole('button', { name: 'Use Blue document color' }).getAttribute('aria-pressed')
+	).toBe('true');
 	setNavigatorOnline(false);
 	window.dispatchEvent(new Event('offline'));
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
@@ -109,12 +111,12 @@ it('preserves the form after a cancelled import and allows retry', async () => {
 	prepareOnlineStatus();
 	const onclose = vi.fn();
 	const onimport = vi.fn().mockResolvedValue({ status: 'cancelled' });
-	const { container, getByRole } = render(ReaderWebpageImportModal, {
+	const { baseElement, getByRole } = render(ReaderWebpageImportModal, {
 		visible: true,
 		onclose,
 		onimport,
 	});
-	const urlInput = container.querySelector('#reader-webpage-import-url') as HTMLInputElement;
+	const urlInput = baseElement.querySelector('#reader-webpage-import-url') as HTMLInputElement;
 	await fireEvent.input(urlInput, { target: { value: 'https://example.com/large' } });
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
 	await waitFor(() => expect(getByRole('button', { name: 'Import' })).toBeTruthy());
@@ -126,8 +128,10 @@ it('preserves the form after a cancelled import and allows retry', async () => {
 
 it('keeps a valid preview and entered details when a refreshed large-page preview is declined', async () => {
 	prepareOnlineStatus();
-	const { container, getByRole, getByText } = render(ReaderWebpageImportModal, { visible: true });
-	const urlInput = container.querySelector('#reader-webpage-import-url') as HTMLInputElement;
+	const { baseElement, getByRole, getByText } = render(ReaderWebpageImportModal, {
+		visible: true,
+	});
+	const urlInput = baseElement.querySelector('#reader-webpage-import-url') as HTMLInputElement;
 	await fireEvent.input(urlInput, { target: { value: 'https://example.com/large' } });
 	await fireEvent.click(getByRole('button', { name: 'Fetch Preview' }));
 	await waitFor(() => expect(getByText('A locally prepared webpage preview.')).toBeTruthy());
@@ -152,11 +156,11 @@ it('discards a pending preview when the user cancels the form', async () => {
 		() => new Promise<ReaderImportPayload>((resolve) => (resolvePreview = resolve))
 	);
 	const onclose = vi.fn();
-	const { container, getByRole, queryByText } = render(ReaderWebpageImportModal, {
+	const { baseElement, getByRole, queryByText } = render(ReaderWebpageImportModal, {
 		visible: true,
 		onclose,
 	});
-	const urlInput = container.querySelector('#reader-webpage-import-url') as HTMLInputElement;
+	const urlInput = baseElement.querySelector('#reader-webpage-import-url') as HTMLInputElement;
 	await fireEvent.input(urlInput, { target: { value: 'https://example.com/article' } });
 	await fireEvent.click(getByRole('button', { name: 'Fetch Preview' }));
 	await fireEvent.click(getByRole('button', { name: 'Cancel' }));
@@ -170,7 +174,7 @@ it('discards a pending preview when the user cancels the form', async () => {
 
 it('explains disabled webpage controls while offline and includes the touch fallback', () => {
 	prepareOfflineStatus();
-	const { container, getByRole, getByText } = render(ReaderWebpageImportModal, {
+	const { baseElement, getByRole, getByText } = render(ReaderWebpageImportModal, {
 		visible: true,
 	});
 	const fetchButton = getByRole('button', { name: 'Fetch Preview' });
@@ -185,14 +189,14 @@ it('explains disabled webpage controls while offline and includes the touch fall
 	expect(fetchTooltip.closest('.sy-tooltip--body-top')).toBeTruthy();
 	expect(importTooltip.closest('.sy-tooltip--body-top')).toBeTruthy();
 	expect(
-		container.querySelector('.reader-webpage-import__offline-status')?.textContent
+		baseElement.querySelector('.reader-webpage-import__offline-status')?.textContent
 	).toContain('You are offline. Connect to the internet to fetch a preview before importing.');
 });
 
 it('keeps a locally prepared preview importable after connectivity drops', async () => {
 	prepareOnlineStatus();
-	const { container, getByRole } = render(ReaderWebpageImportModal, { visible: true });
-	const urlInput = container.querySelector('#reader-webpage-import-url');
+	const { baseElement, getByRole } = render(ReaderWebpageImportModal, { visible: true });
+	const urlInput = baseElement.querySelector('#reader-webpage-import-url');
 
 	if (!(urlInput instanceof HTMLInputElement)) {
 		throw new Error('Expected webpage URL input.');
@@ -212,11 +216,11 @@ it('keeps a locally prepared preview importable after connectivity drops', async
 		expect(getByRole('button', { name: 'Import' }).hasAttribute('disabled')).toBe(false)
 	);
 	expect(
-		container.textContent?.includes(
+		baseElement.textContent?.includes(
 			'You are offline. Fetch a preview while online before importing.'
 		)
 	).toBe(false);
 	expect(
-		container.querySelector('.reader-webpage-import__offline-status')?.textContent
+		baseElement.querySelector('.reader-webpage-import__offline-status')?.textContent
 	).toContain('You are offline. Connect to the internet to fetch a preview before importing.');
 });

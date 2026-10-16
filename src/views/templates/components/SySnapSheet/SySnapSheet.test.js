@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { fireEvent, render } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
 import { COLLAPSED_HEIGHT, FULL_HEIGHT_RATIO } from '@/types/snapSheet.js';
 
@@ -32,7 +33,7 @@ it('should render the drag handle with correct accessibility attributes', () => 
 	const { container } = render(SySnapSheet);
 	const handle = container.querySelector('.sy-snap-sheet__handle');
 	expect(handle.getAttribute('role')).toBe('separator');
-	expect(handle.getAttribute('aria-label')).toBe('Drag to resize');
+	expect(handle.getAttribute('aria-label')).toBe('Resize panel');
 });
 
 it('should apply the transition class when not dragging', () => {
@@ -119,4 +120,77 @@ it('should resize from pointer drag gestures on the handle', async () => {
 
 	await dispatchPointerEvent('pointerup', DRAG_END_Y);
 	expect(onSnapChange).toHaveBeenCalledWith('full');
+});
+
+it('exposes the resize state and supports keyboard resizing without changing drag behavior', async () => {
+	const { getByRole, container } = render(SySnapSheet);
+	const handle = getByRole('separator', { name: 'Resize panel' });
+	const sheet = container.querySelector('.sy-snap-sheet');
+	expect(handle.getAttribute('tabindex')).toBe('0');
+	await fireEvent.keyDown(handle, { key: 'ArrowUp' });
+	expectSnapHeight(sheet, PARTIAL_HEIGHT);
+	expect(handle.getAttribute('aria-valuetext')).toBe('partial');
+	await fireEvent.keyDown(handle, { key: 'End' });
+	expectSnapHeight(sheet, FULL_HEIGHT);
+	await fireEvent.keyDown(handle, { key: 'Escape' });
+	expectSnapHeight(sheet, COLLAPSED_HEIGHT);
+});
+
+it('reveals keyboard-focused content and returns focus to the visible handle on Escape', async () => {
+	vi.useFakeTimers();
+	document.documentElement.dataset.inputModality = 'keyboard';
+	try {
+		const { getByRole } = render(SySnapSheet);
+		const sheet = getByRole('dialog');
+		const handle = getByRole('separator', { name: 'Resize panel' });
+		const childButton = document.createElement('button');
+		childButton.textContent = 'Sheet content action';
+		sheet.append(childButton);
+		childButton.focus();
+		await tick();
+		await vi.advanceTimersByTimeAsync(0);
+		expectSnapHeight(sheet, FULL_HEIGHT);
+		expect(document.activeElement).toBe(childButton);
+		await fireEvent.keyDown(childButton, { key: 'Escape' });
+		expectSnapHeight(sheet, COLLAPSED_HEIGHT);
+		expect(document.activeElement).toBe(handle);
+	} finally {
+		delete document.documentElement.dataset.inputModality;
+		vi.useRealTimers();
+	}
+});
+
+it('preserves the existing snap when pointer interaction focuses content', async () => {
+	document.documentElement.dataset.inputModality = 'pointer';
+	try {
+		const { getByRole } = render(SySnapSheet, { initialSnap: 'partial' });
+		const sheet = getByRole('dialog');
+		const childButton = document.createElement('button');
+		sheet.append(childButton);
+		childButton.focus();
+		await tick();
+		expectSnapHeight(sheet, PARTIAL_HEIGHT);
+	} finally {
+		delete document.documentElement.dataset.inputModality;
+	}
+});
+
+it('reveals offscreen assistive-technology focus without requiring a keyboard event', async () => {
+	document.documentElement.dataset.inputModality = 'pointer';
+	try {
+		const { getByRole } = render(SySnapSheet);
+		const sheet = getByRole('dialog');
+		const childButton = document.createElement('button');
+		childButton.getBoundingClientRect = () => ({
+			top: window.innerHeight,
+			bottom: window.innerHeight + COLLAPSED_HEIGHT,
+		});
+		sheet.append(childButton);
+		childButton.focus();
+		await tick();
+		expectSnapHeight(sheet, FULL_HEIGHT);
+		expect(document.activeElement).toBe(childButton);
+	} finally {
+		delete document.documentElement.dataset.inputModality;
+	}
 });

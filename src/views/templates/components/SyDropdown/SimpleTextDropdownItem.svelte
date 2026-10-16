@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	/* Text Prop */
 
 	/* Color Prop */
@@ -9,22 +9,20 @@
 	// Color of the text on hover
 	// Possible Values:
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {any} [text] - The value to be displayed
-	 * @property {string} [color] - 'black'
-	 * @property {string} [hover] - 'blue'
-	 * @property {any} [icon] - Suppress the unexpected prop warning
-	 * @property {(e: Event) => void} [onclick] - Click handler
-	 */
-
-	/** @type {Props} */
 	const {
-		text = undefined,
+		text = '',
 		color = 'black',
 		hover = 'blue',
 		icon: _icon = undefined,
+		disabled = false,
 		onclick = () => {},
+	}: {
+		text?: string;
+		color?: string;
+		hover?: string;
+		icon?: import('svelte').Component<any> | import('svelte').ComponentType;
+		disabled?: boolean;
+		onclick?: (_event: MouseEvent) => void;
 	} = $props();
 
 	const getClasses = () => {
@@ -35,17 +33,30 @@
 		].join(' ');
 	};
 
-	const handleClick = (e) => {
-		onclick(e);
+	const handleClick = (event: MouseEvent) => {
+		onclick(event);
 	};
 </script>
 
-<span class={getClasses()} role="button" tabindex="0" onclick={handleClick} onkeyup={handleClick}>
+<button
+	type="button"
+	class={getClasses()}
+	role="menuitem"
+	tabindex="-1"
+	{disabled}
+	onclick={handleClick}
+>
 	{text}
-</span>
+</button>
 
 <style>
 	.st-dropdown-item--container {
+		border: 0;
+		background: transparent;
+		font: inherit;
+		text-align: left;
+		min-width: 0;
+		white-space: normal;
 		cursor: pointer;
 		padding: var(--sy-space--large);
 		transition: all ease-in-out;
@@ -62,6 +73,6 @@
 		color: var(--sy-color--black);
 	}
 	.st-dropdown-item--hover--blue:hover {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 </style>

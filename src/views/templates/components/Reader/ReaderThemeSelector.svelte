@@ -14,7 +14,7 @@
 	const { colorTheme, systemPrefersDark = false, onchange }: Props = $props();
 </script>
 
-<SyButtonBar size="large" aria-label="Reader theme">
+<SyButtonBar size="large" role="group" aria-label="Reader theme">
 	{#each READER_COLOR_THEMES as theme (theme.id)}
 		{@const resolvedTheme = getReaderColorTheme(theme.id, systemPrefersDark)}
 		<SyButton
@@ -52,8 +52,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 20px;
-		height: 20px;
+		width: 1.25rem;
+		height: 1.25rem;
 		border: 1px solid var(--sy-color--grey-2);
 		border-radius: 50%;
 		box-sizing: border-box;

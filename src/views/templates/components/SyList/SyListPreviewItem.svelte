@@ -31,7 +31,6 @@
 		onclick,
 		onevent: _onevent,
 	} = $props();
-	const ENTER_KEY_CODE = 13;
 	const MAX_CONTENT_LENGTH = 25;
 	const MAX_TRUNCATION_LENGTH = 22;
 
@@ -42,69 +41,75 @@
 			'sy-list-preview-item-container',
 			mobile ? 'sy-list-preview-item-container--mobile' : '',
 		].join(' ');
-	const handleKeyup = (e) => {
-		if (e.key === 'Enter' || e.keyCode === ENTER_KEY_CODE) {
-			onclick?.({ detail: index });
-		}
-	};
-	const handleClick = () => onclick?.({ detail: index });
+	const handleClick = (event) => onclick?.({ detail: index, keyboard: event.detail === 0 });
 </script>
 
-<div
+<button
+	type="button"
+	aria-current={active ? 'true' : undefined}
 	class:sy-list-preview-item-container--active={active && highlight}
 	class={getClasses()}
-	role="button"
-	tabindex="0"
 	onclick={handleClick}
-	onkeyup={handleKeyup}
 >
 	{#if PreviewContent}
 		<PreviewContent value={itemValue} {mobile} />
-		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+		<span class="sy-list-preview-item--text sy-list-preview-item--content">
 			{truncateContent(content)}
-		</p>
+		</span>
 	{:else if mobile}
-		<p class="sy-list-preview-item--text sy-list-preview-item--topline">
+		<span class="sy-list-preview-item--text sy-list-preview-item--topline">
 			<span class="sy-list-preview-item--headline">{headline}</span>
 			{#if subtitle}
 				<span class="sy-list-preview-item--subtitle">{subtitle}</span>
 			{/if}
-		</p>
-		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+		</span>
+		<span class="sy-list-preview-item--text sy-list-preview-item--content">
 			{truncateContent(content)}
-		</p>
+		</span>
 	{:else}
-		<p class="sy-list-preview-item--text sy-list-preview-item--headline">
+		<span class="sy-list-preview-item--text sy-list-preview-item--headline">
 			{headline}
-		</p>
-		<p class="sy-list-preview-item--text sy-list-preview-item--subtitle">
+		</span>
+		<span class="sy-list-preview-item--text sy-list-preview-item--subtitle">
 			{subtitle}
-		</p>
-		<p class="sy-list-preview-item--text sy-list-preview-item--content">
+		</span>
+		<span class="sy-list-preview-item--text sy-list-preview-item--content">
 			{truncateContent(content)}
-		</p>
+		</span>
 	{/if}
-</div>
+</button>
 
 <style>
 	.sy-list-preview-item-container {
+		-webkit-appearance: none;
+		appearance: none;
 		display: flex;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		font: inherit;
+		text-align: left;
+		box-sizing: border-box;
 		margin: 0;
 		padding: var(--sy-space--large) var(--sy-space);
 		flex-direction: column;
 		width: 100%;
 		height: fit-content;
 		cursor: pointer;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
+	}
+	.sy-list-preview-item-container:focus-visible,
+	.sy-list-preview-item-container:global(.sy-focus-visible) {
+		outline-offset: calc(-1 * var(--sy-focus-width));
 	}
 	.sy-list-preview-item-container--active {
-		color: var(--sy-color--grey-3);
+		color: var(--sy-text--secondary);
 		background-color: var(--sy-color--grey-2);
 		transition-property: background-color, color;
 		transition-duration: var(--sy-transition-duration);
 	}
 	.sy-list-preview-item-container:hover {
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		background-color: var(--sy-color--grey-2);
 		transition-property: background-color, color;
 		transition-duration: var(--sy-transition-duration);
@@ -139,30 +144,33 @@
 		display: flex;
 		align-items: baseline;
 		gap: var(--sy-mobile-space--medium);
+		flex-wrap: wrap;
 		min-width: 0;
 	}
 	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--headline) {
 		flex: 0 1 auto;
 		min-width: 0;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--mobile-extra-large);
 		font-weight: var(--sy-font-weight--medium);
 		overflow: hidden;
 		text-overflow: ellipsis;
-		white-space: nowrap;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--subtitle) {
 		flex: 1 1 auto;
 		min-width: 0;
-		color: var(--sy-color--grey-3);
+		color: var(--sy-text--secondary);
 		font-size: var(--sy-font-size--mobile-small);
 		overflow: hidden;
 		text-overflow: ellipsis;
-		white-space: nowrap;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 	.sy-list-preview-item-container--mobile :global(.sy-list-preview-item--content) {
 		margin-top: var(--sy-mobile-space--extra-small);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--mobile-small);
 	}
 	:global(.sy-list-preview-item--text) {
@@ -178,6 +186,7 @@
 		font-size: 0.8em;
 		text-overflow: ellipsis;
 		overflow: hidden;
-		white-space: nowrap;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 </style>

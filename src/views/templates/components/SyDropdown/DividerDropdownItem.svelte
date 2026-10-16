@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	/**
 	 * This component renders a divider in a dropdown menu.
 	 * It accepts but ignores text/icon props for compatibility with other dropdown items.

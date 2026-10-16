@@ -7,7 +7,7 @@ it('should have the uuid passed to it', async () => {
 		id: 'test-id',
 		value: 'test',
 	});
-	const id = getByRole('checkbox', { hidden: true }).id;
+	const id = getByRole('checkbox').id;
 
 	expect(id).toBe('test-id');
 });
@@ -26,7 +26,7 @@ it('should respect the state passed to it', async () => {
 		value: 'test',
 		checked: true,
 	});
-	const state = getByRole('checkbox', { hidden: true }).checked;
+	const state = getByRole('checkbox').checked;
 
 	expect(state).toBe(true);
 });
@@ -36,7 +36,7 @@ it('should update its state once clicked', async () => {
 	const { getByRole } = render(SyToggle, {
 		value: 'test',
 	});
-	const element = getByRole('checkbox', { hidden: true });
+	const element = getByRole('checkbox');
 
 	let state = element.checked;
 	expect(state).toBe(false);
@@ -54,7 +54,7 @@ it('does not change state when disabled', async () => {
 		disabled: true,
 		onchange,
 	});
-	const element = getByRole('checkbox', { hidden: true });
+	const element = getByRole('checkbox');
 
 	expect(element.disabled).toBe(true);
 	await user.click(element);

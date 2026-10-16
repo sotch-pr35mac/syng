@@ -9,6 +9,7 @@ import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { appearanceStore } from '@/stores/appearance.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { handleError } from '@/utils/error.js';
 import {
@@ -136,23 +137,12 @@ export const runStartupActions = () => {
 		console.error('Telemetry initialization failed', error);
 	});
 
-	const initializeStyles = () => {
-		const colorSettings = preferenceManager.get('toneColors');
-		if (colorSettings.hasCustomColors) {
-			const globalStyles = document.querySelector(':root').style;
-			const toneColors = colorSettings.colors;
-			for (let i = 0; i < toneColors.length; i++) {
-				globalStyles.setProperty(`--sy-tone-color--${i + 1}`, toneColors[i]);
-			}
-		}
-	};
-
 	const loadDisplayPreferences = async () => {
 		await Promise.all([
 			privacySettingsStore.loadSettings(),
 			dictionaryDisplaySettingsStore.loadSettings(),
+			appearanceStore.loadSettings(),
 		]);
-		initializeStyles();
 	};
 
 	const migrationPromise = Promise.all([preferenceManagerInit, bookmarkManagerInit]).then(

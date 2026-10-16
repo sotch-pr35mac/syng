@@ -67,6 +67,11 @@
 		onmembershipchange,
 	} = $props();
 
+	const componentId = $props.id();
+	const notesLabelId = `${componentId}-notes-label`;
+	const notesInputId = `${componentId}-notes`;
+	let membershipPending = $state(0);
+	let membershipStatus = $state('');
 	let memberLists = $state([]);
 	let measureWords = $state([]);
 	let dictionaryContentElement = $state();
@@ -80,6 +85,7 @@
 			return;
 		}
 		previousWordId = currentWordId;
+		membershipStatus = '';
 		if (dictionaryContentElement) {
 			dictionaryContentElement.scrollTop = 0;
 		}
@@ -109,8 +115,8 @@
 				);
 			});
 	};
-	const _modifyListMembership = (fnName, list, word) => {
-		if (!word || !lexicalDisplayId(word)) {
+	const _modifyListMembership = (fnName, list, selectedWord) => {
+		if (!selectedWord || !lexicalDisplayId(selectedWord)) {
 			handleError(
 				'There was an error modifying the list membership. Check the log for more details.',
 				{
@@ -118,18 +124,23 @@
 					list,
 				}
 			);
-			return;
+			return undefined;
 		}
-		bookmarksStore[fnName](list, {
-			lexical_id: lexicalDisplayId(word),
+		membershipPending += 1;
+		membershipStatus = '';
+		return bookmarksStore[fnName](list, {
+			lexical_id: lexicalDisplayId(selectedWord),
 		})
 			.then(() => {
+				if (word && lexicalDisplayId(word) === lexicalDisplayId(selectedWord)) {
+					membershipStatus = `${fnName === 'addToList' ? 'Added to' : 'Removed from'} ${list}.`;
+				}
 				telemetry
 					.trackEvent(fnName === 'addToList' ? 'bookmark.added' : 'bookmark.removed', {})
 					.catch(() => {});
 				onmembershipchange?.({
 					listName: list,
-					lexicalId: lexicalDisplayId(word),
+					lexicalId: lexicalDisplayId(selectedWord),
 					operation:
 						fnName === 'addToList'
 							? BOOKMARK_LIST_MEMBERSHIP_OPERATIONS.ADDED
@@ -138,16 +149,19 @@
 				updateListMembership();
 				return undefined;
 			})
-			.catch((e) => {
+			.catch((error) => {
 				handleError(
 					'There was an error modifying the list membership. Check the log for more details.',
 					{
-						message: e instanceof Error ? e.message : String(e),
-						cause: e,
-						lexical_id: word ? lexicalDisplayId(word) : undefined,
+						message: error instanceof Error ? error.message : String(error),
+						cause: error,
+						lexical_id: selectedWord ? lexicalDisplayId(selectedWord) : undefined,
 						list,
 					}
 				);
+			})
+			.finally(() => {
+				membershipPending -= 1;
 			});
 	};
 	const removeListMembership = (list, word) => {
@@ -255,12 +269,12 @@
 	const handleOpenLink = (detail) => onlink?.(detail);
 
 	let saveNotesDebounce;
-	const saveNotes = () => {
+	const saveNotes = (event) => {
 		const cachedWord = word;
+		const notes = event.currentTarget.value.trim();
 		clearTimeout(saveNotesDebounce);
 		const DEBOUNCE_MS = 500;
 		saveNotesDebounce = setTimeout(() => {
-			const notes = document.getElementById('dictionary-content--notes').value.trim();
 			bookmarksStore
 				.updateProperty(lexicalDisplayId(cachedWord), 'notes', notes)
 				.then(() => {
@@ -285,7 +299,12 @@
 		// Wait for the on-screen keyboard to finish animating in (the layout shrinks
 		// via visualViewport in MobileApp) before centering the field above it.
 		setTimeout(() => {
-			notesElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+			notesElement.scrollIntoView({
+				block: 'center',
+				behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+					? 'auto'
+					: 'smooth',
+			});
 		}, NOTES_KEYBOARD_SETTLE_MS);
 	};
 
@@ -316,6 +335,7 @@
 </script>
 
 <div class={getContainerClasses()} bind:this={dictionaryContentElement}>
+	<p class="sy-sr-only" role="status" aria-atomic="true">{membershipStatus}</p>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
 			<EntryTopline {word} {separateTraditionalCharacters} />
@@ -329,34 +349,37 @@
 								position={DROPDOWN_POSITIONS.RIGHT}
 								fixed={fixedActions}
 							>
-								<SyButton
-									grouped="true"
-									classes={['sy-tooltip--container', ...action.classes]}
-									onclick={action.action}
-								>
-									<action.component size="18" />
-									{#if action.tooltip}
-										<div class="sy-tooltip--body sy-tooltip--body-bottom">
-											<p>
-												{action.tooltip}
-											</p>
-										</div>
-									{/if}
-								</SyButton>
+								{#snippet children(_open, triggerProps)}
+									<SyButton
+										{...triggerProps}
+										grouped={true}
+										classes={['sy-tooltip--container', ...action.classes]}
+										aria-label="Choose bookmark lists"
+										disabled={membershipPending > 0}
+									>
+										<action.component size="18" />
+										<span
+											class="sy-tooltip--body sy-tooltip--body-bottom"
+											aria-hidden="true">{action.tooltip}</span
+										>
+									</SyButton>
+								{/snippet}
 							</SyDropdown>
 						{:else}
 							<SyButton
-								grouped="true"
+								grouped={true}
 								classes={['sy-tooltip--container', ...(action.classes ?? [])]}
 								onclick={action.action}
+								aria-label={action.tooltip}
+								aria-pressed={index === 0 ? memberLists.length > 0 : undefined}
+								disabled={index === 0 && membershipPending > 0}
 							>
 								<action.component size="18" />
 								{#if action.tooltip}
-									<div class="sy-tooltip--body sy-tooltip--body-bottom">
-										<p>
-											{action.tooltip}
-										</p>
-									</div>
+									<span
+										class="sy-tooltip--body sy-tooltip--body-bottom"
+										aria-hidden="true">{action.tooltip}</span
+									>
 								{/if}
 							</SyButton>
 						{/if}
@@ -409,14 +432,15 @@
 		{/if}
 		{#if typeof word.notes === 'string'}
 			<section class="dictionary-content">
-				<h2 class="dictionary-content--section-title">Notes</h2>
+				<h2 id={notesLabelId} class="dictionary-content--section-title">Notes</h2>
 				<textarea
 					use:cursorToEnd
 					placeholder="No Notes"
 					class="dictionary-content--notes {isMobile()
 						? 'dictionary-content--notes--mobile'
 						: ''}"
-					id="dictionary-content--notes"
+					id={notesInputId}
+					aria-labelledby={notesLabelId}
 					autocorrect="on"
 					autocapitalize="sentences"
 					onfocus={handleNotesFocus}
@@ -469,6 +493,8 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-start;
+		flex-wrap: wrap;
+		gap: var(--sy-space);
 	}
 	.dictionary-content__tags {
 		display: flex;
@@ -482,12 +508,13 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
+		margin-left: auto;
 	}
 	.dictionary-content--section-title {
 		font-size: 1.8em;
 		font-weight: 400;
 		margin: var(--sy-space--small) var(--sy-space--large);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 	.dictionary-content--notes {
 		display: block;
@@ -497,15 +524,22 @@
 		box-sizing: border-box;
 		padding: var(--sy-space--extra-large);
 		margin: var(--sy-space--extra-large);
-		font-size: var(--sy-font--size);
+		font-size: var(--sy-font-size--medium);
 		color: var(--sy-color--black);
 		height: auto;
 		width: calc(100% - calc(var(--sy-space--extra-large) + var(--sy-space--extra-large)));
 	}
+	.dictionary-content--notes::placeholder {
+		color: var(--sy-text--placeholder);
+		opacity: 1;
+	}
+	.dictionary-content--notes:where(textarea) {
+		border: var(--sy-input--border);
+	}
 	.dictionary-content--notes--mobile {
 		margin: var(--sy-mobile-space--medium) 0;
 		width: 100%;
-		border: var(--sy-mobile-surface-border);
+		border: var(--sy-input--border-mobile);
 		box-shadow: none;
 	}
 </style>

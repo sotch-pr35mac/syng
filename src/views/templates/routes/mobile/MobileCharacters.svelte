@@ -68,6 +68,7 @@
 				style="ghost"
 				size="large"
 				onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
+				aria-pressed={activeScript === CHARACTER_SETS.SIMPLIFIED}
 			>
 				<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}
 					>Simplified</span
@@ -77,6 +78,7 @@
 				style="ghost"
 				size="large"
 				onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
+				aria-pressed={activeScript === CHARACTER_SETS.TRADITIONAL}
 			>
 				<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}
 					>Traditional</span
@@ -91,15 +93,20 @@
 					center={true}
 					classes={['mobile-characters__icon-button', 'sy-tooltip--container']}
 					onclick={animation.toggle}
+					aria-label={animation.active
+						? 'Pause stroke order'
+						: animation.paused
+							? 'Resume stroke order'
+							: 'Play stroke order'}
 				>
 					<span class="animate-button--icon-container" data-testid="control-button">
 						{#if !animation.active}
-							<Play size="18" />
+							<Play size="18" aria-hidden="true" />
 						{:else}
-							<Pause size="18" />
+							<Pause size="18" aria-hidden="true" />
 						{/if}
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-bottom">
+					<div class="sy-tooltip--body sy-tooltip--body-bottom" aria-hidden="true">
 						<p data-testid="tooltip-text">
 							{#if animation.active}
 								Pause
@@ -167,6 +174,7 @@
 
 	.mobile-characters__script-selector {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		gap: var(--sy-space);
@@ -227,7 +235,7 @@
 		min-height: 100%;
 		text-align: center;
 		padding: var(--sy-space--large);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-medium);
 	}

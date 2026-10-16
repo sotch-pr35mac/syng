@@ -5,7 +5,7 @@
 
 	/** @typedef {import('@/components/SyList/SyListPreview.types.js').SyListPreviewValue} SyListPreviewValue */
 
-	const id = Math.floor(Math.random() * 100);
+	const id = $props.id();
 	const mobile = isMobile();
 	const ipad = isIPad();
 
@@ -63,6 +63,7 @@
 			index: sourceIndex,
 			visibleIndex: event.detail,
 			visibleCount: filteredValues.length,
+			keyboard: event.keyboard,
 			value: selectedValue,
 		});
 	};
@@ -83,6 +84,7 @@
 			<SyTextInput
 				spellcheck={false}
 				placeholder="Filter"
+				aria-label="Filter words"
 				size="large"
 				{id}
 				value={filterValue}

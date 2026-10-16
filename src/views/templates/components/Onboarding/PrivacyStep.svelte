@@ -392,7 +392,7 @@
 		padding: var(--sy-space--large);
 		background-color: var(--sy-color--grey-2);
 		border-radius: var(--sy-border-radius);
-		font-size: 11px;
+		font-size: 0.6875rem;
 		line-height: 1.5;
 		overflow-x: auto;
 		white-space: pre-wrap;

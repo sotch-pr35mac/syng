@@ -9,6 +9,7 @@
 	} from '@/types/snapSheet.js';
 	import type { SheetSnap } from '@/types/snapSheet.js';
 	import { snapSheetDrag } from '@/actions/snapSheetDrag.svelte.js';
+	import { overlayFocus } from '@/actions/overlayFocus.js';
 
 	// Above this release velocity (px/ms) we treat the gesture as a flick and jump
 	// one snap in the flick direction rather than settling to the nearest snap.
@@ -24,21 +25,30 @@
 	};
 
 	const {
+		id = undefined,
 		children,
 		initialSnap = 'collapsed',
 		reopenKey = undefined,
 		onSnapChange,
+		accessibleName = 'Options',
+		returnFocus = undefined,
+		onclose = undefined,
 	}: {
+		id?: string;
 		children?: Snippet;
 		initialSnap?: SheetSnap;
 		reopenKey?: number | string;
 		onSnapChange?: (_snap: SheetSnap) => void;
+		accessibleName?: string;
+		returnFocus?: HTMLElement;
+		onclose?: () => void;
 	} = $props();
 
 	const getInitialSnap = () => initialSnap;
 	let snap = $state<SheetSnap>(getInitialSnap());
 	let dragHeight = $state<number | null>(null);
 	let handleElement = $state<HTMLElement | undefined>(undefined);
+	let sheetElement = $state<HTMLElement | undefined>(undefined);
 
 	const sheetHeight = $derived(dragHeight ?? SNAP_HEIGHTS[snap]());
 	// Transition applies whenever we're not actively dragging.
@@ -167,9 +177,64 @@
 		handleElement?.releasePointerCapture?.(event.pointerId);
 		applySnap(target);
 	}
+	function handleResizeKeydown(event: KeyboardEvent): void {
+		const currentIndex = SHEET_SNAPS.indexOf(snap);
+		let next: SheetSnap | undefined;
+		if (event.key === 'ArrowUp') {
+			next = SHEET_SNAPS[Math.min(SHEET_SNAPS.length - 1, currentIndex + 1)];
+		} else if (event.key === 'ArrowDown') {
+			next = SHEET_SNAPS[Math.max(0, currentIndex - 1)];
+		} else if (event.key === 'Home') {
+			next = 'collapsed';
+		} else if (event.key === 'End') {
+			next = 'full';
+		}
+		if (next) {
+			event.preventDefault();
+			applySnap(next);
+		}
+	}
+
+	function revealFocusedContent(event: FocusEvent): void {
+		if (
+			snap === 'full' ||
+			!(event.target instanceof HTMLElement) ||
+			handleElement?.contains(event.target)
+		) {
+			return;
+		}
+		const focusedBounds = event.target.getBoundingClientRect();
+		if (
+			document.documentElement.dataset.inputModality === 'keyboard' ||
+			focusedBounds.bottom > window.innerHeight ||
+			focusedBounds.top < 0
+		) {
+			// Screen-reader focus can move below the viewport without a preceding key event.
+			openFull();
+		}
+	}
+
+	function defaultReturnFocus(): HTMLElement | undefined {
+		const focused = document.activeElement;
+		return focused instanceof HTMLElement && !sheetElement?.contains(focused)
+			? focused
+			: handleElement;
+	}
 </script>
 
 <div
+	{id}
+	bind:this={sheetElement}
+	role="dialog"
+	onfocusin={revealFocusedContent}
+	aria-label={accessibleName}
+	tabindex="-1"
+	use:overlayFocus={{
+		active: snap !== 'collapsed',
+		initialFocus: 'keyboard',
+		returnFocus: returnFocus ?? defaultReturnFocus,
+		onclose: onclose ?? collapse,
+	}}
 	class="sy-snap-sheet"
 	class:sy-snap-sheet--transitioning={transitioning}
 	style="height: {fullSheetHeight}px; --sy-snap-sheet-hidden-height: {sheetTranslateY}px;"
@@ -183,6 +248,8 @@
 		onDragEnd: handleBodyDragEnd,
 	}}
 >
+	<!-- A focusable ARIA separator exposes the existing resize operation to keyboards. -->
+	<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 	<div
 		bind:this={handleElement}
 		class="sy-snap-sheet__handle"
@@ -191,7 +258,14 @@
 		onpointerup={onPointerEnd}
 		onpointercancel={onPointerEnd}
 		role="separator"
-		aria-label="Drag to resize"
+		tabindex="0"
+		aria-orientation="horizontal"
+		aria-valuemin="0"
+		aria-valuemax={SHEET_SNAPS.length - 1}
+		aria-valuenow={SHEET_SNAPS.indexOf(snap)}
+		aria-valuetext={snap}
+		onkeydown={handleResizeKeydown}
+		aria-label="Resize panel"
 	>
 		<div class="sy-snap-sheet__handle-pill"></div>
 	</div>
@@ -239,6 +313,6 @@
 		width: 36px;
 		height: 4px;
 		border-radius: 2px;
-		background: var(--sy-color--grey-1);
+		background: var(--sy-control--border);
 	}
 </style>

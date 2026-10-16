@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
 	import ColorizedToolOutput from '@/components/Tools/ColorizedToolOutput.svelte';
 	import TextConversionToolPanel from '@/components/Tools/TextConversionToolPanel.svelte';
 	import ToolsOverlays from '@/components/Tools/ToolsOverlays.svelte';
@@ -17,10 +18,13 @@
 
 <div class="mobile-tools">
 	<header class="mobile-tools__header">
-		<div class="mobile-tools__tabs" aria-label="Extras tools">
+		<div class="mobile-tools__tabs" role="tablist" aria-label="Extras tools" use:tabNavigation>
 			{#each textConversionTabs as tab (tab.name)}
 				<SyTab
 					variant="mobile"
+					role="tab"
+					id={`mobile-tools-${tab.name}-tab`}
+					aria-controls="mobile-tools-panel"
 					active={toolsRoute.activeTab === tab.name}
 					onclick={() => toolsRoute.setActiveTab(tab.name)}
 				>
@@ -30,10 +34,18 @@
 		</div>
 	</header>
 
-	<div class="mobile-tools__content">
+	<div
+		role="tabpanel"
+		id="mobile-tools-panel"
+		aria-labelledby={`mobile-tools-${toolsRoute.activeTab}-tab`}
+		tabindex="0"
+		class="mobile-tools__content"
+	>
 		<TextConversionToolPanel
 			variant="mobile"
 			tool={toolsRoute.activeTool.name}
+			busy={toolsRoute.operationState.busy}
+			status={toolsRoute.operationState.status}
 			label={toolsRoute.activeTool.label}
 			headingId={textConversionHeadingId(toolsRoute.activeTool.name, 'mobile')}
 			inputLabel={toolsRoute.activeTool.inputLabel}
@@ -74,6 +86,7 @@
 		border-bottom: var(--sy-mobile-surface-border);
 	}
 	.mobile-tools__tabs {
+		flex-wrap: wrap;
 		display: flex;
 		align-items: center;
 		justify-content: center;

@@ -36,9 +36,9 @@
 
 <label class="reader-metadata-field">
 	<span class="reader-metadata-field__title-label">
-		Title
+		<span id={`${idPrefix}-title-label`}>Title</span>
 		{#if atLimit}
-			<span class="reader-metadata-field__char-limit">
+			<span class="reader-metadata-field__char-limit" id={`${idPrefix}-title-limit`}>
 				{clampedTitle.length}/{READER_DOCUMENT_TITLE_MAX_LENGTH}
 			</span>
 		{/if}
@@ -46,6 +46,8 @@
 	<SyTextInput
 		value={clampedTitle}
 		id={`${idPrefix}-title`}
+		aria-labelledby={`${idPrefix}-title-label`}
+		aria-describedby={atLimit ? `${idPrefix}-title-limit` : undefined}
 		size="large"
 		autocomplete="off"
 		autocorrect="on"
@@ -78,6 +80,6 @@
 	.reader-metadata-field__char-limit {
 		font-size: var(--sy-font-size--small);
 		font-weight: var(--sy-font-weight--regular);
-		color: var(--sy-color--grey-1);
+		color: var(--sy-text--muted);
 	}
 </style>

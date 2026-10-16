@@ -81,12 +81,13 @@
 	});
 </script>
 
-<div class="character-window-container">
+<main class="character-window-container" aria-label="Character stroke order">
 	<div class="script-selector-container" data-tauri-drag-region={enableDrag ? true : undefined}>
 		<SyButton
 			style="ghost"
 			size="large"
 			onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
+			aria-pressed={activeScript === CHARACTER_SETS.SIMPLIFIED}
 		>
 			<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}>
 				Simplified
@@ -96,6 +97,7 @@
 			style="ghost"
 			size="large"
 			onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
+			aria-pressed={activeScript === CHARACTER_SETS.TRADITIONAL}
 		>
 			<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}>
 				Traditional
@@ -113,15 +115,23 @@
 			</div>
 		{:else}
 			<div class="character-actions">
-				<SyButton classes={['sy-tooltip--container']} onclick={animation.toggle}>
+				<SyButton
+					classes={['sy-tooltip--container']}
+					onclick={animation.toggle}
+					aria-label={animation.active
+						? 'Pause stroke order'
+						: animation.paused
+							? 'Resume stroke order'
+							: 'Play stroke order'}
+				>
 					<span class="animate-button--icon-container" data-testid="control-button">
 						{#if !animation.active}
-							<Play size="18" />
+							<Play size="18" aria-hidden="true" />
 						{:else}
-							<Pause size="18" />
+							<Pause size="18" aria-hidden="true" />
 						{/if}
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-bottom">
+					<div class="sy-tooltip--body sy-tooltip--body-bottom" aria-hidden="true">
 						<p data-testid="tooltip-text">
 							{#if animation.active}
 								<!-- An animation is currently playing -->
@@ -142,7 +152,7 @@
 			</div>
 		{/if}
 	</div>
-</div>
+</main>
 
 <style>
 	.character-window-container {
@@ -153,6 +163,7 @@
 	}
 	.script-selector-container {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);

@@ -56,6 +56,8 @@
 	style:--sy-toast-bottom-offset={bottomOffset}
 	role="status"
 	aria-live="polite"
+	aria-hidden={!visible}
+	inert={!visible}
 >
 	<div class="sy-toast--body">
 		<span class="sy-toast--message">{message}</span>
@@ -63,8 +65,13 @@
 			<button class="sy-toast--action" onclick={onaction}>{actionLabel}</button>
 		{/if}
 	</div>
-	<SyButton style="ghost" onclick={ondismiss}>
-		<X size="14" />
+	<SyButton
+		style="ghost"
+		onclick={ondismiss}
+		aria-label="Dismiss notification"
+		tabindex={visible ? 0 : -1}
+	>
+		<X size="14" aria-hidden="true" />
 	</SyButton>
 </div>
 
@@ -78,6 +85,8 @@
 		justify-content: space-between;
 		gap: var(--sy-space--large);
 		width: 280px;
+		max-width: calc(100vw - 60px);
+		visibility: hidden;
 		padding: var(--sy-space--large);
 		background-color: var(--sy-color--white);
 		border-radius: var(--sy-border-radius);
@@ -109,6 +118,7 @@
 		transform: translateY(calc(100% + var(--sy-space--extra-large)));
 	}
 	.sy-toast--visible {
+		visibility: visible;
 		transform: translateY(0);
 		opacity: 1;
 		pointer-events: auto;
@@ -131,15 +141,12 @@
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--small);
 		font-weight: var(--sy-font-weight--normal);
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 		cursor: pointer;
 		text-align: left;
 	}
-	.sy-toast--action:focus {
-		outline: none;
-	}
 	.sy-toast--action:hover {
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 		transition-property: color;
 		transition-duration: var(--sy-transition-duration);
 	}

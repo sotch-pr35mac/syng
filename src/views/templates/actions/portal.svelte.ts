@@ -22,12 +22,14 @@ type PortalOptions =
 	| HTMLElement
 	| {
 			target?: HTMLElement;
+			owner?: HTMLElement;
 			attributes?: Record<string, string>;
 	  }
 	| undefined;
 
 function resolvePortalOptions(options: PortalOptions): {
 	target?: HTMLElement;
+	owner?: HTMLElement;
 	attributes: Record<string, string>;
 } {
 	if (!options) {
@@ -44,13 +46,44 @@ function resolvePortalOptions(options: PortalOptions): {
 	}
 	return {
 		target: options.target,
+		owner: options.owner,
 		attributes: options.attributes ?? {},
 	};
 }
 
+// DOM ownership survives moving a popup out of its logical parent's DOM subtree.
+// eslint-disable-next-line svelte/prefer-svelte-reactivity
+const portalOwners = new Map<HTMLElement, HTMLElement>();
+
+export function containsOwnedNode(container: HTMLElement, target: Node | null): boolean {
+	let currentTarget = target;
+	const visited: Node[] = [];
+	while (currentTarget && !visited.includes(currentTarget)) {
+		if (container.contains(currentTarget)) {
+			return true;
+		}
+		visited.push(currentTarget);
+		const owner = [...portalOwners].find(([portalNode]) =>
+			portalNode.contains(currentTarget)
+		)?.[1];
+		currentTarget = owner ?? null;
+	}
+	return false;
+}
+
+export function ownedPortalRoots(container: HTMLElement): HTMLElement[] {
+	return [...portalOwners.keys()].filter((portalNode) =>
+		containsOwnedNode(container, portalNode)
+	);
+}
+
 export const portal: Action<HTMLElement, PortalOptions> = (node, options) => {
-	const { target, attributes } = resolvePortalOptions(options);
+	const { target, owner, attributes } = resolvePortalOptions(options);
 	const destination = target ?? document.body;
+	const logicalOwner = owner ?? node.parentElement;
+	if (logicalOwner && logicalOwner !== destination) {
+		portalOwners.set(node, logicalOwner);
+	}
 	const previousAttributes = Object.fromEntries(
 		Object.keys(attributes).map((name) => [name, node.getAttribute(name)])
 	);
@@ -62,6 +95,7 @@ export const portal: Action<HTMLElement, PortalOptions> = (node, options) => {
 
 	return {
 		destroy() {
+			portalOwners.delete(node);
 			for (const [name, previousValue] of Object.entries(previousAttributes)) {
 				if (previousValue === null) {
 					node.removeAttribute(name);
