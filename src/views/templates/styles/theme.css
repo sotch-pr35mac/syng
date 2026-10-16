@@ -3,6 +3,11 @@
 @import url('../fonts/montserrat/Montserrat.css');
 
 :root {
+	/* Syng Brand Colors */
+	--sy-color--syng-orange: #ff8a00;
+	--sy-color--syng-red: #ef1063;
+	--sy-color--syng-purple: #9d29ad;
+
 	/* Theme Colors */
 	--sy-color--blue-1: #76aff9;
 	--sy-color--blue-2: #2c7ee7;

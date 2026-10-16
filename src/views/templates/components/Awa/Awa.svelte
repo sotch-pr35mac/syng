@@ -62,7 +62,12 @@
 		content: '';
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(135deg, #ff8a00, #ef1063, #9d29ad);
+		background: linear-gradient(
+			135deg,
+			var(--sy-color--syng-orange),
+			var(--sy-color--syng-red),
+			var(--sy-color--syng-purple)
+		);
 		-webkit-mask: var(--awa-silhouette) center / contain no-repeat;
 		mask: var(--awa-silhouette) center / contain no-repeat;
 	}

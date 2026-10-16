@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { render } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
@@ -129,9 +130,15 @@ it('contains approved messages and none of the retired messages', () => {
 
 it('uses the v1.5.0 gradient and a softer dark-mode shimmer only on the full-size joke copy', async () => {
 	const source = (await import('../LoadingScreen/LoadingScreen.svelte?raw')).default;
+	const theme = readFileSync('src/views/templates/styles/theme.css', 'utf8');
 	const jokeRule = source.match(/\.loading-screen__message\s*\{([^}]*)\}/)?.[1] ?? '';
 
-	expect(source).toContain('background: linear-gradient(#ff8a00, #ef1063, #9d29ad);');
+	expect(source.replace(/\s+/g, ' ')).toContain(
+		'background: linear-gradient( var(--sy-color--syng-orange), var(--sy-color--syng-red), var(--sy-color--syng-purple) );'
+	);
+	expect(theme).toContain('--sy-color--syng-orange: #ff8a00;');
+	expect(theme).toContain('--sy-color--syng-red: #ef1063;');
+	expect(theme).toContain('--sy-color--syng-purple: #9d29ad;');
 	expect(jokeRule).toContain('font-size: var(--sy-font-size--normal)');
 	expect(jokeRule).toContain('animation: loading-shimmer');
 	expect(source.match(/animation: loading-shimmer/g)).toHaveLength(1);
