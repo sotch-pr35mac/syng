@@ -279,6 +279,8 @@
 		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
 			<DictionaryContent
 				word={activeWord}
+				showEmptyState={bookmarksRoute.contentStatus === 'ready'}
+				emptyStatePose="collect"
 				{lists}
 				onlink={handleDictionaryLink}
 				onmembershipchange={handleMembershipChange}

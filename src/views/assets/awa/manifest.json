@@ -1,0 +1,138 @@
+{
+	"character": "Awa",
+	"created": "2026-10-15",
+	"format": "Transparent WebP, lossless encoding after resizing",
+	"resolutions": [512, 1024],
+	"canvas": "Original square composition retained; no cropping or artistic edits.",
+	"recommendedDisplaySize": "160–256 CSS pixels; 1024px sources support high-density displays.",
+	"sourceDirectory": "output/imagegen/wamao-refined-v4-2026-10-15",
+	"conversion": "cwebp 1.6.0 -lossless -q 100 -m 6 -resize SIZE SIZE SOURCE -o DESTINATION",
+	"poses": [
+		{
+			"pose": "read",
+			"source": "01-read.png",
+			"sourceSha256": "6cf79cacc001db7a2ab1079321669768642614ffe37882626494716c146685da",
+			"files": [
+				{
+					"path": "read-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 146510,
+					"sha256": "1c6b53c4d621a2b3222c84ee35d637f745db210accd79fe847b185da416ef074"
+				},
+				{
+					"path": "read-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 474258,
+					"sha256": "939a61e13c9432d49b9da9483349fa92693c26ee68739affe2922e6556f7397c"
+				}
+			]
+		},
+		{
+			"pose": "collect",
+			"source": "02-collect.png",
+			"sourceSha256": "0372f446111c33b445d22da978d548d90a763bb8e71c700ff3b8122a6352b6e1",
+			"files": [
+				{
+					"path": "collect-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 158848,
+					"sha256": "61ca105637c361e2b47808920f5473322c321fd18a0e5a515e5158e56e59ba09"
+				},
+				{
+					"path": "collect-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 511382,
+					"sha256": "5a8ee00df7976bca52f4aa24d237fda3ec4b3ed89453be57732fd890c5a1a1a2"
+				}
+			]
+		},
+		{
+			"pose": "practice",
+			"source": "03-practice.png",
+			"sourceSha256": "3852d24772a097b4107cc30f7f6f7a6e9e22a4ccd7ddf61aadaf32ad2f874954",
+			"files": [
+				{
+					"path": "practice-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 145354,
+					"sha256": "a0970a01c0be84e2c5849343bc75e6f3bf0022e937cbd5d118580c185441efe3"
+				},
+				{
+					"path": "practice-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 469320,
+					"sha256": "dd876cd794484002aa3612feaec0d698d605b54877d100a5cdf7110c29fe5f81"
+				}
+			]
+		},
+		{
+			"pose": "search",
+			"source": "04-search.png",
+			"sourceSha256": "e888dd1df0d1eaf6bbcd62b4d9973b7d461fd9ab1a2af911f8f755e519765123",
+			"files": [
+				{
+					"path": "search-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 150684,
+					"sha256": "54e54532802112fb0fd13f35960eb69e7a3c563697d4f4a8f069ba81c4bee11d"
+				},
+				{
+					"path": "search-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 484338,
+					"sha256": "84bc34ab6013d1d332ba33627073ebc80a4f033d1c4af395fc34eb8e5979ae5c"
+				}
+			]
+		},
+		{
+			"pose": "dictionary",
+			"source": "05-dictionary.png",
+			"sourceSha256": "86da455a29dc0b6d198c9f424a28e7120adca44cd8507033ad1f904abc7662a7",
+			"files": [
+				{
+					"path": "dictionary-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 160092,
+					"sha256": "f8a424d08e697b119de62ec636ada3c1e1554bfc3b637ae3afb9927a65131abe"
+				},
+				{
+					"path": "dictionary-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 516112,
+					"sha256": "aed7575c02b2d14734134f743421f6b8a7617d82dc43ca72c38cfcd4e593e634"
+				}
+			]
+		},
+		{
+			"pose": "welcome",
+			"source": "../wamao-welcome-v5-2026-10-15/01-welcome.png",
+			"sourceSha256": "add68cd2f667861f1db8445efb11658a25d18426baa2ea7ad9f9a7bb2d22b4e1",
+			"files": [
+				{
+					"path": "welcome-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 175670,
+					"sha256": "d41891e756597ee93364bea21d3f36de7b03394dc2a365d36486157367b3b84e"
+				},
+				{
+					"path": "welcome-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 566712,
+					"sha256": "2d9a0ca1b032eb115022299adc0220482f7bb38caea8d24f28b9e1f8e7dc9917"
+				}
+			]
+		}
+	]
+}

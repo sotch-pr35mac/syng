@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
 		ClipboardPaste,
 		FilePlus2,
 		Globe2,
-		Library,
 		Trash2,
 	} from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -99,7 +99,7 @@
 		{:else}
 			<div class="mobile-reader__empty">
 				<div class="mobile-reader__empty-copy">
-					<Library size="38" />
+					<Awa pose="read" size={AWA_SIZES.mobile} />
 					<p>Your reading library is empty</p>
 				</div>
 				<div class="mobile-reader__empty-actions" aria-label="Import options">

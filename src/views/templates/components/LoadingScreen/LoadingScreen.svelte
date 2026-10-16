@@ -101,7 +101,11 @@
 		padding: max(var(--sy-space--extra-large), env(safe-area-inset-top))
 			var(--sy-space--extra-large)
 			max(var(--sy-space--extra-large), env(safe-area-inset-bottom));
-		background: linear-gradient(#ff8a00, #ef1063, #9d29ad);
+		background: linear-gradient(
+			var(--sy-color--syng-orange),
+			var(--sy-color--syng-red),
+			var(--sy-color--syng-purple)
+		);
 		color: var(--sy-color--white);
 		font-family: var(--sy-font-family);
 		text-align: center;

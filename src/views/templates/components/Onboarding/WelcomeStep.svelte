@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Award, BookOpen, GraduationCap, Search } from 'lucide-svelte';
+	import Awa from '@/components/Awa/Awa.svelte';
 
 	const features = [
 		{
@@ -35,6 +36,7 @@
 
 <div class="welcome-step">
 	<header class="welcome-step__header">
+		<div class="welcome-step__mascot"><Awa pose="welcome" /></div>
 		<h2 class="welcome-step__title">Welcome to Syng</h2>
 		<p class="welcome-step__intro">
 			Syng helps you understand the Chinese you encounter and learn from it. Look up words,
@@ -74,6 +76,15 @@
 	.welcome-step__title,
 	.welcome-step__intro {
 		text-align: center;
+	}
+
+	.welcome-step__mascot {
+		align-self: center;
+		max-width: 100%;
+	}
+
+	:global(.onboarding-flow--mobile) .welcome-step__mascot {
+		width: 144px;
 	}
 
 	.welcome-step__title {
