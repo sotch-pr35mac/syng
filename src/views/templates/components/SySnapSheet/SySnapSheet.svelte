@@ -196,8 +196,12 @@
 	}
 
 	function revealFocusedContent(event: FocusEvent): void {
+		// iOS can focus this dialog wrapper when a descendant button is tapped.
+		// Its full-height box deliberately extends below the viewport at smaller
+		// snaps; only descendant content should trigger focus-driven expansion.
 		if (
 			snap === 'full' ||
+			event.target === sheetElement ||
 			!(event.target instanceof HTMLElement) ||
 			handleElement?.contains(event.target)
 		) {

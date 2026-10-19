@@ -3,6 +3,25 @@ import AxeBuilder from '@axe-core/playwright';
 
 const fixtureUrl = '/src/test/accessibility/index.html';
 
+test.describe('touch dropdown activation', () => {
+	test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+	for (const triggerName of ['Choose list', 'List actions']) {
+		test(`${triggerName} keeps the current snap when tapped`, async ({ page }) => {
+			for (const snap of ['collapsed', 'partial']) {
+				await page.goto(`${fixtureUrl}?sheet&mobile&snap=${snap}`);
+				const handle = page.getByRole('separator', { name: 'Resize panel' });
+				await expect(handle).toHaveAttribute('aria-valuetext', snap);
+				await page.getByRole('button', { name: triggerName, exact: true }).tap();
+				await expect(page.getByRole('menu')).toBeVisible();
+				await expect(handle).toHaveAttribute('aria-valuetext', snap);
+				await page.getByRole('menuitem', { name: 'First action' }).tap();
+				await expect(page.getByRole('menu')).toHaveCount(0);
+				await expect(handle).toHaveAttribute('aria-valuetext', snap);
+			}
+		});
+	}
+});
+
 for (const triggerName of ['Choose list', 'List actions']) {
 	test(`${triggerName} menu follows snap-sheet animation and dragging`, async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });

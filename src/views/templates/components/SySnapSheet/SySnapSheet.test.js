@@ -175,6 +175,29 @@ it('preserves the existing snap when pointer interaction focuses content', async
 	}
 });
 
+it.each(['collapsed', 'partial'])(
+	'keeps the %s snap when a mobile tap focuses the dialog wrapper',
+	async (initialSnap) => {
+		document.documentElement.dataset.inputModality = 'pointer';
+		try {
+			const onSnapChange = vi.fn();
+			const { getByRole } = render(SySnapSheet, { initialSnap, onSnapChange });
+			const sheet = getByRole('dialog');
+			const snapHeight = initialSnap === 'collapsed' ? COLLAPSED_HEIGHT : PARTIAL_HEIGHT;
+			const top = window.innerHeight - snapHeight;
+			// The translated wrapper remains full-height, even when only its header
+			// is visible. Its bottom extending offscreen must not count as hidden focus.
+			sheet.getBoundingClientRect = () => ({ top, bottom: top + FULL_HEIGHT });
+			sheet.focus();
+			await tick();
+			expectSnapHeight(sheet, snapHeight);
+			expect(onSnapChange).not.toHaveBeenCalled();
+		} finally {
+			delete document.documentElement.dataset.inputModality;
+		}
+	}
+);
+
 it('reveals offscreen assistive-technology focus without requiring a keyboard event', async () => {
 	document.documentElement.dataset.inputModality = 'pointer';
 	try {

@@ -24,7 +24,9 @@
 	}));
 	const showReader = new URLSearchParams(location.search).has('reader');
 	const showSheet = new URLSearchParams(location.search).has('sheet');
-	let sheetSnap = $state<SheetSnap>('partial');
+	const initialSheetSnap: SheetSnap =
+		new URLSearchParams(location.search).get('snap') === 'collapsed' ? 'collapsed' : 'partial';
+	let sheetSnap = $state<SheetSnap>(initialSheetSnap);
 </script>
 
 <main>
@@ -89,7 +91,7 @@
 	<!-- Exercise the same fixed menu alignment/direction choices as MobileBookmarks. -->
 	<SySnapSheet
 		accessibleName="Bookmark lists"
-		initialSnap="partial"
+		initialSnap={initialSheetSnap}
 		onSnapChange={(snap) => (sheetSnap = snap)}
 	>
 		<div class="sheet-controls">
@@ -101,7 +103,7 @@
 					direction={sheetSnap === 'full' ? 'down' : 'up'}
 				>
 					{#snippet children(_open, triggerProps)}
-						<SyButton {...triggerProps}
+						<SyButton {...triggerProps} style="ghost" size="small"
 							>{position === 'left' ? 'Choose list' : 'List actions'}</SyButton
 						>
 					{/snippet}
