@@ -29,7 +29,7 @@ it.each(['clipboard', 'file'] as const)(
 						onclose,
 						onimport,
 					});
-		const { baseElement, getByRole, getByText } = rendered;
+		const { baseElement, getByRole, queryByRole } = rendered;
 		if (source === 'clipboard') {
 			await fireEvent.input(getByRole('textbox', { name: 'Text' }), {
 				target: { value: '你好\nA pasted passage.' },
@@ -40,7 +40,10 @@ it.each(['clipboard', 'file'] as const)(
 		await fireEvent.click(getByRole('button', { name: 'Use Blue document color' }));
 		await fireEvent.click(getByRole('button', { name: 'Import' }));
 
-		await waitFor(() => expect(getByText('Could not save the document.')).toBeTruthy());
+		await waitFor(() =>
+			expect(getByRole('alert').textContent).toContain('Could not save the document.')
+		);
+		expect(getByRole('alert').getAttribute('aria-atomic')).toBe('true');
 		expect(onclose).not.toHaveBeenCalled();
 		expect(titleInput.value).toBe('My edited title');
 		expect(
@@ -55,6 +58,7 @@ it.each(['clipboard', 'file'] as const)(
 
 		await fireEvent.click(getByRole('button', { name: 'Import' }));
 		await waitFor(() => expect(onclose).toHaveBeenCalledTimes(1));
+		expect(queryByRole('alert')).toBeNull();
 		expect(onimport.mock.calls[1]).toEqual(onimport.mock.calls[0]);
 	}
 );
@@ -63,7 +67,7 @@ it('keeps clipboard input retryable after an unexpected rejection without a glob
 	const failure = new Error('Unexpected storage rejection');
 	const onimport = vi.fn().mockRejectedValueOnce(failure);
 	const onclose = vi.fn();
-	const { getByRole, getByText } = render(ReaderClipboardImportModal, {
+	const { getByRole } = render(ReaderClipboardImportModal, {
 		visible: true,
 		onimport,
 		onclose,
@@ -73,7 +77,9 @@ it('keeps clipboard input retryable after an unexpected rejection without a glob
 	});
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
 	await waitFor(() =>
-		expect(getByText('There was an error importing the reader document.')).toBeTruthy()
+		expect(getByRole('alert').textContent).toContain(
+			'There was an error importing the reader document.'
+		)
 	);
 	expect(onclose).not.toHaveBeenCalled();
 	expect(getByRole('button', { name: 'Import' }).hasAttribute('disabled')).toBe(false);

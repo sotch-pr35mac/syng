@@ -7,6 +7,7 @@
 	let importVisible = $state(false);
 	let selected = $state(false);
 	let status = $state('');
+	const failImport = new URLSearchParams(location.search).has('importError');
 	const book: ReaderDocument = {
 		...createPlainTextReaderImportPayload('A long book title for enlarged text', '你好世界'),
 		_id: 'fixture-book',
@@ -43,6 +44,9 @@
 	visible={importVisible}
 	onclose={() => (importVisible = false)}
 	onimport={() => {
+		if (failImport) {
+			return { status: 'error', message: 'Could not save the document. Please try again.' };
+		}
 		status = 'Imported text';
 		return { status: 'success' };
 	}}

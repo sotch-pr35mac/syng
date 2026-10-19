@@ -392,11 +392,22 @@
 				size="large"
 				placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 				id="create-new-list-input"
+				aria-invalid={bookmarksRoute.creationNameInvalid || undefined}
+				aria-describedby={bookmarksRoute.creationError
+					? 'create-new-list-error'
+					: undefined}
 				value={newListName}
 				oninput={handleNewListName}
 			/>
 			{#if bookmarksRoute.creationError}
-				<p class="mobile-bookmarks__creation-error">{bookmarksRoute.creationError}</p>
+				<p
+					class="mobile-bookmarks__creation-error"
+					id="create-new-list-error"
+					role="alert"
+					aria-atomic="true"
+				>
+					{bookmarksRoute.creationError}
+				</p>
 			{/if}
 		</div>
 	{/snippet}
@@ -451,13 +462,13 @@
 
 	.mobile-bookmarks__list-empty p {
 		margin: 0 0 var(--sy-space--large);
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: var(--sy-font-weight--normal);
 		line-height: var(--sy-line-height--body);
 	}
 
 	.mobile-bookmarks__creation-error {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
 	}
 	.mobile-bookmarks {
@@ -540,9 +551,9 @@
 	.mobile-bookmarks__study-requirement {
 		flex-shrink: 0;
 		margin: 0 var(--sy-mobile-space--large) var(--sy-mobile-space--small);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
-		font-size: 13px;
+		font-size: 0.8125rem;
 		text-align: right;
 	}
 

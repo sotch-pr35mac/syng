@@ -288,6 +288,123 @@ test('Reader cards and import controls remain usable with enlarged text', async 
 	await expect(dialog).toHaveCount(0);
 });
 
+for (const mobile of [false, true]) {
+	test(`${mobile ? 'mobile' : 'desktop'} empty-state text follows system text size`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: mobile ? 320 : 1100, height: 800 });
+		const surface = mobile ? '&mobile' : '';
+		const messages = [
+			{
+				query: '&emptySearch',
+				text: 'No results found. Try another word in Chinese, English, or pinyin.',
+			},
+			{ query: '', text: 'This list is empty. Search for a word, then add it to this list.' },
+			...(mobile ? [{ query: '&savedWord', text: 'Quiz needs at least 4 words' }] : []),
+		];
+		for (const message of messages) {
+			await page.goto(`${fixtureUrl}?routes${surface}${message.query}`);
+			const copy = page.getByText(message.text, { exact: true });
+			await expect(copy).toBeVisible();
+			await expect(copy).toHaveCSS('font-size', '13px');
+			await page.evaluate(() =>
+				document.documentElement.style.setProperty('--sy-system-font-size', '32px')
+			);
+			await expect(copy).toHaveCSS('font-size', '26px');
+			const bounds = await copy.boundingBox();
+			expect(bounds?.x).toBeGreaterThanOrEqual(0);
+			expect((bounds?.x ?? 0) + (bounds?.width ?? 0)).toBeLessThanOrEqual(
+				mobile ? 320 : 1100
+			);
+		}
+	});
+
+	for (const colorScheme of ['light', 'dark'] as const) {
+		test(`${colorScheme} ${mobile ? 'mobile' : 'desktop'} bookmark errors expose validation and follow contrast`, async ({
+			page,
+		}) => {
+			await page.emulateMedia({ colorScheme });
+			await page.setViewportSize({ width: mobile ? 320 : 1100, height: 800 });
+			await page.goto(`${fixtureUrl}?routes&savedWord${mobile ? '&mobile' : ''}`);
+			await page.getByRole('button', { name: 'Choose list: Bookmarks' }).click();
+			await page.getByRole('menuitem', { name: 'Create New' }).click();
+			const dialog = page.getByRole('dialog', { name: 'Create List' });
+			const input = dialog.getByRole('textbox', {
+				name: 'What would you like to call this list?',
+			});
+			await dialog.getByRole('button', { name: 'Create', exact: true }).click();
+			const error = dialog.getByRole('alert');
+			await expect(error).toHaveText('Enter a name for your list.');
+			await expect(input).toHaveAttribute('aria-invalid', 'true');
+			await expect(input).toHaveAttribute(
+				'aria-describedby',
+				(await error.getAttribute('id')) as string
+			);
+			await expect(error).toHaveCSS('color', 'rgb(228, 57, 120)');
+			await page.evaluate(() => (document.documentElement.dataset.appearance = 'contrast'));
+			await expect(error).toHaveCSS(
+				'color',
+				colorScheme === 'light' ? 'rgb(218, 0, 105)' : 'rgb(236, 108, 157)'
+			);
+			// The pointer remains over Create. Wait for its existing background
+			// transition to finish before sampling contrast in the changed theme.
+			await expect(dialog.getByRole('button', { name: 'Create', exact: true })).toHaveCSS(
+				'background-color',
+				colorScheme === 'light' ? 'rgb(245, 245, 245)' : 'rgb(44, 44, 44)'
+			);
+			const results = await new AxeBuilder({ page })
+				.include('[aria-modal="true"]')
+				.withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+				.analyze();
+			expect(results.violations).toEqual([]);
+			await input.fill('New list');
+			await expect(error).toHaveCount(0);
+			await expect(input).not.toHaveAttribute('aria-invalid');
+			await expect(input).not.toHaveAttribute('aria-describedby');
+			await dialog.getByRole('button', { name: 'Cancel' }).click();
+			if (mobile) {
+				const requirement = page.getByText('Quiz needs at least 4 words', { exact: true });
+				await expect(requirement).toHaveCSS(
+					'color',
+					colorScheme === 'light' ? 'rgb(112, 112, 112)' : 'rgb(154, 155, 156)'
+				);
+				await page.evaluate(
+					() => (document.documentElement.dataset.appearance = 'original')
+				);
+				await expect(requirement).toHaveCSS('color', 'rgb(154, 155, 156)');
+			}
+		});
+	}
+}
+
+for (const colorScheme of ['light', 'dark'] as const) {
+	test(`${colorScheme} Reader import errors are alerts with contrast colors`, async ({
+		page,
+	}) => {
+		await page.emulateMedia({ colorScheme });
+		await page.setViewportSize({ width: 320, height: 740 });
+		await page.goto(`${fixtureUrl}?reader&importError&fontSize=32`);
+		await page.getByRole('button', { name: 'Import text', exact: true }).click();
+		const dialog = page.getByRole('dialog', { name: 'Import from Clipboard' });
+		await dialog.getByRole('textbox', { name: 'Text', exact: true }).fill('Keep this passage');
+		await dialog.getByRole('button', { name: 'Import', exact: true }).focus();
+		await page.keyboard.press('Enter');
+		const error = dialog.getByRole('alert');
+		await expect(error).toHaveText('Could not save the document. Please try again.');
+		await expect(error).toHaveCSS('color', 'rgb(228, 57, 120)');
+		await page.evaluate(() => (document.documentElement.dataset.appearance = 'contrast'));
+		await expect(error).toHaveCSS(
+			'color',
+			colorScheme === 'light' ? 'rgb(218, 0, 105)' : 'rgb(236, 108, 157)'
+		);
+		const results = await new AxeBuilder({ page })
+			.include('[aria-modal="true"]')
+			.withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+			.analyze();
+		expect(results.violations).toEqual([]);
+	});
+}
+
 test('navigation tooltips escape the scroll container and dismiss with Escape', async ({
 	page,
 }) => {

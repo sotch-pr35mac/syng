@@ -313,11 +313,22 @@
 					size="large"
 					placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 					id="create-new-list-input"
+					aria-invalid={bookmarksRoute.creationNameInvalid || undefined}
+					aria-describedby={bookmarksRoute.creationError
+						? 'create-new-list-error'
+						: undefined}
 					value={newListName}
 					oninput={handleNewListName}
 				/>
 				{#if bookmarksRoute.creationError}
-					<p class="bookmarks--creation-error">{bookmarksRoute.creationError}</p>
+					<p
+						class="bookmarks--creation-error"
+						id="create-new-list-error"
+						role="alert"
+						aria-atomic="true"
+					>
+						{bookmarksRoute.creationError}
+					</p>
 				{/if}
 			</div>
 		{/snippet}
@@ -364,13 +375,13 @@
 
 	.bookmarks--list-empty p {
 		margin: 0;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: var(--sy-font-weight--normal);
 		line-height: var(--sy-line-height--body);
 	}
 
 	.bookmarks--creation-error {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
 	}
 	.bookmarks--container {

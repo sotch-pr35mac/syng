@@ -81,7 +81,9 @@ it('preserves webpage details and a prepared preview after a failed save, includ
 	await fireEvent.click(getByRole('button', { name: 'Use Blue document color' }));
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
 
-	await waitFor(() => expect(getByText('Could not save this webpage.')).toBeTruthy());
+	await waitFor(() =>
+		expect(getByRole('alert').textContent).toContain('Could not save this webpage.')
+	);
 	expect(onclose).not.toHaveBeenCalled();
 	expect(urlInput.value).toBe('https://example.com/article');
 	expect(titleInput.value).toBe('My article');

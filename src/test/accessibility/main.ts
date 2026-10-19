@@ -18,5 +18,7 @@ document.documentElement.style.setProperty('--sy-system-font-size', `${fontSize}
 document.documentElement.style.setProperty('--sy-system-text-scale', `${fontSize / 16}`);
 const { default: Fixture } = new URLSearchParams(location.search).has('palette')
 	? await import('@test/accessibility/PaletteFixture.svelte')
-	: await import('@test/accessibility/Fixture.svelte');
+	: new URLSearchParams(location.search).has('routes')
+		? await import('@test/accessibility/RoutesFixture.svelte')
+		: await import('@test/accessibility/Fixture.svelte');
 mount(Fixture, { target: document.getElementById('fixture')! });

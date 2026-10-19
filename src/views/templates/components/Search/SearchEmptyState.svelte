@@ -35,7 +35,7 @@
 
 	p {
 		margin: 0;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: var(--sy-font-weight--normal);
 		line-height: var(--sy-line-height--body);
 	}

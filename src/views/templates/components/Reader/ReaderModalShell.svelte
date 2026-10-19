@@ -42,7 +42,9 @@
 		<div class="reader-modal-shell__body" style={`width: ${width};`} aria-busy={busy}>
 			{@render bodySnippet?.()}
 			{#if errorMessage}
-				<p class="reader-modal-shell__error">{errorMessage}</p>
+				<p class="reader-modal-shell__error" role="alert" aria-atomic="true">
+					{errorMessage}
+				</p>
 			{/if}
 		</div>
 		<span class="sy-sr-only" role="status">{busy ? busyLabel : ''}</span>
@@ -75,7 +77,7 @@
 <style>
 	.reader-modal-shell__error {
 		margin: var(--sy-space--none);
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 	}
 
 	.reader-modal-shell__body {

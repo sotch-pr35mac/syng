@@ -86,10 +86,16 @@ describe.each([
 		['create-new', 'This name is reserved. Choose another name.'],
 	])('keeps the form and explains invalid name %j', async (name, message) => {
 		const { user, input, modal, createButton } = await openCreateDialog();
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 		await user.type(input, name);
 		await user.click(createButton);
 
-		expect(await screen.findByText(message)).toBeTruthy();
+		const error = await screen.findByRole('alert');
+		expect(error.textContent).toContain(message);
+		expect(error.getAttribute('aria-atomic')).toBe('true');
+		expect(input.getAttribute('aria-invalid')).toBe('true');
+		expect(input.getAttribute('aria-describedby')).toBe(error.id);
 		expect(input.value).toBe(name);
 		expect(modal.classList.contains('sy-modal--active')).toBe(true);
 		expect((createButton as HTMLButtonElement).disabled).toBe(false);
@@ -98,6 +104,9 @@ describe.each([
 
 		await user.type(input, 'x');
 		expect(screen.queryByText(message)).toBeNull();
+		expect(screen.queryByRole('alert')).toBeNull();
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 	});
 
 	it('opens the trimmed new list and clears the prior filter and selected word', async () => {
@@ -133,9 +142,10 @@ describe.each([
 		expect((createButton as HTMLButtonElement).disabled).toBe(true);
 
 		rejectSave(new Error('Storage unavailable'));
-		expect(
-			await screen.findByText('Could not create this list. Please try again.')
-		).toBeTruthy();
+		const error = await screen.findByRole('alert');
+		expect(error.textContent).toContain('Could not create this list. Please try again.');
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.getAttribute('aria-describedby')).toBe(error.id);
 		expect(input.value).toBe('My vocabulary');
 		expect(modal.classList.contains('sy-modal--active')).toBe(true);
 		expect((createButton as HTMLButtonElement).disabled).toBe(false);
@@ -180,6 +190,9 @@ describe.each([
 		await user.click(screen.getByRole('button', { name: 'Cancel' }));
 		expect(input.value).toBe('');
 		expect(bookmarksRoute.creationError).toBe('');
+		expect(bookmarksRoute.creationNameInvalid).toBe(false);
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 		expect(modal.classList.contains('sy-modal--active')).toBe(false);
 	});
 });
