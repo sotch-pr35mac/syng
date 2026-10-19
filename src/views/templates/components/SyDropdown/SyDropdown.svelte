@@ -11,6 +11,24 @@
 	import { portal } from '@/actions/portal.svelte.js';
 	import { overlayFocus, focusOutsideOverlay } from '@/actions/overlayFocus.js';
 
+	/* Dropdown Values Prop */
+	// The values to be present in the dropdown list.
+	// Values should be an array of objects in the following form:
+	// [
+	//   {
+	//     text: 'Value to display', // if applicable
+	//     icon: SvelteComponent, // if applicable
+	//     id: 'unique identifier',
+	//     component: SvelteComponent, // One of the supported SyDropdown Item components
+	//     color: 'some color',
+	//     hover: 'some hover color'
+	//   }
+	// ]
+
+	/* Position Prop */
+	/* Possible Values */
+	// 'right' - Right aligned to the dropdown trigger
+
 	type DropdownValue = {
 		id?: string | number;
 		component: Component<any>;
@@ -20,6 +38,16 @@
 		hover?: string;
 		disabled?: boolean;
 	};
+	/**
+	 * @typedef {Object} Props
+	 * @property {DropdownValue[]} [values] - The values to be present in the dropdown list
+	 * @property {import('@/types/dropdown.js').DropdownPosition} [position] - Left aligned to the dropdown trigger
+	 * @property {import('@/types/dropdown.js').DropdownDirection} [direction] - Direction the dropdown opens
+	 * @property {boolean} [fixed] - Use fixed positioning to escape overflow:hidden containers
+	 * @property {import('svelte').Snippet<[boolean, HTMLButtonAttributes]>} [children] - Receives the open state and props to spread onto the trigger button
+	 * @property {(id: string | number) => void} [onselection] - Selection handler
+	 */
+	/** @type {Props} */
 	const {
 		values = [],
 		position = DROPDOWN_POSITIONS.LEFT,
@@ -66,6 +94,8 @@
 		}
 	}
 
+	// Close the dropdown if the user clicks outside of it. The menu's overlayFocus
+	// action handles outside clicks and listener cleanup, ignoring the trigger itself.
 	function closeMenu(restore = true): void {
 		restoreFocus = restore;
 		active = false;
@@ -182,6 +212,8 @@
 		}
 	}
 
+	// Portaled to <body> so position:fixed resolves against the viewport, not a
+	// transformed ancestor (e.g. SySnapSheet's translate3d), which would otherwise displace it.
 	function menuPortal(node: HTMLElement) {
 		return fixed
 			? portal(node, {
@@ -195,9 +227,20 @@
 		if (!active || !fixed) {
 			return undefined;
 		}
+		// A transformed ancestor (such as a dragging or snapping SySnapSheet) can
+		// move the trigger without a scroll or resize event. Follow its rendered
+		// bounds only while the fixed menu is open, including direction changes.
+		updateFixedPosition();
+		let positionFrame: number;
+		const followTrigger = () => {
+			updateFixedPosition();
+			positionFrame = requestAnimationFrame(followTrigger);
+		};
+		positionFrame = requestAnimationFrame(followTrigger);
 		window.addEventListener('resize', updateFixedPosition);
 		window.addEventListener('scroll', updateFixedPosition, true);
 		return () => {
+			cancelAnimationFrame(positionFrame);
 			window.removeEventListener('resize', updateFixedPosition);
 			window.removeEventListener('scroll', updateFixedPosition, true);
 		};
@@ -286,5 +329,7 @@
 	.sy-dropdown--fixed-list {
 		visibility: visible;
 		opacity: 1;
+		/* Geometry follows the trigger directly; animating it adds a trailing delay. */
+		transition-property: opacity;
 	}
 </style>

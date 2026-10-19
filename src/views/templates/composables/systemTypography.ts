@@ -1,3 +1,8 @@
+/**
+ * Bridge native system text size into shared CSS tokens and layout subscriptions.
+ * Native revisions order events and asynchronous reads so a late response cannot
+ * undo a more recent system text-size change.
+ */
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { SystemTypographySnapshot } from '@/types/accessibility.js';
@@ -10,11 +15,15 @@ type TypographyListener = (_snapshot: SystemTypographySnapshot) => void;
 
 let snapshot: SystemTypographySnapshot = {
 	rootFontSizePx: DEFAULT_ROOT_FONT_SIZE_PX,
+	// The native snapshot supplies the ordering counter; JavaScript does not increment it.
 	revision: 0,
 };
 const listeners = new Set<TypographyListener>();
+// Share one startup operation and native listener per window, even with concurrent
+// callers. The returned disposer clears this promise so initialization can run again.
 let initialization: Promise<() => void> | undefined;
 
+/** Return a copy so subscribers cannot mutate the accepted native snapshot. */
 export function getSystemTypographySnapshot(): SystemTypographySnapshot {
 	return { ...snapshot };
 }
@@ -26,6 +35,7 @@ export function subscribeSystemTypography(listener: TypographyListener): () => v
 	return () => listeners.delete(listener);
 }
 
+/** Reject invalid native payloads before they reach root CSS sizing. */
 function isValidSnapshot(value: unknown): value is SystemTypographySnapshot {
 	if (!value || typeof value !== 'object') {
 		return false;
@@ -41,6 +51,7 @@ function isValidSnapshot(value: unknown): value is SystemTypographySnapshot {
 	);
 }
 
+/** Ignore stale revisions and notify layout subscribers only when text size changes. */
 function applySnapshot(value: unknown): void {
 	if (!isValidSnapshot(value) || value.revision < snapshot.revision) {
 		return;
@@ -74,6 +85,7 @@ export function initializeSystemTypography(): Promise<() => void> {
 	return initialization;
 }
 
+/** Subscribe before reading, refresh on resume, and dispose all listeners together. */
 async function startSystemTypography(): Promise<() => void> {
 	let disposed = false;
 	let stopListening: UnlistenFn | undefined;

@@ -9,6 +9,16 @@
 	// Color of the text on hover
 	// Possible Values:
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [text] - The value to be displayed
+	 * @property {string} [color] - 'black'
+	 * @property {string} [hover] - 'blue'
+	 * @property {any} [icon] - Accept the shared dropdown item prop; this item displays text only
+	 * @property {boolean} [disabled] - Whether the item can be selected
+	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
+	 */
+	/** @type {Props} */
 	const {
 		text = '',
 		color = 'black',

@@ -1,4 +1,38 @@
 <script lang="ts">
+	/* Style Prop */
+	/* Possible Values */
+	// 'ghost' - 'Invisible' text box
+
+	/* Size Prop */
+	/* Possible Values */
+	// 'small' - Small text field
+	// 'medium' - Medium text field (Default Value)
+	// 'large' - Large text field
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [style] - 'standard' - Standard text box styling
+	 * @property {string} [size] - 'extra-large' - Extra large text field
+	 * @property {string} [placeholder] - Placeholder Prop
+	 * @property {string} [value] - Controlled input value
+	 * @property {string} [type] - Type Prop
+	 * @property {string} [autocomplete] - Autocomplete Prop
+	 * @property {string} [autocorrect] - Autocorrect Prop ('off' by default to stop pinyin being "corrected")
+	 * @property {string} [autocapitalize] - Autocapitalize Prop ('off' by default)
+	 * @property {string} [inputmode] - Input mode Prop
+	 * @property {string} [id] - ID Prop
+	 * @property {string} [name] - Form field name
+	 * @property {boolean} [required] - Whether the form field is required
+	 * @property {string} [ariaDescribedby] - ID of descriptive helper text
+	 * @property {any} [spellcheck] - Spellcheck Prop
+	 * @property {string[]} [classes] - Additional class names
+	 * @property {number} [maxlength] - Maximum character length
+	 * @property {(value: string) => void} [onchange] - Change handler
+	 * @property {(value: string) => void} [onkeyup] - Keyup handler
+	 * @property {(value: string) => void} [oninput] - Input handler
+	 * @property {(event: KeyboardEvent) => void} [onenter] - Enter key handler
+	 */
+
 	import type { HTMLInputAttributes } from 'svelte/elements';
 	import { isAndroid, isMobile } from '@/utils/device.js';
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
@@ -31,6 +65,7 @@
 	const mobile = isMobile();
 	const android = isAndroid();
 
+	/** @type {Props} */
 	const {
 		style = 'standard',
 		size = 'medium',

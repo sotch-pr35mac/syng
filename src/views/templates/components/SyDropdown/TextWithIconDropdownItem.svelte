@@ -16,6 +16,16 @@
 	// Possible Values:
 	// 'blue'
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [icon] - The icon component to use
+	 * @property {string} [text] - The text value to display
+	 * @property {string} [hover] - 'blue' by default; also accepts 'red' and 'green'
+	 * @property {string} [color] - 'black'
+	 * @property {boolean} [disabled] - Whether the item can be selected
+	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
+	 */
+	/** @type {Props} */
 	const {
 		text = '',
 		color = 'black',

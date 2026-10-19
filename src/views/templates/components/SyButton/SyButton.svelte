@@ -1,8 +1,67 @@
 <script lang="ts">
+	/* Style Prop */
+	/* Possible Values */
+	// 'ghost' - No background or shadow
+
+	/* Size Prop */
+	/* Possible Values */
+	// 'small' - Small button
+	// 'medium' - Medium button
+
+	/* Shape Prop */
+	/* Possible Values */
+	// 'rectangle' - Rectangular
+
+	/* Disabled Prop */
+	/* Possible Values */
+	// true
+
+	/* Group Prop */
+	/* Possible Values */
+	// true
+
+	/* Color Prop */
+	/* Possible Values */
+	// 'green'
+	// 'blue'
+	// 'red'
+
+	/* Hover Prop */
+	/* Possible Values */
+	// 'green'
+	// 'blue'
+	// 'red'
+
+	/* Center Prop */
+	/* Possible Values */
+	// true
+
+	/* Classes Prop */
+
 	import type { Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { isMobile } from '@/utils/device.js';
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [style] - 'filled' - With background and shadow
+	 * @property {string} [size] - 'large' - Large button; defaults to 'medium'
+	 * @property {string} [shape] - 'circle' - Circular; defaults to 'rectangle'
+	 * @property {boolean} [disabled] - false
+	 * @property {boolean | 'true' | 'false'} [grouped] - false
+	 * @property {string} [color] - 'yellow', 'green', 'blue', or 'red'
+	 * @property {string} [hover] - 'yellow', 'green', 'blue', or 'red'
+	 * @property {boolean} [center] - false
+	 * @property {boolean} [disableHoverActions] - false
+	 * @property {string[]} [classes] - A list of classes
+	 * @property {string} [type] - Native button type
+	 * @property {string} [form] - Associated native form ID
+	 * @property {string} [aria-label] - Accessible label
+	 * @property {boolean | 'true' | 'false'} [aria-pressed] - Pressed state
+	 * @property {string} [title] - Native title
+	 * @property {import('svelte').Snippet} [children]
+	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
+	 */
 	interface Props extends Omit<HTMLButtonAttributes, 'style' | 'children'> {
 		style?: string;
 		size?: string;
@@ -19,6 +78,7 @@
 	// Optimized for mobile: 44px minimum touch target, larger small-size font.
 	const mobile = isMobile();
 
+	/** @type {Props} */
 	const {
 		style = 'filled',
 		size = 'medium',

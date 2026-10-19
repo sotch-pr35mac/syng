@@ -1,3 +1,8 @@
+/**
+ * Name client-side route destinations for window titles and the main landmark.
+ * Keyboard navigation can focus that landmark after rendering; pointer navigation
+ * keeps its focus behavior, and destination components retain deliberate autofocus.
+ */
 import { tick } from 'svelte';
 
 const ROUTE_TITLES: Record<string, string> = {
@@ -16,6 +21,7 @@ const ROUTE_TITLES: Record<string, string> = {
 /** Name SPA destinations and move keyboard navigation into the destination landmark. */
 export function routeAccessibility(element: HTMLElement, initialRoute: string) {
 	let currentRoute = initialRoute;
+	/** Resolve dynamic Reader routes and name the window and its destination together. */
 	const nameDestination = (route: string) => {
 		const title = route.startsWith('/read/document/')
 			? 'Reader document'

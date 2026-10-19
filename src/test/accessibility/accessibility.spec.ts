@@ -3,6 +3,94 @@ import AxeBuilder from '@axe-core/playwright';
 
 const fixtureUrl = '/src/test/accessibility/index.html';
 
+for (const triggerName of ['Choose list', 'List actions']) {
+	test(`${triggerName} menu follows snap-sheet animation and dragging`, async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(`${fixtureUrl}?sheet&mobile`);
+		const trigger = page.getByRole('button', { name: triggerName, exact: true });
+		await trigger.click();
+		const menu = page.getByRole('menu');
+		await expect(menu).toBeVisible();
+		await expect(menu).toHaveCSS('transition-property', 'opacity');
+		const triggerId = await trigger.getAttribute('id');
+
+		// Dispatch the sheet's real resize keys without moving focus away from the
+		// menu, so both the transition and the up/down direction change stay visible.
+		for (const key of ['End', 'ArrowDown']) {
+			const samples = await page.evaluate(
+				async ({ key, triggerId }) => {
+					const handle = document.querySelector('[role="separator"]')!;
+					const trigger = document.getElementById(triggerId!)!;
+					const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
+					handle.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+					// Let the direction change register its positioning callback first.
+					await Promise.resolve();
+					const samples: { gap: number; horizontalError: number; triggerTop: number }[] =
+						[];
+					const started = performance.now();
+					while (performance.now() - started < 450) {
+						await new Promise<void>((resolve) =>
+							requestAnimationFrame(() => resolve())
+						);
+						const triggerBounds = trigger.getBoundingClientRect();
+						const menuBounds = menu.getBoundingClientRect();
+						samples.push({
+							gap: menu.style.bottom
+								? triggerBounds.top - menuBounds.bottom
+								: menuBounds.top - triggerBounds.bottom,
+							horizontalError: menu.style.right
+								? menuBounds.right - triggerBounds.right
+								: menuBounds.left - triggerBounds.left,
+							triggerTop: triggerBounds.top,
+						});
+					}
+					return samples;
+				},
+				{ key, triggerId }
+			);
+			expect(samples.length).toBeGreaterThan(5);
+			expect(
+				Math.max(...samples.map((sample) => sample.triggerTop)) -
+					Math.min(...samples.map((sample) => sample.triggerTop))
+			).toBeGreaterThan(100);
+			// Compositor motion and JS bounds reads can sample slightly different
+			// instants (up to ~3px in WebKit here). Require tight tracking throughout
+			// the animation, and subpixel alignment once the sheet settles.
+			expect(Math.max(...samples.map((sample) => Math.abs(sample.gap - 4)))).toBeLessThan(5);
+			expect(Math.abs(samples[samples.length - 1].gap - 4)).toBeLessThan(1);
+			expect(
+				Math.max(...samples.map((sample) => Math.abs(sample.horizontalError)))
+			).toBeLessThan(2);
+		}
+
+		const handleBounds = await page
+			.getByRole('separator', { name: 'Resize panel' })
+			.boundingBox();
+		const triggerBefore = await trigger.boundingBox();
+		await page.mouse.move(
+			handleBounds!.x + handleBounds!.width / 2,
+			handleBounds!.y + handleBounds!.height / 2
+		);
+		await page.mouse.down();
+		await page.mouse.move(
+			handleBounds!.x + handleBounds!.width / 2,
+			handleBounds!.y + handleBounds!.height / 2 - 80,
+			{ steps: 8 }
+		);
+		await expect
+			.poll(async () => (await trigger.boundingBox())!.y)
+			.toBeLessThan(triggerBefore!.y - 70);
+		await expect
+			.poll(async () => {
+				const triggerBounds = await trigger.boundingBox();
+				const menuBounds = await menu.boundingBox();
+				return Math.abs(triggerBounds!.y - menuBounds!.y - menuBounds!.height - 4);
+			})
+			.toBeLessThan(2);
+		await page.mouse.up();
+	});
+}
+
 test('appearance control remains readable at 320px with doubled text', async ({
 	page,
 }, testInfo) => {

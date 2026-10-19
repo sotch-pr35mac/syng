@@ -1,11 +1,29 @@
 <script lang="ts">
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	/* Checked Prop */
+	/* Possible Values */
+	// true - The toggle is in the 'on' position
+
+	/* ID Prop */
+
+	/* Value Prop */
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [checked] - false - The toggle is in the 'off' position
+	 * @property {string} [id] - HTML ID for reference
+	 * @property {any} [value] - The value property for the HTML checkbox
+	 * @property {string} [accessibleLabel] - Accessible name for the checkbox
+	 * @property {boolean} [disabled] - Whether the toggle can be changed
+	 * @property {(checked: boolean) => void} [onchange] - Change handler
+	 */
 	interface Props extends Omit<HTMLInputAttributes, 'type' | 'onchange'> {
 		accessibleLabel?: string;
 		onchange?: (checked: boolean) => void;
 	}
 
+	/** @type {Props} */
 	const {
 		checked = false,
 		id = crypto.randomUUID(),

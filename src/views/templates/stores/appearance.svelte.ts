@@ -1,24 +1,36 @@
+/**
+ * Apply the saved Increase Contrast preference before either app window mounts.
+ * localStorage is an optional startup cache and a same-origin window notification;
+ * the preference manager remains the persisted source of truth.
+ */
 import { getPreferenceManager } from '@/utils/appServices.js';
 
 const PREFERENCE_KEY = 'increaseContrast';
 const CACHE_KEY = 'syng:appearance';
 const TONE_COLOR_COUNT = 5;
+// Match the preference database selected by Syng's debugMode argument. This flag
+// is separate from Tauri's compiler profile; different builds need not share storage.
 let cacheKey = CACHE_KEY;
 let increaseContrast = $state(false);
 let customToneColors: string[] = [];
+// Increment for an explicit toggle or a change received from another window.
+// An older asynchronous preference read must not overwrite that newer choice.
 let revision = 0;
+// Increment when initialize() starts a new store lifetime. Reads started in an
+// earlier lifetime must not apply preferences or cache data to the new one.
 let initialization = 0;
 let stopListening: (() => void) | undefined;
 
+/** Update the root appearance selector and the five tone overrides without reading layout. */
 function applyAppearance(): void {
 	const root = document.documentElement;
 	root.dataset.appearance = increaseContrast ? 'contrast' : 'original';
-	// The alternate presentation always uses its tested tone defaults. Switching
-	// back restores the user's palette without changing their saved tone preference.
+	// User-selected tones take precedence in both appearances. With no custom
+	// color, leave the token to the current theme rather than setting an override.
 	for (let index = 0; index < TONE_COLOR_COUNT; index += 1) {
 		const token = `--sy-tone-color--${index + 1}`;
 		const customColor = customToneColors[index];
-		if (!increaseContrast && customColor) {
+		if (customColor) {
 			root.style.setProperty(token, customColor);
 		} else {
 			root.style.removeProperty(token);
@@ -26,6 +38,7 @@ function applyAppearance(): void {
 	}
 }
 
+/** Cache the current choice for startup and notify other windows sharing this storage area. */
 function cacheAppearance(): void {
 	try {
 		window.localStorage.setItem(cacheKey, increaseContrast ? 'contrast' : 'original');
@@ -34,7 +47,7 @@ function cacheAppearance(): void {
 	}
 }
 
-/** Apply before mounting either window; separate development and production caches. */
+/** Apply before mounting either window; match the cache to Syng's preference-database mode. */
 function initialize(debugMode = false): () => void {
 	stopListening?.();
 	initialization += 1;
@@ -46,6 +59,8 @@ function initialize(debugMode = false): () => void {
 		increaseContrast = false;
 	}
 	applyAppearance();
+	// Event-driven, with no polling. Storage events arrive in other windows sharing
+	// this origin/storage area; setIncreaseContrast() updates the initiating window.
 	const handleStorage = (event: StorageEvent): void => {
 		if (event.key !== cacheKey || !['original', 'contrast'].includes(event.newValue ?? '')) {
 			return;
@@ -59,6 +74,7 @@ function initialize(debugMode = false): () => void {
 	return stopListening;
 }
 
+/** Load persisted preferences, retaining newer changes made while initialization was pending. */
 async function loadSettings(): Promise<void> {
 	const loadRevision = revision;
 	const loadInitialization = initialization;
@@ -81,6 +97,7 @@ async function loadSettings(): Promise<void> {
 	cacheAppearance();
 }
 
+/** Persist a local toggle, apply it immediately, and refresh the startup cache. */
 function setIncreaseContrast(checked: boolean): void {
 	getPreferenceManager().set(PREFERENCE_KEY, checked);
 	revision += 1;

@@ -6,6 +6,23 @@
 	import { portal } from '@/actions/portal.svelte.js';
 	import { overlayFocus } from '@/actions/overlayFocus.js';
 
+	/* Visible Prop */
+
+	/* Title Prop */
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [visible] - Whether or not the modal is visible
+	 * @property {string} [title] - The text to display in the modal header
+	 * @property {string} [accessibleName] - Dialog name when no visible title is supplied
+	 * @property {boolean} [dismissible] - Whether Escape, the backdrop, and the close button can dismiss it
+	 * @property {HTMLElement | (() => HTMLElement | null | undefined)} [initialFocus] - Initial focus target
+	 * @property {HTMLElement | (() => HTMLElement | null | undefined)} [returnFocus] - Focus target after closing
+	 * @property {import('svelte').Snippet} [body]
+	 * @property {import('svelte').Snippet} [footer]
+	 * @property {() => void} [onclose] - Close handler
+	 */
+	/** @type {Props} */
 	const {
 		visible = false,
 		title = '',

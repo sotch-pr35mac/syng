@@ -5,6 +5,12 @@
 	import { getPreferenceManager } from '@/utils/appServices.js';
 	import { DEFAULT_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {'desktop' | 'mobile'} [variant] - Visual density/layout variant
+	 * @property {(data: {hasCustomColors: boolean, colors: string[]}) => void} [onchange] - Change handler
+	 */
+	/** @type {Props} */
 	const {
 		variant = 'desktop',
 		onchange,
@@ -36,13 +42,10 @@
 	}
 
 	let colors = $state<string[]>(savedColors.colors.map(resolveColor));
-	let contrastColors = $state<string[]>(DEFAULT_TONE_COLOR_TOKENS.map(resolveColor));
 	let previousIncreaseContrast = appearanceStore.increaseContrast;
 
 	function refreshThemeColors(): void {
-		if (appearanceStore.increaseContrast) {
-			contrastColors = DEFAULT_TONE_COLOR_TOKENS.map(resolveColor);
-		} else if (!hasCustomColors) {
+		if (!hasCustomColors) {
 			colors = DEFAULT_TONE_COLOR_TOKENS.map(resolveColor);
 		}
 	}
@@ -56,18 +59,12 @@
 	});
 
 	function handleUpdate(index: number, event: Event): void {
-		if (appearanceStore.increaseContrast) {
-			return;
-		}
 		colors[index] = (event.currentTarget as HTMLInputElement).value;
 		hasCustomColors = true;
 		onchange?.({ hasCustomColors: true, colors: [...colors] });
 	}
 
 	function resetColors(): void {
-		if (appearanceStore.increaseContrast) {
-			return;
-		}
 		hasCustomColors = false;
 		colors = DEFAULT_TONE_COLOR_TOKENS.map(resolveColor);
 		onchange?.({ hasCustomColors: false, colors: [...DEFAULT_TONE_COLOR_TOKENS] });
@@ -81,32 +78,19 @@
 </script>
 
 <div class="tone-color-picker" class:tone-color-picker--mobile={variant === 'mobile'}>
-	{#if appearanceStore.increaseContrast}
-		<p id={`${pickerId}-contrast-help`} class="tone-color-picker--help">
-			Contrast appearance uses the theme’s tone colors. Turn off Increase Contrast to use
-			custom colors.
-		</p>
-	{/if}
 	{#each labels as label, index (label)}
 		<div class="tone-color-picker--tone">
 			<label for={`${pickerId}-tone-${index + 1}`}>{label}</label>
 			<input
 				type="color"
-				value={appearanceStore.increaseContrast ? contrastColors[index] : colors[index]}
-				disabled={appearanceStore.increaseContrast}
-				aria-describedby={appearanceStore.increaseContrast
-					? `${pickerId}-contrast-help`
-					: undefined}
+				value={colors[index]}
 				id={`${pickerId}-tone-${index + 1}`}
 				name={`tone-${index + 1}`}
 				onchange={(event) => handleUpdate(index, event)}
 			/>
 		</div>
 	{/each}
-	<SyButton
-		style="ghost"
-		onclick={resetColors}
-		disabled={appearanceStore.increaseContrast || !hasCustomColors}
+	<SyButton style="ghost" onclick={resetColors} disabled={!hasCustomColors}
 		>Reset to theme colors</SyButton
 	>
 </div>
@@ -116,12 +100,6 @@
 		display: flex;
 		flex-direction: column;
 	}
-	.tone-color-picker--help {
-		margin: 0 0 var(--sy-space);
-		font-size: var(--sy-font-size--medium);
-		line-height: var(--sy-line-height--body);
-	}
-
 	.tone-color-picker--tone {
 		display: flex;
 		align-items: center;

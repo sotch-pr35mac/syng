@@ -5,6 +5,8 @@
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
+	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
+	import type { SheetSnap } from '@/types/snapSheet.js';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import SyTag from '@/components/SyTag/SyTag.svelte';
 	import ReaderFixture from '@test/accessibility/ReaderFixture.svelte';
@@ -21,6 +23,8 @@
 		component: SimpleTextDropdownItem,
 	}));
 	const showReader = new URLSearchParams(location.search).has('reader');
+	const showSheet = new URLSearchParams(location.search).has('sheet');
+	let sheetSnap = $state<SheetSnap>('partial');
 </script>
 
 <main>
@@ -81,6 +85,32 @@
 
 {#if showReader}<div class="reader-fixture"><ReaderFixture /></div>{/if}
 
+{#if showSheet}
+	<!-- Exercise the same fixed menu alignment/direction choices as MobileBookmarks. -->
+	<SySnapSheet
+		accessibleName="Bookmark lists"
+		initialSnap="partial"
+		onSnapChange={(snap) => (sheetSnap = snap)}
+	>
+		<div class="sheet-controls">
+			{#each ['left', 'right'] as position}
+				<SyDropdown
+					{values}
+					fixed
+					position={position as 'left' | 'right'}
+					direction={sheetSnap === 'full' ? 'down' : 'up'}
+				>
+					{#snippet children(_open, triggerProps)}
+						<SyButton {...triggerProps}
+							>{position === 'left' ? 'Choose list' : 'List actions'}</SyButton
+						>
+					{/snippet}
+				</SyDropdown>
+			{/each}
+		</div>
+	</SySnapSheet>
+{/if}
+
 <SyModal visible={dialogOpen} title="Accessible dialog" onclose={() => (dialogOpen = false)}>
 	{#snippet body()}
 		<p>The heading receives initial focus without opening the software keyboard.</p>
@@ -99,6 +129,11 @@
 </SyModal>
 
 <style>
+	.sheet-controls {
+		display: flex;
+		justify-content: space-between;
+		padding: 1rem;
+	}
 	.reader-fixture {
 		padding: 1rem;
 		overflow-wrap: anywhere;

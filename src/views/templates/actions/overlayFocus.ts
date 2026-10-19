@@ -1,3 +1,9 @@
+/**
+ * Coordinate focus and dismissal across nested dialogs, sheets, popovers, and menus.
+ * Owned portals remain part of their overlay even when their DOM lives under body.
+ * Only the top modal exposes its content; previous background attributes are restored
+ * on close. Document listeners exist only while at least one overlay is active.
+ */
 import type { Action } from 'svelte/action';
 import { containsOwnedNode, ownedPortalRoots } from '@/actions/portal.svelte.js';
 
@@ -26,6 +32,7 @@ const FOCUSABLE_SELECTOR =
 	'a[href], area[href], button, input:not([type="hidden"]), select, textarea, iframe, [contenteditable="true"], [tabindex]';
 let backgroundObserver: MutationObserver | undefined;
 
+/** Exclude disabled, hidden, and inert controls, including those hidden by an ancestor. */
 function isAvailable(element: HTMLElement): boolean {
 	if (
 		element.matches(':disabled') ||
@@ -44,6 +51,7 @@ function isAvailable(element: HTMLElement): boolean {
 	return true;
 }
 
+/** Collect available Tab stops from a container and its logically owned portals. */
 export function overlayFocusableElements(container: HTMLElement): HTMLElement[] {
 	const roots = [container, ...ownedPortalRoots(container)];
 	const elements = roots.flatMap((root) => [
@@ -78,6 +86,7 @@ export function focusOutsideOverlay(
 	return false;
 }
 
+/** Prefer the requested target, then the heading, first control, or overlay itself. */
 function initialTarget(entry: OverlayEntry): HTMLElement {
 	const requestedTarget =
 		typeof entry.options.initialFocusTarget === 'function'
@@ -91,6 +100,7 @@ function initialTarget(entry: OverlayEntry): HTMLElement {
 	);
 }
 
+/** Restore exact preexisting inert/aria-hidden values before recalculating the modal boundary. */
 function restoreBackground(): void {
 	for (const [element, previous] of backgroundState) {
 		for (const [attribute, value] of [
@@ -107,10 +117,12 @@ function restoreBackground(): void {
 	backgroundState.clear();
 }
 
+/** Find the last active modal, allowing a nonmodal menu to sit above it. */
 function topModal(): OverlayEntry | undefined {
 	return [...overlays].reverse().find((entry) => entry.options.modal);
 }
 
+/** Hide background branches while retaining the top modal and all of its owned portals. */
 function updateBackground(): void {
 	restoreBackground();
 	const modal = topModal();
@@ -118,6 +130,7 @@ function updateBackground(): void {
 		return;
 	}
 	const allowedRoots = [modal.node, ...ownedPortalRoots(modal.node)];
+	// Descend only through ancestors of allowed roots; hide each unrelated branch once.
 	function visit(parent: HTMLElement): void {
 		for (const child of parent.children) {
 			if (!(child instanceof HTMLElement) || containsOwnedNode(modal.node, child)) {
@@ -138,6 +151,7 @@ function updateBackground(): void {
 	visit(document.body);
 }
 
+/** Give Escape to the top overlay and contain Tab within the active modal. */
 function handleKeydown(event: KeyboardEvent): void {
 	const top = overlays[overlays.length - 1];
 	if (!top || event.defaultPrevented) {
@@ -182,6 +196,7 @@ function handleKeydown(event: KeyboardEvent): void {
 	}
 }
 
+/** Recover focus that escapes a modal, including on WebKit versions without inert support. */
 function handleFocus(event: FocusEvent): void {
 	const modal = topModal();
 	if (modal && !containsOwnedNode(modal.node, event.target as Node)) {
@@ -189,6 +204,7 @@ function handleFocus(event: FocusEvent): void {
 	}
 }
 
+/** Track outside pointer intent for focus restoration and block interaction behind modals. */
 function handlePointer(event: Event): void {
 	const target = event.target as Node;
 	for (const entry of overlays) {
@@ -202,6 +218,7 @@ function handlePointer(event: Event): void {
 	}
 }
 
+/** Dismiss overlays outside the click, stopping at its owner or an explicitly ignored trigger. */
 function handleClick(event: MouseEvent): void {
 	const target = event.target as Node;
 	for (const entry of [...overlays].reverse()) {
@@ -223,6 +240,7 @@ function handleClick(event: MouseEvent): void {
 	}
 }
 
+/** Install one shared set of handlers and observe background nodes added while overlays are open. */
 function connect(): void {
 	document.addEventListener('keydown', handleKeydown, true);
 	document.addEventListener('focusin', handleFocus, true);
@@ -232,6 +250,7 @@ function connect(): void {
 	backgroundObserver.observe(document.body, { childList: true, subtree: true });
 }
 
+/** Remove shared handlers when the final overlay closes. */
 function disconnect(): void {
 	document.removeEventListener('keydown', handleKeydown, true);
 	document.removeEventListener('focusin', handleFocus, true);
@@ -241,11 +260,16 @@ function disconnect(): void {
 	backgroundObserver = undefined;
 }
 
-/** Shared focus lifecycle for menus, dialogs, popovers and sheets, including owned portals. */
+/**
+ * Register an overlay while active and release it on deactivation or destruction.
+ * initialFocus defaults to keyboard-only; modals can request focus for every opening.
+ * Nonmodal outside clicks retain the user's new focus instead of jumping to the opener.
+ */
 export const overlayFocus: Action<HTMLElement, OverlayOptions> = (node, initialOptions = {}) => {
 	let options = initialOptions;
 	let entry: OverlayEntry | undefined;
 	let openingTimer: ReturnType<typeof setTimeout> | undefined;
+	/** Remember the opener, join the stack, and defer initial focus until content is mounted. */
 	function activate(): void {
 		if (entry || options.active === false) {
 			return;
@@ -282,6 +306,7 @@ export const overlayFocus: Action<HTMLElement, OverlayOptions> = (node, initialO
 			}, 0);
 		}
 	}
+	/** Leave the stack, restore the background, and return focus when the close warrants it. */
 	function deactivate(): void {
 		clearTimeout(openingTimer);
 		if (!entry) {

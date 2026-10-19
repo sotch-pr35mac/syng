@@ -1,11 +1,17 @@
+/**
+ * Provide content-width layout switches on older WebKit without container queries.
+ * Breakpoints use the current root font size so system text scaling can select the
+ * compact layout even when the window width itself has not changed.
+ */
 import { subscribeSystemTypography } from '@/composables/systemTypography.js';
 
 type ResponsiveLayoutOptions = { thresholdRem: number; className: string };
 const DEFAULT_ROOT_FONT_SIZE = 16;
 
-/** Content-width breakpoints that also respond to system text size on older WebKit. */
+/** Toggle className below thresholdRem, observing width/text-size changes until destroyed. */
 export function responsiveLayout(element: HTMLElement, initialOptions: ResponsiveLayoutOptions) {
 	let options = initialOptions;
+	/** Compare the rendered content width with the breakpoint expressed in current rem units. */
 	const updateLayout = () => {
 		const rootFontSize =
 			Number.parseFloat(getComputedStyle(document.documentElement).fontSize) ||

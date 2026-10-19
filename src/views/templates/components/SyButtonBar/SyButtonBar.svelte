@@ -7,11 +7,23 @@
 	 * A: You can add the `sy-button--grouped--first` / `sy-button--grouped--last` directly to the button.
 	 */
 
+	/* Size Prop */
+	/* Possible Values */
+	/* large */
+	/* medium */
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [size] - 'small', 'medium', or 'large'; defaults to 'medium'
+	 * @property {string} [aria-label] - Accessible label
+	 * @property {import('svelte').Snippet} [children]
+	 */
 	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
 		size?: string;
 		children?: Snippet;
 	}
 
+	/** @type {Props} */
 	const { size = 'medium', class: className, children, ...restProps }: Props = $props();
 
 	const getClasses = () => {

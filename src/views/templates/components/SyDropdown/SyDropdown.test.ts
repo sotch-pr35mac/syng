@@ -1,9 +1,49 @@
 import { render, fireEvent } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { tick } from 'svelte';
 import DropdownHarness from '@/components/SyDropdown/DropdownHarness.test.svelte';
 
 vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'unknown' }));
+
+afterEach(() => vi.restoreAllMocks());
+
+it('follows a moving fixed trigger and stops frame tracking on close and destruction', async () => {
+	const frames = new Map<number, FrameRequestCallback>();
+	let nextFrame = 0;
+	vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+		nextFrame += 1;
+		frames.set(nextFrame, callback);
+		return nextFrame;
+	});
+	vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((frame) => {
+		frames.delete(frame);
+	});
+	const { getByRole, queryByRole, unmount } = render(DropdownHarness, { fixed: true });
+	const trigger = getByRole('button', { name: 'Options' });
+	let triggerTop = 300;
+	vi.spyOn(trigger, 'getBoundingClientRect').mockImplementation(
+		() => new DOMRect(100, triggerTop, 80, 40)
+	);
+	expect(frames.size).toBe(0);
+	await fireEvent.click(trigger);
+	const menu = getByRole('menu');
+	expect(menu.style.top).toBe('344px');
+	triggerTop = 220;
+	const [frame, callback] = [...frames.entries()][0];
+	frames.delete(frame);
+	callback(16);
+	await tick();
+	expect(menu.style.top).toBe('264px');
+	expect(frames.size).toBe(1);
+	await fireEvent.keyDown(menu, { key: 'Escape' });
+	expect(queryByRole('menu')).toBeNull();
+	expect(frames.size).toBe(0);
+	await fireEvent.click(trigger);
+	expect(frames.size).toBe(1);
+	unmount();
+	expect(frames.size).toBe(0);
+});
 
 it('uses one native trigger and opens only from activation keys', async () => {
 	const user = userEvent.setup();

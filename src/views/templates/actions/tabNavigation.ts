@@ -1,7 +1,13 @@
+/**
+ * Give the existing Settings/Tools tabs one Tab stop and arrow/Home/End navigation.
+ * Moving focus activates the destination immediately because these panels render
+ * locally. Nested tablists keep their own selection and keyboard behavior.
+ */
 import type { Action } from 'svelte/action';
 
 /** Keyboard navigation for the existing, immediately rendered Settings and Tools panels. */
 export const tabNavigation: Action<HTMLElement> = (tablist) => {
+	/** Find visible, enabled tabs belonging directly to this tablist. */
 	const getEnabledTabs = (): HTMLElement[] => {
 		return Array.from(tablist.querySelectorAll<HTMLElement>('[role="tab"]')).filter((tab) => {
 			return (
@@ -15,6 +21,7 @@ export const tabNavigation: Action<HTMLElement> = (tablist) => {
 		});
 	};
 
+	/** Keep only the selected enabled tab, or the first available tab, in the Tab sequence. */
 	const synchronizeTabStops = (): void => {
 		const enabledTabs = getEnabledTabs();
 		const selectedTab = enabledTabs.find((tab) => tab.getAttribute('aria-selected') === 'true');
@@ -26,6 +33,7 @@ export const tabNavigation: Action<HTMLElement> = (tablist) => {
 		}
 	};
 
+	/** Move and activate tabs in their orientation, respecting right-to-left horizontal layouts. */
 	const handleKeydown = (event: KeyboardEvent): void => {
 		if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
 			return;

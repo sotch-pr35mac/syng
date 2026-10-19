@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { render, waitFor } from '@testing-library/svelte';
+import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 import { appearanceStore } from '@/stores/appearance.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -37,34 +37,67 @@ beforeEach(async () => {
 
 afterEach(() => vi.restoreAllMocks());
 
-it('shows protected contrast tones and restores custom swatches without changing their preference', async () => {
-	const onchange = vi.fn();
-	const { getByLabelText, getByRole, getByText, queryByText } = render(ToneColorPicker, {
-		onchange,
-	});
-	const firstTone = getByLabelText('First Tone') as HTMLInputElement;
-	expect(firstTone.value).toBe(customColors[0]);
-	appearanceStore.setIncreaseContrast(true);
-	await waitFor(() => expect(firstTone.disabled).toBe(true));
-	expect(firstTone.value).toBe('#112233');
-	expect(
-		(getByRole('button', { name: 'Reset to theme colors' }) as HTMLButtonElement).disabled
-	).toBe(true);
-	expect(getByText(/Turn off Increase Contrast to use custom colors/)).toBeTruthy();
-	appearanceStore.setIncreaseContrast(false);
-	await waitFor(() => expect(firstTone.disabled).toBe(false));
-	expect(firstTone.value).toBe(customColors[0]);
-	expect(
-		(getByRole('button', { name: 'Reset to theme colors' }) as HTMLButtonElement).disabled
-	).toBe(false);
-	expect(queryByText(/Turn off Increase Contrast to use custom colors/)).toBeNull();
-	expect(onchange).not.toHaveBeenCalled();
-	expect(savePreference.mock.calls).toEqual([
-		['increaseContrast', true],
-		['increaseContrast', false],
-	]);
-	expect(toneColors.colors).toEqual(customColors);
-});
+it.each(['desktop', 'mobile'] as const)(
+	'keeps custom %s swatches editable across contrast changes',
+	async (variant) => {
+		const onchange = vi.fn();
+		const { getByLabelText, getByRole, queryByText } = render(ToneColorPicker, {
+			onchange,
+			variant,
+		});
+		const firstTone = getByLabelText('First Tone') as HTMLInputElement;
+		expect(firstTone.value).toBe(customColors[0]);
+		appearanceStore.setIncreaseContrast(true);
+		await waitFor(() => expect(appearanceStore.increaseContrast).toBe(true));
+		expect(firstTone.disabled).toBe(false);
+		expect(firstTone.value).toBe(customColors[0]);
+		expect(
+			(getByRole('button', { name: 'Reset to theme colors' }) as HTMLButtonElement).disabled
+		).toBe(false);
+		appearanceStore.setIncreaseContrast(false);
+		await waitFor(() => expect(firstTone.disabled).toBe(false));
+		expect(firstTone.value).toBe(customColors[0]);
+		expect(
+			(getByRole('button', { name: 'Reset to theme colors' }) as HTMLButtonElement).disabled
+		).toBe(false);
+		expect(queryByText(/Turn off Increase Contrast to use custom colors/)).toBeNull();
+		expect(onchange).not.toHaveBeenCalled();
+		expect(savePreference.mock.calls).toEqual([
+			['increaseContrast', true],
+			['increaseContrast', false],
+		]);
+		expect(toneColors.colors).toEqual(customColors);
+	}
+);
+
+it.each(['desktop', 'mobile'] as const)(
+	'allows editing and resetting %s tones with Increase Contrast on',
+	async (variant) => {
+		appearanceStore.setIncreaseContrast(true);
+		const onchange = vi.fn();
+		const { getByLabelText, getByRole } = render(ToneColorPicker, { variant, onchange });
+		const firstTone = getByLabelText('First Tone') as HTMLInputElement;
+		await fireEvent.change(firstTone, { target: { value: '#ffffee' } });
+		expect(onchange).toHaveBeenLastCalledWith({
+			hasCustomColors: true,
+			colors: ['#ffffee', ...customColors.slice(1)],
+		});
+		appearanceStore.setIncreaseContrast(false);
+		await waitFor(() => expect(firstTone.value).toBe('#ffffee'));
+		appearanceStore.setIncreaseContrast(true);
+		const reset = getByRole('button', { name: 'Reset to theme colors' }) as HTMLButtonElement;
+		expect(reset.disabled).toBe(false);
+		await fireEvent.click(reset);
+		expect(onchange).toHaveBeenLastCalledWith({
+			hasCustomColors: false,
+			colors: [...DEFAULT_TONE_COLOR_TOKENS],
+		});
+		expect(firstTone.value).toBe('#112233');
+		expect(reset.disabled).toBe(true);
+		appearanceStore.setIncreaseContrast(false);
+		await waitFor(() => expect(firstTone.value).toBe('#445566'));
+	}
+);
 
 it('refreshes default swatches in both directions when appearance changes', async () => {
 	toneColors = { hasCustomColors: false, colors: [...DEFAULT_TONE_COLOR_TOKENS] };
