@@ -9,6 +9,7 @@ interface SettingsScrollOptions {
 	layout: SettingsLayout;
 	tab: SettingsTab;
 	ready: boolean;
+	destination?: boolean;
 }
 
 /** Each tab owns a keyed scroll container. Wait for General's conditional rows before restoring. */
@@ -52,6 +53,10 @@ export function settingsScroll(node: HTMLElement, initialOptions: SettingsScroll
 	}
 
 	function scheduleRestore(): void {
+		if (options.destination) {
+			cancelRestore();
+			return;
+		}
 		if (!pending || !options.ready || frame !== undefined) {
 			return;
 		}

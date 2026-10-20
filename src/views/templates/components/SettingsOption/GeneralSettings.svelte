@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onMount, tick, type Snippet } from 'svelte';
 	import { ChevronDown } from 'lucide-svelte';
+	import { router } from 'svelte-spa-router';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+	import WhatsNewTesting from '@/components/WhatsNew/WhatsNewTesting.svelte';
 	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
 	import WalkthroughReset from '@/components/Walkthrough/WalkthroughReset.svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
@@ -64,6 +67,8 @@
 	let showDevPreferences = $state(isDevBuild());
 	let showUpdates = $state(false);
 	let hasSavedRecoveryReport = $state(false);
+	let optionsReady = $state(false);
+	let appliedQuery = '';
 	const visibleSections = $derived(
 		sections.filter((section) => section.id !== 'developer' || showDevPreferences)
 	);
@@ -84,6 +89,37 @@
 			},
 		};
 	}
+
+	$effect(() => {
+		const query = router.querystring ?? '';
+		if (!optionsReady || !scrollContainer || !content || query === appliedQuery) {
+			return;
+		}
+		appliedQuery = query;
+		const parameters = new URLSearchParams(query);
+		const setting = parameters.get('setting');
+		const section =
+			parameters.get('section') ?? (setting === 'contrast' ? 'appearance' : 'help');
+		if (!parameters.has('section') && !setting) {
+			return;
+		}
+		const heading = headingElements[section];
+		const control =
+			setting === 'walkthrough'
+				? content.querySelector<HTMLElement>('.walkthrough-settings [aria-haspopup="menu"]')
+				: setting === 'contrast'
+					? content.querySelector<HTMLElement>('.increase-contrast-settings input')
+					: null;
+		const target = control ?? heading;
+		if (target) {
+			scrollContainer.scrollTop +=
+				target.getBoundingClientRect().top -
+				scrollContainer.getBoundingClientRect().top -
+				SECTION_OFFSET;
+			target.focus({ preventScroll: true });
+			updateCurrentSection();
+		}
+	});
 
 	function updateCurrentSection(): void {
 		if (!scrollContainer || !scrollContainer.clientHeight) {
@@ -178,6 +214,7 @@
 			}
 			await tick();
 			if (mounted) {
+				optionsReady = true;
 				onready?.();
 			}
 		}
@@ -245,6 +282,10 @@
 				Help &amp; Maintenance
 			</h2>
 			<WalkthroughSettings {variant} />
+			{#snippet whatsNew()}<SyButton size="large" onclick={() => whatsNewStore.open()}
+					>View changes</SyButton
+				>{/snippet}
+			{@render setting('What’s New', whatsNew)}
 			{#if showUpdates}
 				{#snippet updates()}<UpdateChecker />{/snippet}
 				{@render setting('Updates', updates)}
@@ -332,6 +373,8 @@
 				{@render setting('Database Migration', migration)}
 				{#snippet resetTours()}<WalkthroughReset />{/snippet}
 				{@render setting('Feature tour testing', resetTours)}
+				{#snippet releaseTesting()}<WhatsNewTesting />{/snippet}
+				{@render setting('What’s New testing', releaseTesting)}
 				{#snippet onboarding()}
 					<p class="settings--description">
 						Show first-run setup again. Your words and documents are kept.

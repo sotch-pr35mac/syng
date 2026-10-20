@@ -11,6 +11,7 @@ import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 import { createWalkthroughPreferences } from '@/types/walkthrough.js';
+import { emptyReleaseHistory } from '@/utils/whatsNew.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -51,6 +52,7 @@ const createDefaultPreferences = () => ({
 	completedOnboardingVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
 	walkthrough: createPreference(false, createWalkthroughPreferences(true)),
+	whatsNew: createPreference(false, emptyReleaseHistory()),
 });
 
 const backfillPreferences = (configuration) => {
@@ -175,6 +177,25 @@ export class PreferenceManager {
 		this._writeQueue = this._writeQueue.then(() => this._persistConfig());
 	}
 
+	/** Await a durable write without leaving the queue rejected after a storage failure. */
+	setAndSave(property, value) {
+		if (!this.initialized || !this._config[property]) {
+			return Promise.reject(new Error('Cannot save an unavailable preference.'));
+		}
+		const previousValue = this._config[property].value;
+		this._config[property].value = value;
+		const operation = this._writeQueue
+			.then(() => this._persistConfig(true))
+			.catch((error) => {
+				if (this._config[property].value === value) {
+					this._config[property].value = previousValue;
+				}
+				throw error;
+			});
+		this._writeQueue = operation.catch(() => {});
+		return operation;
+	}
+
 	_isConflictError(error) {
 		return (
 			Boolean(error) && (error.status === POUCH_CONFLICT_STATUS || error.name === 'conflict')
@@ -187,17 +208,19 @@ export class PreferenceManager {
 			this._config._rev = response.rev;
 			return;
 		}
-		handleError(
-			'Cannot save preferences. An unknown error occurred. Check the log for more details.',
-			response
-		);
+		throw new Error('Cannot save preferences. The database did not confirm the write.', {
+			cause: response,
+		});
 	}
 
-	async _persistConfig() {
+	async _persistConfig(rejectOnError = false) {
 		try {
 			await this._putConfig();
 		} catch (error) {
 			if (!this._isConflictError(error)) {
+				if (rejectOnError) {
+					throw error;
+				}
 				handleError(
 					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
 					error
@@ -209,6 +232,9 @@ export class PreferenceManager {
 				this._config._rev = latest._rev;
 				await this._putConfig();
 			} catch (retryError) {
+				if (rejectOnError) {
+					throw retryError;
+				}
 				handleError(
 					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
 					retryError

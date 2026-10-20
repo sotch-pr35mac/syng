@@ -5,6 +5,7 @@ import MobileApp from '@/MobileApp.svelte';
 import { telemetry } from '@/utils/telemetry.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+import { push } from 'svelte-spa-router';
 
 vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
@@ -31,6 +32,9 @@ vi.mock('@/utils/appLifecycle.js', () => ({
 }));
 
 vi.mock('@/routes/mobile/MobileSearch.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
+}));
+vi.mock('@/routes/WhatsNew.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
 vi.mock('@/routes/mobile/Reader/MobileReader.svelte', async () => ({
@@ -150,6 +154,15 @@ it('shows search after onboarding is completed', async () => {
 
 	await waitFor(() => expect(getByRole('link', { name: 'Search' })).toBeTruthy());
 	expect(queryByText('Welcome to Syng')).toBeNull();
+});
+
+it('removes mobile navigation for release notes and restores it on leaving', async () => {
+	const { getByRole, queryByRole } = render(MobileApp);
+	await waitFor(() => expect(getByRole('link', { name: 'Search' })).toBeTruthy());
+	await push('/whats-new');
+	await waitFor(() => expect(queryByRole('link', { name: 'Search' })).toBeNull());
+	await push('/read');
+	await waitFor(() => expect(getByRole('link', { name: 'Search' })).toBeTruthy());
 });
 
 it('shows onboarding when replay is requested for an existing install', async () => {

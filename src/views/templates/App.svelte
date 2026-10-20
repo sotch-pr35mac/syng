@@ -1,4 +1,7 @@
 <script lang="ts">
+	import WhatsNewGate from '@/components/WhatsNew/WhatsNewGate.svelte';
+	import WhatsNew from '@/routes/WhatsNew.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 	import WalkthroughGate from '@/components/Walkthrough/WalkthroughGate.svelte';
 
@@ -35,8 +38,10 @@
 	let startupReady = $state(false);
 	let startupFailed = $state(false);
 	let startupError = $state<unknown>(undefined);
+	const showingWhatsNew = $derived(router.location === '/whats-new' || whatsNewStore.navigating);
 
 	const routes = {
+		'/whats-new': WhatsNew,
 		'/': Search,
 		'/read': lazyRoute(() => import('@/routes/Reader/Library.svelte')),
 		'/read/document/:id': lazyRoute(() => import('@/routes/Reader/Document.svelte')),
@@ -143,17 +148,19 @@
 	{/await}
 {:else}
 	<div class="app-container">
-		<a
-			class="sy-skip-link"
-			href="#sy-main-content"
-			onclick={(event) => {
-				event.preventDefault();
-				document.getElementById('sy-main-content')?.focus();
-			}}>Skip to content</a
-		>
-		<div class="navigation-container">
-			<Navigation />
-		</div>
+		{#if !showingWhatsNew}
+			<a
+				class="sy-skip-link"
+				href="#sy-main-content"
+				onclick={(event) => {
+					event.preventDefault();
+					document.getElementById('sy-main-content')?.focus();
+				}}>Skip to content</a
+			>
+			<div class="navigation-container">
+				<Navigation />
+			</div>
+		{/if}
 		<main
 			id="sy-main-content"
 			use:routeAccessibility={router.location}
@@ -161,12 +168,19 @@
 			tabindex="-1"
 			aria-label="Main content"
 		>
-			<Router {routes} />
+			<WhatsNewGate ready={startupReady} blocked={bookmarkRecoveryStore.active}>
+				<Router {routes} />
+			</WhatsNewGate>
 		</main>
 	</div>
 
 	<SyToast
-		visible={showUpdateToast && !walkthroughStore.visible}
+		visible={showUpdateToast &&
+			!walkthroughStore.visible &&
+			startupReady &&
+			!whatsNewStore.navigating &&
+			router.location !== '/whats-new' &&
+			!bookmarkRecoveryStore.active}
 		message={buildToastMessage()}
 		actionLabel={networkStatus.isOnline ? 'Update now' : ''}
 		corner="bottom-right"
@@ -174,7 +188,7 @@
 		onaction={handleUpdateAction}
 		ondismiss={() => (showUpdateToast = false)}
 	/>
-	<OfflineIndicator />
+	{#if !showingWhatsNew}<OfflineIndicator />{/if}
 	{#if bookmarkRecoveryStore.active}
 		{#await import('@/components/BookmarkRecovery/BookmarkRecovery.svelte')}
 			<!-- Recovery details are already durable; load the blocking UI lazily. -->
@@ -187,7 +201,11 @@
 <WalkthroughGate
 	{startupReady}
 	ready={onboardingReady && privacySettingsStore.hasCompletedOnboarding}
-	blocked={databaseMigrationStore.active || startupFailed || bookmarkRecoveryStore.active}
+	blocked={databaseMigrationStore.active ||
+		startupFailed ||
+		bookmarkRecoveryStore.active ||
+		whatsNewStore.navigating ||
+		router.location === '/whats-new'}
 />
 
 <style>

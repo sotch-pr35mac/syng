@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { router } from 'svelte-spa-router';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 	import GeneralSettings from '@/components/SettingsOption/GeneralSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
@@ -11,6 +14,12 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
 	const isMacos = platform() === 'macos';
+	const destination = $derived(new URLSearchParams(router.querystring ?? ''));
+	$effect.pre(() => {
+		if (destination.has('section') || destination.has('setting')) {
+			settingsActiveTabStore.set('general');
+		}
+	});
 	const activeTab = $derived(settingsActiveTabStore.value as SettingsTab);
 	let scrollContainer = $state<HTMLDivElement>();
 	let generalReady = $state(false);
@@ -60,6 +69,14 @@
 			Acknowledgements
 		</SyTab>
 	</div>
+	{#if destination.get('from') === 'whats-new'}
+		<div class="settings-return">
+			<SyButton style="ghost" size="large" onclick={whatsNewStore.back}
+				>Back to What’s New</SyButton
+			>
+		</div>
+	{/if}
+
 	{#key activeTab}
 		<div
 			class="settings--content"
@@ -68,6 +85,7 @@
 				layout: 'desktop',
 				tab: activeTab,
 				ready: activeTab !== 'general' || generalReady,
+				destination: destination.has('section') || destination.has('setting'),
 			}}
 		>
 			<div
@@ -100,6 +118,10 @@
 </div>
 
 <style>
+	.settings-return {
+		padding: var(--sy-space--large);
+		flex-shrink: 0;
+	}
 	.settings--container {
 		padding: 0px var(--sy-space--extra-large);
 		background-color: var(--sy-color--white);

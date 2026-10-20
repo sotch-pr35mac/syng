@@ -3,13 +3,14 @@ All notable changes to this project will be documented in this file. This projec
 
 ## [2.6.0] - 2026-10-20
 ### Added
+- Added interactive What's New notes after selected updates
 - Added optional app and feature walkthroughs
 - Added an Increase Contrast option
 - Added support for iOS Dynamic Type, including live system text-size changes
 - Added Awa, Syng's mascot, to onboarding and empty states
 
 ### Changed
-- Grouped General settings with Help & Maintenance first, responsive section navigation, and remembered scroll position
+- Updated General Settings to be more easier to navigate
 - Improved keyboard navigation, focus indicators, screen-reader labels and announcements, and focus handling in dialogs, dropdowns, and sheets
 - Improved layouts for larger text and narrow windows across desktop and mobile
 - Made empty Search, Bookmarks, Reader, and Study screens more helpful with clearer explanations and next-step actions

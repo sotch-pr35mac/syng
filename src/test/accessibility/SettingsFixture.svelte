@@ -1,5 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Router, { router } from 'svelte-spa-router';
+	import WhatsNew from '@/routes/WhatsNew.svelte';
+	import WhatsNewGate from '@/components/WhatsNew/WhatsNewGate.svelte';
+	import RouteMock from '@/components/__mocks__/RouteMock.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+	import { emptyReleaseHistory } from '@/utils/whatsNew.js';
 	import Settings from '@/routes/Settings.svelte';
 	import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 	import Navigation from '@/components/Navigation/Navigation.svelte';
@@ -12,7 +18,21 @@
 
 	const parameters = new URLSearchParams(location.search);
 	const mobile = parameters.has('mobile');
+	const testingRelease = parameters.has('whatsnew');
+	let releaseReady = $state(false);
+	let releaseBlocked = $state(parameters.has('blocked'));
+	const baseline = parameters.get('baseline');
+	const storedHistory = localStorage.getItem('fixture:release-history');
 	const preferences: Record<string, unknown> = {
+		whatsNew: storedHistory
+			? JSON.parse(storedHistory)
+			: baseline
+				? {
+						lastOpenedVersion: baseline,
+						handledThroughVersion: baseline,
+						pending: null,
+					}
+				: emptyReleaseHistory(),
 		increaseContrast: parameters.get('appearance') === 'contrast',
 		toneColors: {
 			hasCustomColors: false,
@@ -24,6 +44,10 @@
 		get: (key: string) => preferences[key],
 		set: (key: string, value: unknown) => {
 			preferences[key] = value;
+		},
+		setAndSave: async (key: string, value: unknown) => {
+			preferences[key] = value;
+			localStorage.setItem('fixture:release-history', JSON.stringify(value));
 		},
 	} as unknown as Parameters<typeof setPreferenceManagerForTest>[0]);
 	Reflect.set(window, '__TAURI_INTERNALS__', {
@@ -68,6 +92,11 @@
 	});
 	let showingSettings = $state(true);
 	onMount(() => {
+		if (testingRelease) {
+			void whatsNewStore.initialize(parameters.has('fresh')).then(() => {
+				releaseReady = true;
+			});
+		}
 		const updateRoute = () => {
 			showingSettings = location.hash === '#/settings';
 		};
@@ -77,9 +106,24 @@
 </script>
 
 <div class="shell" class:mobile>
-	{#if mobile}<MobileNavigation />{:else}<aside><Navigation /></aside>{/if}
+	{#if !testingRelease || (router.location !== '/whats-new' && !whatsNewStore.navigating)}
+		{#if mobile}<MobileNavigation />{:else}<aside><Navigation /></aside>{/if}
+	{/if}
 	<main aria-label="Settings fixture">
-		{#if showingSettings}
+		{#if testingRelease}
+			{#if releaseBlocked}
+				<SyButton onclick={() => (releaseBlocked = false)}>Finish recovery</SyButton>
+			{/if}
+			<WhatsNewGate ready={releaseReady} blocked={releaseBlocked}>
+				<Router
+					routes={{
+						'/whats-new': WhatsNew,
+						'/settings': mobile ? MobileSettings : Settings,
+						'*': RouteMock,
+					}}
+				/>
+			</WhatsNewGate>
+		{:else if showingSettings}
 			{#if mobile}<MobileSettings />{:else}<Settings />{/if}
 		{:else}
 			<SyButton

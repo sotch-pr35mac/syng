@@ -32,6 +32,7 @@ import {
 	MIGRATION_STATUS,
 } from '@/stores/databaseMigration.svelte.js';
 import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
+import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 
 /** Pouch database names for the session, isolated by debug mode. */
 export const getStartupDatabaseNames = (debugMode) => ({
@@ -111,6 +112,7 @@ window.onload = () => {
 // Startup actions to only be run once per application start.
 export const runStartupActions = () => {
 	initializeNetworkStatus();
+	const launchRoute = window.location.hash.slice(1) || '/';
 	// app.js resolves and stores debug mode before mounting the shell. Reading it synchronously here
 	// keeps service creation ordered when the shell starts initialization. A bare inDebugMode()
 	// returns a Promise (always truthy), which would incorrectly select the development databases.
@@ -136,6 +138,7 @@ export const runStartupActions = () => {
 	const telemetryInit = telemetry.init().catch((error) => {
 		console.error('Telemetry initialization failed', error);
 	});
+	let firstSetup = true;
 
 	const loadDisplayPreferences = async () => {
 		await Promise.all([
@@ -168,6 +171,8 @@ export const runStartupActions = () => {
 			await migrationPromise;
 			await loadDisplayPreferences();
 		}
+		// Capture before onboarding mounts: completing first setup must not queue release notes.
+		firstSetup = !(privacySettingsStore.completedOnboardingVersion > 0);
 		// Resume delivery only after persisted/migrated age preferences have been loaded.
 		// A signup-storage failure must not prevent the dictionary from opening.
 		await initializeInterviews(privacySettingsStore.childPrivacyMode).catch(() => {});
@@ -197,6 +202,7 @@ export const runStartupActions = () => {
 			);
 			throw new Error('Startup failed while updating the bookmark schema.', { cause: error });
 		}
+		await whatsNewStore.initialize(firstSetup, launchRoute);
 		return undefined;
 	});
 

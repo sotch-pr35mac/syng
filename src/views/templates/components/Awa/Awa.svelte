@@ -9,7 +9,7 @@
 
 <script lang="ts">
 	interface Props {
-		pose?: 'read' | 'collect' | 'practice' | 'search' | 'dictionary' | 'welcome';
+		pose?: 'read' | 'collect' | 'practice' | 'search' | 'dictionary' | 'welcome' | 'wave';
 		/** Display width in CSS pixels. The image scales down to fit its container. */
 		size?: number;
 		/** Leave empty when adjacent empty-state copy already conveys the meaning. */

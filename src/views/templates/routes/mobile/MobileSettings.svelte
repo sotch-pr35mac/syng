@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { router } from 'svelte-spa-router';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 	import GeneralSettings from '@/components/SettingsOption/GeneralSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
@@ -8,6 +11,12 @@
 	import { settingsScroll } from '@/actions/settingsScroll.js';
 	import { settingsActiveTabStore, type SettingsTab } from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+	const destination = $derived(new URLSearchParams(router.querystring ?? ''));
+	$effect.pre(() => {
+		if (destination.has('section') || destination.has('setting')) {
+			settingsActiveTabStore.set('general');
+		}
+	});
 	const activeTab = $derived(settingsActiveTabStore.value as SettingsTab);
 	let scrollContainer = $state<HTMLDivElement>();
 	let generalReady = $state(false);
@@ -61,6 +70,14 @@
 		</div>
 	</header>
 
+	{#if destination.get('from') === 'whats-new'}
+		<div class="settings-return">
+			<SyButton style="ghost" size="large" onclick={whatsNewStore.back}
+				>Back to What’s New</SyButton
+			>
+		</div>
+	{/if}
+
 	{#key activeTab}
 		<div
 			class="mobile-settings__content"
@@ -69,6 +86,7 @@
 				layout: 'mobile',
 				tab: activeTab,
 				ready: activeTab !== 'general' || generalReady,
+				destination: destination.has('section') || destination.has('setting'),
 			}}
 		>
 			<div
@@ -101,6 +119,10 @@
 </div>
 
 <style>
+	.settings-return {
+		padding: var(--sy-space--large);
+		flex-shrink: 0;
+	}
 	.mobile-settings {
 		display: flex;
 		flex-direction: column;

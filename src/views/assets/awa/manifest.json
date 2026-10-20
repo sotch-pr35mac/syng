@@ -133,6 +133,27 @@
 					"sha256": "2d9a0ca1b032eb115022299adc0220482f7bb38caea8d24f28b9e1f8e7dc9917"
 				}
 			]
+		},
+		{
+			"pose": "wave",
+			"source": "../awa-wave-2026-10-20/01-wave.png",
+			"sourceSha256": "6aef674a733712e3e779950ac8516fe411c2ad75f3df61f47d62978ccec71675",
+			"files": [
+				{
+					"path": "wave-512.webp",
+					"width": 512,
+					"height": 512,
+					"bytes": 176086,
+					"sha256": "467d01e12336de8510990e91675d8d5359922f36d6bddbb845bb73503feda8dd"
+				},
+				{
+					"path": "wave-1024.webp",
+					"width": 1024,
+					"height": 1024,
+					"bytes": 568620,
+					"sha256": "956e7a4a6a95e14214d826ef1983ee20cceefe1302772040c3a5ffcda36ae0cd"
+				}
+			]
 		}
 	]
 }

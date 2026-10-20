@@ -1,0 +1,24 @@
+{
+	"date": "2026-10-20",
+	"generator": "Built-in image_gen",
+	"master": "01-wave.png",
+	"prompt": "prompt.json",
+	"runtimeAssets": ["src/views/assets/awa/wave-512.webp", "src/views/assets/awa/wave-1024.webp"],
+	"integration": {
+		"componentPose": "wave",
+		"route": "src/views/templates/routes/WhatsNew.svelte",
+		"displaySize": "96 CSS pixels",
+		"treatment": "Existing shared Awa component, responsive images and silhouette glow."
+	},
+	"review": {
+		"pose": "Compared with the supplied waving reference: head tilted toward viewer left, viewer-right forepaw raised, three grounded paws, one curled tail, three orange greeting strokes.",
+		"identity": "Compared with the finished Welcome and Collect assets: crescent eyes, four cream fangs, broad orange smile rim, purple cheek flares and collar, orange medallion with purple center.",
+		"visibleDefects": "Inspected full-size artwork and rendered page screenshots for malformed paws or teeth, extra limbs, disconnected shapes, doubled outlines and edge halos. No obvious defects found.",
+		"format": "1254 x 1254 RGBA PNG master with genuine alpha transparency. Lossless WebP exports at 512 x 512 and 1024 x 1024, resized with the existing cwebp settings. No artistic post-processing.",
+		"alpha": "All four master canvas edges have zero alpha. At a 50 percent alpha threshold, the foreground has exactly four connected components: the character and three greeting strokes.",
+		"palette": "Generated colors visually match the production references; fills retain subtle tonal variation and are not normalized to exact palette RGB values.",
+		"browser": "14 existing Chromium/WebKit checks passed across desktop, compact iPad, phones, short windows, enlarged text and dark appearance. Inspected desktop, narrow-phone and dark screenshots with the new pose loaded.",
+		"code": "Typecheck passed with zero errors and warnings; targeted formatting, lint and diff checks passed.",
+		"scope": "Visual inspection of generated raster artwork, not a mathematical guarantee of defect-free vector geometry. Native-device verification was not performed."
+	}
+}
