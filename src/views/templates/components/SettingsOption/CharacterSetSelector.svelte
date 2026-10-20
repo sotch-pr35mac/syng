@@ -4,10 +4,11 @@
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
+		label?: string;
 		onchange?: (characterSet: CharacterSet) => void;
 	}
 
-	const { variant = 'desktop', onchange }: Props = $props();
+	const { variant = 'desktop', label = 'Characters', onchange }: Props = $props();
 	const options: { value: CharacterSet; label: string }[] = [
 		{ value: CHARACTER_SETS.BOTH, label: 'Simplified + Traditional' },
 		{ value: CHARACTER_SETS.SIMPLIFIED, label: 'Simplified' },
@@ -19,7 +20,7 @@
 	class="character-set-selector"
 	class:character-set-selector--mobile={variant === 'mobile'}
 >
-	<legend>Characters</legend>
+	<legend>{label}</legend>
 	{#each options as option (option.value)}
 		<label class="character-set-selector__option">
 			<input

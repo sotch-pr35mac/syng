@@ -7,13 +7,19 @@
 	} from '@/types/dictionaryDisplay.js';
 	interface Props {
 		variant?: 'desktop' | 'mobile';
+		label?: string;
+		describedBy?: string;
 		onchange?: (value: HskVariant) => void;
 	}
-	const { variant = 'desktop', onchange }: Props = $props();
+	const { variant = 'desktop', label = 'HSK', describedBy, onchange }: Props = $props();
 </script>
 
-<fieldset class="hsk-variant-selector" class:hsk-variant-selector--mobile={variant === 'mobile'}>
-	<legend>HSK</legend>
+<fieldset
+	class="hsk-variant-selector"
+	class:hsk-variant-selector--mobile={variant === 'mobile'}
+	aria-describedby={describedBy}
+>
+	<legend>{label}</legend>
 	{#each HSK_VARIANT_VALUES as value (value)}
 		<label class="hsk-variant-selector__option"
 			><input

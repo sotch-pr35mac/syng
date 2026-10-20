@@ -185,7 +185,7 @@ export async function prepareGuide(
 				step(
 					'settings',
 					'Make Syng yours',
-					'Adjust character display and tone colors in General. Find every guide in Settings → Walkthrough whenever you need a refresher.',
+					'Adjust character display and tone colors in General settings. Replay any guide from Walkthrough under Help & Maintenance whenever you need a refresher.',
 					'settings-walkthroughs',
 					'/settings'
 				),

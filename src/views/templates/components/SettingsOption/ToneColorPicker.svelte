@@ -99,6 +99,7 @@
 	.tone-color-picker {
 		display: flex;
 		flex-direction: column;
+		max-width: 24rem;
 	}
 	.tone-color-picker--tone {
 		display: flex;
@@ -122,7 +123,8 @@
 
 	.tone-color-picker--mobile .tone-color-picker--tone {
 		min-height: 48px;
-		padding: calc(var(--sy-mobile-space--extra-small) * 3) 0;
+		box-sizing: border-box;
+		padding: var(--sy-mobile-space--extra-small) 0;
 	}
 
 	.tone-color-picker--mobile .tone-color-picker--tone label {
@@ -130,11 +132,10 @@
 	}
 
 	.tone-color-picker--mobile .tone-color-picker--tone input {
-		width: 28px;
-		height: 28px;
-		padding: 0;
+		width: var(--sy-mobile-touch-target);
+		height: var(--sy-mobile-touch-target);
+		padding: var(--sy-mobile-space--medium);
 		border: 0;
-		border-radius: 50%;
 		background-color: transparent;
 		overflow: hidden;
 		appearance: none;

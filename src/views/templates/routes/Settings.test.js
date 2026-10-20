@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, expect, vi } from 'vitest';
-import { render, waitFor } from '@testing-library/svelte';
+import { render, waitFor, within, fireEvent } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import Settings from '@/routes/Settings.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
-import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { settingsActiveTabStore, settingsScrollStore } from '@/stores/settings.svelte.js';
 import { contrastStore } from '@/stores/contrast.svelte.js';
 import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 import * as settings from '@/composables/settings.js';
@@ -70,6 +70,7 @@ beforeEach(async () => {
 	vi.mocked(isIPad).mockReturnValue(false);
 	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
+	settingsScrollStore.resetForTest();
 	databaseMigrationStore.resetForTest();
 	const preferences = {
 		beta: false,
@@ -101,7 +102,11 @@ beforeEach(async () => {
 
 it('shows Increase Contrast with General options only and keeps its state across tabs', async () => {
 	vi.mocked(invoke).mockImplementation(async (command) =>
-		command === 'get_acknowledgements' ? [] : false
+		command === 'get_acknowledgements'
+			? []
+			: command === 'read_bookmark_recovery_report'
+				? null
+				: false
 	);
 	settingsActiveTabStore.set('acknowledgements');
 	const user = userEvent.setup();
@@ -110,7 +115,7 @@ it('shows Increase Contrast with General options only and keeps its state across
 	await user.click(getByRole('tab', { name: 'General' }));
 	const contrast = getByRole('checkbox', { name: 'Increase Contrast' });
 	expect(contrast.closest('[role="tabpanel"]')).toBe(getByRole('tabpanel', { name: 'General' }));
-	expect(contrast.closest('.settings--setting')?.querySelector('p')?.textContent).toBe(
+	expect(contrast.closest('.settings--setting')?.querySelector('h3')?.textContent).toBe(
 		'Increase Contrast'
 	);
 	expect(
@@ -168,7 +173,7 @@ it('renders and updates desktop dictionary display settings', async () => {
 
 	expect(getByText('Tone Coloring')).toBeTruthy();
 	expect(getByText('Tone Colors')).toBeTruthy();
-	expect(getByText('Dictionary Metadata')).toBeTruthy();
+	expect(getByRole('heading', { name: 'Dictionary details' })).toBeTruthy();
 	expect(getByRole('radio', { name: 'Simplified + Traditional' }).checked).toBe(true);
 	expect(getByLabelText('Color characters by tone').checked).toBe(true);
 	expect(getByLabelText('Color pinyin by tone').checked).toBe(false);
@@ -296,4 +301,86 @@ it('hides feature-tour reset in release builds', async () => {
 	const view = render(Settings);
 	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
 	expect(view.queryByRole('button', { name: 'Reset feature tours' })).toBeNull();
+});
+
+it('groups settings by purpose with Help first and developer tools last', async () => {
+	const view = render(Settings);
+	const general = view.getByRole('tabpanel', { name: 'General' });
+	expect(
+		within(general)
+			.getAllByRole('heading', { level: 2 })
+			.map((heading) => heading.textContent)
+	).toEqual(['Help & Maintenance', 'Chinese & Dictionary', 'Appearance', 'Developer']);
+	expect(
+		within(view.getByRole('region', { name: 'Help & Maintenance' })).getByRole('group', {
+			name: 'Walkthrough',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Chinese & Dictionary' })).getByRole('heading', {
+			name: 'Dictionary details',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Appearance' })).getByRole('checkbox', {
+			name: 'Increase Contrast',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Developer' })).getByRole('button', {
+			name: 'Reset feature tours',
+		})
+	).toBeTruthy();
+	const hsk = general.querySelector('fieldset.hsk-variant-selector');
+	expect(
+		document
+			.getElementById(hsk.getAttribute('aria-describedby'))
+			.textContent.replace(/\s+/g, ' ')
+	).toContain('level labels shown on dictionary entries');
+});
+
+it('remembers General scroll across tab switches and route remounts', async () => {
+	const user = userEvent.setup();
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'get_acknowledgements'
+			? []
+			: command === 'read_bookmark_recovery_report'
+				? null
+				: false
+	);
+	const view = render(Settings);
+	await waitFor(() => expect(view.getByRole('heading', { name: 'Developer' })).toBeTruthy());
+	const scroller = view.container.querySelector('.settings--content');
+	scroller.scrollTop = 420;
+	await fireEvent.scroll(scroller);
+	await user.click(view.getByRole('tab', { name: 'Acknowledgements' }));
+	expect(view.container.querySelector('.settings--content').scrollTop).toBe(0);
+	await user.click(view.getByRole('tab', { name: 'General' }));
+	await waitFor(() =>
+		expect(view.container.querySelector('.settings--content').scrollTop).toBe(420)
+	);
+	view.unmount();
+	const reopened = render(Settings);
+	await waitFor(() =>
+		expect(reopened.container.querySelector('.settings--content').scrollTop).toBe(420)
+	);
+});
+
+it('omits the entire Developer group and navigation choice in release builds', async () => {
+	vi.spyOn(settings, 'isDevBuild').mockReturnValue(false);
+	vi.spyOn(settings, 'resolveIsDevBuild').mockResolvedValue(false);
+	const user = userEvent.setup();
+	const view = render(Settings);
+	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
+	expect(view.queryByRole('region', { name: 'Developer' })).toBeNull();
+	expect(view.queryByRole('button', { name: 'Developer' })).toBeNull();
+	await user.click(view.getByRole('button', { name: 'Jump to section' }));
+	expect(view.queryByRole('menuitemradio', { name: 'Developer' })).toBeNull();
+});
+
+it('hides the updater in Mac App Store builds', async () => {
+	vi.spyOn(settings, 'resolveIsMasBuild').mockResolvedValue(true);
+	const view = render(Settings);
+	await waitFor(() => expect(settings.resolveIsMasBuild).toHaveBeenCalled());
+	expect(view.queryByRole('heading', { name: 'Updates' })).toBeNull();
 });

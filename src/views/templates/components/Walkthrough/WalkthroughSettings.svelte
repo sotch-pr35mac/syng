@@ -108,7 +108,8 @@
 <style>
 	.walkthrough-settings {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-columns: var(--settings-row-columns, minmax(0, 1fr) minmax(0, 1fr));
+		gap: var(--sy-space--extra-large);
 		align-items: center;
 		width: 100%;
 		container-type: inline-size;
