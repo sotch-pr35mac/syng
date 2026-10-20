@@ -1,6 +1,26 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.6.0] - 2026-10-20
+### Added
+- Added optional app and feature walkthroughs
+- Added an Increase Contrast option
+- Added support for iOS Dynamic Type, including live system text-size changes
+- Added Awa, Syng's mascot, to onboarding and empty states
+
+### Changed
+- Improved keyboard navigation, focus indicators, screen-reader labels and announcements, and focus handling in dialogs, dropdowns, and sheets
+- Improved layouts for larger text and narrow windows across desktop and mobile
+- Made empty Search, Bookmarks, Reader, and Study screens more helpful with clearer explanations and next-step actions
+- Made flashcards and quizzes directly accessible from bookmark lists, with clearer minimum-word requirements
+- Show the active list, card position, and last-card status during flashcard study
+
+### Fixed
+- Preserve Reader import forms and entered text after failed imports so they can be retried
+- Show inline validation for invalid or duplicate list names, prevent repeated submissions, and select newly created lists
+- Keep flashcard progress tied to its list and restore the originating bookmark list when leaving study
+- Reload flashcards and quizzes when changing lists, and refresh Study counts after vocabulary changes
+
 ## [2.5.2] - 2026-10-10
 ### Changed
 - Updated compatible frontend, native, and build dependencies in validated stages
