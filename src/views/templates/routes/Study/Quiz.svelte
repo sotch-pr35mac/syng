@@ -218,7 +218,7 @@
 							autoStart={true}
 							size={32}
 							oncomplete={handleQuestionTimerComplete}
-							progressColor="var(--sy-color--red)"
+							progressColor="var(--sy-fill--red)"
 						/>
 						<!-- eslint-enable no-magic-numbers -->
 					</div>

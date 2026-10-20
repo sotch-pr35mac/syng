@@ -364,7 +364,7 @@
 								autoStart={true}
 								size={TIMER_SIZE}
 								oncomplete={handleQuestionTimerComplete}
-								progressColor="var(--sy-color--red)"
+								progressColor="var(--sy-fill--red)"
 							/>
 						{/if}
 					</div>

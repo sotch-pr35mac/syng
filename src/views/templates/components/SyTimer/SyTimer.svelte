@@ -1,7 +1,6 @@
 <script>
 	/* eslint-disable @typescript-eslint/no-magic-numbers */
 	import { onMount, onDestroy } from 'svelte';
-	import { interpolateColor } from '@/utils/color';
 
 	/* Duration Prop */
 
@@ -52,18 +51,10 @@
 
 	// Theme colors
 	const lightGrey = 'var(--sy-color--grey-2)';
-	const darkGrey = 'var(--sy-control--border)';
+	const neutralColor = 'var(--sy-timer--neutral)';
 
 	// Reactive values
 	const angle = $derived(progress * 360);
-
-	// Calculate interpolated color based on progress
-	function getProgressColor(progress) {
-		if (!progressColor) {
-			return darkGrey;
-		}
-		return interpolateColor(progressColor, darkGrey, 1 - progress);
-	}
 
 	// Public methods
 	export function pause() {
@@ -144,16 +135,21 @@
 >
 	{#if isPaused}
 		<svg viewBox="0 0 40 40" aria-hidden="true">
-			<path d="M15 12L29 20L15 28V12Z" fill={darkGrey} />
+			<path d="M15 12L29 20L15 28V12Z" fill={neutralColor} />
 		</svg>
 	{:else if hovering}
 		<svg viewBox="0 0 40 40" aria-hidden="true">
-			<rect x="13" y="13" width="5" height="14" fill={darkGrey} rx="1" />
-			<rect x="22" y="13" width="5" height="14" fill={darkGrey} rx="1" />
+			<rect x="13" y="13" width="5" height="14" fill={neutralColor} rx="1" />
+			<rect x="22" y="13" width="5" height="14" fill={neutralColor} rx="1" />
 		</svg>
 	{:else}
 		<svg viewBox="0 0 40 40" aria-hidden="true">
-			<circle cx="20" cy="20" r="16" fill={getProgressColor(progress)} />
+			<circle cx="20" cy="20" r="16" fill={neutralColor} />
+			{#if progressColor}
+				<!-- Blend using SVG opacity so both colors follow live theme changes,
+				     even when progress is suspended and no timer tick occurs. -->
+				<circle cx="20" cy="20" r="16" fill={progressColor} opacity={progress} />
+			{/if}
 			<path d={pathD} fill={lightGrey} />
 		</svg>
 	{/if}

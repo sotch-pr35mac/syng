@@ -38,6 +38,7 @@
 	--sy-icon--muted: var(--sy-color--grey-4);
 	--sy-icon--hover: var(--sy-color--blue);
 	--sy-control--border: #6d6e6f;
+	--sy-timer--neutral: var(--sy-color--grey-1);
 	--sy-control--track-off: var(--sy-color--grey-4);
 	--sy-control--knob: var(--sy-color--white);
 	--sy-focus-color: #2368c2;
@@ -148,6 +149,7 @@
 	--sy-icon--muted: #8c8c8c;
 	--sy-icon--hover: #007cff;
 	--sy-control--border: #8c8c8c;
+	--sy-timer--neutral: var(--sy-control--border);
 	--sy-input--border: 1px solid var(--sy-control--border);
 	--sy-input--border-mobile: var(--sy-input--border);
 	--sy-control--track-off: #8c8c8c;

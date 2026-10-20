@@ -37,6 +37,85 @@ async function sampleTransition(indicator: Locator) {
 	});
 }
 
+for (const colorScheme of ['light', 'dark'] as const) {
+	for (const mobile of [false, true]) {
+		test(`${colorScheme} ${mobile ? 'mobile' : 'desktop'} timer colors follow Increase Contrast while suspended or paused`, async ({
+			page,
+		}) => {
+			await page.emulateMedia({ colorScheme });
+			await page.clock.install();
+			await page.goto(
+				`/src/test/accessibility/index.html?quizFeedback&timers${mobile ? '&mobile' : ''}`
+			);
+			const resultTimer = page.getByRole('region', { name: 'Result timer' });
+			const questionTimer = page.getByRole('region', { name: 'Question timer' });
+			const toggle = page.getByRole('checkbox', { name: 'Increase Contrast' });
+			async function setAppearance(appearance: 'original' | 'contrast') {
+				const checked = appearance === 'contrast';
+				if ((await toggle.isChecked()) !== checked) {
+					await toggle.focus();
+					await page.keyboard.press('Space');
+				}
+				await expect(toggle).toBeChecked({ checked });
+			}
+			await expect(questionTimer.getByRole('button')).toBeVisible();
+			await page.clock.runFor(3000);
+			await page.getByRole('button', { name: 'Suspend timers' }).click();
+
+			const neutral = resultTimer.locator('circle').first();
+			const resultProgress = resultTimer.locator('.mobile-timer__progress');
+			const questionAccent = questionTimer.locator('circle').last();
+			const progressAttribute = mobile ? 'stroke-dashoffset' : 'opacity';
+			const suspendedProgress = await questionAccent.getAttribute(progressAttribute);
+			const colors = {
+				original: {
+					neutral: 'rgb(205, 209, 214)',
+					blue: 'rgb(118, 175, 249)',
+					red: 'rgb(228, 57, 120)',
+				},
+				contrast: {
+					neutral: colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)',
+					blue: colorScheme === 'light' ? 'rgb(0, 107, 223)' : 'rgb(118, 175, 249)',
+					red: colorScheme === 'light' ? 'rgb(229, 0, 111)' : 'rgb(236, 108, 157)',
+				},
+			};
+
+			for (const appearance of ['original', 'contrast', 'original'] as const) {
+				await setAppearance(appearance);
+				if (mobile) {
+					await expect(resultProgress).toHaveCSS('stroke', colors[appearance].blue);
+				} else {
+					await expect(neutral).toHaveCSS('fill', colors[appearance].neutral);
+					await expect(questionTimer.locator('circle').first()).toHaveCSS(
+						'fill',
+						colors[appearance].neutral
+					);
+				}
+				await expect(questionAccent).toHaveCSS(
+					mobile ? 'stroke' : 'fill',
+					colors[appearance].red
+				);
+				await expect(questionAccent).toHaveAttribute(progressAttribute, suspendedProgress!);
+			}
+
+			// Manual pause must also keep following appearance changes without a tick.
+			await questionTimer.getByRole('button', { name: 'Pause timer' }).click();
+			await expect(questionTimer.getByRole('button', { name: 'Resume timer' })).toBeVisible();
+			for (const appearance of ['contrast', 'original'] as const) {
+				await setAppearance(appearance);
+				if (mobile) {
+					await expect(questionAccent).toHaveCSS('stroke', colors[appearance].red);
+				} else {
+					await expect(questionTimer.locator('svg path')).toHaveCSS(
+						'fill',
+						colors[appearance].neutral
+					);
+				}
+			}
+		});
+	}
+}
+
 for (const mobile of [false, true]) {
 	for (const answer of ['correct', 'incorrect', 'long incorrect']) {
 		test(`${mobile ? 'mobile' : 'desktop'} ${answer} feedback clips without reflow during entry and exit`, async ({
