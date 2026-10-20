@@ -135,8 +135,8 @@ describe.each([
 		{
 			initialList: 'Empty',
 			choice: 'example',
-			listName: 'Syng Example Vocabulary',
-			firstWord: '学习',
+			listName: 'Awa’s Tea Party — Sample Words',
+			firstWord: '朋友',
 		},
 		{
 			initialList: 'Deleted',
@@ -147,8 +147,8 @@ describe.each([
 		{
 			initialList: 'Deleted',
 			choice: 'example',
-			listName: 'Syng Example Vocabulary',
-			firstWord: '学习',
+			listName: 'Awa’s Tea Party — Sample Words',
+			firstWord: '朋友',
 		},
 	])(
 		'loads the $choice list chosen from help for an $initialList list without remounting',
@@ -229,7 +229,7 @@ describe.each([
 ])('$layout quiz walkthrough', ({ component }) => {
 	it.each([
 		{ choice: 'saved', listName: 'Ready vocabulary', count: 4 },
-		{ choice: 'example', listName: 'Syng Example Vocabulary', count: 6 },
+		{ choice: 'example', listName: 'Awa’s Tea Party — Sample Words', count: 21 },
 	])(
 		'loads the $choice list chosen from help without remounting the route',
 		async ({ choice, listName, count }) => {
@@ -341,7 +341,7 @@ describe.each([
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add sample words' }));
 		await waitFor(() => expect(walkthroughStore.exampleBusy).toBe(false));
 		const listName = walkthroughStore.preferences.examples.listName;
-		expect(lists[listName]).toHaveLength(6);
+		expect(lists[listName]).toHaveLength(21);
 		await waitFor(() => {
 			expect(
 				(

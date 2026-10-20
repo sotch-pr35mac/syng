@@ -122,10 +122,10 @@ it('offers personal content and respects quiz minimums without creating examples
 });
 
 it('creates a distinct sample list and adds only lexical membership, preserving user notes', async () => {
-	state.lists.push('Syng Example Vocabulary');
+	state.lists.push('Awa’s Tea Party — Sample Words');
 	const context = await addExample('list', examples, remember);
-	expect(context.listName).toBe('Syng Example Vocabulary 2');
-	expect(bookmarksStore.addToList).toHaveBeenCalledTimes(6);
+	expect(context.listName).toBe('Awa’s Tea Party — Sample Words 2');
+	expect(bookmarksStore.addToList).toHaveBeenCalledTimes(21);
 	for (const [_name, word] of vi.mocked(bookmarksStore.addToList).mock.calls) {
 		expect(Object.keys(word)).toEqual(['lexical_id']);
 	}
@@ -138,10 +138,10 @@ it('reuses suitable samples without restoring removed words', async () => {
 	vi.mocked(bookmarksStore.addToList).mockClear();
 	await addExample('list', examples, remember);
 	expect(bookmarksStore.addToList).not.toHaveBeenCalled();
-	expect(state.contents[examples.listName]).toHaveLength(5);
+	expect(state.contents[examples.listName]).toHaveLength(20);
 	const prepared = await prepareGuide('flashcards', {}, () => true);
 	expect(prepared.choices).toContainEqual({
-		label: 'Syng Example Vocabulary (5 words)',
+		label: 'Awa’s Tea Party — Sample Words (20 words)',
 		context: { listName: examples.listName },
 	});
 });
@@ -156,9 +156,9 @@ it.each([
 		const originalName = examples.listName;
 		state.contents[originalName] = state.contents[originalName].slice(0, remaining);
 		await addExample('list', examples, remember, false, guide);
-		expect(examples.listName).toBe('Syng Example Vocabulary 2');
+		expect(examples.listName).toBe('Awa’s Tea Party — Sample Words 2');
 		expect(state.contents[originalName]).toHaveLength(remaining);
-		expect(state.contents[examples.listName]).toHaveLength(6);
+		expect(state.contents[examples.listName]).toHaveLength(21);
 	}
 );
 
@@ -184,9 +184,9 @@ it('retries partial seeding in the same list without duplicating successful entr
 	expect(examples.listPending).toBe(true);
 	await addExample('list', examples, remember);
 	expect(bookmarksStore.createList).toHaveBeenCalledTimes(1);
-	expect(state.contents[examples.listName]).toHaveLength(6);
+	expect(state.contents[examples.listName]).toHaveLength(21);
 	expect(new Set(state.contents[examples.listName].map((entry) => entry.lexical_id)).size).toBe(
-		6
+		21
 	);
 });
 
@@ -196,15 +196,24 @@ it('resolves all words before creating a list', async () => {
 	expect(bookmarksStore.createList).not.toHaveBeenCalled();
 });
 
-it('imports the traditional example through the normal Reader API and reuses its ID', async () => {
-	state.traditional = true;
-	await addExample('document', examples, remember);
-	expect(invokePrepareReaderImport).toHaveBeenCalledWith(
-		expect.objectContaining({ text: expect.stringContaining('學習中文') })
-	);
-	await addExample('document', examples, remember);
-	expect(readerDocumentsStore.importDocument).toHaveBeenCalledTimes(1);
-	state.documents = [];
-	await addExample('document', examples, remember);
-	expect(readerDocumentsStore.importDocument).toHaveBeenCalledTimes(2);
-});
+it.each([
+	{ traditional: false, excerpt: '学习贵在循序渐进' },
+	{ traditional: true, excerpt: '學習貴在循序漸進' },
+])(
+	'imports the story with traditional=$traditional and reuses its ID',
+	async ({ traditional, excerpt }) => {
+		state.traditional = traditional;
+		await addExample('document', examples, remember);
+		expect(invokePrepareReaderImport).toHaveBeenCalledWith(
+			expect.objectContaining({
+				title: 'Awa’s Tea Party — A Story That Levels Up',
+				text: expect.stringContaining(excerpt),
+			})
+		);
+		await addExample('document', examples, remember);
+		expect(readerDocumentsStore.importDocument).toHaveBeenCalledTimes(1);
+		state.documents = [];
+		await addExample('document', examples, remember);
+		expect(readerDocumentsStore.importDocument).toHaveBeenCalledTimes(2);
+	}
+);

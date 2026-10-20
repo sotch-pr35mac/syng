@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
+	import { BookOpen, Check, List, Plus } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { searchStore } from '@/composables/search.svelte.js';
 	import { portal } from '@/actions/portal.svelte.js';
@@ -7,6 +8,8 @@
 	import {
 		GUIDE_LABELS,
 		hasSuitableContent,
+		SAMPLE_TITLE,
+		SAMPLE_WORD_COUNT,
 	} from '@/components/Walkthrough/walkthroughContent.js';
 	const GUTTER = 16;
 	const TARGET_PADDING = 6;
@@ -34,6 +37,20 @@
 	const exampleKind = $derived(tour.preparation.choose ?? tour.step?.example);
 	let needsExample = $state(false);
 	const contentKey = $derived(`${tour.phase}:${tour.guide}:${tour.step?.id ?? ''}`);
+
+	async function addExample(kind: 'document' | 'list'): Promise<void> {
+		const focusedControl = document.activeElement;
+		await tour.addExample(kind);
+		await tick();
+		if (
+			tour.exampleAdded &&
+			focusedControl &&
+			!focusedControl.isConnected &&
+			document.activeElement === document.body
+		) {
+			heading?.focus({ preventScroll: true });
+		}
+	}
 
 	$effect(() => {
 		if (explainingLinks) {
@@ -464,30 +481,46 @@
 			{/if}
 			{#if exampleKind && needsExample}
 				<div class="walkthrough__example">
-					<div class="walkthrough__example-action">
-						<span
-							>{exampleKind === 'document'
-								? 'Need something to read?'
-								: 'Need something to practice?'}</span
-						>
-						<SyButton
-							style="ghost"
-							disabled={tour.exampleBusy}
-							onclick={() => tour.addExample(exampleKind)}
-							>{tour.exampleBusy
-								? 'Adding sample…'
-								: exampleKind === 'document'
-									? 'Add sample document'
-									: 'Add sample words'}</SyButton
-						>
+					<div class="walkthrough__example-icon">
+						{#if exampleKind === 'document'}
+							<BookOpen size="18" aria-hidden="true" />
+						{:else}
+							<List size="18" aria-hidden="true" />
+						{/if}
 					</div>
-					<p>
-						{exampleKind === 'document'
-							? 'Adds a short document to your library.'
-							: 'Adds six words to a new list.'}
-					</p>
+					<div class="walkthrough__example-details">
+						<span class="walkthrough__example-title">{SAMPLE_TITLE}</span>
+						<p id="walkthrough-sample-description">
+							{exampleKind === 'document'
+								? 'Sample story · easy → advanced'
+								: `${SAMPLE_WORD_COUNT} words · HSK 1–9`}
+						</p>
+					</div>
+					<SyButton
+						aria-label={exampleKind === 'document'
+							? 'Add sample document'
+							: 'Add sample words'}
+						aria-describedby="walkthrough-sample-description"
+						disabled={tour.exampleBusy}
+						onclick={() => addExample(exampleKind)}
+					>
+						<span class="walkthrough__example-button">
+							<Plus size="14" aria-hidden="true" />
+							{tour.exampleBusy ? 'Adding…' : 'Add'}
+						</span>
+					</SyButton>
 				</div>
 			{/if}
+			<div class:walkthrough__example-notice={tour.exampleAdded} role="status">
+				{#if tour.exampleAdded}
+					<Check size="16" aria-hidden="true" />
+					<span>
+						{tour.exampleAdded === 'document'
+							? 'Added to your Reader library.'
+							: 'Added to your vocabulary lists.'}
+					</span>
+				{/if}
+			</div>
 			{#if tour.error}<p role="alert">{tour.error}</p>{/if}
 			{#if tour.phase === 'guiding'}
 				<div class="walkthrough__navigation">
@@ -629,17 +662,47 @@
 	}
 	.walkthrough__example {
 		margin-top: 12px;
-	}
-	.walkthrough__example-action {
-		display: flex;
+		padding-top: 12px;
+		border-top: var(--sy-border);
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: center;
-		flex-wrap: wrap;
-		font-size: var(--sy-font-size--small);
+		gap: var(--sy-space--large);
+	}
+	.walkthrough__example-icon {
+		display: flex;
+		color: var(--sy-text--muted);
+	}
+	.walkthrough__example-details {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+	.walkthrough__example-title {
+		font-size: 0.8125rem;
+		font-weight: var(--sy-font-weight--bold);
+	}
+	.walkthrough__example-button {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sy-space);
+	}
+	.walkthrough__example :global(button) {
+		margin: 0;
 	}
 	.walkthrough__example p {
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--small);
-		margin: var(--sy-space) 0 0;
+		margin: var(--sy-space--small) 0 0;
+	}
+	.walkthrough__example-notice {
+		display: flex;
+		align-items: center;
+		gap: var(--sy-space);
+		font-size: var(--sy-font-size--small);
+		margin-top: 12px;
+	}
+	.walkthrough__example-notice :global(svg) {
+		flex-shrink: 0;
 	}
 	.walkthrough__choices {
 		display: flex;

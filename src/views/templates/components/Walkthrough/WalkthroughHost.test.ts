@@ -22,6 +22,8 @@ vi.mock('@/utils/appServices.js', () => ({
 }));
 vi.mock('@/components/Walkthrough/walkthroughContent.js', () => ({
 	GUIDE_LABELS: { dictionary: 'Dictionary', 'reader-document': 'Reading a document' },
+	SAMPLE_TITLE: 'Awa’s Tea Party',
+	SAMPLE_WORD_COUNT: 21,
 	prepareGuide: mocks.prepareGuide,
 	hasSuitableContent: mocks.hasSuitableContent,
 	addExample: mocks.addExample,
@@ -275,7 +277,7 @@ it.each(['list', 'document'] as const)(
 		render(Host);
 		const label = kind === 'list' ? 'Add sample words' : 'Add sample document';
 		const sample = await screen.findByRole('button', { name: label });
-		expect(sample.classList.contains('sy-button--ghost')).toBe(true);
+		expect(sample.classList.contains('sy-button--filled')).toBe(true);
 		expect(sample.classList.contains('sy-button--medium')).toBe(true);
 		mocks.hasSuitableContent.mockResolvedValue(true);
 		await fireEvent.click(sample);
@@ -290,6 +292,11 @@ it.each(['list', 'document'] as const)(
 		);
 		await vi.waitFor(() => expect(tour.exampleBusy).toBe(false));
 		expect(screen.queryByRole('button', { name: label })).toBeNull();
+		expect(screen.getByRole('status').textContent).toContain(
+			kind === 'document'
+				? 'Added to your Reader library.'
+				: 'Added to your vocabulary lists.'
+		);
 	}
 );
 
@@ -327,6 +334,7 @@ it('keeps sample creation available after a failed attempt', async () => {
 	expect(
 		(screen.getByRole('button', { name: 'Add sample words' }) as HTMLButtonElement).disabled
 	).toBe(false);
+	expect(screen.queryByText('Added to your vocabulary lists.')).toBeNull();
 });
 
 it('hides only completed feature links, including during a later replay', async () => {

@@ -31,6 +31,7 @@ let requestVersion = 0;
 let expectedRoute = '';
 let errorMessage = $state('');
 let exampleBusy = $state(false);
+let exampleAdded = $state<'document' | 'list' | null>(null);
 let blocked = $state(false);
 let targetRevision = $state(0);
 // DOM nodes must remain unproxied; revision announces registration changes to the host.
@@ -110,6 +111,7 @@ function hasCompleted(identifier: WalkthroughId): boolean {
 
 async function resetFeatureTours(): Promise<void> {
 	await load();
+	exampleAdded = null;
 	if (guide && guide !== 'app') {
 		// Cancel any pending preparation before clearing progress so it cannot restore it.
 		++requestVersion;
@@ -156,6 +158,7 @@ async function start(
 	resume = false
 ): Promise<void> {
 	const request = ++requestVersion;
+	exampleAdded = null;
 	guide = identifier;
 	phase = 'loading';
 	preparation = { steps: [], context };
@@ -208,6 +211,7 @@ async function start(
 
 function close(status: 'skipped' | 'completed' | 'in-progress'): void {
 	++requestVersion;
+	exampleAdded = null;
 	saveProgress(status);
 	phase = 'idle';
 	expectedRoute = '';
@@ -215,6 +219,7 @@ function close(status: 'skipped' | 'completed' | 'in-progress'): void {
 }
 
 function next(): void {
+	exampleAdded = null;
 	if (stepIndex >= preparation.steps.length - 1) {
 		const wasAppTour = guide === 'app';
 		close('completed');
@@ -228,6 +233,7 @@ function next(): void {
 }
 
 function back(): void {
+	exampleAdded = null;
 	if (stepIndex > 0) {
 		stepIndex -= 1;
 		navigate(preparation.steps[stepIndex]);
@@ -281,8 +287,9 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 		return;
 	}
 	exampleBusy = true;
+	exampleAdded = null;
 	errorMessage = '';
-	const request = requestVersion;
+	let request = requestVersion;
 	try {
 		const content = await import('@/components/Walkthrough/walkthroughContent.js');
 		const context = await content.addExample(
@@ -299,7 +306,11 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 			return;
 		}
 		if (phase === 'choosing' && guide) {
-			await start(guide, context);
+			const openingGuide = start(guide, context);
+			// Follow the request created by our own start, while still rejecting
+			// completions after Skip or a different guide takes over.
+			request = requestVersion;
+			await openingGuide;
 		} else if (guide) {
 			const identifier = guide;
 			const previousStep = preparation.steps[stepIndex]?.id;
@@ -316,6 +327,9 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 				0,
 				updated.steps.findIndex((step) => step.id === previousStep)
 			);
+		}
+		if (request === requestVersion) {
+			exampleAdded = kind;
 		}
 	} catch (error) {
 		if (request === requestVersion) {
@@ -365,6 +379,9 @@ export const walkthroughStore = {
 	},
 	get exampleBusy() {
 		return exampleBusy;
+	},
+	get exampleAdded() {
+		return exampleAdded;
 	},
 	get loaded() {
 		return loaded;

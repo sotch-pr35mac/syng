@@ -185,6 +185,49 @@ it('allows only one example creation at a time and keeps saved examples after Sk
 	expect(content.addExample).toHaveBeenCalledTimes(1);
 	expect(saved.examples.listName).toBe('Example');
 	expect(store.visible).toBe(false);
+	expect(store.exampleAdded).toBeNull();
+});
+
+it('confirms a saved sample after the chooser opens its guide, until the next step', async () => {
+	content.prepareGuide.mockResolvedValueOnce({
+		steps: [],
+		choose: 'document',
+		choices: [],
+		context: {},
+	});
+	content.addExample.mockResolvedValue({ documentId: 'sample-document' });
+	await store.start('reader-document');
+	await store.addExample('document');
+	expect(store.phase).toBe('guiding');
+	expect(store.preparation.context.documentId).toBe('sample-document');
+	expect(store.exampleAdded).toBe('document');
+	store.next();
+	expect(store.exampleAdded).toBeNull();
+});
+
+it('does not restore a sample confirmation if the reopened guide is skipped while loading', async () => {
+	content.prepareGuide.mockResolvedValueOnce({
+		steps: [],
+		choose: 'list',
+		choices: [],
+		context: {},
+	});
+	await store.start('flashcards');
+	let finish: (value: unknown) => void;
+	content.prepareGuide.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			})
+	);
+	content.addExample.mockResolvedValue({ listName: 'Sample' });
+	const pending = store.addExample('list');
+	await vi.waitFor(() => expect(content.prepareGuide).toHaveBeenCalledTimes(2));
+	store.skip();
+	finish({ steps, context: { listName: 'Sample' } });
+	await pending;
+	expect(store.phase).toBe('idle');
+	expect(store.exampleAdded).toBeNull();
 });
 
 it('remembers completed guides through interrupted replays and across restarts', async () => {

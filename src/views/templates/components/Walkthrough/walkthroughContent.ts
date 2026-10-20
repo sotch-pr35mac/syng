@@ -36,13 +36,61 @@ export const GUIDE_LABELS: Record<WalkthroughId, string> = {
 	flashcards: 'Flashcards',
 	quiz: 'Quizzes',
 };
-const SAMPLE_WORDS = ['学习', '中文', '朋友', '老师', '书', '今天'];
-const SAMPLE_LIST_NAME = 'Syng Example Vocabulary';
-const SAMPLE_DOCUMENT_TITLE = 'Syng Example — Learning';
-const SAMPLE_TEXT =
-	'今天，我和朋友一起学习中文。\n\n我们在学校看书。老师说：“每天学习一点，你会慢慢进步。”\n\n朋友喜欢读故事，我喜欢写字。我们一边看书，一边学习新词。\n\n回家以后，我把今天学到的词再看一遍。明天，我们还要一起学习。';
-const SAMPLE_TRADITIONAL_TEXT =
-	'今天，我和朋友一起學習中文。\n\n我們在學校看書。老師說：「每天學習一點，你會慢慢進步。」\n\n朋友喜歡讀故事，我喜歡寫字。我們一邊看書，一邊學習新詞。\n\n回家以後，我把今天學到的詞再看一遍。明天，我們還要一起學習。';
+// Three words per band in the HSK Exam Syllabus 2025, checked against the
+// bundled dictionary. Each group occurs in the corresponding story paragraph.
+// Source: https://www.chinesetest.cn/syllabus (2025 vocabulary syllabus).
+const SAMPLE_WORDS = [
+	// HSK 1
+	'朋友',
+	'茶',
+	'杯子',
+	// HSK 2
+	'奶茶',
+	'跳舞',
+	'生日',
+	// HSK 3
+	'突然',
+	'奇怪',
+	'发现',
+	// HSK 4
+	'解释',
+	'理解',
+	'阅读',
+	// HSK 5
+	'挑战',
+	'想象',
+	'难度',
+	// HSK 6
+	'冒险',
+	'探索',
+	'旅程',
+	// HSK 7–9
+	'异想天开',
+	'锲而不舍',
+	'不妨',
+];
+export const SAMPLE_TITLE = 'Awa’s Tea Party';
+export const SAMPLE_WORD_COUNT = SAMPLE_WORDS.length;
+const SAMPLE_LIST_NAME = `${SAMPLE_TITLE} — Sample Words`;
+const SAMPLE_DOCUMENT_TITLE = `${SAMPLE_TITLE} — A Story That Levels Up`;
+const SAMPLE_TEXT = [
+	'阿瓦是我的朋友。今天，他请我喝茶。我说：“你好！”他说：“请坐。你喝茶，我喝水。”我们有三个杯子，还有一本书。',
+	'旁边的猫也想喝奶茶。它站起来，开始跳舞。阿瓦笑了。猫说：“今天是我的生日！”我们一起说：“生日快乐！”',
+	'突然，杯子也开始说话：“这个故事越来越奇怪了！”我发现，茶没变，句子变长了。阿瓦说：“别怕，慢慢读。”',
+	'猫送来饼干，还认真地解释起杯子的话。虽然我不完全理解，但阿瓦很有耐心：“阅读也像吃饼干，先来一小口。”',
+	'茶杯提出了新的挑战：不许用“好喝”来表达感受。我发挥想象，称赞茶里藏着春天。阿瓦提醒我：“难度又提高了！”',
+	'这场冒险成了对语言的探索。与其急着结束旅程，不如留意句子的细节。猫却坚持认为，一切问题都能靠饼干解决。',
+	'方才还只是喝茶，如今竟谈起了人生。茶会虽异想天开，道理却不难懂：学习贵在循序渐进，遇到困惑更须锲而不舍。倘若你读到此处，不妨举杯庆贺；至于饼干的哲学意义，容我们下回再议。',
+].join('\n\n');
+const SAMPLE_TRADITIONAL_TEXT = [
+	'阿瓦是我的朋友。今天，他請我喝茶。我說：「你好！」他說：「請坐。你喝茶，我喝水。」我們有三個杯子，還有一本書。',
+	'旁邊的貓也想喝奶茶。牠站起來，開始跳舞。阿瓦笑了。貓說：「今天是我的生日！」我們一起說：「生日快樂！」',
+	'突然，杯子也開始說話：「這個故事越來越奇怪了！」我發現，茶沒變，句子變長了。阿瓦說：「別怕，慢慢讀。」',
+	'貓送來餅乾，還認真地解釋起杯子的話。雖然我不完全理解，但阿瓦很有耐心：「閱讀也像吃餅乾，先來一小口。」',
+	'茶杯提出了新的挑戰：不許用「好喝」來表達感受。我發揮想象，稱讚茶裡藏著春天。阿瓦提醒我：「難度又提高了！」',
+	'這場冒險成了對語言的探索。與其急著結束旅程，不如留意句子的細節。貓卻堅持認為，一切問題都能靠餅乾解決。',
+	'方才還只是喝茶，如今竟談起了人生。茶會雖異想天開，道理卻不難懂：學習貴在循序漸進，遇到困惑更須鍥而不捨。倘若你讀到此處，不妨舉杯慶賀；至於餅乾的哲學意義，容我們下回再議。',
+].join('\n\n');
 
 function step(
 	id: string,
@@ -552,7 +600,7 @@ export async function addExample(
 		})
 	);
 	if (new Set(words.map(lexicalDisplayId)).size !== SAMPLE_WORDS.length) {
-		throw new Error('The example needs six distinct dictionary entries. Please try again.');
+		throw new Error('The example needs distinct dictionary entries. Please try again.');
 	}
 	const reusePending =
 		!freshCopy &&
