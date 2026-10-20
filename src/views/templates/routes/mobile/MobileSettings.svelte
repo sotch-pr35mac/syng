@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import AppearanceSettings from '@/components/SettingsOption/AppearanceSettings.svelte';
+	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
 	import { tabNavigation } from '@/actions/tabNavigation.js';
@@ -123,7 +123,7 @@
 					aria-labelledby="contrast-heading"
 				>
 					<h2 id="contrast-heading">Increase Contrast</h2>
-					<AppearanceSettings variant="mobile" showLabel={false} />
+					<IncreaseContrastSettings variant="mobile" showLabel={false} />
 				</section>
 				<section class="mobile-settings__section" aria-labelledby="characters-heading">
 					<h2 id="characters-heading">Characters</h2>

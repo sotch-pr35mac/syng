@@ -216,7 +216,7 @@
 		align-items: center;
 	}
 	.navigation--item {
-		color: var(--sy-navigation-icon, var(--sy-icon--muted));
+		color: var(--sy-icon--muted);
 		margin: var(--sy-space);
 		padding: var(--sy-space--large);
 		height: 30px;
@@ -225,10 +225,6 @@
 		align-items: center;
 		justify-content: center;
 		position: relative;
-	}
-	.navigation--secondary-nav a[href='#/settings'] .navigation--item {
-		--sy-navigation-icon: var(--sy-icon--settings);
-		--sy-navigation-icon-hover: var(--sy-icon--settings-hover);
 	}
 	.navigation--badge {
 		position: absolute;
@@ -242,7 +238,7 @@
 	}
 	@media (hover: hover) {
 		.navigation--item:hover {
-			color: var(--sy-navigation-icon-hover, var(--sy-icon--hover));
+			color: var(--sy-icon--hover);
 			transition-property: color;
 			transition-duration: var(--sy-transition-duration);
 		}
@@ -251,7 +247,7 @@
 		background-color: var(--sy-color--white);
 		border-radius: 100%;
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-navigation-icon, var(--sy-icon--muted)) !important;
+		color: var(--sy-icon--muted) !important;
 		transition-property: background-color, box-shadow, border-radius, color !important;
 		transition-duration: var(--sy-transition-duration) !important;
 	}

@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import Document from '@/routes/Reader/Document.svelte';
+import { contrastStore } from '@/stores/contrast.svelte.js';
+import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 import { readerRoute } from '@/composables/reader.svelte.js';
 import * as systemTypography from '@/composables/systemTypography.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
@@ -363,3 +365,33 @@ it('keeps the current reading position when larger application controls leave le
 		container.querySelector('.reader').style.getPropertyValue('--reader-page-font-size')
 	).toBe('20px');
 });
+
+it.each([
+	['light', '#6b7280', '#667080'],
+	['sepia', '#76593d', '#664a31'],
+])(
+	'updates the %s Reader palette live without changing the saved page theme',
+	async (theme, originalMuted, contrastMuted) => {
+		contrastStore.setIncreaseContrast(false);
+		const { container, findByText } = renderReaderDocument('reader-1');
+		await findByText('Story');
+		readerSettingsStore.applyColorTheme(theme);
+		const readerElement = container.querySelector('.reader');
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		const savedSettings = { ...readerSettingsStore.settings };
+
+		contrastStore.setIncreaseContrast(true);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(contrastMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+
+		contrastStore.setIncreaseContrast(false);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+	}
+);

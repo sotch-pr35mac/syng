@@ -15,7 +15,7 @@ const textTokens = [
 	'--sy-text--secondary',
 	'--sy-text--placeholder',
 	...semanticColors.map((color) => `--sy-text--${color}`),
-	...Array.from({ length: 5 }, (_, index) => `--sy-tone-default--${index + 1}`),
+	...Array.from({ length: 5 }, (_, index) => `--sy-tone-theme--${index + 1}`),
 	...Array.from({ length: 5 }, (_, index) => `--sy-tone-color--${index + 1}`),
 ];
 
@@ -80,27 +80,6 @@ function themeColors(
 	return resolve;
 }
 
-function composite(background: string, surface: string): string {
-	if (background.startsWith('#')) {
-		return background;
-	}
-	const channels = background.match(/^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/)?.slice(1);
-	if (!channels) {
-		throw new Error(`Unsupported surface color: ${background}`);
-	}
-	const opacity = Number(channels[3]);
-	return `#${[1, 3, 5]
-		.map((offset, index) =>
-			Math.round(
-				Number(channels[index]) * opacity +
-					Number.parseInt(surface.slice(offset, offset + 2), 16) * (1 - opacity)
-			)
-				.toString(16)
-				.padStart(2, '0')
-		)
-		.join('')}`;
-}
-
 function luminance(hex: string): number {
 	expect(hex, 'Contrast colors must resolve to opaque six-digit hex values').toMatch(
 		/^#[0-9a-f]{6}$/i
@@ -160,33 +139,13 @@ describe.each(schemes)('%s Contrast appearance', (scheme) => {
 	});
 });
 
-describe.each(schemes)('%s appearance access', (scheme) => {
-	it.each(appearances)(
-		'%s keeps Settings and the appearance label discoverable',
-		(appearance) => {
-			const color = themeColors(scheme, appearance);
-			for (const surface of ['--sy-color--white', '--sy-color--grey-2']) {
-				const surfaceColor = color(surface);
-				for (const settings of ['--sy-icon--settings', '--sy-icon--settings-hover']) {
-					checkContrast('Settings icon', color(settings), surfaceColor, 3);
-					checkContrast(
-						'Pressed Settings icon',
-						color(settings),
-						composite(color('--sy-mobile-state-pressed'), surfaceColor),
-						3
-					);
-				}
-				checkContrast(
-					'Appearance label',
-					color('--sy-appearance-switch--text'),
-					surfaceColor
-				);
-				checkContrast('Appearance focus', color('--sy-focus-color'), surfaceColor, 3);
-			}
-		}
-	);
+describe.each(schemes)('%s theme roles', (scheme) => {
+	it.each(appearances)('%s uses the theme white for filled labels', (appearance) => {
+		const color = themeColors(scheme, appearance);
+		expect(color('--sy-text--on-fill')).toBe(color('--sy-color--white'));
+	});
 
-	it('preserves Original brand colors, neutral roles, tones, and white fill labels', () => {
+	it('preserves Original brand colors, neutral roles, and tones', () => {
 		const color = themeColors(scheme);
 		expect(color('--sy-text--muted')).toBe('#9a9b9c');
 		expect(color('--sy-text--secondary')).toBe('#788598');
@@ -194,7 +153,6 @@ describe.each(schemes)('%s appearance access', (scheme) => {
 		expect(color('--sy-text--light')).toBe(scheme === 'light' ? '#d7d7d7' : '#9f9fa0');
 		expect(color('--sy-icon--muted')).toBe('#9a9b9c');
 		expect(color('--sy-icon--hover')).toBe('#76aff9');
-		expect(color('--sy-text--on-fill')).toBe('#ffffff');
 		expect(color('--sy-control--track-off')).toBe('#9a9b9c');
 		const originalAccents = [
 			'#76aff9',
@@ -212,8 +170,9 @@ describe.each(schemes)('%s appearance access', (scheme) => {
 });
 
 it.each(READER_COLOR_THEMES)(
-	'$label Reader preset keeps page and surrounding text readable',
-	(theme) => {
+	'$label Reader preset with Increase Contrast keeps page and surrounding text readable',
+	(preset) => {
+		const theme = getReaderColorTheme(preset.id, false, true);
 		checkContrast('Page text', theme.textColor, theme.backgroundColor);
 		checkContrast('Dictionary links', theme.linkColor, theme.backgroundColor);
 		checkContrast('Muted page text', theme.mutedTextColor, theme.backgroundColor);
@@ -222,7 +181,22 @@ it.each(READER_COLOR_THEMES)(
 	}
 );
 
-it('automatic Reader colors resolve to the tested light and dark presets', () => {
-	expect(getReaderColorTheme('automatic', false)).toBe(getReaderColorTheme('light'));
-	expect(getReaderColorTheme('automatic', true)).toBe(getReaderColorTheme('dark'));
+it('retains the original Reader muted palette unless Increase Contrast is enabled', () => {
+	expect(getReaderColorTheme('light').mutedTextColor).toBe('#6b7280');
+	expect(getReaderColorTheme('sepia').mutedTextColor).toBe('#76593d');
+	expect(getReaderColorTheme('light', false, true).mutedTextColor).toBe('#667080');
+	expect(getReaderColorTheme('sepia', false, true).mutedTextColor).toBe('#664a31');
+	expect(getReaderColorTheme('dark', false, true)).toBe(getReaderColorTheme('dark'));
 });
+
+it.each([false, true])(
+	'automatic Reader colors follow the system with Increase Contrast set to %s',
+	(increaseContrast) => {
+		expect(getReaderColorTheme('automatic', false, increaseContrast)).toBe(
+			getReaderColorTheme('light', false, increaseContrast)
+		);
+		expect(getReaderColorTheme('automatic', true, increaseContrast)).toBe(
+			getReaderColorTheme('dark', true, increaseContrast)
+		);
+	}
+);

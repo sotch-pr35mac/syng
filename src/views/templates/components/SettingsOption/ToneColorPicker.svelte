@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import { appearanceStore } from '@/stores/appearance.svelte.js';
+	import { contrastStore } from '@/stores/contrast.svelte.js';
 	import { getPreferenceManager } from '@/utils/appServices.js';
-	import { DEFAULT_TONE_COLOR_TOKENS } from '@/utils/tones.js';
+	import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -42,16 +42,16 @@
 	}
 
 	let colors = $state<string[]>(savedColors.colors.map(resolveColor));
-	let previousIncreaseContrast = appearanceStore.increaseContrast;
+	let previousIncreaseContrast = contrastStore.increaseContrast;
 
 	function refreshThemeColors(): void {
 		if (!hasCustomColors) {
-			colors = DEFAULT_TONE_COLOR_TOKENS.map(resolveColor);
+			colors = THEME_TONE_COLOR_TOKENS.map(resolveColor);
 		}
 	}
 
 	$effect(() => {
-		const increaseContrast = appearanceStore.increaseContrast;
+		const increaseContrast = contrastStore.increaseContrast;
 		if (increaseContrast !== previousIncreaseContrast) {
 			refreshThemeColors();
 			previousIncreaseContrast = increaseContrast;
@@ -66,8 +66,8 @@
 
 	function resetColors(): void {
 		hasCustomColors = false;
-		colors = DEFAULT_TONE_COLOR_TOKENS.map(resolveColor);
-		onchange?.({ hasCustomColors: false, colors: [...DEFAULT_TONE_COLOR_TOKENS] });
+		colors = THEME_TONE_COLOR_TOKENS.map(resolveColor);
+		onchange?.({ hasCustomColors: false, colors: [...THEME_TONE_COLOR_TOKENS] });
 	}
 
 	onMount(() => {

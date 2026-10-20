@@ -9,7 +9,7 @@
 import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
-import { DEFAULT_TONE_COLOR_TOKENS } from '@/utils/tones.js';
+import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -42,7 +42,7 @@ const createDefaultPreferences = () => ({
 	showPartsOfSpeech: createPreference(false, true),
 	showAlternativePronunciations: createPreference(false, false),
 	toneColors: createPreference(true, {
-		colors: [...DEFAULT_TONE_COLOR_TOKENS],
+		colors: [...THEME_TONE_COLOR_TOKENS],
 		hasCustomColors: false,
 	}),
 	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
@@ -139,7 +139,7 @@ export class PreferenceManager {
 			return undefined;
 		}
 		if (property === 'toneColors' && !preference.value.hasCustomColors) {
-			return { ...preference.value, colors: [...DEFAULT_TONE_COLOR_TOKENS] };
+			return { ...preference.value, colors: [...THEME_TONE_COLOR_TOKENS] };
 		}
 		return preference.value;
 	}

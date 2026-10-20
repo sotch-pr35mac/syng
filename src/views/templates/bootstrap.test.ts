@@ -26,8 +26,8 @@ vi.mock('@/composables/accessibility.js', () => ({ initializeAccessibility: vi.f
 vi.mock('@/composables/systemTypography.js', () => ({
 	initializeSystemTypography: mocks.initializeSystemTypography,
 }));
-vi.mock('@/stores/appearance.svelte.js', () => ({
-	appearanceStore: { initialize: mocks.initializeAppearance },
+vi.mock('@/stores/contrast.svelte.js', () => ({
+	contrastStore: { initialize: mocks.initializeAppearance },
 }));
 
 const splashMarkup = `

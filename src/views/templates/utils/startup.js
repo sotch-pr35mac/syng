@@ -9,7 +9,7 @@ import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { handleError } from '@/utils/error.js';
 import {
@@ -141,7 +141,7 @@ export const runStartupActions = () => {
 		await Promise.all([
 			privacySettingsStore.loadSettings(),
 			dictionaryDisplaySettingsStore.loadSettings(),
-			appearanceStore.loadSettings(),
+			contrastStore.loadSettings(),
 		]);
 	};
 

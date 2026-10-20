@@ -4,7 +4,7 @@
 	import { platform } from '@tauri-apps/plugin-os';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import AppearanceSettings from '@/components/SettingsOption/AppearanceSettings.svelte';
+	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import OnboardingProgress from '@/components/Onboarding/OnboardingProgress.svelte';
 	import WelcomeStep from '@/components/Onboarding/WelcomeStep.svelte';
 	import ChinesePreferencesStep from '@/components/Onboarding/ChinesePreferencesStep.svelte';
@@ -118,7 +118,7 @@
 	<div class="onboarding-flow__card">
 		<div class="onboarding-flow__body">
 			<div class="onboarding-flow__appearance">
-				<AppearanceSettings {variant} />
+				<IncreaseContrastSettings {variant} />
 			</div>
 			{#key onboardingStore.currentStepId}
 				<div

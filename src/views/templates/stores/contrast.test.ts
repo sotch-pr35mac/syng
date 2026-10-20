@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 
 vi.mock('@/utils/appServices.js', () => ({ getPreferenceManager: vi.fn() }));
@@ -23,7 +23,7 @@ beforeEach(() => {
 	vi.mocked(getPreferenceManager).mockReturnValue(
 		preferences as unknown as ReturnType<typeof getPreferenceManager>
 	);
-	cleanup = appearanceStore.initialize();
+	cleanup = contrastStore.initialize();
 });
 
 afterEach(() => {
@@ -32,15 +32,15 @@ afterEach(() => {
 });
 
 it('keeps custom tones in both appearances without changing their saved preference', async () => {
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	expect(document.documentElement.dataset.appearance).toBe('original');
 	for (let index = 0; index < 5; index += 1) {
 		expect(
 			document.documentElement.style.getPropertyValue(`--sy-tone-color--${index + 1}`)
 		).toBe(customColors[index]);
 	}
-	appearanceStore.setIncreaseContrast(true);
-	expect(appearanceStore.increaseContrast).toBe(true);
+	contrastStore.setIncreaseContrast(true);
+	expect(contrastStore.increaseContrast).toBe(true);
 	expect(document.documentElement.dataset.appearance).toBe('contrast');
 	expect(window.localStorage.getItem('syng:appearance')).toBe('contrast');
 	for (let index = 0; index < 5; index += 1) {
@@ -48,7 +48,7 @@ it('keeps custom tones in both appearances without changing their saved preferen
 			document.documentElement.style.getPropertyValue(`--sy-tone-color--${index + 1}`)
 		).toBe(customColors[index]);
 	}
-	appearanceStore.setIncreaseContrast(false);
+	contrastStore.setIncreaseContrast(false);
 	expect(document.documentElement.dataset.appearance).toBe('original');
 	expect(document.documentElement.style.getPropertyValue('--sy-tone-color--1')).toBe(
 		customColors[0]
@@ -63,7 +63,7 @@ it('applies custom tones when starting with Increase Contrast already enabled', 
 	preferences.get.mockImplementation((key: string) =>
 		key === 'toneColors' ? { hasCustomColors: true, colors: [...customColors] } : true
 	);
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	expect(document.documentElement.dataset.appearance).toBe('contrast');
 	for (let index = 0; index < customColors.length; index += 1) {
 		expect(
@@ -73,13 +73,13 @@ it('applies custom tones when starting with Increase Contrast already enabled', 
 });
 
 it('removes custom overrides after reset so either appearance supplies its theme tones', async () => {
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	preferences.get.mockImplementation((key: string) =>
 		key === 'toneColors' ? { hasCustomColors: false, colors: [...customColors] } : true
 	);
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	for (const increaseContrast of [true, false]) {
-		appearanceStore.setIncreaseContrast(increaseContrast);
+		contrastStore.setIncreaseContrast(increaseContrast);
 		for (let index = 0; index < customColors.length; index += 1) {
 			expect(
 				document.documentElement.style.getPropertyValue(`--sy-tone-color--${index + 1}`)
@@ -90,26 +90,26 @@ it('removes custom overrides after reset so either appearance supplies its theme
 
 it('loads the stored preference over an old cache before revealing the app', async () => {
 	preferences.get.mockReturnValue(true);
-	await appearanceStore.loadSettings();
-	expect(appearanceStore.increaseContrast).toBe(true);
+	await contrastStore.loadSettings();
+	expect(contrastStore.increaseContrast).toBe(true);
 	expect(window.localStorage.getItem('syng:appearance')).toBe('contrast');
-	cleanup = appearanceStore.initialize();
+	cleanup = contrastStore.initialize();
 	expect(document.documentElement.dataset.appearance).toBe('contrast');
 });
 
 it('isolates development appearance from production', () => {
-	appearanceStore.setIncreaseContrast(true);
-	cleanup = appearanceStore.initialize(true);
-	expect(appearanceStore.increaseContrast).toBe(false);
-	appearanceStore.setIncreaseContrast(false);
+	contrastStore.setIncreaseContrast(true);
+	cleanup = contrastStore.initialize(true);
+	expect(contrastStore.increaseContrast).toBe(false);
+	contrastStore.setIncreaseContrast(false);
 	expect(window.localStorage.getItem('syng:appearance')).toBe('contrast');
 	expect(window.localStorage.getItem('syng:appearance:development')).toBe('original');
 });
 
 it('updates another window without saving back, replacing custom tones, or responding to unrelated storage', async () => {
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	window.dispatchEvent(new StorageEvent('storage', { key: 'other', newValue: 'contrast' }));
-	expect(appearanceStore.increaseContrast).toBe(false);
+	expect(contrastStore.increaseContrast).toBe(false);
 	window.dispatchEvent(
 		new StorageEvent('storage', { key: 'syng:appearance', newValue: 'contrast' })
 	);
@@ -122,7 +122,7 @@ it('updates another window without saving back, replacing custom tones, or respo
 	window.dispatchEvent(
 		new StorageEvent('storage', { key: 'syng:appearance', newValue: 'original' })
 	);
-	expect(appearanceStore.increaseContrast).toBe(true);
+	expect(contrastStore.increaseContrast).toBe(true);
 });
 
 it('keeps a newer user choice if a preference load completes late', async () => {
@@ -132,12 +132,12 @@ it('keeps a newer user choice if a preference load completes late', async () => 
 			finishLoading = resolve;
 		})
 	);
-	const pendingLoad = appearanceStore.loadSettings();
-	appearanceStore.setIncreaseContrast(true);
+	const pendingLoad = contrastStore.loadSettings();
+	contrastStore.setIncreaseContrast(true);
 	finishLoading();
 	await pendingLoad;
-	expect(appearanceStore.increaseContrast).toBe(true);
-	appearanceStore.setIncreaseContrast(false);
+	expect(contrastStore.increaseContrast).toBe(true);
+	contrastStore.setIncreaseContrast(false);
 	expect(document.documentElement.style.getPropertyValue('--sy-tone-color--1')).toBe(
 		customColors[0]
 	);
@@ -151,11 +151,11 @@ it('does not apply a delayed preference load from a previous initialization', as
 		})
 	);
 	preferences.get.mockReturnValue(true);
-	const pendingLoad = appearanceStore.loadSettings();
-	cleanup = appearanceStore.initialize(true);
+	const pendingLoad = contrastStore.loadSettings();
+	cleanup = contrastStore.initialize(true);
 	finishLoading();
 	await pendingLoad;
-	expect(appearanceStore.increaseContrast).toBe(false);
+	expect(contrastStore.increaseContrast).toBe(false);
 	expect(window.localStorage.getItem('syng:appearance:development')).toBeNull();
 });
 
@@ -166,9 +166,9 @@ it('still applies and saves the preference when browser storage is unavailable',
 	vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
 		throw new Error('Storage unavailable');
 	});
-	cleanup = appearanceStore.initialize();
-	await appearanceStore.loadSettings();
-	appearanceStore.setIncreaseContrast(true);
+	cleanup = contrastStore.initialize();
+	await contrastStore.loadSettings();
+	contrastStore.setIncreaseContrast(true);
 	expect(document.documentElement.dataset.appearance).toBe('contrast');
 	expect(preferences.set).toHaveBeenCalledWith('increaseContrast', true);
 });

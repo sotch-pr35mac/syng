@@ -3,7 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -62,7 +62,7 @@ beforeEach(async () => {
 		set: vi.fn(),
 	};
 	setPreferenceManagerForTest(preferenceManager);
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
@@ -202,11 +202,11 @@ it('restores the theme palette only after an explicit reset', async () => {
 	expect(preferenceManager.set).toHaveBeenLastCalledWith('toneColors', {
 		hasCustomColors: false,
 		colors: [
-			'--sy-tone-default--1',
-			'--sy-tone-default--2',
-			'--sy-tone-default--3',
-			'--sy-tone-default--4',
-			'--sy-tone-default--5',
+			'--sy-tone-theme--1',
+			'--sy-tone-theme--2',
+			'--sy-tone-theme--3',
+			'--sy-tone-theme--4',
+			'--sy-tone-theme--5',
 		],
 	});
 });

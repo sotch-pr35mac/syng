@@ -5,7 +5,7 @@ import Settings from '@/routes/Settings.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
@@ -88,7 +88,7 @@ beforeEach(async () => {
 		}),
 	};
 	setPreferenceManagerForTest(preferenceManager);
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
@@ -112,7 +112,7 @@ it('shows Increase Contrast with General options only and keeps its state across
 		'Increase Contrast'
 	);
 	expect(
-		contrast.closest('.settings--setting')?.querySelector('.appearance-settings > label')
+		contrast.closest('.settings--setting')?.querySelector('.increase-contrast-settings > label')
 	).toBeNull();
 	await user.click(contrast);
 	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);

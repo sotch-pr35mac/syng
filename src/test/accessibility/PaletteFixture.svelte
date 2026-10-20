@@ -1,14 +1,14 @@
 <script lang="ts">
 	import Navigation from '@/components/Navigation/Navigation.svelte';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
-	import AppearanceSettings from '@/components/SettingsOption/AppearanceSettings.svelte';
+	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import SyListPreview from '@/components/SyList/SyListPreview.svelte';
 	import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.svelte';
 	import { setPreferenceManagerForTest } from '@/utils/appServices.js';
-	import { appearanceStore } from '@/stores/appearance.svelte.js';
+	import { contrastStore } from '@/stores/contrast.svelte.js';
 
 	const mobile = new URLSearchParams(location.search).has('mobile');
 	const preferenceKey = 'syng-fixture:increaseContrast';
@@ -21,7 +21,7 @@
 			if (key === 'increaseContrast') localStorage.setItem(preferenceKey, String(value));
 		},
 	} as unknown as Parameters<typeof setPreferenceManagerForTest>[0]);
-	void appearanceStore.loadSettings();
+	void contrastStore.loadSettings();
 	const words = [
 		{ key: 'mother', headline: '妈', subtitle: 'mā', content: 'mother' },
 		{ key: 'hemp', headline: '麻', subtitle: 'má', content: 'hemp; numb' },
@@ -33,7 +33,7 @@
 	{#if mobile}<MobileNavigation />{:else}<aside><Navigation /></aside>{/if}
 	<main>
 		<div class="appearance-control" data-testid="appearance-control">
-			<AppearanceSettings variant={mobile ? 'mobile' : 'desktop'} />
+			<IncreaseContrastSettings variant={mobile ? 'mobile' : 'desktop'} />
 			<SyToggle accessibleLabel="Comparison toggle" />
 		</div>
 		<div class="search-bar">

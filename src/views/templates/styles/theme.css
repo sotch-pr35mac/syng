@@ -34,35 +34,28 @@
 	--sy-fill--yellow: var(--sy-text--yellow);
 	--sy-fill--red: var(--sy-text--red);
 	--sy-fill--green: var(--sy-text--green);
-	--sy-text--on-fill: #ffffff;
+	--sy-text--on-fill: var(--sy-color--white);
 	--sy-icon--muted: var(--sy-color--grey-4);
 	--sy-icon--hover: var(--sy-color--blue);
-	/* Settings remains discoverable even before Contrast appearance is enabled. */
-	--sy-icon--settings: #838383;
-	--sy-icon--settings-hover: #007cff;
 	--sy-control--border: #6d6e6f;
 	--sy-control--track-off: var(--sy-color--grey-4);
 	--sy-control--knob: var(--sy-color--white);
 	--sy-focus-color: #2368c2;
 	--sy-focus-width: 2px;
 	--sy-focus-offset: 2px;
-	/* Labels remain readable; the appearance switch uses the shared toggle palette. */
-	--sy-appearance-switch--text: var(--sy-color--black);
 	--sy-input--border: var(--sy-border);
 	--sy-input--border-mobile: var(--sy-mobile-surface-border);
 
-	/* Tone blue uses the original, stronger blue-3 rather than the navigation accent.
-	   Custom palettes override only --sy-tone-color--*, leaving these defaults intact. */
-	--sy-tone-default--1: var(--sy-color--blue-3);
-	--sy-tone-default--2: var(--sy-text--yellow);
-	--sy-tone-default--3: var(--sy-text--red);
-	--sy-tone-default--4: var(--sy-color--green-3);
-	--sy-tone-default--5: var(--sy-text--muted);
-	--sy-tone-color--1: var(--sy-tone-default--1);
-	--sy-tone-color--2: var(--sy-tone-default--2);
-	--sy-tone-color--3: var(--sy-tone-default--3);
-	--sy-tone-color--4: var(--sy-tone-default--4);
-	--sy-tone-color--5: var(--sy-tone-default--5);
+	--sy-tone-theme--1: var(--sy-color--blue-3);
+	--sy-tone-theme--2: var(--sy-text--yellow);
+	--sy-tone-theme--3: var(--sy-text--red);
+	--sy-tone-theme--4: var(--sy-color--green-3);
+	--sy-tone-theme--5: var(--sy-text--muted);
+	--sy-tone-color--1: var(--sy-tone-theme--1);
+	--sy-tone-color--2: var(--sy-tone-theme--2);
+	--sy-tone-color--3: var(--sy-tone-theme--3);
+	--sy-tone-color--4: var(--sy-tone-theme--4);
+	--sy-tone-color--5: var(--sy-tone-theme--5);
 
 	/* Text Colors */
 	--sy-text--dark: var(--sy-color--black);
@@ -154,14 +147,13 @@
 	--sy-fill--green: #00873c;
 	--sy-icon--muted: #8c8c8c;
 	--sy-icon--hover: #007cff;
-	--sy-icon--settings: #8c8c8c;
 	--sy-control--border: #8c8c8c;
 	--sy-input--border: 1px solid var(--sy-control--border);
 	--sy-input--border-mobile: var(--sy-input--border);
 	--sy-control--track-off: #8c8c8c;
 	--sy-focus-color: var(--sy-text--blue);
-	--sy-tone-default--1: var(--sy-text--blue);
-	--sy-tone-default--4: var(--sy-text--green);
+	--sy-tone-theme--1: var(--sy-text--blue);
+	--sy-tone-theme--4: var(--sy-text--green);
 	/* Keep the tested surface behind text, including pressed mobile list rows. */
 	--sy-mobile-state-pressed: var(--sy-color--grey-2);
 }
@@ -204,8 +196,6 @@
 		--sy-color--grey-5: #9f9fa0;
 		--sy-color--green: var(--sy-color--green-1);
 
-		--sy-icon--settings: var(--sy-color--grey-4);
-		--sy-icon--settings-hover: var(--sy-color--blue);
 		--sy-control--border: var(--sy-text--muted);
 		--sy-focus-color: var(--sy-text--blue);
 
@@ -231,10 +221,8 @@
 		--sy-fill--yellow: var(--sy-text--yellow);
 		--sy-fill--red: var(--sy-text--red);
 		--sy-fill--green: var(--sy-text--green);
-		--sy-text--on-fill: #232323;
 		--sy-icon--muted: var(--sy-text--muted);
 		--sy-icon--hover: var(--sy-text--blue);
-		--sy-icon--settings: var(--sy-text--muted);
 		--sy-control--border: var(--sy-text--muted);
 		--sy-control--track-off: var(--sy-text--muted);
 	}

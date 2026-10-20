@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import OnboardingFlow from '@/components/Onboarding/OnboardingFlow.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { onboardingStore } from '@/stores/onboarding.svelte.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -108,7 +108,7 @@ beforeEach(async () => {
 		}),
 	};
 	setPreferenceManagerForTest(preferenceManager as never);
-	await appearanceStore.loadSettings();
+	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,

@@ -95,11 +95,11 @@ it.each([false, true])(
 			hasCustomColors
 				? palette
 				: [
-						'--sy-tone-default--1',
-						'--sy-tone-default--2',
-						'--sy-tone-default--3',
-						'--sy-tone-default--4',
-						'--sy-tone-default--5',
+						'--sy-tone-theme--1',
+						'--sy-tone-theme--2',
+						'--sy-tone-theme--3',
+						'--sy-tone-theme--4',
+						'--sy-tone-theme--5',
 					]
 		);
 		expect(manager._config.toneColors.value.colors).toEqual(palette);

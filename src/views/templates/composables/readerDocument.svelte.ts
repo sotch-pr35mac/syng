@@ -29,6 +29,7 @@ import type {
 	ReaderToken,
 } from '@/types/reader.js';
 import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import {
 	createReaderPageSnapshot,
 	READER_IMAGE_MAX_HEIGHT_RATIO,
@@ -91,7 +92,11 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	let systemPrefersDark = $state(false);
 	let pageContentHeight = $state(0);
 	const activeReaderTheme = $derived(
-		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
+		getReaderColorTheme(
+			readerSettings.colorTheme,
+			systemPrefersDark,
+			contrastStore.increaseContrast
+		)
 	);
 	const activeReaderThemeSettings = $derived(
 		getReaderColorThemeSettings(readerSettings.colorTheme, systemPrefersDark)

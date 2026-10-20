@@ -3,13 +3,13 @@ import { mount } from 'svelte';
 import '@/styles/theme.css';
 import '@/styles/syui.css';
 import { initializeAccessibility } from '@/composables/accessibility.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 
 Reflect.set(window, '__TAURI_OS_PLUGIN_INTERNALS__', {
 	platform: new URLSearchParams(location.search).has('mobile') ? 'android' : 'linux',
 });
 initializeAccessibility();
-appearanceStore.initialize();
+contrastStore.initialize();
 if (new URLSearchParams(location.search).get('appearance') === 'contrast') {
 	document.documentElement.dataset.appearance = 'contrast';
 }

@@ -117,7 +117,7 @@ test('appearance control remains readable at 320px with doubled text', async ({
 	await page.emulateMedia({ colorScheme: 'light' });
 	await page.goto(`${fixtureUrl}?palette&mobile&fontSize=32`);
 	const control = page.getByTestId('appearance-control');
-	const description = control.locator('.appearance-settings > label');
+	const description = control.locator('.increase-contrast-settings > label');
 	expect(
 		await description.evaluate((element) => element.scrollWidth <= element.clientWidth)
 	).toBe(true);
@@ -167,6 +167,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
 					? 'rgb(245, 245, 245)'
 					: 'rgb(44, 44, 44)';
 			await expect(standardField).toHaveCSS('border-top-color', originalBorder);
+			const settingsIcon = page.locator(
+				mobile ? 'a[href="#/settings"]' : 'a[href="#/settings"] .navigation--item'
+			);
+			const bookmarksIcon = page.locator(
+				mobile ? 'a[href="#/bookmarks"]' : 'a[href="#/bookmarks"] .navigation--item'
+			);
+			await expect(settingsIcon).toHaveCSS('color', 'rgb(154, 155, 156)');
+			await expect(bookmarksIcon).toHaveCSS('color', 'rgb(154, 155, 156)');
 			const switchResults = await new AxeBuilder({ page })
 				.include('[data-testid="appearance-control"]')
 				.withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
@@ -178,6 +186,14 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			await page.keyboard.press('Space');
 			await expect(toggle).toBeChecked();
 			await expect(page.locator('html')).toHaveAttribute('data-appearance', 'contrast');
+			await expect(settingsIcon).toHaveCSS(
+				'color',
+				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
+			);
+			await expect(bookmarksIcon).toHaveCSS(
+				'color',
+				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
+			);
 			await expect(standardField).toHaveCSS(
 				'border-top-color',
 				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
@@ -209,7 +225,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			await secondWindow.close();
 			await expect(page.getByRole('button', { name: 'Save word' })).toHaveCSS(
 				'color',
-				'rgb(255, 255, 255)'
+				colorScheme === 'light' ? 'rgb(255, 255, 255)' : 'rgb(35, 35, 35)'
 			);
 			await page.screenshot({ path: testInfo.outputPath('original.png'), fullPage: true });
 			await page.reload();

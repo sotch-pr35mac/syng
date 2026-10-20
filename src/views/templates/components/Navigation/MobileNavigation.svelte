@@ -78,17 +78,12 @@
 		min-height: var(--sy-mobile-touch-target);
 		border-radius: calc(var(--sy-border-radius) * 8);
 		font-family: var(--sy-font-family);
-		color: var(--sy-navigation-icon, var(--sy-icon--muted));
+		color: var(--sy-icon--muted);
 		text-decoration: none;
 		transition:
 			background-color var(--sy-transition-duration),
 			box-shadow var(--sy-transition-duration),
 			color var(--sy-transition-duration);
-	}
-
-	.mobile-nav__tab[href='#/settings'] {
-		--sy-navigation-icon: var(--sy-icon--settings);
-		--sy-navigation-icon-hover: var(--sy-icon--settings-hover);
 	}
 
 	.mobile-nav__tab:active {
@@ -97,14 +92,14 @@
 
 	@media (hover: hover) {
 		.mobile-nav__tab:hover {
-			color: var(--sy-navigation-icon-hover, var(--sy-icon--hover));
+			color: var(--sy-icon--hover);
 		}
 	}
 
 	:global(.mobile-nav__tab.mobile-nav__tab--active) {
 		background-color: var(--sy-color--white);
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-navigation-icon-hover, var(--sy-icon--hover));
+		color: var(--sy-icon--hover);
 	}
 
 	:global(.mobile-nav__tab.mobile-nav__tab--active:active) {

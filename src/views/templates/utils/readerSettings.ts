@@ -28,7 +28,7 @@ const LIGHT_READER_COLOR_THEME: ReaderColorTheme = {
 	selectionBackgroundColor: '#dbeafe',
 	selectionTextColor: '#111827',
 	stageBackgroundColor: '#f5f5f5',
-	mutedTextColor: '#667080',
+	mutedTextColor: '#6b7280',
 	borderColor: '#e5e7eb',
 	controlBackgroundColor: 'rgb(255 255 255 / 84%)',
 	controlTextColor: '#474c5a',
@@ -43,7 +43,7 @@ const SEPIA_READER_COLOR_THEME: ReaderColorTheme = {
 	selectionBackgroundColor: '#d7b884',
 	selectionTextColor: '#24170e',
 	stageBackgroundColor: '#d8c4a1',
-	mutedTextColor: '#664a31',
+	mutedTextColor: '#76593d',
 	borderColor: '#d6c19e',
 	controlBackgroundColor: 'rgb(244 236 216 / 88%)',
 	controlTextColor: '#4a3322',
@@ -79,11 +79,25 @@ export const READER_COLOR_THEMES: ReaderColorTheme[] = [
 
 export const DEFAULT_READER_COLOR_THEME = AUTOMATIC_READER_COLOR_THEME;
 
-export function getReaderColorTheme(id: ReaderColorThemeId, prefersDark = false): ReaderColorTheme {
-	if (id === 'automatic') {
-		return prefersDark ? DARK_READER_COLOR_THEME : LIGHT_READER_COLOR_THEME;
-	}
-	return READER_COLOR_THEMES.find((theme) => theme.id === id) ?? DEFAULT_READER_COLOR_THEME;
+const CONTRAST_READER_COLOR_THEMES: Record<
+	Exclude<ReaderColorThemeId, 'automatic'>,
+	ReaderColorTheme
+> = {
+	light: { ...LIGHT_READER_COLOR_THEME, mutedTextColor: '#667080' },
+	sepia: { ...SEPIA_READER_COLOR_THEME, mutedTextColor: '#664a31' },
+	dark: DARK_READER_COLOR_THEME,
+};
+
+/** Resolve the page theme independently of the optional Increase Contrast treatment. */
+export function getReaderColorTheme(
+	id: ReaderColorThemeId,
+	prefersDark = false,
+	increaseContrast = false
+): ReaderColorTheme {
+	const resolvedId = id === 'automatic' ? (prefersDark ? 'dark' : 'light') : id;
+	const theme =
+		READER_COLOR_THEMES.find((theme) => theme.id === resolvedId) ?? LIGHT_READER_COLOR_THEME;
+	return increaseContrast ? (CONTRAST_READER_COLOR_THEMES[resolvedId] ?? theme) : theme;
 }
 
 export function getReaderColorThemeSettings(

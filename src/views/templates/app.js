@@ -8,7 +8,7 @@ import { inDebugMode } from '@/utils/process.js';
 import { setDebugMode } from '@/utils/startup.js';
 import { initializeAccessibility } from '@/composables/accessibility.js';
 import { initializeSystemTypography } from '@/composables/systemTypography.js';
-import { appearanceStore } from '@/stores/appearance.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 
 const appContainer = document.getElementById('app');
 const charactersContainer = document.getElementById('characters');
@@ -72,7 +72,7 @@ async function bootstrap() {
 		// to false — the production databases — on any failure.
 		const debugMode = await inDebugMode();
 		setDebugMode(debugMode);
-		appearanceStore.initialize(debugMode);
+		contrastStore.initialize(debugMode);
 		await initializeSystemTypography();
 		const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
 		await dismissMobileSplashAfterPaint();
@@ -80,7 +80,7 @@ async function bootstrap() {
 		return mountedApp;
 	}
 	if (charactersContainer) {
-		appearanceStore.initialize(await inDebugMode());
+		contrastStore.initialize(await inDebugMode());
 		await initializeSystemTypography();
 		return mount(CharacterWindow, { target: charactersContainer });
 	}

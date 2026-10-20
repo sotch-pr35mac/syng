@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import AppearanceSettings from '@/components/SettingsOption/AppearanceSettings.svelte';
+	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
 	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
@@ -55,7 +55,7 @@
 			hideOnIPad: false,
 			hideOnMas: false,
 			centerLabel: true,
-			component: AppearanceSettings,
+			component: IncreaseContrastSettings,
 			props: { variant: isIPad() ? 'mobile' : 'desktop', showLabel: false },
 		},
 		...(isMobile()
@@ -227,7 +227,6 @@
 		<SyTab
 			role="tab"
 			id="settings-general-tab"
-			style="--sy-text--muted: var(--sy-appearance-switch--text)"
 			aria-controls="settings-panel"
 			active={activeTab === 'general'}
 			onclick={() => {

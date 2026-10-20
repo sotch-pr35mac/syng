@@ -106,7 +106,7 @@ function setIncreaseContrast(checked: boolean): void {
 	cacheAppearance();
 }
 
-export const appearanceStore = {
+export const contrastStore = {
 	get increaseContrast(): boolean {
 		return increaseContrast;
 	},
