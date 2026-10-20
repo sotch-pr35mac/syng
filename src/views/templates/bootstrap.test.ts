@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
 	setDebugMode: vi.fn(),
 	mount: vi.fn(),
 	handleError: vi.fn(),
+	initializeSystemTypography: vi.fn(),
+	initializeAppearance: vi.fn(),
 }));
 
 vi.mock('@/App.svelte', () => ({ default: 'desktop-app' }));
@@ -20,6 +22,13 @@ vi.mock('@/utils/device.js', () => ({
 vi.mock('@/utils/error.js', () => ({ handleError: mocks.handleError }));
 vi.mock('@/utils/process.js', () => ({ inDebugMode: mocks.inDebugMode }));
 vi.mock('@/utils/startup.js', () => ({ setDebugMode: mocks.setDebugMode }));
+vi.mock('@/composables/accessibility.js', () => ({ initializeAccessibility: vi.fn() }));
+vi.mock('@/composables/systemTypography.js', () => ({
+	initializeSystemTypography: mocks.initializeSystemTypography,
+}));
+vi.mock('@/stores/contrast.svelte.js', () => ({
+	contrastStore: { initialize: mocks.initializeAppearance },
+}));
 
 const splashMarkup = `
 	<div id="syng-bootstrap-launch-screen">
@@ -53,6 +62,7 @@ describe('application splash handoff', () => {
 		mocks.isIPad.mockReturnValue(false);
 		mocks.inDebugMode.mockResolvedValue(false);
 		mocks.mount.mockReturnValue({ mounted: true });
+		mocks.initializeSystemTypography.mockResolvedValue(() => {});
 		animationFrames = [];
 		vi.stubGlobal('requestAnimationFrame', (callback) => {
 			animationFrames.push(callback);
@@ -104,7 +114,24 @@ describe('application splash handoff', () => {
 		resolveDebugMode(false);
 		await appModule.default;
 		expect(mocks.mount).toHaveBeenCalledWith('desktop-app', { target: document.body });
+		expect(mocks.initializeSystemTypography).toHaveBeenCalledOnce();
+		expect(mocks.initializeAppearance).toHaveBeenCalledWith(false);
 		expect(document.getElementById('syng-bootstrap-launch-screen')).toBeNull();
+	});
+
+	it('applies the same saved appearance before mounting the separate character window', async () => {
+		document.body.id = 'characters';
+		document.body.innerHTML = '';
+		mocks.inDebugMode.mockResolvedValue(true);
+
+		const appModule = await import('@/app.js');
+		await appModule.default;
+
+		expect(mocks.initializeAppearance).toHaveBeenCalledWith(true);
+		expect(mocks.initializeAppearance.mock.invocationCallOrder[0]).toBeLessThan(
+			mocks.mount.mock.invocationCallOrder[0]
+		);
+		expect(mocks.mount).toHaveBeenCalledWith('character-window', { target: document.body });
 	});
 
 	it('reveals the splash on mobile and dismisses it after the shell mounts', async () => {

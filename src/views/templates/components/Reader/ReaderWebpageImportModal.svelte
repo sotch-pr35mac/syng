@@ -204,6 +204,11 @@
 				<SyTextInput
 					value={url}
 					id="reader-webpage-import-url"
+					aria-describedby={fetchError
+						? 'reader-webpage-import-error'
+						: networkStatus.isOffline
+							? 'reader-webpage-import-offline'
+							: undefined}
 					size="large"
 					classes={['reader-webpage-import__url-input']}
 					type="text"
@@ -245,7 +250,11 @@
 			</div>
 		</div>
 		{#if networkStatus.isOffline}
-			<p class="reader-webpage-import__offline-status" role="status">
+			<p
+				class="reader-webpage-import__offline-status"
+				role="status"
+				id="reader-webpage-import-offline"
+			>
 				You are offline. Connect to the internet to fetch a preview before importing.
 			</p>
 		{/if}
@@ -260,11 +269,20 @@
 			oncolorchange={(nextColor) => (color = nextColor)}
 		/>
 		{#if fetchError}
-			<p class="reader-webpage-import__error">{fetchError}</p>
+			<p class="reader-webpage-import__error" role="alert" id="reader-webpage-import-error">
+				{fetchError}
+			</p>
 		{/if}
+		<span class="sy-sr-only" role="status"
+			>{fetching
+				? 'Fetching webpage preview…'
+				: preparedPayloadIsValid
+					? 'Webpage preview ready.'
+					: ''}</span
+		>
 		{#if preparedPayloadIsValid && previewText}
 			<div class="reader-webpage-import__field">
-				<label for="reader-webpage-import-preview">Preview</label>
+				<span>Preview</span>
 				<section
 					class="reader-webpage-import__preview"
 					id="reader-webpage-import-preview"
@@ -297,7 +315,8 @@
 
 	:global(.reader-webpage-import__url-input) {
 		box-sizing: border-box;
-		flex: 1 1 var(--sy-space--none);
+		flex: 1 1 12rem;
+		min-width: 0;
 		margin: var(--sy-space--none);
 	}
 
@@ -307,18 +326,21 @@
 
 	.reader-webpage-import__error {
 		margin: var(--sy-space--none);
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 	}
 
 	.reader-webpage-import__offline-status {
-		display: none;
 		margin: var(--sy-space--none);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
-	@media (hover: none) {
+	@media (hover: hover) {
 		.reader-webpage-import__offline-status {
-			display: block;
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			clip-path: inset(50%);
+			overflow: hidden;
 		}
 	}
 
@@ -328,7 +350,7 @@
 		border: var(--sy-border);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		box-shadow: var(--sy-inner-shadow);
 		margin: calc(var(--sy-space--small) + var(--sy-space--large))
 			calc(var(--sy-space--small) + var(--sy-space));

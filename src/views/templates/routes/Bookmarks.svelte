@@ -20,6 +20,7 @@
 	import { onMount } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
@@ -205,15 +206,24 @@
 	]);
 </script>
 
-<div class="bookmarks--container">
+<div
+	class="bookmarks--container"
+	use:responsiveLayout={{ thresholdRem: 44, className: 'bookmarks--container--stacked' }}
+>
 	<div
 		class="bookmarks--header"
 		class:bookmarks--header--ipad={isIPadDevice}
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<SyDropdown values={dropdownList} onselection={handleListSelection}>
-			{#snippet children(open)}
-				<SyButton size="large" style="ghost" center={true}>
+			{#snippet children(open, triggerProps)}
+				<SyButton
+					{...triggerProps}
+					size="large"
+					style="ghost"
+					center={true}
+					aria-label={`Choose list: ${activeList}`}
+				>
 					{activeList}&nbsp;
 					{#if open}<ChevronUp size="20" />{:else}<ChevronDown size="20" />{/if}
 				</SyButton>
@@ -233,9 +243,10 @@
 							classes={['sy-tooltip--container']}
 						>
 							<action.icon size="20" />
-							<div class="sy-tooltip--body sy-tooltip--body-bottom">
-								<p>{action.description || action.tooltip}</p>
-							</div>
+							<span
+								class="sy-tooltip--body sy-tooltip--body-bottom"
+								aria-hidden="true">{action.description || action.tooltip}</span
+							>
 						</SyButton>
 					</span>
 				{/if}
@@ -245,6 +256,8 @@
 	<div class="bookmarks--content">
 		<div
 			class="bookmarks--word-listing"
+			role="region"
+			aria-label="Saved words"
 			data-elastic
 			use:scrollRestore={'bookmarks-word-listing'}
 		>
@@ -276,7 +289,12 @@
 				{/if}
 			{/if}
 		</div>
-		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
+		<div
+			class="dictionary-content"
+			role="region"
+			aria-label="Dictionary entry"
+			onclickcapture={clickTracker.captureClickPosition}
+		>
 			<DictionaryContent
 				word={activeWord}
 				showEmptyState={bookmarksRoute.contentStatus === 'ready'}
@@ -290,16 +308,27 @@
 	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>
 		{#snippet body()}
 			<div class="bookmarks-modal-content">
-				<p>What would you like to call this list?</p>
+				<label for="create-new-list-input">What would you like to call this list?</label>
 				<SyTextInput
 					size="large"
 					placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 					id="create-new-list-input"
+					aria-invalid={bookmarksRoute.creationNameInvalid || undefined}
+					aria-describedby={bookmarksRoute.creationError
+						? 'create-new-list-error'
+						: undefined}
 					value={newListName}
 					oninput={handleNewListName}
 				/>
 				{#if bookmarksRoute.creationError}
-					<p class="bookmarks--creation-error">{bookmarksRoute.creationError}</p>
+					<p
+						class="bookmarks--creation-error"
+						id="create-new-list-error"
+						role="alert"
+						aria-atomic="true"
+					>
+						{bookmarksRoute.creationError}
+					</p>
 				{/if}
 			</div>
 		{/snippet}
@@ -346,13 +375,13 @@
 
 	.bookmarks--list-empty p {
 		margin: 0;
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: var(--sy-font-weight--normal);
 		line-height: var(--sy-line-height--body);
 	}
 
 	.bookmarks--creation-error {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
 	}
 	.bookmarks--container {
@@ -370,6 +399,20 @@
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
 		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+	:global(.bookmarks--container--stacked) .bookmarks--content {
+		flex-direction: column;
+	}
+	:global(.bookmarks--container--stacked) .bookmarks--word-listing {
+		flex: 1;
+		min-height: 0;
+		height: auto;
+	}
+	:global(.bookmarks--container--stacked) .dictionary-content {
+		flex: 2;
+		min-height: 0;
+		height: auto;
 	}
 	.bookmarks--header--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
@@ -391,6 +434,7 @@
 	.bookmarks--word-listing {
 		display: flex;
 		flex: 2;
+		min-width: 0;
 		z-index: var(--sy-z-index--base);
 		flex-direction: column;
 		background-color: var(--sy-color--white);
@@ -406,6 +450,7 @@
 	.dictionary-content {
 		display: flex;
 		flex: 9;
+		min-width: 0;
 		box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 		height: 100%;
 		z-index: var(--sy-z-index--base-1);

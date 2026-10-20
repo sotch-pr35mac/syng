@@ -143,7 +143,7 @@
 	.reader-clipboard-import__textarea {
 		min-height: var(--sy-reader-import-textarea-min-height);
 		resize: vertical;
-		border: var(--sy-border);
+		border: var(--sy-input--border);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space);
 		box-shadow: var(--sy-inner-shadow);
@@ -158,6 +158,7 @@
 	}
 
 	.reader-clipboard-import__textarea::placeholder {
-		color: var(--sy-color--grey-1);
+		color: var(--sy-text--placeholder);
+		opacity: 1;
 	}
 </style>

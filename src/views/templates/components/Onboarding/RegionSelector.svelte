@@ -100,14 +100,14 @@
 	}
 
 	.region-selector__attribution a {
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 		text-decoration: underline;
 	}
 
 	.region-selector__retry {
 		align-self: flex-start;
 		font: inherit;
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 		background: none;
 		border: 0;
 		padding: 0;
@@ -120,7 +120,7 @@
 		font-size: var(--sy-font-size--medium);
 		color: var(--sy-color--black);
 		background-color: var(--sy-color--white);
-		border: var(--sy-border);
+		border: var(--sy-input--border);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space--large);
 		min-height: var(--sy-mobile-touch-target);

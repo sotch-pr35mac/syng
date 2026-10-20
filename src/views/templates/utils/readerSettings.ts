@@ -79,11 +79,25 @@ export const READER_COLOR_THEMES: ReaderColorTheme[] = [
 
 export const DEFAULT_READER_COLOR_THEME = AUTOMATIC_READER_COLOR_THEME;
 
-export function getReaderColorTheme(id: ReaderColorThemeId, prefersDark = false): ReaderColorTheme {
-	if (id === 'automatic') {
-		return prefersDark ? DARK_READER_COLOR_THEME : LIGHT_READER_COLOR_THEME;
-	}
-	return READER_COLOR_THEMES.find((theme) => theme.id === id) ?? DEFAULT_READER_COLOR_THEME;
+const CONTRAST_READER_COLOR_THEMES: Record<
+	Exclude<ReaderColorThemeId, 'automatic'>,
+	ReaderColorTheme
+> = {
+	light: { ...LIGHT_READER_COLOR_THEME, mutedTextColor: '#667080' },
+	sepia: { ...SEPIA_READER_COLOR_THEME, mutedTextColor: '#664a31' },
+	dark: DARK_READER_COLOR_THEME,
+};
+
+/** Resolve the page theme independently of the optional Increase Contrast treatment. */
+export function getReaderColorTheme(
+	id: ReaderColorThemeId,
+	prefersDark = false,
+	increaseContrast = false
+): ReaderColorTheme {
+	const resolvedId = id === 'automatic' ? (prefersDark ? 'dark' : 'light') : id;
+	const theme =
+		READER_COLOR_THEMES.find((theme) => theme.id === resolvedId) ?? LIGHT_READER_COLOR_THEME;
+	return increaseContrast ? (CONTRAST_READER_COLOR_THEMES[resolvedId] ?? theme) : theme;
 }
 
 export function getReaderColorThemeSettings(

@@ -77,6 +77,7 @@
 				{/if}
 				<span
 					class="preferred-characters__lexical sy-text--selectable"
+					lang={scriptLanguage(form.script)}
 					data-testid={lexicalTestIdPrefix
 						? `${lexicalTestIdPrefix}-${form.script}`
 						: undefined}

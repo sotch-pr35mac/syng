@@ -11,60 +11,58 @@
 
 	const { value = DEFAULT_READER_DOCUMENT_COLOR, onchange = () => {} }: Props = $props();
 
-	let colorInputElement: HTMLInputElement | undefined = $state();
-
+	const colorNames = ['White', 'Blue', 'Green', 'Orange', 'Pink', 'Lavender'];
 	const isCustomColor = $derived(!READER_DOCUMENT_COLORS.includes(value));
 </script>
 
-<div class="reader-color-swatches">
-	{#each READER_DOCUMENT_COLORS as color (color)}
+<div class="reader-color-swatches" role="group" aria-label="Document color">
+	{#each READER_DOCUMENT_COLORS as color, index (color)}
 		<button
 			class="reader-color-swatches__swatch"
 			class:reader-color-swatches__swatch--selected={value === color}
 			style:--swatch-color={color}
 			type="button"
-			aria-label={`Use ${color}`}
+			aria-label={`Use ${colorNames[index]} document color`}
 			aria-pressed={value === color}
 			onclick={() => onchange(color)}
 		></button>
 	{/each}
-	<button
-		class="reader-color-swatches__swatch reader-color-swatches__swatch--custom"
-		class:reader-color-swatches__swatch--selected={isCustomColor}
-		style:--swatch-color={isCustomColor ? value : undefined}
-		type="button"
-		aria-label="Custom color"
-		onclick={() => colorInputElement?.click()}
-	>
+	<label class="reader-color-swatches__custom-control">
 		<input
-			bind:this={colorInputElement}
 			value={isCustomColor ? value : DEFAULT_READER_DOCUMENT_COLOR}
 			class="reader-color-swatches__custom-input"
 			type="color"
-			tabindex={-1}
-			aria-hidden="true"
+			aria-label="Custom document color"
 			oninput={(event) => {
 				if (event.currentTarget instanceof HTMLInputElement) {
 					onchange(event.currentTarget.value);
 				}
 			}}
 		/>
-	</button>
+		<span
+			class="reader-color-swatches__swatch reader-color-swatches__swatch--custom"
+			class:reader-color-swatches__swatch--selected={isCustomColor}
+			style:--swatch-color={isCustomColor ? value : undefined}
+			aria-hidden="true"
+		></span>
+	</label>
 </div>
 
 <style>
 	.reader-color-swatches {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, 28px);
+		grid-template-columns: repeat(auto-fill, 1.75rem);
 		gap: var(--sy-space);
 		margin: calc(var(--sy-space--small) + var(--sy-space--large))
 			calc(var(--sy-space--small) + var(--sy-space));
 	}
 
 	.reader-color-swatches__swatch {
-		width: 28px;
-		height: 28px;
-		border: var(--sy-border);
+		display: block;
+		width: 1.75rem;
+		height: 1.75rem;
+		box-sizing: border-box;
+		border: 1px solid var(--sy-control--border);
 		border-radius: 50%;
 		box-shadow: var(--sy-shadow);
 		cursor: pointer;
@@ -82,13 +80,8 @@
 		box-shadow: var(--sy-shadow--active);
 	}
 
-	.reader-color-swatches__swatch:focus-visible {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 2px;
-	}
-
 	.reader-color-swatches__swatch--selected {
-		outline: 2px solid var(--sy-color--blue);
+		outline: 2px solid var(--sy-text--blue);
 		outline-offset: 2px;
 	}
 
@@ -120,12 +113,28 @@
 		}
 	}
 
+	.reader-color-swatches__custom-control {
+		position: relative;
+	}
+
 	.reader-color-swatches__custom-input {
 		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		opacity: 0;
-		cursor: pointer;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		border: 0;
+		clip-path: inset(50%);
+		overflow: hidden;
+		white-space: nowrap;
+	}
+
+	.reader-color-swatches__custom-input:focus-visible + span {
+		outline: var(--sy-focus-width) solid var(--sy-focus-color);
+		outline-offset: var(--sy-focus-offset);
+	}
+
+	.reader-color-swatches__custom-input:global(.sy-focus-visible) + span {
+		outline: var(--sy-focus-width) solid var(--sy-focus-color);
+		outline-offset: var(--sy-focus-offset);
 	}
 </style>

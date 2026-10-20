@@ -425,12 +425,14 @@ it('shows only the invitation for existing users, with explicit consent and no r
 	expect(queryByText('Welcome to Syng')).toBeNull();
 	expect(queryByText('Country or region')).toBeNull();
 	expect(getByRole('status', { name: 'Step 1 of 1' })).toBeTruthy();
-	expect((getByRole('checkbox') as HTMLInputElement).checked).toBe(false);
+	expect(
+		(getByRole('checkbox', { name: /I agree to be contacted/ }) as HTMLInputElement).checked
+	).toBe(false);
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
 	expect(submitInterviewSignup).toHaveBeenCalledWith({
@@ -472,7 +474,7 @@ it('keeps local save retries idempotent, changes the ID for edited details, and 
 	});
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	await waitFor(() => expect(getByRole('alert')).toBeTruthy());
 	expect(queryByText(/Error echoing/)).toBeNull();
@@ -506,7 +508,7 @@ it('prevents duplicate clicks during local storage and completes as soon as the 
 	const { getByRole, getByLabelText } = render(OnboardingFlow);
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'invalid');
-	await user.click(getByRole('checkbox'));
+	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
 	await user.click(getByRole('button', { name: 'Sign up and get started' }));
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
 	await user.clear(getByLabelText('Email address'));

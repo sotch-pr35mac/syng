@@ -1,35 +1,52 @@
-<script>
-	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '@/types/dropdown.js';
+<script lang="ts">
+	import { tick, type Component, type ComponentType, type Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import {
+		DROPDOWN_DIRECTIONS,
+		DROPDOWN_POSITIONS,
+		type DropdownDirection,
+		type DropdownPosition,
+	} from '@/types/dropdown.js';
 	import { isMobile } from '@/utils/device.js';
 	import { portal } from '@/actions/portal.svelte.js';
+	import { overlayFocus, focusOutsideOverlay } from '@/actions/overlayFocus.js';
 
 	/* Dropdown Values Prop */
 	// The values to be present in the dropdown list.
-	// Values should be an array of objects in the follow form:
+	// Values should be an array of objects in the following form:
 	// [
 	//   {
 	//     text: 'Value to display', // if applicable
 	//     icon: SvelteComponent, // if applicable
 	//     id: 'unique identifier',
-	//     component: SvelteComponent // One of the supported SyDropdown Item components
+	//     component: SvelteComponent, // One of the supported SyDropdown Item components
 	//     color: 'some color',
 	//     hover: 'some hover color'
 	//   }
+	// ]
 
 	/* Position Prop */
 	/* Possible Values */
 	// 'right' - Right aligned to the dropdown trigger
 
+	type DropdownValue = {
+		id?: string | number;
+		component: Component<any>;
+		text?: string;
+		icon?: Component<any> | ComponentType;
+		color?: string;
+		hover?: string;
+		disabled?: boolean;
+	};
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} [values] - ]
+	 * @property {DropdownValue[]} [values] - The values to be present in the dropdown list
 	 * @property {import('@/types/dropdown.js').DropdownPosition} [position] - Left aligned to the dropdown trigger
 	 * @property {import('@/types/dropdown.js').DropdownDirection} [direction] - Direction the dropdown opens
 	 * @property {boolean} [fixed] - Use fixed positioning to escape overflow:hidden containers
-	 * @property {import('svelte').Snippet<[boolean]>} [children] - Receives the open state as a parameter
-	 * @property {(id: any) => void} [onselection] - Selection handler
+	 * @property {import('svelte').Snippet<[boolean, HTMLButtonAttributes]>} [children] - Receives the open state and props to spread onto the trigger button
+	 * @property {(id: string | number) => void} [onselection] - Selection handler
 	 */
-
 	/** @type {Props} */
 	const {
 		values = [],
@@ -38,37 +55,54 @@
 		fixed = false,
 		children,
 		onselection = () => {},
+	}: {
+		values?: DropdownValue[];
+		position?: DropdownPosition;
+		direction?: DropdownDirection;
+		fixed?: boolean;
+		children?: Snippet<[boolean, HTMLButtonAttributes]>;
+		onselection?: (_id: string | number) => void;
 	} = $props();
 
+	const dropdownId = $props.id();
 	const mobile = isMobile();
-	let containerElement = $state(undefined);
-	let triggerElement = $state(undefined);
-	let fixedListElement = $state(undefined);
+	let containerElement = $state<HTMLElement>();
+	let triggerElement = $state<HTMLElement>();
+	let listElement = $state<HTMLElement>();
 	let fixedStyle = $state('');
-	const FIXED_DROPDOWN_OFFSET_PX = 4;
-	const FIXED_DROPDOWN_PORTAL_ATTRIBUTES = {
-		'data-sy-portal-overlay': 'true',
-	};
-
-	// Whether or not the dropdown is "open".
 	let active = $state(false);
+	let restoreFocus = $state(true);
+	let searchText = '';
+	let lastTypeTime = 0;
+	const TYPEAHEAD_RESET_MS = 600;
+	const FIXED_DROPDOWN_OFFSET_PX = 4;
 
-	const handleClick = (event) => {
-		const eventPath = event.composedPath();
-		if (
-			(!containerElement || !eventPath.includes(containerElement)) &&
-			(!fixedListElement || !eventPath.includes(fixedListElement))
-		) {
-			active = false;
+	function menuItems(): HTMLButtonElement[] {
+		return [
+			...(listElement?.querySelectorAll<HTMLButtonElement>(
+				'[role="menuitem"]:not(:disabled)'
+			) ?? []),
+		];
+	}
+
+	function focusItem(item: HTMLButtonElement | undefined): void {
+		if (item) {
+			for (const menuItem of menuItems()) {
+				menuItem.tabIndex = menuItem === item ? 0 : -1;
+			}
+			item.focus();
 		}
-	};
-	const handleSelect = (id) => {
-		if (id) {
-			onselection(id);
-			active = false;
-		}
-	};
-	const updateFixedPosition = () => {
+	}
+
+	// Close the dropdown if the user clicks outside of it. The menu's overlayFocus
+	// action handles outside clicks and listener cleanup, ignoring the trigger itself.
+	function closeMenu(restore = true): void {
+		restoreFocus = restore;
+		active = false;
+		searchText = '';
+	}
+
+	function updateFixedPosition(): void {
 		if (!fixed || !triggerElement) {
 			return;
 		}
@@ -85,84 +119,165 @@
 			styles.push(`top:${rect.bottom + FIXED_DROPDOWN_OFFSET_PX}px`);
 		}
 		fixedStyle = styles.join(';');
-	};
-	const toggleDropdown = () => {
-		active = !active;
-		if (active) {
-			updateFixedPosition();
-		}
-	};
+	}
 
-	// Close the dropdown if the user clicks outside of it
-	// $effect automatically handles cleanup when the component is destroyed
-	$effect(() => {
+	async function openMenu(trigger: HTMLElement, last = false): Promise<void> {
+		triggerElement = trigger;
+		restoreFocus = true;
+		active = true;
+		updateFixedPosition();
+		await tick();
+		const items = menuItems();
+		focusItem(last ? items[items.length - 1] : items[0]);
+	}
+
+	function handleTriggerClick(event: MouseEvent): void {
 		if (active) {
-			document.addEventListener('click', handleClick, { capture: true });
-			return () => {
-				document.removeEventListener('click', handleClick, { capture: true });
-			};
+			closeMenu();
+		} else {
+			void openMenu(event.currentTarget as HTMLElement);
 		}
-		return undefined;
+	}
+
+	function handleTriggerKeydown(event: KeyboardEvent): void {
+		if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+			event.preventDefault();
+			void openMenu(event.currentTarget as HTMLElement, event.key === 'ArrowUp');
+		}
+	}
+
+	const triggerProps = $derived<HTMLButtonAttributes>({
+		id: `${dropdownId}-trigger`,
+		'aria-haspopup': 'menu',
+		'aria-expanded': active,
+		'aria-controls': active ? `${dropdownId}-menu` : undefined,
+		onclick: handleTriggerClick,
+		onkeydown: handleTriggerKeydown,
 	});
 
-	const getListClasses = () => {
-		const classes = ['sy-dropdown--list'];
-		if (mobile) {
-			classes.push('sy-dropdown--list--mobile');
+	function handleSelect(value: DropdownValue): void {
+		if (!value.disabled && value.id !== undefined) {
+			closeMenu();
+			onselection(value.id);
 		}
-		if (!fixed) {
-			classes.push(`sy-dropdown--list--${position}`, `sy-dropdown--list--${direction}`);
+	}
+
+	function handleMenuKeydown(event: KeyboardEvent): void {
+		const items = menuItems();
+		const currentIndex = items.indexOf(document.activeElement as HTMLButtonElement);
+		let nextIndex: number | undefined;
+		if (event.key === 'ArrowDown') {
+			nextIndex = (currentIndex + 1) % items.length;
+		} else if (event.key === 'ArrowUp') {
+			nextIndex = (currentIndex - 1 + items.length) % items.length;
+		} else if (event.key === 'Home') {
+			nextIndex = 0;
+		} else if (event.key === 'End') {
+			nextIndex = items.length - 1;
+		} else if (event.key === 'Tab') {
+			closeMenu(false);
+			if (
+				listElement &&
+				triggerElement &&
+				focusOutsideOverlay(listElement, triggerElement, event.shiftKey)
+			) {
+				event.preventDefault();
+			}
+			return;
+		} else if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			items[currentIndex]?.click();
+			return;
+		} else if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+			const now = Date.now();
+			searchText =
+				now - lastTypeTime > TYPEAHEAD_RESET_MS ? event.key : searchText + event.key;
+			lastTypeTime = now;
+			const normalized = searchText.toLocaleLowerCase();
+			const repeated = [...normalized].every((character) => character === normalized[0]);
+			const prefix = repeated ? normalized[0] : normalized;
+			const ordered = [...items.slice(currentIndex + 1), ...items.slice(0, currentIndex + 1)];
+			const match = ordered.find((item) =>
+				item.textContent?.trim().toLocaleLowerCase().startsWith(prefix)
+			);
+			if (match) {
+				event.preventDefault();
+				focusItem(match);
+			}
+			return;
 		}
-		return classes.join(' ');
-	};
+		if (nextIndex !== undefined) {
+			event.preventDefault();
+			focusItem(items[nextIndex]);
+		}
+	}
+
+	// Portaled to <body> so position:fixed resolves against the viewport, not a
+	// transformed ancestor (e.g. SySnapSheet's translate3d), which would otherwise displace it.
+	function menuPortal(node: HTMLElement) {
+		return fixed
+			? portal(node, {
+					owner: containerElement,
+					attributes: { 'data-sy-portal-overlay': 'true' },
+				})
+			: undefined;
+	}
+
+	$effect(() => {
+		if (!active || !fixed) {
+			return undefined;
+		}
+		// A transformed ancestor (such as a dragging or snapping SySnapSheet) can
+		// move the trigger without a scroll or resize event. Follow its rendered
+		// bounds only while the fixed menu is open, including direction changes.
+		updateFixedPosition();
+		let positionFrame: number;
+		const followTrigger = () => {
+			updateFixedPosition();
+			positionFrame = requestAnimationFrame(followTrigger);
+		};
+		positionFrame = requestAnimationFrame(followTrigger);
+		window.addEventListener('resize', updateFixedPosition);
+		window.addEventListener('scroll', updateFixedPosition, true);
+		return () => {
+			cancelAnimationFrame(positionFrame);
+			window.removeEventListener('resize', updateFixedPosition);
+			window.removeEventListener('scroll', updateFixedPosition, true);
+		};
+	});
 </script>
 
-{#snippet listContent()}
-	<div class="sy-dropdown--list--content">
-		{#each values as value (value.id)}
-			<value.component
-				{...value}
-				onclick={() => {
-					if (!value.disabled) {
-						handleSelect(value.id);
-					}
-				}}
-			/>
-		{/each}
-	</div>
-{/snippet}
-
 <div class="sy-dropdown--container" class:sy-dropdown--active={active} bind:this={containerElement}>
-	<span
-		class="sy-dropdown--trigger"
-		role="button"
-		tabindex="0"
-		onclick={toggleDropdown}
-		onkeyup={toggleDropdown}
-		bind:this={triggerElement}
-	>
-		{@render children?.(active)}
-	</span>
-	{#if !fixed}
-		<div class={getListClasses()}>
-			{@render listContent()}
+	{@render children?.(active, triggerProps)}
+	{#if active}
+		<div
+			use:menuPortal
+			use:overlayFocus={{
+				initialFocus: 'none',
+				returnFocus: triggerElement,
+				restoreFocus,
+				closeOnOutside: true,
+				ignoreElement: triggerElement,
+				onclose: (reason) => closeMenu(reason !== 'outside'),
+			}}
+			bind:this={listElement}
+			id={`${dropdownId}-menu`}
+			role="menu"
+			aria-labelledby={`${dropdownId}-trigger`}
+			tabindex="-1"
+			onkeydown={handleMenuKeydown}
+			class={`sy-dropdown--list ${fixed ? 'sy-dropdown--fixed-list' : `sy-dropdown--list--${position} sy-dropdown--list--${direction}`}`}
+			class:sy-dropdown--list--mobile={mobile}
+			style={fixed ? fixedStyle : undefined}
+		>
+			<div class="sy-dropdown--list--content" role="none">
+				{#each values as value (value.id ?? value)}
+					<value.component {...value} onclick={() => handleSelect(value)} />
+				{/each}
+			</div>
 		</div>
 	{/if}
 </div>
-
-{#if fixed && active}
-	<!-- Portaled to <body> so position:fixed resolves against the viewport, not a
-	     transformed ancestor (e.g. SySnapSheet's translate3d), which would otherwise displace it. -->
-	<div
-		use:portal={{ attributes: FIXED_DROPDOWN_PORTAL_ATTRIBUTES }}
-		bind:this={fixedListElement}
-		class="sy-dropdown--list sy-dropdown--fixed-list"
-		class:sy-dropdown--list--mobile={mobile}
-		style={fixedStyle}
-	>
-		{@render listContent()}
-	</div>
-{/if}
 
 <style>
 	.sy-dropdown--container {
@@ -170,6 +285,7 @@
 		position: relative;
 	}
 	.sy-dropdown--list {
+		max-width: calc(100vw - 2rem);
 		position: absolute;
 		width: max-content;
 		background-color: var(--sy-color--white);
@@ -213,5 +329,7 @@
 	.sy-dropdown--fixed-list {
 		visibility: visible;
 		opacity: 1;
+		/* Geometry follows the trigger directly; animating it adds a trailing delay. */
+		transition-property: opacity;
 	}
 </style>

@@ -9,6 +9,7 @@
 import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
+import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -31,6 +32,7 @@ const createPreference = (restart, value) => {
 const createDefaultPreferences = () => ({
 	_id: 'config',
 	beta: createPreference(true, false),
+	increaseContrast: createPreference(false, false),
 	characterSet: createPreference(false, CHARACTER_SETS.BOTH),
 	colorCharactersByTone: createPreference(false, true),
 	colorPinyinByTone: createPreference(false, false),
@@ -40,13 +42,7 @@ const createDefaultPreferences = () => ({
 	showPartsOfSpeech: createPreference(false, true),
 	showAlternativePronunciations: createPreference(false, false),
 	toneColors: createPreference(true, {
-		colors: [
-			'--sy-color--blue-3',
-			'--sy-color--yellow-1',
-			'--sy-color--red-1',
-			'--sy-color--green-3',
-			'--sy-color--grey-4',
-		],
+		colors: [...THEME_TONE_COLOR_TOKENS],
 		hasCustomColors: false,
 	}),
 	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
@@ -141,6 +137,9 @@ export class PreferenceManager {
 				telemetryMessage: 'Requested preference does not exist.',
 			});
 			return undefined;
+		}
+		if (property === 'toneColors' && !preference.value.hasCustomColors) {
+			return { ...preference.value, colors: [...THEME_TONE_COLOR_TOKENS] };
 		}
 		return preference.value;
 	}

@@ -152,7 +152,7 @@
 			accessibleLabel="Enable Telemetry"
 			checked={telemetryLocked ? false : prefs.enabled}
 			disabled={telemetryLocked || savingPreference}
-			onchange={(v) => setPref('enabled', v)}
+			onchange={(checked) => setPref('enabled', checked)}
 		/>
 	</div>
 
@@ -167,9 +167,10 @@
 				</div>
 				<SyToggle
 					value="track_events"
+					accessibleLabel="Event Tracking"
 					checked={prefs.track_events}
 					disabled={savingPreference}
-					onchange={(v) => setPref('track_events', v)}
+					onchange={(checked) => setPref('track_events', checked)}
 				/>
 			</div>
 			<div class="telemetry--setting telemetry--setting--center">
@@ -179,9 +180,10 @@
 				</div>
 				<SyToggle
 					value="track_screen_views"
+					accessibleLabel="Screen Views"
 					checked={prefs.track_screen_views}
 					disabled={savingPreference}
-					onchange={(v) => setPref('track_screen_views', v)}
+					onchange={(checked) => setPref('track_screen_views', checked)}
 				/>
 			</div>
 			<div class="telemetry--setting telemetry--setting--center">
@@ -191,9 +193,10 @@
 				</div>
 				<SyToggle
 					value="track_errors"
+					accessibleLabel="Error Reporting"
 					checked={prefs.track_errors}
 					disabled={savingPreference}
-					onchange={(v) => setPref('track_errors', v)}
+					onchange={(checked) => setPref('track_errors', checked)}
 				/>
 			</div>
 			<div class="telemetry--setting telemetry--setting--center">
@@ -205,9 +208,10 @@
 				</div>
 				<SyToggle
 					value="include_device_context"
+					accessibleLabel="Device Context"
 					checked={prefs.include_device_context}
 					disabled={savingPreference}
-					onchange={(v) => setPref('include_device_context', v)}
+					onchange={(checked) => setPref('include_device_context', checked)}
 				/>
 			</div>
 		</div>
@@ -255,7 +259,7 @@
 	}
 
 	.telemetry--privacy-link {
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 		text-decoration: underline;
 	}
 
@@ -277,7 +281,7 @@
 
 	.telemetry--setting {
 		display: grid;
-		grid-template-columns: 1fr auto;
+		grid-template-columns: minmax(0, 1fr) auto;
 		gap: var(--sy-space--large);
 	}
 
@@ -327,25 +331,25 @@
 	.telemetry--badge {
 		padding: 2px 6px;
 		border-radius: 3px;
-		font-size: 10px;
+		font-size: 0.625rem;
 		font-weight: var(--sy-font-weight--bold);
 		text-transform: uppercase;
 		flex-shrink: 0;
 	}
 
 	.telemetry--badge--event {
-		background-color: var(--sy-color--blue-1);
-		color: var(--sy-color--white);
+		background-color: var(--sy-fill--blue);
+		color: var(--sy-text--on-fill);
 	}
 
 	.telemetry--badge--screen_view {
-		background-color: var(--sy-color--green-3);
-		color: var(--sy-color--white);
+		background-color: var(--sy-fill--green);
+		color: var(--sy-text--on-fill);
 	}
 
 	.telemetry--badge--error {
-		background-color: var(--sy-color--red-1);
-		color: var(--sy-color--white);
+		background-color: var(--sy-fill--red);
+		color: var(--sy-text--on-fill);
 	}
 
 	.telemetry--event-name {
@@ -362,7 +366,7 @@
 		margin: 0;
 		padding: var(--sy-space--large);
 		background-color: var(--sy-color--grey-2);
-		font-size: 11px;
+		font-size: 0.6875rem;
 		line-height: 1.5;
 		overflow-x: auto;
 		overflow-y: auto;

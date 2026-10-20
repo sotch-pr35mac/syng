@@ -17,6 +17,7 @@
 	import type { SearchEntry } from '@/types/search.js';
 	import { lexicalDisplayId } from '@/types/dictionary.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import { isIPad } from '@/utils/device.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
@@ -97,40 +98,66 @@
 	}
 </script>
 
-<div class="search-page-container">
+<div
+	class="search-page-container"
+	use:responsiveLayout={{ thresholdRem: 44, className: 'search-page-container--stacked' }}
+>
 	<div
 		class="search-bar-container"
 		class:search-bar-container--ipad={isIPadDevice}
 		data-testid="search-bar-container"
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
-		<SyButton style="ghost" size="large" disabled={!search.canGoBack} onclick={historyBack}>
+		<SyButton
+			aria-label="Previous word"
+			style="ghost"
+			size="large"
+			disabled={!search.canGoBack}
+			onclick={historyBack}
+		>
 			<ChevronLeft size="20" />
 		</SyButton>
 		<SyButton
 			style="ghost"
 			size="large"
+			aria-label="Next word"
 			disabled={!search.canGoForward}
 			onclick={historyForward}
 		>
 			<ChevronRight size="20" />
 		</SyButton>
-		<SyButton style="ghost" size="large" onclick={() => switchLang()}>
-			{search.searchLang}
-		</SyButton>
-		<SyTextInput
-			spellcheck="false"
+		<SyButton
+			aria-label={`Search language: ${search.searchLang} (${search.searchLang === 'EN' ? 'English' : search.searchLang === 'PY' ? 'Pinyin' : 'Chinese'}). Change language`}
 			style="ghost"
 			size="large"
-			placeholder="Search..."
-			id="search"
-			value={search.queryText}
-			oninput={(value) => doSearch(value, true)}
-			onenter={handleEnter}
-		/>
+			onclick={() => switchLang()}
+		>
+			{search.searchLang}
+		</SyButton>
+		<div class="search-input">
+			<SyTextInput
+				spellcheck="false"
+				style="ghost"
+				size="large"
+				placeholder="Search..."
+				id="search"
+				aria-label="Search dictionary"
+				value={search.queryText}
+				oninput={(value) => doSearch(value, true)}
+				onenter={handleEnter}
+			/>
+		</div>
 	</div>
+	<p class="sy-sr-only" role="status" aria-atomic="true">{search.statusMessage}</p>
 	<div class="search-content-container">
-		<div class="search-results" data-elastic use:scrollRestore={'search-results'}>
+		<div
+			class="search-results"
+			role="region"
+			aria-label="Search results"
+			aria-busy={search.isSearching}
+			data-elastic
+			use:scrollRestore={'search-results'}
+		>
 			<SearchEmptyState />
 			<SyList
 				style="preview"
@@ -141,7 +168,12 @@
 				onselection={handleSelection}
 			/>
 		</div>
-		<div class="dictionary-content" onclickcapture={clickTracker.captureClickPosition}>
+		<div
+			class="dictionary-content"
+			role="region"
+			aria-label="Dictionary entry"
+			onclickcapture={clickTracker.captureClickPosition}
+		>
 			<DictionaryContent
 				word={search.activeWord}
 				showEmptyState={search.status === 'idle' ||
@@ -180,6 +212,30 @@
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
+		flex-wrap: wrap;
+	}
+	.search-input {
+		flex: 1 1 12rem;
+		min-width: 0;
+	}
+	.search-input :global(.sy-text-input) {
+		box-sizing: border-box;
+		width: calc(100% - 2 * (var(--sy-space--small) + var(--sy-space)));
+		min-width: 0;
+	}
+	:global(.search-page-container--stacked) .search-content-container {
+		flex-direction: column;
+	}
+	:global(.search-page-container--stacked) .search-results {
+		flex: 1;
+		min-height: 0;
+		height: auto;
+	}
+	:global(.search-page-container--stacked) .dictionary-content {
+		flex: 2;
+		min-width: 0;
+		min-height: 0;
+		height: auto;
 	}
 	.search-bar-container--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
@@ -193,6 +249,7 @@
 	.search-results {
 		display: flex;
 		flex: 2;
+		min-width: 0;
 		z-index: var(--sy-z-index--base);
 		flex-direction: column;
 		background-color: var(--sy-color--white);
@@ -205,6 +262,7 @@
 	.dictionary-content {
 		display: flex;
 		flex: 9;
+		min-width: 0;
 		box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
 		height: 100%;
 		z-index: var(--sy-z-index--base-1);

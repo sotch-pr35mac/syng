@@ -13,6 +13,7 @@
 import { onMount, tick } from 'svelte';
 import type { ReaderPageSwipeOptions } from '@/actions/readerPageSwipe.svelte.js';
 import { readerRoute } from '@/composables/reader.svelte.js';
+import { subscribeSystemTypography } from '@/composables/systemTypography.js';
 import {
 	getReaderColorTheme,
 	getReaderColorThemeSettings,
@@ -28,6 +29,7 @@ import type {
 	ReaderToken,
 } from '@/types/reader.js';
 import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import {
 	createReaderPageSnapshot,
 	READER_IMAGE_MAX_HEIGHT_RATIO,
@@ -90,7 +92,11 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	let systemPrefersDark = $state(false);
 	let pageContentHeight = $state(0);
 	const activeReaderTheme = $derived(
-		getReaderColorTheme(readerSettings.colorTheme, systemPrefersDark)
+		getReaderColorTheme(
+			readerSettings.colorTheme,
+			systemPrefersDark,
+			contrastStore.increaseContrast
+		)
 	);
 	const activeReaderThemeSettings = $derived(
 		getReaderColorThemeSettings(readerSettings.colorTheme, systemPrefersDark)
@@ -125,6 +131,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	let currentPageImage = $state<string | undefined>(undefined);
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
+	let layoutRefreshPending = false;
 	const pageCurl = $derived<ReaderPageCurl | undefined>(
 		turningPage && currentPageImage && targetPageImage && turningPageDirection
 			? {
@@ -144,6 +151,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	let readerSettingsPopoverVisible = $state(false);
 	let readerSettingsButtonElement = $state<HTMLElement | undefined>(undefined);
 	let readerSettingsPopoverAnchor = $state<DOMRect | undefined>(undefined);
+	let dictionaryTriggerElement = $state<HTMLElement | undefined>(undefined);
 	const activeDocumentVerticalWriting = $derived(
 		Boolean(
 			activeDocument?.blocks.some(
@@ -163,9 +171,13 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		};
 		updateSystemColorScheme();
 		colorSchemeQuery.addEventListener('change', updateSystemColorScheme);
+		const stopTypography = subscribeSystemTypography(() => {
+			updatePageLayout().catch(() => {});
+		});
 
 		return () => {
 			stopTelemetry();
+			stopTypography();
 			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
 		};
 	});
@@ -236,6 +248,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		if (!token || !(event.currentTarget instanceof HTMLElement)) {
 			return;
 		}
+		dictionaryTriggerElement = event.currentTarget;
 		readerRoute.openDictionary(token, event.currentTarget.getBoundingClientRect());
 	}
 
@@ -335,6 +348,11 @@ export function createReaderDocumentController(options: ReaderDocumentController
 
 	async function updatePageLayout(): Promise<void> {
 		await tick();
+		// Finish the existing turn before repagination changes its target index.
+		if (turningPage) {
+			layoutRefreshPending = true;
+			return;
+		}
 		const pageElement = options.getPageElement();
 		if (!pageElement) {
 			return;
@@ -353,6 +371,13 @@ export function createReaderDocumentController(options: ReaderDocumentController
 			parsePixelValue(pageStyles.paddingTop, 0) +
 			parsePixelValue(pageStyles.paddingBottom, 0);
 		const contentHeight = pageElement.clientHeight - paddingY;
+		const contentWidth = pageElement.clientWidth - paddingX;
+		if (contentWidth <= 0 || contentHeight <= 0) {
+			return;
+		}
+		if (readerSettingsPopoverVisible && readerSettingsButtonElement) {
+			readerSettingsPopoverAnchor = readerSettingsButtonElement.getBoundingClientRect();
+		}
 		const characterMeasureElement = options.getCharacterMeasureElement();
 		const measuredCharacterWidth = characterMeasureElement
 			? characterMeasureElement.getBoundingClientRect().width /
@@ -361,7 +386,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		pageContentHeight = contentHeight;
 
 		await readerRoute.setPageLayout({
-			contentWidth: pageElement.clientWidth - paddingX,
+			contentWidth,
 			contentHeight,
 			fontSize,
 			lineHeight,
@@ -462,6 +487,10 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		currentPageImage = undefined;
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
+		if (layoutRefreshPending) {
+			layoutRefreshPending = false;
+			updatePageLayout().catch(() => {});
+		}
 	}
 
 	return {
@@ -505,6 +534,9 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		},
 		get readerSettingsButtonElement(): HTMLElement | undefined {
 			return readerSettingsButtonElement;
+		},
+		get dictionaryTriggerElement(): HTMLElement | undefined {
+			return dictionaryTriggerElement;
 		},
 		get readerPageSwipeOptions(): ReaderPageSwipeOptions {
 			return readerPageSwipeOptions;

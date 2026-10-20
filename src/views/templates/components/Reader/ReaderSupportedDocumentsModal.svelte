@@ -51,7 +51,9 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--large);
-		width: min(460px, 68vw);
+		width: 28.75rem;
+		max-width: 100%;
+		box-sizing: border-box;
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
 	}

@@ -4,7 +4,6 @@ import ReaderClipboardImportModal from '@/components/Reader/ReaderClipboardImpor
 import ReaderDocumentImportModal from '@/components/Reader/ReaderDocumentImportModal.svelte';
 import { handleError } from '@/utils/error.js';
 import type { ReaderImportResult } from '@/types/reader.js';
-import { READER_DOCUMENT_COLORS } from '@/utils/readerDocument.js';
 
 vi.mock('@/utils/error.js', () => ({ handleError: vi.fn() }));
 
@@ -30,23 +29,25 @@ it.each(['clipboard', 'file'] as const)(
 						onclose,
 						onimport,
 					});
-		const { container, getByRole, getByText } = rendered;
+		const { baseElement, getByRole, queryByRole } = rendered;
 		if (source === 'clipboard') {
 			await fireEvent.input(getByRole('textbox', { name: 'Text' }), {
 				target: { value: '你好\nA pasted passage.' },
 			});
 		}
-		const titleInput = container.querySelector('input[id$="-title"]') as HTMLInputElement;
+		const titleInput = baseElement.querySelector('input[id$="-title"]') as HTMLInputElement;
 		await fireEvent.input(titleInput, { target: { value: 'My edited title' } });
-		const selectedColor = READER_DOCUMENT_COLORS[1];
-		await fireEvent.click(getByRole('button', { name: `Use ${selectedColor}` }));
+		await fireEvent.click(getByRole('button', { name: 'Use Blue document color' }));
 		await fireEvent.click(getByRole('button', { name: 'Import' }));
 
-		await waitFor(() => expect(getByText('Could not save the document.')).toBeTruthy());
+		await waitFor(() =>
+			expect(getByRole('alert').textContent).toContain('Could not save the document.')
+		);
+		expect(getByRole('alert').getAttribute('aria-atomic')).toBe('true');
 		expect(onclose).not.toHaveBeenCalled();
 		expect(titleInput.value).toBe('My edited title');
 		expect(
-			getByRole('button', { name: `Use ${selectedColor}` }).getAttribute('aria-pressed')
+			getByRole('button', { name: 'Use Blue document color' }).getAttribute('aria-pressed')
 		).toBe('true');
 		expect(getByRole('button', { name: 'Import' }).hasAttribute('disabled')).toBe(false);
 		if (source === 'clipboard') {
@@ -57,6 +58,7 @@ it.each(['clipboard', 'file'] as const)(
 
 		await fireEvent.click(getByRole('button', { name: 'Import' }));
 		await waitFor(() => expect(onclose).toHaveBeenCalledTimes(1));
+		expect(queryByRole('alert')).toBeNull();
 		expect(onimport.mock.calls[1]).toEqual(onimport.mock.calls[0]);
 	}
 );
@@ -65,7 +67,7 @@ it('keeps clipboard input retryable after an unexpected rejection without a glob
 	const failure = new Error('Unexpected storage rejection');
 	const onimport = vi.fn().mockRejectedValueOnce(failure);
 	const onclose = vi.fn();
-	const { getByRole, getByText } = render(ReaderClipboardImportModal, {
+	const { getByRole } = render(ReaderClipboardImportModal, {
 		visible: true,
 		onimport,
 		onclose,
@@ -75,7 +77,9 @@ it('keeps clipboard input retryable after an unexpected rejection without a glob
 	});
 	await fireEvent.click(getByRole('button', { name: 'Import' }));
 	await waitFor(() =>
-		expect(getByText('There was an error importing the reader document.')).toBeTruthy()
+		expect(getByRole('alert').textContent).toContain(
+			'There was an error importing the reader document.'
+		)
 	);
 	expect(onclose).not.toHaveBeenCalled();
 	expect(getByRole('button', { name: 'Import' }).hasAttribute('disabled')).toBe(false);

@@ -178,16 +178,16 @@
 		padding: 0;
 		border: 0;
 		background: transparent;
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 		font: inherit;
 		cursor: pointer;
 	}
 	.dictionary-content--example-sentence__token:hover {
-		color: var(--sy-color--blue-2);
+		text-decoration: underline;
 	}
 	.dictionary-content--example-sentence__translation {
 		margin-top: var(--sy-space--small);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--small);
 		font-style: italic;
 	}

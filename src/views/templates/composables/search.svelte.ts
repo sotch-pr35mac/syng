@@ -48,6 +48,8 @@ interface QueryRequest {
 let currentRequest: QueryRequest | undefined;
 let displayedRequest: QueryRequest | undefined;
 let queryText = $state('');
+let isSearching = $state(false);
+let statusMessage = $state('');
 let popoverRequest = 0;
 const searchHistory = $state<SearchEntry[]>([]);
 let historyPosition = $state(-1);
@@ -105,6 +107,8 @@ function runSearch(rawText: string, language?: SearchLang): void {
 		displayedRequest = undefined;
 		fullResults = [];
 		status = 'idle';
+		isSearching = false;
+		statusMessage = '';
 		return;
 	}
 	const request: QueryRequest = {
@@ -119,6 +123,8 @@ function runSearch(rawText: string, language?: SearchLang): void {
 	};
 	currentRequest = request;
 	status = 'loading';
+	isSearching = true;
+	statusMessage = '';
 	searchTrackDebounce = setTimeout(() => commitQuery(request, 'pause'), SEARCH_TRACK_DEBOUNCE_MS);
 	const classification = language
 		? Promise.resolve(language)
@@ -141,6 +147,7 @@ function runSearch(rawText: string, language?: SearchLang): void {
 			}
 			return undefined;
 		}
+		isSearching = false;
 		if (request.language) {
 			searchLang = request.language;
 		}
@@ -149,11 +156,16 @@ function runSearch(rawText: string, language?: SearchLang): void {
 			fullResults = queried.value;
 			request.resultCount = queried.value.length;
 			displayedRequest = request;
+			statusMessage =
+				fullResults.length === 0
+					? 'No results.'
+					: `${fullResults.length} ${fullResults.length === 1 ? 'result' : 'results'}.`;
 		} else {
 			fullResults = [];
 			displayedRequest = undefined;
 			request.outcome = 'error';
 			status = 'error';
+			statusMessage = 'Search failed.';
 			handleError('Search failed.', queried.reason, {
 				privateValues: [request.text],
 				context: { operation: 'dictionary.search', stage: 'query' },
@@ -356,6 +368,12 @@ export const searchStore = {
 	getResultPreviews,
 	get status(): SearchStatus {
 		return status;
+	},
+	get isSearching(): boolean {
+		return isSearching;
+	},
+	get statusMessage(): string {
+		return statusMessage;
 	},
 	get queryText(): string {
 		return queryText;

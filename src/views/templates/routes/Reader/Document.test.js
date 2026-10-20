@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import Document from '@/routes/Reader/Document.svelte';
+import { contrastStore } from '@/stores/contrast.svelte.js';
+import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 import { readerRoute } from '@/composables/reader.svelte.js';
+import * as systemTypography from '@/composables/systemTypography.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import {
 	setBookmarkManagerForTest,
@@ -243,13 +246,11 @@ it('adds a reader dictionary word to a selected list from the popup', async () =
 	});
 	await bookmarksStore.refresh();
 
-	const { container, findByText } = renderReaderDocument('reader-1');
+	const { findByText } = renderReaderDocument('reader-1');
 	await fireEvent.click(await findByText('你好'));
 	await findByText('hello');
 
-	const listTrigger = container.querySelector(
-		'.dictionary-popover__content .sy-dropdown--trigger button'
-	);
+	const listTrigger = await screen.findByRole('button', { name: 'Choose bookmark lists' });
 	expect(listTrigger).toBeTruthy();
 
 	await user.click(listTrigger);
@@ -270,7 +271,11 @@ it('toggles the reader settings popover from the header', async () => {
 
 	expect(await findByText('Theme')).toBeTruthy();
 	expect(await findByText('Text size')).toBeTruthy();
-	expect(settingsButton.getAttribute('aria-pressed')).toBe('true');
+	expect(settingsButton.getAttribute('aria-expanded')).toBe('true');
+	expect(settingsButton.getAttribute('aria-haspopup')).toBe('dialog');
+	const settingsDialog = document.getElementById(settingsButton.getAttribute('aria-controls'));
+	expect(settingsDialog?.getAttribute('role')).toBe('dialog');
+	expect(settingsDialog?.getAttribute('aria-label')).toBe('Reader settings');
 });
 
 it('returns to the library when the back button is clicked', async () => {
@@ -288,3 +293,105 @@ it('navigates to the library when the route has no document id', async () => {
 
 	await waitFor(() => expect(window.location.hash).toBe('#/read'));
 });
+
+it('remeasures the available page on system text changes without changing Reader body sizing', async () => {
+	let typographyListener;
+	const stopTypography = vi.fn();
+	vi.spyOn(systemTypography, 'subscribeSystemTypography').mockImplementation((listener) => {
+		typographyListener = listener;
+		return stopTypography;
+	});
+	const { container, findByText, unmount } = renderReaderDocument('reader-1');
+	await findByText('你好');
+	const pageElement = container.querySelector('.reader__page');
+	Object.defineProperties(pageElement, {
+		clientHeight: { configurable: true, value: 600 },
+		clientWidth: { configurable: true, value: 400 },
+	});
+	readerRoute.setPageLayout.mockClear();
+	typographyListener({ rootFontSizePx: 24, revision: 1 });
+	await waitFor(() =>
+		expect(readerRoute.setPageLayout).toHaveBeenCalledWith(
+			expect.objectContaining({ contentWidth: 400, contentHeight: 600, fontSize: 20 })
+		)
+	);
+	expect(
+		container.querySelector('.reader').style.getPropertyValue('--reader-page-font-size')
+	).toBe('20px');
+	await unmount();
+	expect(stopTypography).toHaveBeenCalledOnce();
+});
+
+it('keeps the current reading position when larger application controls leave less page space', async () => {
+	let typographyListener;
+	vi.spyOn(systemTypography, 'subscribeSystemTypography').mockImplementation((listener) => {
+		typographyListener = listener;
+		return () => {};
+	});
+	readerRoute.setPageLayout.mockRestore();
+	const text = '你好世界'.repeat(500);
+	const longDocument = {
+		...READER_DOCUMENT,
+		text,
+		blocks: [
+			{ id: 'block-1', kind: 'paragraph', text, start_offset: 0, end_offset: text.length },
+		],
+	};
+	setReaderDocumentManagerForTest(
+		buildReaderDocumentManager({
+			getDocuments: vi.fn(() => Promise.resolve([longDocument])),
+			getDocument: vi.fn(() => Promise.resolve(longDocument)),
+			updateProgress: vi.fn(() => Promise.resolve(longDocument)),
+		})
+	);
+	const { container, findByText } = renderReaderDocument('reader-1');
+	await findByText('Story');
+	const pageElement = container.querySelector('.reader__page');
+	Object.defineProperties(pageElement, {
+		clientHeight: { configurable: true, value: 400 },
+		clientWidth: { configurable: true, value: 200 },
+	});
+	typographyListener({ rootFontSizePx: 16, revision: 1 });
+	await waitFor(() => expect(readerRoute.pageCount).toBeGreaterThan(4));
+	await readerRoute.goToPage(3);
+	const readingAnchor = readerRoute.currentPage.start;
+	const originalPageCount = readerRoute.pageCount;
+	Object.defineProperty(pageElement, 'clientHeight', { configurable: true, value: 200 });
+	typographyListener({ rootFontSizePx: 24, revision: 2 });
+	await waitFor(() => expect(readerRoute.pageCount).toBeGreaterThan(originalPageCount));
+	expect(readerRoute.currentPage.start).toBeLessThanOrEqual(readingAnchor);
+	expect(readerRoute.currentPage.end).toBeGreaterThan(readingAnchor);
+	expect(
+		container.querySelector('.reader').style.getPropertyValue('--reader-page-font-size')
+	).toBe('20px');
+});
+
+it.each([
+	['light', '#6b7280', '#667080'],
+	['sepia', '#76593d', '#664a31'],
+])(
+	'updates the %s Reader palette live without changing the saved page theme',
+	async (theme, originalMuted, contrastMuted) => {
+		contrastStore.setIncreaseContrast(false);
+		const { container, findByText } = renderReaderDocument('reader-1');
+		await findByText('Story');
+		readerSettingsStore.applyColorTheme(theme);
+		const readerElement = container.querySelector('.reader');
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		const savedSettings = { ...readerSettingsStore.settings };
+
+		contrastStore.setIncreaseContrast(true);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(contrastMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+
+		contrastStore.setIncreaseContrast(false);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+	}
+);

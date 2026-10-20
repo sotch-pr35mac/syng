@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -15,6 +15,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -36,9 +37,10 @@
 		normalizeDictionaryLookupRequest,
 		type DictionaryLookupRequest,
 	} from '@/composables/dictionaryPopover.svelte.js';
-	import { DROPDOWN_DIRECTIONS } from '@/types/dropdown.js';
+	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
+	let dictionaryElement = $state<HTMLElement>();
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	let currentSnap = $state<SheetSnap>(mobileBookmarksSnapStore.value);
 	const activeList = $derived(bookmarksRoute.activeList);
@@ -73,7 +75,6 @@
 	const dropdownDirection = $derived(
 		currentSnap === 'full' ? DROPDOWN_DIRECTIONS.DOWN : DROPDOWN_DIRECTIONS.UP
 	);
-	const OVERFLOW_MENU_OFFSET_PX = 4;
 
 	onMount(() => {
 		const requestedList = new URLSearchParams(router.querystring).get('list');
@@ -108,7 +109,10 @@
 		}
 	}
 
-	function handleListSelection(id: string): void {
+	function handleListSelection(id: string | number): void {
+		if (typeof id !== 'string') {
+			return;
+		}
 		if (id === CREATE_NEW_LIST_ID) {
 			bookmarksRoute.clearCreationError();
 			createNewModalVisible = true;
@@ -118,9 +122,19 @@
 		bookmarksRoute.setActiveList(id).catch(() => {});
 	}
 
-	function handleSelectWord(data: { index: number; value: any }): void {
+	function handleSelectWord(data: { index: number; value: any; keyboard?: boolean }): void {
 		bookmarksRoute.selectWord(data);
 		sheetRef?.collapse();
+		if (data.keyboard) {
+			void tick()
+				.then(() => {
+					dictionaryElement
+						?.querySelector<HTMLElement>('h1')
+						?.focus({ preventScroll: true });
+					return undefined;
+				})
+				.catch(() => {});
+		}
 	}
 
 	function handleVisibleWordListChange(values: WordListPreviewItem[]): void {
@@ -154,49 +168,32 @@
 		});
 	}
 
-	// Overflow menu
-	let overflowOpen = $state(false);
-	let overflowAnchorElement = $state<HTMLElement | undefined>(undefined);
-	let overflowMenuStyle = $state('');
-
-	function positionOverflowMenu(): void {
-		if (!overflowAnchorElement) {
-			return;
-		}
-		const rect = overflowAnchorElement.getBoundingClientRect();
-		const rightOffset = window.innerWidth - rect.right;
-		if (currentSnap === 'full') {
-			overflowMenuStyle = `position:fixed; right:${rightOffset}px; top:${rect.bottom + OVERFLOW_MENU_OFFSET_PX}px;`;
-		} else {
-			overflowMenuStyle = `position:fixed; right:${rightOffset}px; bottom:${window.innerHeight - rect.top + OVERFLOW_MENU_OFFSET_PX}px;`;
+	const listActions = $derived([
+		{ id: 'import', text: 'Import', icon: FolderDown, component: TextWithIconDropdownItem },
+		{ id: 'export', text: 'Export', icon: FolderUp, component: TextWithIconDropdownItem },
+		...(activeList === DEFAULT_BOOKMARKS_LIST
+			? []
+			: [
+					{
+						id: 'delete',
+						text: 'Delete',
+						icon: Trash2,
+						color: 'red',
+						component: TextWithIconDropdownItem,
+					},
+				]),
+	]);
+	function handleListAction(action: string | number): void {
+		if (action === 'import') {
+			importList();
+		} else if (action === 'export') {
+			exportActiveList();
+		} else if (action === 'delete') {
+			deleteActiveList();
 		}
 	}
-
-	function toggleOverflowMenu(): void {
-		overflowOpen = !overflowOpen;
-		if (overflowOpen) {
-			positionOverflowMenu();
-		}
-	}
-
-	function closeOverflowMenu(): void {
-		overflowOpen = false;
-	}
-
-	$effect(() => {
-		if (overflowOpen) {
-			const handleOutsideClick = () => closeOverflowMenu();
-			setTimeout(
-				() => document.addEventListener('click', handleOutsideClick, { once: true }),
-				0
-			);
-			return () => document.removeEventListener('click', handleOutsideClick);
-		}
-		return undefined;
-	});
 
 	function importList(): void {
-		closeOverflowMenu();
 		bookmarksRoute
 			.importList()
 			.then((imported) => {
@@ -209,12 +206,10 @@
 	}
 
 	function exportActiveList(): void {
-		closeOverflowMenu();
 		bookmarksRoute.exportActiveList();
 	}
 
 	function deleteActiveList(): void {
-		closeOverflowMenu();
 		bookmarksRoute.confirmDeleteActiveList().catch(() => {});
 	}
 
@@ -267,6 +262,7 @@
 		{#if activeWord}
 			<div
 				class="mobile-bookmarks__dict-wrapper"
+				bind:this={dictionaryElement}
 				onclickcapture={clickTracker.captureClickPosition}
 			>
 				<DictionaryContent
@@ -286,7 +282,11 @@
 		{/if}
 	</div>
 
-	<SySnapSheet bind:this={sheetRef} onSnapChange={handleSnapChange}>
+	<SySnapSheet
+		accessibleName="Bookmark lists"
+		bind:this={sheetRef}
+		onSnapChange={handleSnapChange}
+	>
 		<div class="mobile-bookmarks__header-row">
 			<SyDropdown
 				values={dropdownList}
@@ -294,8 +294,13 @@
 				direction={dropdownDirection}
 				fixed={true}
 			>
-				{#snippet children(open)}
-					<SyButton style="ghost" size="small">
+				{#snippet children(open, triggerProps)}
+					<SyButton
+						{...triggerProps}
+						aria-label={`Choose list: ${activeList}`}
+						style="ghost"
+						size="small"
+					>
 						<span class="mobile-bookmarks__list-name">{activeList}</span>&nbsp;
 						{#if open}<ChevronUp size="16" />{:else}<ChevronDown size="16" />{/if}
 					</SyButton>
@@ -317,11 +322,24 @@
 					</SyButton>
 				{/each}
 			</div>
-			<div class="mobile-bookmarks__overflow-anchor" bind:this={overflowAnchorElement}>
-				<SyButton style="ghost" size="small" onclick={toggleOverflowMenu}>
-					<EllipsisVertical size="20" />
-				</SyButton>
-			</div>
+			<SyDropdown
+				values={listActions}
+				onselection={handleListAction}
+				direction={dropdownDirection}
+				position={DROPDOWN_POSITIONS.RIGHT}
+				fixed={true}
+			>
+				{#snippet children(_open, triggerProps)}
+					<SyButton
+						{...triggerProps}
+						style="ghost"
+						size="small"
+						aria-label="List actions"
+					>
+						<EllipsisVertical size="20" />
+					</SyButton>
+				{/snippet}
+			</SyDropdown>
 		</div>
 		{#if studyEligibility.flashcards && !studyEligibility.quiz}
 			<p class="mobile-bookmarks__study-requirement">{studyEligibility.message}</p>
@@ -330,6 +348,8 @@
 		<div
 			class="mobile-bookmarks__results"
 			class:mobile-bookmarks__results--empty={showEmptyState}
+			role="region"
+			aria-label="Saved words"
 			onfocusin={handleFilterFocus}
 			use:scrollRestore={'mobile-bookmarks-results'}
 		>
@@ -364,41 +384,30 @@
 	</SySnapSheet>
 </div>
 
-{#if overflowOpen}
-	<div class="mobile-bookmarks__overflow-menu" style={overflowMenuStyle}>
-		<button class="mobile-bookmarks__overflow-item" onclick={importList}>
-			<FolderDown size="18" />
-			<span>Import</span>
-		</button>
-		<button class="mobile-bookmarks__overflow-item" onclick={exportActiveList}>
-			<FolderUp size="18" />
-			<span>Export</span>
-		</button>
-		{#if activeList !== DEFAULT_BOOKMARKS_LIST}
-			<button
-				class="mobile-bookmarks__overflow-item mobile-bookmarks__overflow-item--danger"
-				onclick={deleteActiveList}
-			>
-				<Trash2 size="18" />
-				<span>Delete</span>
-			</button>
-		{/if}
-	</div>
-{/if}
-
 <SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>
 	{#snippet body()}
 		<div class="mobile-bookmarks__modal-content">
-			<p>What would you like to call this list?</p>
+			<label for="create-new-list-input">What would you like to call this list?</label>
 			<SyTextInput
 				size="large"
 				placeholder={`ex. ${bookmarksRoute.getNewPlaceholder()}`}
 				id="create-new-list-input"
+				aria-invalid={bookmarksRoute.creationNameInvalid || undefined}
+				aria-describedby={bookmarksRoute.creationError
+					? 'create-new-list-error'
+					: undefined}
 				value={newListName}
 				oninput={handleNewListName}
 			/>
 			{#if bookmarksRoute.creationError}
-				<p class="mobile-bookmarks__creation-error">{bookmarksRoute.creationError}</p>
+				<p
+					class="mobile-bookmarks__creation-error"
+					id="create-new-list-error"
+					role="alert"
+					aria-atomic="true"
+				>
+					{bookmarksRoute.creationError}
+				</p>
 			{/if}
 		</div>
 	{/snippet}
@@ -453,13 +462,13 @@
 
 	.mobile-bookmarks__list-empty p {
 		margin: 0 0 var(--sy-space--large);
-		font-size: 13px;
+		font-size: 0.8125rem;
 		font-weight: var(--sy-font-weight--normal);
 		line-height: var(--sy-line-height--body);
 	}
 
 	.mobile-bookmarks__creation-error {
-		color: var(--sy-color--red);
+		color: var(--sy-text--red);
 		margin: var(--sy-space) calc(var(--sy-space--small) + var(--sy-space));
 	}
 	.mobile-bookmarks {
@@ -495,7 +504,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-medium);
 	}
@@ -504,6 +513,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-wrap: wrap;
 		padding: 0 var(--sy-mobile-space--medium) var(--sy-mobile-space--small);
 		gap: var(--sy-mobile-space--small);
 		flex-shrink: 0;
@@ -541,51 +551,10 @@
 	.mobile-bookmarks__study-requirement {
 		flex-shrink: 0;
 		margin: 0 var(--sy-mobile-space--large) var(--sy-mobile-space--small);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
-		font-size: 13px;
+		font-size: 0.8125rem;
 		text-align: right;
-	}
-
-	.mobile-bookmarks__overflow-anchor {
-		position: relative;
-	}
-
-	.mobile-bookmarks__overflow-menu {
-		background-color: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		border: var(--sy-mobile-surface-border);
-		box-shadow: var(--sy-mobile-overlay-shadow);
-		z-index: var(--sy-z-index--top-3);
-		min-width: 150px;
-		overflow: hidden;
-	}
-
-	.mobile-bookmarks__overflow-item {
-		display: flex;
-		align-items: center;
-		gap: calc(var(--sy-mobile-space--extra-small) * 5);
-		width: 100%;
-		padding: calc(var(--sy-mobile-space--small) * 3) var(--sy-mobile-space--large);
-		border: none;
-		background: none;
-		font-family: var(--sy-font-family);
-		font-size: var(--sy-font-size--mobile-medium);
-		color: var(--sy-color--grey-6);
-		cursor: pointer;
-	}
-
-	.mobile-bookmarks__overflow-item:active {
-		background-color: var(--sy-color--grey-1);
-	}
-
-	.mobile-bookmarks__overflow-item--danger {
-		color: var(--sy-color--red);
-	}
-
-	.mobile-bookmarks__overflow-item:disabled {
-		opacity: 0.35;
-		pointer-events: none;
 	}
 
 	.mobile-bookmarks__results {

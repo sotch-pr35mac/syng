@@ -11,6 +11,7 @@ export const NATIVE_COMMANDS = {
 		INIT: 'interviews_init',
 	},
 	APP: {
+		GET_SYSTEM_TYPOGRAPHY: 'get_system_typography',
 		IS_DEV_BUILD: 'is_dev_build',
 		IS_MAS_BUILD: 'is_mas_build',
 		SET_NETWORK_ONLINE: 'set_network_online',

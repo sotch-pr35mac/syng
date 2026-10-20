@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Router, { router } from 'svelte-spa-router';
+	import { routeAccessibility } from '@/actions/routeAccessibility.js';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import MobileSearch from '@/routes/mobile/MobileSearch.svelte';
 	import DatabaseMigrationScreen from '@/components/DatabaseMigrationScreen/DatabaseMigrationScreen.svelte';
@@ -159,10 +160,24 @@
 	</div>
 {:else}
 	<div class="mobile-app" style="bottom: {keyboardInset}px">
+		<a
+			class="sy-skip-link"
+			href="#sy-main-content"
+			onclick={(event) => {
+				event.preventDefault();
+				document.getElementById('sy-main-content')?.focus();
+			}}>Skip to content</a
+		>
 		<MobileNavigation />
-		<div class="mobile-app__content">
+		<main
+			id="sy-main-content"
+			use:routeAccessibility={router.location}
+			class="mobile-app__content"
+			tabindex="-1"
+			aria-label="Main content"
+		>
 			<Router {routes} />
-		</div>
+		</main>
 	</div>
 	{#if bookmarkRecoveryStore.active}
 		{#await import('@/components/BookmarkRecovery/BookmarkRecovery.svelte')}

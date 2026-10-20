@@ -7,6 +7,7 @@ import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
 import { handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
 import type { ToolName } from '@/types/tools.js';
+import { toolsStore } from '@/composables/tools.svelte.js';
 import type { TextConversionToolConfig } from '@/types/textConversionTool.js';
 
 /**
@@ -84,6 +85,9 @@ function startPlaceholderRotation(): () => void {
 }
 
 export const toolsRoute = {
+	get operationState(): { busy: boolean; status: string } {
+		return toolsStore.operationState(toolsActiveTabStore.value);
+	},
 	get activeTab(): ToolName {
 		return toolsActiveTabStore.value;
 	},

@@ -36,6 +36,8 @@ it('backfills newer settings into existing preference documents', async () => {
 		})
 	);
 	expect(manager.get('characterSet')).toBe('both');
+	expect(manager.get('increaseContrast')).toBe(false);
+	expect(manager._config.increaseContrast.requiresRestart).toBe(false);
 	expect(manager.get('colorCharactersByTone')).toBe(true);
 	expect(manager.get('colorPinyinByTone')).toBe(false);
 	expect(manager.get('colorListsByTone')).toBe(false);
@@ -68,6 +70,42 @@ it('does not mark existing preference documents as having completed onboarding',
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(put).not.toHaveBeenCalled();
 });
+
+it.each([false, true])(
+	'resolves theme defaults while preserving custom palettes (%s)',
+	async (hasCustomColors) => {
+		const palette = ['#112233', '#223344', '#334455', '#445566', '#556677'];
+		const put = vi.fn();
+		global.PouchDB = class {
+			get = vi.fn(() =>
+				Promise.resolve({
+					_id: 'config',
+					toneColors: {
+						requiresRestart: true,
+						value: { hasCustomColors, colors: [...palette] },
+					},
+				})
+			);
+			put = put;
+		};
+		const { PreferenceManager } = await import('@/utils/preferenceManager.js');
+		const manager = new PreferenceManager('config');
+		await manager.init();
+		expect(manager.get('toneColors').colors).toEqual(
+			hasCustomColors
+				? palette
+				: [
+						'--sy-tone-theme--1',
+						'--sy-tone-theme--2',
+						'--sy-tone-theme--3',
+						'--sy-tone-theme--4',
+						'--sy-tone-theme--5',
+					]
+		);
+		expect(manager._config.toneColors.value.colors).toEqual(palette);
+		expect(put).not.toHaveBeenCalled();
+	}
+);
 
 it('uses dictionary display defaults for new preference documents', async () => {
 	global.PouchDB = class {

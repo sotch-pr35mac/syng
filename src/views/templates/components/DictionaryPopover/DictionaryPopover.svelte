@@ -12,6 +12,8 @@
 	} from '@/composables/dictionaryPopover.svelte.js';
 
 	const {
+		id = undefined,
+		returnFocus = undefined,
 		word = undefined,
 		results = [],
 		resultIndex = 0,
@@ -23,6 +25,8 @@
 		onlink = undefined,
 		onmembershipchange = undefined,
 	}: {
+		id?: string;
+		returnFocus?: HTMLElement;
 		word?: SearchEntry;
 		results?: SearchEntry[];
 		resultIndex?: number;
@@ -55,6 +59,8 @@
 </script>
 
 <SyPopover
+	{id}
+	{returnFocus}
 	{visible}
 	{anchor}
 	{reopenKey}
@@ -78,7 +84,11 @@
 			</div>
 		{/if}
 		{#if results.length > 1}
-			<div class="dictionary-popover__results-nav" aria-label="Dictionary results">
+			<div
+				role="group"
+				class="dictionary-popover__results-nav"
+				aria-label="Dictionary results"
+			>
 				<SyButton
 					style="ghost"
 					size="small"
@@ -89,13 +99,15 @@
 					<ChevronLeft size="16" />
 				</SyButton>
 				<div class="dictionary-popover__result-indicator">
-					<span class="dictionary-popover__result-label">
+					<span class="dictionary-popover__result-label" role="status" aria-atomic="true">
 						Result {resultIndex + 1} of {results.length}
 					</span>
 					{#if showDots}
 						<div class="dictionary-popover__result-dots">
 							{#each results as _, dotIndex (dotIndex)}
 								<button
+									type="button"
+									aria-current={dotIndex === resultIndex ? 'true' : undefined}
 									class="dictionary-popover__result-dot"
 									class:dictionary-popover__result-dot--active={dotIndex ===
 										resultIndex}
@@ -151,7 +163,7 @@
 	.dictionary-popover__title {
 		font-family: var(--sy-font-family);
 		font-weight: var(--sy-font-weight--medium);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.dictionary-popover__results-nav {
@@ -176,33 +188,44 @@
 	.dictionary-popover__result-label {
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--small);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		overflow: hidden;
 		text-overflow: ellipsis;
-		white-space: nowrap;
+		white-space: normal;
 		max-width: 100%;
 		text-align: center;
 	}
 
 	.dictionary-popover__result-dots {
 		display: flex;
-		gap: var(--sy-space);
+		gap: 0;
+		flex-wrap: wrap;
 		justify-content: center;
 	}
 
 	.dictionary-popover__result-dot {
+		display: grid;
+		place-items: center;
+		width: 24px;
+		height: 24px;
+		border: 0;
+		padding: 0;
+		background: transparent;
+		cursor: pointer;
+	}
+	.dictionary-popover__result-dot::after {
+		content: '';
+		box-sizing: border-box;
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		border: 0;
-		padding: 0;
-		background: var(--sy-color--grey-5);
-		cursor: pointer;
+		border: 1px solid var(--sy-control--border);
+		background: transparent;
 		transition: background var(--sy-transition-duration);
 	}
-
-	.dictionary-popover__result-dot--active {
-		background: var(--sy-color--blue);
+	.dictionary-popover__result-dot--active::after {
+		background: var(--sy-text--blue);
+		border-color: var(--sy-text--blue);
 	}
 
 	.dictionary-popover__content {

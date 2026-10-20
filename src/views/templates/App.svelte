@@ -23,6 +23,7 @@
 	import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 	import { networkStatus } from '@/utils/networkStatus.svelte.js';
+	import { routeAccessibility } from '@/actions/routeAccessibility.js';
 
 	runStartupActions();
 
@@ -133,12 +134,26 @@
 	{/await}
 {:else}
 	<div class="app-container">
+		<a
+			class="sy-skip-link"
+			href="#sy-main-content"
+			onclick={(event) => {
+				event.preventDefault();
+				document.getElementById('sy-main-content')?.focus();
+			}}>Skip to content</a
+		>
 		<div class="navigation-container">
 			<Navigation />
 		</div>
-		<div class="content-container">
+		<main
+			id="sy-main-content"
+			use:routeAccessibility={router.location}
+			class="content-container"
+			tabindex="-1"
+			aria-label="Main content"
+		>
 			<Router {routes} />
-		</div>
+		</main>
 	</div>
 
 	<SyToast
@@ -175,5 +190,7 @@
 	.content-container {
 		display: flex;
 		flex: 11;
+		min-width: 0;
+		min-height: 0;
 	}
 </style>

@@ -5,6 +5,7 @@ import Settings from '@/routes/Settings.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
@@ -87,12 +88,39 @@ beforeEach(async () => {
 		}),
 	};
 	setPreferenceManagerForTest(preferenceManager);
+	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
 		completedOnboardingVersion: 1,
 	});
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('shows Increase Contrast with General options only and keeps its state across tabs', async () => {
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'get_acknowledgements' ? [] : false
+	);
+	settingsActiveTabStore.set('acknowledgements');
+	const user = userEvent.setup();
+	const { getByRole, queryByRole } = render(Settings);
+	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
+	await user.click(getByRole('tab', { name: 'General' }));
+	const contrast = getByRole('checkbox', { name: 'Increase Contrast' });
+	expect(contrast.closest('[role="tabpanel"]')).toBe(getByRole('tabpanel', { name: 'General' }));
+	expect(contrast.closest('.settings--setting')?.querySelector('p')?.textContent).toBe(
+		'Increase Contrast'
+	);
+	expect(
+		contrast.closest('.settings--setting')?.querySelector('.increase-contrast-settings > label')
+	).toBeNull();
+	await user.click(contrast);
+	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
+	expect(contrast.checked).toBe(true);
+	await user.click(getByRole('tab', { name: 'Telemetry' }));
+	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
+	await user.click(getByRole('tab', { name: 'General' }));
+	expect(getByRole('checkbox', { name: 'Increase Contrast' }).checked).toBe(true);
 });
 
 it('reopens saved recovery reports from iPad settings', async () => {

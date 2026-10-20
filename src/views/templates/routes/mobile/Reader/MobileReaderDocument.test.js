@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
 import MobileReaderDocument from '@/routes/mobile/Reader/MobileReaderDocument.svelte';
+import { contrastStore } from '@/stores/contrast.svelte.js';
+import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 import { readerRoute } from '@/composables/reader.svelte.js';
 import { readerDocumentRouteStore } from '@/stores/readerRoute.svelte.js';
 import {
@@ -182,3 +184,33 @@ it('restores the last reader route when opened without a document id', async () 
 
 	await waitFor(() => expect(window.location.hash).toBe('#/read/document/mobile-doc'));
 });
+
+it.each([
+	['light', '#6b7280', '#667080'],
+	['sepia', '#76593d', '#664a31'],
+])(
+	'updates the %s Reader palette live without changing the saved page theme',
+	async (theme, originalMuted, contrastMuted) => {
+		contrastStore.setIncreaseContrast(false);
+		const { container, findByText } = renderMobileReaderDocument('reader-1');
+		await findByText('Story');
+		readerSettingsStore.applyColorTheme(theme);
+		const readerElement = container.querySelector('.mobile-reader-document');
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		const savedSettings = { ...readerSettingsStore.settings };
+
+		contrastStore.setIncreaseContrast(true);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(contrastMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+
+		contrastStore.setIncreaseContrast(false);
+		await waitFor(() =>
+			expect(readerElement.style.getPropertyValue('--reader-muted-text')).toBe(originalMuted)
+		);
+		expect(readerSettingsStore.settings).toEqual(savedSettings);
+	}
+);

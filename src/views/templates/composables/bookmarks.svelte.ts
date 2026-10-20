@@ -53,6 +53,7 @@ export type MembershipReconciliation = {
 };
 
 let creationError = $state('');
+let creationNameInvalid = $state(false);
 let activeList = $state(bookmarksActiveListStore.value);
 let activeWord = $state<BookmarkWordEntry | undefined>(bookmarksActiveWordStore.value);
 let words = $state<BookmarkWordEntry[]>([]);
@@ -282,20 +283,24 @@ function initialize(requestedList: string | null): () => void {
 
 function clearCreationError(): void {
 	creationError = '';
+	creationNameInvalid = false;
 }
 
 async function createList(name: string): Promise<boolean> {
 	const newListName = name.trim();
 	clearCreationError();
 	if (!newListName) {
+		creationNameInvalid = true;
 		creationError = 'Enter a name for your list.';
 		return false;
 	}
 	if (RESTRICTED_LIST_NAMES.includes(newListName)) {
+		creationNameInvalid = true;
 		creationError = 'This name is reserved. Choose another name.';
 		return false;
 	}
 	if (bookmarksStore.lists.includes(newListName)) {
+		creationNameInvalid = true;
 		creationError = 'A list with this name already exists.';
 		return false;
 	}
@@ -487,6 +492,9 @@ export const bookmarksRoute = {
 	},
 	get creationError(): string {
 		return creationError;
+	},
+	get creationNameInvalid(): boolean {
+		return creationNameInvalid;
 	},
 	get activeList(): string {
 		return activeList;

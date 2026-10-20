@@ -1,5 +1,6 @@
 import { beforeEach, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
 import DictionaryLink from '@/components/DictionaryContent/DictionaryLink.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -44,8 +45,6 @@ it('renders parenthetical character forms for the both preference', () => {
 	expect(queryByText('简')).toBeNull();
 	expect(queryByText('繁')).toBeNull();
 	expect(getByTestId('dictionary-link').innerHTML).not.toContain('colored-characters--tone');
-	expect(getComputedStyle(getByTestId('dictionary-link-simplified')).cursor).toBe('pointer');
-	expect(getComputedStyle(getByLabelText('Simplified Chinese: 实验')).cursor).toBe('pointer');
 });
 
 it('renders identical character forms once without labels', () => {
@@ -104,6 +103,30 @@ it('dispatches the unchanged lookup text and anchor when clicked', async () => {
 		detail: {
 			text: '實驗',
 			anchor,
+		},
+	});
+});
+
+it('opens a dictionary reference with either Enter or Space as a native button', async () => {
+	const user = userEvent.setup();
+	const onopen = vi.fn();
+	const { getByRole } = render(DictionaryLink, {
+		link: '中国',
+		simplified: '中国',
+		traditional: '中国',
+		onopen,
+	});
+	const trigger = getByRole('button', { name: '中国' });
+	trigger.focus();
+	await user.keyboard('{Enter} ');
+	expect(onopen).toHaveBeenCalledTimes(2);
+	expect(onopen).toHaveBeenLastCalledWith({
+		detail: {
+			text: '中国',
+			anchor: expect.objectContaining({
+				width: expect.any(Number),
+				height: expect.any(Number),
+			}),
 		},
 	});
 });

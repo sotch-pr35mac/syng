@@ -95,7 +95,7 @@
 		gap: var(--sy-mobile-space--large);
 		width: 100%;
 		text-align: center;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-medium);
 	}

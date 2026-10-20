@@ -7,6 +7,7 @@ mod core;
 #[cfg(desktop)]
 mod menu;
 mod platform;
+mod system_typography;
 mod utils;
 mod windows;
 
@@ -25,6 +26,7 @@ use core::{
     telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, InterviewManager, NetworkStatus,
     QuizState, TelemetryManager,
 };
+use system_typography::get_system_typography;
 #[cfg(any(desktop, target_os = "ios"))]
 use tauri::Manager;
 #[cfg(desktop)]
@@ -60,6 +62,7 @@ pub fn run() {
     }
 
     builder = builder
+        .manage(system_typography::SystemTypography::default())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_http::init())
@@ -69,6 +72,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
+            system_typography::install(app.handle());
             #[cfg(desktop)]
             {
                 let app_menu = menu::create(app.handle())?;
@@ -101,6 +105,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.invoke_handler(tauri::generate_handler!(
+            get_system_typography,
             check_for_update,
             set_network_online,
             init_dictionary,
@@ -150,6 +155,7 @@ pub fn run() {
     #[cfg(mobile)]
     {
         builder = builder.invoke_handler(tauri::generate_handler!(
+            get_system_typography,
             set_network_online,
             init_dictionary,
             classify,
@@ -206,6 +212,9 @@ pub fn run() {
         .build(app_context)
         .expect("error while building tauri application")
         .run(|app_handle, event| {
+            if matches!(&event, tauri::RunEvent::Exit) {
+                system_typography::shutdown();
+            }
             #[cfg(target_os = "macos")]
             match event {
                 // Dock icon: NSApplicationDelegate applicationShouldHandleReopen

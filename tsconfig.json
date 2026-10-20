@@ -21,6 +21,8 @@
 		"src/views/templates/**/*.ts",
 		"src/views/templates/**/*.svelte",
 		"src/test/**/*.js",
+		"src/test/**/*.ts",
+		"src/test/**/*.svelte",
 		"vite.config.js"
 	],
 	"exclude": [

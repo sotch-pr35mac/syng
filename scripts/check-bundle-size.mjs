@@ -10,8 +10,8 @@ const ENTRY_FILE = join(BUILD_DIRECTORY, 'bundle.js');
 const BUDGETS = {
 	entryBytes: 200 * 1024,
 	// The offline indicator, connectivity synchronization, and eagerly loaded stroke-order engine
-	// are intentionally part of the app shell.
-	initialShellBytes: 285 * 1024,
+	// are intentionally part of the app shell, alongside the shared accessibility support.
+	initialShellBytes: 310 * 1024,
 	largestChunkBytes: 200 * 1024,
 	totalBytes: 650 * 1024,
 	totalGzipBytes: 230 * 1024,

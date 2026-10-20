@@ -11,6 +11,8 @@
 	import { cursorToEnd } from '@/actions/cursorToEnd.svelte.js';
 
 	interface Props {
+		busy?: boolean;
+		status?: string;
 		tool: ToolName;
 		label: string;
 		headingId: string;
@@ -33,6 +35,8 @@
 	}
 
 	const {
+		busy = false,
+		status = '',
 		tool,
 		label,
 		headingId,
@@ -88,6 +92,8 @@
 			type="button"
 			class="text-conversion-tool__icon-button"
 			aria-label={collapsed ? `Expand ${label} input` : `Collapse ${label} input`}
+			aria-expanded={!collapsed}
+			aria-controls={!collapsed ? `${headingId}-input` : undefined}
 			onclick={() => onToggleCollapse(tool)}
 		>
 			{#if collapsed}
@@ -102,6 +108,7 @@
 		<!-- autocorrect is spread because Svelte's textarea types omit it (non-standard attr). -->
 		<textarea
 			use:cursorToEnd
+			id={`${headingId}-input`}
 			aria-label={inputLabel}
 			{placeholder}
 			value={inputValue}
@@ -121,6 +128,7 @@
 						<SyButton
 							grouped
 							color={option.active ? 'blue' : undefined}
+							aria-pressed={option.active}
 							onclick={option.onSelect}
 						>
 							{isMobile ? (option.mobileLabel ?? option.label) : option.label}
@@ -141,6 +149,8 @@
 	<div
 		class="text-conversion-tool__output"
 		class:text-conversion-tool__output--large={outputLarge}
+		role="region"
+		aria-busy={busy}
 		aria-label={outputLabel}
 	>
 		<p>
@@ -153,6 +163,7 @@
 		<SyButton
 			style="ghost"
 			classes={copyButtonClasses}
+			aria-label={`Copy ${outputLabel.toLocaleLowerCase()}`}
 			onclick={() => onCopy(outputText)}
 			disabled={!outputText}
 		>
@@ -162,6 +173,7 @@
 			{/if}
 		</SyButton>
 	</div>
+	<p class="sy-sr-only" role="status" aria-atomic="true">{status}</p>
 </section>
 
 <style>
@@ -177,10 +189,13 @@
 		gap: var(--sy-space);
 	}
 	.text-conversion-tool__heading h2 {
+		min-width: 0;
+		overflow-wrap: anywhere;
 		margin: 0;
 		font-size: var(--sy-font-size--large);
 	}
 	.text-conversion-tool__icon-button {
+		flex-shrink: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -189,11 +204,11 @@
 		padding: 0;
 		border: 0;
 		background: transparent;
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 		cursor: pointer;
 	}
 	.text-conversion-tool__icon-button:hover {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 	.text-conversion-tool textarea {
 		width: 100%;
@@ -201,7 +216,7 @@
 		min-height: 150px;
 		resize: vertical;
 		padding: var(--sy-space--large);
-		border: var(--sy-border);
+		border: var(--sy-input--border);
 		border-radius: var(--sy-border-radius);
 		background-color: var(--sy-color--white);
 		color: var(--sy-color--black);
@@ -220,7 +235,7 @@
 	}
 	.text-conversion-tool__decision {
 		margin: 0;
-		color: var(--sy-color--grey-5);
+		color: var(--sy-text--muted);
 		font-size: var(--sy-font-size--small);
 	}
 	.text-conversion-tool__output {
@@ -265,8 +280,8 @@
 	.text-conversion-tool--mobile textarea {
 		min-height: 132px;
 		padding: var(--sy-mobile-space--large);
-		border: var(--sy-mobile-surface-border);
-		font-size: 16px;
+		border: var(--sy-input--border-mobile);
+		font-size: 1rem;
 		line-height: 1.5;
 	}
 	.text-conversion-tool--mobile .text-conversion-tool__controls {

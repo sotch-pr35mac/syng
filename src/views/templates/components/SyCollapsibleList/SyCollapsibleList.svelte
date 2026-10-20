@@ -22,6 +22,7 @@
 		onlinkclick,
 	}: Props = $props();
 
+	const listId = $props.id();
 	let expandedId = $state<string | number | null>(null);
 
 	const toggle = (id: string | number) => {
@@ -33,7 +34,7 @@
 	<p class="sy-collapsible-list--empty">{emptyText}</p>
 {:else}
 	<div class="sy-collapsible-list">
-		{#each items as item (item.id)}
+		{#each items as item, index (item.id)}
 			{@const url = itemUrl?.(item)}
 			<div class="sy-collapsible-list--item">
 				{#if url}
@@ -48,14 +49,20 @@
 						</span>
 					</a>
 				{:else}
-					<button class="sy-collapsible-list--header" onclick={() => toggle(item.id)}>
+					<button
+						type="button"
+						class="sy-collapsible-list--header"
+						aria-expanded={expandedId === item.id}
+						aria-controls={`${listId}-${index}`}
+						onclick={() => toggle(item.id)}
+					>
 						{@render header(item)}
-						<span class="sy-collapsible-list--chevron">
+						<span class="sy-collapsible-list--chevron" aria-hidden="true">
 							{expandedId === item.id ? '▲' : '▼'}
 						</span>
 					</button>
 					{#if expandedId === item.id}
-						<div class="sy-collapsible-list--detail">
+						<div id={`${listId}-${index}`} class="sy-collapsible-list--detail">
 							{@render detail(item)}
 						</div>
 					{/if}
@@ -105,13 +112,17 @@
 		box-sizing: border-box;
 	}
 
+	.sy-collapsible-list--header:focus-visible,
+	.sy-collapsible-list--header:global(.sy-focus-visible) {
+		outline-offset: calc(-1 * var(--sy-focus-width));
+	}
 	.sy-collapsible-list--header:hover {
 		background-color: var(--sy-color--grey-2);
 	}
 
 	.sy-collapsible-list--chevron {
 		color: var(--sy-text--light);
-		font-size: 10px;
+		font-size: 0.625rem;
 		flex-shrink: 0;
 		margin-left: auto;
 	}

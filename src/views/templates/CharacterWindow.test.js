@@ -143,7 +143,8 @@ it('opens on a requested script', async () => {
 	window.matchMedia = mockMatchMedia;
 	const { getByText } = render(CharacterWindow, {});
 
-	await waitFor(() => expect(eventMocks.displayCharactersListener).toBeTypeOf('function'));
+	// Let the fixture's initial display event finish loading the stroke engine first.
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(2));
 	eventMocks.displayCharactersListener({
 		payload: { ...WORD, initialScript: 'traditional' },
 	});

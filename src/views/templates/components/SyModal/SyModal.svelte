@@ -1,7 +1,10 @@
-<script>
+<script lang="ts">
+	import type { Snippet } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { isMobile } from '@/utils/device.js';
+	import { portal } from '@/actions/portal.svelte.js';
+	import { overlayFocus } from '@/actions/overlayFocus.js';
 
 	/* Visible Prop */
 
@@ -11,23 +14,73 @@
 	 * @typedef {Object} Props
 	 * @property {boolean} [visible] - Whether or not the modal is visible
 	 * @property {string} [title] - The text to display in the modal header
+	 * @property {string} [accessibleName] - Dialog name when no visible title is supplied
+	 * @property {boolean} [dismissible] - Whether Escape, the backdrop, and the close button can dismiss it
+	 * @property {HTMLElement | (() => HTMLElement | null | undefined)} [initialFocus] - Initial focus target
+	 * @property {HTMLElement | (() => HTMLElement | null | undefined)} [returnFocus] - Focus target after closing
 	 * @property {import('svelte').Snippet} [body]
 	 * @property {import('svelte').Snippet} [footer]
 	 * @property {() => void} [onclose] - Close handler
 	 */
-
 	/** @type {Props} */
-	const { visible = false, title = '', body, footer, onclose = () => {} } = $props();
+	const {
+		visible = false,
+		title = '',
+		accessibleName = 'Dialog',
+		dismissible = true,
+		initialFocus = undefined,
+		returnFocus = undefined,
+		body,
+		footer,
+		onclose = () => {},
+	}: {
+		visible?: boolean;
+		title?: string;
+		accessibleName?: string;
+		dismissible?: boolean;
+		initialFocus?: HTMLElement | (() => HTMLElement | null | undefined);
+		returnFocus?: HTMLElement | (() => HTMLElement | null | undefined);
+		body?: Snippet;
+		footer?: Snippet;
+		onclose?: () => void;
+	} = $props();
 	const mobile = isMobile();
+	const titleId = $props.id();
 </script>
 
-<div class="sy-modal--container" class:sy-modal--active={visible}>
-	<div class="sy-modal--content" class:sy-modal--content--mobile={mobile}>
+<div use:portal hidden={!visible} class="sy-modal--container" class:sy-modal--active={visible}>
+	<div
+		class="sy-modal--content"
+		class:sy-modal--content--mobile={mobile}
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby={title ? titleId : undefined}
+		aria-label={title ? undefined : accessibleName}
+		tabindex="-1"
+		use:overlayFocus={{
+			active: visible,
+			modal: true,
+			initialFocus: 'always',
+			initialFocusTarget: initialFocus,
+			returnFocus,
+			dismissible,
+			onclose,
+		}}
+	>
 		<div class="sy-modal--header">
-			<h2 class="sy-modal--title">{title}</h2>
-			<SyButton style="ghost" onclick={onclose}>
-				<X size="14" />
-			</SyButton>
+			<h2
+				id={titleId}
+				class="sy-modal--title"
+				tabindex="-1"
+				data-sy-overlay-heading={title ? true : undefined}
+			>
+				{title}
+			</h2>
+			{#if dismissible}
+				<SyButton style="ghost" aria-label="Close dialog" onclick={onclose}>
+					<X size="14" aria-hidden="true" />
+				</SyButton>
+			{/if}
 		</div>
 		<div class="sy-modal--body">
 			{@render body?.()}
@@ -60,6 +113,10 @@
 		z-index: var(--sy-z-index--top-2);
 	}
 	.sy-modal--content {
+		box-sizing: border-box;
+		max-width: calc(100vw - 2rem);
+		max-height: calc(100vh - 2rem);
+		overflow-y: auto;
 		position: fixed;
 		top: 50%;
 		left: 50%;
@@ -83,12 +140,16 @@
 		justify-content: space-between;
 	}
 	.sy-modal--title {
+		min-width: 0;
+		overflow-wrap: anywhere;
 		margin: var(--sy-space) 0px;
 	}
 	.sy-modal--body {
 		padding: var(--sy-space);
 	}
 	.sy-modal--footer {
+		flex-wrap: wrap;
+		gap: var(--sy-space);
 		display: flex;
 		flex-direction: row;
 		align-items: center;

@@ -3,6 +3,7 @@ import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -61,6 +62,7 @@ beforeEach(async () => {
 		set: vi.fn(),
 	};
 	setPreferenceManagerForTest(preferenceManager);
+	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
@@ -70,6 +72,28 @@ beforeEach(async () => {
 	vi.mocked(telemetry.getQueuedEvents).mockClear();
 	vi.mocked(telemetry.setPref).mockClear();
 	vi.mocked(telemetry.trackEvent).mockClear();
+});
+
+it('shows Increase Contrast in General only and keeps its state across mobile tabs', async () => {
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'get_acknowledgements' ? [] : null
+	);
+	settingsActiveTabStore.set('acknowledgements');
+	const user = userEvent.setup();
+	const { getByRole, queryByRole } = render(MobileSettings);
+	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
+	await user.click(getByRole('tab', { name: 'General' }));
+	const contrast = getByRole('checkbox', { name: 'Increase Contrast' });
+	expect(contrast.closest('[role="tabpanel"]')).toBe(getByRole('tabpanel', { name: 'General' }));
+	expect(getByRole('region', { name: 'Increase Contrast' }).contains(contrast)).toBe(true);
+	expect(getByRole('region', { name: 'Increase Contrast' }).querySelector('p')).toBeNull();
+	await user.click(contrast);
+	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
+	expect(contrast.checked).toBe(true);
+	await user.click(getByRole('tab', { name: 'Telemetry' }));
+	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
+	await user.click(getByRole('tab', { name: 'General' }));
+	expect(getByRole('checkbox', { name: 'Increase Contrast' }).checked).toBe(true);
 });
 
 it('reopens saved recovery reports from phone settings', async () => {
@@ -170,25 +194,42 @@ it('updates tone colors through the shared settings handler', async () => {
 	});
 });
 
+it('restores the theme palette only after an explicit reset', async () => {
+	const user = userEvent.setup();
+	const { getByLabelText, getByRole } = render(MobileSettings);
+	await fireEvent.change(getByLabelText('First Tone'), { target: { value: '#112233' } });
+	await user.click(getByRole('button', { name: 'Reset to theme colors' }));
+	expect(preferenceManager.set).toHaveBeenLastCalledWith('toneColors', {
+		hasCustomColors: false,
+		colors: [
+			'--sy-tone-theme--1',
+			'--sy-tone-theme--2',
+			'--sy-tone-theme--3',
+			'--sy-tone-theme--4',
+			'--sy-tone-theme--5',
+		],
+	});
+});
+
 it('shows every telemetry option on the telemetry tab', async () => {
 	const user = userEvent.setup();
-	const { getByText } = render(MobileSettings);
+	const { getByText, getByRole } = render(MobileSettings);
 
 	await user.click(getByText('Telemetry'));
 
-	await waitFor(() => expect(getByText('Enable Telemetry')).toBeTruthy());
-	expect(getByText('Event Tracking')).toBeTruthy();
-	expect(getByText('Screen Views')).toBeTruthy();
-	expect(getByText('Error Reporting')).toBeTruthy();
-	expect(getByText('Device Context')).toBeTruthy();
+	await waitFor(() => expect(getByRole('checkbox', { name: 'Enable Telemetry' })).toBeTruthy());
+	expect(getByRole('checkbox', { name: 'Event Tracking' })).toBeTruthy();
+	expect(getByRole('checkbox', { name: 'Screen Views' })).toBeTruthy();
+	expect(getByRole('checkbox', { name: 'Error Reporting' })).toBeTruthy();
+	expect(getByRole('checkbox', { name: 'Device Context' })).toBeTruthy();
 	expect(getByText('Queued Telemetry Events')).toBeTruthy();
 });
 
 it('restores the last active settings tab', async () => {
 	settingsActiveTabStore.set('telemetry');
-	const { getByText } = render(MobileSettings);
+	const { getByRole } = render(MobileSettings);
 
-	await waitFor(() => expect(getByText('Enable Telemetry')).toBeTruthy());
+	await waitFor(() => expect(getByRole('checkbox', { name: 'Enable Telemetry' })).toBeTruthy());
 });
 
 it('shows age status on the telemetry tab while child privacy mode is on', async () => {

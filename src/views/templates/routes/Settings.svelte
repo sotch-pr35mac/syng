@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
 	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
@@ -15,6 +16,8 @@
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
@@ -46,6 +49,15 @@
 	let hasSavedRecoveryReport = $state(false);
 
 	const preferences = [
+		{
+			label: 'Increase Contrast',
+			devOnly: false,
+			hideOnIPad: false,
+			hideOnMas: false,
+			centerLabel: true,
+			component: IncreaseContrastSettings,
+			props: { variant: isIPad() ? 'mobile' : 'desktop', showLabel: false },
+		},
 		...(isMobile()
 			? [
 					{
@@ -81,6 +93,7 @@
 			component: SyToggle,
 			props: {
 				checked: getPreferenceManager().get('beta'),
+				accessibleLabel: 'Under Construction Features',
 				onchange: updateBetaPreference,
 			},
 		},
@@ -199,7 +212,10 @@
 	});
 </script>
 
-<div class="settings--container">
+<div
+	class="settings--container"
+	use:responsiveLayout={{ thresholdRem: 36, className: 'settings--compact' }}
+>
 	<div
 		class="settings--title"
 		class:settings--title--ipad={isIPad()}
@@ -207,8 +223,11 @@
 	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Settings</h1>
 	</div>
-	<div class="settings--tabs">
+	<div class="settings--tabs" role="tablist" aria-label="Settings sections" use:tabNavigation>
 		<SyTab
+			role="tab"
+			id="settings-general-tab"
+			aria-controls="settings-panel"
 			active={activeTab === 'general'}
 			onclick={() => {
 				activeTab = 'general';
@@ -218,6 +237,9 @@
 			General
 		</SyTab>
 		<SyTab
+			role="tab"
+			id="settings-telemetry-tab"
+			aria-controls="settings-panel"
 			active={activeTab === 'telemetry'}
 			onclick={() => {
 				activeTab = 'telemetry';
@@ -227,6 +249,9 @@
 			Telemetry
 		</SyTab>
 		<SyTab
+			role="tab"
+			id="settings-acknowledgements-tab"
+			aria-controls="settings-panel"
 			active={activeTab === 'acknowledgements'}
 			onclick={() => {
 				activeTab = 'acknowledgements';
@@ -237,36 +262,44 @@
 		</SyTab>
 	</div>
 	<div class="settings--content" use:scrollRestore={'settings-content'}>
-		{#if activeTab === 'general'}
-			{#each visiblePreferences as preference (preference.label)}
-				<div
-					class="settings--setting"
-					class:settings--setting--center={preference.centerLabel}
-				>
-					<p>{preference.label}</p>
-					<preference.component {...preference.props} />
-				</div>
-			{/each}
-			{#if showDevPreferences}
-				<div class="settings--setting settings--setting--center">
-					<p>Replay onboarding</p>
-					<SyButton
-						style="filled"
-						onclick={() => privacySettingsStore.requestOnboardingReplay()}
+		<div
+			role="tabpanel"
+			id="settings-panel"
+			aria-labelledby={`settings-${activeTab}-tab`}
+			tabindex="0"
+			class="settings--panel"
+		>
+			{#if activeTab === 'general'}
+				{#each visiblePreferences as preference (preference.label)}
+					<div
+						class="settings--setting"
+						class:settings--setting--center={preference.centerLabel}
 					>
-						Show again
-					</SyButton>
-				</div>
-			{/if}
-		{:else if activeTab === 'telemetry'}
-			{#if privacySettingsStore.childPrivacyMode}
-				<AgeStatusSettings />
+						<p>{preference.label}</p>
+						<preference.component {...preference.props} />
+					</div>
+				{/each}
+				{#if showDevPreferences}
+					<div class="settings--setting settings--setting--center">
+						<p>Replay onboarding</p>
+						<SyButton
+							style="filled"
+							onclick={() => privacySettingsStore.requestOnboardingReplay()}
+						>
+							Show again
+						</SyButton>
+					</div>
+				{/if}
+			{:else if activeTab === 'telemetry'}
+				{#if privacySettingsStore.childPrivacyMode}
+					<AgeStatusSettings />
+				{:else}
+					<TelemetrySettings />
+				{/if}
 			{:else}
-				<TelemetrySettings />
+				<Acknowledgements />
 			{/if}
-		{:else}
-			<Acknowledgements />
-		{/if}
+		</div>
 	</div>
 </div>
 
@@ -287,6 +320,7 @@
 		padding-bottom: var(--sy-space--large);
 	}
 	.settings--tabs {
+		flex-wrap: wrap;
 		display: flex;
 		gap: var(--sy-space--large);
 		padding: 0 var(--sy-space);
@@ -294,6 +328,8 @@
 		margin-bottom: var(--sy-space--extra-large);
 	}
 	.settings--content {
+		min-height: 0;
+		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--extra-large);
@@ -303,8 +339,17 @@
 	}
 	.settings--setting {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: var(--sy-space--large);
 		align-items: start;
+	}
+	.settings--panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--sy-space--extra-large);
+	}
+	:global(.settings--compact) .settings--setting {
+		grid-template-columns: minmax(0, 1fr);
 	}
 	.settings--setting--center {
 		align-items: center;

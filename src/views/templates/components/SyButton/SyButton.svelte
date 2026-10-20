@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - No background or shadow
@@ -38,18 +38,22 @@
 
 	/* Classes Prop */
 
+	import type { Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
+	import { isMobile } from '@/utils/device.js';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [style] - 'filled' - With background and shadow
-	 * @property {string} [size] - 'large' - Large button
-	 * @property {string} [shape] - 'circle' - Circular
+	 * @property {string} [size] - 'large' - Large button; defaults to 'medium'
+	 * @property {string} [shape] - 'circle' - Circular; defaults to 'rectangle'
 	 * @property {boolean} [disabled] - false
-	 * @property {boolean} [grouped] - false
-	 * @property {any} [color] - 'yellow'
-	 * @property {any} [hover] - 'yellow'
+	 * @property {boolean | 'true' | 'false'} [grouped] - false
+	 * @property {string} [color] - 'yellow', 'green', 'blue', or 'red'
+	 * @property {string} [hover] - 'yellow', 'green', 'blue', or 'red'
 	 * @property {boolean} [center] - false
 	 * @property {boolean} [disableHoverActions] - false
-	 * @property {any} [classes] - A list of classes
+	 * @property {string[]} [classes] - A list of classes
 	 * @property {string} [type] - Native button type
 	 * @property {string} [form] - Associated native form ID
 	 * @property {string} [aria-label] - Accessible label
@@ -58,8 +62,18 @@
 	 * @property {import('svelte').Snippet} [children]
 	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
 	 */
-
-	import { isMobile } from '@/utils/device.js';
+	interface Props extends Omit<HTMLButtonAttributes, 'style' | 'children'> {
+		style?: string;
+		size?: string;
+		shape?: string;
+		grouped?: boolean | 'true' | 'false';
+		color?: string;
+		hover?: string;
+		center?: boolean;
+		disableHoverActions?: boolean;
+		classes?: string[];
+		children?: Snippet;
+	}
 
 	// Optimized for mobile: 44px minimum touch target, larger small-size font.
 	const mobile = isMobile();
@@ -76,11 +90,12 @@
 		center = false,
 		disableHoverActions = false,
 		classes = [],
+		class: className,
 		type = 'button',
 		children,
 		onclick = () => {},
 		...restProps
-	} = $props();
+	}: Props = $props();
 	const getClasses = () => {
 		return classes
 			.concat([
@@ -100,7 +115,14 @@
 	};
 </script>
 
-<button {...restProps} class={getClasses()} {type} {onclick} {disabled} data-testid="sy-button">
+<button
+	{...restProps}
+	class={[getClasses(), className]}
+	{type}
+	{onclick}
+	{disabled}
+	data-testid="sy-button"
+>
 	{@render children?.()}
 </button>
 
@@ -112,9 +134,8 @@
 		cursor: pointer;
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
-	}
-	.sy-button:focus {
-		outline: none;
+		max-width: 100%;
+		overflow-wrap: anywhere;
 	}
 	.sy-button:disabled {
 		color: var(--sy-color--grey-5);
@@ -143,11 +164,11 @@
 		background: none;
 	}
 	.sy-button--ghost:active {
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 	@media (hover: hover) {
 		.sy-button--ghost:not(.sy-button--hover-actions-disabled):hover {
-			color: var(--sy-color--blue);
+			color: var(--sy-text--blue);
 			transition-property: color;
 			transition-duration: var(--sy-transition-duration);
 		}
@@ -156,13 +177,13 @@
 		}
 	}
 	.sy-button--small {
-		font-size: 10px;
+		font-size: 0.625rem;
 	}
 	.sy-button--medium {
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 	.sy-button--large {
-		font-size: 16px;
+		font-size: 1rem;
 		padding: var(--sy-space--large);
 	}
 	.sy-button--rectangle {
@@ -176,33 +197,37 @@
 		margin: 1px;
 	}
 	.sy-button--color-green {
-		color: var(--sy-color--green);
-		--sy-button-filled-background: var(--sy-color--green);
+		color: var(--sy-text--green);
+		--sy-button-filled-background: var(--sy-fill--green);
+		--sy-button-interactive-text: var(--sy-text--green);
 	}
 	.sy-button--color-blue {
-		color: var(--sy-color--blue);
-		--sy-button-filled-background: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
+		--sy-button-filled-background: var(--sy-fill--blue);
+		--sy-button-interactive-text: var(--sy-text--blue);
 	}
 	.sy-button--color-red {
-		color: var(--sy-color--red);
-		--sy-button-filled-background: var(--sy-color--red);
+		color: var(--sy-text--red);
+		--sy-button-filled-background: var(--sy-fill--red);
+		--sy-button-interactive-text: var(--sy-text--red);
 	}
 	.sy-button--color-yellow {
-		color: var(--sy-color--yellow);
-		--sy-button-filled-background: var(--sy-color--yellow);
+		color: var(--sy-text--yellow);
+		--sy-button-filled-background: var(--sy-fill--yellow);
+		--sy-button-interactive-text: var(--sy-text--yellow);
 	}
 	@media (hover: hover) {
 		.sy-button--hover-green:not(.sy-button--hover-actions-disabled):hover {
-			color: var(--sy-color--green);
+			color: var(--sy-text--green);
 		}
 		.sy-button--hover-blue:not(.sy-button--hover-actions-disabled):hover {
-			color: var(--sy-color--blue);
+			color: var(--sy-text--blue);
 		}
 		.sy-button--hover-red:not(.sy-button--hover-actions-disabled):hover {
-			color: var(--sy-color--red);
+			color: var(--sy-text--red);
 		}
 		.sy-button--hover-yellow:not(.sy-button--hover-actions-disabled):hover {
-			color: var(--sy-color--yellow);
+			color: var(--sy-text--yellow);
 		}
 	}
 	.sy-button--center {
@@ -231,21 +256,21 @@
 		}
 	}
 	.sy-button--mobile.sy-button--small {
-		font-size: 13px;
+		font-size: 0.8125rem;
 	}
 	.sy-button--filled-color {
 		background-color: var(--sy-button-filled-background);
-		color: var(--sy-color--white);
+		color: var(--sy-text--on-fill);
 	}
 	@media (hover: hover) {
 		.sy-button--filled-color:not(.sy-button--hover-actions-disabled):hover {
 			background-color: var(--sy-color--grey-2);
-			color: var(--sy-button-filled-background);
+			color: var(--sy-button-interactive-text);
 		}
 	}
 	.sy-button--filled-color:active {
 		background-color: var(--sy-color--grey-2);
-		color: var(--sy-button-filled-background);
+		color: var(--sy-button-interactive-text);
 	}
 	.sy-button--filled-color:disabled,
 	.sy-button--filled-color:disabled:hover {

@@ -1,5 +1,5 @@
 import { beforeEach, vi } from 'vitest';
-import { render, waitFor } from '@testing-library/svelte';
+import { render, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import { mockBookmarkManager, mockPreferenceManager } from '@test/utils/unitTestUtils.js';
@@ -335,4 +335,19 @@ it('does not report bookmark success before persistence or after failure', async
 	expect(telemetry.trackEvent).not.toHaveBeenCalledWith('bookmark.added', expect.anything());
 	alert.mockRestore();
 	errorLog.mockRestore();
+});
+
+it('associates each notes field with its own label when a second dictionary is open', () => {
+	const first = render(DictionaryContent, { word: { ...TEST_WORD, notes: 'first notes' } });
+	const second = render(DictionaryContent, {
+		word: { ...TEST_WORD, hash: 'other-word', notes: 'second notes' },
+	});
+	const firstNotes = within(first.container).getByRole('textbox', { name: 'Notes' });
+	const secondNotes = within(second.container).getByRole('textbox', { name: 'Notes' });
+	expect(firstNotes.id).not.toBe(secondNotes.id);
+	expect(firstNotes.getAttribute('aria-labelledby')).not.toBe(
+		secondNotes.getAttribute('aria-labelledby')
+	);
+	expect(firstNotes.value).toBe('first notes');
+	expect(secondNotes.value).toBe('second notes');
 });

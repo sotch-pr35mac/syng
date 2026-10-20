@@ -20,7 +20,7 @@
 		align-items: center;
 		padding: var(--sy-space--small) var(--sy-space--large);
 		border-radius: var(--sy-border-radius);
-		color: var(--sy-color--white);
+		color: var(--sy-text--on-fill);
 		font-size: var(--sy-font-size--small);
 		font-family: var(--sy-font-family);
 		font-weight: var(--sy-font-weight--normal);
@@ -42,15 +42,15 @@
 		font-weight: var(--sy-font-weight--normal);
 	}
 	.sy-tag--blue {
-		background: var(--sy-color--blue);
+		background: var(--sy-fill--blue);
 	}
 	.sy-tag--green {
-		background: var(--sy-color--green);
+		background: var(--sy-fill--green);
 	}
 	.sy-tag--yellow {
-		background: var(--sy-color--yellow);
+		background: var(--sy-fill--yellow);
 	}
 	.sy-tag--red {
-		background: var(--sy-color--red);
+		background: var(--sy-fill--red);
 	}
 </style>

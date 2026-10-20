@@ -27,6 +27,10 @@ vi.mock('@/stores/dictionaryDisplaySettings.svelte.js', () => ({
 	},
 }));
 
+vi.mock('@/stores/contrast.svelte.js', () => ({
+	contrastStore: { loadSettings: vi.fn().mockResolvedValue(undefined) },
+}));
+
 vi.mock('@/stores/privacySettings.svelte.js', () => ({
 	privacySettingsStore: {
 		hasCompletedOnboarding: true,
@@ -89,6 +93,7 @@ import {
 	setupShutdownHook,
 } from '@/utils/migrationManager.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { databaseMigrationStore } from '@/stores/databaseMigration.svelte.js';
 import {
@@ -199,6 +204,7 @@ it('makes onboarding ready without waiting for dictionary initialization', async
 
 	const startup = runStartupActions();
 	await expect(waitForOnboardingReady()).resolves.toBeUndefined();
+	expect(contrastStore.loadSettings).toHaveBeenCalledOnce();
 
 	let startupComplete = false;
 	const completion = waitForStartupComplete().then(() => {

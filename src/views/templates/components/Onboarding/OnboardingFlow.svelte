@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -55,6 +56,17 @@
 		}
 	});
 
+	function focusStep(node: HTMLElement) {
+		const timer = setTimeout(() => {
+			const heading = node.querySelector<HTMLElement>('h1, h2');
+			if (heading) {
+				heading.tabIndex = -1;
+				heading.focus({ preventScroll: true });
+			}
+		}, 0);
+		return { destroy: () => clearTimeout(timer) };
+	}
+
 	function handleBack(): void {
 		onboardingStore.previousStep();
 	}
@@ -92,6 +104,7 @@
 
 <div
 	class="onboarding-flow"
+	use:responsiveLayout={{ thresholdRem: 36, className: 'onboarding-flow--compact' }}
 	class:onboarding-flow--desktop={variant === 'desktop'}
 	class:onboarding-flow--mobile={variant === 'mobile'}
 	class:onboarding-flow--draggable={canDragWindow}
@@ -106,6 +119,7 @@
 			{#key onboardingStore.currentStepId}
 				<div
 					class="onboarding-flow__step"
+					use:focusStep
 					in:fly={{ x: STEP_TRANSITION_X, duration: transitionDuration }}
 				>
 					{#if onboardingStore.currentStepId === 'welcome'}
@@ -179,8 +193,6 @@
 
 <style>
 	.onboarding-flow {
-		container-type: inline-size;
-		container-name: onboarding;
 		height: 100%;
 		min-height: 100%;
 		box-sizing: border-box;
@@ -254,7 +266,7 @@
 
 	.onboarding-flow__actions {
 		display: grid;
-		grid-template-columns: 1fr auto 1fr;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
 		align-items: center;
 		gap: var(--sy-space--large);
 		padding: var(--sy-space--extra-large);
@@ -278,23 +290,33 @@
 		justify-self: end;
 	}
 
-	.onboarding-flow__actions :global(.sy-button:focus-visible) {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 3px;
+	.onboarding-flow__back {
+		flex-wrap: wrap;
+		min-width: 0;
 	}
-
-	@container onboarding (max-width: 36rem) {
-		.onboarding-flow__actions--interview {
-			grid-template-columns: auto 1fr;
-		}
-		.onboarding-flow__actions--interview :global(.onboarding-progress) {
-			grid-row: 1;
-			grid-column: 1 / -1;
-		}
-		.onboarding-flow__actions--interview .onboarding-flow__back,
-		.onboarding-flow__actions--interview .onboarding-flow__primary {
-			grid-row: 2;
-		}
+	.onboarding-flow__primary {
+		min-width: 0;
+		max-width: 100%;
+	}
+	.onboarding-flow__primary :global(button) {
+		max-width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+	:global(.onboarding-flow--compact) .onboarding-flow__actions--interview {
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+	:global(.onboarding-flow--compact)
+		.onboarding-flow__actions--interview
+		:global(.onboarding-progress) {
+		grid-row: 1;
+		grid-column: 1 / -1;
+	}
+	:global(.onboarding-flow--compact) .onboarding-flow__actions--interview .onboarding-flow__back,
+	:global(.onboarding-flow--compact)
+		.onboarding-flow__actions--interview
+		.onboarding-flow__primary {
+		grid-row: 2;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

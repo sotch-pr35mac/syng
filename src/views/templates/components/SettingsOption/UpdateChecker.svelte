@@ -130,7 +130,7 @@
 		font-weight: var(--sy-font-weight--light);
 	}
 	.update-checker--update-available {
-		color: var(--sy-color--green);
+		color: var(--sy-text--green);
 	}
 	.update-checker--release-notes {
 		margin-top: var(--sy-space--large);

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
 	import SearchEmptyState from '@/components/Search/SearchEmptyState.svelte';
@@ -23,6 +23,7 @@
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
 	// sheetRef gives us access to collapse/openPartial/openFull on the snap sheet.
+	let dictionaryElement = $state<HTMLElement>();
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	// currentSnap and searchQuery are initialised from the persistent stores so that
 	// returning to this screen restores the previous state.
@@ -70,10 +71,24 @@
 		mobileSearchSnapStore.set(snap);
 	}
 
-	function handleSelectResult(data: { index: number; value: { word: SearchEntry } }): void {
+	function handleSelectResult(data: {
+		index: number;
+		value: { word: SearchEntry };
+		keyboard?: boolean;
+	}): void {
 		search.selectResult(data.index);
 		mobileCharacterWindowWordStore.set(data.value.word);
 		sheetRef?.collapse();
+		if (data.keyboard) {
+			void tick()
+				.then(() => {
+					dictionaryElement
+						?.querySelector<HTMLElement>('h1')
+						?.focus({ preventScroll: true });
+					return undefined;
+				})
+				.catch(() => {});
+		}
 	}
 
 	const clickTracker = createClickPositionTracker();
@@ -107,6 +122,7 @@
 		{#if search.activeWord}
 			<div
 				class="mobile-search__dict-wrapper"
+				bind:this={dictionaryElement}
 				onclickcapture={clickTracker.captureClickPosition}
 			>
 				<DictionaryContent
@@ -123,9 +139,19 @@
 		{/if}
 	</div>
 
-	<SySnapSheet bind:this={sheetRef} onSnapChange={handleSnapChange}>
+	<SySnapSheet
+		accessibleName="Search results"
+		bind:this={sheetRef}
+		onSnapChange={handleSnapChange}
+	>
 		<div class="mobile-search__search-row" onfocusin={handleSearchFocus}>
-			<SyButton style="ghost" size="small" color="blue" onclick={handleSwitchLang}>
+			<SyButton
+				aria-label={`Search language: ${search.searchLang} (${search.searchLang === 'EN' ? 'English' : search.searchLang === 'PY' ? 'Pinyin' : 'Chinese'}). Change language`}
+				style="ghost"
+				size="small"
+				color="blue"
+				onclick={handleSwitchLang}
+			>
 				{search.searchLang}
 			</SyButton>
 			<SyTextInput
@@ -133,6 +159,7 @@
 				size="large"
 				placeholder="Search..."
 				id="mobile-search-input"
+				aria-label="Search dictionary"
 				spellcheck={false}
 				oninput={handleSearch}
 				onenter={() => {
@@ -144,7 +171,11 @@
 			/>
 		</div>
 
+		<p class="sy-sr-only" role="status" aria-atomic="true">{search.statusMessage}</p>
 		<div
+			role="region"
+			aria-label="Search results"
+			aria-busy={search.isSearching}
 			class="mobile-search__results"
 			class:mobile-search__results--empty={search.status === 'ready' &&
 				!search.fullResults.length}
@@ -206,7 +237,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--mobile-medium);
 	}
@@ -219,6 +250,10 @@
 		flex-shrink: 0;
 	}
 
+	.mobile-search__search-row :global(.sy-text-input) {
+		flex: 1;
+		min-width: 0;
+	}
 	.mobile-search__results {
 		flex: 1;
 		overflow-y: auto;

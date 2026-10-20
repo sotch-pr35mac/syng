@@ -4,6 +4,7 @@ import { telemetry } from '@/utils/telemetry.js';
 import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type {
+	ToolName,
 	CharacterScript,
 	ColorizeMode,
 	ConvertCharactersResult,
@@ -15,6 +16,34 @@ import type {
 	ResolvedConvertDirection,
 	ResolvedPrettifyDirection,
 } from '@/types/tools.js';
+
+const toolRequestIds: Record<ToolName, number> = {
+	pinyinify: 0,
+	converter: 0,
+	colorize: 0,
+	prettify: 0,
+};
+const operationStates = $state<Record<ToolName, { busy: boolean; status: string }>>({
+	pinyinify: { busy: false, status: '' },
+	converter: { busy: false, status: '' },
+	colorize: { busy: false, status: '' },
+	prettify: { busy: false, status: '' },
+});
+
+function beginOperation(tool: ToolName, input: string): number {
+	toolRequestIds[tool] += 1;
+	operationStates[tool] = { busy: Boolean(input), status: input ? 'Processing…' : '' };
+	return toolRequestIds[tool];
+}
+
+function finishOperation(tool: ToolName, requestId: number, failed = false): void {
+	if (requestId === toolRequestIds[tool]) {
+		operationStates[tool] = {
+			busy: false,
+			status: failed ? 'Processing failed.' : 'Output ready.',
+		};
+	}
+}
 
 let pinyinifyInput = $state('');
 let pinyinifyResult = $state<PinyinSegment[]>([]);
@@ -38,6 +67,7 @@ let prettifyResolvedDirection = $state<ResolvedPrettifyDirection | null>(null);
 let prettifyDecision = $state('');
 
 function doPinyinify(): void {
+	const requestId = beginOperation('pinyinify', pinyinifyInput);
 	if (!pinyinifyInput) {
 		pinyinifyResult = [];
 		return;
@@ -46,7 +76,11 @@ function doPinyinify(): void {
 	const input = pinyinifyInput;
 	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: input })
 		.then((result) => {
+			if (requestId !== toolRequestIds.pinyinify) {
+				return undefined;
+			}
 			pinyinifyResult = result;
+			finishOperation('pinyinify', requestId);
 			telemetry
 				.trackEvent('tools.completed', {
 					tool: 'pinyinify',
@@ -56,10 +90,14 @@ function doPinyinify(): void {
 				.catch(() => {});
 			return undefined;
 		})
-		.catch((error) => handleError('Pinyinify failed.', error));
+		.catch((error) => {
+			finishOperation('pinyinify', requestId, true);
+			handleError('Pinyinify failed.', error);
+		});
 }
 
 function doConvert(): void {
+	const requestId = beginOperation('converter', converterInput);
 	if (!converterInput) {
 		converterResult = '';
 		converterResolvedDirection = null;
@@ -74,7 +112,11 @@ function doConvert(): void {
 		direction,
 	})
 		.then((result) => {
+			if (requestId !== toolRequestIds.converter) {
+				return undefined;
+			}
 			converterResult = result.text;
+			finishOperation('converter', requestId);
 			telemetry
 				.trackEvent('tools.completed', {
 					tool: 'converter',
@@ -91,10 +133,14 @@ function doConvert(): void {
 					: '';
 			return undefined;
 		})
-		.catch((error) => handleError('Character conversion failed.', error));
+		.catch((error) => {
+			finishOperation('converter', requestId, true);
+			handleError('Character conversion failed.', error);
+		});
 }
 
 function doColorize(): void {
+	const requestId = beginOperation('colorize', colorizeInput);
 	if (!colorizeInput) {
 		colorizeResult = [];
 		colorizeTokens = [];
@@ -107,19 +153,24 @@ function doColorize(): void {
 	const input = colorizeInput;
 	const mode = colorizeMode;
 	const script = colorizeScript;
-	const trackCompletion = () =>
-		telemetry
+	const trackCompletion = () => {
+		finishOperation('colorize', requestId);
+		return telemetry
 			.trackEvent('tools.completed', {
 				tool: 'colorize',
 				mode: `${mode}:${script}`,
 				input_length: Array.from(input.trim()).length,
 			})
 			.catch(() => {});
+	};
 	// Segment first; whether any token resolved to a dictionary word tells us if the
 	// input is Chinese characters (color the characters) or free-form pinyin (color
 	// the syllables) — no separate front-end CJK detector needed.
 	invoke<PinyinSegment[]>(NATIVE_COMMANDS.TOOLS.PINYINIFY, { text: input })
 		.then((segments) => {
+			if (requestId !== toolRequestIds.colorize) {
+				return undefined;
+			}
 			const hasChinese = segments.some(
 				(segment) => lexicalUnitFromToolSegment(segment) !== null
 			);
@@ -136,6 +187,9 @@ function doColorize(): void {
 				return invoke<PinyinToken[]>(NATIVE_COMMANDS.TOOLS.TOKENIZE_PINYIN, {
 					text: input,
 				}).then((tokens) => {
+					if (requestId !== toolRequestIds.colorize) {
+						return undefined;
+					}
 					colorizeTokens = tokens;
 					void trackCompletion();
 					return undefined;
@@ -146,7 +200,10 @@ function doColorize(): void {
 			void trackCompletion();
 			return undefined;
 		})
-		.catch((error) => handleError('Colorize failed.', error));
+		.catch((error) => {
+			finishOperation('colorize', requestId, true);
+			handleError('Colorize failed.', error);
+		});
 }
 
 function describeColorizeDecision(resolvedMode: Exclude<ColorizeMode, 'automatic'>): string {
@@ -167,6 +224,7 @@ function describeColorizeDecision(resolvedMode: Exclude<ColorizeMode, 'automatic
 }
 
 function doPrettify(): void {
+	const requestId = beginOperation('prettify', prettifyInput);
 	if (!prettifyInput) {
 		prettifyResult = '';
 		prettifyResolvedDirection = null;
@@ -181,7 +239,11 @@ function doPrettify(): void {
 		direction,
 	})
 		.then((result) => {
+			if (requestId !== toolRequestIds.prettify) {
+				return undefined;
+			}
 			prettifyResult = result.text;
+			finishOperation('prettify', requestId);
 			telemetry
 				.trackEvent('tools.completed', {
 					tool: 'prettify',
@@ -198,7 +260,10 @@ function doPrettify(): void {
 					: '';
 			return undefined;
 		})
-		.catch((error) => handleError('Pinyin prettify failed.', error));
+		.catch((error) => {
+			finishOperation('prettify', requestId, true);
+			handleError('Pinyin prettify failed.', error);
+		});
 }
 
 export function segmentsToPinyinText(segments: PinyinSegment[]): string {
@@ -271,6 +336,9 @@ function describePrettifyDirection(direction: ResolvedPrettifyDirection): string
 }
 
 export const toolsStore = {
+	operationState(tool: ToolName): { busy: boolean; status: string } {
+		return operationStates[tool];
+	},
 	get pinyinifyInput(): string {
 		return pinyinifyInput;
 	},
@@ -362,6 +430,10 @@ export const toolsStore = {
 };
 
 export function resetToolsStoreForTest(): void {
+	for (const tool of Object.keys(operationStates) as ToolName[]) {
+		toolRequestIds[tool] += 1;
+		operationStates[tool] = { busy: false, status: '' };
+	}
 	pinyinifyInput = '';
 	pinyinifyResult = [];
 	converterInput = '';

@@ -14,7 +14,7 @@
 		duration = 10,
 		size = 44,
 		autoStart = false,
-		progressColor = 'var(--sy-color--blue)',
+		progressColor = 'var(--sy-text--blue)',
 		oncomplete = () => {},
 	}: Props = $props();
 
@@ -74,14 +74,8 @@
 		}, FRAME_INTERVAL_MS);
 	}
 
-	function toggle(event: MouseEvent | KeyboardEvent): void {
+	function toggle(event: MouseEvent): void {
 		event.stopPropagation();
-		if ('key' in event && event.key !== 'Enter' && event.key !== ' ') {
-			return;
-		}
-		if ('key' in event) {
-			event.preventDefault();
-		}
 		if (isPaused) {
 			resume();
 		} else {
@@ -105,7 +99,6 @@
 	type="button"
 	aria-label={label}
 	onclick={toggle}
-	onkeydown={toggle}
 >
 	<svg class="mobile-timer__ring" viewBox="0 0 40 40" aria-hidden="true">
 		<circle
@@ -152,11 +145,6 @@
 
 	.mobile-timer:active {
 		background-color: var(--sy-color--blue-1);
-	}
-
-	.mobile-timer:focus-visible {
-		outline: 2px solid var(--sy-color--blue);
-		outline-offset: 2px;
 	}
 
 	.mobile-timer__ring {

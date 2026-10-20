@@ -56,3 +56,25 @@ it('uses a controlled key to keep the correct row active after reordering', asyn
 		container.querySelector('.sy-list-preview-item-container--active').textContent
 	).toContain('Banana');
 });
+
+it('activates native rows with Enter and Space and exposes the selected row', async () => {
+	const user = userEvent.setup();
+	const onselection = vi.fn();
+	const { getByRole } = render(SyList, { style: 'preview', values: VALUES, onselection });
+	const apple = getByRole('button', { name: 'Apple red fruit' });
+	const banana = getByRole('button', { name: 'Banana yellow fruit' });
+	apple.focus();
+	await user.keyboard('{Enter}');
+	expect(onselection).toHaveBeenLastCalledWith(
+		expect.objectContaining({ index: 0, value: VALUES[0] })
+	);
+	expect(apple.getAttribute('aria-current')).toBe('true');
+	await user.tab();
+	expect(document.activeElement).toBe(banana);
+	await user.keyboard(' ');
+	expect(onselection).toHaveBeenLastCalledWith(
+		expect.objectContaining({ index: 1, value: VALUES[1] })
+	);
+	expect(banana.getAttribute('aria-current')).toBe('true');
+	expect(apple.hasAttribute('aria-current')).toBe(false);
+});

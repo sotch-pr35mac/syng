@@ -7,6 +7,19 @@ on:
     workflow_dispatch:
 
 jobs:
+    accessibility:
+        name: Browser accessibility
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v7
+            - uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+                  cache: npm
+            - run: npm ci
+            - run: npx playwright install --with-deps chromium webkit
+            - run: npm run test:a11y
+
     test:
         name: Test on ${{ matrix.platform }}
         strategy:

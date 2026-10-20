@@ -1,71 +1,98 @@
-<script>
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { contrastStore } from '@/stores/contrast.svelte.js';
 	import { getPreferenceManager } from '@/utils/appServices.js';
+	import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {'desktop' | 'mobile'} [variant] - Visual density/layout variant
 	 * @property {(data: {hasCustomColors: boolean, colors: string[]}) => void} [onchange] - Change handler
 	 */
-
 	/** @type {Props} */
-	const { variant = 'desktop', onchange } = $props();
+	const {
+		variant = 'desktop',
+		onchange,
+	}: {
+		variant?: 'desktop' | 'mobile';
+		onchange?: (_data: { hasCustomColors: boolean; colors: string[] }) => void;
+	} = $props();
 
-	const styles = getComputedStyle(document.body);
-	const getRGB = (value) =>
-		value.substring(0, 2) === '--' ? styles.getPropertyValue(value) : value;
-	const colors = getPreferenceManager()
-		.get('toneColors')
-		.colors.map((color) => getRGB(color).trim());
-	const tones = [
-		{
-			label: 'First Tone',
-			color: colors[0],
-			index: 0,
-		},
-		{
-			label: 'Second Tone',
-			color: colors[1],
-			index: 1,
-		},
-		{
-			label: 'Third Tone',
-			color: colors[2],
-			index: 2,
-		},
-		{
-			label: 'Fourth Tone',
-			color: colors[3],
-			index: 3,
-		},
-		{
-			label: 'No Tone',
-			color: colors[4],
-			index: 4,
-		},
-	];
+	const pickerId = $props.id();
+	const RGB_CHANNELS = 3;
+	const HEX_RADIX = 16;
+	const labels = ['First Tone', 'Second Tone', 'Third Tone', 'Fourth Tone', 'No Tone'];
+	const savedColors = getPreferenceManager().get('toneColors');
+	let hasCustomColors = $state(Boolean(savedColors.hasCustomColors));
 
-	const handleUpdate = (index) => {
-		colors[index] = document.getElementById(`tone-${index + 1}`).value;
-		onchange?.({
-			hasCustomColors: true,
-			colors: colors,
-		});
-	};
+	function resolveColor(value: string): string {
+		if (/^#[0-9a-f]{6}$/i.test(value)) {
+			return value;
+		}
+		const sample = document.createElement('span');
+		sample.style.color = value.startsWith('--') ? `var(${value})` : value;
+		document.body.appendChild(sample);
+		const resolved = getComputedStyle(sample).color;
+		sample.remove();
+		const channels = resolved.match(/[\d.]+/g)?.slice(0, RGB_CHANNELS);
+		return channels?.length === RGB_CHANNELS
+			? `#${channels.map((channel) => Math.round(Number(channel)).toString(HEX_RADIX).padStart(2, '0')).join('')}`
+			: '#000000';
+	}
+
+	let colors = $state<string[]>(savedColors.colors.map(resolveColor));
+	let previousIncreaseContrast = contrastStore.increaseContrast;
+
+	function refreshThemeColors(): void {
+		if (!hasCustomColors) {
+			colors = THEME_TONE_COLOR_TOKENS.map(resolveColor);
+		}
+	}
+
+	$effect(() => {
+		const increaseContrast = contrastStore.increaseContrast;
+		if (increaseContrast !== previousIncreaseContrast) {
+			refreshThemeColors();
+			previousIncreaseContrast = increaseContrast;
+		}
+	});
+
+	function handleUpdate(index: number, event: Event): void {
+		colors[index] = (event.currentTarget as HTMLInputElement).value;
+		hasCustomColors = true;
+		onchange?.({ hasCustomColors: true, colors: [...colors] });
+	}
+
+	function resetColors(): void {
+		hasCustomColors = false;
+		colors = THEME_TONE_COLOR_TOKENS.map(resolveColor);
+		onchange?.({ hasCustomColors: false, colors: [...THEME_TONE_COLOR_TOKENS] });
+	}
+
+	onMount(() => {
+		const query = window.matchMedia?.('(prefers-color-scheme: dark)');
+		query?.addEventListener?.('change', refreshThemeColors);
+		return () => query?.removeEventListener?.('change', refreshThemeColors);
+	});
 </script>
 
 <div class="tone-color-picker" class:tone-color-picker--mobile={variant === 'mobile'}>
-	{#each tones as tone (tone.index)}
+	{#each labels as label, index (label)}
 		<div class="tone-color-picker--tone">
-			<label for={`tone-${tone.index + 1}`}>{tone.label}</label>
+			<label for={`${pickerId}-tone-${index + 1}`}>{label}</label>
 			<input
 				type="color"
-				value={tone.color}
-				id={`tone-${tone.index + 1}`}
-				name={`tone-${tone.index + 1}`}
-				onchange={() => handleUpdate(tone.index)}
+				value={colors[index]}
+				id={`${pickerId}-tone-${index + 1}`}
+				name={`tone-${index + 1}`}
+				onchange={(event) => handleUpdate(index, event)}
 			/>
 		</div>
 	{/each}
+	<SyButton style="ghost" onclick={resetColors} disabled={!hasCustomColors}
+		>Reset to theme colors</SyButton
+	>
 </div>
 
 <style>
@@ -73,7 +100,6 @@
 		display: flex;
 		flex-direction: column;
 	}
-
 	.tone-color-picker--tone {
 		display: flex;
 		align-items: center;

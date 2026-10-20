@@ -54,6 +54,7 @@
 	const activeDocument = $derived(reader.activeDocument);
 	const currentPage = $derived(reader.currentPage);
 	const pageCurl = $derived(reader.pageCurl);
+	const settingsPopoverId = `reader-settings-${crypto.randomUUID()}`;
 </script>
 
 <div class="reader" style={activeDocument ? reader.readerThemeStyle : ''}>
@@ -73,7 +74,7 @@
 				<ChevronLeft size="20" />
 				Library
 			</SyButton>
-			<span class="reader__document-title">{activeDocument?.title ?? 'Reader'}</span>
+			<h1 class="reader__document-title">{activeDocument?.title ?? 'Reader'}</h1>
 		</div>
 		<div class="reader__header-actions">
 			<SyButton
@@ -82,12 +83,17 @@
 				center={true}
 				disabled={!activeDocument}
 				aria-label="Reader settings"
-				aria-pressed={reader.readerSettingsPopoverVisible}
+				aria-expanded={reader.readerSettingsPopoverVisible}
+				aria-haspopup="dialog"
+				aria-controls={reader.readerSettingsPopoverVisible ? settingsPopoverId : undefined}
 				onclick={reader.toggleReaderSettingsPopover}
 			>
 				<SlidersHorizontal size="20" />
 			</SyButton>
 			<SyPopover
+				id={settingsPopoverId}
+				accessibleName="Reader settings"
+				returnFocus={reader.readerSettingsButtonElement}
 				visible={reader.readerSettingsPopoverVisible}
 				anchor={reader.readerSettingsPopoverAnchor}
 				ignoreElement={reader.readerSettingsButtonElement}
@@ -96,7 +102,7 @@
 				mobileTitle="Reader settings"
 				onclose={reader.closeReaderSettingsPopover}
 			>
-				<div class="reader__settings-popover" aria-label="Reader settings">
+				<div class="reader__settings-popover">
 					<div class="reader__settings-section">
 						<span class="reader__settings-label">Theme</span>
 						<ReaderThemeSelector
@@ -120,12 +126,14 @@
 	</div>
 
 	{#if activeDocument && currentPage}
-		<main
+		<section
+			aria-label="Reading document"
 			class="reader__stage"
 			class:reader__stage--ipad={isIPadDevice}
 			use:readerPageSwipe={reader.readerPageSwipeOptions}
 		>
 			<button
+				type="button"
 				class="reader__page-turn reader__page-turn--previous"
 				disabled={!readerRoute.canGoPrevious || reader.turningPage}
 				aria-label="Previous page"
@@ -175,6 +183,9 @@
 																	<ruby class="reader__ruby">
 																		<button
 																			class="reader__token"
+																			type="button"
+																			lang="zh"
+																			aria-haspopup="dialog"
 																			class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
 																				segment.token,
 																				readerRoute.dictionaryToken
@@ -193,6 +204,9 @@
 																{:else}
 																	<button
 																		class="reader__token"
+																		type="button"
+																		lang="zh"
+																		aria-haspopup="dialog"
 																		class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
 																			segment.token,
 																			readerRoute.dictionaryToken
@@ -288,6 +302,9 @@
 										<ruby class="reader__ruby">
 											<button
 												class="reader__token"
+												type="button"
+												lang="zh"
+												aria-haspopup="dialog"
 												class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
 													segment.token,
 													readerRoute.dictionaryToken
@@ -302,6 +319,9 @@
 									{:else}
 										<button
 											class="reader__token"
+											type="button"
+											lang="zh"
+											aria-haspopup="dialog"
 											class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
 												segment.token,
 												readerRoute.dictionaryToken
@@ -338,6 +358,7 @@
 				</div>
 			{/if}
 			<button
+				type="button"
 				class="reader__page-turn reader__page-turn--next"
 				disabled={!readerRoute.canGoNext || reader.turningPage}
 				aria-label="Next page"
@@ -345,18 +366,23 @@
 			>
 				<ChevronRight size="28" />
 			</button>
-			<div class="reader__page-count">
-				{readerRoute.pageIndex + 1} / {readerRoute.pageCount}
+			<div class="reader__page-count" role="status" aria-live="polite" aria-atomic="true">
+				<span aria-hidden="true">{readerRoute.pageIndex + 1} / {readerRoute.pageCount}</span
+				>
+				<span class="sy-sr-only"
+					>Page {readerRoute.pageIndex + 1} of {readerRoute.pageCount}</span
+				>
 			</div>
-		</main>
+		</section>
 	{:else}
-		<main class="reader__stage reader__stage--empty">
-			<span>Loading document...</span>
-		</main>
+		<section aria-label="Reading document" class="reader__stage reader__stage--empty">
+			<span role="status">Loading document...</span>
+		</section>
 	{/if}
 </div>
 
 <DictionaryPopover
+	returnFocus={reader.dictionaryTriggerElement}
 	word={readerRoute.dictionaryWord}
 	results={readerRoute.dictionaryResults}
 	resultIndex={readerRoute.dictionaryResultIndex}
@@ -380,6 +406,9 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		flex-shrink: 0;
+		flex-wrap: wrap;
+		gap: var(--sy-space);
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		background-color: var(--sy-color--white);
 		box-shadow: var(--sy-box-shadow);
@@ -397,7 +426,7 @@
 		align-items: center;
 		gap: var(--sy-space--large);
 		min-width: 0;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.reader__header-actions {
@@ -408,19 +437,18 @@
 	:global(.reader__library-back-button) {
 		gap: var(--sy-space);
 		margin: 0;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.reader__document-title {
+		margin: 0;
 		min-width: 0;
 		max-width: min(42vw, 520px);
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
-		font-size: var(--sy-font-size);
+		font-size: 1rem;
 		font-weight: var(--sy-font-weight--medium);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 
 	.reader__settings-popover {
@@ -429,7 +457,7 @@
 		gap: var(--sy-space--large);
 		padding: var(--sy-space--large);
 		box-sizing: border-box;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.reader__settings-section {
@@ -442,10 +470,11 @@
 		font-family: var(--sy-font-family);
 		font-size: 0.78rem;
 		font-weight: var(--sy-font-weight--medium);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 	}
 
 	.reader__stage {
+		--sy-focus-color: var(--reader-page-text, var(--sy-color--black));
 		--reader-stage-padding: clamp(16px, 2vw, 28px);
 		--reader-chevron-width: clamp(32px, 3vw, 44px);
 
@@ -469,7 +498,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-family: var(--sy-font-family);
 	}
 
@@ -543,9 +572,9 @@
 		border: 0;
 		border-radius: 0;
 		background: transparent;
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		cursor: pointer;
-		opacity: 0.4;
+		opacity: 1;
 		transition: opacity var(--sy-transition-duration);
 	}
 
@@ -575,7 +604,7 @@
 		padding: var(--sy-space) var(--sy-space--large);
 		border-radius: var(--sy-border-radius);
 		background: var(--reader-control-background, rgb(255 255 255 / 84%));
-		color: var(--reader-control-text, var(--sy-color--grey-4));
+		color: var(--reader-control-text, var(--sy-text--muted));
 		font-family: var(--sy-font-family);
 		font-size: 0.86rem;
 		box-shadow: var(--sy-shadow);
@@ -657,7 +686,7 @@
 	}
 
 	.reader__image-caption {
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-size: 0.9em;
 		font-style: italic;
 	}
@@ -701,7 +730,7 @@
 		margin: 0 0 1.2em;
 		padding: 0.35em 0 0.35em 1em;
 		border-left: 0.28em solid var(--reader-border-color, var(--sy-color--grey-2));
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-style: italic;
 	}
 
@@ -713,7 +742,7 @@
 	h6.reader__block {
 		white-space: normal;
 		line-height: 1.35;
-		color: var(--reader-page-text, var(--sy-color--grey-4));
+		color: var(--reader-page-text, var(--sy-text--muted));
 		margin: 0 0 0.75em;
 	}
 
@@ -757,9 +786,15 @@
 	}
 
 	.reader__ruby rt {
-		color: var(--reader-muted-text, var(--sy-color--grey-4));
+		color: var(--reader-muted-text, var(--sy-text--muted));
 		font-size: 0.52em;
 		font-weight: 500;
 		line-height: 1;
+	}
+
+	@media (forced-colors: active) {
+		.reader__stage {
+			--sy-focus-color: Highlight;
+		}
 	}
 </style>

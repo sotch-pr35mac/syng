@@ -62,14 +62,19 @@ describe.each([
 	['desktop', Bookmarks],
 	['mobile', MobileBookmarks],
 ] as const)('%s list creation', (_surface, component) => {
-	async function openCreateDialog() {
+	async function openCreateDialog(filterValue = '') {
 		const user = userEvent.setup();
 		const view = render(component);
-		const trigger = view.container.querySelector('.sy-dropdown--trigger') as HTMLElement;
+		if (filterValue) {
+			await user.type(screen.getByPlaceholderText('Filter'), filterValue);
+		}
+		const trigger = screen.getByRole('button', { name: 'Choose list: Bookmarks' });
 		await user.click(trigger);
-		await user.click(await screen.findByText('Create New'));
-		const input = view.container.querySelector('#create-new-list-input') as HTMLInputElement;
-		const modal = view.container.querySelector('.sy-modal--container') as HTMLElement;
+		await user.click(await screen.findByRole('menuitem', { name: 'Create New' }));
+		const input = screen.getByRole('textbox', {
+			name: 'What would you like to call this list?',
+		}) as HTMLInputElement;
+		const modal = screen.getByRole('dialog', { name: 'Create List' }).parentElement!;
 		const createButton = screen.getByRole('button', { name: /^Create$/ });
 		return { ...view, user, input, modal, createButton };
 	}
@@ -81,10 +86,16 @@ describe.each([
 		['create-new', 'This name is reserved. Choose another name.'],
 	])('keeps the form and explains invalid name %j', async (name, message) => {
 		const { user, input, modal, createButton } = await openCreateDialog();
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 		await user.type(input, name);
 		await user.click(createButton);
 
-		expect(await screen.findByText(message)).toBeTruthy();
+		const error = await screen.findByRole('alert');
+		expect(error.textContent).toContain(message);
+		expect(error.getAttribute('aria-atomic')).toBe('true');
+		expect(input.getAttribute('aria-invalid')).toBe('true');
+		expect(input.getAttribute('aria-describedby')).toBe(error.id);
 		expect(input.value).toBe(name);
 		expect(modal.classList.contains('sy-modal--active')).toBe(true);
 		expect((createButton as HTMLButtonElement).disabled).toBe(false);
@@ -93,13 +104,15 @@ describe.each([
 
 		await user.type(input, 'x');
 		expect(screen.queryByText(message)).toBeNull();
+		expect(screen.queryByRole('alert')).toBeNull();
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 	});
 
 	it('opens the trimmed new list and clears the prior filter and selected word', async () => {
-		const { user, input, modal, createButton } = await openCreateDialog();
+		const { user, input, modal, createButton } = await openCreateDialog('watermelon');
 		bookmarksRoute.setActiveWord(savedWord);
 		const filterInput = screen.getByPlaceholderText('Filter') as HTMLInputElement;
-		await user.type(filterInput, 'watermelon');
 		await user.type(input, '  existing  ');
 		await user.click(createButton);
 
@@ -129,9 +142,10 @@ describe.each([
 		expect((createButton as HTMLButtonElement).disabled).toBe(true);
 
 		rejectSave(new Error('Storage unavailable'));
-		expect(
-			await screen.findByText('Could not create this list. Please try again.')
-		).toBeTruthy();
+		const error = await screen.findByRole('alert');
+		expect(error.textContent).toContain('Could not create this list. Please try again.');
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.getAttribute('aria-describedby')).toBe(error.id);
 		expect(input.value).toBe('My vocabulary');
 		expect(modal.classList.contains('sy-modal--active')).toBe(true);
 		expect((createButton as HTMLButtonElement).disabled).toBe(false);
@@ -154,12 +168,12 @@ describe.each([
 					completeSave = resolve;
 				})
 		);
-		const { user, input, modal, createButton, container } = await openCreateDialog();
+		const { user, input, modal, createButton } = await openCreateDialog();
 		await user.type(input, 'First list');
 		await user.click(createButton);
 		await user.click(screen.getByRole('button', { name: 'Cancel' }));
-		await user.click(container.querySelector('.sy-dropdown--trigger') as HTMLElement);
-		await user.click(await screen.findByText('Create New'));
+		await user.click(screen.getByRole('button', { name: 'Choose list: Bookmarks' }));
+		await user.click(await screen.findByRole('menuitem', { name: 'Create New' }));
 		await user.type(input, 'Second list');
 		completeSave();
 
@@ -176,6 +190,9 @@ describe.each([
 		await user.click(screen.getByRole('button', { name: 'Cancel' }));
 		expect(input.value).toBe('');
 		expect(bookmarksRoute.creationError).toBe('');
+		expect(bookmarksRoute.creationNameInvalid).toBe(false);
+		expect(input.hasAttribute('aria-invalid')).toBe(false);
+		expect(input.hasAttribute('aria-describedby')).toBe(false);
 		expect(modal.classList.contains('sy-modal--active')).toBe(false);
 	});
 });

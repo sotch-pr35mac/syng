@@ -13,6 +13,7 @@
 		"format": "prettier --write \"src/views/**/*.{js,ts,svelte}\"",
 		"format:check": "prettier --check \"src/views/**/*.{js,ts,svelte}\"",
 		"test": "vitest run",
+		"test:a11y": "playwright test",
 		"test-coverage": "vitest run --coverage"
 	},
 	"repository": {
@@ -22,7 +23,9 @@
 	"author": "Preston Wang-Stosur-Bassett",
 	"license": "GPL-3.0",
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@eslint/js": "^10.0.1",
+		"@playwright/test": "^1.64.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@testing-library/svelte": "^5.0.0",
 		"@testing-library/user-event": "^14.6.7",

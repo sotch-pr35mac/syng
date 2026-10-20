@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -36,13 +37,14 @@
 <div class="mobile-reader">
 	{#if library.documents.length || library.editingLibrary}
 		<div class="mobile-reader__library-header">
-			<span class="mobile-reader__library-title">Library</span>
+			<h1 class="mobile-reader__library-title">Library</h1>
 			<div class="mobile-reader__library-actions">
 				{#if library.editingLibrary}
 					<SyButton
 						style="ghost"
 						size="small"
 						hover="red"
+						aria-label="Delete selected documents"
 						disabled={!library.selectedDocuments.length}
 						onclick={library.deleteSelectedDocuments}
 					>
@@ -59,8 +61,8 @@
 						position={DROPDOWN_POSITIONS.RIGHT}
 						onselection={library.handleImportSelection}
 					>
-						{#snippet children(open)}
-							<SyButton style="ghost" size="small" center={true}>
+						{#snippet children(open, triggerProps)}
+							<SyButton {...triggerProps} style="ghost" size="small" center={true}>
 								Import
 								{#if open}<ChevronUp size="18" />{:else}<ChevronDown
 										size="18"
@@ -70,28 +72,38 @@
 					</SyDropdown>
 				{/if}
 				{#if library.editingLibrary || library.documents.length}
-					<SyButton style="ghost" size="small" onclick={library.toggleEditing}>
+					<SyButton
+						style="ghost"
+						size="small"
+						onclick={library.toggleEditing}
+						aria-pressed={library.editingLibrary}
+					>
 						{library.editingLibrary ? 'Done' : 'Edit'}
 					</SyButton>
 				{/if}
 			</div>
 		</div>
 	{/if}
-	<main
+	<section
+		aria-label="Reading library"
+		aria-busy={readerRoute.importing}
 		class="mobile-reader__library"
 		class:mobile-reader__library--empty={!library.documents.length}
-		class:mobile-reader__library--full-height={!library.documents.length &&
-			!library.editingLibrary}
 	>
 		{#if library.documents.length}
-			<div class="mobile-reader__library-grid">
+			<div
+				class="mobile-reader__library-grid"
+				use:responsiveLayout={{
+					thresholdRem: 20,
+					className: 'mobile-reader__library-grid--narrow',
+				}}
+			>
 				{#each library.documents as document (document._id)}
 					<ReaderBookCard
 						{document}
 						editing={library.editingLibrary}
 						selected={library.selectedDocumentIds.has(document._id)}
 						onclick={() => library.handleDocumentCardClick(document)}
-						onkeyup={(event) => library.handleDocumentCardKey(event, document)}
 						onedit={(event) => library.openDocumentDetails(event, document)}
 					/>
 				{/each}
@@ -102,7 +114,7 @@
 					<Awa pose="read" size={AWA_SIZES.mobile} />
 					<p>Your reading library is empty</p>
 				</div>
-				<div class="mobile-reader__empty-actions" aria-label="Import options">
+				<div class="mobile-reader__empty-actions" role="group" aria-label="Import options">
 					<SyButton
 						size="small"
 						classes={['mobile-reader__empty-action']}
@@ -133,7 +145,10 @@
 				</div>
 			</div>
 		{/if}
-	</main>
+		<span class="sy-sr-only" role="status"
+			>{readerRoute.importing ? 'Importing document…' : ''}</span
+		>
+	</section>
 </div>
 
 <ReaderClipboardImportModal
@@ -178,6 +193,8 @@
 <style>
 	.mobile-reader {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 		background-color: var(--sy-color--grey-2);
@@ -188,40 +205,41 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		height: 54px;
+		min-height: 54px;
+		flex-shrink: 0;
+		flex-wrap: wrap;
+		gap: var(--sy-space);
 		padding: 0 var(--sy-mobile-space--large);
 		background: var(--sy-color--white);
 		border-bottom: var(--sy-mobile-surface-border);
 		box-sizing: border-box;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-weight: var(--sy-font-weight--medium);
 	}
 
 	.mobile-reader__library-actions {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 	}
 
 	.mobile-reader__library-title {
+		margin: 0;
 		min-width: 0;
 		overflow: hidden;
 		color: var(--sy-color--black);
 		font-size: var(--sy-font-size--mobile-large);
 		font-weight: var(--sy-font-weight--bold);
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 
 	.mobile-reader__library {
-		height: calc(100% - 54px);
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
 		box-sizing: border-box;
 		padding: var(--sy-mobile-space--large);
 		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom));
-	}
-
-	.mobile-reader__library--full-height {
-		height: 100%;
 	}
 
 	.mobile-reader__library--empty {
@@ -236,14 +254,19 @@
 		gap: var(--sy-mobile-space--large);
 	}
 
+	.mobile-reader__library-grid:global(.mobile-reader__library-grid--narrow) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
 	.mobile-reader__empty {
+		margin: auto;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
 		gap: var(--sy-mobile-space--large);
 		width: 100%;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		text-align: center;
 	}
 
@@ -260,6 +283,7 @@
 
 	.mobile-reader__empty-actions {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: stretch;
 		justify-content: center;
 		gap: var(--sy-mobile-space--medium);
@@ -268,7 +292,7 @@
 
 	:global(.mobile-reader__empty-action) {
 		display: inline-flex;
-		flex: 1 1 0;
+		flex: 1 1 6rem;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;

@@ -8,6 +8,7 @@
 		Settings,
 	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
+	import { router } from 'svelte-spa-router';
 
 	const tabs = [
 		{ href: '#/', path: '/', label: 'Search', icon: Search },
@@ -26,6 +27,13 @@
 				href={tab.href}
 				class="mobile-nav__tab"
 				aria-label={tab.label}
+				aria-current={(
+					typeof tab.path === 'string'
+						? router.location === tab.path
+						: tab.path.test(router.location)
+				)
+					? 'page'
+					: undefined}
 				title={tab.label}
 				use:active={{ path: tab.path, className: 'mobile-nav__tab--active' }}
 			>
@@ -70,7 +78,7 @@
 		min-height: var(--sy-mobile-touch-target);
 		border-radius: calc(var(--sy-border-radius) * 8);
 		font-family: var(--sy-font-family);
-		color: var(--sy-color--grey-4);
+		color: var(--sy-icon--muted);
 		text-decoration: none;
 		transition:
 			background-color var(--sy-transition-duration),
@@ -84,14 +92,14 @@
 
 	@media (hover: hover) {
 		.mobile-nav__tab:hover {
-			color: var(--sy-color--blue);
+			color: var(--sy-icon--hover);
 		}
 	}
 
 	:global(.mobile-nav__tab.mobile-nav__tab--active) {
 		background-color: var(--sy-color--white);
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-color--blue);
+		color: var(--sy-icon--hover);
 	}
 
 	:global(.mobile-nav__tab.mobile-nav__tab--active:active) {

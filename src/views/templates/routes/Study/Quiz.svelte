@@ -14,6 +14,7 @@
 	import { CHARACTER_QUESTIONS, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { quizRoute } from '@/composables/quiz.svelte.js';
 	import { isIPad } from '@/utils/device.js';
+	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
@@ -101,8 +102,11 @@
 		}
 	};
 
-	// Update the handlePageClick function
 	function handlePageClick(event) {
+		// Native keyboard activation belongs to its button, not the pointer pause shortcut.
+		if (event.detail === 0) {
+			return;
+		}
 		// Stop if the click was on the timer itself
 		if (event.target.closest('.timer')) {
 			return;
@@ -114,7 +118,20 @@
 	}
 </script>
 
-<div class="quiz--container">
+<div
+	class="quiz--container"
+	use:responsiveLayout={{ thresholdRem: 36, className: 'quiz--compact' }}
+>
+	<p class="sy-sr-only" role="status" aria-atomic="true">
+		{#if quizRoute.showFinalResults}
+			Quiz complete. {quizRoute.finalCorrect} of {quizRoute.finalTotal} correct.
+		{:else if quizRoute.showResult}
+			{quizRoute.lastAnswerCorrect ? 'Correct answer.' : 'Incorrect answer.'}
+		{:else if quizRoute.currentQuestion}
+			Question {quizRoute.questionsCompleted + 1} of {quizRoute.questionsTotal}.
+		{/if}
+	</p>
+
 	<div
 		class="quiz--header"
 		class:quiz--header--ipad={isIPadDevice}
@@ -174,14 +191,14 @@
 			{/each}
 		</div>
 	</div>
+	<!-- Pointer pause shortcut; the timer button provides the keyboard action. -->
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 	<div
 		class="quiz--content"
 		bind:this={contentElement}
 		onclick={handlePageClick}
-		onkeydown={handlePageClick}
-		role="button"
-		tabindex="0"
-		aria-label="Click to pause timer"
+		role="region"
+		aria-label="Quiz content"
 	>
 		{#if quizRoute.showFinalResults}
 			<QuizResults
@@ -218,6 +235,7 @@
 						<div class="quiz--options">
 							{#each currentQuestion.options as option (option.value)}
 								<button
+									type="button"
 									class="quiz--option"
 									onclick={() => answerQuestion(option.value)}
 								>
@@ -275,6 +293,7 @@
 		width: 100%;
 	}
 	.quiz--header {
+		flex-wrap: wrap;
 		display: flex;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		margin: 0;
@@ -289,11 +308,13 @@
 		padding-bottom: var(--sy-space--large);
 	}
 	.quiz--header--section {
+		flex-wrap: wrap;
 		display: flex;
 		align-items: center;
 		justify-content: space-around;
 	}
 	.quiz--content {
+		min-height: 0;
 		display: flex;
 		background-color: var(--sy-color--white);
 		width: 100%;
@@ -321,10 +342,13 @@
 		font-size: var(--sy-font-size--display-large);
 		font-weight: 200;
 	}
+	:global(.quiz--compact) .quiz--options {
+		grid-template-columns: minmax(0, 1fr);
+	}
 	.quiz--options {
 		margin: calc(var(--sy-space--extra-large) * 2);
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 		gap: var(--sy-space--large);
 		width: 100%;
 	}
@@ -337,14 +361,14 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: var(--sy-color--white);
-		background-color: var(--sy-color--blue);
+		color: var(--sy-text--on-fill);
+		background-color: var(--sy-fill--blue);
 		border-radius: var(--sy-border-radius);
 		font-size: var(--sy-font-size--display-medium);
 	}
 	.quiz--option:hover {
 		box-shadow: var(--sy-shadow--active);
-		background-color: rgba(118, 175, 249, 0.65);
+		background-color: var(--sy-fill--blue);
 		transition-property: background-color, box-shadow;
 		transition-duration: var(--sy-transition-duration);
 	}

@@ -57,6 +57,15 @@
 </script>
 
 <div class="flashcard--container">
+	<p class="sy-sr-only" role="status" aria-atomic="true">
+		{#if flashcardsRoute.loading}
+			{LOADING_STUDY_MESSAGE}
+		{:else if activeWord}
+			Card {flashcardsRoute.activeIndex + 1} of {flashcardsRoute.listContent.length}. {flashcardsRoute.showDetails
+				? 'Details shown.'
+				: 'Front shown.'}
+		{/if}
+	</p>
 	<div
 		class="flashcard--header"
 		class:flashcard--header--ipad={isIPadDevice}
@@ -161,6 +170,7 @@
 		width: 100%;
 	}
 	.flashcard--header {
+		flex-wrap: wrap;
 		display: flex;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		margin: 0;
@@ -175,6 +185,7 @@
 		padding-bottom: var(--sy-space--large);
 	}
 	.flashcard--header--section {
+		flex-wrap: wrap;
 		display: flex;
 		flex-shrink: 0;
 		align-items: center;

@@ -170,11 +170,11 @@
 		grid-template-columns: 1fr;
 	}
 
-	@container onboarding (min-width: 36rem) {
-		.chinese-prefs--desktop .chinese-prefs__layout {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			align-items: start;
-		}
+	:global(.onboarding-flow:not(.onboarding-flow--compact))
+		.chinese-prefs--desktop
+		.chinese-prefs__layout {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		align-items: start;
 	}
 
 	:global(.onboarding-flow--mobile) .chinese-prefs__title {

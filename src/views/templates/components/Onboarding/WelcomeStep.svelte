@@ -121,7 +121,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--sy-space);
-		color: var(--sy-color--blue-2);
+		color: var(--sy-text--blue);
 		flex-shrink: 0;
 	}
 
@@ -129,7 +129,7 @@
 		margin: 0 0 var(--sy-space) 0;
 		font-size: var(--sy-font-size--medium);
 		font-weight: var(--sy-font-weight--bold);
-		line-height: 22px;
+		line-height: 1.375;
 	}
 
 	.welcome-step__feature-copy {
@@ -152,9 +152,7 @@
 		font-size: var(--sy-font-size--mobile-small);
 	}
 
-	@container onboarding (min-width: 36rem) {
-		.welcome-step__features {
-			grid-template-columns: 1fr 1fr;
-		}
+	:global(.onboarding-flow:not(.onboarding-flow--compact)) .welcome-step__features {
+		grid-template-columns: 1fr 1fr;
 	}
 </style>

@@ -32,13 +32,7 @@
 	};
 </script>
 
-<!-- svelte-ignore a11y_invalid_attribute -->
-<a
-	href="javascript:void(0)"
-	class="dictionary-link"
-	onclick={openLink}
-	data-testid="dictionary-link"
->
+<button type="button" class="dictionary-link" onclick={openLink} data-testid="dictionary-link">
 	{#if hasCharacterForms}
 		<PreferredCharacters
 			{simplified}
@@ -49,17 +43,23 @@
 	{:else}
 		{@render children?.()}
 	{/if}
-</a>
+</button>
 
 <style>
 	.dictionary-link {
+		display: inline;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		font: inherit;
+		text-align: inherit;
 		cursor: pointer;
-		color: var(--sy-color--blue);
+		color: var(--sy-text--blue);
 	}
 	.dictionary-link :global(*) {
 		cursor: pointer;
 	}
 	.dictionary-link:hover {
-		color: var(--sy-color--blue-2);
+		text-decoration: underline;
 	}
 </style>
