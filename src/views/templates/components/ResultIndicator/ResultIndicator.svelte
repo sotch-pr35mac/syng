@@ -43,6 +43,26 @@
 		suspended = false,
 	} = $props();
 	/* eslint-enable prefer-const */
+
+	/**
+	 * @param {HTMLElement} node
+	 * @param {import('svelte/transition').SlideParams} parameters
+	 */
+	function slideFeedback(node, parameters) {
+		const transition = slide(node, parameters);
+		if (parameters.axis !== 'x') {
+			return transition;
+		}
+
+		// Keep the text layout steady while the outer box clips it. The width
+		// returns to auto after the transition so long answers can still reflow.
+		const contentWidth = getComputedStyle(node).width;
+		return {
+			...transition,
+			css: (progress, inverse) =>
+				`${transition.css(progress, inverse)}; --quiz-feedback-content-width: ${contentWidth};`,
+		};
+	}
 </script>
 
 {#if show}
@@ -50,8 +70,8 @@
 		<!-- Result badge with slide animation -->
 		<div
 			class="result-indicator"
-			in:slide|global={{ duration: 250, axis: slideAxis }}
-			out:slide|global={{ duration: 250, axis: slideAxis }}
+			in:slideFeedback|global={{ duration: 250, axis: slideAxis }}
+			out:slideFeedback|global={{ duration: 250, axis: slideAxis }}
 		>
 			<div class="indicator-content">
 				{#if isCorrect}
@@ -102,6 +122,7 @@
 	}
 	.indicator-content {
 		display: flex;
+		width: var(--quiz-feedback-content-width, auto);
 		align-items: center;
 		gap: var(--sy-space);
 		flex-wrap: wrap;
