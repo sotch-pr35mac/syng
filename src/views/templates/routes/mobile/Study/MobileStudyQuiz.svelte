@@ -2,6 +2,7 @@
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ArrowRight, RotateCw, SquareStack, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
@@ -181,6 +182,18 @@
 	}
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="quiz"
+	context={{ listName: activeList ?? undefined }}
+	ready={router.location === '/study/quiz' &&
+		!quizRoute.loading &&
+		!quizRoute.error &&
+		quizRoute.activeList === activeList &&
+		Boolean(quizRoute.currentQuestion) &&
+		!quizRoute.showAnswer &&
+		!quizRoute.showFinalResults}
+/>
+
 <!-- Pointer pause shortcut; the timer button provides the keyboard action. -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 <div class="mobile-quiz" onclick={handlePageClick} role="region" aria-label="Quiz content">
@@ -248,6 +261,13 @@
 						>Flashcards</SyButton
 					>{/if}
 				{#if quizRoute.error}<SyButton onclick={retakeQuiz}>Try again</SyButton>{/if}
+				{#if !quizRoute.loading && !quizRoute.error}
+					<WalkthroughHelp
+						guide="quiz"
+						label="Learn how quizzes work"
+						context={{ listName: activeList ?? undefined }}
+					/>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -281,7 +301,6 @@
 
 		<div class="mobile-quiz__bar">
 			<div class="mobile-quiz__exit-row">
-				<WalkthroughHelp guide="quiz" context={{ listName: activeList ?? undefined }} />
 				<SyButton
 					style="ghost"
 					size="large"

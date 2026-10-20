@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
-	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-svelte';
 	import { platform } from '@tauri-apps/plugin-os';
@@ -60,6 +60,12 @@
 	const settingsPopoverId = `reader-settings-${crypto.randomUUID()}`;
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="reader-document"
+	context={{ documentId: params.id }}
+	ready={Boolean(activeDocument && activeDocument._id === params.id && currentPage)}
+/>
+
 <div class="reader" style={activeDocument ? reader.readerThemeStyle : ''}>
 	<div
 		class="reader__header"
@@ -82,7 +88,6 @@
 			<h1 class="reader__document-title">{activeDocument?.title ?? 'Reader'}</h1>
 		</div>
 		<div class="reader__header-actions">
-			<WalkthroughHelp guide="reader-document" context={{ documentId: params.id }} />
 			<SyButton
 				style="ghost"
 				size="large"

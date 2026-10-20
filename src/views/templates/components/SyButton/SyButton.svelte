@@ -62,6 +62,10 @@
 	 * @property {string} [form] - Associated native form ID
 	 * @property {string} [aria-label] - Accessible label
 	 * @property {boolean | 'true' | 'false'} [aria-pressed] - Pressed state
+	 * @property {boolean} [aria-expanded] - Whether the controlled popup is open
+	 * @property {string} [aria-controls] - Controlled element ID
+	 * @property {'menu'} [aria-haspopup] - Popup type
+	 * @property {(event: KeyboardEvent) => void} [onkeydown] - Keyboard handler
 	 * @property {string} [title] - Native title
 	 * @property {import('svelte').Snippet} [children]
 	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
@@ -143,6 +147,10 @@
 		font-family: var(--sy-font-family);
 		max-width: 100%;
 		overflow-wrap: anywhere;
+	}
+	.sy-button:focus-visible {
+		outline: 2px solid var(--sy-color--blue-2);
+		outline-offset: 2px;
 	}
 	.sy-button:disabled {
 		color: var(--sy-color--grey-5);

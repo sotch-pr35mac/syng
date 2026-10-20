@@ -10,10 +10,15 @@ export const WALKTHROUGH_IDS = [
 	'quiz',
 ] as const;
 export type WalkthroughId = (typeof WALKTHROUGH_IDS)[number];
+export type FeatureWalkthroughId = Extract<
+	WalkthroughId,
+	'reader-document' | 'flashcards' | 'quiz'
+>;
 export type WalkthroughContext = { documentId?: string; listName?: string };
 export type WalkthroughStatus = 'in-progress' | 'skipped' | 'completed';
 export type WalkthroughProgress = {
 	status: WalkthroughStatus;
+	completed?: boolean;
 	stepId?: string;
 	context: WalkthroughContext;
 };
@@ -21,6 +26,7 @@ export type WalkthroughPreferences = {
 	version: number;
 	invitation: 'eligible' | 'shown' | 'unavailable';
 	guides: Partial<Record<WalkthroughId, WalkthroughProgress>>;
+	featureInvitations?: Partial<Record<FeatureWalkthroughId, boolean>>;
 	examples: { documentId?: string; listName?: string; listPending?: boolean };
 };
 export const createWalkthroughPreferences = (freshInstall = false): WalkthroughPreferences => ({
@@ -36,6 +42,9 @@ export type WalkthroughTargetId =
 	| 'search-results'
 	| 'search-history'
 	| 'dictionary-entry'
+	| 'dictionary-link'
+	| 'dictionary-examples'
+	| 'dictionary-popup'
 	| 'dictionary-save'
 	| 'dictionary-characters'
 	| 'dictionary-notes'

@@ -2,6 +2,7 @@
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ChevronLeft, ArrowRight, SquareStack, RotateCw } from 'lucide-svelte';
 	import { onDestroy, untrack } from 'svelte';
@@ -146,6 +147,18 @@
 	}
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="quiz"
+	context={{ listName: activeList ?? undefined }}
+	ready={router.location === '/study/quiz' &&
+		!quizRoute.loading &&
+		!quizRoute.error &&
+		quizRoute.activeList === activeList &&
+		Boolean(quizRoute.currentQuestion) &&
+		!quizRoute.showAnswer &&
+		!quizRoute.showFinalResults}
+/>
+
 <div
 	class="quiz--container"
 	use:responsiveLayout={{ thresholdRem: 36, className: 'quiz--compact' }}
@@ -166,7 +179,6 @@
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<div class="quiz--header--section">
-			<WalkthroughHelp guide="quiz" context={{ listName: activeList ?? undefined }} />
 			{#each leftActions as action (action.label)}
 				<SyButton
 					guideTarget="study-exit"
@@ -297,6 +309,13 @@
 							{#if quizRoute.error}<SyButton onclick={quizRoute.retake}
 									>Try again</SyButton
 								>{/if}
+							{#if !quizRoute.loading && !quizRoute.error}
+								<WalkthroughHelp
+									guide="quiz"
+									label="Learn how quizzes work"
+									context={{ listName: activeList ?? undefined }}
+								/>
+							{/if}
 						</div>
 					{/if}
 				</div>

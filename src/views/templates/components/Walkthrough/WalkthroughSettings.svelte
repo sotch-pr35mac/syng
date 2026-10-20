@@ -1,107 +1,138 @@
 <script lang="ts">
+	import { ChevronDown, ChevronUp } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
+	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
+	import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
+	import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import type { WalkthroughId } from '@/types/walkthrough.js';
-	const groups: { title: string; guides: { id: WalkthroughId; label: string }[] }[] = [
-		{ title: 'Explore Syng', guides: [{ id: 'app', label: 'App tour' }] },
-		{
-			title: 'Dictionary and vocabulary',
-			guides: [
-				{ id: 'dictionary', label: 'Dictionary' },
-				{ id: 'bookmarks', label: 'Bookmarks' },
-			],
-		},
-		{
-			title: 'Reader',
-			guides: [
-				{ id: 'reader-library', label: 'Importing and your library' },
-				{ id: 'reader-document', label: 'Reading a document' },
-			],
-		},
-		{
-			title: 'Study',
-			guides: [
-				{ id: 'study', label: 'Choosing what to study' },
-				{ id: 'flashcards', label: 'Flashcards' },
-				{ id: 'quiz', label: 'Quizzes' },
-			],
-		},
+
+	const { variant = 'desktop' }: { variant?: 'desktop' | 'mobile' } = $props();
+	const identifier = $props.id();
+	// Keep these labels independent of the lazily loaded guide content.
+	const guides: { id: WalkthroughId; label: string }[] = [
+		{ id: 'app', label: 'App tour' },
+		{ id: 'dictionary', label: 'Dictionary' },
+		{ id: 'bookmarks', label: 'Bookmarks' },
+		{ id: 'reader-library', label: 'Importing and your library' },
+		{ id: 'reader-document', label: 'Reading a document' },
+		{ id: 'study', label: 'Choosing what to study' },
+		{ id: 'flashcards', label: 'Flashcards' },
+		{ id: 'quiz', label: 'Quizzes' },
 	];
+	let selectedId = $state<WalkthroughId>('app');
+	let controls = $state<HTMLDivElement>();
+	const selectedGuide = $derived(guides.find((guide) => guide.id === selectedId)!);
+	const progress = $derived(walkthroughStore.preferences.guides[selectedId]);
+	const actionLabel = $derived(
+		progress?.status === 'in-progress' ? 'Resume' : progress ? 'Replay' : 'Start'
+	);
+	const choices = $derived([
+		...guides.map((guide) => ({
+			id: guide.id,
+			text: guide.label,
+			selected: guide.id === selectedId,
+			component: SimpleTextDropdownItem,
+		})),
+		...(progress?.status === 'in-progress'
+			? [
+					{ id: 'divider', component: DividerDropdownItem },
+					{
+						id: 'restart',
+						text: 'Start over',
+						'aria-label': `Start over ${selectedGuide.label}`,
+						component: SimpleTextDropdownItem,
+					},
+				]
+			: []),
+	]);
+
+	function launchGuide(resume = false): void {
+		controls
+			?.querySelector<HTMLButtonElement>('.sy-button-bar--container > .sy-button')
+			?.focus({ preventScroll: true });
+		void walkthroughStore.start(selectedId, {}, resume);
+	}
+	function selectGuide(value: string | number): void {
+		if (value === 'restart') {
+			launchGuide();
+		} else if (guides.some((guide) => guide.id === value)) {
+			selectedId = value as WalkthroughId;
+		}
+	}
 </script>
 
-<section
+<div
 	class="walkthrough-settings"
-	aria-labelledby="walkthrough-settings-title"
+	class:walkthrough-settings--mobile={variant === 'mobile'}
+	role="group"
+	aria-labelledby={`${identifier}-label`}
 	use:walkthroughTarget={'settings-walkthroughs'}
 >
-	<h2 id="walkthrough-settings-title">Walkthroughs</h2>
-	<p>Explore the app or get help with one feature. Every guide is optional.</p>
-	{#each groups as group (group.title)}
-		<h3>{group.title}</h3>
-		{#each group.guides as item (item.id)}
-			{@const progress = walkthroughStore.preferences.guides[item.id]}
-			<div class="walkthrough-settings__row">
-				<span>{item.label}</span>
-				<div>
-					{#if progress?.status === 'in-progress'}
-						<SyButton
-							aria-label={`Resume ${item.label}`}
-							size="small"
-							style="ghost"
-							onclick={() => walkthroughStore.start(item.id, {}, true)}
-							>Resume</SyButton
-						>
-					{/if}
+	<span id={`${identifier}-label`}>Walkthrough</span>
+	<div bind:this={controls} class="walkthrough-settings__controls">
+		<SyButtonBar size="large">
+			<SyDropdown
+				values={choices}
+				fixed={true}
+				aria-label="Walkthroughs"
+				onselection={selectGuide}
+			>
+				{#snippet children(open, attributes)}
 					<SyButton
-						aria-label={`${progress ? 'Restart' : 'Start'} ${item.label}`}
-						size="small"
-						style="ghost"
-						onclick={() => walkthroughStore.start(item.id)}
-						>{progress ? 'Start again' : 'Start guide'}</SyButton
+						{...attributes}
+						grouped={true}
+						classes={['sy-button--grouped--first']}
+						center={true}
+						aria-label={`Choose walkthrough: ${selectedGuide.label}`}
+						title={selectedGuide.label}
 					>
-				</div>
-			</div>
-		{/each}
-	{/each}
-</section>
+						<span class="walkthrough-settings__selection">{selectedGuide.label}</span
+						>&nbsp;
+						{#if open}<ChevronUp size="16" />{:else}<ChevronDown size="16" />{/if}
+					</SyButton>
+				{/snippet}
+			</SyDropdown>
+			<SyButton
+				grouped={true}
+				aria-label={`${actionLabel} ${selectedGuide.label}`}
+				onclick={() => launchGuide(progress?.status === 'in-progress')}
+				>{actionLabel}</SyButton
+			>
+		</SyButtonBar>
+	</div>
+</div>
 
 <style>
 	.walkthrough-settings {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		align-items: center;
 		width: 100%;
-		font-family: var(--sy-font-family);
-		color: var(--sy-color--black);
+		container-type: inline-size;
 	}
-	h2 {
-		font-size: var(--sy-font-size--large);
-		margin: 0 0 var(--sy-space--large);
+	.walkthrough-settings__controls {
+		min-width: 0;
+		max-width: 100%;
 	}
-	h3 {
-		font-size: var(--sy-font-size);
-		margin: var(--sy-space--extra-large) 0 var(--sy-space--medium);
+	.walkthrough-settings__selection {
+		max-width: 10em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	p {
-		font-size: var(--sy-font-size--small);
-		line-height: 1.5;
-	}
-	.walkthrough-settings__row {
+	.walkthrough-settings--mobile {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--sy-space--medium);
-		padding: var(--sy-space--medium) 0;
+		gap: var(--sy-mobile-space--medium);
 	}
-	.walkthrough-settings__row > div {
-		display: flex;
-		flex-wrap: wrap;
-	}
-	.walkthrough-settings :global(button:focus-visible) {
-		outline: 2px solid var(--sy-color--blue-2);
-		outline-offset: 2px;
-	}
-	.walkthrough-settings :global(button) {
-		min-height: 44px;
-		font-size: var(--sy-font-size--small);
+	@container (max-width: 28rem) {
+		.walkthrough-settings:not(.walkthrough-settings--mobile) > * {
+			grid-column: 1 / -1;
+		}
 	}
 </style>

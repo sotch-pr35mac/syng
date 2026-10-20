@@ -6,7 +6,8 @@
 	import SyList from '@/components/SyList/SyList.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { Search } from 'lucide-svelte';
@@ -31,9 +32,13 @@
 				flashcardsActiveListStore.value,
 				studyOriginStore.value
 			);
-			return undefined;
 		}
-		void studyLists.load();
+	});
+	$effect(() => {
+		void bookmarksStore.contentRevision;
+		untrack(() => {
+			void studyLists.load();
+		});
 		return studyLists.cancel;
 	});
 	function handleSelection(event: { action: StudyAction; list: string }): void {
@@ -52,7 +57,6 @@
 	>
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
-	<WalkthroughHelp guide="study" />
 	<div
 		use:walkthroughTarget={'study-lists'}
 		class="study--content"
@@ -64,6 +68,9 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
+			<div class="study--help">
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
+			</div>
 			<SyList
 				values={populatedLists}
 				component={StudyListItem}
@@ -83,12 +90,17 @@
 					<Search size="20" />
 					<span>Search for words</span>
 				</SyButton>
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
 			</div>
 		{/if}
 	</div>
 </div>
 
 <style>
+	.study--help {
+		text-align: center;
+	}
+
 	.study--container {
 		display: flex;
 		flex-direction: column;

@@ -67,6 +67,7 @@
 	width={DESKTOP_WIDTH_PX}
 	height={DESKTOP_HEIGHT_PX}
 	mobileTitle="Dictionary"
+	guideTarget="dictionary-popup"
 	{onclose}
 >
 	<div class="dictionary-popover__body" data-walkthrough-secondary="true">

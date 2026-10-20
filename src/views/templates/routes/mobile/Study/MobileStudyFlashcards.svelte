@@ -1,5 +1,6 @@
 <script lang="ts">
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ArrowLeft, ArrowRight, RotateCcw, RotateCw, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
@@ -58,6 +59,16 @@
 	onDestroy(flashcardsRoute.endSession);
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="flashcards"
+	context={{ listName: listFromUrl ?? undefined }}
+	ready={router.location === '/study/flashcards' &&
+		!flashcardsRoute.loading &&
+		!flashcardsRoute.error &&
+		flashcardsRoute.activeList === listFromUrl &&
+		Boolean(flashcardsRoute.activeWord)}
+/>
+
 <div class="mobile-flashcards">
 	<p class="sy-sr-only" role="status" aria-atomic="true">
 		{#if flashcardsRoute.loading}
@@ -96,6 +107,13 @@
 								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					{/if}
 				</h1>
+				{#if !flashcardsRoute.loading && !flashcardsRoute.error && !flashcardsRoute.listContent.length}
+					<WalkthroughHelp
+						guide="flashcards"
+						label="Learn how flashcards work"
+						context={{ listName: listFromUrl ?? undefined }}
+					/>
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -112,7 +130,6 @@
 					</span>
 				</div>
 			{/if}
-			<WalkthroughHelp guide="flashcards" context={{ listName: listFromUrl ?? undefined }} />
 			<SyButton
 				style="ghost"
 				size="large"
@@ -183,6 +200,8 @@
 	}
 
 	.mobile-flashcards__front {
+		flex-direction: column;
+		gap: var(--sy-space--large);
 		min-height: 100%;
 		display: flex;
 		align-items: center;

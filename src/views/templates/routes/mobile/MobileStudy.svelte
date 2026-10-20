@@ -3,7 +3,8 @@
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
 
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { Search } from 'lucide-svelte';
@@ -28,9 +29,13 @@
 				flashcardsActiveListStore.value,
 				studyOriginStore.value
 			);
-			return undefined;
 		}
-		void studyLists.load();
+	});
+	$effect(() => {
+		void bookmarksStore.contentRevision;
+		untrack(() => {
+			void studyLists.load();
+		});
 		return studyLists.cancel;
 	});
 	function handleSelection(event: { action: StudyAction; list: string }): void {
@@ -40,9 +45,6 @@
 </script>
 
 <div class="mobile-study">
-	<div class="mobile-study__help">
-		<WalkthroughHelp guide="study" />
-	</div>
 	<div
 		use:walkthroughTarget={'study-lists'}
 		class="mobile-study__content"
@@ -54,6 +56,9 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
+			<div class="mobile-study__help">
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
+			</div>
 			<div class="mobile-study__list">
 				{#each populatedLists as list (list.name)}
 					<StudyListItem value={list} variant="mobile" onselection={handleSelection} />
@@ -73,23 +78,23 @@
 					<Search size="20" />
 					<span>Search for words</span>
 				</SyButton>
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
 			</div>
 		{/if}
 	</div>
 </div>
 
 <style>
+	.mobile-study__help {
+		text-align: center;
+	}
+
 	.mobile-study {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 		background-color: var(--sy-color--grey-2);
-	}
-
-	.mobile-study__help {
-		display: flex;
-		flex-shrink: 0;
 	}
 
 	.mobile-study__content {

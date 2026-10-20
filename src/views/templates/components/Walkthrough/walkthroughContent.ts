@@ -6,7 +6,7 @@ import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
-import { isMobileLayout } from '@/utils/device.js';
+import { isIPad, isMobileLayout } from '@/utils/device.js';
 import { resolveNameConflict } from '@/utils/name.js';
 import {
 	applyReaderImportMetadata,
@@ -53,6 +53,18 @@ function step(
 	options: Partial<WalkthroughStep> = {}
 ): WalkthroughStep {
 	return { id, title, body, target, route, ...options };
+}
+
+export async function hasSuitableContent(kind: 'document' | 'list'): Promise<boolean> {
+	if (kind === 'document') {
+		await readerDocumentsStore.refresh();
+		return readerDocumentsStore.documents.length > 0;
+	}
+	await bookmarksStore.refresh();
+	const contents = await Promise.all(
+		bookmarksStore.lists.map((listName) => bookmarksStore.getContent(listName))
+	);
+	return contents.some((words) => words.length > 0);
 }
 
 export async function prepareGuide(
@@ -150,7 +162,7 @@ export async function prepareGuide(
 				step(
 					'study',
 					'Practice what you save',
-					'Choose a saved list for flashcards or a quiz. Quizzes need at least four words. You can add an example list or come back after saving your own.',
+					'Choose a saved list for flashcards or a quiz. Quizzes need at least four words.',
 					'study-lists',
 					'/study',
 					{ example: 'list' }
@@ -173,7 +185,7 @@ export async function prepareGuide(
 				step(
 					'settings',
 					'Make Syng yours',
-					'Adjust character display and tone colors in General. Replay this tour or open a shorter feature guide in Walkthroughs.',
+					'Adjust character display and tone colors in General. Find every guide in Settings → Walkthrough whenever you need a refresher.',
 					'settings-walkthroughs',
 					'/settings'
 				),
@@ -198,10 +210,18 @@ export async function prepareGuide(
 				step(
 					'meaning',
 					'Understand the entry',
-					'Read the characters, pinyin, and definitions here. Linked words open another dictionary entry.',
+					'Read the characters, pinyin, and definitions here.',
 					'dictionary-entry',
 					'/',
 					{ fallbackTarget: 'search-results' }
+				),
+				step(
+					'links',
+					'Look up blue links without leaving the page',
+					'Select a blue word in an example sentence or definition to open the popup dictionary without leaving this page.',
+					'dictionary-examples',
+					'/',
+					{ fallbackTarget: 'dictionary-link' }
 				),
 				step(
 					'save',
@@ -245,7 +265,7 @@ export async function prepareGuide(
 				step(
 					'words',
 					'Find your vocabulary',
-					'Save words from a dictionary entry with +. They appear in the selected list here. You can also add an example vocabulary list.',
+					'Save words from a dictionary entry with +. They appear in the selected list here.',
 					'bookmarks-words',
 					'/bookmarks',
 					{ example: 'list' }
@@ -297,7 +317,7 @@ export async function prepareGuide(
 				step(
 					'library',
 					'Keep your reading together',
-					'Open a document to read from your saved place. Use Edit to manage your library. The reading guide is available inside each document.',
+					'Open a document to read from your saved place. Use Edit to manage your library. Find the reading guide in Settings → Walkthrough.',
 					'reader-library',
 					'/read'
 				),
@@ -318,7 +338,9 @@ export async function prepareGuide(
 					'Move through the document',
 					isMobileLayout()
 						? 'Swipe across the page to keep reading. Syng saves your reading place.'
-						: 'Use the page controls to move through your document. On iPad you can also swipe. Syng saves your reading place.',
+						: isIPad()
+							? 'Use the page controls or swipe across the page to keep reading. Syng saves your reading place.'
+							: 'Use the page controls to move through your document. Syng saves your reading place.',
 					'reader-pages',
 					route,
 					{ fallbackTarget: 'reader-page' }
@@ -333,7 +355,7 @@ export async function prepareGuide(
 				step(
 					'library',
 					'Return to your library',
-					'Use this control to choose another document. You can return to this guide through Show me how.',
+					'Use this control to choose another document. You can return to this guide from Settings → Walkthrough.',
 					'reader-back',
 					route
 				),
@@ -345,7 +367,7 @@ export async function prepareGuide(
 				step(
 					'lists',
 					'Choose what to practice',
-					'Study uses your saved vocabulary lists. Save words from Search or Reader, or add an example list to try it now.',
+					'Study uses your saved vocabulary lists. Save words from Search or Reader, then choose a list here.',
 					'study-lists',
 					'/study',
 					{ example: 'list' }
@@ -478,7 +500,8 @@ export async function addExample(
 	kind: 'document' | 'list',
 	saved: WalkthroughPreferences['examples'],
 	remember: (examples: WalkthroughPreferences['examples']) => void,
-	freshCopy = false
+	freshCopy = false,
+	guide?: WalkthroughId | null
 ): Promise<WalkthroughContext> {
 	if (kind === 'document') {
 		if (
@@ -506,7 +529,9 @@ export async function addExample(
 		!freshCopy &&
 		saved.listName &&
 		bookmarksStore.lists.includes(saved.listName) &&
-		!saved.listPending
+		!saved.listPending &&
+		(await bookmarksStore.getContent(saved.listName)).length >=
+			(guide === 'quiz' ? MINIMUM_QUIZ_WORD_COUNT : 1)
 	) {
 		await bookmarksRoute.setActiveList(saved.listName);
 		return { listName: saved.listName };

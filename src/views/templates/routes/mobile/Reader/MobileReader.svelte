@@ -93,9 +93,6 @@
 			</div>
 		</div>
 	{/if}
-	<div class="mobile-reader__help">
-		<WalkthroughHelp guide="reader-library" />
-	</div>
 	<section
 		use:walkthroughTarget={'reader-library'}
 		aria-label="Reading library"
@@ -161,6 +158,7 @@
 						<span>Clipboard</span>
 					</SyButton>
 				</div>
+				<WalkthroughHelp guide="reader-library" label="Learn how Reader works" />
 			</div>
 		{/if}
 		<span class="sy-sr-only" role="status"
@@ -259,11 +257,6 @@
 		box-sizing: border-box;
 		padding: var(--sy-mobile-space--large);
 		padding-bottom: calc(var(--sy-mobile-space--large) + env(safe-area-inset-bottom));
-	}
-
-	.mobile-reader__help {
-		display: flex;
-		flex-shrink: 0;
 	}
 
 	.mobile-reader__library--empty {

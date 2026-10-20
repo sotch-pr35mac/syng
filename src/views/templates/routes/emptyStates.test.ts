@@ -119,6 +119,11 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		window.location.hash = '#/bookmarks';
 		const view = render(surface.bookmarks);
 		expect(await view.findByText(emptyBookmarks)).toBeTruthy();
+		const help = view.getByRole('button', { name: 'Learn how Bookmarks works' });
+		expect(
+			help.closest(surface.mobile ? '.mobile-bookmarks__empty' : '.dictionary-content__empty')
+		).toBeTruthy();
+		expect(help.closest('.sy-snap-sheet')).toBeNull();
 		if (surface.mobile) {
 			expect(view.getByText(emptyBookmarks).closest('.sy-snap-sheet')).toBeTruthy();
 			await waitFor(() => expect(mobileBookmarksSnapStore.value).toBe('partial'));
@@ -138,6 +143,7 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		});
 		expect(await view.findByText('No words match your filter.')).toBeTruthy();
 		expect(view.queryByText(emptyBookmarks)).toBeNull();
+		expect(view.queryByRole('button', { name: 'Learn how Bookmarks works' })).toBeNull();
 		await userEvent.click(view.getByRole('button', { name: 'Clear filter' }));
 		expect((view.getByPlaceholderText('Filter') as HTMLInputElement).value).toBe('');
 		expect(view.queryByText('No words match your filter.')).toBeNull();
@@ -157,6 +163,7 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		const view = render(surface.bookmarks);
 		await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('loading'));
 		expect(view.queryByText(emptyBookmarks)).toBeNull();
+		expect(view.queryByRole('button', { name: 'Learn how Bookmarks works' })).toBeNull();
 		expect(
 			(view.getByRole('button', { name: 'Flashcards' }) as HTMLButtonElement).disabled
 		).toBe(true);
@@ -166,6 +173,7 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		await act(() => rejectLoad(new Error('Storage unavailable')));
 		await waitFor(() => expect(bookmarksRoute.contentStatus).toBe('error'));
 		expect(view.queryByText(emptyBookmarks)).toBeNull();
+		expect(view.queryByRole('button', { name: 'Learn how Bookmarks works' })).toBeNull();
 		expect(
 			(view.getByRole('button', { name: 'Flashcards' }) as HTMLButtonElement).disabled
 		).toBe(true);
@@ -186,9 +194,11 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		);
 		const view = render(surface.study);
 		expect(view.queryByText(emptyStudy)).toBeNull();
+		expect(view.queryByRole('button', { name: 'Learn how Study works' })).toBeNull();
 		await waitFor(() => expect(resolveLoad).toBeTypeOf('function'));
 		await act(() => resolveLoad([]));
 		expect(await view.findByText(emptyStudy)).toBeTruthy();
+		expect(view.getByRole('button', { name: 'Learn how Study works' })).toBeTruthy();
 		await userEvent.click(view.getByRole('button', { name: 'Search for words' }));
 		expect(window.location.hash).toBe('#/');
 	});
@@ -198,7 +208,18 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		const view = render(surface.study);
 		expect(await view.findByText('Unable to load your lists. Please try again.')).toBeTruthy();
 		expect(view.queryByText(emptyStudy)).toBeNull();
+		expect(view.queryByRole('button', { name: 'Learn how Study works' })).toBeNull();
 		expect(view.queryByRole('button', { name: 'Search for words' })).toBeNull();
+	});
+
+	it('offers a Search guide only before a search or word selection', async () => {
+		const view = render(surface.search);
+		expect(await view.findByRole('button', { name: 'Learn how Search works' })).toBeTruthy();
+		await act(() => searchStore.doSearch('no-match'));
+		await view.findByText(emptySearch);
+		expect(view.queryByRole('button', { name: 'Learn how Search works' })).toBeNull();
+		await act(() => searchStore.setActiveWord(word));
+		expect(view.queryByRole('button', { name: 'Learn how Search works' })).toBeNull();
 	});
 
 	it('shows completed zero-result searches in the results area and preserves selected detail', async () => {

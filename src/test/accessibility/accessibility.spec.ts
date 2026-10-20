@@ -37,7 +37,7 @@ for (const triggerName of ['Choose list', 'List actions']) {
 		// menu, so both the transition and the up/down direction change stay visible.
 		for (const key of ['End', 'ArrowDown']) {
 			const samples = await page.evaluate(
-				async ({ key, triggerId }) => {
+				async ({ key, triggerId, rightAligned }) => {
 					const handle = document.querySelector('[role="separator"]')!;
 					const trigger = document.getElementById(triggerId!)!;
 					const menu = document.querySelector<HTMLElement>('[role="menu"]')!;
@@ -53,11 +53,13 @@ for (const triggerName of ['Choose list', 'List actions']) {
 						);
 						const triggerBounds = trigger.getBoundingClientRect();
 						const menuBounds = menu.getBoundingClientRect();
+						// The menu can flip to fit the viewport; measure its visible edge.
 						samples.push({
-							gap: menu.style.bottom
-								? triggerBounds.top - menuBounds.bottom
-								: menuBounds.top - triggerBounds.bottom,
-							horizontalError: menu.style.right
+							gap:
+								menuBounds.bottom <= triggerBounds.top
+									? triggerBounds.top - menuBounds.bottom
+									: menuBounds.top - triggerBounds.bottom,
+							horizontalError: rightAligned
 								? menuBounds.right - triggerBounds.right
 								: menuBounds.left - triggerBounds.left,
 							triggerTop: triggerBounds.top,
@@ -65,7 +67,7 @@ for (const triggerName of ['Choose list', 'List actions']) {
 					}
 					return samples;
 				},
-				{ key, triggerId }
+				{ key, triggerId, rightAligned: triggerName === 'List actions' }
 			);
 			expect(samples.length).toBeGreaterThan(5);
 			expect(

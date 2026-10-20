@@ -116,7 +116,6 @@
 		</div>
 	</div>
 
-	<WalkthroughHelp guide="reader-library" />
 	<section
 		use:walkthroughTarget={'reader-library'}
 		aria-label="Reading library"
@@ -182,6 +181,7 @@
 						<span>Import from Clipboard</span>
 					</SyButton>
 				</div>
+				<WalkthroughHelp guide="reader-library" label="Learn how Reader works" />
 			</div>
 		{/if}
 		<span class="sy-sr-only" role="status"

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invoke } from '@tauri-apps/api/core';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import CharacterSetLabel from '@/components/DictionaryContent/CharacterSetLabel.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
@@ -129,7 +130,10 @@
 	}
 </script>
 
-<div class="dictionary-content--example-sentence sy-text--selectable">
+<div
+	class="dictionary-content--example-sentence sy-text--selectable"
+	use:walkthroughTarget={'dictionary-examples'}
+>
 	{#each characterForms as form (form.script)}
 		<div class="dictionary-content--example-sentence__form">
 			{#if form.showLabel}

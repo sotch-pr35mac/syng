@@ -1,6 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { WalkthroughPreferences } from '@/types/walkthrough.js';
-import { addExample, prepareGuide } from '@/components/Walkthrough/walkthroughContent.js';
+import {
+	addExample,
+	hasSuitableContent,
+	prepareGuide,
+} from '@/components/Walkthrough/walkthroughContent.js';
 import { invoke } from '@tauri-apps/api/core';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
@@ -11,6 +15,8 @@ const state = vi.hoisted(() => ({
 	contents: {} as Record<string, { lexical_id: string }[]>,
 	documents: [] as { _id: string; title: string }[],
 	traditional: false,
+	mobile: false,
+	ipad: false,
 }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 vi.mock('@/composables/search.svelte.js', () => ({
@@ -58,7 +64,10 @@ vi.mock('@/stores/settings.svelte.js', () => ({ settingsActiveTabStore: { set: v
 vi.mock('@/utils/appServices.js', () => ({
 	getPreferenceManager: () => ({ get: () => (state.traditional ? 'traditional' : 'simplified') }),
 }));
-vi.mock('@/utils/device.js', () => ({ isMobileLayout: () => false }));
+vi.mock('@/utils/device.js', () => ({
+	isMobileLayout: () => state.mobile,
+	isIPad: () => state.ipad,
+}));
 vi.mock('@/utils/readerDocument.js', () => ({
 	DEFAULT_READER_DOCUMENT_COLOR: '#ffffff',
 	invokePrepareReaderImport: vi.fn(async (args) => args),
@@ -75,6 +84,8 @@ beforeEach(() => {
 	state.contents = {};
 	state.documents = [];
 	state.traditional = false;
+	state.mobile = false;
+	state.ipad = false;
 	examples = {};
 	vi.mocked(invoke).mockImplementation(async (_command, args: { text: string }) => [
 		{ id: `lexical-${args.text}`, simplified: args.text, traditional: args.text },
@@ -82,6 +93,20 @@ beforeEach(() => {
 	vi.mocked(bookmarksStore.addToList).mockImplementation(async (name, word) => {
 		state.contents[name].push(word);
 	});
+});
+
+it.each([
+	{ platform: 'desktop', mobile: false, ipad: false, swipe: false },
+	{ platform: 'iPad', mobile: false, ipad: true, swipe: true },
+	{ platform: 'phone', mobile: true, ipad: false, swipe: true },
+])('describes only supported page navigation on $platform', async ({ mobile, ipad, swipe }) => {
+	state.mobile = mobile;
+	state.ipad = ipad;
+	state.documents = [{ _id: 'story', title: 'Story' }];
+	const prepared = await prepareGuide('reader-document', { documentId: 'story' }, () => true);
+	const description = prepared.steps.find((step) => step.id === 'pages').body;
+	expect(/swipe/i.test(description)).toBe(swipe);
+	expect(/page controls/i.test(description)).toBe(!mobile);
 });
 
 it('offers personal content and respects quiz minimums without creating examples', async () => {
@@ -107,14 +132,43 @@ it('creates a distinct sample list and adds only lexical membership, preserving 
 	expect(examples.listPending).toBe(false);
 });
 
-it('reuses completed examples without replacing words the user removed', async () => {
+it('reuses suitable samples without restoring removed words', async () => {
 	await addExample('list', examples, remember);
-	state.contents[examples.listName] = [];
+	state.contents[examples.listName].pop();
 	vi.mocked(bookmarksStore.addToList).mockClear();
 	await addExample('list', examples, remember);
 	expect(bookmarksStore.addToList).not.toHaveBeenCalled();
-	await addExample('list', examples, remember, true);
-	expect(examples.listName).toBe('Syng Example Vocabulary 2');
+	expect(state.contents[examples.listName]).toHaveLength(5);
+	const prepared = await prepareGuide('flashcards', {}, () => true);
+	expect(prepared.choices).toContainEqual({
+		label: 'Syng Example Vocabulary (5 words)',
+		context: { listName: examples.listName },
+	});
+});
+
+it.each([
+	{ guide: 'flashcards' as const, remaining: 0 },
+	{ guide: 'quiz' as const, remaining: 3 },
+])(
+	'creates a usable sample for $guide while preserving an unsuitable edited sample',
+	async ({ guide, remaining }) => {
+		await addExample('list', examples, remember);
+		const originalName = examples.listName;
+		state.contents[originalName] = state.contents[originalName].slice(0, remaining);
+		await addExample('list', examples, remember, false, guide);
+		expect(examples.listName).toBe('Syng Example Vocabulary 2');
+		expect(state.contents[originalName]).toHaveLength(remaining);
+		expect(state.contents[examples.listName]).toHaveLength(6);
+	}
+);
+
+it('only considers populated lists and existing documents suitable content', async () => {
+	expect(await hasSuitableContent('list')).toBe(false);
+	expect(await hasSuitableContent('document')).toBe(false);
+	state.contents.Bookmarks = [{ lexical_id: 'one' }];
+	state.documents = [{ _id: 'document', title: 'Reading' }];
+	expect(await hasSuitableContent('list')).toBe(true);
+	expect(await hasSuitableContent('document')).toBe(true);
 });
 
 it('retries partial seeding in the same list without duplicating successful entries', async () => {

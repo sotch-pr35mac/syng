@@ -4,6 +4,8 @@ import { tick } from 'svelte';
 import Router from 'svelte-spa-router';
 import { invoke } from '@tauri-apps/api/core';
 import Quiz from '@/routes/Study/Quiz.svelte';
+import Study from '@/routes/Study.svelte';
+import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
 import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
 import Flashcards from '@/routes/Study/Flashcards.svelte';
 import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
@@ -75,6 +77,8 @@ beforeEach(async () => {
 		waitForInit: async () => {},
 		getLists: async () => Object.keys(lists),
 		getListContent: async (name: string) => lists[name] ?? [],
+		getListSummaries: async () =>
+			Object.entries(lists).map(([name, words]) => ({ name, wordCount: words.length })),
 		createList: async (name: string) => {
 			lists[name] = [];
 		},
@@ -103,6 +107,11 @@ beforeEach(async () => {
 				return null;
 		}
 	});
+	await walkthroughStore.load();
+	Object.assign(walkthroughStore.preferences, createWalkthroughPreferences(), {
+		featureInvitations: {},
+	});
+	studySubRouteStore.set(null);
 	quizRoute.reset();
 	flashcardsActiveListStore.set(null);
 	flashcardsActiveIndexStore.set(0);
@@ -144,20 +153,25 @@ describe.each([
 	])(
 		'loads the $choice list chosen from help for an $initialList list without remounting',
 		async ({ initialList, choice, listName, firstWord }) => {
+			if (choice === 'example') {
+				lists = { Empty: [], Short: [] };
+				await bookmarksStore.refresh();
+			}
 			window.location.hash = studyHref('flashcards', initialList, 'bookmarks');
 			window.dispatchEvent(new HashChangeEvent('hashchange'));
 			render(Router, { routes: { '/study/flashcards': component } });
 			await screen.findByText('No flashcards in this list');
-			const helpButton = screen.getByRole('button', { name: 'Show me how' });
+			const helpButton = screen.getByRole('button', { name: 'Learn how flashcards work' });
+			const exitButton = screen.getByRole('button', { name: 'Exit' });
 			await fireEvent.click(helpButton);
 			await waitFor(() => expect(walkthroughStore.phase).toBe('choosing'));
 			const host = render(WalkthroughHost);
+			if (choice === 'saved') {
+				expect(screen.queryByRole('button', { name: 'Add sample words' })).toBeNull();
+			}
 			await fireEvent.click(
 				screen.getByRole('button', {
-					name:
-						choice === 'saved'
-							? 'Ready vocabulary (4 words)'
-							: /(?:Add|Use) example vocabulary/,
+					name: choice === 'saved' ? 'Ready vocabulary (4 words)' : 'Add sample words',
 				})
 			);
 
@@ -165,7 +179,8 @@ describe.each([
 				firstWord
 			);
 			expect(screen.queryByText('No flashcards in this list')).toBeNull();
-			expect(screen.getByRole('button', { name: 'Show me how' })).toBe(helpButton);
+			expect(screen.queryByRole('button', { name: 'Learn how flashcards work' })).toBeNull();
+			expect(screen.getByRole('button', { name: 'Exit' })).toBe(exitButton);
 			expect(flashcardsRoute.activeList).toBe(listName);
 			expect(window.location.hash).toBe(studyHref('flashcards', listName, 'bookmarks'));
 			expect(flashcardsRoute.activeIndex).toBe(0);
@@ -182,8 +197,8 @@ describe.each([
 			await fireEvent.click(screen.getByRole('button', { name: 'Flip' }));
 			expect(flashcardsRoute.showDetails).toBe(true);
 
-			// Help must follow the new list without resetting card navigation or the flipped side.
-			await fireEvent.click(helpButton);
+			// A guide launched from Settings must retain card navigation and the flipped side.
+			await walkthroughStore.start('flashcards', { listName });
 			await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
 			expect(walkthroughStore.preparation.context.listName).toBe(listName);
 			walkthroughStore.next();
@@ -218,24 +233,30 @@ describe.each([
 	])(
 		'loads the $choice list chosen from help without remounting the route',
 		async ({ choice, listName, count }) => {
+			if (choice === 'example') {
+				delete lists['Ready vocabulary'];
+				await bookmarksStore.refresh();
+			}
 			render(Router, { routes: { '/study/quiz': component } });
 			await screen.findByText(EMPTY_QUIZ_MESSAGE);
-			const helpButton = screen.getByRole('button', { name: 'Show me how' });
+			const helpButton = screen.getByRole('button', { name: 'Learn how quizzes work' });
+			const exitButton = screen.getByRole('button', { name: 'Exit' });
 			await fireEvent.click(helpButton);
 			await waitFor(() => expect(walkthroughStore.phase).toBe('choosing'));
 			const host = render(WalkthroughHost);
+			if (choice === 'saved') {
+				expect(screen.queryByRole('button', { name: 'Add sample words' })).toBeNull();
+			}
 			await fireEvent.click(
 				screen.getByRole('button', {
-					name:
-						choice === 'saved'
-							? 'Ready vocabulary (4 words)'
-							: /(?:Add|Use) example vocabulary/,
+					name: choice === 'saved' ? 'Ready vocabulary (4 words)' : 'Add sample words',
 				})
 			);
 
 			await screen.findByRole('button', { name: 'watermelon' });
 			expect(screen.queryByText(EMPTY_QUIZ_MESSAGE)).toBeNull();
-			expect(screen.getByRole('button', { name: 'Show me how' })).toBe(helpButton);
+			expect(screen.queryByRole('button', { name: 'Learn how quizzes work' })).toBeNull();
+			expect(screen.getByRole('button', { name: 'Exit' })).toBe(exitButton);
 			expect(quizRoute.activeList).toBe(listName);
 			expect(window.location.hash).toBe(studyHref('quiz', listName, 'bookmarks'));
 			expect(lists[listName]).toHaveLength(count);
@@ -265,8 +286,8 @@ describe.each([
 				response: expect.objectContaining({ response: 'watermelon' }),
 			});
 
-			// Reopening help must use the new list and retain the answer already submitted.
-			await fireEvent.click(helpButton);
+			// A guide launched from Settings must retain the answer already submitted.
+			await walkthroughStore.start('quiz', { listName });
 			await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
 			expect(walkthroughStore.preparation.context.listName).toBe(listName);
 			expect(quizRoute.showAnswer).toBe(true);
@@ -280,6 +301,115 @@ describe.each([
 			await tick();
 			expect(studyOriginStore.value).toBeNull();
 			expect(studySubRouteStore.value).toBeNull();
+		}
+	);
+});
+
+describe.each([
+	{ layout: 'desktop', component: Study },
+	{ layout: 'mobile', component: MobileStudy },
+])('$layout Study sample refresh', ({ component }) => {
+	it('offers the Study guide with existing lists until it has been completed', async () => {
+		window.location.hash = '#/study';
+		render(component);
+		await screen.findByRole('button', { name: 'Flashcards for Ready vocabulary' });
+		await fireEvent.click(screen.getByRole('button', { name: 'Learn how Study works' }));
+		await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
+		walkthroughStore.skip();
+		await tick();
+		expect(screen.getByRole('button', { name: 'Learn how Study works' })).toBeTruthy();
+		await walkthroughStore.start('study');
+		while (walkthroughStore.visible) {
+			walkthroughStore.next();
+		}
+		await tick();
+		expect(screen.queryByRole('button', { name: 'Learn how Study works' })).toBeNull();
+		expect(
+			screen.getByRole('button', { name: 'Flashcards for Ready vocabulary' })
+		).toBeTruthy();
+	});
+
+	it('shows a sample list and enables both practice modes without leaving Study', async () => {
+		lists = { Bookmarks: [] };
+		await bookmarksStore.refresh();
+		window.location.hash = '#/study';
+		render(component);
+		await screen.findByText('Add words to a list to start studying.');
+		await fireEvent.click(screen.getByRole('button', { name: 'Learn how Study works' }));
+		await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
+		render(WalkthroughHost);
+		await fireEvent.click(await screen.findByRole('button', { name: 'Add sample words' }));
+		await waitFor(() => expect(walkthroughStore.exampleBusy).toBe(false));
+		const listName = walkthroughStore.preferences.examples.listName;
+		expect(lists[listName]).toHaveLength(6);
+		await waitFor(() => {
+			expect(
+				(
+					screen.getByRole('button', {
+						name: `Flashcards for ${listName}`,
+					}) as HTMLButtonElement
+				).disabled
+			).toBe(false);
+			expect(
+				(
+					screen.getByRole('button', {
+						name: `Start quiz for ${listName}`,
+					}) as HTMLButtonElement
+				).disabled
+			).toBe(false);
+		});
+		expect(screen.queryByText('Add words to a list to start studying.')).toBeNull();
+		expect(window.location.hash).toBe('#/study');
+	});
+});
+
+describe.each([
+	{ layout: 'desktop', guide: 'flashcards' as const, component: Flashcards },
+	{ layout: 'mobile', guide: 'flashcards' as const, component: MobileStudyFlashcards },
+	{ layout: 'desktop', guide: 'quiz' as const, component: Quiz },
+	{ layout: 'mobile', guide: 'quiz' as const, component: MobileStudyQuiz },
+])('$layout first-use $guide invitation', ({ guide, component }) => {
+	it.each(['accept', 'decline'])(
+		'offers a tour for ready content and remembers %s',
+		async (choice) => {
+			const instructionPause = vi.spyOn(quizRoute, 'setInstructionPaused');
+			window.location.hash = studyHref(guide, 'Ready vocabulary');
+			window.dispatchEvent(new HashChangeEvent('hashchange'));
+			const view = render(Router, { routes: { [`/study/${guide}`]: component } });
+			await waitFor(() => expect(walkthroughStore.phase).toBe('feature-invitation'));
+			const host = render(WalkthroughHost);
+			expect(
+				screen.getByRole('heading', {
+					name: `Try a quick ${guide === 'quiz' ? 'quiz' : 'flashcards'} tour?`,
+				})
+			).toBeTruthy();
+			expect(walkthroughStore.quizSuspended).toBe(guide === 'quiz');
+			if (guide === 'quiz') {
+				expect(instructionPause).toHaveBeenLastCalledWith(true);
+			}
+			await fireEvent.click(
+				screen.getByRole('button', { name: choice === 'accept' ? 'Start tour' : 'Not now' })
+			);
+			if (choice === 'accept') {
+				await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
+				expect(walkthroughStore.preparation.context.listName).toBe('Ready vocabulary');
+				walkthroughStore.skip();
+			}
+			expect(walkthroughStore.visible).toBe(false);
+			expect(walkthroughStore.quizSuspended).toBe(false);
+			await tick();
+			if (guide === 'quiz') {
+				expect(instructionPause).toHaveBeenLastCalledWith(false);
+			}
+			instructionPause.mockRestore();
+			host.unmount();
+			view.unmount();
+			render(Router, { routes: { [`/study/${guide}`]: component } });
+			await tick();
+			await waitFor(() =>
+				expect(guide === 'quiz' ? quizRoute.loading : flashcardsRoute.loading).toBe(false)
+			);
+			expect(walkthroughStore.visible).toBe(false);
 		}
 	);
 });

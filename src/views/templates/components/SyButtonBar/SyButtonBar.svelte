@@ -38,12 +38,29 @@
 <style>
 	.sy-button-bar--container {
 		display: inline-flex;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		align-items: center;
 		flex-wrap: wrap;
 		min-width: 0;
 		max-width: 100%;
 		box-sizing: border-box;
 		padding: var(--sy-space--large);
+	}
+	:global(.sy-button-bar--container > .sy-button) {
+		flex-shrink: 0;
+	}
+	:global(.sy-button-bar--container > .sy-dropdown--container) {
+		min-width: 0;
+	}
+	:global(.sy-button-bar--container > .sy-dropdown--container > .sy-dropdown--trigger) {
+		display: flex;
+	}
+	:global(
+		.sy-button-bar--container > .sy-dropdown--container > .sy-dropdown--trigger > .sy-button
+	) {
+		min-width: 0;
 	}
 	:global(.sy-button-bar--container .sy-button--grouped) {
 		margin: 0;

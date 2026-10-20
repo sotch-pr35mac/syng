@@ -85,7 +85,8 @@ it('resumes a running quiz timer after help closes instead of leaving it manuall
 	vi.useFakeTimers();
 	quiz.answerQuestion.mockClear();
 	render(MobileStudyQuiz);
-	await fireEvent.click(screen.getByRole('button', { name: 'Show me how' }));
+	expect(screen.queryByRole('button', { name: 'Learn how quizzes work' })).toBeNull();
+	await walkthroughStore.start('quiz');
 	await vi.advanceTimersByTimeAsync(2000);
 	expect(quiz.answerQuestion).not.toHaveBeenCalled();
 	walkthroughStore.skip();

@@ -10,6 +10,8 @@
 	import type { SheetSnap } from '@/types/snapSheet.js';
 	import { snapSheetDrag } from '@/actions/snapSheetDrag.svelte.js';
 	import { overlayFocus } from '@/actions/overlayFocus.js';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import type { WalkthroughTargetId } from '@/types/walkthrough.js';
 
 	// Above this release velocity (px/ms) we treat the gesture as a flick and jump
 	// one snap in the flick direction rather than settling to the nearest snap.
@@ -29,6 +31,7 @@
 		children,
 		initialSnap = 'collapsed',
 		reopenKey = undefined,
+		guideTarget = undefined,
 		onSnapChange,
 		accessibleName = 'Options',
 		returnFocus = undefined,
@@ -38,6 +41,7 @@
 		children?: Snippet;
 		initialSnap?: SheetSnap;
 		reopenKey?: number | string;
+		guideTarget?: WalkthroughTargetId;
 		onSnapChange?: (_snap: SheetSnap) => void;
 		accessibleName?: string;
 		returnFocus?: HTMLElement;
@@ -240,6 +244,7 @@
 		onclose: onclose ?? collapse,
 	}}
 	class="sy-snap-sheet"
+	use:walkthroughTarget={guideTarget}
 	class:sy-snap-sheet--transitioning={transitioning}
 	style="height: {fullSheetHeight}px; --sy-snap-sheet-hidden-height: {sheetTranslateY}px;"
 	use:snapSheetDrag={{

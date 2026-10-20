@@ -41,7 +41,10 @@ export function createStudyListState() {
 		},
 		async load(): Promise<void> {
 			const requestId = ++loadRequest;
-			status = 'loading';
+			// Keep the current list controls mounted while membership changes refresh counts.
+			if (status !== 'ready') {
+				status = 'loading';
+			}
 			try {
 				const summaries = await bookmarksStore.getListSummaries();
 				if (requestId !== loadRequest) {

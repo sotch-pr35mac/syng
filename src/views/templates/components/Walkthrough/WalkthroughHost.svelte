@@ -1,11 +1,16 @@
 <script lang="ts">
 	import { onMount, tick, untrack } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import { searchStore } from '@/composables/search.svelte.js';
 	import { portal } from '@/actions/portal.svelte.js';
 	import { walkthroughStore as tour } from '@/stores/walkthrough.svelte.js';
-	import { GUIDE_LABELS } from '@/components/Walkthrough/walkthroughContent.js';
+	import {
+		GUIDE_LABELS,
+		hasSuitableContent,
+	} from '@/components/Walkthrough/walkthroughContent.js';
 	const GUTTER = 16;
 	const TARGET_PADDING = 6;
+	const POPUP_PADDING = 10;
 	const TARGET_WAIT_MS = 5000;
 	const CARD_WIDTH = 336;
 	const INITIAL_CARD_HEIGHT = 260;
@@ -16,19 +21,54 @@
 	let targetMissing = $state(false);
 	let secondaryOpen = $state(false);
 	let geometryRevision = $state(0);
+	const explainingLinks = $derived(tour.guide === 'dictionary' && tour.step?.id === 'links');
+	const explainingPopup = $derived(explainingLinks && Boolean(searchStore.popoverWord));
 	const target = $derived.by(() => {
 		void geometryRevision;
 		return tour.phase === 'guiding'
-			? (tour.target(tour.step?.target) ?? tour.target(tour.step?.fallbackTarget))
+			? explainingPopup
+				? tour.target('dictionary-popup')
+				: (tour.target(tour.step?.target) ?? tour.target(tour.step?.fallbackTarget))
 			: undefined;
 	});
 	const exampleKind = $derived(tour.preparation.choose ?? tour.step?.example);
-	const existingExample = $derived(
-		exampleKind === 'document'
-			? tour.preferences.examples.documentId
-			: tour.preferences.examples.listName
-	);
+	let needsExample = $state(false);
 	const contentKey = $derived(`${tour.phase}:${tour.guide}:${tour.step?.id ?? ''}`);
+
+	$effect(() => {
+		if (explainingLinks) {
+			return () => searchStore.closePopoverDictionary();
+		}
+		return undefined;
+	});
+
+	$effect(() => {
+		void contentKey;
+		void tour.preparation;
+		needsExample = false;
+		if (!exampleKind) {
+			return undefined;
+		}
+		if (tour.phase === 'choosing') {
+			needsExample = !tour.preparation.choices?.length;
+			return undefined;
+		}
+		if (tour.phase !== 'guiding') {
+			return undefined;
+		}
+		let canceled = false;
+		void hasSuitableContent(exampleKind)
+			.then((available) => {
+				if (!canceled) {
+					needsExample = !available;
+				}
+				return undefined;
+			})
+			.catch(() => {});
+		return () => {
+			canceled = true;
+		};
+	});
 
 	function measure(): void {
 		const viewport = window.visualViewport;
@@ -49,19 +89,16 @@
 		const bottom = viewportTop + viewportHeight;
 		const measured = target?.getBoundingClientRect();
 		if (measured && measured.width > 0 && measured.height > 0) {
-			const left = Math.max(viewportLeft + GUTTER / 2, measured.left - TARGET_PADDING);
-			const top = Math.max(viewportTop + GUTTER / 2, measured.top - TARGET_PADDING);
+			// Include the popup arrow and the mobile sheet's header/handle, even at viewport edges.
+			const padding = explainingPopup ? POPUP_PADDING : TARGET_PADDING;
+			const edgeInset = explainingPopup ? 0 : GUTTER / 2;
+			const left = Math.max(viewportLeft + edgeInset, measured.left - padding);
+			const top = Math.max(viewportTop + edgeInset, measured.top - padding);
 			anchor = {
 				left,
 				top,
-				width: Math.max(
-					0,
-					Math.min(right - GUTTER / 2, measured.right + TARGET_PADDING) - left
-				),
-				height: Math.max(
-					0,
-					Math.min(bottom - GUTTER / 2, measured.bottom + TARGET_PADDING) - top
-				),
+				width: Math.max(0, Math.min(right - edgeInset, measured.right + padding) - left),
+				height: Math.max(0, Math.min(bottom - edgeInset, measured.bottom + padding) - top),
 			};
 		} else {
 			anchor = undefined;
@@ -149,7 +186,13 @@
 		if (!element) {
 			return undefined;
 		}
-		element.scrollIntoView?.({ block: 'nearest', inline: 'nearest', behavior: 'instant' });
+		if (!explainingPopup) {
+			element.scrollIntoView?.({
+				block: explainingLinks ? 'center' : 'nearest',
+				inline: 'nearest',
+				behavior: 'instant',
+			});
+		}
 		const description = element.getAttribute('aria-describedby');
 		const originalTabIndex = element.getAttribute('tabindex');
 		element.setAttribute(
@@ -209,6 +252,12 @@
 			});
 		};
 		const keydown = (event: KeyboardEvent) => {
+			if (event.key === 'Escape' && explainingPopup && !secondaryOpen) {
+				event.preventDefault();
+				event.stopPropagation();
+				searchStore.closePopoverDictionary();
+				return;
+			}
 			if (event.key === 'Escape' && !secondaryOpen) {
 				event.preventDefault();
 				event.stopPropagation();
@@ -224,10 +273,17 @@
 			}
 		};
 		const detectSecondary = () => {
-			secondaryOpen = Boolean(
-				document.querySelector(
+			secondaryOpen = Array.from(
+				document.querySelectorAll(
 					'.sy-modal--active, .sy-dropdown--active, [data-walkthrough-secondary="true"]'
 				)
+			).some(
+				(element) =>
+					!(
+						explainingLinks &&
+						element.getAttribute('data-walkthrough-secondary') === 'true' &&
+						element.closest('[data-walkthrough-target="dictionary-popup"]')
+					)
 			);
 			if (secondaryOpen) {
 				tour.suspend();
@@ -242,6 +298,7 @@
 		});
 		document.addEventListener('keydown', keydown, true);
 		document.addEventListener('transitionend', resize, true);
+		document.addEventListener('animationend', resize, true);
 		window.addEventListener('resize', resize);
 		window.addEventListener('scroll', resize, true);
 		window.visualViewport?.addEventListener('resize', resize);
@@ -252,6 +309,7 @@
 			cancelAnimationFrame(animationFrame);
 			document.removeEventListener('keydown', keydown, true);
 			document.removeEventListener('transitionend', resize, true);
+			document.removeEventListener('animationend', resize, true);
 			window.removeEventListener('resize', resize);
 			window.removeEventListener('scroll', resize, true);
 			window.visualViewport?.removeEventListener('resize', resize);
@@ -276,14 +334,42 @@
 			<SyButton size="small" style="ghost" onclick={tour.skip}>Skip tour</SyButton>
 		</div>
 	{:else}
+		<svg class="walkthrough__shade" width="100%" height="100%" aria-hidden="true">
+			<defs>
+				<mask
+					id="walkthrough-mask"
+					maskUnits="userSpaceOnUse"
+					x="0"
+					y="0"
+					width="100%"
+					height="100%"
+				>
+					<rect width="100%" height="100%" fill="white" />
+					{#if anchor && tour.phase === 'guiding'}
+						<rect
+							x={anchor.left}
+							y={anchor.top}
+							width={anchor.width}
+							height={anchor.height}
+							rx="8"
+							fill="black"
+						/>
+					{/if}
+				</mask>
+			</defs>
+			<rect
+				width="100%"
+				height="100%"
+				fill="rgba(0, 0, 0, 0.26)"
+				mask="url(#walkthrough-mask)"
+			/>
+		</svg>
 		{#if anchor && tour.phase === 'guiding'}
 			<div
 				class="walkthrough__spotlight"
 				style={`left:${anchor.left}px;top:${anchor.top}px;width:${anchor.width}px;height:${anchor.height}px`}
 				aria-hidden="true"
 			></div>
-		{:else}
-			<div class="walkthrough__backdrop" aria-hidden="true"></div>
 		{/if}
 		<div
 			class="walkthrough__card"
@@ -307,14 +393,38 @@
 						onclick={() => tour.start('app')}>Show me around</SyButton
 					>
 				</div>
+			{:else if tour.phase === 'feature-invitation'}
+				<h2 id="walkthrough-heading" tabindex="-1" bind:this={heading}>
+					{tour.guide === 'quiz'
+						? 'Try a quick quiz tour?'
+						: tour.guide === 'flashcards'
+							? 'Try a quick flashcards tour?'
+							: 'Try a quick reading tour?'}
+				</h2>
+				<p id="walkthrough-description">
+					{tour.guide === 'quiz'
+						? 'Learn how questions, answers, and the timer work. Your quiz timer is paused while this invitation or the guide is open.'
+						: tour.guide === 'flashcards'
+							? 'Learn how to flip cards and move through your list.'
+							: 'Learn how to look up words, turn pages, and adjust your reading view.'}
+					You can skip at any time or replay from Settings → Walkthrough.
+				</p>
+				<div class="walkthrough__actions">
+					<SyButton style="ghost" onclick={tour.skip}>Not now</SyButton>
+					<SyButton
+						color="blue"
+						onclick={() => tour.start(tour.guide, tour.preparation.context)}
+						>Start tour</SyButton
+					>
+				</div>
 			{:else if tour.phase === 'choosing'}
 				<h2 id="walkthrough-heading" tabindex="-1" bind:this={heading}>
 					{tour.guide ? GUIDE_LABELS[tour.guide] : 'Choose content'}
 				</h2>
 				<p id="walkthrough-description">
 					{tour.preparation.choose === 'document'
-						? 'Choose a document to read, or add our example to your library.'
-						: `Choose a saved list${tour.guide === 'quiz' ? ' with at least four words' : ''}, or add our example vocabulary.`}
+						? 'Choose a document to read.'
+						: `Choose a saved list${tour.guide === 'quiz' ? ' with at least four words' : ''}.`}
 				</p>
 				<div class="walkthrough__choices">
 					{#each tour.preparation.choices ?? [] as choice (choice.context.documentId ?? choice.context.listName)}
@@ -340,58 +450,71 @@
 				<p id="walkthrough-description">You can retry or continue exploring Syng.</p>
 			{:else if tour.step}
 				<h2 id="walkthrough-heading" tabindex="-1" bind:this={heading}>
-					{tour.step.title}
+					{explainingPopup ? 'Explore the popup dictionary' : tour.step.title}
 				</h2>
-				<p id="walkthrough-description">{tour.step.body}</p>
-				<p class="walkthrough__progress" aria-live="polite" aria-atomic="true">
-					{tour.stepIndex + 1} of {tour.stepCount}
+				<p id="walkthrough-description">
+					{explainingPopup
+						? 'Read the meaning here and use + to save the word. Close the popup to try another blue link, or choose Next to continue the tour.'
+						: tour.step.body}
 				</p>
-				{#if target}<button class="walkthrough__focus" onclick={focusTarget}
-						>Focus highlighted control</button
-					>{/if}
 				{#if targetMissing}<p role="status">
 						This control isn’t available right now. You can continue or retry.
 					</p>
 					<SyButton style="ghost" onclick={retry}>Retry</SyButton>{/if}
 			{/if}
-			{#if exampleKind && (tour.phase === 'choosing' || tour.phase === 'guiding')}
+			{#if exampleKind && needsExample}
 				<div class="walkthrough__example">
-					<SyButton
-						size="small"
-						disabled={tour.exampleBusy}
-						onclick={() => tour.addExample(exampleKind)}
-						>{tour.exampleBusy
-							? 'Adding example…'
-							: `${existingExample ? 'Use' : 'Add'} example ${exampleKind === 'document' ? 'document' : 'vocabulary'}`}</SyButton
-					>
-					{#if existingExample && tour.phase === 'choosing'}<SyButton
-							size="small"
+					<div class="walkthrough__example-action">
+						<span
+							>{exampleKind === 'document'
+								? 'Need something to read?'
+								: 'Need something to practice?'}</span
+						>
+						<SyButton
 							style="ghost"
 							disabled={tour.exampleBusy}
-							onclick={() => tour.addExample(exampleKind, true)}
-							>Add a fresh example</SyButton
-						>{/if}
+							onclick={() => tour.addExample(exampleKind)}
+							>{tour.exampleBusy
+								? 'Adding sample…'
+								: exampleKind === 'document'
+									? 'Add sample document'
+									: 'Add sample words'}</SyButton
+						>
+					</div>
 					<p>
-						Added examples stay in your {exampleKind === 'document'
-							? 'library'
-							: 'lists'}. You can edit or delete them normally.
+						{exampleKind === 'document'
+							? 'Adds a short document to your library.'
+							: 'Adds six words to a new list.'}
 					</p>
 				</div>
 			{/if}
 			{#if tour.error}<p role="alert">{tour.error}</p>{/if}
-			{#if tour.phase !== 'invitation'}
+			{#if tour.phase === 'guiding'}
+				<div class="walkthrough__navigation">
+					<SyButton
+						style="ghost"
+						size="large"
+						disabled={tour.stepIndex === 0}
+						onclick={tour.back}>Back</SyButton
+					>
+					<span class="walkthrough__progress" aria-live="polite" aria-atomic="true">
+						{tour.stepIndex + 1} of {tour.stepCount}
+					</span>
+					<SyButton
+						color="blue"
+						size="large"
+						aria-label={tour.stepIndex === tour.stepCount - 1 ? 'Finish tour' : 'Next'}
+						onclick={tour.next}
+						>{tour.stepIndex === tour.stepCount - 1 ? 'Finish' : 'Next'}</SyButton
+					>
+				</div>
+				<div class="walkthrough__skip">
+					<SyButton style="ghost" size="small" onclick={tour.skip}>Skip tour</SyButton>
+				</div>
+			{:else if tour.phase !== 'invitation' && tour.phase !== 'feature-invitation'}
 				<div class="walkthrough__actions">
-					<SyButton style="ghost" onclick={tour.skip}>Skip tour</SyButton>
-					{#if tour.phase === 'guiding'}
-						{#if tour.stepIndex > 0}<SyButton style="ghost" onclick={tour.back}
-								>Back</SyButton
-							>{/if}
-						<SyButton color="blue" onclick={tour.next}
-							>{tour.stepIndex === tour.stepCount - 1
-								? 'Finish tour'
-								: 'Next'}</SyButton
-						>
-					{:else if tour.phase === 'error'}<SyButton color="blue" onclick={retry}
+					<SyButton style="ghost" size="small" onclick={tour.skip}>Skip tour</SyButton>
+					{#if tour.phase === 'error'}<SyButton color="blue" onclick={retry}
 							>Retry</SyButton
 						>{/if}
 				</div>
@@ -406,20 +529,18 @@
 		color: var(--sy-color--black);
 	}
 	.walkthrough__spotlight,
-	.walkthrough__backdrop {
+	.walkthrough__shade {
 		position: fixed;
 		pointer-events: none;
 		z-index: var(--sy-z-index--top-1);
 	}
-	.walkthrough__backdrop {
+	.walkthrough__shade {
 		inset: 0;
-		background: rgba(0, 0, 0, 0.26);
 	}
 	.walkthrough__spotlight {
 		box-sizing: border-box;
 		border: 2px solid var(--sy-color--blue-2);
 		border-radius: calc(var(--sy-border-radius) * 2);
-		box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.26);
 	}
 	.walkthrough__card,
 	.walkthrough__resume {
@@ -461,8 +582,11 @@
 		margin: 0 0 12px;
 	}
 	.walkthrough__progress {
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
 		font-variant-numeric: tabular-nums;
-		margin-top: 16px;
+		text-align: center;
+		white-space: nowrap;
 	}
 	.walkthrough__actions {
 		display: flex;
@@ -472,11 +596,28 @@
 		gap: 4px;
 		margin-top: 16px;
 	}
+	.walkthrough__actions :global(button) {
+		flex-shrink: 0;
+	}
 	.walkthrough__actions :global(button:first-child) {
 		margin-right: auto;
 	}
-	.walkthrough :global(button) {
-		min-height: 44px;
+	.walkthrough__navigation {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		gap: var(--sy-space);
+		margin-top: var(--sy-space--extra-large);
+	}
+	.walkthrough__navigation :global(button:first-child) {
+		justify-self: start;
+	}
+	.walkthrough__navigation :global(button:last-child) {
+		justify-self: end;
+	}
+	.walkthrough__skip {
+		margin-top: var(--sy-space);
+		text-align: center;
 	}
 	.walkthrough :global(button:focus-visible),
 	h2:focus-visible {
@@ -486,25 +627,19 @@
 	h2:focus:not(:focus-visible) {
 		outline: none;
 	}
-	.walkthrough__focus {
-		background: none;
-		border: 0;
-		padding: 0;
-		color: var(--sy-color--black);
-		font: inherit;
-		font-size: 0.75rem;
-		text-decoration: underline;
-		text-underline-offset: 3px;
-		cursor: pointer;
-	}
 	.walkthrough__example {
 		margin-top: 12px;
-		padding-top: 12px;
-		border-top: var(--sy-border);
+	}
+	.walkthrough__example-action {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		font-size: var(--sy-font-size--small);
 	}
 	.walkthrough__example p {
-		font-size: 0.75rem;
-		margin: 8px 0 0;
+		color: var(--sy-color--grey-5);
+		font-size: var(--sy-font-size--small);
+		margin: var(--sy-space) 0 0;
 	}
 	.walkthrough__choices {
 		display: flex;

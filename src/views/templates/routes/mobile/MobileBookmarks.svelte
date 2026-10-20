@@ -293,6 +293,7 @@
 		{:else if bookmarksRoute.contentStatus === 'ready'}
 			<div class="mobile-bookmarks__empty">
 				<Awa pose="collect" size={AWA_SIZES.detail} />
+				<WalkthroughHelp guide="bookmarks" label="Learn how Bookmarks works" />
 				{#if wordList.length}
 					<p>Select a word from your bookmarks</p>
 				{/if}
@@ -306,7 +307,6 @@
 		onSnapChange={handleSnapChange}
 	>
 		<div class="mobile-bookmarks__header-row">
-			<WalkthroughHelp guide="bookmarks" />
 			<SyDropdown
 				values={dropdownList}
 				onselection={handleListSelection}

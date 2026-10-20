@@ -13,8 +13,9 @@ const BUDGETS = {
 	// are intentionally part of the app shell, alongside the shared accessibility support.
 	initialShellBytes: 310 * 1024,
 	largestChunkBytes: 200 * 1024,
-	totalBytes: 650 * 1024,
-	totalGzipBytes: 230 * 1024,
+	// Includes the contextual walkthroughs and shared accessibility improvements.
+	totalBytes: 685 * 1024,
+	totalGzipBytes: 245 * 1024,
 };
 
 function javascriptFiles(directory) {

@@ -234,7 +234,6 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
-			<WalkthroughHelp guide="bookmarks" />
 			{#each actions as action (action.tooltip)}
 				{#if !action.exclude.includes(activeList)}
 					<span class="bookmarks--header--action-item">
@@ -308,7 +307,11 @@
 				{lists}
 				onlink={handleDictionaryLink}
 				onmembershipchange={handleMembershipChange}
-			/>
+			>
+				{#snippet emptyStateActions()}
+					<WalkthroughHelp guide="bookmarks" label="Learn how Bookmarks works" />
+				{/snippet}
+			</DictionaryContent>
 		</div>
 	</div>
 	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>

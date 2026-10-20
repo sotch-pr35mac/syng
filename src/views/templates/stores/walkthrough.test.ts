@@ -1,5 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { createWalkthroughPreferences, type WalkthroughPreferences } from '@/types/walkthrough.js';
+import {
+	createWalkthroughPreferences,
+	WALKTHROUGH_IDS,
+	type WalkthroughPreferences,
+} from '@/types/walkthrough.js';
 
 const content = vi.hoisted(() => ({ prepareGuide: vi.fn(), addExample: vi.fn() }));
 vi.mock('@/components/Walkthrough/walkthroughContent.js', () => content);
@@ -182,3 +186,122 @@ it('allows only one example creation at a time and keeps saved examples after Sk
 	expect(saved.examples.listName).toBe('Example');
 	expect(store.visible).toBe(false);
 });
+
+it('remembers completed guides through interrupted replays and across restarts', async () => {
+	saved.guides.dictionary = { status: 'completed', context: {} };
+	await store.load();
+	expect(store.hasCompleted('dictionary')).toBe(true);
+	expect(store.hasCompleted('study')).toBe(false);
+	await store.start('dictionary');
+	store.skip();
+	expect(saved.guides.dictionary.status).toBe('skipped');
+	expect(saved.guides.dictionary.completed).toBe(true);
+	vi.resetModules();
+	const { setPreferenceManagerForTest } = await import('@/utils/appServices.js');
+	setPreferenceManagerForTest({
+		waitForInit: async () => {},
+		get: () => saved,
+		set: vi.fn(),
+	} as never);
+	store = (await import('@/stores/walkthrough.svelte.js')).walkthroughStore;
+	await store.load();
+	expect(store.hasCompleted('dictionary')).toBe(true);
+});
+
+it('offers each practice guide once, pauses quiz timing, and persists a declined invitation', async () => {
+	await store.load();
+	window.location.hash = '#/study/quiz?list=Vocabulary';
+	store.offerFeature('quiz', { listName: 'Vocabulary' });
+	expect(store.phase).toBe('feature-invitation');
+	expect(store.quizSuspended).toBe(true);
+	store.routeChanged();
+	expect(store.phase).toBe('feature-invitation');
+	store.skip();
+	expect(store.quizSuspended).toBe(false);
+	expect(saved.featureInvitations.quiz).toBe(true);
+	expect(saved.guides.quiz).toBeUndefined();
+	store.offerFeature('quiz', { listName: 'Vocabulary' });
+	expect(store.visible).toBe(false);
+	store.offerFeature('flashcards', { listName: 'Vocabulary' });
+	expect(store.phase).toBe('feature-invitation');
+	window.location.hash = '#/study';
+	store.routeChanged();
+	expect(store.visible).toBe(false);
+	vi.resetModules();
+	const { setPreferenceManagerForTest } = await import('@/utils/appServices.js');
+	setPreferenceManagerForTest({
+		waitForInit: async () => {},
+		get: () => saved,
+		set: vi.fn(),
+	} as never);
+	store = (await import('@/stores/walkthrough.svelte.js')).walkthroughStore;
+	await store.load();
+	store.offerFeature('quiz', { listName: 'Vocabulary' });
+	expect(store.visible).toBe(false);
+});
+
+it('defers practice invitations while blocked or guiding and does not offer previously tried guides', async () => {
+	await store.load();
+	store.setBlocked(true);
+	store.offerFeature('flashcards', { listName: 'Vocabulary' });
+	expect(saved.featureInvitations?.flashcards).not.toBe(true);
+	store.setBlocked(false);
+	await store.start('study');
+	store.offerFeature('flashcards', { listName: 'Vocabulary' });
+	expect(store.guide).toBe('study');
+	expect(saved.featureInvitations?.flashcards).not.toBe(true);
+	store.skip();
+	await store.start('flashcards', { listName: 'Vocabulary' });
+	store.skip();
+	store.offerFeature('flashcards', { listName: 'Vocabulary' });
+	expect(store.visible).toBe(false);
+});
+
+it('resets all feature tours while keeping app tour history and sample content', async () => {
+	saved.invitation = 'shown';
+	saved.examples = { listName: 'My sample', documentId: 'my-document' };
+	for (const identifier of WALKTHROUGH_IDS) {
+		saved.guides[identifier] = { status: 'completed', completed: true, context: {} };
+	}
+	saved.guides.quiz = { status: 'in-progress', context: { listName: 'Vocabulary' } };
+	saved.featureInvitations = { flashcards: true, quiz: true };
+	saved.featureInvitations['reader-document'] = true;
+	await store.resetFeatureTours();
+	expect(saved.invitation).toBe('shown');
+	expect(saved.examples).toEqual({ listName: 'My sample', documentId: 'my-document' });
+	expect(saved.guides).toEqual({
+		app: { status: 'completed', completed: true, context: {} },
+	});
+	for (const identifier of WALKTHROUGH_IDS) {
+		expect(store.hasCompleted(identifier)).toBe(identifier === 'app');
+	}
+	store.offerFeature('flashcards', { listName: 'Vocabulary' });
+	expect(store.phase).toBe('feature-invitation');
+	store.skip();
+	store.offerFeature('quiz', { listName: 'Vocabulary' });
+	expect(store.phase).toBe('feature-invitation');
+	store.skip();
+	store.offerFeature('reader-document', { documentId: 'my-document' });
+	expect(store.phase).toBe('feature-invitation');
+});
+
+it.each(WALKTHROUGH_IDS.filter((identifier) => identifier !== 'app'))(
+	'does not let pending %s preparation restore progress after a reset',
+	async (identifier) => {
+		let finish: (value: unknown) => void;
+		content.prepareGuide.mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					finish = resolve;
+				})
+		);
+		const pending = store.start(identifier, { listName: 'Vocabulary' });
+		await vi.waitFor(() => expect(content.prepareGuide).toHaveBeenCalled());
+		await store.resetFeatureTours();
+		finish({ steps, context: { listName: 'Vocabulary' } });
+		await pending;
+		expect(store.visible).toBe(false);
+		expect(store.quizSuspended).toBe(false);
+		expect(saved.guides[identifier]).toBeUndefined();
+	}
+);

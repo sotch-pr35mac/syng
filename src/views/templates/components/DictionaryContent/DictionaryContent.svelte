@@ -51,6 +51,7 @@
 	 * @property {boolean} [showEmptyState] - Show Awa in an unselected page detail pane
 	 * @property {'search' | 'collect' | 'dictionary'} [emptyStatePose] - Match Awa to the page's empty state
 	 * @property {string} [emptyStateMessage] - Optional guidance below Awa
+	 * @property {import('svelte').Snippet} [emptyStateActions] - Optional actions below the empty-state guidance
 	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
 	 * @property {(event: import('@/types/bookmarks.js').BookmarkListMembershipEvent) => void} [onmembershipchange] - Callback after list membership changes
@@ -65,6 +66,7 @@
 		showEmptyState = false,
 		emptyStatePose = 'dictionary',
 		emptyStateMessage = '',
+		emptyStateActions,
 		separateTraditionalCharacters,
 		onlink,
 		onmembershipchange,
@@ -468,6 +470,7 @@
 			{#if emptyStateMessage}
 				<p>{emptyStateMessage}</p>
 			{/if}
+			{@render emptyStateActions?.()}
 		</div>
 	{/if}
 </div>

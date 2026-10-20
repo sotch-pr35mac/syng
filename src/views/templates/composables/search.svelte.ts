@@ -11,7 +11,7 @@ import {
 } from '@/types/search.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
-import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+import { lexicalExamples, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 import type { QueryTrigger, SearchQueryTelemetry } from '@/types/telemetry.js';
 import {
@@ -210,7 +210,13 @@ async function prepareWalkthroughExample(isCurrent: () => boolean): Promise<void
 	if (!isCurrent() || currentRequest !== previousRequest || queryText || activeWord) {
 		return;
 	}
-	const selectedIndex = matches.findIndex((entry) => entry.simplified === '学习');
+	const withExamples = matches.findIndex(
+		(entry) => entry.simplified === '学习' && lexicalExamples(entry).length > 0
+	);
+	const selectedIndex =
+		withExamples >= 0
+			? withExamples
+			: matches.findIndex((entry) => entry.simplified === '学习');
 	if (selectedIndex < 0) {
 		throw new Error('The example word could not be loaded. Please try again.');
 	}

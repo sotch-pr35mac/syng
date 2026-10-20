@@ -153,6 +153,9 @@
 			<div class="mobile-search__empty">
 				<Awa pose="search" size={AWA_SIZES.detail} />
 				<p>Search for a word to get started</p>
+				{#if search.status === 'idle'}
+					<WalkthroughHelp guide="dictionary" label="Learn how Search works" />
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -190,7 +193,6 @@
 					}
 				}}
 			/>
-			<WalkthroughHelp guide="dictionary" />
 		</div>
 
 		<p class="sy-sr-only" role="status" aria-atomic="true">{search.statusMessage}</p>

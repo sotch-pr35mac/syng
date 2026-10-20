@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
-	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ChevronLeft, SlidersHorizontal } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -61,6 +61,12 @@
 	const settingsPopoverId = `reader-settings-${crypto.randomUUID()}`;
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="reader-document"
+	context={{ documentId: params.id }}
+	ready={Boolean(activeDocument && activeDocument._id === params.id && currentPage)}
+/>
+
 <div
 	class="mobile-reader-document"
 	style={activeDocument && currentPage ? reader.readerThemeStyle : ''}
@@ -78,7 +84,6 @@
 			</SyButton>
 			<h1 class="mobile-reader-document__document-title">{activeDocument.title}</h1>
 			<div class="mobile-reader-document__header-actions">
-				<WalkthroughHelp guide="reader-document" context={{ documentId: params.id }} />
 				<SyButton
 					style="ghost"
 					size="small"

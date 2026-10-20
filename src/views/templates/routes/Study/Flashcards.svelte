@@ -1,5 +1,6 @@
 <script>
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
 	import { ChevronLeft, ArrowLeft, ArrowRight, RotateCw, RotateCcw } from 'lucide-svelte';
 	import { onDestroy, untrack } from 'svelte';
@@ -68,6 +69,16 @@
 	]);
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="flashcards"
+	context={{ listName: listFromUrl ?? undefined }}
+	ready={router.location === '/study/flashcards' &&
+		!flashcardsRoute.loading &&
+		!flashcardsRoute.error &&
+		flashcardsRoute.activeList === listFromUrl &&
+		Boolean(flashcardsRoute.activeWord)}
+/>
+
 <div class="flashcard--container">
 	<p class="sy-sr-only" role="status" aria-atomic="true">
 		{#if flashcardsRoute.loading}
@@ -84,7 +95,6 @@
 		data-tauri-drag-region={isMacos ? true : undefined}
 	>
 		<div class="flashcard--header--section">
-			<WalkthroughHelp guide="flashcards" context={{ listName: listFromUrl ?? undefined }} />
 			{#each leftActions as action (action.label)}
 				<SyButton
 					guideTarget={action.guideTarget}
@@ -142,7 +152,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flashcard--front">
+			<div class="flashcard--front" class:flashcard--empty={!flashcardsRoute.activeWord}>
 				{#if flashcardsRoute.listContent.length > 0 && activeWord}
 					<h1>
 						<PreferredCharacters
@@ -159,6 +169,13 @@
 								? 'Unable to load flashcards. Please try again.'
 								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					</h1>
+				{/if}
+				{#if !flashcardsRoute.loading && !flashcardsRoute.error && !flashcardsRoute.listContent.length}
+					<WalkthroughHelp
+						guide="flashcards"
+						label="Learn how flashcards work"
+						context={{ listName: listFromUrl ?? undefined }}
+					/>
 				{/if}
 			</div>
 		{/if}
@@ -239,6 +256,8 @@
 		z-index: var(--sy-z-index--base-1);
 	}
 	.flashcard--front {
+		flex-direction: column;
+		gap: var(--sy-space--large);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -249,6 +268,9 @@
 		font-size: var(--sy-font-size--display-large);
 		font-weight: 200;
 		margin-bottom: 83px;
+	}
+	.flashcard--empty h1 {
+		margin-bottom: var(--sy-space--large);
 	}
 	.flashcard--back {
 		margin: var(--sy-space--large) var(--sy-space--extra-large);

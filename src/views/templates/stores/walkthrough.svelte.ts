@@ -9,9 +9,18 @@ import {
 	type WalkthroughPreparation,
 	type WalkthroughStep,
 	type WalkthroughTargetId,
+	type FeatureWalkthroughId,
 } from '@/types/walkthrough.js';
 
-type Phase = 'idle' | 'invitation' | 'loading' | 'choosing' | 'guiding' | 'suspended' | 'error';
+type Phase =
+	| 'idle'
+	| 'invitation'
+	| 'feature-invitation'
+	| 'loading'
+	| 'choosing'
+	| 'guiding'
+	| 'suspended'
+	| 'error';
 let preferences = $state<WalkthroughPreferences>(createWalkthroughPreferences());
 let loaded = $state(false);
 let phase = $state<Phase>('idle');
@@ -53,6 +62,11 @@ async function load(): Promise<void> {
 			}
 		}
 		clean.examples = saved.examples ?? {};
+		clean.featureInvitations = {
+			'reader-document': saved.featureInvitations?.['reader-document'] === true,
+			flashcards: saved.featureInvitations?.flashcards === true,
+			quiz: saved.featureInvitations?.quiz === true,
+		};
 		preferences = clean;
 	}
 	loaded = true;
@@ -65,16 +79,63 @@ function offer(): void {
 	preferences.invitation = 'shown';
 	persist();
 	if (window.location.hash === '#/' || !window.location.hash) {
+		guide = null;
 		phase = 'invitation';
 	}
 }
 
+function offerFeature(identifier: FeatureWalkthroughId, context: WalkthroughContext): void {
+	if (
+		!loaded ||
+		blocked ||
+		phase !== 'idle' ||
+		preferences.guides[identifier] ||
+		preferences.featureInvitations?.[identifier]
+	) {
+		return;
+	}
+	preferences.featureInvitations = { ...preferences.featureInvitations, [identifier]: true };
+	guide = identifier;
+	preparation = { steps: [], context };
+	stepIndex = 0;
+	expectedRoute = window.location.hash.slice(1) || '/';
+	phase = 'feature-invitation';
+	persist();
+}
+
+function hasCompleted(identifier: WalkthroughId): boolean {
+	const progress = preferences.guides[identifier];
+	return progress?.completed === true || progress?.status === 'completed';
+}
+
+async function resetFeatureTours(): Promise<void> {
+	await load();
+	if (guide && guide !== 'app') {
+		// Cancel any pending preparation before clearing progress so it cannot restore it.
+		++requestVersion;
+		phase = 'idle';
+		guide = null;
+		preparation = { steps: [], context: {} };
+		stepIndex = 0;
+		expectedRoute = '';
+		errorMessage = '';
+	}
+	for (const identifier of WALKTHROUGH_IDS) {
+		if (identifier !== 'app') {
+			delete preferences.guides[identifier];
+		}
+	}
+	preferences.featureInvitations = {};
+	persist();
+}
+
 function saveProgress(status: 'in-progress' | 'skipped' | 'completed'): void {
-	if (!guide) {
+	if (!guide || phase === 'feature-invitation') {
 		return;
 	}
 	preferences.guides[guide] = {
 		status,
+		completed: status === 'completed' || hasCompleted(guide),
 		stepId: preparation.steps[stepIndex]?.id,
 		context: { ...preparation.context },
 	};
@@ -231,7 +292,8 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 				preferences.examples = examples;
 				persist();
 			},
-			freshCopy
+			freshCopy,
+			guide
 		);
 		if (request !== requestVersion) {
 			return;
@@ -309,6 +371,9 @@ export const walkthroughStore = {
 	},
 	load,
 	offer,
+	offerFeature,
+	resetFeatureTours,
+	hasCompleted,
 	start,
 	next,
 	back,
@@ -323,6 +388,10 @@ export const walkthroughStore = {
 		}
 	},
 	suspend: () => {
+		if (phase === 'feature-invitation') {
+			close('skipped');
+			return;
+		}
 		if (phase === 'guiding') {
 			phase = 'suspended';
 			saveProgress('in-progress');

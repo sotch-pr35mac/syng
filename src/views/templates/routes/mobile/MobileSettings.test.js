@@ -1,9 +1,11 @@
-import { beforeEach, expect, vi } from 'vitest';
+import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
 import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { contrastStore } from '@/stores/contrast.svelte.js';
+import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+import * as settings from '@/composables/settings.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -256,4 +258,51 @@ it('shows age status on the telemetry tab while child privacy mode is on', async
 	).toBeTruthy();
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
 	expect(queryByText('Recent Telemetry Events')).toBeNull();
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+it('resets feature tours and invitations from developer settings', async () => {
+	for (const identifier of ['dictionary', 'reader-library', 'reader-document', 'flashcards']) {
+		walkthroughStore.preferences.guides[identifier] = {
+			status: 'completed',
+			completed: true,
+			context: {},
+		};
+	}
+	walkthroughStore.preferences.guides.quiz = { status: 'skipped', context: {} };
+	walkthroughStore.preferences.featureInvitations = { flashcards: true, quiz: true };
+	const user = userEvent.setup();
+	const view = render(MobileSettings);
+	await user.click(view.getByRole('button', { name: 'Reset feature tours' }));
+	expect(
+		await view.findByText(
+			'Reset. Empty-state help links and first-use tour invitations are available again.'
+		)
+	).toBeTruthy();
+	for (const identifier of [
+		'dictionary',
+		'reader-library',
+		'reader-document',
+		'flashcards',
+		'quiz',
+	]) {
+		expect(walkthroughStore.preferences.guides[identifier]).toBeUndefined();
+	}
+	expect(preferenceManager.set).toHaveBeenCalledWith(
+		'walkthrough',
+		expect.objectContaining({
+			featureInvitations: {},
+		})
+	);
+});
+
+it('hides feature-tour reset in release builds', async () => {
+	vi.spyOn(settings, 'isDevBuild').mockReturnValue(false);
+	vi.spyOn(settings, 'resolveIsDevBuild').mockResolvedValue(false);
+	const view = render(MobileSettings);
+	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
+	expect(view.queryByRole('button', { name: 'Reset feature tours' })).toBeNull();
 });

@@ -154,7 +154,6 @@
 				onenter={handleEnter}
 			/>
 		</div>
-		<WalkthroughHelp guide="dictionary" />
 	</div>
 	<p class="sy-sr-only" role="status" aria-atomic="true">{search.statusMessage}</p>
 	<div class="search-content-container">
@@ -191,7 +190,13 @@
 				emptyStateMessage="Search for a word to get started"
 				lists={search.bookmarks}
 				onlink={handleDictionaryLink}
-			/>
+			>
+				{#snippet emptyStateActions()}
+					{#if search.status === 'idle'}
+						<WalkthroughHelp guide="dictionary" label="Learn how Search works" />
+					{/if}
+				{/snippet}
+			</DictionaryContent>
 		</div>
 	</div>
 	<DictionaryPopover

@@ -1,5 +1,6 @@
 <script>
 	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
+	import WalkthroughReset from '@/components/Walkthrough/WalkthroughReset.svelte';
 
 	import { onMount } from 'svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
@@ -283,6 +284,10 @@
 					</div>
 				{/each}
 				{#if showDevPreferences}
+					<div class="settings--setting">
+						<p>Feature tour testing</p>
+						<WalkthroughReset />
+					</div>
 					<div class="settings--setting settings--setting--center">
 						<p>Replay onboarding</p>
 						<SyButton

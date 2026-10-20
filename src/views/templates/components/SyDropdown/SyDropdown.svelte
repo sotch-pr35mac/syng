@@ -37,6 +37,8 @@
 		color?: string;
 		hover?: string;
 		disabled?: boolean;
+		selected?: boolean;
+		'aria-label'?: string;
 	};
 	/**
 	 * @typedef {Object} Props
@@ -54,12 +56,14 @@
 		direction = DROPDOWN_DIRECTIONS.DOWN,
 		fixed = false,
 		children,
+		'aria-label': menuLabel,
 		onselection = () => {},
 	}: {
 		values?: DropdownValue[];
 		position?: DropdownPosition;
 		direction?: DropdownDirection;
 		fixed?: boolean;
+		'aria-label'?: string;
 		children?: Snippet<[boolean, HTMLButtonAttributes]>;
 		onselection?: (_id: string | number) => void;
 	} = $props();
@@ -80,7 +84,7 @@
 	function menuItems(): HTMLButtonElement[] {
 		return [
 			...(listElement?.querySelectorAll<HTMLButtonElement>(
-				'[role="menuitem"]:not(:disabled)'
+				'[role="menuitem"]:not(:disabled), [role="menuitemradio"]:not(:disabled)'
 			) ?? []),
 		];
 	}
@@ -90,7 +94,8 @@
 			for (const menuItem of menuItems()) {
 				menuItem.tabIndex = menuItem === item ? 0 : -1;
 			}
-			item.focus();
+			item.focus({ preventScroll: true });
+			item.scrollIntoView?.({ block: 'nearest' });
 		}
 	}
 
@@ -103,32 +108,71 @@
 	}
 
 	function updateFixedPosition(): void {
-		if (!fixed || !triggerElement) {
+		if (!fixed || !triggerElement || !listElement) {
 			return;
 		}
+		const viewport = window.visualViewport;
+		const gutter = 12;
+		const viewportLeft = viewport?.offsetLeft ?? 0;
+		const viewportTop = viewport?.offsetTop ?? 0;
+		const viewportWidth = viewport?.width ?? window.innerWidth;
+		const viewportHeight = viewport?.height ?? window.innerHeight;
+		const left = viewportLeft + gutter;
+		const top = viewportTop + gutter;
+		const bottom = viewportTop + viewportHeight - gutter;
 		const rect = triggerElement.getBoundingClientRect();
-		const styles = ['position:fixed', 'z-index:var(--sy-z-index--top-3)'];
-		if (position === DROPDOWN_POSITIONS.RIGHT) {
-			styles.push(`right:${window.innerWidth - rect.right}px`);
-		} else {
-			styles.push(`left:${rect.left}px`);
-		}
-		if (direction === DROPDOWN_DIRECTIONS.UP) {
-			styles.push(`bottom:${window.innerHeight - rect.top + FIXED_DROPDOWN_OFFSET_PX}px`);
-		} else {
-			styles.push(`top:${rect.bottom + FIXED_DROPDOWN_OFFSET_PX}px`);
-		}
-		fixedStyle = styles.join(';');
+		const naturalHeight = listElement.scrollHeight;
+		const below = Math.max(0, bottom - rect.bottom - FIXED_DROPDOWN_OFFSET_PX);
+		const above = Math.max(0, rect.top - top - FIXED_DROPDOWN_OFFSET_PX);
+		const upwards =
+			direction === DROPDOWN_DIRECTIONS.UP
+				? above >= naturalHeight || above > below
+				: below < naturalHeight && above > below;
+		const maxHeight = Math.max(
+			0,
+			Math.min(viewportHeight - gutter * 2, upwards ? above : below)
+		);
+		const height = Math.min(naturalHeight, maxHeight);
+		const width = Math.min(
+			listElement.getBoundingClientRect().width,
+			viewportWidth - gutter * 2
+		);
+		const preferredLeft =
+			position === DROPDOWN_POSITIONS.RIGHT ? rect.right - width : rect.left;
+		const menuLeft = Math.max(
+			left,
+			Math.min(preferredLeft, viewportLeft + viewportWidth - gutter - width)
+		);
+		const menuTop = Math.max(
+			top,
+			Math.min(
+				bottom - height,
+				upwards
+					? rect.top - FIXED_DROPDOWN_OFFSET_PX - height
+					: rect.bottom + FIXED_DROPDOWN_OFFSET_PX
+			)
+		);
+		fixedStyle = `left:${menuLeft}px;top:${menuTop}px;max-width:${viewportWidth - gutter * 2}px;max-height:${maxHeight}px`;
 	}
 
-	async function openMenu(trigger: HTMLElement, last = false): Promise<void> {
+	async function openMenu(trigger: HTMLElement, edge?: 'first' | 'last'): Promise<void> {
 		triggerElement = trigger;
 		restoreFocus = true;
 		active = true;
-		updateFixedPosition();
 		await tick();
+		if (!active) {
+			return;
+		}
+		updateFixedPosition();
 		const items = menuItems();
-		focusItem(last ? items[items.length - 1] : items[0]);
+		const selected = items.find((item) => item.getAttribute('aria-checked') === 'true');
+		focusItem(
+			edge === 'last'
+				? items[items.length - 1]
+				: edge === 'first'
+					? items[0]
+					: (selected ?? items[0])
+		);
 	}
 
 	function handleTriggerClick(event: MouseEvent): void {
@@ -142,7 +186,10 @@
 	function handleTriggerKeydown(event: KeyboardEvent): void {
 		if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
 			event.preventDefault();
-			void openMenu(event.currentTarget as HTMLElement, event.key === 'ArrowUp');
+			void openMenu(
+				event.currentTarget as HTMLElement,
+				event.key === 'ArrowUp' ? 'last' : event.key === 'ArrowDown' ? 'first' : undefined
+			);
 		}
 	}
 
@@ -239,10 +286,14 @@
 		positionFrame = requestAnimationFrame(followTrigger);
 		window.addEventListener('resize', updateFixedPosition);
 		window.addEventListener('scroll', updateFixedPosition, true);
+		window.visualViewport?.addEventListener('resize', updateFixedPosition);
+		window.visualViewport?.addEventListener('scroll', updateFixedPosition);
 		return () => {
 			cancelAnimationFrame(positionFrame);
 			window.removeEventListener('resize', updateFixedPosition);
 			window.removeEventListener('scroll', updateFixedPosition, true);
+			window.visualViewport?.removeEventListener('resize', updateFixedPosition);
+			window.visualViewport?.removeEventListener('scroll', updateFixedPosition);
 		};
 	});
 </script>
@@ -263,7 +314,8 @@
 			bind:this={listElement}
 			id={`${dropdownId}-menu`}
 			role="menu"
-			aria-labelledby={`${dropdownId}-trigger`}
+			aria-label={menuLabel}
+			aria-labelledby={menuLabel ? undefined : `${dropdownId}-trigger`}
 			tabindex="-1"
 			onkeydown={handleMenuKeydown}
 			class={`sy-dropdown--list ${fixed ? 'sy-dropdown--fixed-list' : `sy-dropdown--list--${position} sy-dropdown--list--${direction}`}`}
@@ -327,9 +379,18 @@
 		opacity: 1;
 	}
 	.sy-dropdown--fixed-list {
+		position: fixed;
+		/* An open menu must remain usable above a paused walkthrough. */
+		z-index: calc(var(--sy-z-index--top) + 1);
+		overflow-y: auto;
+		overscroll-behavior: contain;
 		visibility: visible;
 		opacity: 1;
 		/* Geometry follows the trigger directly; animating it adds a trailing delay. */
 		transition-property: opacity;
+	}
+	.sy-dropdown--fixed-list .sy-dropdown--list--content {
+		max-height: none;
+		overflow-y: visible;
 	}
 </style>

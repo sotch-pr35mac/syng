@@ -1,5 +1,6 @@
 <script lang="ts">
 	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
+	import WalkthroughReset from '@/components/Walkthrough/WalkthroughReset.svelte';
 
 	import { onMount } from 'svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
@@ -120,7 +121,7 @@
 			class="mobile-settings__panel"
 		>
 			{#if activeTab === 'general'}
-				<WalkthroughSettings />
+				<WalkthroughSettings variant="mobile" />
 				<section
 					class="mobile-settings__section mobile-settings__section--toggle"
 					aria-labelledby="contrast-heading"
@@ -174,6 +175,13 @@
 					</section>
 				{/if}
 				{#if showDevPreferences}
+					<section
+						class="mobile-settings__section"
+						aria-labelledby="feature-tour-testing-heading"
+					>
+						<h2 id="feature-tour-testing-heading">Feature tour testing</h2>
+						<WalkthroughReset />
+					</section>
 					<section class="mobile-settings__section" aria-labelledby="migration-heading">
 						<h2 id="migration-heading">Database Migration</h2>
 						<DatabaseMigrationPreview />

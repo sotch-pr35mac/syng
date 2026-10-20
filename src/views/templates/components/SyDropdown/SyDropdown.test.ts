@@ -76,18 +76,51 @@ it('skips disabled items and separators with arrows, Home, End and typeahead', a
 	expect(document.activeElement).toBe(getByRole('menuitem', { name: 'Bravo' }));
 });
 
-it.each(['{Enter}', ' '])('selects exactly once with %s and restores focus', async (key) => {
+it.each([
+	[false, '{Enter}'],
+	[false, ' '],
+	[true, '{Enter}'],
+	[true, ' '],
+] as const)(
+	'selects exactly once with fixed=%s and key=%s and restores focus',
+	async (fixed, key) => {
+		const user = userEvent.setup();
+		const onselection = vi.fn();
+		const { getByRole, queryByRole } = render(DropdownHarness, { fixed, onselection });
+		const trigger = getByRole('button', { name: 'Options' });
+		trigger.focus();
+		await user.keyboard('{ArrowDown}');
+		await user.keyboard(key);
+		expect(onselection).toHaveBeenCalledExactlyOnceWith('alpha');
+		expect(queryByRole('menu')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+	}
+);
+
+it('does not select an icon item when navigating with arrow keys', async () => {
 	const user = userEvent.setup();
 	const onselection = vi.fn();
-	const { getByRole, queryByRole } = render(DropdownHarness, { onselection });
-	const trigger = getByRole('button', { name: 'Options' });
-	trigger.focus();
+	const { getByRole } = render(DropdownHarness, { iconItems: true, onselection });
+	await user.click(getByRole('button', { name: 'Options' }));
 	await user.keyboard('{ArrowDown}');
-	await user.keyboard(key);
-	expect(onselection).toHaveBeenCalledExactlyOnceWith('alpha');
-	expect(queryByRole('menu')).toBeNull();
-	expect(document.activeElement).toBe(trigger);
+	expect(document.activeElement).toBe(getByRole('menuitem', { name: 'Beta' }));
+	expect(onselection).not.toHaveBeenCalled();
+	await user.keyboard(' ');
+	expect(onselection).toHaveBeenCalledExactlyOnceWith('beta');
 });
+
+it.each([false, true])(
+	'prevents disabled options from being selected (icons=%s)',
+	async (iconItems) => {
+		const onselection = vi.fn();
+		const { getByRole } = render(DropdownHarness, { iconItems, onselection });
+		await fireEvent.click(getByRole('button', { name: 'Options' }));
+		const item = getByRole('menuitem', { name: 'Disabled' });
+		expect(item).toHaveProperty('disabled', true);
+		await fireEvent.click(item);
+		expect(onselection).not.toHaveBeenCalled();
+	}
+);
 
 it('dismisses Escape without selection and preserves pointer destination on outside dismissal', async () => {
 	const user = userEvent.setup();

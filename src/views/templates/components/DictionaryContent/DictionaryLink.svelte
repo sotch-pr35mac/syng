@@ -1,4 +1,5 @@
 <script>
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 
 	/**
@@ -32,7 +33,13 @@
 	};
 </script>
 
-<button type="button" class="dictionary-link" onclick={openLink} data-testid="dictionary-link">
+<button
+	use:walkthroughTarget={'dictionary-link'}
+	type="button"
+	class="dictionary-link"
+	onclick={openLink}
+	data-testid="dictionary-link"
+>
 	{#if hasCharacterForms}
 		<PreferredCharacters
 			{simplified}
