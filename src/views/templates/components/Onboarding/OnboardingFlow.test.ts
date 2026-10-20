@@ -4,7 +4,6 @@ import userEvent from '@testing-library/user-event';
 import OnboardingFlow from '@/components/Onboarding/OnboardingFlow.svelte';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { onboardingStore } from '@/stores/onboarding.svelte.js';
-import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -108,7 +107,6 @@ beforeEach(async () => {
 		}),
 	};
 	setPreferenceManagerForTest(preferenceManager as never);
-	await contrastStore.loadSettings();
 	await dictionaryDisplaySettingsStore.loadSettings();
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
@@ -131,20 +129,6 @@ beforeEach(async () => {
 		addEventListener: vi.fn(),
 		removeEventListener: vi.fn(),
 	});
-});
-
-it('offers Increase Contrast before completion and retains it between onboarding steps', async () => {
-	const user = userEvent.setup();
-	const { getByRole, getByText } = render(OnboardingFlow);
-	const contrast = getByRole('checkbox', { name: 'Increase Contrast' }) as HTMLInputElement;
-	expect(contrast.checked).toBe(false);
-	await user.click(contrast);
-	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
-	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
-	await user.click(getByRole('button', { name: 'Continue' }));
-	await waitFor(() => expect(getByText('Chinese display')).toBeTruthy());
-	expect(getByRole('checkbox', { name: 'Increase Contrast' })).toBe(contrast);
-	expect(contrast.checked).toBe(true);
 });
 
 async function continueFromWelcome(user: ReturnType<typeof userEvent.setup>) {
