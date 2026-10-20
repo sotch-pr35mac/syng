@@ -20,7 +20,7 @@
 		classes={['walkthrough-help']}
 		onclick={(event) => {
 			event.stopPropagation();
-			void walkthroughStore.start(guide, context);
+			void walkthroughStore.start(guide, context, false, 'help');
 		}}
 	>
 		{label}

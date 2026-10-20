@@ -10,6 +10,8 @@ vi.mock('@/stores/whatsNew.svelte.js', () => ({
 		platform: 'desktop',
 		expanded: false,
 		markPresented: vi.fn(),
+		disclose: vi.fn(),
+		action: vi.fn(),
 	},
 }));
 
@@ -40,10 +42,12 @@ it('keeps the latest highlights visible and cumulative and older releases expand
 	expect(getByText('Improvement 2.5.0').closest('details')?.open).toBe(false);
 
 	await user.click(getByText('Also new since your last version'));
+	await waitFor(() => expect(whatsNewStore.disclose).toHaveBeenCalledWith('cumulative', true));
 	expect(getByRole('heading', { name: 'Syng 2.5.0' })).toBeTruthy();
 	expect(getByText('Improvement 2.5.0').closest('details')?.open).toBe(true);
 	expect(getByText('Highlight 2.4.0').closest('details')?.open).toBe(false);
 
 	await user.click(getByText('Earlier releases'));
+	await waitFor(() => expect(whatsNewStore.disclose).toHaveBeenCalledWith('earlier', true));
 	expect(getByRole('heading', { name: 'Syng 2.4.0' })).toBeTruthy();
 });

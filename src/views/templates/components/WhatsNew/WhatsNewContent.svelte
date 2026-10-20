@@ -58,7 +58,7 @@
 						<p>{highlight.body}</p>
 						{#if highlight.component}
 							<div class="highlight__control">
-								<highlight.component {variant} />
+								<highlight.component {variant} source="whats_new" />
 								{#if highlight.controlHint}<p class="highlight__hint">
 										{highlight.controlHint}
 									</p>{/if}
@@ -68,6 +68,10 @@
 							<SyButton
 								size="large"
 								onclick={() => {
+									whatsNewStore.action(
+										highlight.action!.section,
+										highlight.action!.setting
+									);
 									const parameters = new URLSearchParams({
 										section: highlight.action!.section,
 										from: 'whats-new',
@@ -114,7 +118,7 @@
 	<p>No release notes are available for this version yet.</p>
 {/if}
 {#if cumulative.length}
-	<details>
+	<details ontoggle={(event) => whatsNewStore.disclose('cumulative', event.currentTarget.open)}>
 		<summary>Also new since your last version</summary>
 		{#each cumulative as release (release.version)}
 			{@render releaseNotes(release, true)}
@@ -122,7 +126,7 @@
 	</details>
 {/if}
 {#if older.length}
-	<details>
+	<details ontoggle={(event) => whatsNewStore.disclose('earlier', event.currentTarget.open)}>
 		<summary>Earlier releases</summary>
 		{#each older as release (release.version)}
 			{@render releaseNotes(release, true)}

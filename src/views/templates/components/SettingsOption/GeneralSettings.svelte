@@ -24,6 +24,7 @@
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { getPreferenceManager } from '@/utils/appServices.js';
 	import { handleError } from '@/utils/error.js';
+	import { telemetry } from '@/utils/telemetry.js';
 	import { isIPad, isMobile } from '@/utils/device.js';
 	import {
 		isDevBuild,
@@ -149,6 +150,9 @@
 		if (!scrollContainer || !heading?.isConnected) {
 			return;
 		}
+		telemetry
+			.trackEvent('settings.section_selected', { section: String(value) })
+			.catch(() => {});
 		scrollContainer.scrollTop +=
 			heading.getBoundingClientRect().top -
 			scrollContainer.getBoundingClientRect().top -

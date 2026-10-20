@@ -81,6 +81,36 @@ for (const scenario of [
 			await page.screenshot({ path: testInfo.outputPath('added.png') });
 			await card.getByRole('button', { name: 'Next', exact: true }).click();
 			await expect(card.getByRole('status')).toBeEmpty();
+			await card.getByRole('button', { name: 'Back', exact: true }).click();
+			await card.getByRole('button', { name: 'Skip tour', exact: true }).click();
+			const telemetryCalls = await page.evaluate(
+				() =>
+					Reflect.get(window, '__syngTelemetryCalls') as {
+						name: string;
+						payload: Record<string, unknown>;
+					}[]
+			);
+			expect(telemetryCalls.map((call) => call.name)).toEqual([
+				'walkthrough.started',
+				'walkthrough.step_viewed',
+				'walkthrough.example_requested',
+				'walkthrough.example_added',
+				'walkthrough.next',
+				'walkthrough.step_viewed',
+				'walkthrough.back',
+				'walkthrough.step_viewed',
+				'walkthrough.skipped',
+			]);
+			expect(
+				telemetryCalls.find((call) => call.name === 'walkthrough.example_added')?.payload
+			).toMatchObject({
+				guide: vocabulary ? 'study' : 'reader-library',
+				content_kind: vocabulary ? 'list' : 'document',
+				fresh_copy: false,
+			});
+			expect(JSON.stringify(telemetryCalls)).not.toMatch(
+				/sample-document|Tea Party|lexical_id/
+			);
 		});
 	}
 }

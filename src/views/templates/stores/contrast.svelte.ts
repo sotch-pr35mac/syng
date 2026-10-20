@@ -4,6 +4,7 @@
  * the preference manager remains the persisted source of truth.
  */
 import { getPreferenceManager } from '@/utils/appServices.js';
+import { telemetry } from '@/utils/telemetry.js';
 
 const PREFERENCE_KEY = 'increaseContrast';
 const CACHE_KEY = 'syng:appearance';
@@ -98,12 +99,21 @@ async function loadSettings(): Promise<void> {
 }
 
 /** Persist a local toggle, apply it immediately, and refresh the startup cache. */
-function setIncreaseContrast(checked: boolean): void {
+function setIncreaseContrast(
+	checked: boolean,
+	source: 'settings' | 'whats_new' = 'settings'
+): void {
+	const changed = increaseContrast !== checked;
 	getPreferenceManager().set(PREFERENCE_KEY, checked);
 	revision += 1;
 	increaseContrast = checked;
 	applyAppearance();
 	cacheAppearance();
+	if (changed) {
+		telemetry
+			.trackEvent('settings.changed', { setting: PREFERENCE_KEY, source })
+			.catch(() => {});
+	}
 }
 
 export const contrastStore = {

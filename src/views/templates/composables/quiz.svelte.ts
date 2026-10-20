@@ -163,7 +163,12 @@ function startQuiz(activeList: string | null, origin: string | null = null): voi
 			}
 			handleQuestionChange(nextQuestion);
 			sessionActive = true;
-			telemetry.trackEvent('quiz.started', { word_count: wordCount }).catch(() => {});
+			telemetry
+				.trackEvent('quiz.started', {
+					word_count: wordCount,
+					source: origin === 'bookmarks' ? 'bookmarks' : 'study',
+				})
+				.catch(() => {});
 			return undefined;
 		})
 		.catch((error) => {

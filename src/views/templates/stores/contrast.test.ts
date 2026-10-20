@@ -1,8 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { contrastStore } from '@/stores/contrast.svelte.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
+import { telemetry } from '@/utils/telemetry.js';
 
 vi.mock('@/utils/appServices.js', () => ({ getPreferenceManager: vi.fn() }));
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(async () => {}) },
+}));
 
 // Deliberately pale: user choices must win even when they do not meet contrast targets.
 const customColors = ['#ffffee', '#eeeeff', '#ffeeff', '#eeffee', '#eeeeee'];
@@ -171,4 +175,20 @@ it('still applies and saves the preference when browser storage is unavailable',
 	contrastStore.setIncreaseContrast(true);
 	expect(document.documentElement.dataset.appearance).toBe('contrast');
 	expect(preferences.set).toHaveBeenCalledWith('increaseContrast', true);
+});
+
+it('tracks only user changes with their source, excluding loading, synchronization, and values', async () => {
+	await contrastStore.loadSettings();
+	contrastStore.setIncreaseContrast(false);
+	expect(telemetry.trackEvent).not.toHaveBeenCalled();
+	contrastStore.setIncreaseContrast(true, 'whats_new');
+	contrastStore.setIncreaseContrast(true, 'whats_new');
+	window.dispatchEvent(
+		new StorageEvent('storage', { key: 'syng:appearance', newValue: 'original' })
+	);
+	contrastStore.setIncreaseContrast(true);
+	expect(vi.mocked(telemetry.trackEvent).mock.calls).toEqual([
+		['settings.changed', { setting: 'increaseContrast', source: 'whats_new' }],
+		['settings.changed', { setting: 'increaseContrast', source: 'settings' }],
+	]);
 });

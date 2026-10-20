@@ -95,7 +95,7 @@ it.each(guides)(
 		expect(document.activeElement).toBe(screen.getByRole('menuitemradio', { name: label }));
 		await fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
 		await fireEvent.click(screen.getByRole('button', { name: `Start ${label}` }));
-		expect(tour.start).toHaveBeenCalledExactlyOnceWith(guideId, {}, false);
+		expect(tour.start).toHaveBeenCalledExactlyOnceWith(guideId, {}, false, 'settings');
 	}
 );
 
@@ -117,7 +117,7 @@ it.each([
 		const action = screen.getByRole('button', { name: `${label} Quizzes` });
 		expect(action.textContent).toBe(label);
 		await fireEvent.click(action);
-		expect(tour.start).toHaveBeenCalledExactlyOnceWith('quiz', {}, resume);
+		expect(tour.start).toHaveBeenCalledExactlyOnceWith('quiz', {}, resume, 'settings');
 		await fireEvent.click(screen.getByRole('button', { name: 'Choose walkthrough: Quizzes' }));
 		expect(Boolean(screen.queryByRole('menuitem', { name: 'Start over Quizzes' }))).toBe(
 			resume
@@ -131,7 +131,7 @@ it('starts an interrupted guide over without changing progress on selection', as
 	await fireEvent.click(screen.getByRole('button', { name: 'Choose walkthrough: App tour' }));
 	expect(screen.getByRole('separator')).toBeTruthy();
 	await fireEvent.click(screen.getByRole('menuitem', { name: 'Start over App tour' }));
-	expect(tour.start).toHaveBeenCalledExactlyOnceWith('app', {}, false);
+	expect(tour.start).toHaveBeenCalledExactlyOnceWith('app', {}, false, 'settings');
 	expect(screen.queryByRole('menu')).toBeNull();
 	expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Resume App tour' }));
 });

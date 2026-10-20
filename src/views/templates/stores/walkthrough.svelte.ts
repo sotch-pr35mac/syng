@@ -1,4 +1,11 @@
 import { getPreferenceManager } from '@/utils/appServices.js';
+import { telemetry } from '@/utils/telemetry.js';
+import type {
+	WalkthroughEntry,
+	WalkthroughEvent,
+	WalkthroughSource,
+	WalkthroughTelemetry,
+} from '@/types/telemetry.js';
 import {
 	createWalkthroughPreferences,
 	WALKTHROUGH_IDS,
@@ -34,9 +41,42 @@ let exampleBusy = $state(false);
 let exampleAdded = $state<'document' | 'list' | null>(null);
 let blocked = $state(false);
 let targetRevision = $state(0);
+let source: WalkthroughSource = 'direct';
+let presentedStep = '';
 // DOM nodes must remain unproxied; revision announces registration changes to the host.
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Registry changes explicitly update targetRevision.
 const targets = new Map<WalkthroughTargetId, Set<HTMLElement>>();
+
+function eventContext(): WalkthroughTelemetry {
+	const step = phase === 'invitation' ? undefined : preparation.steps[stepIndex];
+	return {
+		guide: phase === 'invitation' ? 'app' : guide!,
+		source,
+		...(step
+			? { step: step.id, step_number: stepIndex + 1, step_count: preparation.steps.length }
+			: {}),
+	};
+}
+
+function track(
+	event: WalkthroughEvent,
+	details: Partial<WalkthroughTelemetry> = {},
+	context = eventContext()
+): void {
+	telemetry.trackEvent(`walkthrough.${event}`, { ...context, ...details }).catch(() => {});
+}
+
+/** Called by the rendered card, not by route preparation or geometry updates. */
+function markStepPresented(view: 'instructions' | 'dictionary-popup' = 'instructions'): void {
+	if (phase !== 'guiding' || !preparation.steps[stepIndex]) {
+		return;
+	}
+	const key = `${requestVersion}:${stepIndex}:${view}`;
+	if (key !== presentedStep) {
+		presentedStep = key;
+		track('step_viewed', { view });
+	}
+}
 
 function persist(): void {
 	if (loaded) {
@@ -82,6 +122,8 @@ function offer(): void {
 	if (window.location.hash === '#/' || !window.location.hash) {
 		guide = null;
 		phase = 'invitation';
+		source = 'invitation';
+		track('invitation_shown');
 	}
 }
 
@@ -101,6 +143,8 @@ function offerFeature(identifier: FeatureWalkthroughId, context: WalkthroughCont
 	stepIndex = 0;
 	expectedRoute = window.location.hash.slice(1) || '/';
 	phase = 'feature-invitation';
+	source = 'invitation';
+	track('invitation_shown');
 	persist();
 }
 
@@ -155,8 +199,27 @@ function navigate(step: WalkthroughStep): void {
 async function start(
 	identifier: WalkthroughId,
 	context: WalkthroughContext = {},
-	resume = false
+	resume = false,
+	entry: WalkthroughEntry = 'direct'
 ): Promise<void> {
+	const invitation =
+		(entry === 'direct' || entry === 'invitation') &&
+		((phase === 'invitation' && identifier === 'app') ||
+			(phase === 'feature-invitation' && identifier === guide));
+	const continuation = ['choice', 'example', 'retry', 'resume'].includes(entry);
+	if (!continuation && !invitation && phase !== 'idle') {
+		close('in-progress', 'replaced');
+	}
+	if (invitation) {
+		track('invitation_accepted');
+	}
+	if (!continuation) {
+		source = invitation ? 'invitation' : (entry as WalkthroughSource);
+	} else if (entry === 'choice') {
+		track('content_selected', { content_kind: preparation.choose });
+	} else if (entry === 'retry') {
+		track('retried');
+	}
 	const request = ++requestVersion;
 	exampleAdded = null;
 	guide = identifier;
@@ -165,8 +228,20 @@ async function start(
 	stepIndex = 0;
 	expectedRoute = window.location.hash.slice(1) || '/';
 	errorMessage = '';
+	if (entry === 'help') {
+		track('help_clicked');
+	}
 	try {
 		await load();
+		if (request !== requestVersion) {
+			return;
+		}
+		if (!resume && !continuation) {
+			const previous = preferences.guides[identifier];
+			track('started', {
+				mode: !previous ? 'new' : previous.status === 'in-progress' ? 'restart' : 'replay',
+			});
+		}
 		if (preferences.invitation === 'eligible') {
 			preferences.invitation = 'shown';
 			persist();
@@ -193,11 +268,18 @@ async function start(
 		if (prepared.choose) {
 			phase = 'choosing';
 			saveProgress('in-progress');
+			track('chooser_viewed', {
+				content_kind: prepared.choose,
+				choice_count: prepared.choices?.length ?? 0,
+			});
 		} else if (prepared.steps.length) {
 			phase = 'guiding';
 			navigate(prepared.steps[stepIndex]);
 		} else {
 			throw new Error('There are no instructions available for this screen yet.');
+		}
+		if (resume && entry !== 'retry') {
+			track('resumed');
 		}
 	} catch (error) {
 		if (request !== requestVersion) {
@@ -206,10 +288,25 @@ async function start(
 		errorMessage =
 			error instanceof Error ? error.message : 'The guide could not open. Please try again.';
 		phase = 'error';
+		track('failed', { operation: 'prepare' });
 	}
 }
 
-function close(status: 'skipped' | 'completed' | 'in-progress'): void {
+function close(
+	status: 'skipped' | 'completed' | 'in-progress',
+	reason: WalkthroughTelemetry['reason'] = 'dismissed'
+): void {
+	if (phase === 'idle') {
+		return;
+	}
+	if (phase === 'invitation' || phase === 'feature-invitation') {
+		track('invitation_dismissed', { reason });
+	} else {
+		track(
+			status === 'in-progress' ? 'interrupted' : status,
+			status === 'completed' ? {} : { reason }
+		);
+	}
 	++requestVersion;
 	exampleAdded = null;
 	saveProgress(status);
@@ -219,6 +316,10 @@ function close(status: 'skipped' | 'completed' | 'in-progress'): void {
 }
 
 function next(): void {
+	if (phase !== 'guiding') {
+		return;
+	}
+	track('next');
 	exampleAdded = null;
 	if (stepIndex >= preparation.steps.length - 1) {
 		const wasAppTour = guide === 'app';
@@ -234,7 +335,8 @@ function next(): void {
 
 function back(): void {
 	exampleAdded = null;
-	if (stepIndex > 0) {
+	if (phase === 'guiding' && stepIndex > 0) {
+		track('back');
 		stepIndex -= 1;
 		navigate(preparation.steps[stepIndex]);
 	}
@@ -245,14 +347,14 @@ function routeChanged(): void {
 		// Onboarding sets #/ immediately before making the shell ready. Its queued
 		// hashchange must not dismiss the invitation just offered on that screen.
 		if (window.location.hash && window.location.hash !== '#/') {
-			close('in-progress');
+			close('in-progress', 'navigation');
 		}
 	} else if (
 		phase !== 'idle' &&
 		phase !== 'suspended' &&
 		window.location.hash !== `#${expectedRoute}`
 	) {
-		close('in-progress');
+		close('in-progress', 'navigation');
 	}
 }
 
@@ -290,6 +392,11 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 	exampleAdded = null;
 	errorMessage = '';
 	let request = requestVersion;
+	const exampleGuide = guide;
+	const exampleContext = eventContext();
+	const details = { content_kind: kind, fresh_copy: freshCopy };
+	track('example_requested', details, exampleContext);
+	let added = false;
 	try {
 		const content = await import('@/components/Walkthrough/walkthroughContent.js');
 		const context = await content.addExample(
@@ -300,13 +407,16 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 				persist();
 			},
 			freshCopy,
-			guide
+			exampleGuide
 		);
+		added = true;
+		// The sample may have saved after the tour closed. Attribute it to the original request.
+		track('example_added', details, exampleContext);
 		if (request !== requestVersion) {
 			return;
 		}
 		if (phase === 'choosing' && guide) {
-			const openingGuide = start(guide, context);
+			const openingGuide = start(guide, context, false, 'example');
 			// Follow the request created by our own start, while still rejecting
 			// completions after Skip or a different guide takes over.
 			request = requestVersion;
@@ -332,6 +442,7 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 			exampleAdded = kind;
 		}
 	} catch (error) {
+		track('failed', { ...details, operation: added ? 'prepare' : 'example' }, exampleContext);
 		if (request === requestVersion) {
 			errorMessage =
 				error instanceof Error
@@ -398,31 +509,33 @@ export const walkthroughStore = {
 	registerTarget,
 	routeChanged,
 	addExample,
+	markStepPresented,
 	skip: () => close('skipped'),
 	interrupt: () => {
 		if (phase !== 'idle') {
-			close('in-progress');
+			close('in-progress', 'unmount');
 		}
 	},
 	suspend: () => {
 		if (phase === 'feature-invitation') {
-			close('skipped');
+			close('skipped', 'overlay');
 			return;
 		}
 		if (phase === 'guiding') {
+			track('paused', { reason: 'overlay' });
 			phase = 'suspended';
 			saveProgress('in-progress');
 		}
 	},
 	resume: () => {
-		if (guide) {
-			void start(guide, {}, true);
+		if (guide && phase === 'suspended') {
+			void start(guide, {}, true, 'resume');
 		}
 	},
 	setBlocked: (value: boolean) => {
 		blocked = value;
 		if (value && phase !== 'idle') {
-			close('in-progress');
+			close('in-progress', 'blocked');
 		}
 	},
 	isOverview: (route: string) => phase === 'guiding' && expectedRoute === route,

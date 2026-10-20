@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { telemetry } from '@/utils/telemetry.js';
 import {
 	createWalkthroughPreferences,
 	WALKTHROUGH_IDS,
@@ -7,6 +8,11 @@ import {
 
 const content = vi.hoisted(() => ({ prepareGuide: vi.fn(), addExample: vi.fn() }));
 vi.mock('@/components/Walkthrough/walkthroughContent.js', () => content);
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(async () => {}) },
+}));
+const events = (name: string) =>
+	vi.mocked(telemetry.trackEvent).mock.calls.filter(([event]) => event === `walkthrough.${name}`);
 
 let saved: WalkthroughPreferences;
 let store: typeof import('@/stores/walkthrough.svelte.js').walkthroughStore;
@@ -18,6 +24,7 @@ const steps = [
 
 beforeEach(async () => {
 	vi.resetModules();
+	vi.mocked(telemetry.trackEvent).mockReset().mockResolvedValue(undefined);
 	saved = createWalkthroughPreferences(true);
 	const { setPreferenceManagerForTest } = await import('@/utils/appServices.js');
 	setPreferenceManagerForTest({
@@ -348,3 +355,225 @@ it.each(WALKTHROUGH_IDS.filter((identifier) => identifier !== 'app'))(
 		expect(saved.guides[identifier]).toBeUndefined();
 	}
 );
+
+it('records invitation exposure and acceptance separately from starting the tour', async () => {
+	await store.load();
+	store.offer();
+	store.offer();
+	expect(events('invitation_shown')).toEqual([
+		['walkthrough.invitation_shown', { guide: 'app', source: 'invitation' }],
+	]);
+	await store.start('app');
+	expect(events('invitation_accepted')).toHaveLength(1);
+	expect(events('started')).toEqual([
+		['walkthrough.started', { guide: 'app', source: 'invitation', mode: 'new' }],
+	]);
+	expect(events('step_viewed')).toHaveLength(0);
+});
+
+it('records declining a first-use invitation without reporting a skipped tour', async () => {
+	await store.load();
+	store.offerFeature('quiz', { listName: 'Private vocabulary' });
+	store.skip();
+	store.skip();
+	expect(events('invitation_dismissed')).toHaveLength(1);
+	expect(events('skipped')).toHaveLength(0);
+	expect(events('started')).toHaveLength(0);
+});
+
+it('does not count an unrelated help launch as accepting the visible invitation', async () => {
+	await store.load();
+	store.offer();
+	await store.start('dictionary', {}, false, 'help');
+	expect(events('invitation_accepted')).toHaveLength(0);
+	expect(events('invitation_dismissed')).toEqual([
+		[
+			'walkthrough.invitation_dismissed',
+			{ guide: 'app', source: 'invitation', reason: 'replaced' },
+		],
+	]);
+	expect(events('help_clicked')).toEqual([
+		['walkthrough.help_clicked', { guide: 'dictionary', source: 'help' }],
+	]);
+	expect(events('started')).toEqual([
+		['walkthrough.started', { guide: 'dictionary', source: 'help', mode: 'new' }],
+	]);
+});
+
+it('records rendered steps, navigation, pause, resume, and completion once per transition', async () => {
+	await store.start('app', {}, false, 'help');
+	store.markStepPresented();
+	store.markStepPresented();
+	store.back(); // The first step cannot go back.
+	store.next();
+	store.markStepPresented();
+	store.back();
+	store.markStepPresented();
+	store.suspend();
+	store.suspend();
+	store.markStepPresented();
+	store.resume();
+	store.resume();
+	await vi.waitFor(() => expect(store.phase).toBe('guiding'));
+	store.markStepPresented();
+	store.next();
+	store.markStepPresented();
+	store.next();
+	store.markStepPresented();
+	store.next();
+	store.next();
+	store.interrupt();
+	expect(events('help_clicked')).toHaveLength(1);
+	expect(events('started')).toHaveLength(1);
+	expect(events('resumed')).toHaveLength(1);
+	expect(events('paused')).toHaveLength(1);
+	expect(events('back')).toHaveLength(1);
+	expect(events('next')).toHaveLength(4);
+	expect(events('step_viewed').map(([, payload]) => payload?.step)).toEqual([
+		'search',
+		'save',
+		'search',
+		'search',
+		'save',
+		'study',
+	]);
+	expect(events('step_viewed').every(([, payload]) => payload?.source === 'help')).toBe(true);
+	expect(events('completed')).toEqual([
+		[
+			'walkthrough.completed',
+			{ guide: 'app', source: 'help', step: 'study', step_number: 3, step_count: 3 },
+		],
+	]);
+	expect(events('interrupted')).toHaveLength(0);
+});
+
+it('attributes chooser selections to the launch without creating another start or exposing content', async () => {
+	content.prepareGuide.mockResolvedValueOnce({
+		steps: [],
+		context: {},
+		choose: 'document',
+		choices: [],
+	});
+	await store.start('reader-document', {}, false, 'settings');
+	await store.start(
+		'reader-document',
+		{ documentId: 'private-document', listName: 'Private list' },
+		false,
+		'choice'
+	);
+	store.markStepPresented();
+	store.skip();
+	store.skip();
+	expect(events('started')).toHaveLength(1);
+	expect(events('chooser_viewed')).toEqual([
+		[
+			'walkthrough.chooser_viewed',
+			{
+				guide: 'reader-document',
+				source: 'settings',
+				content_kind: 'document',
+				choice_count: 0,
+			},
+		],
+	]);
+	expect(events('content_selected')).toHaveLength(1);
+	expect(events('skipped')).toHaveLength(1);
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toMatch(
+		/private-document|Private list/
+	);
+});
+
+it('distinguishes settings replays, restarts, resumes, interruptions, and failed retries', async () => {
+	saved.guides.quiz = { status: 'completed', context: {} };
+	await store.start('quiz', {}, false, 'settings');
+	store.interrupt();
+	await store.start('quiz', {}, false, 'settings');
+	window.location.hash = '#/read';
+	store.routeChanged();
+	await store.start('quiz', {}, true, 'settings');
+	content.prepareGuide.mockRejectedValueOnce(new Error('Private document failed'));
+	await store.start('quiz', {}, true, 'retry');
+	expect(events('started').map(([, payload]) => payload?.mode)).toEqual(['replay', 'restart']);
+	expect(events('resumed')).toHaveLength(1);
+	expect(events('interrupted').map(([, payload]) => payload?.reason)).toEqual([
+		'unmount',
+		'navigation',
+	]);
+	expect(events('retried')).toHaveLength(1);
+	expect(events('failed')).toEqual([
+		['walkthrough.failed', { guide: 'quiz', source: 'settings', operation: 'prepare' }],
+	]);
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain(
+		'Private document'
+	);
+});
+
+it('records sample outcomes once and retains their original attribution after another guide opens', async () => {
+	content.prepareGuide.mockResolvedValueOnce({
+		steps: [],
+		context: {},
+		choose: 'list',
+		choices: [],
+	});
+	await store.start('study', {}, false, 'help');
+	let finish!: (context: unknown) => void;
+	content.addExample.mockImplementation(
+		() =>
+			new Promise((resolve) => {
+				finish = resolve;
+			})
+	);
+	const adding = store.addExample('list');
+	await vi.waitFor(() => expect(content.addExample).toHaveBeenCalledOnce());
+	await store.addExample('list');
+	store.skip();
+	await store.start('dictionary', {}, false, 'settings');
+	finish({ listName: 'Private sample' });
+	await adding;
+	expect(events('example_requested')).toHaveLength(1);
+	expect(events('example_added')).toHaveLength(1);
+	expect(events('example_added')[0][1]).toEqual({
+		guide: 'study',
+		source: 'help',
+		content_kind: 'list',
+		fresh_copy: false,
+	});
+	expect(store.exampleAdded).toBeNull();
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain(
+		'Private sample'
+	);
+});
+
+it('does not count sample preparation as another launch and reports sample failures without error text', async () => {
+	content.prepareGuide.mockResolvedValueOnce({
+		steps: [],
+		context: {},
+		choose: 'document',
+		choices: [],
+	});
+	await store.start('reader-document');
+	content.addExample.mockRejectedValueOnce(new Error('Private file path'));
+	await store.addExample('document');
+	expect(events('example_added')).toHaveLength(0);
+	expect(events('failed')[0][1]).toMatchObject({
+		operation: 'example',
+		content_kind: 'document',
+	});
+	content.addExample.mockResolvedValue({ documentId: 'private-id' });
+	await store.addExample('document');
+	expect(events('started')).toHaveLength(1);
+	expect(events('example_added')).toHaveLength(1);
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toMatch(
+		/private-id|Private file path/
+	);
+});
+
+it('does not let telemetry transport failures interrupt a guide', async () => {
+	vi.mocked(telemetry.trackEvent).mockRejectedValue(new Error('Unavailable'));
+	await store.start('dictionary');
+	store.markStepPresented();
+	store.next();
+	store.skip();
+	expect(store.phase).toBe('idle');
+	expect(saved.guides.dictionary.status).toBe('skipped');
+});

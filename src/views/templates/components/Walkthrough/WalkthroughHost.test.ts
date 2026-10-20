@@ -8,6 +8,11 @@ import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
 import WalkthroughReset from '@/components/Walkthrough/WalkthroughReset.svelte';
 import DropdownHarness from '@/components/SyDropdown/DropdownHarness.test.svelte';
 import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
+import { telemetry } from '@/utils/telemetry.js';
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(async () => {}) },
+}));
 
 const mocks = vi.hoisted(() => ({
 	get: vi.fn(),
@@ -48,6 +53,7 @@ const steps = [
 
 beforeEach(async () => {
 	tour.interrupt();
+	vi.mocked(telemetry.trackEvent).mockClear();
 	mocks.get.mockReturnValue(createWalkthroughPreferences());
 	mocks.set.mockClear();
 	mocks.prepareGuide.mockReset().mockResolvedValue({ steps, context: {} });
@@ -96,6 +102,29 @@ it('connects instructions to a real control, supports keyboard focus, and restor
 	expect(input.getAttribute('aria-describedby')).toBe('existing-description');
 	expect(document.activeElement).toBe(launcher);
 	unregister();
+});
+
+it('tracks real help and navigation controls without recounting steps on resize or remount', async () => {
+	render(WalkthroughHelp, { guide: 'dictionary', label: 'Learn how Search works' });
+	await fireEvent.click(screen.getByRole('button', { name: 'Learn how Search works' }));
+	await vi.waitFor(() => expect(tour.phase).toBe('guiding'));
+	const firstHost = render(Host);
+	await screen.findByRole('heading', { name: 'Look up a word' });
+	await fireEvent.resize(window);
+	await tick();
+	firstHost.unmount();
+	render(Host);
+	await fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+	await fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+	await fireEvent.click(screen.getByRole('button', { name: 'Skip tour' }));
+	const calls = vi.mocked(telemetry.trackEvent).mock.calls;
+	expect(calls.filter(([name]) => name === 'walkthrough.help_clicked')).toHaveLength(1);
+	expect(
+		calls
+			.filter(([name]) => name === 'walkthrough.step_viewed')
+			.map(([, payload]) => payload?.step)
+	).toEqual(['search', 'save', 'search']);
+	expect(calls.filter(([name]) => name === 'walkthrough.skipped')).toHaveLength(1);
 });
 
 it('keeps Next and Skip available when a target cannot be found', async () => {

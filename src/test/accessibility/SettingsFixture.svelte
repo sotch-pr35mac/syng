@@ -50,8 +50,15 @@
 			localStorage.setItem('fixture:release-history', JSON.stringify(value));
 		},
 	} as unknown as Parameters<typeof setPreferenceManagerForTest>[0]);
+	// Capture calls at the mocked native boundary; native tests cover consent and enqueueing.
+	const telemetryCalls: unknown[] = [];
+	Reflect.set(window, '__syngTelemetryCalls', telemetryCalls);
 	Reflect.set(window, '__TAURI_INTERNALS__', {
-		invoke: async (command: string) => {
+		invoke: async (command: string, args?: unknown) => {
+			if (command === 'telemetry_track_event') {
+				telemetryCalls.push(args);
+				return;
+			}
 			if (command === 'read_bookmark_recovery_report') {
 				await new Promise((resolve) =>
 					setTimeout(resolve, Number(parameters.get('delay')) || 0)

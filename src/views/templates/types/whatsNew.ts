@@ -30,7 +30,7 @@ export interface ReleaseHighlight {
 	controlHint?: string;
 	platforms?: ReleasePlatform[];
 	action?: { label: string; section: string; setting?: string };
-	component?: Component<{ variant?: 'desktop' | 'mobile' }>;
+	component?: Component<{ variant?: 'desktop' | 'mobile'; source?: 'settings' | 'whats_new' }>;
 }
 
 export interface ReleaseContent extends ReleaseMetadata {

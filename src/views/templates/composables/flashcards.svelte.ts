@@ -92,7 +92,10 @@ function loadFlashcards(listFromUrl: string | null, origin: string | null = null
 					revealedCards.add(flashcardsActiveIndex);
 				}
 				telemetry
-					.trackEvent('flashcards.started', { word_count: contents.length })
+					.trackEvent('flashcards.started', {
+						word_count: contents.length,
+						source: origin === 'bookmarks' ? 'bookmarks' : 'study',
+					})
 					.catch(() => {});
 			}
 			return undefined;

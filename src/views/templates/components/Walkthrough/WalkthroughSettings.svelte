@@ -53,7 +53,7 @@
 		controls
 			?.querySelector<HTMLButtonElement>('.sy-button-bar--container > .sy-button')
 			?.focus({ preventScroll: true });
-		void walkthroughStore.start(selectedId, {}, resume);
+		void walkthroughStore.start(selectedId, {}, resume, 'settings');
 	}
 	function selectGuide(value: string | number): void {
 		if (value === 'restart') {

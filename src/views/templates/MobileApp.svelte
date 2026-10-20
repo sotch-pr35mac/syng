@@ -60,6 +60,7 @@
 		'/study/quiz': 'quiz',
 		'/tools': 'tools',
 		'/settings': 'settings',
+		'/whats-new': 'whats_new',
 		'/characters': 'characters',
 	};
 

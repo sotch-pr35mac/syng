@@ -93,6 +93,43 @@ for (const scenario of [
 		expect(results.violations).toEqual([]);
 		await page.getByRole('button', { name: 'Continue to Syng' }).first().click();
 		await expect(page).toHaveURL(/#\/read$/);
+		const telemetryCalls = await page.evaluate(() =>
+			Reflect.get(window, '__syngTelemetryCalls')
+		);
+		expect(telemetryCalls).toEqual([
+			{
+				name: 'whats_new.viewed',
+				payload: { from_version: '2.5.3', to_version: '2.6.0', source: 'update' },
+			},
+			{
+				name: 'settings.changed',
+				payload: { setting: 'increaseContrast', source: 'whats_new' },
+			},
+			{
+				name: 'settings.changed',
+				payload: { setting: 'increaseContrast', source: 'whats_new' },
+			},
+			{
+				name: 'whats_new.disclosure_changed',
+				payload: {
+					from_version: '2.5.3',
+					to_version: '2.6.0',
+					source: 'update',
+					section: 'improvements',
+					expanded: true,
+				},
+			},
+			{
+				name: 'whats_new.continued',
+				payload: {
+					from_version: '2.5.3',
+					to_version: '2.6.0',
+					source: 'update',
+					content_presented: true,
+					expanded: true,
+				},
+			},
+		]);
 		await expect(page.getByRole('link', { name: 'Search', exact: true })).toBeVisible();
 		await page.reload();
 		await expect(

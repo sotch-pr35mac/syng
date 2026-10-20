@@ -75,11 +75,18 @@
 		};
 	}
 
+	// No telemetry leaves the fixture. Record requests to the native bridge for assertions.
+	const telemetryCalls: unknown[] = [];
+	Reflect.set(window, '__syngTelemetryCalls', telemetryCalls);
 	Reflect.set(window, '__TAURI_INTERNALS__', {
 		invoke: async (
 			command: string,
 			parameters: { text: string; args: { text: string; title: string } }
 		) => {
+			if (command === 'telemetry_track_event') {
+				telemetryCalls.push(parameters);
+				return;
+			}
 			if (command === 'prepare_reader_import') {
 				return createPlainTextReaderImportPayload(
 					parameters.args.title,

@@ -66,6 +66,7 @@
 		'/tools': 'tools',
 		'/help': 'help',
 		'/settings': 'settings',
+		'/whats-new': 'whats_new',
 		'/characters': 'characters',
 	};
 

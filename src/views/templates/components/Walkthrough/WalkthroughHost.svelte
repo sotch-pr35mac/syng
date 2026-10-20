@@ -38,6 +38,12 @@
 	let needsExample = $state(false);
 	const contentKey = $derived(`${tour.phase}:${tour.guide}:${tour.step?.id ?? ''}`);
 
+	$effect(() => {
+		void contentKey;
+		const view = explainingPopup ? 'dictionary-popup' : 'instructions';
+		untrack(() => tour.markStepPresented(view));
+	});
+
 	async function addExample(kind: 'document' | 'list'): Promise<void> {
 		const focusedControl = document.activeElement;
 		await tour.addExample(kind);
@@ -254,7 +260,7 @@
 
 	function retry(): void {
 		if (tour.guide) {
-			void tour.start(tour.guide, {}, true);
+			void tour.start(tour.guide, {}, true, 'retry');
 		}
 	}
 
@@ -447,7 +453,7 @@
 					{#each tour.preparation.choices ?? [] as choice (choice.context.documentId ?? choice.context.listName)}
 						<SyButton
 							style="ghost"
-							onclick={() => tour.start(tour.guide, choice.context)}
+							onclick={() => tour.start(tour.guide, choice.context, false, 'choice')}
 							>{choice.label}</SyButton
 						>
 					{/each}

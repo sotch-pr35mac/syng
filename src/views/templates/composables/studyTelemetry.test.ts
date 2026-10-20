@@ -154,3 +154,20 @@ it('starts a question suspended when its guide opens from another screen', async
 		response: { response: 'response', answered_in: 2 },
 	});
 });
+
+it.each([null, 'bookmarks', 'private-query-value'])(
+	'attributes study sessions to a safe entry point (%s)',
+	async (origin) => {
+		flashcards.load('Private list', origin);
+		quiz.start('Private list', origin);
+		await vi.advanceTimersByTimeAsync(0);
+		const source = origin === 'bookmarks' ? 'bookmarks' : 'study';
+		expect(events('flashcards.started')).toEqual([
+			['flashcards.started', { word_count: 4, source }],
+		]);
+		expect(events('quiz.started')).toEqual([['quiz.started', { word_count: 4, source }]]);
+		expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toMatch(
+			/Private list|private-query-value/
+		);
+	}
+);
