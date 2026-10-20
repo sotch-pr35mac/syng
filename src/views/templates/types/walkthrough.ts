@@ -58,6 +58,7 @@ export type WalkthroughTargetId =
 	| 'reader-settings'
 	| 'reader-back'
 	| 'study-lists'
+	| 'study-navigation'
 	| 'study-flashcards'
 	| 'study-quiz'
 	| 'flashcards-flip'

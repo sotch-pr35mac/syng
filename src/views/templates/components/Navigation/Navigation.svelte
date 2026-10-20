@@ -17,6 +17,7 @@
 	import { getCurrentWindow } from '@tauri-apps/api/window';
 	import { getPreferenceManager } from '@/utils/appServices.js';
 	import { updateStore } from '@/stores/update.svelte.js';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 
 	const primaryNavigation = [
 		{
@@ -123,6 +124,9 @@
 		{#each primaryNavigation as navItem (navItem.link)}
 			{#if !navItem.beta || enableBetaFeatures}
 				<a
+					use:walkthroughTarget={navItem.link === 'study'
+						? 'study-navigation'
+						: undefined}
 					href={`#/${navItem.link}`}
 					class="sy-tooltip--container"
 					data-sy-fixed-tooltip

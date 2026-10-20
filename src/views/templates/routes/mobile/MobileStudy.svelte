@@ -46,7 +46,9 @@
 
 <div class="mobile-study">
 	<div
-		use:walkthroughTarget={'study-lists'}
+		use:walkthroughTarget={walkthroughStore.guide === 'app' && !populatedLists.length
+			? undefined
+			: 'study-lists'}
 		class="mobile-study__content"
 		class:mobile-study__content--empty={studyLists.status === 'ready' && !populatedLists.length}
 	>

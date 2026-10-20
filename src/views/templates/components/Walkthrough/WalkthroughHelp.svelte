@@ -16,7 +16,8 @@
 {#if !walkthroughStore.hasCompleted(guide)}
 	<SyButton
 		style="ghost"
-		size="small"
+		size="medium"
+		classes={['walkthrough-help']}
 		onclick={(event) => {
 			event.stopPropagation();
 			void walkthroughStore.start(guide, context);
@@ -25,3 +26,9 @@
 		{label}
 	</SyButton>
 {/if}
+
+<style>
+	:global(.sy-button.sy-button--medium.walkthrough-help) {
+		font-size: 0.875rem;
+	}
+</style>

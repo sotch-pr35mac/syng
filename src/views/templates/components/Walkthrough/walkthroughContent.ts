@@ -4,7 +4,6 @@ import { bookmarksRoute } from '@/composables/bookmarks.svelte.js';
 import { quizRoute } from '@/composables/quiz.svelte.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
-import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 import { isIPad, isMobileLayout } from '@/utils/device.js';
 import { resolveNameConflict } from '@/utils/name.js';
@@ -103,6 +102,22 @@ function step(
 	return { id, title, body, target, route, ...options };
 }
 
+const SEARCH_LANGUAGE_STEP = step(
+	'language',
+	'Choose a search language',
+	'Syng detects the search language automatically. Select this control to cycle through English (EN), pinyin (PY), and Chinese (ZH).',
+	'search-language',
+	'/'
+);
+const CHARACTER_ANIMATION_STEP = step(
+	'characters',
+	'Explore how characters are written',
+	'Write Characters opens character detail, including stroke order where available. Opening it pauses this guide; return here to resume.',
+	'dictionary-characters',
+	'/',
+	{ fallbackTarget: 'dictionary-entry' }
+);
+
 export async function hasSuitableContent(kind: 'document' | 'list'): Promise<boolean> {
 	if (kind === 'document') {
 		await readerDocumentsStore.refresh();
@@ -183,7 +198,6 @@ export async function prepareGuide(
 			: '';
 	switch (identifier) {
 		case 'app':
-			settingsActiveTabStore.set('general');
 			steps = [
 				step(
 					'search',
@@ -192,6 +206,7 @@ export async function prepareGuide(
 					'search-field',
 					'/'
 				),
+				SEARCH_LANGUAGE_STEP,
 				step(
 					'save',
 					'Save useful vocabulary',
@@ -200,6 +215,7 @@ export async function prepareGuide(
 					'/',
 					{ fallbackTarget: 'search-field' }
 				),
+				CHARACTER_ANIMATION_STEP,
 				step(
 					'bookmarks',
 					'Organize your words',
@@ -213,15 +229,14 @@ export async function prepareGuide(
 					'Choose a saved list for flashcards or a quiz. Quizzes need at least four words.',
 					'study-lists',
 					'/study',
-					{ example: 'list' }
+					{ example: 'list', fallbackTarget: 'study-navigation' }
 				),
 				step(
 					'read',
 					'Read your own material',
 					'Import a document, webpage, or clipboard text. Open it and select unfamiliar words to look them up while you read.',
 					'reader-import',
-					'/read',
-					{ example: 'document' }
+					'/read'
 				),
 				step(
 					'extras',
@@ -229,13 +244,6 @@ export async function prepareGuide(
 					'Extras can add pinyin, convert simplified and traditional characters, and work with tone colors. Choose a tool, enter text, and process it.',
 					'extras-tabs',
 					'/tools'
-				),
-				step(
-					'settings',
-					'Make Syng yours',
-					'Adjust character display and tone colors in General settings. Replay any guide from Walkthrough under Help & Maintenance whenever you need a refresher.',
-					'settings-walkthroughs',
-					'/settings'
 				),
 			];
 			break;
@@ -248,13 +256,7 @@ export async function prepareGuide(
 					'search-field',
 					'/'
 				),
-				step(
-					'language',
-					'Choose a search language',
-					'Syng detects the search language automatically. Select this control to cycle through English (EN), pinyin (PY), and Chinese (ZH).',
-					'search-language',
-					'/'
-				),
+				SEARCH_LANGUAGE_STEP,
 				step(
 					'meaning',
 					'Understand the entry',
@@ -279,14 +281,7 @@ export async function prepareGuide(
 					'/',
 					{ fallbackTarget: 'search-field' }
 				),
-				step(
-					'characters',
-					'Explore how characters are written',
-					'Write Characters opens character detail, including stroke order where available. Opening it pauses this guide; return here to resume.',
-					'dictionary-characters',
-					'/',
-					{ fallbackTarget: 'dictionary-entry' }
-				),
+				CHARACTER_ANIMATION_STEP,
 			];
 			if (!isMobileLayout()) {
 				steps.push(
@@ -524,8 +519,8 @@ export async function prepareGuide(
 					),
 					step(
 						'timer',
-						'Take your time with the guide',
-						'The quiz timer is suspended while these instructions are open. Closing the guide resumes the remaining time.',
+						'Answer in time',
+						'Each question has a countdown. Select the timer to pause if you need more time, then select it again to resume. The countdown is paused during this guide.',
 						'quiz-timer',
 						studyRoute
 					),

@@ -1,6 +1,45 @@
 import { expect, test } from '@playwright/test';
 
 const MINIMUM_TOUCH_TARGET = 44;
+const PHONE_WIDTH = 393;
+const DESKTOP_WIDTH = 1100;
+
+for (const mobile of [false, true]) {
+	test(`${mobile ? 'phone' : 'desktop'} App Tour switches from Study navigation to newly added lists`, async ({
+		page,
+	}, testInfo) => {
+		await page.setViewportSize({ width: mobile ? PHONE_WIDTH : DESKTOP_WIDTH, height: 852 });
+		await page.goto(
+			`/src/test/accessibility/index.html?walkthrough&overviewStudy${mobile ? '&mobile' : ''}`
+		);
+		const card = page.getByRole('dialog');
+		await expect(card.getByRole('heading')).toHaveText('Practice what you save');
+		await expect(card.getByText('6 of 8')).toBeVisible();
+		const navigation = page.getByRole('link', { name: 'Study', exact: true });
+		await expect(navigation).toHaveAttribute('aria-describedby', 'walkthrough-description');
+		await expect(page.locator('[data-walkthrough-target="study-lists"]')).toHaveCount(0);
+		await expect(page.getByRole('button', { name: 'Learn how Study works' })).toHaveCSS(
+			'font-size',
+			'14px'
+		);
+		await page.screenshot({ path: testInfo.outputPath('empty-study.png') });
+		await card.getByRole('button', { name: 'Add sample words' }).click();
+		await expect(
+			page.getByRole('button', { name: 'Flashcards for Awa’s Tea Party — Sample Words' })
+		).toBeVisible();
+		await expect(page.locator('[data-walkthrough-target="study-lists"]')).toHaveAttribute(
+			'aria-describedby',
+			'walkthrough-description'
+		);
+		await expect(navigation).not.toHaveAttribute('aria-describedby');
+		await card.getByRole('button', { name: 'Next', exact: true }).click();
+		await expect(card.getByRole('heading')).toHaveText('Read your own material');
+		await expect(card.getByRole('button', { name: 'Add sample document' })).toHaveCount(0);
+		await card.getByRole('button', { name: 'Next', exact: true }).click();
+		await expect(card.getByRole('heading')).toHaveText('Prepare Chinese text');
+		await expect(card.getByRole('button', { name: 'Finish tour' })).toBeVisible();
+	});
+}
 
 for (const scenario of [
 	{ name: 'desktop', width: 1100, fontSize: 16, mobile: false },

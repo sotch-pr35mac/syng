@@ -58,7 +58,9 @@
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
 	<div
-		use:walkthroughTarget={'study-lists'}
+		use:walkthroughTarget={walkthroughStore.guide === 'app' && !populatedLists.length
+			? undefined
+			: 'study-lists'}
 		class="study--content"
 		class:study--content-empty={studyLists.status === 'ready' && !populatedLists.length}
 	>
