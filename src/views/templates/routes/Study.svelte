@@ -35,6 +35,7 @@
 		}
 	});
 	$effect(() => {
+		// Refresh on bookmark mutations only; load() also reads/writes its own reactive status.
 		void bookmarksStore.contentRevision;
 		untrack(() => {
 			void studyLists.load();

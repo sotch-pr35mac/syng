@@ -6,7 +6,8 @@ import {
 	prepareGuide,
 } from '@/components/Walkthrough/walkthroughContent.js';
 import { invoke } from '@tauri-apps/api/core';
-import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { bookmarksStore, type BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
+import { bookmarksRoute } from '@/composables/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { invokePrepareReaderImport } from '@/utils/readerDocument.js';
 
@@ -206,7 +207,7 @@ it.each([
 		await addExample('document', examples, remember);
 		expect(invokePrepareReaderImport).toHaveBeenCalledWith(
 			expect.objectContaining({
-				title: 'Awa’s Tea Party — A Story That Levels Up',
+				title: 'Awa’s Tea Party',
 				text: expect.stringContaining(excerpt),
 			})
 		);
@@ -217,3 +218,56 @@ it.each([
 		expect(readerDocumentsStore.importDocument).toHaveBeenCalledTimes(2);
 	}
 );
+
+it.each(['create', 'reuse'])(
+	'keeps a newer bookmark selection when the originating tour is canceled during sample %s',
+	async (operation) => {
+		if (operation === 'reuse') {
+			await addExample('list', examples, remember);
+		}
+		let current = true;
+		let finish!: () => void;
+		let activeList: string;
+		let activeWord: string | undefined;
+		vi.mocked(bookmarksRoute.setActiveList).mockImplementation(async (list) => {
+			activeList = list;
+			activeWord = undefined;
+		});
+		vi.mocked(bookmarksRoute.setActiveList).mockClear();
+		const pause = () =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			});
+		if (operation === 'create') {
+			vi.mocked(bookmarksStore.addToList).mockImplementationOnce(async (name, word) => {
+				await pause();
+				state.contents[name].push(word);
+			});
+		} else {
+			vi.mocked(bookmarksStore.getContent).mockImplementationOnce(async (name) => {
+				await pause();
+				return state.contents[name] as BookmarkWordEntry[];
+			});
+		}
+		const pending = addExample('list', examples, remember, false, 'study', () => current);
+		await vi.waitFor(() => expect(finish).toBeTypeOf('function'));
+		current = false;
+		activeList = 'My newer list';
+		activeWord = 'My selected word';
+		finish();
+		const context = await pending;
+		expect(state.contents[context.listName!]).toHaveLength(21);
+		expect(examples.listPending).toBe(false);
+		expect(bookmarksRoute.setActiveList).not.toHaveBeenCalled();
+		expect(activeList).toBe('My newer list');
+		expect(activeWord).toBe('My selected word');
+	}
+);
+
+it('selects created and reused samples while their walkthrough request remains current', async () => {
+	await addExample('list', examples, remember, false, 'study', () => true);
+	expect(bookmarksRoute.setActiveList).toHaveBeenLastCalledWith(examples.listName);
+	vi.mocked(bookmarksRoute.setActiveList).mockClear();
+	await addExample('list', examples, remember, false, 'study', () => true);
+	expect(bookmarksRoute.setActiveList).toHaveBeenCalledExactlyOnceWith(examples.listName);
+});

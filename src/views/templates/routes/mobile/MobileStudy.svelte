@@ -32,6 +32,7 @@
 		}
 	});
 	$effect(() => {
+		// Track membership changes, not the loader’s own reactive status.
 		void bookmarksStore.contentRevision;
 		untrack(() => {
 			void studyLists.load();

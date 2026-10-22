@@ -71,7 +71,7 @@ const SAMPLE_WORDS = [
 export const SAMPLE_TITLE = 'Awa’s Tea Party';
 export const SAMPLE_WORD_COUNT = SAMPLE_WORDS.length;
 const SAMPLE_LIST_NAME = `${SAMPLE_TITLE} — Sample Words`;
-const SAMPLE_DOCUMENT_TITLE = `${SAMPLE_TITLE} — A Story That Levels Up`;
+const SAMPLE_DOCUMENT_TITLE = `${SAMPLE_TITLE}`;
 const SAMPLE_TEXT = [
 	'阿瓦是我的朋友。今天，他请我喝茶。我说：“你好！”他说：“请坐。你喝茶，我喝水。”我们有三个杯子，还有一本书。',
 	'旁边的猫也想喝奶茶。它站起来，开始跳舞。阿瓦笑了。猫说：“今天是我的生日！”我们一起说：“生日快乐！”',
@@ -544,7 +544,8 @@ export async function addExample(
 	saved: WalkthroughPreferences['examples'],
 	remember: (examples: WalkthroughPreferences['examples']) => void,
 	freshCopy = false,
-	guide?: WalkthroughId | null
+	guide?: WalkthroughId | null,
+	isCurrent: () => boolean = () => true
 ): Promise<WalkthroughContext> {
 	if (kind === 'document') {
 		if (
@@ -554,6 +555,8 @@ export async function addExample(
 		) {
 			return { documentId: saved.documentId };
 		}
+		// Both-script and simplified preferences use the simplified story. Reused documents
+		// retain their original text even if the preference has changed since import.
 		const traditional = getPreferenceManager().get('characterSet') === 'traditional';
 		const payload = await invokePrepareReaderImport({
 			title: SAMPLE_DOCUMENT_TITLE,
@@ -576,7 +579,9 @@ export async function addExample(
 		(await bookmarksStore.getContent(saved.listName)).length >=
 			(guide === 'quiz' ? MINIMUM_QUIZ_WORD_COUNT : 1)
 	) {
-		await bookmarksRoute.setActiveList(saved.listName);
+		if (isCurrent()) {
+			await bookmarksRoute.setActiveList(saved.listName);
+		}
 		return { listName: saved.listName };
 	}
 	const words = await Promise.all(
@@ -619,6 +624,9 @@ export async function addExample(
 		}
 	}
 	remember({ ...saved, listName, listPending: false });
-	await bookmarksRoute.setActiveList(listName);
+	// Finish requested saves even after Skip, but never replace a newer bookmark selection.
+	if (isCurrent()) {
+		await bookmarksRoute.setActiveList(listName);
+	}
 	return { listName };
 }

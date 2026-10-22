@@ -8,6 +8,9 @@ coverage/
 playwright-report/
 test-results/
 
+# Local image-generation output
+/output/
+
 # Build artifacts
 src/views/templates/build/*
 

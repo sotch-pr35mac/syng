@@ -219,46 +219,35 @@ it('rejects waitForInit when loading preferences fails instead of hanging', asyn
 	expect(manager.initialized).toBe(false);
 });
 
-it('awaits durable writes, reports failure, and keeps the queue usable afterward', async () => {
-	const failure = new Error('Disk full');
-	const put = vi.fn().mockRejectedValueOnce(failure).mockResolvedValue({ ok: true, rev: '2' });
-	global.PouchDB = class {
-		get = vi.fn(() => Promise.reject({ name: 'not_found' }));
-		put = put;
-	};
-	const { PreferenceManager } = await import('@/utils/preferenceManager.js');
-	const manager = new PreferenceManager('config');
-	await manager.init();
-	const original = manager.get('whatsNew');
-	await expect(manager.setAndSave('whatsNew', { handledThroughVersion: '2.6.0' })).rejects.toBe(
-		failure
-	);
-	expect(manager.get('whatsNew')).toEqual(original);
-	await manager.setAndSave('whatsNew', { handledThroughVersion: '2.6.0' });
-	expect(manager.get('whatsNew')).toEqual({ handledThroughVersion: '2.6.0' });
-	manager.set('increaseContrast', true);
-	await manager._writeQueue;
-	expect(put).toHaveBeenCalledTimes(3);
-});
-
-it('retries awaitable conflicts and rejects unconfirmed writes', async () => {
-	const put = vi
-		.fn()
-		.mockRejectedValueOnce({ status: 409 })
-		.mockResolvedValueOnce({ ok: true, rev: '2' })
-		.mockResolvedValueOnce({ ok: false });
-	global.PouchDB = class {
-		get = vi.fn().mockResolvedValue({ _id: 'config', _rev: '1' });
-		put = put;
-	};
-	const { PreferenceManager } = await import('@/utils/preferenceManager.js');
-	const manager = new PreferenceManager('config');
-	await manager.init();
-	await expect(
-		manager.setAndSave('whatsNew', { lastOpenedVersion: '2.6.0' })
-	).resolves.toBeUndefined();
-	await expect(manager.setAndSave('whatsNew', { lastOpenedVersion: '2.7.0' })).rejects.toThrow(
-		'did not confirm'
-	);
-	expect(manager.get('whatsNew')).toEqual({ lastOpenedVersion: '2.6.0' });
-});
+it.each([
+	[{ ok: false }, null],
+	[null, { status: 409, name: 'conflict' }],
+])(
+	'reports unconfirmed or failed retry writes and allows later saves',
+	async (response, failure) => {
+		const handleError = vi.fn();
+		vi.doMock('@/utils/error.js', () => ({ handleError }));
+		const put = vi.fn();
+		if (failure) {
+			put.mockRejectedValueOnce(failure).mockRejectedValueOnce(new Error('Retry failed'));
+		} else {
+			put.mockResolvedValueOnce(response);
+		}
+		put.mockResolvedValue({ ok: true, rev: '3-saved' });
+		global.PouchDB = class {
+			get = vi.fn().mockResolvedValue({ _id: 'config', _rev: '1-existing' });
+			put = put;
+		};
+		const { PreferenceManager } = await import('@/utils/preferenceManager.js');
+		const manager = new PreferenceManager('config');
+		await manager.init();
+		expect(manager._config).not.toHaveProperty('whatsNew');
+		manager.set('increaseContrast', true);
+		await manager._writeQueue;
+		expect(handleError).toHaveBeenCalledTimes(1);
+		manager.set('increaseContrast', false);
+		await manager._writeQueue;
+		expect(put).toHaveBeenCalledTimes(failure ? 3 : 2);
+		expect(handleError).toHaveBeenCalledTimes(1);
+	}
+);

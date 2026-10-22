@@ -11,7 +11,6 @@ import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
 import { createWalkthroughPreferences } from '@/types/walkthrough.js';
-import { emptyReleaseHistory } from '@/utils/whatsNew.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -52,7 +51,6 @@ const createDefaultPreferences = () => ({
 	completedOnboardingVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
 	walkthrough: createPreference(false, createWalkthroughPreferences(true)),
-	whatsNew: createPreference(false, emptyReleaseHistory()),
 });
 
 const backfillPreferences = (configuration) => {
@@ -62,6 +60,7 @@ const backfillPreferences = (configuration) => {
 			continue;
 		}
 		if (!configuration[key]) {
+			// Existing profiles must not receive the fresh-install app-tour invitation.
 			configuration[key] =
 				key === 'walkthrough'
 					? createPreference(false, createWalkthroughPreferences())
@@ -177,25 +176,6 @@ export class PreferenceManager {
 		this._writeQueue = this._writeQueue.then(() => this._persistConfig());
 	}
 
-	/** Await a durable write without leaving the queue rejected after a storage failure. */
-	setAndSave(property, value) {
-		if (!this.initialized || !this._config[property]) {
-			return Promise.reject(new Error('Cannot save an unavailable preference.'));
-		}
-		const previousValue = this._config[property].value;
-		this._config[property].value = value;
-		const operation = this._writeQueue
-			.then(() => this._persistConfig(true))
-			.catch((error) => {
-				if (this._config[property].value === value) {
-					this._config[property].value = previousValue;
-				}
-				throw error;
-			});
-		this._writeQueue = operation.catch(() => {});
-		return operation;
-	}
-
 	_isConflictError(error) {
 		return (
 			Boolean(error) && (error.status === POUCH_CONFLICT_STATUS || error.name === 'conflict')
@@ -213,28 +193,23 @@ export class PreferenceManager {
 		});
 	}
 
-	async _persistConfig(rejectOnError = false) {
+	async _persistConfig() {
 		try {
 			await this._putConfig();
 		} catch (error) {
 			if (!this._isConflictError(error)) {
-				if (rejectOnError) {
-					throw error;
-				}
 				handleError(
 					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
 					error
 				);
 				return;
 			}
+			// Refresh a competing writer's revision and retry once; report any retry failure.
 			try {
 				const latest = await this._db.get('config');
 				this._config._rev = latest._rev;
 				await this._putConfig();
 			} catch (retryError) {
-				if (rejectOnError) {
-					throw retryError;
-				}
 				handleError(
 					'Cannot save preferences. An unknown error occurred. Check the logs for more details.',
 					retryError

@@ -11,7 +11,10 @@
 	import Navigation from '@/components/Navigation/Navigation.svelte';
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import { setPreferenceManagerForTest } from '@/utils/appServices.js';
+	import {
+		setPreferenceManagerForTest,
+		setReleaseHistoryStorageForTest,
+	} from '@/utils/appServices.js';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { contrastStore } from '@/stores/contrast.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
@@ -23,16 +26,19 @@
 	let releaseBlocked = $state(parameters.has('blocked'));
 	const baseline = parameters.get('baseline');
 	const storedHistory = localStorage.getItem('fixture:release-history');
+	let releaseHistory = storedHistory
+		? JSON.parse(storedHistory)
+		: baseline
+			? { lastOpenedVersion: baseline, handledThroughVersion: baseline, pending: null }
+			: emptyReleaseHistory();
+	setReleaseHistoryStorageForTest({
+		load: async () => structuredClone(releaseHistory),
+		save: async (value) => {
+			releaseHistory = value;
+			localStorage.setItem('fixture:release-history', JSON.stringify(value));
+		},
+	});
 	const preferences: Record<string, unknown> = {
-		whatsNew: storedHistory
-			? JSON.parse(storedHistory)
-			: baseline
-				? {
-						lastOpenedVersion: baseline,
-						handledThroughVersion: baseline,
-						pending: null,
-					}
-				: emptyReleaseHistory(),
 		increaseContrast: parameters.get('appearance') === 'contrast',
 		toneColors: {
 			hasCustomColors: false,
@@ -44,10 +50,6 @@
 		get: (key: string) => preferences[key],
 		set: (key: string, value: unknown) => {
 			preferences[key] = value;
-		},
-		setAndSave: async (key: string, value: unknown) => {
-			preferences[key] = value;
-			localStorage.setItem('fixture:release-history', JSON.stringify(value));
 		},
 	} as unknown as Parameters<typeof setPreferenceManagerForTest>[0]);
 	// Capture calls at the mocked native boundary; native tests cover consent and enqueueing.

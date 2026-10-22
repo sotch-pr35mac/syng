@@ -1,3 +1,8 @@
+/**
+ * Release announcement metadata, version/range rules, and installation-local history storage.
+ * Startup uses this small module; detailed copy and interactive controls load with the page.
+ * History advances independently from presentation so failed announcements remain pending.
+ */
 import type { ReleaseHistory, ReleaseMetadata, ReleaseRange } from '@/types/whatsNew.js';
 
 // Keep startup metadata small. Detailed, interactive notes load with the page.
@@ -5,6 +10,7 @@ export const RELEASES: ReleaseMetadata[] = [
 	{ version: '2.6.0', date: '2026-10-20', announce: true },
 ];
 
+/** An installation with no known version or announcement history. */
 export const emptyReleaseHistory = (): ReleaseHistory => ({
 	lastOpenedVersion: null,
 	handledThroughVersion: null,
@@ -14,6 +20,7 @@ export const emptyReleaseHistory = (): ReleaseHistory => ({
 const VERSION =
 	/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
+/** Validate persisted/native versions before using the comparison helpers. */
 export function isReleaseVersion(value: unknown): value is string {
 	if (typeof value !== 'string' || !VERSION.test(value)) {
 		return false;
@@ -22,6 +29,7 @@ export function isReleaseVersion(value: unknown): value is string {
 	return !prerelease?.split('.').some((part) => /^\d+$/.test(part) && /^0\d/.test(part));
 }
 
+/** Compare numeric identifiers without losing precision on large version components. */
 function comparePart(left: string, right: string): number {
 	if (/^\d+$/.test(left) && /^\d+$/.test(right)) {
 		return left.length - right.length || (left < right ? -1 : left > right ? 1 : 0);
@@ -29,7 +37,7 @@ function comparePart(left: string, right: string): number {
 	return left < right ? -1 : left > right ? 1 : 0;
 }
 
-/** SemVer precedence, including prereleases; build metadata does not affect ordering. */
+/** Compare validated SemVer versions, including prereleases; ignore build metadata. */
 export function compareReleaseVersions(left: string, right: string): number {
 	const leftParts = left.match(VERSION)!;
 	const rightParts = right.match(VERSION)!;
@@ -62,6 +70,7 @@ export function compareReleaseVersions(left: string, right: string): number {
 	return 0;
 }
 
+/** Sanitize stored history so malformed fields cannot break startup or version comparisons. */
 export function readReleaseHistory(value: unknown): ReleaseHistory {
 	if (!value || typeof value !== 'object') {
 		return emptyReleaseHistory();
@@ -86,6 +95,7 @@ export function readReleaseHistory(value: unknown): ReleaseHistory {
 	};
 }
 
+/** Select newest-first notes after a known baseline, or only the known releases of an unknown upgrade. */
 export function releasesInRange<Release extends ReleaseMetadata>(
 	releases: Release[],
 	range: ReleaseRange
@@ -101,7 +111,11 @@ export function releasesInRange<Release extends ReleaseMetadata>(
 		.sort((left, right) => compareReleaseVersions(right.version, left.version));
 }
 
-/** Called only after a successful startup, using onboarding history captured before UI mounts. */
+/**
+ * Record a successful startup using onboarding history captured before UI mounts.
+ * Fresh installs and unannounced releases are handled silently. Updates accumulate pending
+ * notes until presentation; downgrades preserve newer acknowledgements and pending ranges.
+ */
 export function nextReleaseHistory(
 	saved: ReleaseHistory,
 	current: string,
@@ -139,4 +153,93 @@ export function nextReleaseHistory(
 		history.handledThroughVersion = current;
 	}
 	return history;
+}
+
+const HISTORY_DOCUMENT_ID = '_local/syng-release-history';
+const NOT_FOUND_STATUS = 404;
+const CONFLICT_STATUS = 409;
+
+interface HistoryDocument {
+	_id: string;
+	_rev?: string;
+	history?: unknown;
+	whatsNew?: { value?: unknown };
+}
+
+interface HistoryDatabase {
+	get(identifier: string): Promise<HistoryDocument>;
+	put(document: HistoryDocument): Promise<{ ok: boolean }>;
+}
+
+declare const PouchDB: new (name: string) => HistoryDatabase;
+
+/** Create a history repository in the selected production or development configuration DB. */
+export function createReleaseHistoryStorage(databaseName: string) {
+	let database: HistoryDatabase | undefined;
+	let writeQueue = Promise.resolve();
+	const databaseConnection = () => (database ??= new PouchDB(databaseName));
+
+	// Only a missing document means "no history"; storage failures must reach the caller.
+	async function readDocument(identifier: string): Promise<HistoryDocument | undefined> {
+		try {
+			return await databaseConnection().get(identifier);
+		} catch (error) {
+			const failure = error as { status?: number; name?: string } | null;
+			if (failure?.status === NOT_FOUND_STATUS || failure?.name === 'not_found') {
+				return undefined;
+			}
+			throw error;
+		}
+	}
+
+	async function write(history: ReleaseHistory): Promise<void> {
+		const existing = await readDocument(HISTORY_DOCUMENT_ID);
+		const response = await databaseConnection().put({
+			_id: HISTORY_DOCUMENT_ID,
+			...(existing?._rev ? { _rev: existing._rev } : {}),
+			history,
+		});
+		if (!response.ok) {
+			throw new Error(
+				'Cannot save release history. The database did not confirm the write.',
+				{
+					cause: response,
+				}
+			);
+		}
+	}
+
+	return {
+		/** Prefer local history; migrate the old preference on the next successful save. */
+		async load(): Promise<ReleaseHistory> {
+			await writeQueue;
+			const existing = await readDocument(HISTORY_DOCUMENT_ID);
+			if (existing) {
+				return readReleaseHistory(existing.history);
+			}
+			return readReleaseHistory((await readDocument('config'))?.whatsNew?.value);
+		},
+		/**
+		 * Await a confirmed write; retry one revision conflict and let callers report failures.
+		 * Local documents are excluded from normal config backups. No preference cache changes
+		 * before saving, and a rejected operation does not block later queued writes.
+		 */
+		save(history: ReleaseHistory): Promise<void> {
+			const snapshot = readReleaseHistory(history);
+			const operation = writeQueue.then(async () => {
+				try {
+					await write(snapshot);
+				} catch (error) {
+					const failure = error as { status?: number; name?: string } | null;
+					if (failure?.status !== CONFLICT_STATUS && failure?.name !== 'conflict') {
+						throw error;
+					}
+					await write(snapshot);
+				}
+				return undefined;
+			});
+			writeQueue = operation.catch(() => {});
+			return operation;
+		},
+	};
 }

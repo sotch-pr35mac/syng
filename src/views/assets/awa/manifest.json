@@ -6,6 +6,7 @@
 	"canvas": "Original square composition retained; no cropping or artistic edits.",
 	"recommendedDisplaySize": "160–256 CSS pixels; 1024px sources support high-density displays.",
 	"sourceDirectory": "output/imagegen/wamao-refined-v4-2026-10-15",
+	"sourceProvenance": "Source paths identify original generation runs, not files shipped in this repository. Source checksums are retained for verification; runtime assets are listed below.",
 	"conversion": "cwebp 1.6.0 -lossless -q 100 -m 6 -resize SIZE SIZE SOURCE -o DESTINATION",
 	"poses": [
 		{

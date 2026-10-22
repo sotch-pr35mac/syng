@@ -47,6 +47,8 @@ export type BookmarkWordInput = {
 
 let lists = $state<string[]>([]);
 let initialized = $state(false);
+// In-memory invalidation for consumers such as Study: word membership can change
+// without changing list names. This is unrelated to persisted database/schema revisions.
 let contentRevision = $state(0);
 let refreshRequest: Promise<void> | undefined;
 

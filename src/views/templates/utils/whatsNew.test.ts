@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+	createReleaseHistoryStorage,
 	compareReleaseVersions,
 	emptyReleaseHistory,
 	isReleaseVersion,
@@ -114,4 +115,138 @@ it('preserves handled and pending high-water marks across downgrades', () => {
 it('safely handles missing and malformed saved fields', () => {
 	expect(readReleaseHistory(undefined)).toEqual(emptyReleaseHistory());
 	expect(readReleaseHistory({ pending: { from: 'banana', to: '2.6.0' } }).pending).toBeNull();
+});
+
+describe('installation-local history storage', () => {
+	const historyId = '_local/syng-release-history';
+	let documents: Map<string, Record<string, unknown>>;
+	let getDocument: ReturnType<typeof vi.fn>;
+	let putDocument: ReturnType<typeof vi.fn>;
+	let storage: ReturnType<typeof createReleaseHistoryStorage>;
+
+	beforeEach(() => {
+		documents = new Map();
+		getDocument = vi.fn(async (identifier: string) => {
+			if (!documents.has(identifier)) {
+				throw { status: 404, name: 'not_found' };
+			}
+			return structuredClone(documents.get(identifier));
+		});
+		putDocument = vi.fn(async (document: Record<string, unknown>) => {
+			documents.set(document._id as string, structuredClone(document));
+			return { ok: true };
+		});
+		vi.stubGlobal(
+			'PouchDB',
+			class {
+				get = getDocument;
+				put = putDocument;
+			}
+		);
+		storage = createReleaseHistoryStorage('config');
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('preserves legacy history while moving subsequent writes out of preferences', async () => {
+		const legacy = { _id: 'config', whatsNew: { value: existing('2.5.3') } };
+		documents.set('config', legacy);
+		expect(await storage.load()).toEqual(existing('2.5.3'));
+		const pending = nextReleaseHistory(await storage.load(), '2.6.0', false);
+		await storage.save(pending);
+		expect(documents.get('config')).toEqual(legacy);
+		expect(putDocument).toHaveBeenCalledExactlyOnceWith({ _id: historyId, history: pending });
+		expect(await createReleaseHistoryStorage('config').load()).toEqual(pending);
+	});
+
+	it('prefers even empty local history to stale legacy preferences', async () => {
+		documents.set('config', { _id: 'config', whatsNew: { value: existing('2.5.3') } });
+		await storage.save(emptyReleaseHistory());
+		expect(await storage.load()).toEqual(emptyReleaseHistory());
+	});
+
+	it('starts with empty history when neither document exists', async () => {
+		expect(await storage.load()).toEqual(emptyReleaseHistory());
+		expect(putDocument).not.toHaveBeenCalled();
+	});
+
+	it('does not mistake a failed read for missing history or overwrite the existing record', async () => {
+		const failure = new Error('Storage unavailable');
+		getDocument.mockRejectedValue(failure);
+		await expect(storage.load()).rejects.toBe(failure);
+		await expect(storage.save(existing('2.6.0'))).rejects.toBe(failure);
+		expect(putDocument).not.toHaveBeenCalled();
+	});
+
+	it('retains pending notes after failed or unconfirmed saves and recovers the write queue', async () => {
+		const pending = nextReleaseHistory(existing('2.5.3'), '2.6.0', false);
+		await storage.save(pending);
+		const failure = new Error('Disk full');
+		putDocument.mockRejectedValueOnce(failure);
+		await expect(storage.save(existing('2.6.0'))).rejects.toBe(failure);
+		expect(await storage.load()).toEqual(pending);
+		putDocument.mockResolvedValueOnce({ ok: false });
+		await expect(storage.save(existing('2.6.0'))).rejects.toThrow('did not confirm');
+		expect(await storage.load()).toEqual(pending);
+		await storage.save(existing('2.6.0'));
+		expect(await storage.load()).toEqual(existing('2.6.0'));
+	});
+
+	it('refreshes the local revision for one conflict retry and propagates a second failure', async () => {
+		documents.set(historyId, { _id: historyId, _rev: '0-1', history: existing('2.5.3') });
+		putDocument.mockImplementationOnce(async () => {
+			documents.set(historyId, { _id: historyId, _rev: '0-2', history: existing('2.5.3') });
+			throw { status: 409 };
+		});
+		await storage.save(existing('2.6.0'));
+		expect(putDocument.mock.calls[1][0]._rev).toBe('0-2');
+		putDocument
+			.mockRejectedValueOnce({ status: 409 })
+			.mockRejectedValueOnce(new Error('Retry failed'));
+		await expect(storage.save(existing('2.7.0'))).rejects.toThrow('Retry failed');
+		expect(await storage.load()).toEqual(existing('2.6.0'));
+	});
+
+	it('serializes writes and captures each requested history before it can be mutated', async () => {
+		let finish!: () => void;
+		putDocument.mockImplementationOnce(async (document) => {
+			await new Promise<void>((resolve) => {
+				finish = resolve;
+			});
+			documents.set(historyId, structuredClone(document));
+			return { ok: true };
+		});
+		const first = storage.save(existing('2.5.3'));
+		const next = existing('2.6.0');
+		const second = storage.save(next);
+		next.handledThroughVersion = '9.0.0';
+		await vi.waitFor(() => expect(putDocument).toHaveBeenCalledTimes(1));
+		finish();
+		await Promise.all([first, second]);
+		expect(await storage.load()).toEqual(existing('2.6.0'));
+	});
+
+	it('uses the app-services configuration database, including development isolation', async () => {
+		const opened: string[] = [];
+		vi.stubGlobal(
+			'PouchDB',
+			class {
+				constructor(name: string) {
+					opened.push(name);
+				}
+				get = getDocument;
+				put = putDocument;
+			}
+		);
+		const { createAppServices, getReleaseHistoryStorage, resetAppServicesForTest } =
+			await import('@/utils/appServices.js');
+		for (const name of ['config', 'development_config']) {
+			createAppServices(name, 'lists', 'bookmarks', 'reader');
+			await getReleaseHistoryStorage().load();
+		}
+		expect(opened.filter((name) => name.endsWith('config'))).toEqual([
+			'config',
+			'development_config',
+		]);
+		resetAppServicesForTest();
+	});
 });

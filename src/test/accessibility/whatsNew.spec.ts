@@ -44,7 +44,7 @@ for (const scenario of [
 		await expect(page.getByRole('navigation')).toHaveCount(0);
 		await expect(page.getByRole('button', { name: 'Choose a walkthrough' })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: 'Explore settings' })).toHaveCount(0);
-		const exit = page.getByRole('button', { name: 'Continue to Syng', exact: true });
+		const exit = page.getByRole('button', { name: 'Continue', exact: true });
 		await expect(exit).toHaveCount(1);
 		await expect(exit).toBeInViewport();
 		await expect
@@ -91,7 +91,7 @@ for (const scenario of [
 		).toBe(true);
 		const results = await new AxeBuilder({ page }).disableRules(['region']).analyze();
 		expect(results.violations).toEqual([]);
-		await page.getByRole('button', { name: 'Continue to Syng' }).first().click();
+		await page.getByRole('button', { name: 'Continue' }).first().click();
 		await expect(page).toHaveURL(/#\/read$/);
 		const telemetryCalls = await page.evaluate(() =>
 			Reflect.get(window, '__syngTelemetryCalls')
@@ -151,7 +151,7 @@ test('new installs stay suppressed after setup, while notes remain available man
 	await expect(page.getByRole('button', { name: 'View changes', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'View changes', exact: true }).click();
 	await expect(page.getByRole('heading', { name: 'What’s New in Syng 2.6.0' })).toBeVisible();
-	await page.getByRole('button', { name: 'Continue to Syng' }).first().click();
+	await page.getByRole('button', { name: 'Continue' }).first().click();
 	await expect(page).toHaveURL(/#\/settings$/);
 });
 
@@ -222,7 +222,7 @@ test('failed content loading leaves an exit and retries on the next launch', asy
 			() => JSON.parse(localStorage.getItem('fixture:release-history')!).handledThroughVersion
 		)
 	).toBeNull();
-	await page.getByRole('button', { name: 'Continue to Syng' }).first().click();
+	await page.getByRole('button', { name: 'Continue' }).first().click();
 	await expect(page).toHaveURL(/#\/read$/);
 	await page.unroute('**/components/WhatsNew/WhatsNewContent.svelte*');
 	await page.reload();

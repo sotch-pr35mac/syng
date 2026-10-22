@@ -38,6 +38,7 @@
 	// currentSnap and searchQuery are initialised from the persistent stores so that
 	// returning to this screen restores the previous state.
 	let currentSnap = $state<SheetSnap>(mobileSearchSnapStore.value);
+	// SyTextInput receives this as its value, restoring navigation and live tutorial queries.
 	let searchQuery = $state(mobileSearchQueryStore.value);
 	onMount(search.mount);
 

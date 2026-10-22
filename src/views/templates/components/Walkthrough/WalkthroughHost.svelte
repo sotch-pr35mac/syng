@@ -1,4 +1,7 @@
 <script lang="ts">
+	// Presentation layer for the shared tour state: locate live controls, position a compact
+	// card/spotlight, and coordinate focus and secondary overlays. The app remains interactive;
+	// navigation, progress persistence, and request cancellation belong to walkthroughStore.
 	import { onMount, tick, untrack } from 'svelte';
 	import { BookOpen, Check, List, Plus } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -26,6 +29,7 @@
 	let geometryRevision = $state(0);
 	const explainingLinks = $derived(tour.guide === 'dictionary' && tour.step?.id === 'links');
 	const explainingPopup = $derived(explainingLinks && Boolean(searchStore.popoverWord));
+	// The links step follows a real example link into its popup, highlighting that surface next.
 	const target = $derived.by(() => {
 		void geometryRevision;
 		return tour.phase === 'guiding'
@@ -40,10 +44,12 @@
 
 	$effect(() => {
 		void contentKey;
+		// Count a presentation change, not each geometry update while scrolling or resizing.
 		const view = explainingPopup ? 'dictionary-popup' : 'instructions';
 		untrack(() => tour.markStepPresented(view));
 	});
 
+	// Adding a sample may replace its focused control; recover focus only if it was lost.
 	async function addExample(kind: 'document' | 'list'): Promise<void> {
 		const focusedControl = document.activeElement;
 		await tour.addExample(kind);
@@ -79,6 +85,7 @@
 		if (tour.phase !== 'guiding') {
 			return undefined;
 		}
+		// A slow availability lookup must not change the sample offer on a subsequent step.
 		let canceled = false;
 		void hasSuitableContent(exampleKind)
 			.then((available) => {
@@ -93,6 +100,8 @@
 		};
 	});
 
+	// Keep card and spotlight in visual-viewport coordinates, accounting for keyboard/zoom
+	// offsets and device safe areas. Prefer beside the target, then use the larger vertical gap.
 	function measure(): void {
 		const viewport = window.visualViewport;
 		const styles = card ? getComputedStyle(card) : undefined;
@@ -182,6 +191,7 @@
 		if (tour.phase !== 'guiding' || target) {
 			return undefined;
 		}
+		// Lazy routes need time to mount their targets before we offer missing-target recovery.
 		const timer = setTimeout(() => {
 			targetMissing = true;
 		}, TARGET_WAIT_MS);
@@ -216,6 +226,7 @@
 				behavior: 'instant',
 			});
 		}
+		// Describe the real control while highlighted; restore its existing ARIA/tab order on exit.
 		const description = element.getAttribute('aria-describedby');
 		const originalTabIndex = element.getAttribute('tabindex');
 		element.setAttribute(
@@ -244,6 +255,7 @@
 		};
 	});
 
+	// F6 moves between the nonmodal guide and its target without trapping focus in the card.
 	function focusTarget(): void {
 		const focusable =
 			'button:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href],select:not(:disabled),[tabindex]:not([disabled])';
@@ -274,6 +286,7 @@
 				geometryRevision += 1;
 			});
 		};
+		// Escape dismisses the explained dictionary popup first; other overlays own their Escape.
 		const keydown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape' && explainingPopup && !secondaryOpen) {
 				event.preventDefault();
@@ -295,6 +308,8 @@
 				}
 			}
 		};
+		// Yield to dropdowns/modals so the guide cannot cover their controls. The dictionary
+		// popup being taught is the exception; it becomes the highlighted target instead.
 		const detectSecondary = () => {
 			secondaryOpen = Array.from(
 				document.querySelectorAll(
@@ -327,6 +342,8 @@
 		window.visualViewport?.addEventListener('resize', resize);
 		window.visualViewport?.addEventListener('scroll', resize);
 		detectSecondary();
+		// Remove all global observers/listeners on unmount and restore focus only if the
+		// user has not already moved to another control.
 		return () => {
 			mutations.disconnect();
 			cancelAnimationFrame(animationFrame);
@@ -357,6 +374,7 @@
 			<SyButton size="small" style="ghost" onclick={tour.skip}>Skip tour</SyButton>
 		</div>
 	{:else}
+		<!-- A viewport-sized mask keeps every area outside the padded target shaded. -->
 		<svg class="walkthrough__shade" width="100%" height="100%" aria-hidden="true">
 			<defs>
 				<mask

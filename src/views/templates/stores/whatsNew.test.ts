@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { emptyReleaseHistory } from '@/utils/whatsNew.js';
 import type { ReleaseHistory } from '@/types/whatsNew.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { handleError } from '@/utils/error.js';
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: { trackEvent: vi.fn(async () => {}) },
@@ -21,21 +22,22 @@ vi.mock('svelte-spa-router', () => ({
 
 let store: typeof import('./whatsNew.svelte.js').whatsNewStore;
 let saved: ReleaseHistory;
-let save: ReturnType<typeof vi.fn>;
+let save: ReturnType<typeof vi.fn<(history: ReleaseHistory) => Promise<void>>>;
 
 beforeEach(async () => {
 	vi.resetModules();
+	vi.mocked(handleError).mockClear();
 	vi.mocked(telemetry.trackEvent).mockReset().mockResolvedValue(undefined);
 	saved = emptyReleaseHistory();
 	native.version.mockReset().mockResolvedValue('2.6.0');
-	save = vi.fn(async (_key, value) => {
+	save = vi.fn(async (value) => {
 		saved = structuredClone(value);
 	});
-	const { setPreferenceManagerForTest } = await import('@/utils/appServices.js');
-	setPreferenceManagerForTest({
-		get: () => saved,
-		setAndSave: save,
-	} as never);
+	const { setReleaseHistoryStorageForTest } = await import('@/utils/appServices.js');
+	setReleaseHistoryStorageForTest({
+		load: async () => structuredClone(saved),
+		save,
+	});
 	store = (await import('./whatsNew.svelte.js')).whatsNewStore;
 	window.location.hash = '#/read';
 });
@@ -105,9 +107,10 @@ it('restores the presentation and position after following a settings link', asy
 	expect(window.location.hash).toBe('#/read');
 });
 
-it('rejects invalid or newer simulation baselines without changing preferences', async () => {
+it('rejects invalid or newer simulation baselines without changing history', async () => {
 	await expect(store.simulateUpdate('2.7.0')).rejects.toThrow('older than');
 	await expect(store.simulateUpdate('invalid')).rejects.toThrow('older than');
+	expect(handleError).not.toHaveBeenCalled();
 	expect(save).not.toHaveBeenCalled();
 });
 
@@ -203,4 +206,38 @@ it('keeps navigation and durable acknowledgement working when telemetry fails', 
 	await store.continue();
 	expect(saved.handledThroughVersion).toBe('2.6.0');
 	expect(window.location.hash).toBe('#/read');
+});
+
+it.each(['version', 'storage'])(
+	'reports %s failures during simulation and keeps the previous history',
+	async (operation) => {
+		const failure = new Error('Unavailable');
+		if (operation === 'version') {
+			native.version.mockRejectedValueOnce(failure);
+		} else {
+			save.mockRejectedValueOnce(failure);
+		}
+		await expect(store.simulateUpdate('2.5.3')).rejects.toBe(failure);
+		expect(handleError).toHaveBeenCalledExactlyOnceWith(
+			'Could not simulate the update.',
+			failure,
+			{ silent: true }
+		);
+		expect(saved).toEqual(emptyReleaseHistory());
+	}
+);
+
+it('reports history read failures during presentation without acknowledging the release', async () => {
+	await store.initialize(false);
+	await store.openPending();
+	const failure = new Error('Cannot read database');
+	const { setReleaseHistoryStorageForTest } = await import('@/utils/appServices.js');
+	setReleaseHistoryStorageForTest({ load: vi.fn().mockRejectedValue(failure), save });
+	await store.markPresented();
+	expect(saved.pending).not.toBeNull();
+	expect(handleError).toHaveBeenCalledExactlyOnceWith(
+		'Could not save release-note history.',
+		failure,
+		{ silent: true }
+	);
 });

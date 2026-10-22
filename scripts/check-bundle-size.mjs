@@ -11,7 +11,8 @@ const BUDGETS = {
 	entryBytes: 200 * 1024,
 	// The offline indicator, connectivity synchronization, and eagerly loaded stroke-order engine
 	// are intentionally part of the app shell, alongside the shared accessibility support.
-	initialShellBytes: 310 * 1024,
+	// Static imports include both layouts and the character window in the initial module graph.
+	initialShellBytes: 330 * 1024,
 	largestChunkBytes: 200 * 1024,
 	// Includes walkthroughs, accessibility, organized Settings, release notes, and their telemetry.
 	totalBytes: 710 * 1024,

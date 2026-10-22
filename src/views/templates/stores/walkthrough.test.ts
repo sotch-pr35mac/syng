@@ -185,8 +185,11 @@ it('allows only one example creation at a time and keeps saved examples after Sk
 	});
 	const pending = store.addExample('list');
 	await vi.waitFor(() => expect(content.addExample).toHaveBeenCalledTimes(1));
+	const isCurrent = content.addExample.mock.calls[0][5];
+	expect(isCurrent()).toBe(true);
 	await store.addExample('list');
 	store.skip();
+	expect(isCurrent()).toBe(false);
 	finish();
 	await pending;
 	expect(content.addExample).toHaveBeenCalledTimes(1);

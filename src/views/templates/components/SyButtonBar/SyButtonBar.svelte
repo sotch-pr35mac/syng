@@ -38,9 +38,6 @@
 <style>
 	.sy-button-bar--container {
 		display: inline-flex;
-		max-width: 100%;
-		min-width: 0;
-		box-sizing: border-box;
 		align-items: center;
 		flex-wrap: wrap;
 		min-width: 0;

@@ -65,9 +65,7 @@
 			{/await}
 		</div>
 		<footer>
-			<SyButton size="large" color="blue" onclick={whatsNewStore.continue}
-				>Continue to Syng</SyButton
-			>
+			<SyButton size="large" color="blue" onclick={whatsNewStore.continue}>Continue</SyButton>
 		</footer>
 	</div>
 </div>

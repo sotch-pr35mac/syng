@@ -1,3 +1,6 @@
+import App from '@/App.svelte';
+import MobileApp from '@/MobileApp.svelte';
+import CharacterWindow from '@/CharacterWindow.svelte';
 import { mount } from 'svelte';
 import { isMobile, isIPad } from '@/utils/device.js';
 import { handleError } from '@/utils/error.js';
@@ -71,10 +74,7 @@ async function bootstrap() {
 		setDebugMode(debugMode);
 		contrastStore.initialize(debugMode);
 		await initializeSystemTypography();
-		// Load only the device's shell, leaving room for contextual help without adding
-		// the other layout or character window to every launch.
-		const shell = useMobile ? await import('@/MobileApp.svelte') : await import('@/App.svelte');
-		const mountedApp = mount(shell.default, { target: appContainer });
+		const mountedApp = mount(useMobile ? MobileApp : App, { target: appContainer });
 		await dismissMobileSplashAfterPaint();
 		document.getElementById('syng-bootstrap-launch-screen')?.remove();
 		return mountedApp;
@@ -82,8 +82,7 @@ async function bootstrap() {
 	if (charactersContainer) {
 		contrastStore.initialize(await inDebugMode());
 		await initializeSystemTypography();
-		const characterWindow = await import('@/CharacterWindow.svelte');
-		return mount(characterWindow.default, { target: charactersContainer });
+		return mount(CharacterWindow, { target: charactersContainer });
 	}
 	return undefined;
 }

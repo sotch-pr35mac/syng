@@ -1,3 +1,10 @@
+/**
+ * Owns the walkthrough lifecycle: invitations, preparation/choices, guiding, pause, and exit.
+ * Preferences persist progress and sample IDs; phase, DOM targets, and pending requests are
+ * session state. Each new launch or cancellation invalidates older requestVersion tokens.
+ * Requested sample writes may finish after cancellation, but stale work must not navigate,
+ * select content, or restore a guide. Telemetry retains the originating launch's context.
+ */
 import { getPreferenceManager } from '@/utils/appServices.js';
 import { telemetry } from '@/utils/telemetry.js';
 import type {
@@ -47,6 +54,7 @@ let presentedStep = '';
 // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Registry changes explicitly update targetRevision.
 const targets = new Map<WalkthroughTargetId, Set<HTMLElement>>();
 
+/** Capture stable guide/step attribution without including user content or route parameters. */
 function eventContext(): WalkthroughTelemetry {
 	const step = phase === 'invitation' ? undefined : preparation.steps[stepIndex];
 	return {
@@ -58,6 +66,7 @@ function eventContext(): WalkthroughTelemetry {
 	};
 }
 
+/** Telemetry failures must never interrupt a guide or a requested data save. */
 function track(
 	event: WalkthroughEvent,
 	details: Partial<WalkthroughTelemetry> = {},
@@ -78,12 +87,14 @@ function markStepPresented(view: 'instructions' | 'dictionary-popup' = 'instruct
 	}
 }
 
+/** Save only serializable preferences; runtime state and DOM nodes remain session-local. */
 function persist(): void {
 	if (loaded) {
 		getPreferenceManager().set('walkthrough', $state.snapshot(preferences));
 	}
 }
 
+/** Load once and sanitize known progress fields; unknown schema versions use safe defaults. */
 async function load(): Promise<void> {
 	if (loaded) {
 		return;
@@ -113,6 +124,7 @@ async function load(): Promise<void> {
 	loaded = true;
 }
 
+/** Consume the fresh-install invitation once, without redirecting an unrelated launch route. */
 function offer(): void {
 	if (!loaded || blocked || phase !== 'idle' || preferences.invitation !== 'eligible') {
 		return;
@@ -127,6 +139,7 @@ function offer(): void {
 	}
 }
 
+/** Offer a feature on first use unless it has already been offered or tried. */
 function offerFeature(identifier: FeatureWalkthroughId, context: WalkthroughContext): void {
 	if (
 		!loaded ||
@@ -148,11 +161,13 @@ function offerFeature(identifier: FeatureWalkthroughId, context: WalkthroughCont
 	persist();
 }
 
+/** Retain completion history even when a later replay is interrupted or skipped. */
 function hasCompleted(identifier: WalkthroughId): boolean {
 	const progress = preferences.guides[identifier];
 	return progress?.completed === true || progress?.status === 'completed';
 }
 
+/** Developer reset: clear feature progress/invitations while preserving samples and the app tour. */
 async function resetFeatureTours(): Promise<void> {
 	await load();
 	exampleAdded = null;
@@ -175,6 +190,7 @@ async function resetFeatureTours(): Promise<void> {
 	persist();
 }
 
+/** Persist the resumable step/context without treating a declined invitation as a tried guide. */
 function saveProgress(status: 'in-progress' | 'skipped' | 'completed'): void {
 	if (!guide || phase === 'feature-invitation') {
 		return;
@@ -188,6 +204,7 @@ function saveProgress(status: 'in-progress' | 'skipped' | 'completed'): void {
 	persist();
 }
 
+/** Record the expected route before navigation so our own hashchange does not close the tour. */
 function navigate(step: WalkthroughStep): void {
 	expectedRoute = step.route;
 	if (window.location.hash !== `#${step.route}`) {
@@ -196,6 +213,7 @@ function navigate(step: WalkthroughStep): void {
 	saveProgress('in-progress');
 }
 
+/** Prepare content under a cancellation token; choices/retries/resumes preserve the launch source. */
 async function start(
 	identifier: WalkthroughId,
 	context: WalkthroughContext = {},
@@ -292,6 +310,7 @@ async function start(
 	}
 }
 
+/** Invalidate pending work before hiding the guide; keep progress according to the exit reason. */
 function close(
 	status: 'skipped' | 'completed' | 'in-progress',
 	reason: WalkthroughTelemetry['reason'] = 'dismissed'
@@ -315,6 +334,7 @@ function close(
 	errorMessage = '';
 }
 
+/** Advance the guide or complete it; the app overview returns to Search when finished. */
 function next(): void {
 	if (phase !== 'guiding') {
 		return;
@@ -333,6 +353,7 @@ function next(): void {
 	navigate(preparation.steps[stepIndex]);
 }
 
+/** Return to the previous instruction without changing completion history. */
 function back(): void {
 	exampleAdded = null;
 	if (phase === 'guiding' && stepIndex > 0) {
@@ -342,6 +363,7 @@ function back(): void {
 	}
 }
 
+/** Treat navigation outside the expected step as interruption, retaining a resumable position. */
 function routeChanged(): void {
 	if (phase === 'invitation') {
 		// Onboarding sets #/ immediately before making the shell ready. Its queued
@@ -358,6 +380,7 @@ function routeChanged(): void {
 	}
 }
 
+/** Register mounted controls and notify the host when responsive layouts replace them. */
 function registerTarget(identifier: WalkthroughTargetId, element: HTMLElement): () => void {
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Registry changes explicitly update targetRevision.
 	const elements = targets.get(identifier) ?? new Set<HTMLElement>();
@@ -370,6 +393,7 @@ function registerTarget(identifier: WalkthroughTargetId, element: HTMLElement): 
 	};
 }
 
+/** Choose a visible main-surface target, excluding duplicates inside secondary popovers. */
 function target(identifier: WalkthroughTargetId | undefined): HTMLElement | undefined {
 	void targetRevision;
 	if (!identifier) {
@@ -384,6 +408,7 @@ function target(identifier: WalkthroughTargetId | undefined): HTMLElement | unde
 	return available.find((element) => !element.matches(':disabled')) ?? available[0];
 }
 
+/** Serialize sample requests; save data after cancellation but guard selection and guide updates. */
 async function addExample(kind: 'document' | 'list', freshCopy = false): Promise<void> {
 	if (exampleBusy) {
 		return;
@@ -407,7 +432,8 @@ async function addExample(kind: 'document' | 'list', freshCopy = false): Promise
 				persist();
 			},
 			freshCopy,
-			exampleGuide
+			exampleGuide,
+			() => request === requestVersion
 		);
 		added = true;
 		// The sample may have saved after the tour closed. Attribute it to the original request.
@@ -516,6 +542,7 @@ export const walkthroughStore = {
 			close('in-progress', 'unmount');
 		}
 	},
+	// Yield to a secondary overlay; resuming prepares the saved step against current content.
 	suspend: () => {
 		if (phase === 'feature-invitation') {
 			close('skipped', 'overlay');

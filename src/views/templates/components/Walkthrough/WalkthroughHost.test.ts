@@ -316,7 +316,8 @@ it.each(['list', 'document'] as const)(
 				expect.anything(),
 				expect.any(Function),
 				false,
-				'study'
+				'study',
+				expect.any(Function)
 			)
 		);
 		await vi.waitFor(() => expect(tour.exampleBusy).toBe(false));

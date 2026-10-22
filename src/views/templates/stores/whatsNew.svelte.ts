@@ -1,6 +1,12 @@
+/**
+ * Coordinates automatic release announcements, Settings replays, and developer previews.
+ * Startup saves the pending range before the gate navigates; the page acknowledges it only
+ * after content renders. Preview never changes history or emits usage events. Return-route,
+ * disclosure, and scroll state survive temporary navigation from a release-note action.
+ */
 import { getVersion } from '@tauri-apps/api/app';
 import { push, replace } from 'svelte-spa-router';
-import { getPreferenceManager } from '@/utils/appServices.js';
+import { getReleaseHistoryStorage } from '@/utils/appServices.js';
 import { handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
 import type { WhatsNewTelemetry } from '@/types/telemetry.js';
@@ -11,11 +17,11 @@ import {
 	emptyReleaseHistory,
 	isReleaseVersion,
 	nextReleaseHistory,
-	readReleaseHistory,
 	releasesInRange,
 } from '@/utils/whatsNew.js';
 import type { ReleasePlatform, ReleaseRange } from '@/types/whatsNew.js';
 
+// iOS needs its own notes (for example Dynamic Type); current desktop notes are shared.
 const releasePlatform = (): ReleasePlatform =>
 	isIos() ? 'ios' : isAndroid() ? 'android' : 'desktop';
 const availableReleases = () =>
@@ -37,6 +43,7 @@ let navigating = $state(false);
 let source: WhatsNewTelemetry['source'] = 'direct';
 let continued = false;
 
+/** Send content-level events without private return routes; previews are excluded. */
 function track(
 	event: 'viewed' | 'continued' | 'disclosure_changed' | 'action',
 	details: Partial<WhatsNewTelemetry> = {}
@@ -53,6 +60,7 @@ function track(
 	}
 }
 
+/** Cache the validated native version for this application session. */
 async function resolveVersion(): Promise<string> {
 	if (!currentVersion) {
 		const version = await getVersion();
@@ -64,6 +72,7 @@ async function resolveVersion(): Promise<string> {
 	return currentVersion;
 }
 
+/** Prepare and persist the upgrade range after startup succeeds; failures leave the app usable. */
 async function initialize(
 	firstSetup: boolean,
 	initialRoute = window.location.hash.slice(1) || '/'
@@ -71,14 +80,14 @@ async function initialize(
 	launchRoute = initialRoute;
 	try {
 		const version = await resolveVersion();
-		const manager = getPreferenceManager();
+		const storage = getReleaseHistoryStorage();
 		history = nextReleaseHistory(
-			readReleaseHistory(manager.get('whatsNew')),
+			await storage.load(),
 			version,
 			firstSetup,
 			availableReleases()
 		);
-		await manager.setAndSave('whatsNew', history);
+		await storage.save(history);
 		navigating = history.pending?.to === version;
 	} catch (error) {
 		history = emptyReleaseHistory();
@@ -87,6 +96,7 @@ async function initialize(
 	}
 }
 
+/** Called once by the startup gate after onboarding and recovery stop blocking navigation. */
 async function openPending(): Promise<void> {
 	if (
 		startupOffered ||
@@ -115,6 +125,7 @@ async function openPending(): Promise<void> {
 	}
 }
 
+/** Open a manual replay or preview, preserving the Settings route for Continue. */
 async function open(isPreview = false): Promise<void> {
 	try {
 		await resolveVersion();
@@ -136,6 +147,7 @@ async function open(isPreview = false): Promise<void> {
 	await push('/whats-new');
 }
 
+/** Acknowledge rendered notes once, preserving pending history if storage fails. */
 async function markPresented(): Promise<void> {
 	if (presentationSaved || !range) {
 		return;
@@ -145,30 +157,31 @@ async function markPresented(): Promise<void> {
 	if (preview) {
 		return;
 	}
-	const manager = getPreferenceManager();
-	const saved = readReleaseHistory(manager.get('whatsNew'));
-	if (
-		saved.handledThroughVersion &&
-		compareReleaseVersions(saved.handledThroughVersion, range.to) >= 0
-	) {
-		return;
-	}
-	const next = {
-		...saved,
-		handledThroughVersion: range.to,
-		pending:
-			saved.pending && compareReleaseVersions(saved.pending.to, range.to) > 0
-				? saved.pending
-				: null,
-	};
 	try {
-		await manager.setAndSave('whatsNew', next);
+		const storage = getReleaseHistoryStorage();
+		const saved = await storage.load();
+		if (
+			saved.handledThroughVersion &&
+			compareReleaseVersions(saved.handledThroughVersion, range.to) >= 0
+		) {
+			return;
+		}
+		const next = {
+			...saved,
+			handledThroughVersion: range.to,
+			pending:
+				saved.pending && compareReleaseVersions(saved.pending.to, range.to) > 0
+					? saved.pending
+					: null,
+		};
+		await storage.save(next);
 		history = next;
 	} catch (error) {
 		handleError('Could not save release-note history.', error, { silent: true });
 	}
 }
 
+/** Support direct visits and restore the current presentation after a linked action. */
 async function preparePage(): Promise<void> {
 	if (continued) {
 		presentationSaved = false;
@@ -186,19 +199,31 @@ async function preparePage(): Promise<void> {
 	}
 }
 
+/** Save a developer baseline before reloading; report operational errors, not invalid input. */
 async function simulateUpdate(previousVersion: string): Promise<void> {
-	const version = await resolveVersion();
+	let version: string;
+	try {
+		version = await resolveVersion();
+	} catch (error) {
+		handleError('Could not simulate the update.', error, { silent: true });
+		throw error;
+	}
 	if (
 		!isReleaseVersion(previousVersion) ||
 		compareReleaseVersions(previousVersion, version) >= 0
 	) {
 		throw new Error(`Enter a version older than ${version}, such as 2.5.3.`);
 	}
-	await getPreferenceManager().setAndSave('whatsNew', {
-		lastOpenedVersion: previousVersion,
-		handledThroughVersion: previousVersion,
-		pending: null,
-	});
+	try {
+		await getReleaseHistoryStorage().save({
+			lastOpenedVersion: previousVersion,
+			handledThroughVersion: previousVersion,
+			pending: null,
+		});
+	} catch (error) {
+		handleError('Could not simulate the update.', error, { silent: true });
+		throw error;
+	}
 	window.location.reload();
 }
 
