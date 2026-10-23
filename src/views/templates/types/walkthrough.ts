@@ -49,6 +49,7 @@ export type WalkthroughTargetId =
 	| 'dictionary-characters'
 	| 'dictionary-notes'
 	| 'bookmarks-lists'
+	| 'bookmarks-management'
 	| 'bookmarks-filter'
 	| 'bookmarks-words'
 	| 'reader-import'

@@ -27,7 +27,8 @@ vi.mock('@/utils/appServices.js', () => ({
 }));
 vi.mock('@/components/Walkthrough/walkthroughContent.js', () => ({
 	GUIDE_LABELS: { dictionary: 'Dictionary', 'reader-document': 'Reading a document' },
-	SAMPLE_TITLE: 'Awa’s Tea Party',
+	SAMPLE_DOCUMENT_TITLE: "Awa's Story",
+	SAMPLE_LIST_NAME: 'Sample Words',
 	SAMPLE_WORD_COUNT: 21,
 	prepareGuide: mocks.prepareGuide,
 	hasSuitableContent: mocks.hasSuitableContent,

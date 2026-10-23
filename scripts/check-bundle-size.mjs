@@ -16,7 +16,7 @@ const BUDGETS = {
 	largestChunkBytes: 200 * 1024,
 	// Includes walkthroughs, accessibility, organized Settings, release notes, and their telemetry.
 	totalBytes: 710 * 1024,
-	totalGzipBytes: 252 * 1024,
+	totalGzipBytes: 253 * 1024,
 };
 
 function javascriptFiles(directory) {

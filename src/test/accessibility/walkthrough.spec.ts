@@ -25,7 +25,7 @@ for (const mobile of [false, true]) {
 		await page.screenshot({ path: testInfo.outputPath('empty-study.png') });
 		await card.getByRole('button', { name: 'Add sample words' }).click();
 		await expect(
-			page.getByRole('button', { name: 'Flashcards for Awa’s Tea Party — Sample Words' })
+			page.getByRole('button', { name: 'Flashcards for Sample Words' })
 		).toBeVisible();
 		await expect(page.locator('[data-walkthrough-target="study-lists"]')).toHaveAttribute(
 			'aria-describedby',
@@ -59,7 +59,7 @@ for (const scenario of [
 				name: vocabulary ? 'Add sample words' : 'Add sample document',
 			});
 			await expect(add).toBeVisible();
-			await expect(card.getByText('Awa’s Tea Party')).toBeVisible();
+			await expect(card.getByText(vocabulary ? 'Sample Words' : "Awa's Story")).toBeVisible();
 			await add.scrollIntoViewIfNeeded();
 			const bounds = await add.boundingBox();
 			if (scenario.mobile) {
@@ -109,7 +109,7 @@ for (const scenario of [
 				fresh_copy: false,
 			});
 			expect(JSON.stringify(telemetryCalls)).not.toMatch(
-				/sample-document|Tea Party|lexical_id/
+				/sample-document|Awa's Story|Sample Words|lexical_id/
 			);
 		});
 	}

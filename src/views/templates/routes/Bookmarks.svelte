@@ -159,7 +159,7 @@
 		});
 	};
 
-	const actions = $derived([
+	const studyActions = $derived([
 		{
 			icon: SquareStack,
 			action: () => {
@@ -184,6 +184,8 @@
 			exclude: [],
 			disabled: !studyEligibility.quiz,
 		},
+	]);
+	const listActions = $derived([
 		{
 			icon: FolderDown,
 			action: importList,
@@ -208,6 +210,29 @@
 		},
 	]);
 </script>
+
+{#snippet actionButtons(actions)}
+	{#each actions as action (action.tooltip)}
+		{#if !action.exclude.includes(activeList)}
+			<span class="bookmarks--header--action-item">
+				<SyButton
+					style="ghost"
+					aria-label={action.tooltip}
+					title={action.description || action.tooltip}
+					onclick={action.action}
+					disabled={action.disabled}
+					hover={action.hover}
+					classes={['sy-tooltip--container']}
+				>
+					<action.icon size="20" />
+					<span class="sy-tooltip--body sy-tooltip--body-bottom" aria-hidden="true">
+						{action.description || action.tooltip}
+					</span>
+				</SyButton>
+			</span>
+		{/if}
+	{/each}
+{/snippet}
 
 <div
 	class="bookmarks--container"
@@ -234,27 +259,15 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
-			{#each actions as action (action.tooltip)}
-				{#if !action.exclude.includes(activeList)}
-					<span class="bookmarks--header--action-item">
-						<SyButton
-							style="ghost"
-							aria-label={action.tooltip}
-							title={action.description || action.tooltip}
-							onclick={action.action}
-							disabled={action.disabled}
-							hover={action.hover}
-							classes={['sy-tooltip--container']}
-						>
-							<action.icon size="20" />
-							<span
-								class="sy-tooltip--body sy-tooltip--body-bottom"
-								aria-hidden="true">{action.description || action.tooltip}</span
-							>
-						</SyButton>
-					</span>
-				{/if}
-			{/each}
+			{@render actionButtons(studyActions)}
+			<div
+				class="bookmarks--header--actions"
+				role="group"
+				aria-label="List Management"
+				use:walkthroughTarget={'bookmarks-management'}
+			>
+				{@render actionButtons(listActions)}
+			</div>
 		</div>
 	</div>
 	<div class="bookmarks--content">

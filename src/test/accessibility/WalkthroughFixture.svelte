@@ -70,7 +70,7 @@
 			id: `1:${text}`,
 			simplified: text,
 			traditional: text,
-			pinyin: { marks: '', numbers: '', tones: [] },
+			pinyin: { marks: '', numbers: text === '踏实' ? 'ta1shi5' : '', tones: [] },
 			english: [],
 		};
 	}

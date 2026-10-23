@@ -355,6 +355,7 @@
 						style="ghost"
 						size="small"
 						aria-label="List actions"
+						guideTarget="bookmarks-management"
 					>
 						<EllipsisVertical size="20" />
 					</SyButton>

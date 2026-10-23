@@ -10,6 +10,7 @@ import MobileStudyQuiz from '@/routes/mobile/Study/MobileStudyQuiz.svelte';
 import Flashcards from '@/routes/Study/Flashcards.svelte';
 import MobileStudyFlashcards from '@/routes/mobile/Study/MobileStudyFlashcards.svelte';
 import WalkthroughHost from '@/components/Walkthrough/WalkthroughHost.svelte';
+import { SAMPLE_WORD_COUNT } from '@/components/Walkthrough/walkthroughContent.js';
 import { quizRoute } from '@/composables/quiz.svelte.js';
 import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 import { EMPTY_QUIZ_MESSAGE, studyHref } from '@/composables/study.js';
@@ -37,7 +38,7 @@ function word(text: string): LexicalUnit {
 		id: `1:${text}`,
 		simplified: text,
 		traditional: text,
-		pinyin: { marks: '', numbers: '', tones: [] },
+		pinyin: { marks: '', numbers: text === '踏实' ? 'ta1shi5' : '', tones: [] },
 		commonness: 0,
 		alternative_pronunciations: [],
 		measure_words: [],
@@ -135,7 +136,7 @@ describe.each([
 		{
 			initialList: 'Empty',
 			choice: 'example',
-			listName: 'Awa’s Tea Party — Sample Words',
+			listName: 'Sample Words',
 			firstWord: '朋友',
 		},
 		{
@@ -147,7 +148,7 @@ describe.each([
 		{
 			initialList: 'Deleted',
 			choice: 'example',
-			listName: 'Awa’s Tea Party — Sample Words',
+			listName: 'Sample Words',
 			firstWord: '朋友',
 		},
 	])(
@@ -229,7 +230,7 @@ describe.each([
 ])('$layout quiz walkthrough', ({ component }) => {
 	it.each([
 		{ choice: 'saved', listName: 'Ready vocabulary', count: 4 },
-		{ choice: 'example', listName: 'Awa’s Tea Party — Sample Words', count: 21 },
+		{ choice: 'example', listName: 'Sample Words', count: SAMPLE_WORD_COUNT },
 	])(
 		'loads the $choice list chosen from help without remounting the route',
 		async ({ choice, listName, count }) => {
@@ -341,7 +342,7 @@ describe.each([
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add sample words' }));
 		await waitFor(() => expect(walkthroughStore.exampleBusy).toBe(false));
 		const listName = walkthroughStore.preferences.examples.listName;
-		expect(lists[listName]).toHaveLength(21);
+		expect(lists[listName]).toHaveLength(SAMPLE_WORD_COUNT);
 		await waitFor(() => {
 			expect(
 				(

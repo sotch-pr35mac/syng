@@ -11,7 +11,8 @@
 	import {
 		GUIDE_LABELS,
 		hasSuitableContent,
-		SAMPLE_TITLE,
+		SAMPLE_DOCUMENT_TITLE,
+		SAMPLE_LIST_NAME,
 		SAMPLE_WORD_COUNT,
 	} from '@/components/Walkthrough/walkthroughContent.js';
 	const GUTTER = 16;
@@ -513,7 +514,9 @@
 						{/if}
 					</div>
 					<div class="walkthrough__example-details">
-						<span class="walkthrough__example-title">{SAMPLE_TITLE}</span>
+						<span class="walkthrough__example-title">
+							{exampleKind === 'document' ? SAMPLE_DOCUMENT_TITLE : SAMPLE_LIST_NAME}
+						</span>
 						<p id="walkthrough-sample-description">
 							{exampleKind === 'document'
 								? 'Sample story · easy → advanced'
