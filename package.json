@@ -57,7 +57,7 @@
 		"@tauri-apps/plugin-os": "^2.4.0",
 		"@tauri-apps/plugin-process": "^2.4.0",
 		"@tauri-apps/plugin-updater": "^2.13.2",
-		"dompurify": "^3.4.16",
+		"dompurify": "^3.4.17",
 		"elastic-scroll-polyfill": "^2.1.0",
 		"hanzi-writer": "^3.7.3",
 		"marked": "^18.1.0"
