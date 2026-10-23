@@ -197,6 +197,7 @@
 						text: 'Delete',
 						icon: Trash2,
 						color: 'red',
+						hover: 'red',
 						component: TextWithIconDropdownItem,
 					},
 				]),
