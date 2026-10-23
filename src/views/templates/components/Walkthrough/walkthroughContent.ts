@@ -35,10 +35,6 @@ export const GUIDE_LABELS: Record<WalkthroughId, string> = {
 	flashcards: 'Flashcards',
 	quiz: 'Quizzes',
 };
-// All carousel words from syng-landing/src/components/Marquee.astro, supplemented
-// with additional vocabulary for at least three words per HSK Exam Syllabus 2025 band.
-// Levels and readings are checked against the bundled dictionary; ungraded
-// carousel words are included without assigning them an HSK level.
 const SAMPLE_WORDS: { text: string; pinyin?: string }[] = [
 	// HSK 1
 	{ text: '朋友' },
@@ -390,7 +386,7 @@ export async function prepareGuide(
 				step(
 					'management',
 					'List Management',
-					`${isMobileLayout() ? 'Open List actions' : 'Use these buttons'} to import saved lists, export this list, or delete a custom list. Delete asks for confirmation; the default Bookmarks list is kept.`,
+					`${isMobileLayout() ? 'Open List actions' : 'Use these buttons'} to import saved lists, export this list, or delete a custom list.`,
 					'bookmarks-management',
 					'/bookmarks'
 				),
