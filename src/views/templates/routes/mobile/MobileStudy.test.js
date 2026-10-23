@@ -211,12 +211,12 @@ it('uses character display preferences on mobile flashcard fronts without tone c
 
 it('renders populated study lists and opens flashcards', async () => {
 	const user = userEvent.setup();
-	const { findByText, getAllByTestId, queryByText } = render(MobileStudy);
+	const { findByText, getByRole, queryByText } = render(MobileStudy);
 
 	expect(await findByText('Bookmarks')).toBeTruthy();
 	await waitFor(() => expect(queryByText('Empty List')).toBeFalsy());
 
-	await user.click(getAllByTestId('sy-button')[0]);
+	await user.click(getByRole('button', { name: 'Flashcards for Bookmarks' }));
 	expect(window.location.hash).toBe('#/study/flashcards?list=Bookmarks');
 });
 

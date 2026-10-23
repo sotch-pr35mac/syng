@@ -1,8 +1,13 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import SyList from '@/components/SyList/SyList.svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { Search } from 'lucide-svelte';
@@ -17,15 +22,24 @@
 	const studyLists = createStudyListState();
 	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
-		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
+		if (
+			!walkthroughStore.isOverview('/study') &&
+			studySubRouteStore.value === 'flashcards' &&
+			flashcardsActiveListStore.value
+		) {
 			window.location.hash = studyHref(
 				'flashcards',
 				flashcardsActiveListStore.value,
 				studyOriginStore.value
 			);
-			return undefined;
 		}
-		void studyLists.load();
+	});
+	$effect(() => {
+		// Refresh on bookmark mutations only; load() also reads/writes its own reactive status.
+		void bookmarksStore.contentRevision;
+		untrack(() => {
+			void studyLists.load();
+		});
 		return studyLists.cancel;
 	});
 	function handleSelection(event: { action: StudyAction; list: string }): void {
@@ -45,6 +59,9 @@
 		<h1 data-tauri-drag-region={isMacos ? true : undefined}>Study</h1>
 	</div>
 	<div
+		use:walkthroughTarget={walkthroughStore.guide === 'app' && !populatedLists.length
+			? undefined
+			: 'study-lists'}
 		class="study--content"
 		class:study--content-empty={studyLists.status === 'ready' && !populatedLists.length}
 	>
@@ -54,6 +71,9 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
+			<div class="study--help">
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
+			</div>
 			<SyList
 				values={populatedLists}
 				component={StudyListItem}
@@ -73,12 +93,17 @@
 					<Search size="20" />
 					<span>Search for words</span>
 				</SyButton>
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
 			</div>
 		{/if}
 	</div>
 </div>
 
 <style>
+	.study--help {
+		text-align: center;
+	}
+
 	.study--container {
 		display: flex;
 		flex-direction: column;

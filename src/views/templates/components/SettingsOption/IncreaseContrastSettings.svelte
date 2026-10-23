@@ -5,7 +5,12 @@
 	const {
 		variant = 'desktop',
 		showLabel = true,
-	}: { variant?: 'desktop' | 'mobile'; showLabel?: boolean } = $props();
+		source = 'settings',
+	}: {
+		variant?: 'desktop' | 'mobile';
+		showLabel?: boolean;
+		source?: 'settings' | 'whats_new';
+	} = $props();
 	const settingId = $props.id();
 </script>
 
@@ -20,7 +25,7 @@
 		id={`${settingId}-contrast`}
 		accessibleLabel="Increase Contrast"
 		checked={contrastStore.increaseContrast}
-		onchange={(checked) => contrastStore.setIncreaseContrast(checked)}
+		onchange={(checked) => contrastStore.setIncreaseContrast(checked, source)}
 	/>
 </div>
 

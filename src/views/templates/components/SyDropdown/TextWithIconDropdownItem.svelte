@@ -90,6 +90,9 @@
 	.twi-dropdown-item--color--black {
 		color: var(--sy-color--black);
 	}
+	.twi-dropdown-item--color--red {
+		color: var(--sy-text--red);
+	}
 	.twi-dropdown-item--hover--blue:hover {
 		color: var(--sy-text--blue);
 	}

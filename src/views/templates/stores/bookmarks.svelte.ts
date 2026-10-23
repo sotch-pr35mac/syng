@@ -47,6 +47,9 @@ export type BookmarkWordInput = {
 
 let lists = $state<string[]>([]);
 let initialized = $state(false);
+// In-memory invalidation for consumers such as Study: word membership can change
+// without changing list names. This is unrelated to persisted database/schema revisions.
+let contentRevision = $state(0);
 let refreshRequest: Promise<void> | undefined;
 
 async function ensureManagerReady(): Promise<void> {
@@ -66,6 +69,7 @@ async function loadLists(): Promise<void> {
 		await ensureManagerReady();
 		lists = await getBookmarkManager().getLists();
 		initialized = true;
+		contentRevision += 1;
 	} catch (error) {
 		handleError(
 			'There was an error fetching bookmark lists. Check the logs for more details.',
@@ -87,22 +91,26 @@ async function createList(name: string): Promise<void> {
 	if (!lists.includes(name)) {
 		lists = [...lists, name];
 	}
+	contentRevision += 1;
 }
 
 async function deleteList(name: string): Promise<void> {
 	await ensureManagerReady();
 	await getBookmarkManager().deleteList(name);
 	lists = lists.filter((listName) => listName !== name);
+	contentRevision += 1;
 }
 
 async function addToList(listName: string, word: BookmarkWordInput): Promise<void> {
 	await ensureManagerReady();
 	await getBookmarkManager().addToList(listName, word);
+	contentRevision += 1;
 }
 
 async function removeFromList(listName: string, word: BookmarkWordInput): Promise<void> {
 	await ensureManagerReady();
 	await getBookmarkManager().removeFromList(listName, word);
+	contentRevision += 1;
 }
 
 async function updateProperty(lexicalId: LexicalId, name: string, value: unknown): Promise<void> {
@@ -131,6 +139,9 @@ async function getWordByLexicalId(lexicalId: LexicalId): Promise<BookmarkWordEnt
 }
 
 export const bookmarksStore = {
+	get contentRevision(): number {
+		return contentRevision;
+	},
 	get lists(): string[] {
 		return lists;
 	},

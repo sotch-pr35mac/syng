@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount, tick, untrack } from 'svelte';
 	import {
 		ChevronDown,
@@ -98,6 +102,20 @@
 		}
 	});
 
+	$effect(() => {
+		const step = walkthroughStore.phase === 'guiding' ? walkthroughStore.step : undefined;
+		const sheet = sheetRef;
+		if (step?.route === '/bookmarks' && sheet) {
+			untrack(() => {
+				if (step.target.startsWith('dictionary-') && activeWord) {
+					sheet.collapse();
+				} else {
+					sheet.openPartial();
+				}
+			});
+		}
+	});
+
 	function handleSnapChange(snap: SheetSnap): void {
 		currentSnap = snap;
 		mobileBookmarksSnapStore.set(snap);
@@ -179,6 +197,7 @@
 						text: 'Delete',
 						icon: Trash2,
 						color: 'red',
+						hover: 'red',
 						component: TextWithIconDropdownItem,
 					},
 				]),
@@ -275,6 +294,7 @@
 		{:else if bookmarksRoute.contentStatus === 'ready'}
 			<div class="mobile-bookmarks__empty">
 				<Awa pose="collect" size={AWA_SIZES.detail} />
+				<WalkthroughHelp guide="bookmarks" label="Learn how Bookmarks works" />
 				{#if wordList.length}
 					<p>Select a word from your bookmarks</p>
 				{/if}
@@ -297,6 +317,7 @@
 				{#snippet children(open, triggerProps)}
 					<SyButton
 						{...triggerProps}
+						guideTarget="bookmarks-lists"
 						aria-label={`Choose list: ${activeList}`}
 						style="ghost"
 						size="small"
@@ -335,6 +356,7 @@
 						style="ghost"
 						size="small"
 						aria-label="List actions"
+						guideTarget="bookmarks-management"
 					>
 						<EllipsisVertical size="20" />
 					</SyButton>
@@ -346,6 +368,7 @@
 		{/if}
 
 		<div
+			use:walkthroughTarget={'bookmarks-words'}
 			class="mobile-bookmarks__results"
 			class:mobile-bookmarks__results--empty={showEmptyState}
 			role="region"

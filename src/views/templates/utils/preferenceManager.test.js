@@ -48,6 +48,7 @@ it('backfills newer settings into existing preference documents', async () => {
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
+	expect(manager.get('walkthrough')).toMatchObject({ version: 1, invitation: 'unavailable' });
 });
 
 it('does not mark existing preference documents as having completed onboarding', async () => {
@@ -127,6 +128,7 @@ it('uses dictionary display defaults for new preference documents', async () => 
 	expect(manager.get('completedOnboardingVersion')).toBe(0);
 	expect(manager.get('childPrivacyMode')).toBe(false);
 	expect(manager.get('forceOnboardingReplay')).toBe(false);
+	expect(manager.get('walkthrough')).toMatchObject({ version: 1, invitation: 'eligible' });
 });
 
 it('serializes rapid preference writes so overlapping puts do not conflict', async () => {
@@ -216,3 +218,36 @@ it('rejects waitForInit when loading preferences fails instead of hanging', asyn
 	await expect(manager.waitForInit()).rejects.toMatchObject({ cause: { name: 'unauthorized' } });
 	expect(manager.initialized).toBe(false);
 });
+
+it.each([
+	[{ ok: false }, null],
+	[null, { status: 409, name: 'conflict' }],
+])(
+	'reports unconfirmed or failed retry writes and allows later saves',
+	async (response, failure) => {
+		const handleError = vi.fn();
+		vi.doMock('@/utils/error.js', () => ({ handleError }));
+		const put = vi.fn();
+		if (failure) {
+			put.mockRejectedValueOnce(failure).mockRejectedValueOnce(new Error('Retry failed'));
+		} else {
+			put.mockResolvedValueOnce(response);
+		}
+		put.mockResolvedValue({ ok: true, rev: '3-saved' });
+		global.PouchDB = class {
+			get = vi.fn().mockResolvedValue({ _id: 'config', _rev: '1-existing' });
+			put = put;
+		};
+		const { PreferenceManager } = await import('@/utils/preferenceManager.js');
+		const manager = new PreferenceManager('config');
+		await manager.init();
+		expect(manager._config).not.toHaveProperty('whatsNew');
+		manager.set('increaseContrast', true);
+		await manager._writeQueue;
+		expect(handleError).toHaveBeenCalledTimes(1);
+		manager.set('increaseContrast', false);
+		await manager._writeQueue;
+		expect(put).toHaveBeenCalledTimes(failure ? 3 : 2);
+		expect(handleError).toHaveBeenCalledTimes(1);
+	}
+);

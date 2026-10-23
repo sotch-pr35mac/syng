@@ -6,6 +6,8 @@
 	import type { SheetSnap } from '@/types/snapSheet.js';
 	import { isMobileLayout } from '@/utils/device.js';
 	import { overlayFocus } from '@/actions/overlayFocus.js';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import type { WalkthroughTargetId } from '@/types/walkthrough.js';
 
 	type PopoverPlacement = 'below' | 'above' | 'right' | 'left';
 	type PopoverHorizontalAlign = 'center' | 'start' | 'end';
@@ -25,6 +27,7 @@
 		returnFocus = undefined,
 		mobileSnap = 'partial',
 		reopenKey = undefined,
+		guideTarget = undefined,
 		children,
 		onclose = () => {},
 	}: {
@@ -42,6 +45,7 @@
 		mobileSnap?: SheetSnap;
 		reopenKey?: number | string;
 		id?: string;
+		guideTarget?: WalkthroughTargetId;
 		children?: Snippet;
 		onclose?: () => void;
 	} = $props();
@@ -192,6 +196,7 @@
 {#if visible}
 	{#if mobile}
 		<SySnapSheet
+			{guideTarget}
 			{id}
 			initialSnap={mobileSnap}
 			{reopenKey}
@@ -223,6 +228,7 @@
 				closeOnOutside: true,
 				onclose,
 			}}
+			use:walkthroughTarget={guideTarget}
 			class="sy-popover"
 			class:sy-popover--below={placement === 'below'}
 			class:sy-popover--above={placement === 'above'}

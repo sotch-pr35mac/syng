@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import { onMount, tick } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
@@ -22,22 +26,23 @@
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
+	$effect(() => {
+		if (search.walkthroughQueryRevision) {
+			searchQuery = search.queryText;
+			mobileSearchQueryStore.set(search.queryText);
+		}
+	});
 	// sheetRef gives us access to collapse/openPartial/openFull on the snap sheet.
 	let dictionaryElement = $state<HTMLElement>();
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	// currentSnap and searchQuery are initialised from the persistent stores so that
 	// returning to this screen restores the previous state.
 	let currentSnap = $state<SheetSnap>(mobileSearchSnapStore.value);
+	// SyTextInput receives this as its value, restoring navigation and live tutorial queries.
 	let searchQuery = $state(mobileSearchQueryStore.value);
 	onMount(search.mount);
 
 	onMount(() => {
-		// SyTextInput is uncontrolled so we restore the value imperatively after mount.
-		const input = document.getElementById('mobile-search-input') as HTMLInputElement | null;
-		if (input && searchQuery) {
-			input.value = searchQuery;
-		}
-
 		// Restore the sheet snap position. The auto-open $effect below only fires when
 		// new results arrive — it won't re-trigger on a navigation round-trip where results
 		// are already populated — so we restore the stored position explicitly here.
@@ -47,6 +52,20 @@
 			sheetRef?.openFull();
 		}
 		// If currentSnap is 'collapsed', the user manually dismissed the sheet — leave it closed.
+	});
+
+	$effect(() => {
+		const step = walkthroughStore.phase === 'guiding' ? walkthroughStore.step : undefined;
+		const sheet = sheetRef;
+		if (step?.route === '/' && sheet) {
+			untrack(() => {
+				if (step.target.startsWith('dictionary-') && search.activeWord) {
+					sheet.collapse();
+				} else {
+					sheet.openPartial();
+				}
+			});
+		}
 	});
 
 	const searchResultItems = $derived(search.getResultPreviews(2));
@@ -135,6 +154,9 @@
 			<div class="mobile-search__empty">
 				<Awa pose="search" size={AWA_SIZES.detail} />
 				<p>Search for a word to get started</p>
+				{#if search.status === 'idle'}
+					<WalkthroughHelp guide="dictionary" label="Learn how Search works" />
+				{/if}
 			</div>
 		{/if}
 	</div>
@@ -146,6 +168,7 @@
 	>
 		<div class="mobile-search__search-row" onfocusin={handleSearchFocus}>
 			<SyButton
+				guideTarget="search-language"
 				aria-label={`Search language: ${search.searchLang} (${search.searchLang === 'EN' ? 'English' : search.searchLang === 'PY' ? 'Pinyin' : 'Chinese'}). Change language`}
 				style="ghost"
 				size="small"
@@ -158,8 +181,10 @@
 				style="ghost"
 				size="large"
 				placeholder="Search..."
+				guideTarget="search-field"
 				id="mobile-search-input"
 				aria-label="Search dictionary"
+				value={searchQuery}
 				spellcheck={false}
 				oninput={handleSearch}
 				onenter={() => {
@@ -176,6 +201,7 @@
 			role="region"
 			aria-label="Search results"
 			aria-busy={search.isSearching}
+			use:walkthroughTarget={'search-results'}
 			class="mobile-search__results"
 			class:mobile-search__results--empty={search.status === 'ready' &&
 				!search.fullResults.length}

@@ -1,6 +1,9 @@
 <script>
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
+
 	import { ChevronLeft, ArrowLeft, ArrowRight, RotateCw, RotateCcw } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -13,27 +16,35 @@
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
-	const params = new URLSearchParams(router.querystring);
-	const listFromUrl = params.get('list');
+	const listFromUrl = $derived(new URLSearchParams(router.querystring).get('list'));
+	const originFromUrl = $derived(new URLSearchParams(router.querystring).get('from'));
 	const lists = $derived(flashcardsRoute.lists);
 	const activeWord = $derived(flashcardsRoute.activeWord);
 
-	onMount(() => {
-		flashcardsRoute.load(listFromUrl, params.get('from'));
-		return flashcardsRoute.endSession;
+	$effect(() => {
+		// Route changes can arrive before unmount; exiting must not reload the saved list.
+		if (router.location !== '/study/flashcards') {
+			return;
+		}
+		const selectedList = listFromUrl;
+		// Reload only when the list changes, preserving card navigation and flip state.
+		untrack(() => flashcardsRoute.load(selectedList, originFromUrl));
 	});
+	onDestroy(flashcardsRoute.endSession);
 
 	// Derive left actions based on current state
 	const leftActions = $derived([
 		{
 			icon: ChevronLeft,
 			label: 'Exit',
+			guideTarget: 'study-exit',
 			disabled: false,
 			action: flashcardsRoute.exit,
 		},
 		{
 			icon: ArrowLeft,
 			label: 'Previous',
+			guideTarget: 'flashcards-navigation',
 			disabled: !flashcardsRoute.canGoPrevious,
 			action: flashcardsRoute.previous,
 		},
@@ -44,17 +55,29 @@
 		{
 			icon: flashcardsRoute.showDetails ? RotateCcw : RotateCw,
 			label: 'Flip',
+			guideTarget: 'flashcards-flip',
 			disabled: false,
 			action: flashcardsRoute.flip,
 		},
 		{
 			icon: ArrowRight,
 			label: 'Next',
+			guideTarget: 'flashcards-navigation',
 			disabled: !flashcardsRoute.canGoNext,
 			action: flashcardsRoute.next,
 		},
 	]);
 </script>
+
+<WalkthroughFeatureInvitation
+	guide="flashcards"
+	context={{ listName: listFromUrl ?? undefined }}
+	ready={router.location === '/study/flashcards' &&
+		!flashcardsRoute.loading &&
+		!flashcardsRoute.error &&
+		flashcardsRoute.activeList === listFromUrl &&
+		Boolean(flashcardsRoute.activeWord)}
+/>
 
 <div class="flashcard--container">
 	<p class="sy-sr-only" role="status" aria-atomic="true">
@@ -74,6 +97,7 @@
 		<div class="flashcard--header--section">
 			{#each leftActions as action (action.label)}
 				<SyButton
+					guideTarget={action.guideTarget}
 					disabled={action.disabled}
 					onclick={action.action}
 					style="ghost"
@@ -102,6 +126,7 @@
 		<div class="flashcard--header--section">
 			{#each rightActions as action (action.label)}
 				<SyButton
+					guideTarget={action.guideTarget}
 					disabled={action.disabled}
 					onclick={action.action}
 					style="ghost"
@@ -127,7 +152,7 @@
 				</div>
 			</div>
 		{:else}
-			<div class="flashcard--front">
+			<div class="flashcard--front" class:flashcard--empty={!flashcardsRoute.activeWord}>
 				{#if flashcardsRoute.listContent.length > 0 && activeWord}
 					<h1>
 						<PreferredCharacters
@@ -144,6 +169,13 @@
 								? 'Unable to load flashcards. Please try again.'
 								: EMPTY_FLASHCARDS_LIST_MESSAGE}
 					</h1>
+				{/if}
+				{#if !flashcardsRoute.loading && !flashcardsRoute.error && !flashcardsRoute.listContent.length}
+					<WalkthroughHelp
+						guide="flashcards"
+						label="Learn how flashcards work"
+						context={{ listName: listFromUrl ?? undefined }}
+					/>
 				{/if}
 			</div>
 		{/if}
@@ -224,6 +256,8 @@
 		z-index: var(--sy-z-index--base-1);
 	}
 	.flashcard--front {
+		flex-direction: column;
+		gap: var(--sy-space--large);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -234,6 +268,9 @@
 		font-size: var(--sy-font-size--display-large);
 		font-weight: 200;
 		margin-bottom: 83px;
+	}
+	.flashcard--empty h1 {
+		margin-bottom: var(--sy-space--large);
 	}
 	.flashcard--back {
 		margin: var(--sy-space--large) var(--sy-space--extra-large);

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import type { WalkthroughTargetId } from '@/types/walkthrough.js';
+
 	/* Style Prop */
 	/* Possible Values */
 	// 'ghost' - No background or shadow
@@ -44,6 +47,7 @@
 
 	/**
 	 * @typedef {Object} Props
+	 * @property {import('@/types/walkthrough.js').WalkthroughTargetId} [guideTarget] - Optional guide anchor
 	 * @property {string} [style] - 'filled' - With background and shadow
 	 * @property {string} [size] - 'large' - Large button; defaults to 'medium'
 	 * @property {string} [shape] - 'circle' - Circular; defaults to 'rectangle'
@@ -58,11 +62,16 @@
 	 * @property {string} [form] - Associated native form ID
 	 * @property {string} [aria-label] - Accessible label
 	 * @property {boolean | 'true' | 'false'} [aria-pressed] - Pressed state
+	 * @property {boolean} [aria-expanded] - Whether the controlled popup is open
+	 * @property {string} [aria-controls] - Controlled element ID
+	 * @property {'menu'} [aria-haspopup] - Popup type
+	 * @property {(event: KeyboardEvent) => void} [onkeydown] - Keyboard handler
 	 * @property {string} [title] - Native title
 	 * @property {import('svelte').Snippet} [children]
 	 * @property {(event: MouseEvent) => void} [onclick] - Click handler
 	 */
 	interface Props extends Omit<HTMLButtonAttributes, 'style' | 'children'> {
+		guideTarget?: WalkthroughTargetId;
 		style?: string;
 		size?: string;
 		shape?: string;
@@ -80,6 +89,7 @@
 
 	/** @type {Props} */
 	const {
+		guideTarget = undefined,
 		style = 'filled',
 		size = 'medium',
 		shape = 'rectangle',
@@ -116,6 +126,7 @@
 </script>
 
 <button
+	use:walkthroughTarget={guideTarget}
 	{...restProps}
 	class={[getClasses(), className]}
 	{type}
@@ -136,6 +147,10 @@
 		font-family: var(--sy-font-family);
 		max-width: 100%;
 		overflow-wrap: anywhere;
+	}
+	.sy-button:focus-visible {
+		outline: 2px solid var(--sy-color--blue-2);
+		outline-offset: 2px;
 	}
 	.sy-button:disabled {
 		color: var(--sy-color--grey-5);

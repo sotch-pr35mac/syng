@@ -9,6 +9,7 @@
 	} from 'lucide-svelte';
 	import active from 'svelte-spa-router/active';
 	import { router } from 'svelte-spa-router';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 
 	const tabs = [
 		{ href: '#/', path: '/', label: 'Search', icon: Search },
@@ -24,6 +25,7 @@
 	<div class="mobile-nav__tabs">
 		{#each tabs as tab (tab.href)}
 			<a
+				use:walkthroughTarget={tab.href === '#/study' ? 'study-navigation' : undefined}
 				href={tab.href}
 				class="mobile-nav__tab"
 				aria-label={tab.label}

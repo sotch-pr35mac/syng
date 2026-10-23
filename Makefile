@@ -74,6 +74,7 @@ fix-lint:
 test:
 	cd src/native && cargo test
 	npm test
+	npm run test:a11y
 
 audit:
 	cd src/native && cargo audit

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
+
 	import { ChevronLeft, SlidersHorizontal } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
@@ -58,6 +61,12 @@
 	const settingsPopoverId = `reader-settings-${crypto.randomUUID()}`;
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="reader-document"
+	context={{ documentId: params.id }}
+	ready={Boolean(activeDocument && activeDocument._id === params.id && currentPage)}
+/>
+
 <div
 	class="mobile-reader-document"
 	style={activeDocument && currentPage ? reader.readerThemeStyle : ''}
@@ -67,6 +76,7 @@
 			<SyButton
 				style="ghost"
 				size="small"
+				guideTarget="reader-back"
 				aria-label="Back to Library"
 				onclick={reader.backToLibrary}
 			>
@@ -77,6 +87,7 @@
 				<SyButton
 					style="ghost"
 					size="small"
+					guideTarget="reader-settings"
 					aria-label="Reader settings"
 					aria-expanded={reader.readerSettingsPopoverVisible}
 					aria-haspopup="dialog"
@@ -100,7 +111,7 @@
 			mobileTitle="Reader settings"
 			onclose={reader.closeReaderSettingsPopover}
 		>
-			<div class="mobile-reader-document__settings-popover">
+			<div class="mobile-reader-document__settings-popover" data-walkthrough-secondary="true">
 				<div class="mobile-reader-document__settings-section">
 					<span class="mobile-reader-document__settings-label">Theme</span>
 					<ReaderThemeSelector
@@ -134,6 +145,7 @@
 				{reader.characterMeasureSample}
 			</span>
 			<article
+				use:walkthroughTarget={'reader-page'}
 				bind:this={pageElement}
 				class="mobile-reader-document__page mobile-reader-document__page--base"
 				class:mobile-reader-document__page--ios={isIos()}

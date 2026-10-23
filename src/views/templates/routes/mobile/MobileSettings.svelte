@@ -1,71 +1,32 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
+	import { router } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import SyTab from '@/components/SyTab/SyTab.svelte';
-	import { tabNavigation } from '@/actions/tabNavigation.js';
-	import ToneColorPicker from '@/components/SettingsOption/ToneColorPicker.svelte';
-	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
-	import DictionaryMetadataSettings from '@/components/SettingsOption/DictionaryMetadataSettings.svelte';
-	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
-	import ToneColoringSettings from '@/components/SettingsOption/ToneColoringSettings.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+	import GeneralSettings from '@/components/SettingsOption/GeneralSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
-	import DatabaseMigrationPreview from '@/components/SettingsOption/DatabaseMigrationPreview.svelte';
-	import BookmarkRecoverySettings from '@/components/SettingsOption/BookmarkRecoverySettings.svelte';
-	import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
-	import { handleError } from '@/utils/error.js';
-	import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
+	import { settingsScroll } from '@/actions/settingsScroll.js';
+	import { settingsActiveTabStore, type SettingsTab } from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
-	import {
-		isDevBuild,
-		resolveIsDevBuild,
-		updateCharacterSetPreference,
-		updateColorCharactersByTonePreference,
-		updateColorListsByTonePreference,
-		updateColorPinyinByTonePreference,
-		updateHskVariantPreference,
-		updateShowAlternativePronunciationsPreference,
-		updateShowPartsOfSpeechPreference,
-		updateShowQualifiersPreference,
-		updateToneColorsPreference,
-	} from '@/composables/settings.js';
-
-	type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
-
-	let activeTab = $state(settingsActiveTabStore.value as SettingsTab);
-	let showDevPreferences = $state(isDevBuild());
-	let hasSavedRecoveryReport = $state(false);
-
+	const destination = $derived(new URLSearchParams(router.querystring ?? ''));
+	$effect.pre(() => {
+		if (destination.has('section') || destination.has('setting')) {
+			settingsActiveTabStore.set('general');
+		}
+	});
+	const activeTab = $derived(settingsActiveTabStore.value as SettingsTab);
+	let scrollContainer = $state<HTMLDivElement>();
+	let generalReady = $state(false);
+	$effect.pre(() => {
+		void activeTab;
+		generalReady = false;
+	});
 	function setActiveTab(tab: SettingsTab): void {
-		activeTab = tab;
 		settingsActiveTabStore.set(tab);
 	}
-
-	onMount(() => {
-		let mounted = true;
-		bookmarkRecoveryStore
-			.hasSaved()
-			.then((hasSaved) => {
-				if (mounted) {
-					hasSavedRecoveryReport = hasSaved;
-				}
-				return undefined;
-			})
-			.catch((error) => {
-				handleError('Could not check for bookmark recovery reports.', error);
-			});
-		resolveIsDevBuild()
-			.then((devBuild) => {
-				showDevPreferences = devBuild;
-				return undefined;
-			})
-			.catch(() => {});
-		return () => {
-			mounted = false;
-		};
-	});
 </script>
 
 <div class="mobile-settings">
@@ -109,100 +70,59 @@
 		</div>
 	</header>
 
-	<div class="mobile-settings__content">
-		<div
-			role="tabpanel"
-			id="mobile-settings-panel"
-			aria-labelledby={`mobile-settings-${activeTab}-tab`}
-			tabindex="0"
-			class="mobile-settings__panel"
-		>
-			{#if activeTab === 'general'}
-				<section
-					class="mobile-settings__section mobile-settings__section--toggle"
-					aria-labelledby="contrast-heading"
-				>
-					<h2 id="contrast-heading">Increase Contrast</h2>
-					<IncreaseContrastSettings variant="mobile" showLabel={false} />
-				</section>
-				<section class="mobile-settings__section" aria-labelledby="characters-heading">
-					<h2 id="characters-heading">Characters</h2>
-					<CharacterSetSelector
-						variant="mobile"
-						onchange={updateCharacterSetPreference}
-					/>
-				</section>
-				<section class="mobile-settings__section" aria-labelledby="hsk-heading">
-					<h2 id="hsk-heading">HSK</h2>
-					<HskVariantSelector variant="mobile" onchange={updateHskVariantPreference} />
-				</section>
-				<section class="mobile-settings__section" aria-labelledby="tone-coloring-heading">
-					<h2 id="tone-coloring-heading">Tone Coloring</h2>
-					<ToneColoringSettings
-						variant="mobile"
-						oncharacterschange={updateColorCharactersByTonePreference}
-						onpinyinchange={updateColorPinyinByTonePreference}
-						onlistschange={updateColorListsByTonePreference}
-					/>
-				</section>
-				<section
-					class="mobile-settings__section"
-					aria-labelledby="dictionary-metadata-heading"
-				>
-					<h2 id="dictionary-metadata-heading">Dictionary Metadata</h2>
-					<DictionaryMetadataSettings
-						variant="mobile"
-						onqualifierschange={updateShowQualifiersPreference}
-						onpartsofspeechchange={updateShowPartsOfSpeechPreference}
-						onalternativepronunciationschange={updateShowAlternativePronunciationsPreference}
-					/>
-				</section>
-				<section class="mobile-settings__section" aria-labelledby="tone-colors-heading">
-					<h2 id="tone-colors-heading">Tone Colors</h2>
-					<ToneColorPicker variant="mobile" onchange={updateToneColorsPreference} />
-				</section>
-				{#if hasSavedRecoveryReport}
-					<section
-						class="mobile-settings__section"
-						aria-labelledby="bookmark-recovery-heading"
-					>
-						<h2 id="bookmark-recovery-heading">Bookmark Recovery</h2>
-						<BookmarkRecoverySettings />
-					</section>
-				{/if}
-				{#if showDevPreferences}
-					<section class="mobile-settings__section" aria-labelledby="migration-heading">
-						<h2 id="migration-heading">Database Migration</h2>
-						<DatabaseMigrationPreview />
-					</section>
-					<section
-						class="mobile-settings__section"
-						aria-labelledby="replay-onboarding-heading"
-					>
-						<h2 id="replay-onboarding-heading">Replay onboarding</h2>
-						<p>Show first-run setup again. Your words and documents are kept.</p>
-						<SyButton
-							style="filled"
-							onclick={() => privacySettingsStore.requestOnboardingReplay()}
-						>
-							Show again
-						</SyButton>
-					</section>
-				{/if}
-			{:else if activeTab === 'telemetry'}
-				{#if privacySettingsStore.childPrivacyMode}
-					<AgeStatusSettings variant="mobile" />
-				{:else}
-					<TelemetrySettings variant="mobile" />
-				{/if}
-			{:else}
-				<Acknowledgements />
-			{/if}
+	{#if destination.get('from') === 'whats-new'}
+		<div class="settings-return">
+			<SyButton style="ghost" size="large" onclick={whatsNewStore.back}
+				>Back to What’s New</SyButton
+			>
 		</div>
-	</div>
+	{/if}
+
+	{#key activeTab}
+		<div
+			class="mobile-settings__content"
+			bind:this={scrollContainer}
+			use:settingsScroll={{
+				layout: 'mobile',
+				tab: activeTab,
+				ready: activeTab !== 'general' || generalReady,
+				destination: destination.has('section') || destination.has('setting'),
+			}}
+		>
+			<div
+				role="tabpanel"
+				id="mobile-settings-panel"
+				aria-labelledby={`mobile-settings-${activeTab}-tab`}
+				tabindex="0"
+				class="mobile-settings__panel"
+			>
+				{#if activeTab === 'general'}
+					<GeneralSettings
+						variant="mobile"
+						{scrollContainer}
+						onready={() => {
+							generalReady = true;
+						}}
+					/>
+				{:else if activeTab === 'telemetry'}
+					{#if privacySettingsStore.childPrivacyMode}
+						<AgeStatusSettings variant="mobile" />
+					{:else}
+						<TelemetrySettings variant="mobile" />
+					{/if}
+				{:else}
+					<Acknowledgements />
+				{/if}
+			</div>
+		</div>
+	{/key}
 </div>
 
 <style>
+	.settings-return {
+		padding: var(--sy-space--large);
+		flex-shrink: 0;
+	}
 	.mobile-settings {
 		display: flex;
 		flex-direction: column;
@@ -237,32 +157,8 @@
 		gap: calc(var(--sy-mobile-space--medium) * 3);
 	}
 
-	.mobile-settings__section {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-mobile-space--medium);
-	}
 	.mobile-settings__panel {
-		display: flex;
-		flex-direction: column;
-		gap: calc(var(--sy-mobile-space--medium) * 3);
-	}
-	.mobile-settings__section--toggle {
-		flex-direction: row;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-	}
-
-	.mobile-settings__section h2 {
-		margin: 0;
-		font-size: var(--sy-font-size--mobile-large);
-		font-weight: var(--sy-font-weight--bold);
-	}
-
-	.mobile-settings__section p {
-		margin: 0;
-		font-size: var(--sy-font-size--small);
-		line-height: var(--sy-line-height--body);
+		flex-shrink: 0;
+		min-width: 0;
 	}
 </style>

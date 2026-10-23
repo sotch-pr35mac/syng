@@ -14,6 +14,7 @@ const ROUTE_TITLES: Record<string, string> = {
 	'/study/flashcards': 'Flashcards',
 	'/tools': 'Tools',
 	'/settings': 'Settings',
+	'/whats-new': 'What’s New',
 	'/help': 'Help',
 	'/characters': 'Character stroke order',
 };

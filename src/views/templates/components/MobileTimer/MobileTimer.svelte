@@ -6,6 +6,7 @@
 		duration?: number;
 		size?: number;
 		autoStart?: boolean;
+		suspended?: boolean;
 		progressColor?: string;
 		oncomplete?: () => void;
 	}
@@ -14,6 +15,7 @@
 		duration = 10,
 		size = 44,
 		autoStart = false,
+		suspended = false,
 		progressColor = 'var(--sy-text--blue)',
 		oncomplete = () => {},
 	}: Props = $props();
@@ -31,6 +33,15 @@
 	let startTime = 0;
 	let pausedTime = 0;
 	let completed = false;
+	let suspensionStarted: number | undefined;
+	$effect(() => {
+		if (suspended) {
+			suspensionStarted = Date.now();
+		} else if (suspensionStarted !== undefined) {
+			startTime += Date.now() - suspensionStarted;
+			suspensionStarted = undefined;
+		}
+	});
 
 	const dashOffset = $derived(CIRCUMFERENCE * (1 - progress));
 	const label = $derived(isPaused ? 'Resume timer' : 'Pause timer');
@@ -40,7 +51,7 @@
 			return;
 		}
 		isPaused = true;
-		pausedTime = Date.now() - startTime;
+		pausedTime = (suspensionStarted ?? Date.now()) - startTime;
 		stopTimer();
 	}
 
@@ -49,7 +60,7 @@
 			return;
 		}
 		isPaused = false;
-		startTime = Date.now() - pausedTime;
+		startTime = (suspensionStarted ?? Date.now()) - pausedTime;
 		startTimer();
 	}
 
@@ -63,6 +74,9 @@
 	function startTimer(): void {
 		stopTimer();
 		intervalId = setInterval(() => {
+			if (suspended) {
+				return;
+			}
 			const elapsed = Date.now() - startTime;
 			progress = Math.min(elapsed / (duration * MS_PER_SECOND), 1);
 

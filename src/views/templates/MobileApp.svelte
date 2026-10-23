@@ -1,4 +1,9 @@
 <script lang="ts">
+	import WhatsNewGate from '@/components/WhatsNew/WhatsNewGate.svelte';
+	import WhatsNew from '@/routes/WhatsNew.svelte';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+	import WalkthroughGate from '@/components/Walkthrough/WalkthroughGate.svelte';
+
 	import { onMount } from 'svelte';
 	import Router, { router } from 'svelte-spa-router';
 	import { routeAccessibility } from '@/actions/routeAccessibility.js';
@@ -23,10 +28,12 @@
 
 	let keyboardInset = $state(0);
 	let onboardingReady = $state(false);
+	let startupReady = $state(false);
 	let startupFailed = $state(false);
 	let startupError = $state<unknown>(undefined);
 
 	const routes = {
+		'/whats-new': WhatsNew,
 		'/': MobileSearch,
 		'/read': lazyRoute(() => import('@/routes/mobile/Reader/MobileReader.svelte')),
 		'/read/document/:id': lazyRoute(
@@ -53,6 +60,7 @@
 		'/study/quiz': 'quiz',
 		'/tools': 'tools',
 		'/settings': 'settings',
+		'/whats-new': 'whats_new',
 		'/characters': 'characters',
 	};
 
@@ -92,10 +100,15 @@
 				startupFailed = true;
 			});
 
-		waitForStartupComplete().catch((error) => {
-			startupError = error;
-			startupFailed = true;
-		});
+		waitForStartupComplete()
+			.then(() => {
+				startupReady = true;
+				return undefined;
+			})
+			.catch((error) => {
+				startupError = error;
+				startupFailed = true;
+			});
 
 		// Diagnostics for the resume-time database failure; correlates DB errors with
 		// recent foreground/background transitions. No behavior change.
@@ -160,15 +173,17 @@
 	</div>
 {:else}
 	<div class="mobile-app" style="bottom: {keyboardInset}px">
-		<a
-			class="sy-skip-link"
-			href="#sy-main-content"
-			onclick={(event) => {
-				event.preventDefault();
-				document.getElementById('sy-main-content')?.focus();
-			}}>Skip to content</a
-		>
-		<MobileNavigation />
+		{#if router.location !== '/whats-new' && !whatsNewStore.navigating}
+			<a
+				class="sy-skip-link"
+				href="#sy-main-content"
+				onclick={(event) => {
+					event.preventDefault();
+					document.getElementById('sy-main-content')?.focus();
+				}}>Skip to content</a
+			>
+			<MobileNavigation />
+		{/if}
 		<main
 			id="sy-main-content"
 			use:routeAccessibility={router.location}
@@ -176,7 +191,9 @@
 			tabindex="-1"
 			aria-label="Main content"
 		>
-			<Router {routes} />
+			<WhatsNewGate ready={startupReady} blocked={bookmarkRecoveryStore.active}>
+				<Router {routes} />
+			</WhatsNewGate>
 		</main>
 	</div>
 	{#if bookmarkRecoveryStore.active}
@@ -187,6 +204,16 @@
 		{/await}
 	{/if}
 {/if}
+
+<WalkthroughGate
+	{startupReady}
+	ready={onboardingReady && privacySettingsStore.hasCompletedOnboarding}
+	blocked={databaseMigrationStore.active ||
+		startupFailed ||
+		bookmarkRecoveryStore.active ||
+		whatsNewStore.navigating ||
+		router.location === '/whats-new'}
+/>
 
 <style>
 	.mobile-app {

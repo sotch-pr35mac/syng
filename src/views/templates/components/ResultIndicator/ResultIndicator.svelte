@@ -27,6 +27,7 @@
 	 * @property {any} [timer] - Timer component reference for external control (bindable)
 	 * @property {'x' | 'y'} [slideAxis] - Axis used for the slide transition
 	 * @property {boolean} [timerVisible] - Render the built-in result countdown timer
+	 * @property {boolean} [suspended] - Suspend the result countdown for instructions
 	 */
 
 	/* eslint-disable prefer-const -- timer uses $bindable() which requires let for the entire destructuring */
@@ -39,8 +40,29 @@
 		timer = $bindable(),
 		slideAxis = 'x',
 		timerVisible = true,
+		suspended = false,
 	} = $props();
 	/* eslint-enable prefer-const */
+
+	/**
+	 * @param {HTMLElement} node
+	 * @param {import('svelte/transition').SlideParams} parameters
+	 */
+	function slideFeedback(node, parameters) {
+		const transition = slide(node, parameters);
+		if (parameters.axis !== 'x') {
+			return transition;
+		}
+
+		// Keep the text layout steady while the outer box clips it. The width
+		// returns to auto after the transition so long answers can still reflow.
+		const contentWidth = getComputedStyle(node).width;
+		return {
+			...transition,
+			css: (progress, inverse) =>
+				`${transition.css(progress, inverse)}; --quiz-feedback-content-width: ${contentWidth};`,
+		};
+	}
 </script>
 
 {#if show}
@@ -48,8 +70,8 @@
 		<!-- Result badge with slide animation -->
 		<div
 			class="result-indicator"
-			in:slide|global={{ duration: 250, axis: slideAxis }}
-			out:slide|global={{ duration: 250, axis: slideAxis }}
+			in:slideFeedback|global={{ duration: 250, axis: slideAxis }}
+			out:slideFeedback|global={{ duration: 250, axis: slideAxis }}
 		>
 			<div class="indicator-content">
 				{#if isCorrect}
@@ -72,6 +94,7 @@
 			<div class="timer-wrapper" in:fade|global={{ duration: 250 }}>
 				<!-- eslint-disable @typescript-eslint/no-magic-numbers -->
 				<SyTimer
+					{suspended}
 					bind:this={timer}
 					duration={QUIZ_RESULT_DISPLAY_TIME}
 					size={32}
@@ -99,6 +122,7 @@
 	}
 	.indicator-content {
 		display: flex;
+		width: var(--quiz-feedback-content-width, auto);
 		align-items: center;
 		gap: var(--sy-space);
 		flex-wrap: wrap;

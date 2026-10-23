@@ -1,9 +1,11 @@
-import { beforeEach, expect, vi } from 'vitest';
-import { fireEvent, render, waitFor } from '@testing-library/svelte';
+import { afterEach, beforeEach, expect, vi } from 'vitest';
+import { fireEvent, render, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
-import { settingsActiveTabStore } from '@/stores/settings.svelte.js';
+import { settingsActiveTabStore, settingsScrollStore } from '@/stores/settings.svelte.js';
 import { contrastStore } from '@/stores/contrast.svelte.js';
+import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+import * as settings from '@/composables/settings.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
@@ -45,6 +47,7 @@ beforeEach(async () => {
 		);
 	bookmarkRecoveryStore.resetForTest();
 	settingsActiveTabStore.set('general');
+	settingsScrollStore.resetForTest();
 	databaseMigrationStore.resetForTest();
 	preferenceManager = {
 		waitForInit: vi.fn(() => Promise.resolve()),
@@ -85,8 +88,8 @@ it('shows Increase Contrast in General only and keeps its state across mobile ta
 	await user.click(getByRole('tab', { name: 'General' }));
 	const contrast = getByRole('checkbox', { name: 'Increase Contrast' });
 	expect(contrast.closest('[role="tabpanel"]')).toBe(getByRole('tabpanel', { name: 'General' }));
-	expect(getByRole('region', { name: 'Increase Contrast' }).contains(contrast)).toBe(true);
-	expect(getByRole('region', { name: 'Increase Contrast' }).querySelector('p')).toBeNull();
+	expect(getByRole('group', { name: 'Increase Contrast' }).contains(contrast)).toBe(true);
+	expect(getByRole('group', { name: 'Increase Contrast' }).querySelector('p')).toBeNull();
 	await user.click(contrast);
 	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
 	expect(contrast.checked).toBe(true);
@@ -135,7 +138,7 @@ it('renders the mobile general settings without desktop-only options', () => {
 	const { getByRole, queryByRole, queryByText } = render(MobileSettings);
 
 	expect(queryByRole('heading', { name: 'Settings' })).toBeNull();
-	expect(getByRole('heading', { name: 'Characters' })).toBeTruthy();
+	expect(getByRole('heading', { name: 'Character set' })).toBeTruthy();
 	expect(getByRole('heading', { name: 'Tone Coloring' })).toBeTruthy();
 	expect(getByRole('heading', { name: 'Tone Colors' })).toBeTruthy();
 	expect(queryByText('Updates')).toBeNull();
@@ -256,4 +259,126 @@ it('shows age status on the telemetry tab while child privacy mode is on', async
 	).toBeTruthy();
 	expect(queryByLabelText('Enable Telemetry')).toBeNull();
 	expect(queryByText('Recent Telemetry Events')).toBeNull();
+});
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
+it('resets feature tours and invitations from developer settings', async () => {
+	for (const identifier of ['dictionary', 'reader-library', 'reader-document', 'flashcards']) {
+		walkthroughStore.preferences.guides[identifier] = {
+			status: 'completed',
+			completed: true,
+			context: {},
+		};
+	}
+	walkthroughStore.preferences.guides.quiz = { status: 'skipped', context: {} };
+	walkthroughStore.preferences.featureInvitations = { flashcards: true, quiz: true };
+	const user = userEvent.setup();
+	const view = render(MobileSettings);
+	await user.click(view.getByRole('button', { name: 'Reset feature tours' }));
+	expect(
+		await view.findByText(
+			'Reset. Empty-state help links and first-use tour invitations are available again.'
+		)
+	).toBeTruthy();
+	for (const identifier of [
+		'dictionary',
+		'reader-library',
+		'reader-document',
+		'flashcards',
+		'quiz',
+	]) {
+		expect(walkthroughStore.preferences.guides[identifier]).toBeUndefined();
+	}
+	expect(preferenceManager.set).toHaveBeenCalledWith(
+		'walkthrough',
+		expect.objectContaining({
+			featureInvitations: {},
+		})
+	);
+});
+
+it('hides feature-tour reset in release builds', async () => {
+	vi.spyOn(settings, 'isDevBuild').mockReturnValue(false);
+	vi.spyOn(settings, 'resolveIsDevBuild').mockResolvedValue(false);
+	const view = render(MobileSettings);
+	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
+	expect(view.queryByRole('button', { name: 'Reset feature tours' })).toBeNull();
+});
+
+it('groups settings by purpose with Help first and developer tools last', async () => {
+	const view = render(MobileSettings);
+	const general = view.getByRole('tabpanel', { name: 'General' });
+	expect(
+		within(general)
+			.getAllByRole('heading', { level: 2 })
+			.map((heading) => heading.textContent)
+	).toEqual(['Help & Maintenance', 'Chinese & Dictionary', 'Appearance', 'Developer']);
+	expect(
+		within(view.getByRole('region', { name: 'Help & Maintenance' })).getByRole('group', {
+			name: 'Walkthrough',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Chinese & Dictionary' })).getByRole('heading', {
+			name: 'Dictionary details',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Appearance' })).getByRole('checkbox', {
+			name: 'Increase Contrast',
+		})
+	).toBeTruthy();
+	expect(
+		within(view.getByRole('region', { name: 'Developer' })).getByRole('button', {
+			name: 'Reset feature tours',
+		})
+	).toBeTruthy();
+	const hsk = general.querySelector('fieldset.hsk-variant-selector');
+	expect(
+		document
+			.getElementById(hsk.getAttribute('aria-describedby'))
+			.textContent.replace(/\s+/g, ' ')
+	).toContain('level labels shown on dictionary entries');
+});
+
+it('remembers General scroll across tab switches and route remounts', async () => {
+	const user = userEvent.setup();
+	vi.mocked(invoke).mockImplementation(async (command) =>
+		command === 'get_acknowledgements'
+			? []
+			: command === 'read_bookmark_recovery_report'
+				? null
+				: false
+	);
+	const view = render(MobileSettings);
+	await waitFor(() => expect(view.getByRole('heading', { name: 'Developer' })).toBeTruthy());
+	const scroller = view.container.querySelector('.mobile-settings__content');
+	scroller.scrollTop = 420;
+	await fireEvent.scroll(scroller);
+	await user.click(view.getByRole('tab', { name: 'Acknowledgements' }));
+	expect(view.container.querySelector('.mobile-settings__content').scrollTop).toBe(0);
+	await user.click(view.getByRole('tab', { name: 'General' }));
+	await waitFor(() =>
+		expect(view.container.querySelector('.mobile-settings__content').scrollTop).toBe(420)
+	);
+	view.unmount();
+	const reopened = render(MobileSettings);
+	await waitFor(() =>
+		expect(reopened.container.querySelector('.mobile-settings__content').scrollTop).toBe(420)
+	);
+});
+
+it('omits the entire Developer group and navigation choice in release builds', async () => {
+	vi.spyOn(settings, 'isDevBuild').mockReturnValue(false);
+	vi.spyOn(settings, 'resolveIsDevBuild').mockResolvedValue(false);
+	const user = userEvent.setup();
+	const view = render(MobileSettings);
+	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
+	expect(view.queryByRole('region', { name: 'Developer' })).toBeNull();
+	expect(view.queryByRole('button', { name: 'Developer' })).toBeNull();
+	await user.click(view.getByRole('button', { name: 'Jump to section' }));
+	expect(view.queryByRole('menuitemradio', { name: 'Developer' })).toBeNull();
 });

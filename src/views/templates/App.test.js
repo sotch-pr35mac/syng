@@ -5,6 +5,7 @@ import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { getResumeContext } from '@/utils/appLifecycle.js';
 import { waitForStartupComplete } from '@/utils/startup.js';
+import { push } from 'svelte-spa-router';
 
 vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
 
@@ -82,6 +83,9 @@ vi.mock('@/components/Navigation/Navigation.svelte', async () => ({
 vi.mock('@/routes/Search.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
+vi.mock('@/routes/WhatsNew.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
+}));
 vi.mock('@/routes/Bookmarks.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
@@ -152,6 +156,16 @@ it('shows the app chrome after onboarding is completed', async () => {
 
 	await waitFor(() => expect(container.querySelector('.app-container')).toBeTruthy());
 	expect(queryByText('Welcome to Syng')).toBeNull();
+});
+
+it('removes desktop navigation for release notes and restores it on leaving', async () => {
+	const { container } = render(App);
+	await waitFor(() => expect(container.querySelector('.navigation-container')).toBeTruthy());
+	await push('/whats-new');
+	await waitFor(() => expect(container.querySelector('.navigation-container')).toBeNull());
+	expect(container.querySelector('.sy-skip-link')).toBeNull();
+	await push('/read');
+	await waitFor(() => expect(container.querySelector('.navigation-container')).toBeTruthy());
 });
 
 it('shows onboarding when replay is requested for an existing install', async () => {

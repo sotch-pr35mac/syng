@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
+	import { onMount, untrack } from 'svelte';
+	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { Search } from 'lucide-svelte';
@@ -14,15 +19,24 @@
 	const studyLists = createStudyListState();
 	const populatedLists = $derived(studyLists.lists);
 	onMount(() => {
-		if (studySubRouteStore.value === 'flashcards' && flashcardsActiveListStore.value) {
+		if (
+			!walkthroughStore.isOverview('/study') &&
+			studySubRouteStore.value === 'flashcards' &&
+			flashcardsActiveListStore.value
+		) {
 			window.location.hash = studyHref(
 				'flashcards',
 				flashcardsActiveListStore.value,
 				studyOriginStore.value
 			);
-			return undefined;
 		}
-		void studyLists.load();
+	});
+	$effect(() => {
+		// Track membership changes, not the loader’s own reactive status.
+		void bookmarksStore.contentRevision;
+		untrack(() => {
+			void studyLists.load();
+		});
 		return studyLists.cancel;
 	});
 	function handleSelection(event: { action: StudyAction; list: string }): void {
@@ -33,6 +47,9 @@
 
 <div class="mobile-study">
 	<div
+		use:walkthroughTarget={walkthroughStore.guide === 'app' && !populatedLists.length
+			? undefined
+			: 'study-lists'}
 		class="mobile-study__content"
 		class:mobile-study__content--empty={studyLists.status === 'ready' && !populatedLists.length}
 	>
@@ -42,6 +59,9 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
+			<div class="mobile-study__help">
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
+			</div>
 			<div class="mobile-study__list">
 				{#each populatedLists as list (list.name)}
 					<StudyListItem value={list} variant="mobile" onselection={handleSelection} />
@@ -61,20 +81,28 @@
 					<Search size="20" />
 					<span>Search for words</span>
 				</SyButton>
+				<WalkthroughHelp guide="study" label="Learn how Study works" />
 			</div>
 		{/if}
 	</div>
 </div>
 
 <style>
+	.mobile-study__help {
+		text-align: center;
+	}
+
 	.mobile-study {
+		display: flex;
+		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
 		background-color: var(--sy-color--grey-2);
 	}
 
 	.mobile-study__content {
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		padding: var(--sy-mobile-space--large);

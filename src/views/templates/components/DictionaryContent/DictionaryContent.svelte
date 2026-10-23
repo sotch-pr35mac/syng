@@ -1,4 +1,7 @@
 <script>
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+
 	import { Check, Brush, Plus } from 'lucide-svelte';
 	import { handleError, telemetry } from '@/utils';
 	import { isMobile } from '@/utils/device.js';
@@ -48,6 +51,7 @@
 	 * @property {boolean} [showEmptyState] - Show Awa in an unselected page detail pane
 	 * @property {'search' | 'collect' | 'dictionary'} [emptyStatePose] - Match Awa to the page's empty state
 	 * @property {string} [emptyStateMessage] - Optional guidance below Awa
+	 * @property {import('svelte').Snippet} [emptyStateActions] - Optional actions below the empty-state guidance
 	 * @property {boolean} [separateTraditionalCharacters] - Display traditional characters on a separate line
 	 * @property {(detail: any) => void} [onlink] - Callback when link is clicked
 	 * @property {(event: import('@/types/bookmarks.js').BookmarkListMembershipEvent) => void} [onmembershipchange] - Callback after list membership changes
@@ -62,6 +66,7 @@
 		showEmptyState = false,
 		emptyStatePose = 'dictionary',
 		emptyStateMessage = '',
+		emptyStateActions,
 		separateTraditionalCharacters,
 		onlink,
 		onmembershipchange,
@@ -225,6 +230,7 @@
 			component: Brush,
 			tooltip: 'Write Characters',
 			action: () => {
+				walkthroughStore.suspend();
 				const characterSet = dictionaryDisplaySettingsStore.settings.characterSet;
 				const initialScript =
 					characterSet === CHARACTER_SETS.BOTH ? undefined : characterSet;
@@ -334,7 +340,11 @@
 			: [];
 </script>
 
-<div class={getContainerClasses()} bind:this={dictionaryContentElement}>
+<div
+	use:walkthroughTarget={word ? 'dictionary-entry' : undefined}
+	class={getContainerClasses()}
+	bind:this={dictionaryContentElement}
+>
 	<p class="sy-sr-only" role="status" aria-atomic="true">{membershipStatus}</p>
 	{#if word}
 		<section class="dictionary-content dictionary-content--header">
@@ -352,6 +362,7 @@
 								{#snippet children(_open, triggerProps)}
 									<SyButton
 										{...triggerProps}
+										guideTarget="dictionary-save"
 										grouped={true}
 										classes={['sy-tooltip--container', ...action.classes]}
 										aria-label="Choose bookmark lists"
@@ -367,6 +378,9 @@
 							</SyDropdown>
 						{:else}
 							<SyButton
+								guideTarget={index === 0
+									? 'dictionary-save'
+									: 'dictionary-characters'}
 								grouped={true}
 								classes={['sy-tooltip--container', ...(action.classes ?? [])]}
 								onclick={action.action}
@@ -434,6 +448,8 @@
 			<section class="dictionary-content">
 				<h2 id={notesLabelId} class="dictionary-content--section-title">Notes</h2>
 				<textarea
+					use:walkthroughTarget={'dictionary-notes'}
+					aria-label="Word notes"
 					use:cursorToEnd
 					placeholder="No Notes"
 					class="dictionary-content--notes {isMobile()
@@ -454,6 +470,7 @@
 			{#if emptyStateMessage}
 				<p>{emptyStateMessage}</p>
 			{/if}
+			{@render emptyStateActions?.()}
 		</div>
 	{/if}
 </div>

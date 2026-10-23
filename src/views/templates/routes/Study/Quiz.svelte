@@ -1,6 +1,11 @@
 <script>
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
+
 	import { ChevronLeft, ArrowRight, SquareStack, RotateCw } from 'lucide-svelte';
-	import { onMount } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -19,8 +24,8 @@
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	let timerRef = $state(); // Reference to the timer component
-	const params = new URLSearchParams(router.querystring);
-	const activeList = params.get('list');
+	const activeList = $derived(new URLSearchParams(router.querystring).get('list'));
+	const originFromUrl = $derived(new URLSearchParams(router.querystring).get('from'));
 
 	// Reset scroll to top when the question or the question/answer view changes, so a
 	// scrolled-down previous word doesn't leave the next word/answer out of view.
@@ -34,15 +39,19 @@
 	});
 
 	const handleRetakeQuiz = () => {
+		walkthroughStore.suspend();
 		quizRoute.retake();
 	};
 	const handleStudyFlashcards = () => {
 		quizRoute.studyFlashcards();
 	};
 	const handleQuestionTimerComplete = () => {
-		answerQuestion('N/A');
+		if (!walkthroughStore.quizSuspended) {
+			answerQuestion('N/A');
+		}
 	};
 	const answerQuestion = (answer) => {
+		walkthroughStore.suspend();
 		quizRoute.answerQuestion(answer);
 	};
 	const leftActions = [
@@ -79,6 +88,7 @@
 					label: quizRoute.continueLabel,
 					disabled: false,
 					action: () => {
+						walkthroughStore.suspend();
 						quizRoute.continue();
 					},
 				},
@@ -89,12 +99,31 @@
 		}
 	});
 
-	onMount(() => {
-		quizRoute.start(activeList, params.get('from'));
-		return quizRoute.endSession;
+	$effect(() => {
+		quizRoute.setInstructionPaused(walkthroughStore.quizSuspended);
+	});
+
+	$effect(() => {
+		if (router.location !== '/study/quiz') {
+			return;
+		}
+		const selectedList = activeList;
+		// Only list changes start a session; guide and question updates must preserve it.
+		untrack(() => {
+			quizRoute.setInstructionPaused(walkthroughStore.quizSuspended);
+			quizRoute.start(selectedList, originFromUrl);
+		});
+	});
+
+	onDestroy(() => {
+		quizRoute.setInstructionPaused(false);
+		quizRoute.endSession();
 	});
 
 	const handleResultTimerComplete = () => {
+		if (walkthroughStore.quizSuspended) {
+			return;
+		}
 		quizRoute.showResult = false;
 		if (quizRoute.showAnswer) {
 			// Move to next question
@@ -118,6 +147,18 @@
 	}
 </script>
 
+<WalkthroughFeatureInvitation
+	guide="quiz"
+	context={{ listName: activeList ?? undefined }}
+	ready={router.location === '/study/quiz' &&
+		!quizRoute.loading &&
+		!quizRoute.error &&
+		quizRoute.activeList === activeList &&
+		Boolean(quizRoute.currentQuestion) &&
+		!quizRoute.showAnswer &&
+		!quizRoute.showFinalResults}
+/>
+
 <div
 	class="quiz--container"
 	use:responsiveLayout={{ thresholdRem: 36, className: 'quiz--compact' }}
@@ -140,6 +181,7 @@
 		<div class="quiz--header--section">
 			{#each leftActions as action (action.label)}
 				<SyButton
+					guideTarget="study-exit"
 					disabled={action.disabled}
 					onclick={action.action}
 					style="ghost"
@@ -151,10 +193,16 @@
 				</SyButton>
 			{/each}
 		</div>
-		<div class="quiz--header--section">
+		<div
+			use:walkthroughTarget={quizRoute.showFinalResults
+				? 'quiz-results-actions'
+				: 'quiz-continue'}
+			class="quiz--header--section"
+		>
 			{#if !quizRoute.showFinalResults}
 				{#if quizRoute.showResult}
 					<ResultIndicator
+						suspended={walkthroughStore.quizSuspended}
 						show={quizRoute.showResult}
 						isCorrect={quizRoute.lastAnswerCorrect}
 						chosenAnswer={quizRoute.chosenAnswer}
@@ -162,14 +210,15 @@
 						bind:timer={timerRef}
 					/>
 				{:else if quizRoute.showQuestionTimer}
-					<div class="question-timer--container">
+					<div use:walkthroughTarget={'quiz-timer'} class="question-timer--container">
 						<!-- eslint-disable @typescript-eslint/no-magic-numbers -->
 						<SyTimer
+							suspended={walkthroughStore.quizSuspended}
 							duration={quizRoute.questionDuration}
 							autoStart={true}
 							size={32}
 							oncomplete={handleQuestionTimerComplete}
-							progressColor="var(--sy-color--red)"
+							progressColor="var(--sy-fill--red)"
 						/>
 						<!-- eslint-enable no-magic-numbers -->
 					</div>
@@ -210,7 +259,7 @@
 		{:else}
 			<!-- Quiz Questions/Answers -->
 			{#if quizRoute.showAnswer}
-				<div class="quiz--answer">
+				<div use:walkthroughTarget={'quiz-answer'} class="quiz--answer">
 					<DictionaryContent
 						word={quizRoute.answer}
 						backgroundColor="white"
@@ -222,7 +271,7 @@
 				<div class="quiz--questions">
 					{#if quizRoute.question !== undefined}
 						{@const currentQuestion = quizRoute.question.question.MultipleChoice}
-						<span class="quiz--question">
+						<span use:walkthroughTarget={'quiz-question'} class="quiz--question">
 							<QuizDisplayText
 								text={currentQuestion.question}
 								characters={currentQuestion.kind === CHARACTER_QUESTIONS
@@ -232,7 +281,7 @@
 								lexicalTestIdPrefix="quiz-question"
 							/>
 						</span>
-						<div class="quiz--options">
+						<div use:walkthroughTarget={'quiz-options'} class="quiz--options">
 							{#each currentQuestion.options as option (option.value)}
 								<button
 									type="button"
@@ -260,15 +309,24 @@
 							{#if quizRoute.error}<SyButton onclick={quizRoute.retake}
 									>Try again</SyButton
 								>{/if}
+							{#if !quizRoute.loading && !quizRoute.error}
+								<WalkthroughHelp
+									guide="quiz"
+									label="Learn how quizzes work"
+									context={{ listName: activeList ?? undefined }}
+								/>
+							{/if}
 						</div>
 					{/if}
 				</div>
 			{/if}
-			<SyProgressLine
-				completed={quizRoute.questionsCompleted}
-				total={quizRoute.questionsTotal}
-				endColor="var(--sy-color--green-3)"
-			/>
+			<div use:walkthroughTarget={'quiz-progress'}>
+				<SyProgressLine
+					completed={quizRoute.questionsCompleted}
+					total={quizRoute.questionsTotal}
+					endColor="var(--sy-color--green-3)"
+				/>
+			</div>
 		{/if}
 	</div>
 </div>

@@ -14,6 +14,9 @@ import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'macos' }));
 vi.mock('svelte-spa-router', () => ({
 	router: {
+		get location() {
+			return window.location.hash.slice(1).split('?')[0];
+		},
 		get querystring() {
 			return window.location.hash.split('?')[1] ?? '';
 		},

@@ -10,6 +10,7 @@ import { handleError } from '@/utils/error.js';
 import { DEFAULT_READER_SETTINGS } from '@/utils/readerSettings.js';
 import { CHARACTER_SETS, HSK_VARIANTS } from '@/types/dictionaryDisplay.js';
 import { THEME_TONE_COLOR_TOKENS } from '@/utils/tones.js';
+import { createWalkthroughPreferences } from '@/types/walkthrough.js';
 
 const POUCH_CONFLICT_STATUS = 409;
 
@@ -49,6 +50,7 @@ const createDefaultPreferences = () => ({
 	childPrivacyMode: createPreference(false, false),
 	completedOnboardingVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
+	walkthrough: createPreference(false, createWalkthroughPreferences(true)),
 });
 
 const backfillPreferences = (configuration) => {
@@ -58,7 +60,11 @@ const backfillPreferences = (configuration) => {
 			continue;
 		}
 		if (!configuration[key]) {
-			configuration[key] = preference;
+			// Existing profiles must not receive the fresh-install app-tour invitation.
+			configuration[key] =
+				key === 'walkthrough'
+					? createPreference(false, createWalkthroughPreferences())
+					: preference;
 		}
 	}
 	return configuration;
@@ -182,10 +188,9 @@ export class PreferenceManager {
 			this._config._rev = response.rev;
 			return;
 		}
-		handleError(
-			'Cannot save preferences. An unknown error occurred. Check the log for more details.',
-			response
-		);
+		throw new Error('Cannot save preferences. The database did not confirm the write.', {
+			cause: response,
+		});
 	}
 
 	async _persistConfig() {
@@ -199,6 +204,7 @@ export class PreferenceManager {
 				);
 				return;
 			}
+			// Refresh a competing writer's revision and retry once; report any retry failure.
 			try {
 				const latest = await this._db.get('config');
 				this._config._rev = latest._rev;

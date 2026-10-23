@@ -11,7 +11,7 @@ import {
 } from '@/types/search.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
-import { lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
+import { lexicalExamples, lexicalGlosses, lexicalPinyin } from '@/types/dictionary.js';
 import type { SyListPreviewValue } from '@/components/SyList/SyListPreview.types.js';
 import type { QueryTrigger, SearchQueryTelemetry } from '@/types/telemetry.js';
 import {
@@ -50,6 +50,7 @@ let displayedRequest: QueryRequest | undefined;
 let queryText = $state('');
 let isSearching = $state(false);
 let statusMessage = $state('');
+let walkthroughQueryRevision = $state(0);
 let popoverRequest = 0;
 const searchHistory = $state<SearchEntry[]>([]);
 let historyPosition = $state(-1);
@@ -195,6 +196,40 @@ function getResultPreviews(glossLimit?: number): SearchResultPreviewItem[] {
 
 function doSearch(text: string): void {
 	runSearch(text);
+}
+
+/** Prepare an illustration without counting an automated lookup as user activity. */
+async function prepareWalkthroughExample(isCurrent: () => boolean): Promise<void> {
+	if (activeWord || queryText) {
+		return;
+	}
+	const previousRequest = currentRequest;
+	const matches = await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
+		text: '学习',
+	});
+	if (!isCurrent() || currentRequest !== previousRequest || queryText || activeWord) {
+		return;
+	}
+	const withExamples = matches.findIndex(
+		(entry) => entry.simplified === '学习' && lexicalExamples(entry).length > 0
+	);
+	const selectedIndex =
+		withExamples >= 0
+			? withExamples
+			: matches.findIndex((entry) => entry.simplified === '学习');
+	if (selectedIndex < 0) {
+		throw new Error('The example word could not be loaded. Please try again.');
+	}
+	cancelPendingTelemetry();
+	currentRequest = undefined;
+	displayedRequest = undefined;
+	queryText = '学习';
+	searchLang = 'ZH';
+	fullResults = matches;
+	status = 'ready';
+	activeWord = matches[selectedIndex];
+	activeResultKey = searchResultKeys(matches)[selectedIndex];
+	walkthroughQueryRevision += 1;
 }
 
 /** Queries the dictionary using a specific language command, bypassing auto-classification. */
@@ -375,6 +410,9 @@ export const searchStore = {
 	get statusMessage(): string {
 		return statusMessage;
 	},
+	get walkthroughQueryRevision(): number {
+		return walkthroughQueryRevision;
+	},
 	get queryText(): string {
 		return queryText;
 	},
@@ -414,6 +452,7 @@ export const searchStore = {
 		return popoverAnchor;
 	},
 	doSearch,
+	prepareWalkthroughExample,
 	mount,
 	cancelPendingTelemetry,
 	submitSearch,

@@ -1,5 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { initializeInterviews } from '@/utils/interviews.js';
+import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+
+vi.mock('@/stores/whatsNew.svelte.js', () => ({
+	whatsNewStore: { initialize: vi.fn().mockResolvedValue(undefined) },
+}));
 
 vi.mock('@/utils/interviews.js', () => ({
 	initializeInterviews: vi.fn().mockResolvedValue(undefined),
@@ -34,6 +39,7 @@ vi.mock('@/stores/contrast.svelte.js', () => ({
 vi.mock('@/stores/privacySettings.svelte.js', () => ({
 	privacySettingsStore: {
 		hasCompletedOnboarding: true,
+		completedOnboardingVersion: 2,
 		childPrivacyMode: false,
 		loadSettings: vi.fn().mockResolvedValue(undefined),
 	},
@@ -115,6 +121,7 @@ beforeEach(() => {
 	vi.mocked(dictionaryDisplaySettingsStore.loadSettings).mockResolvedValue(undefined);
 	vi.mocked(privacySettingsStore.loadSettings).mockResolvedValue(undefined);
 	privacySettingsStore.hasCompletedOnboarding = true;
+	privacySettingsStore.completedOnboardingVersion = 2;
 	vi.mocked(telemetry.init).mockResolvedValue(undefined);
 	vi.mocked(telemetry.trackEvent).mockResolvedValue(undefined);
 	vi.mocked(invoke).mockResolvedValue(undefined);
@@ -292,4 +299,35 @@ it('retains the migration error and stops startup backup and init on failure', a
 	expect(setupShutdownHook).not.toHaveBeenCalled();
 	expect(exportMigrationData).not.toHaveBeenCalled();
 	expect(initialized).not.toHaveBeenCalled();
+	expect(whatsNewStore.initialize).not.toHaveBeenCalled();
+});
+
+it('captures first setup before onboarding can complete while the dictionary is loading', async () => {
+	let finishDictionary;
+	vi.mocked(invoke).mockReturnValue(
+		new Promise((resolve) => {
+			finishDictionary = resolve;
+		})
+	);
+	privacySettingsStore.hasCompletedOnboarding = false;
+	privacySettingsStore.completedOnboardingVersion = 0;
+	startupServices();
+	const startup = runStartupActions();
+	await waitForOnboardingReady();
+	privacySettingsStore.completedOnboardingVersion = 2;
+	finishDictionary();
+	await startup;
+	expect(whatsNewStore.initialize).toHaveBeenCalledWith(true, expect.any(String));
+});
+
+it('uses migrated onboarding history and distinguishes newly required setup', async () => {
+	privacySettingsStore.hasCompletedOnboarding = false;
+	privacySettingsStore.completedOnboardingVersion = 0;
+	vi.mocked(checkAndPerformMigration).mockImplementation(async () => {
+		privacySettingsStore.completedOnboardingVersion = 1;
+		return true;
+	});
+	startupServices();
+	await runStartupActions();
+	expect(whatsNewStore.initialize).toHaveBeenCalledWith(false, expect.any(String));
 });

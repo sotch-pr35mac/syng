@@ -1,4 +1,7 @@
 <script>
+	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
+	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
+
 	import {
 		ChevronDown,
 		ChevronUp,
@@ -156,7 +159,7 @@
 		});
 	};
 
-	const actions = $derived([
+	const studyActions = $derived([
 		{
 			icon: SquareStack,
 			action: () => {
@@ -181,6 +184,8 @@
 			exclude: [],
 			disabled: !studyEligibility.quiz,
 		},
+	]);
+	const listActions = $derived([
 		{
 			icon: FolderDown,
 			action: importList,
@@ -206,6 +211,29 @@
 	]);
 </script>
 
+{#snippet actionButtons(actions)}
+	{#each actions as action (action.tooltip)}
+		{#if !action.exclude.includes(activeList)}
+			<span class="bookmarks--header--action-item">
+				<SyButton
+					style="ghost"
+					aria-label={action.tooltip}
+					title={action.description || action.tooltip}
+					onclick={action.action}
+					disabled={action.disabled}
+					hover={action.hover}
+					classes={['sy-tooltip--container']}
+				>
+					<action.icon size="20" />
+					<span class="sy-tooltip--body sy-tooltip--body-bottom" aria-hidden="true">
+						{action.description || action.tooltip}
+					</span>
+				</SyButton>
+			</span>
+		{/if}
+	{/each}
+{/snippet}
+
 <div
 	class="bookmarks--container"
 	use:responsiveLayout={{ thresholdRem: 44, className: 'bookmarks--container--stacked' }}
@@ -219,6 +247,7 @@
 			{#snippet children(open, triggerProps)}
 				<SyButton
 					{...triggerProps}
+					guideTarget="bookmarks-lists"
 					size="large"
 					style="ghost"
 					center={true}
@@ -230,31 +259,20 @@
 			{/snippet}
 		</SyDropdown>
 		<div class="bookmarks--header--actions">
-			{#each actions as action (action.tooltip)}
-				{#if !action.exclude.includes(activeList)}
-					<span class="bookmarks--header--action-item">
-						<SyButton
-							style="ghost"
-							aria-label={action.tooltip}
-							title={action.description || action.tooltip}
-							onclick={action.action}
-							disabled={action.disabled}
-							hover={action.hover}
-							classes={['sy-tooltip--container']}
-						>
-							<action.icon size="20" />
-							<span
-								class="sy-tooltip--body sy-tooltip--body-bottom"
-								aria-hidden="true">{action.description || action.tooltip}</span
-							>
-						</SyButton>
-					</span>
-				{/if}
-			{/each}
+			{@render actionButtons(studyActions)}
+			<div
+				class="bookmarks--header--actions"
+				role="group"
+				aria-label="List Management"
+				use:walkthroughTarget={'bookmarks-management'}
+			>
+				{@render actionButtons(listActions)}
+			</div>
 		</div>
 	</div>
 	<div class="bookmarks--content">
 		<div
+			use:walkthroughTarget={'bookmarks-words'}
 			class="bookmarks--word-listing"
 			role="region"
 			aria-label="Saved words"
@@ -302,7 +320,11 @@
 				{lists}
 				onlink={handleDictionaryLink}
 				onmembershipchange={handleMembershipChange}
-			/>
+			>
+				{#snippet emptyStateActions()}
+					<WalkthroughHelp guide="bookmarks" label="Learn how Bookmarks works" />
+				{/snippet}
+			</DictionaryContent>
 		</div>
 	</div>
 	<SyModal title="Create List" visible={createNewModalVisible} onclose={closeNewModal}>

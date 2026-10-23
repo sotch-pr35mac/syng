@@ -45,6 +45,20 @@
 		box-sizing: border-box;
 		padding: var(--sy-space--large);
 	}
+	:global(.sy-button-bar--container > .sy-button) {
+		flex-shrink: 0;
+	}
+	:global(.sy-button-bar--container > .sy-dropdown--container) {
+		min-width: 0;
+	}
+	:global(.sy-button-bar--container > .sy-dropdown--container > .sy-dropdown--trigger) {
+		display: flex;
+	}
+	:global(
+		.sy-button-bar--container > .sy-dropdown--container > .sy-dropdown--trigger > .sy-button
+	) {
+		min-width: 0;
+	}
 	:global(.sy-button-bar--container .sy-button--grouped) {
 		margin: 0;
 	}

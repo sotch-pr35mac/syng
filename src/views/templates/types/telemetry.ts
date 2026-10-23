@@ -1,4 +1,55 @@
 import type { SearchLang } from '@/types/search.js';
+import type { WalkthroughId } from '@/types/walkthrough.js';
+
+export type WalkthroughSource = 'help' | 'settings' | 'invitation' | 'direct';
+export type WalkthroughEntry = WalkthroughSource | 'choice' | 'example' | 'retry' | 'resume';
+export type WalkthroughEvent =
+	| 'invitation_shown'
+	| 'invitation_accepted'
+	| 'invitation_dismissed'
+	| 'help_clicked'
+	| 'started'
+	| 'step_viewed'
+	| 'next'
+	| 'back'
+	| 'paused'
+	| 'resumed'
+	| 'skipped'
+	| 'completed'
+	| 'interrupted'
+	| 'chooser_viewed'
+	| 'content_selected'
+	| 'retried'
+	| 'failed'
+	| 'example_requested'
+	| 'example_added';
+
+/** Static guide/step identifiers only. Never include saved context, titles, or list/document IDs. */
+export interface WalkthroughTelemetry {
+	guide: WalkthroughId;
+	source: WalkthroughSource;
+	step?: string;
+	step_number?: number;
+	step_count?: number;
+	mode?: 'new' | 'replay' | 'restart';
+	reason?: 'navigation' | 'blocked' | 'unmount' | 'dismissed' | 'overlay' | 'replaced';
+	content_kind?: 'document' | 'list';
+	choice_count?: number;
+	fresh_copy?: boolean;
+	operation?: 'prepare' | 'example';
+	view?: 'instructions' | 'dictionary-popup';
+}
+
+export interface WhatsNewTelemetry {
+	from_version: string | null;
+	to_version: string;
+	source: 'update' | 'settings' | 'direct';
+	content_presented?: boolean;
+	section?: 'improvements' | 'cumulative' | 'earlier';
+	expanded?: boolean;
+	target_section?: string;
+	target_setting?: string;
+}
 
 export type WordOpeningSource = 'search' | 'bookmarks' | 'reader' | 'flashcards' | 'quiz';
 export type QueryTrigger = 'pause' | 'selection' | 'submit';
@@ -23,11 +74,21 @@ export interface WordOpeningTelemetry {
 }
 
 /** Payload contracts for the events whose measurements require shared context. */
-export interface TelemetryPayloads {
+export interface TelemetryPayloads
+	extends
+		Record<`walkthrough.${WalkthroughEvent}`, WalkthroughTelemetry>,
+		Record<
+			| 'whats_new.viewed'
+			| 'whats_new.continued'
+			| 'whats_new.disclosure_changed'
+			| 'whats_new.action',
+			WhatsNewTelemetry
+		> {
 	'search.query': SearchQueryTelemetry;
 	'dictionary.word_opened': WordOpeningTelemetry;
 	'reader.reading_activity': { next_count: number; previous_count: number };
-	'flashcards.started': { word_count: number };
+	'flashcards.started': { word_count: number; source: 'bookmarks' | 'study' };
+	'quiz.started': { word_count: number; source: 'bookmarks' | 'study' };
 	'flashcards.session_ended': { viewed_count: number; revealed_count: number };
 	'quiz.abandoned': { answered_count: number };
 	'tools.completed': { tool: string; mode: string; input_length: number };

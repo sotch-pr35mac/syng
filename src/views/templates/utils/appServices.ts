@@ -1,6 +1,7 @@
 import { BookmarkManager } from '@/utils/bookmarkManager.js';
 import { PreferenceManager } from '@/utils/preferenceManager.js';
 import { ReaderDocumentManager } from '@/utils/readerDocumentManager.js';
+import { createReleaseHistoryStorage } from '@/utils/whatsNew.js';
 
 type PreferenceManagerInstance = InstanceType<typeof PreferenceManager>;
 type BookmarkManagerInstance = InstanceType<typeof BookmarkManager>;
@@ -9,6 +10,8 @@ type ReaderDocumentManagerInstance = InstanceType<typeof ReaderDocumentManager>;
 let preferenceManager: PreferenceManagerInstance | null = null;
 let bookmarkManager: BookmarkManagerInstance | null = null;
 let readerDocumentManager: ReaderDocumentManagerInstance | null = null;
+type ReleaseHistoryStorage = ReturnType<typeof createReleaseHistoryStorage>;
+let releaseHistoryStorage: ReleaseHistoryStorage | null = null;
 
 const requireService = <T>(service: T | null, name: string): T => {
 	if (!service) {
@@ -30,6 +33,7 @@ export const createAppServices = (
 	preferenceManager = new PreferenceManager(configDb);
 	bookmarkManager = new BookmarkManager(listDb, bookmarkDb);
 	readerDocumentManager = new ReaderDocumentManager(readerDocumentDb);
+	releaseHistoryStorage = createReleaseHistoryStorage(configDb);
 
 	return {
 		preferenceManager,
@@ -47,6 +51,9 @@ export const getBookmarkManager = (): BookmarkManagerInstance =>
 export const getReaderDocumentManager = (): ReaderDocumentManagerInstance =>
 	requireService(readerDocumentManager, 'ReaderDocumentManager');
 
+export const getReleaseHistoryStorage = (): ReleaseHistoryStorage =>
+	requireService(releaseHistoryStorage, 'ReleaseHistoryStorage');
+
 export const setPreferenceManagerForTest = (manager: PreferenceManagerInstance): void => {
 	preferenceManager = manager;
 };
@@ -59,8 +66,13 @@ export const setReaderDocumentManagerForTest = (manager: ReaderDocumentManagerIn
 	readerDocumentManager = manager;
 };
 
+export const setReleaseHistoryStorageForTest = (storage: ReleaseHistoryStorage): void => {
+	releaseHistoryStorage = storage;
+};
+
 export const resetAppServicesForTest = (): void => {
 	preferenceManager = null;
 	bookmarkManager = null;
 	readerDocumentManager = null;
+	releaseHistoryStorage = null;
 };

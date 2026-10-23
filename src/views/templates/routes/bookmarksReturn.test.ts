@@ -13,6 +13,9 @@ import { setBookmarkManagerForTest } from '@/utils/appServices.js';
 
 vi.mock('svelte-spa-router', () => ({
 	router: {
+		get location() {
+			return window.location.hash.slice(1).split('?')[0];
+		},
 		get querystring() {
 			return window.location.hash.split('?')[1] ?? '';
 		},

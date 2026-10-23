@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { Check } from 'lucide-svelte';
+	import { isMobile } from '@/utils/device.js';
 	/* Text Prop */
 
 	/* Color Prop */
@@ -25,6 +27,8 @@
 		hover = 'blue',
 		icon: _icon = undefined,
 		disabled = false,
+		selected = undefined,
+		'aria-label': ariaLabel = undefined,
 		onclick = () => {},
 	}: {
 		text?: string;
@@ -32,8 +36,11 @@
 		hover?: string;
 		icon?: import('svelte').Component<any> | import('svelte').ComponentType;
 		disabled?: boolean;
+		selected?: boolean;
+		'aria-label'?: string;
 		onclick?: (_event: MouseEvent) => void;
 	} = $props();
+	const mobile = isMobile();
 
 	const getClasses = () => {
 		return [
@@ -51,26 +58,47 @@
 <button
 	type="button"
 	class={getClasses()}
-	role="menuitem"
+	class:st-dropdown-item--mobile={mobile}
+	role={selected === undefined ? 'menuitem' : 'menuitemradio'}
 	tabindex="-1"
 	{disabled}
+	aria-label={ariaLabel}
+	aria-checked={selected}
 	onclick={handleClick}
 >
-	{text}
+	{#if selected !== undefined}<span class="st-dropdown-item--check" aria-hidden="true"
+			>{#if selected}<Check size="14" />{/if}</span
+		>{/if}
+	<span>{text}</span>
 </button>
 
 <style>
 	.st-dropdown-item--container {
+		display: flex;
+		align-items: center;
+		gap: var(--sy-space--large);
 		border: 0;
 		background: transparent;
 		font: inherit;
 		text-align: left;
 		min-width: 0;
 		white-space: normal;
+		overflow-wrap: anywhere;
 		cursor: pointer;
 		padding: var(--sy-space--large);
 		transition: all ease-in-out;
 		transition-duration: var(--sy-transition-duration) / 2;
+	}
+	.st-dropdown-item--mobile {
+		min-height: var(--sy-mobile-touch-target);
+	}
+	.st-dropdown-item--check {
+		display: flex;
+		flex: 0 0 14px;
+	}
+	.st-dropdown-item--container:focus-visible {
+		outline: 2px solid var(--sy-color--blue-2);
+		outline-offset: -2px;
 	}
 	.st-dropdown-item--container:first-child,
 	.st-dropdown-item--container:last-child {

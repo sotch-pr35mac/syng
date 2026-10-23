@@ -14,6 +14,7 @@ const { quizState } = vi.hoisted(() => ({
 		questionsTotal: 1,
 		lists: [],
 		start: vi.fn(),
+		setInstructionPaused: vi.fn(),
 		endSession: vi.fn(),
 		exit: vi.fn(),
 		continue: vi.fn(),
