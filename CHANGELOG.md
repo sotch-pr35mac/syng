@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.6.0] - 2026-10-20
+## [2.6.0] - 2026-10-23
 ### Added
 - Added interactive What's New notes after selected updates
 - Added optional app and feature walkthroughs
