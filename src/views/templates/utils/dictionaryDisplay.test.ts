@@ -4,8 +4,13 @@ import {
 	formatDictionarySources,
 	formatPartOfSpeech,
 	formatQualifierCategory,
+	lexicalAlternativePronunciations,
 	lexicalExamples,
 	lexicalPartsOfSpeech,
+	type AlternativePronunciation,
+	type DictionarySource,
+	type LexicalUnit,
+	type Sourced,
 } from '@/types/dictionary.js';
 import { resolveCharacterForms } from '@/utils/dictionaryDisplay.js';
 
@@ -80,6 +85,79 @@ describe('resolveCharacterForms', () => {
 				showLabel: true,
 			},
 		]);
+	});
+});
+
+describe('lexicalAlternativePronunciations', () => {
+	const makeAlternative = (
+		marks: string,
+		source: DictionarySource = 'wiktionary'
+	): Sourced<AlternativePronunciation> => ({
+		value: {
+			pronunciation: { marks, numbers: '', tones: [] },
+			label: 'also pr.',
+		},
+		sources: [source],
+	});
+
+	it('hides whole vowel-less alternatives while preserving the remaining records and order', () => {
+		const alternatives = ['m̌ m', 'm̌ me', 'wǎn me', 'wǒ m', 'wǒ mén'].map((marks) =>
+			makeAlternative(marks)
+		);
+		const unit = { alternative_pronunciations: alternatives } as LexicalUnit;
+		const original = structuredClone(unit);
+
+		expect(lexicalAlternativePronunciations(unit)).toEqual([alternatives[2], alternatives[4]]);
+		expect(unit).toEqual(original);
+	});
+
+	it.each(['cc-cedict', 'chinese-notes', 'wiktionary'] as const)(
+		'applies the display policy to %s alternatives',
+		(source) => {
+			const unit = {
+				alternative_pronunciations: ['ḿ', 'ńg', 'hm', 'hng'].map((marks) =>
+					makeAlternative(marks, source)
+				),
+			} as LexicalUnit;
+
+			expect(lexicalAlternativePronunciations(unit)).toEqual([]);
+		}
+	);
+
+	it.each(['hàn yǔ', 'lǜ', 'ü', 'Ü', 'Ā É Ǐ Ò Ū', 'lü\u0300', '  wo\u030c\tme\u0301n\n'])(
+		'preserves vowel-bearing pronunciation text exactly: %j',
+		(marks) => {
+			const alternative = makeAlternative(marks);
+			const unit = { alternative_pronunciations: [alternative] } as LexicalUnit;
+
+			expect(lexicalAlternativePronunciations(unit)).toEqual([alternative]);
+			expect(alternative.value.pronunciation.marks).toBe(marks);
+		}
+	);
+
+	it.each(['', ' \t\n '])('omits empty pronunciation text: %j', (marks) => {
+		const unit = { alternative_pronunciations: [makeAlternative(marks)] } as LexicalUnit;
+
+		expect(lexicalAlternativePronunciations(unit)).toEqual([]);
+	});
+
+	it('continues to ignore missing or malformed alternatives', () => {
+		expect(lexicalAlternativePronunciations({} as LexicalUnit)).toEqual([]);
+		const unit = {
+			alternative_pronunciations: [
+				null,
+				{},
+				{ value: { label: 'also pr.' } },
+				{
+					value: {
+						label: 'also pr.',
+						pronunciation: { marks: null, numbers: '', tones: [] },
+					},
+				},
+			],
+		} as LexicalUnit;
+
+		expect(lexicalAlternativePronunciations(unit)).toEqual([]);
 	});
 });
 

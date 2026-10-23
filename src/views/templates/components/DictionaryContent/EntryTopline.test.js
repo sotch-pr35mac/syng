@@ -43,6 +43,22 @@ const TEST_WORD_WITH_ALTERNATIVES = {
 	],
 };
 
+const TEST_WORD_WOMEN = {
+	simplified: '我们',
+	traditional: '我們',
+	pinyin: { marks: 'wǒ men', numbers: 'wo3men5', tones: [3, 5] },
+	alternative_pronunciations: [
+		{ marks: 'm̌ m', numbers: 'm3m5', tones: [3, 5] },
+		{ marks: 'm̌ me', numbers: 'm3me5', tones: [3, 5] },
+		{ marks: 'wǎn me', numbers: 'wan3me5', tones: [3, 5] },
+		{ marks: 'wǒ m', numbers: 'wo3m5', tones: [3, 5] },
+		{ marks: 'wǒ mén', numbers: 'wo3men2', tones: [3, 2] },
+	].map((pronunciation) => ({
+		value: { pronunciation, label: 'also pr.' },
+		sources: ['wiktionary'],
+	})),
+};
+
 let preferenceManager;
 
 beforeEach(async () => {
@@ -171,6 +187,65 @@ it('does not render alternative pronunciations by default', () => {
 
 	expect(queryByTestId('alternative-pronunciation-label')).toBeNull();
 });
+
+it.each([false, true])(
+	'filters vowel-less alternatives for 我们 with pinyin coloring %s',
+	async (colorPinyin) => {
+		dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true);
+		dictionaryDisplaySettingsStore.setColorPinyinByTone(colorPinyin);
+		const { container } = render(EntryTopline, { word: TEST_WORD_WOMEN });
+		const alternativeText = () =>
+			Array.from(
+				container.querySelectorAll('.chinese-characters--alternative-pronunciation-text'),
+				(element) => element.textContent.trim()
+			);
+
+		expect(alternativeText()).toEqual(['wǎn me', 'wǒ mén']);
+		expect(
+			container.querySelector('.chinese-characters--pinyin-container').textContent.trim()
+		).toBe('wǒ men');
+
+		await act(() => dictionaryDisplaySettingsStore.setShowAlternativePronunciations(false));
+		expect(
+			container.querySelector('.chinese-characters--alternative-pronunciations')
+		).toBeNull();
+
+		await act(() => dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true));
+		expect(alternativeText()).toEqual(['wǎn me', 'wǒ mén']);
+	}
+);
+
+it.each([false, true])(
+	'keeps vowel-less primary readings and omits an all-filtered alternatives section with coloring %s',
+	(colorPinyin) => {
+		dictionaryDisplaySettingsStore.setShowAlternativePronunciations(true);
+		dictionaryDisplaySettingsStore.setColorPinyinByTone(colorPinyin);
+		const { container, queryByTestId } = render(EntryTopline, {
+			word: {
+				simplified: '呣',
+				traditional: '呣',
+				pinyin: { marks: 'ḿ', numbers: 'm2', tones: [2] },
+				alternative_pronunciations: [
+					{
+						value: {
+							pronunciation: { marks: 'm̀', numbers: 'm4', tones: [4] },
+							label: 'also pr.',
+						},
+						sources: ['cc-cedict'],
+					},
+				],
+			},
+		});
+
+		expect(
+			container.querySelector('.chinese-characters--pinyin-container').textContent.trim()
+		).toBe('ḿ');
+		expect(queryByTestId('alternative-pronunciation-label')).toBeNull();
+		expect(
+			container.querySelector('.chinese-characters--alternative-pronunciations')
+		).toBeNull();
+	}
+);
 
 it.each([
 	{ characters: true, pinyin: false },
