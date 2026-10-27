@@ -24,6 +24,7 @@ vi.mock('lucide-svelte', async () => {
 		Plus: mockIcon,
 		Check: mockIcon,
 		Brush: mockIcon,
+		Blocks: mockIcon,
 	};
 });
 

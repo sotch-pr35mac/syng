@@ -61,6 +61,9 @@ vi.mock('@/routes/mobile/MobileTools.svelte', async () => ({
 vi.mock('@/routes/mobile/MobileCharacters.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
+vi.mock('@/routes/mobile/MobileBreakdown.svelte', async () => ({
+	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
+}));
 vi.mock('@/routes/NotFound.svelte', async () => ({
 	default: (await import('@/components/__mocks__/RouteMock.svelte')).default,
 }));
@@ -126,6 +129,9 @@ it('tracks screen views for mobile route changes', async () => {
 
 	await user.click(getByRole('link', { name: 'Study' }));
 	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('study'));
+
+	await push('/breakdown');
+	await waitFor(() => expect(telemetry.trackScreen).toHaveBeenCalledWith('character_breakdown'));
 });
 
 it('keeps mobile navigation and routes inert while a migration is active', async () => {

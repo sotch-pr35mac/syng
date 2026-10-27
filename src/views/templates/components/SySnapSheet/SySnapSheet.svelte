@@ -36,6 +36,7 @@
 		accessibleName = 'Options',
 		returnFocus = undefined,
 		onclose = undefined,
+		onback = undefined,
 	}: {
 		id?: string;
 		children?: Snippet;
@@ -46,6 +47,7 @@
 		accessibleName?: string;
 		returnFocus?: HTMLElement;
 		onclose?: () => void;
+		onback?: () => void;
 	} = $props();
 
 	const getInitialSnap = () => initialSnap;
@@ -241,7 +243,7 @@
 		active: snap !== 'collapsed',
 		initialFocus: 'keyboard',
 		returnFocus: returnFocus ?? defaultReturnFocus,
-		onclose: onclose ?? collapse,
+		onclose: (reason) => (reason === 'escape' && onback ? onback() : (onclose ?? collapse)()),
 	}}
 	class="sy-snap-sheet"
 	use:walkthroughTarget={guideTarget}

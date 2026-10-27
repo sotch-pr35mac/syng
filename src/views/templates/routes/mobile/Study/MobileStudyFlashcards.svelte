@@ -83,6 +83,7 @@
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="mobile-flashcards__back">
 				<DictionaryContent
+					context="study"
 					word={activeWord}
 					backgroundColor="white"
 					{lists}

@@ -23,6 +23,8 @@
 		offset = 10,
 		horizontalAlign = 'center',
 		mobileTitle = 'Options',
+		hideMobileHeader = false,
+		onback = undefined,
 		accessibleName = undefined,
 		returnFocus = undefined,
 		mobileSnap = 'partial',
@@ -40,6 +42,8 @@
 		offset?: number;
 		horizontalAlign?: PopoverHorizontalAlign;
 		mobileTitle?: string;
+		hideMobileHeader?: boolean;
+		onback?: () => void;
 		accessibleName?: string;
 		returnFocus?: HTMLElement;
 		mobileSnap?: SheetSnap;
@@ -199,17 +203,19 @@
 			{guideTarget}
 			{id}
 			initialSnap={mobileSnap}
+			{onback}
 			{reopenKey}
 			accessibleName={accessibleName ?? mobileTitle}
 			returnFocus={returnFocus ?? ignoreElement}
 			{onclose}
 		>
-			<div class="sy-popover__mobile-header">
-				<span class="sy-popover__mobile-title">{mobileTitle}</span>
-				<SyButton style="ghost" size="small" aria-label="Close" onclick={onclose}>
-					<X size="16" />
-				</SyButton>
-			</div>
+			{#if !hideMobileHeader}<div class="sy-popover__mobile-header">
+					<span class="sy-popover__mobile-title">{mobileTitle}</span>
+					<SyButton style="ghost" size="small" aria-label="Close" onclick={onclose}>
+						<X size="16" />
+					</SyButton>
+				</div>
+			{/if}
 			<div class="sy-popover__mobile-content">
 				{@render children?.()}
 			</div>
@@ -226,7 +232,7 @@
 				returnFocus: returnFocus ?? ignoreElement,
 				ignoreElement,
 				closeOnOutside: true,
-				onclose,
+				onclose: (reason) => (reason === 'escape' && onback ? onback() : onclose()),
 			}}
 			use:walkthroughTarget={guideTarget}
 			class="sy-popover"
@@ -332,6 +338,7 @@
 	}
 
 	.sy-popover__mobile-content {
+		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
 		min-height: 0;
 		overflow-y: auto;
 		flex: 1;

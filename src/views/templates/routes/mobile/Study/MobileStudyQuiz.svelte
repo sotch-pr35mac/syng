@@ -219,6 +219,7 @@
 		{:else if quizRoute.showAnswer && quizRoute.answer}
 			<div use:walkthroughTarget={'quiz-answer'} class="mobile-quiz__answer">
 				<DictionaryContent
+					context="study"
 					word={quizRoute.answer}
 					backgroundColor="white"
 					lists={quizRoute.lists}

@@ -52,6 +52,7 @@
 		'/tools': lazyRoute(() => import('@/routes/Tools.svelte')),
 		'/help': lazyRoute(() => import('@/routes/Help.svelte')),
 		'/settings': lazyRoute(() => import('@/routes/Settings.svelte')),
+		'/breakdown': lazyRoute(() => import('@/routes/mobile/MobileBreakdown.svelte')),
 		'/characters': lazyRoute(() => import('@/routes/mobile/MobileCharacters.svelte')),
 		'*': lazyRoute(() => import('@/routes/NotFound.svelte')),
 	};
@@ -68,6 +69,7 @@
 		'/settings': 'settings',
 		'/whats-new': 'whats_new',
 		'/characters': 'characters',
+		'/breakdown': 'character_breakdown',
 	};
 
 	const buildToastMessage = () =>

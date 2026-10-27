@@ -10,6 +10,7 @@ vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		Brush: mockIcon,
+		Blocks: mockIcon,
 		Check: mockIcon,
 		ChevronLeft: mockIcon,
 		ChevronRight: mockIcon,

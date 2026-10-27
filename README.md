@@ -33,3 +33,12 @@ Syng v1 is no longer maintained. Installation instructions and more information 
 This software is licensed under the [GNU General Public License 3](https://www.gnu.org/licenses/gpl-3.0.en.html) (see [`LICENSE`](./LICENSE)).
 
 Additional permission is granted under GPLv3 §7 allowing distribution through application stores (Apple App Store / Mac App Store, Google Play, Microsoft Store) whose terms would otherwise be incompatible with the GPL — see [`LICENSE-APP-STORE-EXCEPTION`](./LICENSE-APP-STORE-EXCEPTION). Third-party components are listed with their licenses on the in-app Acknowledgements screen and under [`src/native/resources/licenses/`](./src/native/resources/licenses/).
+
+Character breakdown uses [Dong Chinese / Chinese Character Wiki](https://www.dong-chinese.com/wiki)
+formation and component data under CC BY-SA 4.0, [Make Me a Hanzi](https://github.com/skishore/makemeahanzi)
+radical metadata under LGPL-3.0-or-later, and Arphic-licensed character graphics.
+These materials keep their own licenses. Attribution and complete license texts
+ship with the application and are available in Settings → Acknowledgements.
+See the [data manifest](src/views/resources/character-breakdown/manifest.json) and
+[character breakdown maintenance guide](docs/character-breakdown.md) for pinned
+sources, modifications, and reproducible import instructions.

@@ -144,6 +144,7 @@
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">
 					<DictionaryContent
+						context="study"
 						word={activeWord}
 						backgroundColor="white"
 						{lists}

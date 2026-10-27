@@ -14,7 +14,7 @@ for (const mobile of [false, true]) {
 		);
 		const card = page.getByRole('dialog');
 		await expect(card.getByRole('heading')).toHaveText('Practice what you save');
-		await expect(card.getByText('6 of 8')).toBeVisible();
+		await expect(card.getByText('7 of 9')).toBeVisible();
 		const navigation = page.getByRole('link', { name: 'Study', exact: true });
 		await expect(navigation).toHaveAttribute('aria-describedby', 'walkthrough-description');
 		await expect(page.locator('[data-walkthrough-target="study-lists"]')).toHaveCount(0);

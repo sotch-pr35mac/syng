@@ -261,6 +261,7 @@
 			{#if quizRoute.showAnswer}
 				<div use:walkthroughTarget={'quiz-answer'} class="quiz--answer">
 					<DictionaryContent
+						context="study"
 						word={quizRoute.answer}
 						backgroundColor="white"
 						lists={quizRoute.lists}

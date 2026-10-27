@@ -47,6 +47,7 @@
 		'/study/quiz': lazyRoute(() => import('@/routes/mobile/Study/MobileStudyQuiz.svelte')),
 		'/tools': lazyRoute(() => import('@/routes/mobile/MobileTools.svelte')),
 		'/settings': lazyRoute(() => import('@/routes/mobile/MobileSettings.svelte')),
+		'/breakdown': lazyRoute(() => import('@/routes/mobile/MobileBreakdown.svelte')),
 		'/characters': lazyRoute(() => import('@/routes/mobile/MobileCharacters.svelte')),
 		'*': lazyRoute(() => import('@/routes/NotFound.svelte')),
 	};
@@ -62,6 +63,7 @@
 		'/settings': 'settings',
 		'/whats-new': 'whats_new',
 		'/characters': 'characters',
+		'/breakdown': 'character_breakdown',
 	};
 
 	// The shell is pinned to the full webview via CSS (inset:0) so it can never under-fill

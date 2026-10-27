@@ -69,7 +69,7 @@ export const swipeBack: Action<HTMLElement, SwipeBackOptions | undefined> = (nod
 			return;
 		}
 		// Only begin a gesture if the touch started within the left-edge zone.
-		if (event.clientX > settings.edgeSize) {
+		if (event.clientX - node.getBoundingClientRect().left > settings.edgeSize) {
 			return;
 		}
 
@@ -143,6 +143,13 @@ export const swipeBack: Action<HTMLElement, SwipeBackOptions | undefined> = (nod
 			deltaX > width * DISTANCE_THRESHOLD_RATIO ||
 			lastVelocity > VELOCITY_THRESHOLD_PX_PER_MS;
 
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+			resetStyles();
+			if (shouldGoBack) {
+				settings.onBack();
+			}
+			return;
+		}
 		node.style.transition = `transform ${SNAP_DURATION_MS}ms ${SNAP_EASING}`;
 
 		if (shouldGoBack) {

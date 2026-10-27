@@ -54,6 +54,34 @@ export interface WhatsNewTelemetry {
 export type WordOpeningSource = 'search' | 'bookmarks' | 'reader' | 'flashcards' | 'quiz';
 export type QueryTrigger = 'pause' | 'selection' | 'submit';
 
+export type BreakdownSurface = 'sidebar' | 'entry' | 'popup' | 'mobile_screen' | 'study';
+export interface BreakdownTelemetryContext {
+	surface: BreakdownSurface;
+	source: WordOpeningSource | 'other';
+	character_count: number;
+}
+/** Positions and static UI identifiers only; never character text or dictionary IDs. */
+export interface BreakdownInteraction {
+	action:
+		| 'character_lookup'
+		| 'component_lookup'
+		| 'radical_lookup'
+		| 'description_lookup'
+		| 'character_changed'
+		| 'script_changed'
+		| 'component_selected'
+		| 'component_deselected'
+		| 'component_previewed'
+		| 'entry_changed'
+		| 'nested_breakdown_opened'
+		| 'retry';
+	character_position?: number;
+	component_position?: number;
+	script?: 'simplified' | 'traditional';
+	input?: 'glyph' | 'control' | 'keyboard';
+}
+export type BreakdownCloseReason = 'back' | 'dismissed' | 'navigation';
+
 export interface SearchQueryTelemetry {
 	query_id: string;
 	term_length: number;
@@ -86,6 +114,9 @@ export interface TelemetryPayloads
 		> {
 	'search.query': SearchQueryTelemetry;
 	'dictionary.word_opened': WordOpeningTelemetry;
+	'dictionary.breakdown_opened': BreakdownTelemetryContext;
+	'dictionary.breakdown_closed': BreakdownTelemetryContext & { reason: BreakdownCloseReason };
+	'dictionary.breakdown_interacted': BreakdownTelemetryContext & BreakdownInteraction;
 	'reader.reading_activity': { next_count: number; previous_count: number };
 	'flashcards.started': { word_count: number; source: 'bookmarks' | 'study' };
 	'quiz.started': { word_count: number; source: 'bookmarks' | 'study' };
