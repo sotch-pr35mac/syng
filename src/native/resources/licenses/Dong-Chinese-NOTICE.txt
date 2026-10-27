@@ -4,6 +4,7 @@ https://data.dong-chinese.com/dump/dictionary_char_2025-12-27.jsonl
 Licensed under Creative Commons Attribution-ShareAlike 4.0 International.
 https://creativecommons.org/licenses/by-sa/4.0/
 
+Changes made by Syng on 2026-10-27:
 Syng selects formation notes, component names and roles, verification flags,
 stroke counts and eligible modern vectors. Notes are whitespace-trimmed, not
 rewritten. Missing information is not generated. Historical images are omitted.
@@ -12,5 +13,10 @@ The adapted Dong Chinese material is distributed under CC BY-SA 4.0.
 Exact source URLs, SHA-256 hashes, the graphics revision, changes and the import
 report ship in resources/character-breakdown/manifest.json. The reproducible
 importer is scripts/prepare-character-breakdown.mjs in the Syng source release.
-Sources and modifications: https://github.com/sotch-pr35mac/syng
+Sources and modifications: https://github.com/sotch-pr35mac/syng/tags
+Use the Git tag corresponding to the installed release for the matching importer,
+source pins, notices, and setup scripts. The manifest identifies the dated Dong
+Chinese dump, exact Make Me a Hanzi commit, and Hanzi Writer graphics revision.
+Upstream sources remain under their own licenses; Syng's license and App Store
+exception do not replace or extend those licenses.
 No endorsement by the original creators is implied.

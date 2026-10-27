@@ -28,7 +28,7 @@ export interface CharacterBreakdownRecord {
 	components: BreakdownComponent[];
 	radical?: string;
 	strokeCount?: number;
-	glyph?: ({ kind: 'inline' } & CharacterGeometry) | { kind: 'bundled' };
+	glyph?: ({ kind: 'inline' } & CharacterGeometry) | { kind: 'bundled' | 'arphic' };
 	glyphSource?: 'makemeahanzi' | 'dong-chinese';
 }
 export interface BreakdownSelection {

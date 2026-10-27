@@ -1,3 +1,10 @@
+/**
+ * Offline character records, shared stroke geometry, and component hit testing.
+ * All fetches read packaged resources; dictionary lookups use the native database.
+ * Session promise caches share concurrent reads and avoid parsing the same file
+ * on every visit. Failed promises are evicted, not retried automatically: a later
+ * explicit load (including the UI Retry button) can try again.
+ */
 import { lookupDictionary } from '@/utils/dictionaryLookup.js';
 import type { SearchEntry } from '@/types/search.js';
 import type { CharacterBreakdownRecord, CharacterGeometry } from '@/types/characterBreakdown.js';
@@ -7,6 +14,10 @@ const records = new Map<string, Promise<CharacterBreakdownRecord | null>>();
 const geometry = new Map<string, Promise<CharacterGeometry | null>>();
 const dictionary = new Map<string, Promise<SearchEntry[]>>();
 let indexPromise: Promise<Record<string, number>> | undefined;
+let radicalsPromise: Promise<{ radicals: Record<string, string> }> | undefined;
+const characterKey = (character: string) =>
+	[...character].map((c) => c.codePointAt(0).toString(HEX_RADIX)).join('-');
+/** Read a bundled JSON resource, treating the dev server's HTML fallback as failure. */
 async function json<T>(url: string): Promise<T> {
 	try {
 		const response = await fetch(url);
@@ -22,6 +33,7 @@ async function json<T>(url: string): Promise<T> {
 		throw new Error(`Could not load character data: ${url}`, { cause: error });
 	}
 }
+/** Load the generated character/eligibility index once; absence is distinct from load failure. */
 export function breakdownIndex(): Promise<Record<string, number>> {
 	indexPromise ??= json<Record<string, number>>(`${ROOT}/index.json`).catch((error) => {
 		indexPromise = undefined;
@@ -29,37 +41,52 @@ export function breakdownIndex(): Promise<Record<string, number>> {
 	});
 	return indexPromise;
 }
+/** Read a Unicode-keyed record; null means unsupported, while missing/corrupt assets reject. */
 export async function loadBreakdown(character: string): Promise<CharacterBreakdownRecord | null> {
 	const index = await breakdownIndex();
 	if (!Object.prototype.hasOwnProperty.call(index, character)) {
 		return null;
 	}
 	if (!records.has(character)) {
-		const key = [...character].map((c) => c.codePointAt(0).toString(HEX_RADIX)).join('-');
+		// LGPL radical fields are packaged separately from the CC BY-SA character notes.
+		radicalsPromise ??= json<{ radicals: Record<string, string> }>(
+			`${ROOT}/radicals.json`
+		).catch((error) => {
+			radicalsPromise = undefined;
+			throw error;
+		});
 		records.set(
 			character,
-			json<CharacterBreakdownRecord>(`${ROOT}/chars/${key}.json`).catch((error) => {
-				records.delete(character);
-				throw error;
-			})
+			Promise.all([
+				json<CharacterBreakdownRecord>(`${ROOT}/chars/${characterKey(character)}.json`),
+				radicalsPromise,
+			])
+				.then(([record, { radicals }]) => ({ ...record, radical: radicals[character] }))
+				.catch((error) => {
+					records.delete(character);
+					throw error;
+				})
 		);
 	}
 	return records.get(character);
 }
+/** Read shared, separately licensed Arphic, or inline geometry; null permits a font-only glyph. */
 export function loadBreakdownGeometry(
 	record: CharacterBreakdownRecord
 ): Promise<CharacterGeometry | null> {
 	if (record.glyph?.kind === 'inline') {
 		return Promise.resolve(record.glyph);
 	}
-	if (record.glyph?.kind !== 'bundled') {
+	if (record.glyph?.kind !== 'bundled' && record.glyph?.kind !== 'arphic') {
 		return Promise.resolve(null);
 	}
 	if (!geometry.has(record.character)) {
 		geometry.set(
 			record.character,
 			json<CharacterGeometry>(
-				`resources/hanzi-writer-data/data/${encodeURIComponent(record.character)}.json`
+				record.glyph.kind === 'arphic'
+					? `${ROOT}/arphic/${characterKey(record.character)}.json`
+					: `resources/hanzi-writer-data/data/${encodeURIComponent(record.character)}.json`
 			).catch((error) => {
 				geometry.delete(record.character);
 				throw error;
@@ -86,6 +113,7 @@ export function lookupCharacter(character: string): Promise<SearchEntry[]> {
 	}
 	return dictionary.get(character);
 }
+/** Shortest distance to one stroke-median segment, in the source glyph coordinate system. */
 function segmentDistance(x: number, y: number, a: number[], b: number[]): number {
 	const dx = b[0] - a[0],
 		dy = b[1] - a[1],
@@ -93,7 +121,11 @@ function segmentDistance(x: number, y: number, a: number[], b: number[]): number
 	const t = length ? Math.max(0, Math.min(1, ((x - a[0]) * dx + (y - a[1]) * dy) / length)) : 0;
 	return Math.hypot(x - a[0] - t * dx, y - a[1] - t * dy);
 }
-/** Nearest stroke median across the whole glyph, with tolerance at component boundaries. */
+/**
+ * Choose the nearest mapped component anywhere in the glyph, including between strokes.
+ * Coordinates must use the geometry's source space. Keep the prior component near
+ * boundaries to avoid flicker; null means no usable component-to-stroke mapping.
+ */
 export function nearestComponent(
 	record: CharacterBreakdownRecord,
 	data: CharacterGeometry,

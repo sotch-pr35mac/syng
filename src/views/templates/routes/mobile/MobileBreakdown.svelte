@@ -3,7 +3,7 @@
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
-	import { breakdownSource } from '@/utils/breakdownTelemetry.js';
+	import { breakdownSource } from '@/composables/breakdownTelemetry.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { mobileBreakdown } from '@/stores/mobileBreakdown.js';
 	const source = breakdownSource(mobileBreakdown.origin ?? '');

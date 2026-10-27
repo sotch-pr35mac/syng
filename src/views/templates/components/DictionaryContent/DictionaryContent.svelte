@@ -1,4 +1,8 @@
 <script lang="ts">
+	/**
+	 * Owns entry/breakdown navigation, responsive presentation, focus, and history.
+	 * DictionaryEntry renders the reusable entry body; it does not own this stack.
+	 */
 	import { onMount, tick, untrack } from 'svelte';
 	import DictionaryEntry from '@/components/DictionaryContent/DictionaryEntry.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -9,9 +13,9 @@
 	import { isMobile, isMobileLayout } from '@/utils/device.js';
 	import { subscribeSystemTypography } from '@/composables/systemTypography.js';
 	import { swipeBack } from '@/actions/swipeBack.svelte.js';
-	import { breakdownHistory } from '@/utils/breakdownHistory.js';
+	import { breakdownHistory } from '@/composables/breakdownHistory.js';
 	import { mobileBreakdown } from '@/stores/mobileBreakdown.js';
-	import { createBreakdownTelemetry, breakdownSource } from '@/utils/breakdownTelemetry.js';
+	import { createBreakdownTelemetry, breakdownSource } from '@/composables/breakdownTelemetry.js';
 	import type { BreakdownCloseReason } from '@/types/telemetry.js';
 	import {
 		normalizeDictionaryLookupRequest,
@@ -29,6 +33,11 @@
 		...entryProps
 	}: {
 		word?: SearchEntry;
+		/**
+		 * page: companion pane or mobile route; popup: compact replacement views;
+		 * study: keep the answer mounted and use popup lookups on mobile;
+		 * screen: routed mobile breakdown with an existing route Back step.
+		 */
 		context?: 'page' | 'popup' | 'study' | 'screen';
 		initialSelection?: BreakdownSelection;
 		onviewchange?: (active: boolean) => void;
@@ -36,7 +45,12 @@
 		onclose?: () => void;
 		[key: string]: any;
 	} = $props();
-	type Frame = {
+	/**
+	 * One local entry or breakdown view. Keeping covered views mounted preserves
+	 * character selection; saved focus/scroll restore the caller on Back.
+	 * This is UI navigation state, separate from dictionary data and browser history.
+	 */
+	type DictionaryNavigationView = {
 		id: number;
 		kind: 'breakdown' | 'entry';
 		word: SearchEntry;
@@ -46,8 +60,8 @@
 		focus?: HTMLElement;
 		scroll?: { node: HTMLElement; top: number }[];
 	};
-	let retained = $state<Frame[]>([]);
-	let frames = $state<Frame[]>([]),
+	let retained = $state<DictionaryNavigationView[]>([]);
+	let frames = $state<DictionaryNavigationView[]>([]),
 		wide = $state(false);
 	let host: HTMLElement, entry: ReturnType<typeof DictionaryEntry>;
 	let Panel =
@@ -91,7 +105,7 @@
 			panelFailed = true;
 		}
 	}
-	function frame(target: SearchEntry, chosen = selection()): Frame {
+	function breakdownView(target: SearchEntry, chosen = selection()): DictionaryNavigationView {
 		return {
 			id: ++serial,
 			kind: 'breakdown',
@@ -100,7 +114,7 @@
 			focus: document.activeElement as HTMLElement,
 		};
 	}
-	function push(next: Frame) {
+	function push(next: DictionaryNavigationView) {
 		if (next.kind === 'breakdown' && frames.length) {
 			breakdownTelemetry.interact({ action: 'nested_breakdown_opened' });
 		}
@@ -110,9 +124,9 @@
 			.filter((node) => node.getClientRects().length > 0)
 			.map((node) => ({ node, top: node.scrollTop }));
 		frames = [...frames, next];
-		void focusFrame(next);
+		void focusNavigationView(next);
 	}
-	async function focusFrame(next: Frame) {
+	async function focusNavigationView(next: DictionaryNavigationView) {
 		if (next.kind === 'breakdown') {
 			await loadPanel();
 		}
@@ -176,11 +190,11 @@
 			window.location.hash = '#/breakdown';
 			return;
 		}
-		push(frame(word, retained[0]?.word === word ? retained[0].selection : selection()));
+		push(breakdownView(word, retained[0]?.word === word ? retained[0].selection : selection()));
 	}
 	async function nested(request: DictionaryLookupRequest) {
 		const requestId = ++nestedRequest;
-		const currentFrame = frames[frames.length - 1];
+		const currentView = frames[frames.length - 1];
 		const lookup = normalizeDictionaryLookupRequest(request);
 		if (popupLookups) {
 			entryProps.onlink?.(lookup);
@@ -193,7 +207,7 @@
 		if (
 			rows.length &&
 			requestId === nestedRequest &&
-			currentFrame === frames[frames.length - 1]
+			currentView === frames[frames.length - 1]
 		) {
 			if (popupLookups) {
 				entryProps.onlink?.(lookup);
@@ -231,11 +245,11 @@
 		const target = word;
 		untrack(() => {
 			if (context === 'screen' && target) {
-				frames = [frame(target, initialSelection ?? selection())];
-				void focusFrame(frames[0]);
+				frames = [breakdownView(target, initialSelection ?? selection())];
+				void focusNavigationView(frames[0]);
 			} else if (companion && frames.length && target) {
 				breakdownTelemetry.interact({ action: 'entry_changed' });
-				frames = [frame(target)];
+				frames = [breakdownView(target)];
 			} else {
 				frames = [];
 			}
@@ -407,7 +421,7 @@
 							{...entryProps}
 							word={item.word}
 							onlink={nested}
-							onbreakdown={() => push(frame(item.word))}
+							onbreakdown={() => push(breakdownView(item.word))}
 						/>
 					{/if}
 				</div>

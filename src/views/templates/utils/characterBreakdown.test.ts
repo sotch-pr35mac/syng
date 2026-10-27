@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { invoke } from '@tauri-apps/api/core';
 import {
 	loadBreakdownGeometry,
+	loadBreakdown,
 	lookupCharacter,
 	nearestComponent,
 } from '@/utils/characterBreakdown.js';
@@ -9,6 +10,34 @@ import type { CharacterBreakdownRecord, CharacterGeometry } from '@/types/charac
 vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
 beforeEach(() => vi.mocked(invoke).mockReset());
 afterEach(() => vi.unstubAllGlobals());
+it('joins separately licensed notes, radicals, and Arphic geometry for display', async () => {
+	const record: CharacterBreakdownRecord = {
+		character: '𠁁',
+		verified: true,
+		formation: 'Source note',
+		components: [],
+		glyph: { kind: 'arphic' },
+	};
+	const data: CharacterGeometry = { strokes: ['M 0 0'], medians: [[[0, 0]]] };
+	const files = {
+		'resources/character-breakdown/index.json': { '𠁁': 1 },
+		'resources/character-breakdown/chars/20041.json': record,
+		'resources/character-breakdown/radicals.json': { radicals: { '𠁁': '一' } },
+		'resources/character-breakdown/arphic/20041.json': data,
+	};
+	const fetchMock = vi.fn(
+		async (url: string) =>
+			new Response(JSON.stringify(files[url]), {
+				headers: { 'content-type': 'application/json' },
+			})
+	);
+	vi.stubGlobal('fetch', fetchMock);
+	const loaded = await loadBreakdown('𠁁');
+	expect(loaded).toEqual({ ...record, radical: '一' });
+	expect(await loadBreakdownGeometry(loaded)).toEqual(data);
+	await loadBreakdown('𠁁');
+	expect(fetchMock).toHaveBeenCalledTimes(4);
+});
 it('reports HTML asset fallbacks with the path and retries failed graphics requests', async () => {
 	const record: CharacterBreakdownRecord = {
 		character: '要',

@@ -236,6 +236,40 @@ test('mobile full entry uses a route; study and narrow entries never auto-open',
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Back to dictionary' })).toBeVisible();
 });
+test('mobile popup history preserves the underlying study breakdown and selection', async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto('/src/test/accessibility/index.html?breakdown&study&mobile');
+	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	const study = page.locator('.entry').getByRole('region', { name: 'Character breakdown' });
+	await study.getByRole('button', { name: 'Component 2: Sound' }).click();
+	await study.getByRole('button', { name: 'Look up 青', exact: true }).click();
+	const popup = page.getByRole('dialog');
+	await popup.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	const popupBreakdown = popup.getByRole('region', { name: 'Character breakdown' });
+	await popupBreakdown
+		.getByRole('button', { name: 'Look up this character', exact: true })
+		.click();
+	await expect(popupBreakdown).not.toBeVisible();
+	await page.goBack();
+	await expect(popupBreakdown).toBeVisible();
+	await expect(study).toBeVisible();
+	await expect(study.getByRole('button', { name: 'Component 2: Sound' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await popupBreakdown.getByRole('button', { name: 'Close dictionary', exact: true }).click();
+	await expect(popup).not.toBeVisible();
+	await expect(study).toBeVisible();
+	await expect(study.getByRole('button', { name: 'Component 2: Sound' })).toHaveAttribute(
+		'aria-pressed',
+		'true'
+	);
+	await page.goBack();
+	await expect(study).not.toBeVisible();
+});
+
 test('breakdown is accessible with enlarged text and high contrast', async ({ page }) => {
 	await page.goto('/src/test/accessibility/index.html?breakdown&fontSize=20&appearance=contrast');
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
@@ -281,6 +315,7 @@ for (const [character, strokes, mapped] of [
 	['考', 6, true],
 	['西', 6, false],
 	['要', 9, true],
+	['說', 14, true], // Geometry is in the separately licensed Arphic resource.
 ] as const) {
 	test(`reported character: ${character}`, async ({ page }) => {
 		await page.goto(

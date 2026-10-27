@@ -1,14 +1,21 @@
 Make Me a Hanzi dictionary data, by Shaunak Kishore and contributors
 https://github.com/skishore/makemeahanzi
-https://github.com/skishore/makemeahanzi/blob/master/dictionary.txt
+https://github.com/skishore/makemeahanzi/blob/bddc96d41bef78427ed0e034e9f7e31d71fd1b92/dictionary.txt
 
+Changes made by Syng on 2026-10-27:
 Syng selects dictionary radical fields from dictionary.txt (derived from
 Unihan and CJKlib). This dictionary data is licensed under the GNU Lesser
 General Public License version 3 or any later version. The complete LGPL
-and accompanying GPL texts follow this notice.
+and accompanying GPL texts follow this notice. The selected radical fields ship
+separately in resources/character-breakdown/radicals.json.
 
 Exact source URLs, SHA-256 hashes, the graphics revision, changes and the import
 report ship in resources/character-breakdown/manifest.json. The reproducible
 importer is scripts/prepare-character-breakdown.mjs in the Syng source release.
-Sources and modifications: https://github.com/sotch-pr35mac/syng
+Sources and modifications: https://github.com/sotch-pr35mac/syng/tags
+Use the Git tag corresponding to the installed release for the matching importer,
+source pins, notices, and setup scripts. The manifest identifies the dated Dong
+Chinese dump, exact Make Me a Hanzi commit, and Hanzi Writer graphics revision.
+Upstream sources remain under their own licenses; Syng's license and App Store
+exception do not replace or extend those licenses.
 No endorsement by the original creators is implied.

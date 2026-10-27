@@ -80,10 +80,16 @@ test('unverified, deleted, empty, and multi-role components retain their source 
 test('shipped corpus has valid geometry references, all roles, and exact eligibility', () => {
 	const root = 'src/views/resources/character-breakdown';
 	const index = JSON.parse(readFileSync(`${root}/index.json`));
+	const radicals = JSON.parse(readFileSync(`${root}/radicals.json`));
+	assert.equal(radicals._notice.license, 'LGPL-3.0-or-later');
+	assert.equal(radicals.radicals['清'], '氵');
 	const roles = new Set();
+	let arphicCount = 0;
 	let maximum = 0;
 	for (const filename of readdirSync(`${root}/chars`)) {
 		const row = JSON.parse(readFileSync(`${root}/chars/${filename}`));
+		assert.equal('radical' in row, false);
+		assert.ok(!(row.glyph?.kind === 'inline' && row.glyphSource === 'makemeahanzi'));
 		assert.equal(
 			index[row.character],
 			Number(row.verified && !!(row.formation || row.components.length))
@@ -95,7 +101,15 @@ test('shipped corpus has valid geometry references, all roles, and exact eligibi
 							`src/views/resources/hanzi-writer-data/data/${row.character}.json`
 						)
 					)
-				: row.glyph;
+				: row.glyph?.kind === 'arphic'
+					? JSON.parse(readFileSync(`${root}/arphic/${filename}`))
+					: row.glyph;
+		if (row.glyph?.kind === 'arphic') {
+			arphicCount++;
+			assert.equal(glyph._notice.license, 'Arphic-Public-License');
+			assert.match(glyph._notice.modified, /^\d{4}-\d{2}-\d{2}$/);
+			assert.ok(glyph._notice.changes);
+		}
 		if (glyph) {
 			assert.ok(validGeometry(glyph), row.character);
 		}
@@ -110,6 +124,7 @@ test('shipped corpus has valid geometry references, all roles, and exact eligibi
 		maximum = Math.max(maximum, row.components.length);
 	}
 	assert.equal(roles.size, 8);
+	assert.equal(arphicCount, 20);
 	assert.ok(maximum >= 5);
 	const qing = JSON.parse(readFileSync(`${root}/chars/6e05.json`));
 	assert.equal(qing.components[1].note, '');

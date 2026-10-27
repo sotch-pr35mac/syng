@@ -1,4 +1,9 @@
 <script>
+	/**
+	 * Reusable dictionary entry body: definitions, pronunciation, and entry actions.
+	 * DictionaryContent owns layout and navigation between this body and breakdowns;
+	 * lookup/breakdown callbacks let the same body render inside nested views.
+	 */
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 

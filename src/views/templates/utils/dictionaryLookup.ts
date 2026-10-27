@@ -1,3 +1,9 @@
+/**
+ * Shared resolution for dictionary references in popovers and breakdown views.
+ * Canonical lexical IDs preserve a referenced pronunciation/sense; text references
+ * can require an exact character match. Search's broader matching policy is owned
+ * separately by the search composable and is intentionally not changed here.
+ */
 import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type { SearchEntry } from '@/types/search.js';
@@ -11,6 +17,7 @@ export type DictionaryLookupRequest =
 			anchor?: DOMRect;
 	  };
 
+/** Accept legacy text links without losing IDs, exact-match intent, or popup positioning. */
 export function normalizeDictionaryLookupRequest(request: DictionaryLookupRequest): {
 	text: string;
 	lexicalId?: string;
@@ -23,11 +30,15 @@ export function normalizeDictionaryLookupRequest(request: DictionaryLookupReques
 	return request;
 }
 
+/** Extract display/search text without resolving the reference. */
 export function getDictionaryLookupText(request: DictionaryLookupRequest): string {
 	return normalizeDictionaryLookupRequest(request).text;
 }
 
-/** Resolve references consistently, independently of where the resulting entry is displayed. */
+/**
+ * Resolve a reference and prefer its exact spelling among results. A missing lexical
+ * ID returns no entry rather than silently substituting another pronunciation/sense.
+ */
 export async function lookupDictionary(
 	request: DictionaryLookupRequest
 ): Promise<{ results: SearchEntry[]; resultIndex: number }> {

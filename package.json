@@ -4,6 +4,7 @@
 	"description": "An open source, cross platform, Chinese study app.",
 	"type": "module",
 	"scripts": {
+		"postinstall": "node scripts/install-character-breakdown.mjs",
 		"build": "vite build",
 		"bundle:check": "npm run build && node scripts/check-bundle-size.mjs",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
