@@ -1,0 +1,63 @@
+/* Reference only: syui.css from release 2.5.0, commit
+   17dc24d30e89b3a7e686142eebfcf8ad5077d1a4. Keep unchanged. */
+/* SYUI */
+
+@import url('./tones.css');
+
+/* Tooltip */
+.sy-tooltip--container {
+	display: inline-block;
+	position: relative;
+	text-align: left;
+}
+
+.sy-tooltip--container .sy-tooltip--body {
+	min-width: 50px;
+	width: max-content;
+	transform: translate(0, -50%);
+	padding: var(--sy-space);
+	color: var(--sy-color--grey-4);
+	background-color: var(--sy-color--white);
+	font-size: 11px;
+	line-height: 1px;
+	text-align: center;
+	border-radius: var(--sy-border-radius);
+	position: absolute;
+	z-index: var(--sy-z-index--top);
+	box-sizing: border-box;
+	box-shadow: var(--sy-shadow--active);
+	visibility: hidden;
+	opacity: 0;
+	transition: opacity var(--sy-transition-duraction);
+}
+
+@media (hover: hover) {
+	.sy-tooltip--container:hover .sy-tooltip--body {
+		visibility: visible;
+		opacity: 1;
+	}
+}
+
+.sy-tooltip--body-right {
+	top: 50%;
+	left: 100%;
+	margin-left: var(--sy-space);
+}
+
+.sy-tooltip--body-left {
+	top: 50%;
+	right: 100%;
+	margin-right: var(--sy-space);
+}
+
+.sy-tooltip--body-top {
+	top: -20px;
+	right: 0px;
+	margin-bottom: var(--sy-space);
+}
+
+.sy-tooltip--body-bottom {
+	top: 60px;
+	right: -10px;
+	margin-top: var(--sy-space);
+}

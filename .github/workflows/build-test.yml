@@ -7,19 +7,6 @@ on:
     workflow_dispatch:
 
 jobs:
-    accessibility:
-        name: Browser accessibility
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v7
-            - uses: actions/setup-node@v7
-              with:
-                  node-version: 24
-                  cache: npm
-            - run: npm ci
-            - run: npx playwright install --with-deps chromium webkit
-            - run: npm run test:a11y
-
     test:
         name: Test on ${{ matrix.platform }}
         strategy:
@@ -49,6 +36,11 @@ jobs:
                   sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev libfuse2 xdg-utils
             - name: Install Frontend Dependencies
               run: npm ci
+            - name: Install Make (Windows Only)
+              if: runner.os == 'Windows'
+              run: choco install make --no-progress --yes
+            - name: Install Browser Test Dependencies
+              run: npx playwright install --with-deps chromium webkit
             - name: Test Updater Artifact Validation
               run: node --test scripts/check-updater-artifacts.test.ts
             - name: Build Frontend
@@ -59,8 +51,5 @@ jobs:
             - name: Build Native
               working-directory: src/native
               run: cargo build --locked
-            - name: Test Native
-              working-directory: src/native
-              run: cargo test --locked
-            - name: Test Frontend
-              run: npm test
+            - name: Test
+              run: make test CARGO_TEST_FLAGS=--locked
