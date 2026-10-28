@@ -35,10 +35,9 @@
 		word?: SearchEntry;
 		/**
 		 * page: companion pane or mobile route; popup: compact replacement views;
-		 * study: keep the answer mounted and use popup lookups on mobile;
 		 * screen: routed mobile breakdown with an existing route Back step.
 		 */
-		context?: 'page' | 'popup' | 'study' | 'screen';
+		context?: 'page' | 'popup' | 'screen';
 		initialSelection?: BreakdownSelection;
 		onviewchange?: (active: boolean) => void;
 		onexit?: () => void;
@@ -77,9 +76,7 @@
 	const COMPANION_MIN_REM = 38.75,
 		DEFAULT_ROOT_FONT_SIZE = 16;
 	const companion = $derived(context === 'page' && !mobile && wide);
-	const popupLookups = $derived(
-		companion || context === 'screen' || (mobile && context === 'study')
-	);
+	const popupLookups = $derived(companion || context === 'screen');
 	const replaced = $derived(frames.length > 0 && !companion);
 	const breakdownTelemetry = createBreakdownTelemetry();
 	let closeReason: BreakdownCloseReason = 'navigation';
@@ -263,11 +260,9 @@
 						? 'mobile_screen'
 						: context === 'popup'
 							? 'popup'
-							: context === 'study'
-								? 'study'
-								: companion
-									? 'sidebar'
-									: 'entry',
+							: companion
+								? 'sidebar'
+								: 'entry',
 				source: breakdownSource(
 					context === 'screen' ? (mobileBreakdown.origin ?? '') : window.location.hash
 				),
@@ -327,7 +322,7 @@
 			void tick().then(() => {
 				entry?.scrollPosition(mobileBreakdown.scroll);
 				host.querySelector<HTMLButtonElement>(
-					'button[aria-label="Character breakdown"]'
+					'button[aria-label="Character Breakdown"]'
 				)?.focus({ preventScroll: true });
 				mobileBreakdown.origin = undefined;
 				return undefined;

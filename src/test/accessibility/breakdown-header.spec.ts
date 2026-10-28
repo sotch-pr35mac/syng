@@ -18,7 +18,7 @@ for (const mobile of [false, true]) {
 			await page.goto(
 				`/src/test/accessibility/index.html?breakdown&popup${mobile ? '&mobile' : ''}`
 			);
-			const open = page.getByRole('button', { name: 'Character breakdown', exact: true });
+			const open = page.getByRole('button', { name: 'Character Breakdown', exact: true });
 			await expect(open).toBeVisible();
 			if (multiple) {
 				await page.evaluate(() => {
@@ -33,7 +33,7 @@ for (const mobile of [false, true]) {
 				});
 			}
 			await open.click();
-			const panel = page.getByRole('region', { name: 'Character breakdown' });
+			const panel = page.getByRole('region', { name: 'Character Breakdown' });
 			const originalHeader = panel.locator('header');
 			const originalBack = await panel
 				.getByRole('button', { name: 'Back to dictionary' })

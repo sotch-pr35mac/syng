@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
+	import { finishStudyBreakdown } from '@/composables/studyBreakdownSession.js';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { createDictionaryPopover } from '@/composables/dictionaryPopover.svelte.js';
@@ -8,7 +9,10 @@
 	import { mobileBreakdown } from '@/stores/mobileBreakdown.js';
 	const source = breakdownSource(mobileBreakdown.origin ?? '');
 	const dictionary = createDictionaryPopover(source === 'other' ? undefined : source);
-	onDestroy(dictionary.close);
+	onDestroy(() => {
+		dictionary.close();
+		finishStudyBreakdown();
+	});
 	function back() {
 		if (mobileBreakdown.origin !== undefined) {
 			window.history.back();

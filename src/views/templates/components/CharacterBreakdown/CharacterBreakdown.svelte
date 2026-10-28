@@ -205,7 +205,7 @@
 	}
 </script>
 
-<section class="breakdown" aria-label="Character breakdown">
+<section class="breakdown" aria-label="Character Breakdown">
 	<header>
 		{#if !companion}<SyButton
 				style="ghost"
@@ -218,7 +218,7 @@
 				size="small"
 				aria-label="Close dictionary"
 				onclick={onclose}><X size="16" /></SyButton
-			>{:else}<h2>Character breakdown</h2>{/if}
+			>{:else}<h2>Character Breakdown</h2>{/if}
 		{#if companion}<SyButton
 				style="ghost"
 				onclick={onback}

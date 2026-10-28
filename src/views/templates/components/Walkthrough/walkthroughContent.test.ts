@@ -114,12 +114,12 @@ it.each([
 		const prepared = await prepareGuide(guide, {}, () => true);
 		const breakdown = prepared.steps.find((item) => item.id === 'breakdown');
 		expect(breakdown).toMatchObject({
-			title: 'Character breakdown',
+			title: 'Character Breakdown',
 			target: 'dictionary-breakdown',
 			fallbackTarget: 'dictionary-entry',
 			route: '/',
 		});
-		expect(breakdown.body).toContain('Select the Blocks button');
+		expect(breakdown.body).toContain('Select the Character Breakdown button');
 		expect(breakdown.body).toContain('where available');
 		expect(breakdown.body).toContain('Look up this character');
 		expect(breakdown.body).toContain('pauses this guide');

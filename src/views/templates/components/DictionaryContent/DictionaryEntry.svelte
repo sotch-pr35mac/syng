@@ -6,6 +6,7 @@
 	 */
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
+	import { onDestroy } from 'svelte';
 
 	import { Check, Brush, Plus, Blocks } from 'lucide-svelte';
 	import { handleError, telemetry } from '@/utils';
@@ -90,6 +91,10 @@
 	let measureWords = $state([]);
 	let dictionaryContentElement = $state();
 	let previousWordId;
+	let destroyed = false;
+	onDestroy(() => {
+		destroyed = true;
+	});
 	export function scrollPosition(value) {
 		if (value !== undefined && dictionaryContentElement) {
 			dictionaryContentElement.scrollTop = value;
@@ -112,23 +117,26 @@
 	});
 
 	const updateListMembership = () => {
+		if (destroyed) {
+			return;
+		}
 		const requestedWordId = word ? lexicalDisplayId(word) : undefined;
 		bookmarksStore
 			.inList(requestedWordId)
 			.then((lists) => {
-				if (!word || lexicalDisplayId(word) !== requestedWordId) {
+				// A lookup can finish after navigation has destroyed this entry.
+				if (destroyed || !word || lexicalDisplayId(word) !== requestedWordId) {
 					return undefined;
 				}
 				memberLists = lists;
 
-				// After updating list membership update the 'add to bookmarks' action item icon
-				// and tooltip to best reflect the new state.
-				// Note: Here, the 'add to bookmarks' action item is assumed to be the first action
-				actions[0].component = getBookmarkIcon();
-				actions[0].tooltip = getBookmarkTooltip();
+				// The action icon and tooltip derive from memberLists automatically.
 				return undefined;
 			})
 			.catch((e) => {
+				if (destroyed) {
+					return;
+				}
 				handleError(
 					'There was an error fetching list membership. Check the log for more details.',
 					e
@@ -279,7 +287,7 @@
 		},
 		{
 			component: Blocks,
-			tooltip: 'Character breakdown',
+			tooltip: 'Character Breakdown',
 			action: () => {
 				if (!breakdownOpen) {
 					walkthroughStore.suspend();

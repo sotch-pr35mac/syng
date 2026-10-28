@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 async function mockCharacterLookup(page: Page) {
 	await expect(
-		page.getByRole('button', { name: 'Character breakdown', exact: true })
+		page.getByRole('button', { name: 'Character Breakdown', exact: true })
 	).toBeVisible();
 	await page.evaluate(() => {
 		const bridge = (
@@ -69,8 +69,8 @@ for (const surface of ['desktop', 'popup', 'mobile', 'mobile-popup']) {
 			`/src/test/accessibility/index.html?breakdown&character=${encodeURIComponent('清语')}${mobile ? '&mobile' : ''}${popup ? '&popup' : ''}`
 		);
 		await mockCharacterLookup(page);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-		const panel = page.getByRole('region', { name: 'Character breakdown' });
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await panel.getByRole('button', { name: 'Next character' }).click();
 		await expect(panel).toContainText('2 of 2');
 		const lookup = panel.getByRole('button', { name: 'Look up this character', exact: true });
@@ -105,8 +105,8 @@ test('lookup follows the selected script', async ({ page }) => {
 		`/src/test/accessibility/index.html?breakdown&character=${encodeURIComponent('语')}`
 	);
 	await mockCharacterLookup(page);
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	const panel = page.getByRole('region', { name: 'Character breakdown' });
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	const panel = page.getByRole('region', { name: 'Character Breakdown' });
 	await panel.getByRole('button', { name: 'Traditional', exact: true }).click();
 	await panel.getByRole('button', { name: 'Look up this character', exact: true }).click();
 	await expect(page.getByText('Character lookup: 語', { exact: true })).toBeVisible();
@@ -120,8 +120,8 @@ test('lookup is available when breakdown data fails to load', async ({ page }) =
 		`/src/test/accessibility/index.html?breakdown&character=${encodeURIComponent('汉')}`
 	);
 	await mockCharacterLookup(page);
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	const panel = page.getByRole('region', { name: 'Character breakdown' });
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	const panel = page.getByRole('region', { name: 'Character Breakdown' });
 	await expect(panel).toContainText('Character data could not be loaded.');
 	await expect(panel.getByRole('button', { name: 'Retry', exact: true })).toHaveCount(0);
 	await panel.getByRole('button', { name: 'Look up this character', exact: true }).click();

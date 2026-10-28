@@ -354,3 +354,24 @@ it('associates each notes field with its own label when a second dictionary is o
 	expect(firstNotes.value).toBe('first notes');
 	expect(secondNotes.value).toBe('second notes');
 });
+
+it('ignores a membership response after the dictionary entry has unmounted', async () => {
+	let resolveMembership;
+	const pending = new Promise((resolve) => {
+		resolveMembership = resolve;
+	});
+	const inList = vi.fn(() => pending);
+	setBookmarkManagerForTest({ waitForInit: async () => {}, inList });
+	const warning = vi.spyOn(console, 'warn');
+	try {
+		const view = render(DictionaryContent, { word: TEST_WORD, lists: ['Bookmarks'] });
+		await waitFor(() => expect(inList).toHaveBeenCalled());
+		view.unmount();
+		resolveMembership(['Bookmarks']);
+		await pending;
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect(warning).not.toHaveBeenCalled();
+	} finally {
+		warning.mockRestore();
+	}
+});

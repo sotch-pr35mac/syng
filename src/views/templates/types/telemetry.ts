@@ -54,7 +54,7 @@ export interface WhatsNewTelemetry {
 export type WordOpeningSource = 'search' | 'bookmarks' | 'reader' | 'flashcards' | 'quiz';
 export type QueryTrigger = 'pause' | 'selection' | 'submit';
 
-export type BreakdownSurface = 'sidebar' | 'entry' | 'popup' | 'mobile_screen' | 'study';
+export type BreakdownSurface = 'sidebar' | 'entry' | 'popup' | 'mobile_screen';
 export interface BreakdownTelemetryContext {
 	surface: BreakdownSurface;
 	source: WordOpeningSource | 'other';

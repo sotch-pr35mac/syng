@@ -7,6 +7,7 @@
 	import { ArrowRight, RotateCw, SquareStack, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
 	import { onDestroy, untrack } from 'svelte';
+	import { enterStudySession, leaveStudySession } from '@/composables/studyBreakdownSession.js';
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
@@ -82,14 +83,14 @@
 		untrack(() => {
 			hideResultToast();
 			quizRoute.setInstructionPaused(walkthroughStore.quizSuspended);
-			quizRoute.start(selectedList, originFromUrl);
+			enterStudySession(() => quizRoute.start(selectedList, originFromUrl));
 		});
 	});
 
 	onDestroy(() => {
 		hideResultToast();
 		quizRoute.setInstructionPaused(false);
-		quizRoute.endSession();
+		leaveStudySession(quizRoute.endSession);
 	});
 
 	function hideResultToast(): void {
@@ -219,7 +220,7 @@
 		{:else if quizRoute.showAnswer && quizRoute.answer}
 			<div use:walkthroughTarget={'quiz-answer'} class="mobile-quiz__answer">
 				<DictionaryContent
-					context="study"
+					context="page"
 					word={quizRoute.answer}
 					backgroundColor="white"
 					lists={quizRoute.lists}

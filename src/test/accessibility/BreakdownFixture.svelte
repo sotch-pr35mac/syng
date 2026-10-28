@@ -9,7 +9,6 @@
 	import { onMount } from 'svelte';
 	const parameters = new URLSearchParams(location.search);
 	const popup = parameters.has('popup');
-	const study = parameters.has('study');
 	const words = [parameters.get('character') || '清', '要', '语', '喷', '清清🙂'].map(
 		(simplified, index) => ({
 			id: `fixture-${index}`,
@@ -118,7 +117,7 @@
 			/>
 		{:else}<DictionaryContent
 				{word}
-				context={study ? 'study' : 'page'}
+				context="page"
 				onlink={controller.lookup}
 			/>{/if}
 	</div>

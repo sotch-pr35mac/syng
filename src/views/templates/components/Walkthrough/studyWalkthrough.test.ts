@@ -414,3 +414,76 @@ describe.each([
 		}
 	);
 });
+
+it('returns from mobile breakdown to the same quiz answer without restarting the session', async () => {
+	const { mobileBreakdown } = await import('@/stores/mobileBreakdown.js');
+	const { finishStudyBreakdown } = await import('@/composables/studyBreakdownSession.js');
+	const origin = studyHref('quiz', 'Ready vocabulary', 'bookmarks');
+	window.location.hash = origin;
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
+	const view = render(MobileStudyQuiz);
+	await waitFor(() => expect(quizRoute.currentQuestion).toEqual(question));
+	await quizRoute.answerQuestion('watermelon');
+	await tick();
+	const answer = quizRoute.answer;
+	mobileBreakdown.origin = window.location.hash;
+	window.location.hash = '#/breakdown';
+	view.unmount();
+	expect(
+		vi.mocked(telemetry.trackEvent).mock.calls.some(([name]) => name === 'quiz.abandoned')
+	).toBe(false);
+	window.location.hash = origin;
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
+	finishStudyBreakdown();
+	render(MobileStudyQuiz);
+	await tick();
+	expect(quizRoute.showAnswer).toBe(true);
+	expect(quizRoute.answer).toEqual(answer);
+	expect(
+		vi.mocked(telemetry.trackEvent).mock.calls.filter(([name]) => name === 'quiz.started')
+	).toHaveLength(1);
+	const before = vi
+		.mocked(invoke)
+		.mock.calls.filter(([name]) => name === 'get_next_question').length;
+	quizRoute.continue();
+	await waitFor(() =>
+		expect(
+			vi.mocked(invoke).mock.calls.filter(([name]) => name === 'get_next_question')
+		).toHaveLength(before + 1)
+	);
+	mobileBreakdown.origin = undefined;
+});
+
+it('returns from mobile breakdown to the same revealed flashcard without restarting the session', async () => {
+	const { mobileBreakdown } = await import('@/stores/mobileBreakdown.js');
+	const { finishStudyBreakdown } = await import('@/composables/studyBreakdownSession.js');
+	const origin = studyHref('flashcards', 'Ready vocabulary', 'bookmarks');
+	window.location.hash = origin;
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
+	const view = render(MobileStudyFlashcards);
+	await waitFor(() => expect(flashcardsRoute.loading).toBe(false));
+	flashcardsRoute.next();
+	flashcardsRoute.flip();
+	await tick();
+	const answer = flashcardsRoute.activeWord;
+	mobileBreakdown.origin = window.location.hash;
+	window.location.hash = '#/breakdown';
+	view.unmount();
+	expect(
+		vi
+			.mocked(telemetry.trackEvent)
+			.mock.calls.some(([name]) => name === 'flashcards.session_ended')
+	).toBe(false);
+	window.location.hash = origin;
+	window.dispatchEvent(new HashChangeEvent('hashchange'));
+	finishStudyBreakdown();
+	render(MobileStudyFlashcards);
+	await tick();
+	expect(flashcardsRoute.activeWord).toEqual(answer);
+	expect(flashcardsRoute.activeIndex).toBe(1);
+	expect(flashcardsRoute.showDetails).toBe(true);
+	expect(
+		vi.mocked(telemetry.trackEvent).mock.calls.filter(([name]) => name === 'flashcards.started')
+	).toHaveLength(1);
+	mobileBreakdown.origin = undefined;
+});

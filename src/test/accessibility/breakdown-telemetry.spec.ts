@@ -30,8 +30,8 @@ for (const mobile of [false, true]) {
 			`/src/test/accessibility/index.html?breakdown&popup${mobile ? '&mobile' : ''}`
 		);
 		expect(await count(page, 'opened')).toBe(0);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-		const panel = page.getByRole('region', { name: 'Character breakdown' });
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await expect(panel).toBeVisible();
 		for (const target of [
 			panel.getByRole('button', { name: 'Look up this character', exact: true }),
@@ -70,8 +70,8 @@ test('sidebar resizing does not duplicate lifecycle events and previews are boun
 		Object.defineProperty(navigator, 'userAgent', { value: 'iPad' })
 	);
 	await page.goto('/src/test/accessibility/index.html?breakdown&ipad');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	const panel = page.getByRole('region', { name: 'Character breakdown' });
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	const panel = page.getByRole('region', { name: 'Character Breakdown' });
 	await panel.getByRole('button', { name: 'Component 2: Sound' }).hover();
 	await panel.getByRole('button', { name: 'Component 2: Sound' }).click();
 	await panel.locator('.glyph-hit').hover({ position: { x: 16, y: 16 } });
@@ -103,43 +103,46 @@ test('sidebar resizing does not duplicate lifecycle events and previews are boun
 	).toBe('dismissed');
 });
 
-test('mobile route has one open and close, without an extra origin-page event', async ({
-	page,
-}) => {
-	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/src/test/accessibility/index.html?breakdown&mobile');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toBeVisible();
-	expect(await count(page, 'opened')).toBe(1);
-	const panel = page.locator('.mobile-breakdown .breakdown');
-	await panel.getByRole('button', { name: 'Component 1: Meaning' }).click();
-	const route = page.url();
-	for (const link of [
-		panel.getByRole('button', { name: 'Look up this character', exact: true }),
-		panel.getByRole('button', { name: 'Look up 青', exact: true }),
-		panel.locator('.formation').getByRole('button', { name: '青', exact: true }),
-		panel.getByRole('button', { name: 'Look up radical 氵', exact: true }),
-	]) {
-		await link.focus();
-		await link.press('Enter');
-		await expect(page.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
-		await expect(page).toHaveURL(route);
-		await expect(panel).toBeVisible();
-		await expect(page.locator('.mobile-breakdown .nested-header')).toHaveCount(0);
-		await page.getByRole('button', { name: 'Close', exact: true }).click();
-		await expect(link).toBeFocused();
-		await expect(panel.getByRole('button', { name: 'Component 1: Meaning' })).toHaveAttribute(
-			'aria-pressed',
-			'true'
+for (const source of ['search', 'flashcards', 'quiz']) {
+	test(`mobile ${source} route has one open and close, without an extra origin-page event`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(
+			`/src/test/accessibility/index.html?breakdown&mobile${source === 'search' ? '' : `#/study/${source}?list=Review`}`
 		);
-	}
-	expect(await count(page, 'opened')).toBe(1);
-	expect(await count(page, 'closed')).toBe(0);
-	await page.getByRole('button', { name: 'Back to dictionary' }).click();
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toHaveCount(0);
-	expect(await count(page, 'closed')).toBe(1);
-	const captured = await events(page);
-	expect(
-		captured.find((event) => event.name === 'dictionary.breakdown_opened')?.payload.surface
-	).toBe('mobile_screen');
-});
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		await expect(page.getByRole('region', { name: 'Character Breakdown' })).toBeVisible();
+		expect(await count(page, 'opened')).toBe(1);
+		const panel = page.locator('.mobile-breakdown .breakdown');
+		await panel.getByRole('button', { name: 'Component 1: Meaning' }).click();
+		const route = page.url();
+		for (const link of [
+			panel.getByRole('button', { name: 'Look up this character', exact: true }),
+			panel.getByRole('button', { name: 'Look up 青', exact: true }),
+			panel.locator('.formation').getByRole('button', { name: '青', exact: true }),
+			panel.getByRole('button', { name: 'Look up radical 氵', exact: true }),
+		]) {
+			await link.focus();
+			await link.press('Enter');
+			await expect(page.getByRole('button', { name: 'Close', exact: true })).toBeVisible();
+			await expect(page).toHaveURL(route);
+			await expect(panel).toBeVisible();
+			await expect(page.locator('.mobile-breakdown .nested-header')).toHaveCount(0);
+			await page.getByRole('button', { name: 'Close', exact: true }).click();
+			await expect(link).toBeFocused();
+			await expect(
+				panel.getByRole('button', { name: 'Component 1: Meaning' })
+			).toHaveAttribute('aria-pressed', 'true');
+		}
+		expect(await count(page, 'opened')).toBe(1);
+		expect(await count(page, 'closed')).toBe(0);
+		await page.getByRole('button', { name: 'Back to dictionary' }).click();
+		await expect(page.getByRole('region', { name: 'Character Breakdown' })).toHaveCount(0);
+		expect(await count(page, 'closed')).toBe(1);
+		const captured = await events(page);
+		expect(
+			captured.find((event) => event.name === 'dictionary.breakdown_opened')?.payload
+		).toMatchObject({ surface: 'mobile_screen', source });
+	});
+}

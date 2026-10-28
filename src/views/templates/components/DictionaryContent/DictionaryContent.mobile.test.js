@@ -83,21 +83,24 @@ it.each([
 	}
 );
 
-it('opens mobile breakdown with the current entry, script, scroll and bookmark context', async () => {
-	const user = userEvent.setup();
-	setPreferenceManagerForTest(mockPreferenceManager({}));
-	dictionaryDisplaySettingsStore.setCharacterSet('both');
-	window.location.hash = '#/bookmarks';
-	const { getByRole, container } = render(DictionaryContent, {
-		word: TEST_WORD,
-		lists: ['Bookmarks', 'Review'],
-	});
-	container.querySelector('.dictionary-content-container').scrollTop = 83;
-	await user.click(getByRole('button', { name: 'Character breakdown', exact: true }));
-	expect(window.location.hash).toBe('#/breakdown');
-	expect(mobileBreakdown.word).toEqual(TEST_WORD);
-	expect(mobileBreakdown.origin).toBe('#/bookmarks');
-	expect(mobileBreakdown.selection).toEqual({ script: 'simplified', index: 0, pinned: null });
-	expect(mobileBreakdown.scroll).toBe(83);
-	expect(mobileBreakdown.lists).toEqual(['Bookmarks', 'Review']);
-});
+it.each(['#/bookmarks', '#/study/flashcards?list=Review', '#/study/quiz?list=Review'])(
+	'opens mobile breakdown from %s with the current entry, script, scroll and bookmark context',
+	async (origin) => {
+		const user = userEvent.setup();
+		setPreferenceManagerForTest(mockPreferenceManager({}));
+		dictionaryDisplaySettingsStore.setCharacterSet('both');
+		window.location.hash = origin;
+		const { getByRole, container } = render(DictionaryContent, {
+			word: TEST_WORD,
+			lists: ['Bookmarks', 'Review'],
+		});
+		container.querySelector('.dictionary-content-container').scrollTop = 83;
+		await user.click(getByRole('button', { name: 'Character Breakdown', exact: true }));
+		expect(window.location.hash).toBe('#/breakdown');
+		expect(mobileBreakdown.word).toEqual(TEST_WORD);
+		expect(mobileBreakdown.origin).toBe(origin);
+		expect(mobileBreakdown.selection).toEqual({ script: 'simplified', index: 0, pinned: null });
+		expect(mobileBreakdown.scroll).toBe(83);
+		expect(mobileBreakdown.lists).toEqual(['Bookmarks', 'Review']);
+	}
+);

@@ -114,7 +114,7 @@ it.each(['app', 'dictionary'] as const)(
 		while (tour.step.id !== 'breakdown') {
 			tour.next();
 		}
-		await fireEvent.click(screen.getByRole('button', { name: 'Character breakdown' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Character Breakdown' }));
 		await waitFor(() => expect(tour.phase).toBe('suspended'));
 		await fireEvent.click(
 			await screen.findByRole('button', { name: 'Look up this character' })
@@ -154,7 +154,7 @@ describe.each([
 			while (tour.step.id !== 'breakdown') {
 				tour.next();
 			}
-			const button = screen.getByRole('button', { name: 'Character breakdown' });
+			const button = screen.getByRole('button', { name: 'Character Breakdown' });
 			expect(tour.target('dictionary-breakdown')).toBe(button);
 			await waitFor(() =>
 				expect(telemetry.trackEvent).toHaveBeenCalledWith(

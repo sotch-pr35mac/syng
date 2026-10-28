@@ -23,8 +23,8 @@ test('iPad resizing preserves the panel and reconciles Back in both directions',
 		Object.defineProperty(navigator, 'userAgent', { value: 'iPad' })
 	);
 	await page.goto('/src/test/accessibility/index.html?breakdown&ipad');
-	const panel = page.getByRole('region', { name: 'Character breakdown' });
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	const panel = page.getByRole('region', { name: 'Character Breakdown' });
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await panel.getByRole('button', { name: 'Component 2: Sound' }).click();
 	await expect
 		.poll(() => page.evaluate(() => window.history.state?.syngBreakdown))
@@ -49,7 +49,7 @@ test('iPad resizing preserves the panel and reconciles Back in both directions',
 		.toBe(1);
 	await page.goBack();
 	await expect(panel).not.toBeVisible();
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await panel.getByRole('button', { name: 'Back to dictionary' }).click();
 	await expect(panel).not.toBeVisible();
 });
@@ -66,7 +66,7 @@ test('first lazy opening focuses the mounted panel rather than its removed loadi
 		await route.continue();
 	});
 	await page.goto('/src/test/accessibility/index.html?breakdown&popup');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(page.getByText('Loading character breakdown…')).toBeVisible();
 	release();
 	await expect(page.getByRole('button', { name: 'Back to dictionary' })).toBeFocused();
@@ -81,18 +81,18 @@ test('a failed packaged panel shows Back without a retry action or another impor
 		await route.abort();
 	});
 	await page.goto('/src/test/accessibility/index.html?breakdown&popup');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(page.getByRole('status')).toHaveText('Character breakdown could not be loaded.');
 	await expect(page.getByRole('button', { name: 'Retry', exact: true })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Back', exact: true }).click();
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(page.getByRole('status')).toHaveText('Character breakdown could not be loaded.');
 	expect(requests).toBe(1);
 });
 
 test('nested measure-word lookup opens its canonical lexical ID', async ({ page }) => {
 	await page.goto('/src/test/accessibility/index.html?breakdown&popup');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await page.getByRole('button', { name: 'Look up 青', exact: true }).click();
 	await page.getByRole('button', { name: '行', exact: true }).click();
 	await expect(page.getByText('Referenced classifier reading')).toBeVisible();
@@ -102,12 +102,12 @@ test('companion: real data, forgiving hover, stable notes, manual close and word
 	page,
 }) => {
 	await page.goto('/src/test/accessibility/index.html?breakdown');
-	const panel = page.getByRole('region', { name: 'Character breakdown' });
+	const panel = page.getByRole('region', { name: 'Character Breakdown' });
 	await expect(panel).toHaveCount(0);
 	await page.getByRole('button', { name: '要', exact: true }).click();
 	await expect(panel).toHaveCount(0);
 	await page.getByRole('button', { name: '清', exact: true }).click();
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(panel).toBeVisible();
 	await expect(panel.locator('.character-nav')).toHaveCount(0);
 	await expect(panel.locator('footer')).toHaveCount(0);
@@ -155,7 +155,7 @@ test('companion: real data, forgiving hover, stable notes, manual close and word
 	await expect(panel).not.toBeVisible();
 	await page.getByRole('button', { name: '清', exact: true }).click();
 	await expect(panel).not.toBeVisible();
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(panel).toBeVisible();
 	await page.getByRole('button', { name: '喷', exact: true }).click();
 	await expect(panel).toBeVisible();
@@ -178,7 +178,7 @@ for (const mobile of [false, true]) {
 		await page.goto(
 			`/src/test/accessibility/index.html?breakdown&popup${mobile ? '&mobile' : ''}`
 		);
-		await expect(page.getByRole('region', { name: 'Character breakdown' })).toHaveCount(0);
+		await expect(page.getByRole('region', { name: 'Character Breakdown' })).toHaveCount(0);
 		const pageHistory = await page.evaluate(() => ({
 			length: history.length,
 			state: history.state,
@@ -187,8 +187,8 @@ for (const mobile of [false, true]) {
 		const root = page.locator('.dictionary-content-container').first();
 		await root.evaluate((node) => (node.scrollTop = 10));
 		const scroll = await root.evaluate((node) => node.scrollTop);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-		const panel = page.getByRole('region', { name: 'Character breakdown' });
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await expect(panel).toBeVisible();
 		expect(
 			await page.evaluate(() => ({
@@ -197,7 +197,7 @@ for (const mobile of [false, true]) {
 				url: location.href,
 			}))
 		).toEqual(pageHistory);
-		await expect(panel.getByRole('heading', { name: 'Character breakdown' })).toHaveCount(0);
+		await expect(panel.getByRole('heading', { name: 'Character Breakdown' })).toHaveCount(0);
 		await expect(panel.getByRole('button', { name: 'Close dictionary' })).toBeVisible();
 		await panel.locator('.formation').getByRole('button', { name: '青', exact: true }).click();
 		await expect(panel).not.toBeVisible();
@@ -233,7 +233,7 @@ for (const mobile of [false, true]) {
 		).toEqual(pageHistory);
 		await expect(page.getByRole('dialog', { name: 'Dictionary', exact: true })).toBeVisible();
 		expect(await root.evaluate((node) => node.scrollTop)).toBe(scroll);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 		await panel.getByRole('button', { name: 'Close dictionary' }).click();
 		await expect(page.getByRole('dialog', { name: 'Dictionary', exact: true })).toHaveCount(0);
 	});
@@ -244,10 +244,10 @@ test('mobile full entry uses a route; study and narrow entries never auto-open',
 	await page.setViewportSize({ width: 390, height: 844 });
 	await page.goto('/src/test/accessibility/index.html?breakdown&mobile');
 	const origin = page.url();
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await expect(page.getByRole('region', { name: 'Character Breakdown' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(page).toHaveURL(/#\/breakdown$/);
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toBeVisible();
+	await expect(page.getByRole('region', { name: 'Character Breakdown' })).toBeVisible();
 	const glyph = page.locator('.glyph-hit');
 	await expect(glyph).toBeVisible();
 	const bounds = await glyph.boundingBox();
@@ -263,20 +263,22 @@ test('mobile full entry uses a route; study and narrow entries never auto-open',
 	await page.getByRole('button', { name: 'Back to dictionary' }).click();
 	await expect(page).toHaveURL(origin);
 	await expect(
-		page.getByRole('button', { name: 'Character breakdown', exact: true })
+		page.getByRole('button', { name: 'Character Breakdown', exact: true })
 	).toBeVisible();
-	await page.goto('/src/test/accessibility/index.html?breakdown&study');
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toHaveCount(0);
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await page.goto('/src/test/accessibility/index.html?breakdown#/study/flashcards?list=Review');
+	await expect(page.getByRole('region', { name: 'Character Breakdown' })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Back to dictionary' })).toBeVisible();
 });
 test('mobile popup Back preserves the underlying study breakdown and its history', async ({
 	page,
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await page.goto('/src/test/accessibility/index.html?breakdown&study&mobile');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	const study = page.locator('.entry').getByRole('region', { name: 'Character breakdown' });
+	await page.goto('/src/test/accessibility/index.html?breakdown&mobile#/study/quiz?list=Review');
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	const study = page
+		.locator('.mobile-breakdown')
+		.getByRole('region', { name: 'Character Breakdown' });
 	await study.getByRole('button', { name: 'Component 2: Sound' }).click();
 	const studyHistory = await page.evaluate(() => ({
 		length: history.length,
@@ -284,8 +286,8 @@ test('mobile popup Back preserves the underlying study breakdown and its history
 	}));
 	await study.getByRole('button', { name: 'Look up 青', exact: true }).click();
 	const popup = page.getByRole('dialog');
-	await popup.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	const popupBreakdown = popup.getByRole('region', { name: 'Character breakdown' });
+	await popup.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	const popupBreakdown = popup.getByRole('region', { name: 'Character Breakdown' });
 	await popupBreakdown
 		.getByRole('button', { name: 'Look up this character', exact: true })
 		.click();
@@ -313,8 +315,8 @@ test('mobile popup Back preserves the underlying study breakdown and its history
 
 test('breakdown is accessible with enlarged text and high contrast', async ({ page }) => {
 	await page.goto('/src/test/accessibility/index.html?breakdown&fontSize=20&appearance=contrast');
-	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-	await expect(page.getByRole('region', { name: 'Character breakdown' })).toBeVisible();
+	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+	await expect(page.getByRole('region', { name: 'Character Breakdown' })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Look up 青', exact: true })).toBeVisible();
 	const results = await new AxeBuilder({ page }).include('.breakdown').analyze();
 	expect(results.violations).toEqual([]);
@@ -334,8 +336,8 @@ for (const surface of ['desktop', 'popup', 'mobile', 'mobile-popup']) {
 		await page.goto(
 			`/src/test/accessibility/index.html?breakdown${mobile ? '&mobile' : ''}${popup ? '&popup' : ''}`
 		);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-		const panel = page.getByRole('region', { name: 'Character breakdown' });
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await expect(panel.locator('.glyph path')).toHaveCount(11);
 		expect(await panel.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 		await expect(panel).toBeVisible();
@@ -362,8 +364,8 @@ for (const [character, strokes, mapped] of [
 		await page.goto(
 			`/src/test/accessibility/index.html?breakdown&character=${encodeURIComponent(character)}`
 		);
-		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
-		const panel = page.getByRole('region', { name: 'Character breakdown' });
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await expect(panel.locator('.glyph path')).toHaveCount(strokes);
 		if (mapped) {
 			await panel.locator('.glyph-hit').hover({ position: { x: 24, y: 64 } });
@@ -371,6 +373,34 @@ for (const [character, strokes, mapped] of [
 			await expect(panel.locator('.component.active')).toHaveCount(1);
 		} else {
 			await expect(panel.locator('.glyph-hit')).toHaveCount(0);
+		}
+	});
+}
+
+for (const source of ['flashcards', 'quiz']) {
+	test(`${source} uses the companion panel and popup lookups on desktop`, async ({ page }) => {
+		await page.goto(
+			`/src/test/accessibility/index.html?breakdown#/study/${source}?list=Review`
+		);
+		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
+		const panel = page
+			.locator('.entry > .dictionary-layout')
+			.getByRole('region', { name: 'Character Breakdown' });
+		await expect(
+			panel.getByRole('button', { name: 'Close character breakdown' })
+		).toBeVisible();
+		await expect(page.locator('.entry > .dictionary-layout > .root-entry')).toBeVisible();
+		await panel.getByRole('button', { name: 'Look up 青', exact: true }).click();
+		await expect(page.getByRole('dialog')).toBeVisible();
+		await expect(panel).toBeVisible();
+		await page.getByRole('button', { name: 'Close dictionary', exact: true }).click();
+		await panel.getByRole('button', { name: 'Close character breakdown' }).click();
+		await expect(panel).not.toBeVisible();
+		const events = await page.evaluate(() => Reflect.get(window, '__BREAKDOWN_EVENTS__'));
+		for (const name of ['dictionary.breakdown_opened', 'dictionary.breakdown_closed']) {
+			const matching = events.filter((event) => event.name === name);
+			expect(matching).toHaveLength(1);
+			expect(matching[0].payload).toMatchObject({ source, surface: 'sidebar' });
 		}
 	});
 }
