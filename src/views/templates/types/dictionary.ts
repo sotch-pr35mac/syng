@@ -289,7 +289,19 @@ export const lexicalExamples = (unit: LexicalUnit): Example[] => {
 	return examples;
 };
 
-/** Read only word-level alternatives; gloss-level alternatives stay attached to their definition. */
+/**
+ * Temporary display policy until dictionary imports preserve contraction context.
+ * Vowel-less syllables can be valid, but suppress their alternatives for now.
+ * Normalize only for inspection so displayed text and primary readings stay intact.
+ */
+const hasVowelInEverySyllable = (marks: string): boolean =>
+	marks
+		.normalize('NFD')
+		.trim()
+		.split(/\s+/u)
+		.every((syllable) => /[aeiou]/i.test(syllable));
+
+/** Read displayable word-level alternatives; gloss-level alternatives stay with their definition. */
 export const lexicalAlternativePronunciations = (
 	unit: LexicalUnit
 ): Sourced<AlternativePronunciation>[] => {
@@ -306,7 +318,8 @@ export const lexicalAlternativePronunciations = (
 				alternative.pronunciation &&
 				typeof alternative.pronunciation.marks === 'string' &&
 				typeof alternative.pronunciation.numbers === 'string' &&
-				Array.isArray(alternative.pronunciation.tones)
+				Array.isArray(alternative.pronunciation.tones) &&
+				hasVowelInEverySyllable(alternative.pronunciation.marks)
 			);
 		}
 	);
