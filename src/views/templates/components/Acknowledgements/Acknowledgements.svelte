@@ -47,7 +47,7 @@
 	<SyCollapsibleList
 		items={acknowledgements}
 		emptyText="No acknowledgements available."
-		itemUrl={(item) => item.url}
+		itemUrl={(item) => (item.text ? undefined : item.url)}
 		onlinkclick={openAttribution}
 	>
 		{#snippet header(item)}
@@ -57,6 +57,13 @@
 			</span>
 		{/snippet}
 		{#snippet detail(item)}
+			{#if item.url}
+				<p class="acknowledgements--source">
+					<a href={item.url} onclick={(event) => openAttribution(event, item)}
+						>View source</a
+					>
+				</p>
+			{/if}
 			<pre class="acknowledgements--text sy-text--selectable">{item.text}</pre>
 		{/snippet}
 	</SyCollapsibleList>
@@ -99,5 +106,12 @@
 		word-break: break-word;
 		font-size: var(--sy-font-size--small);
 		line-height: 1.5;
+	}
+	.acknowledgements--source {
+		margin: 0 0 var(--sy-space--large);
+		font-size: var(--sy-font-size--small);
+	}
+	.acknowledgements--source a {
+		color: var(--sy-text--blue);
 	}
 </style>

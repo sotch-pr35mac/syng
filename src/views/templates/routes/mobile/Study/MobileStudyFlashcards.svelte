@@ -5,6 +5,7 @@
 	import { ArrowLeft, ArrowRight, RotateCcw, RotateCw, X } from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
 	import { onDestroy, untrack } from 'svelte';
+	import { enterStudySession, leaveStudySession } from '@/composables/studyBreakdownSession.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
@@ -54,9 +55,9 @@
 		}
 		const selectedList = listFromUrl;
 		// Reload only when the list changes, preserving card navigation and flip state.
-		untrack(() => flashcardsRoute.load(selectedList, originFromUrl));
+		untrack(() => enterStudySession(() => flashcardsRoute.load(selectedList, originFromUrl)));
 	});
-	onDestroy(flashcardsRoute.endSession);
+	onDestroy(() => leaveStudySession(flashcardsRoute.endSession));
 </script>
 
 <WalkthroughFeatureInvitation
@@ -83,6 +84,7 @@
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="mobile-flashcards__back">
 				<DictionaryContent
+					context="page"
 					word={activeWord}
 					backgroundColor="white"
 					{lists}

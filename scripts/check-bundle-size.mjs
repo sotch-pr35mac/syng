@@ -12,11 +12,13 @@ const BUDGETS = {
 	// The offline indicator, connectivity synchronization, and eagerly loaded stroke-order engine
 	// are intentionally part of the app shell, alongside the shared accessibility support.
 	// Static imports include both layouts and the character window in the initial module graph.
-	initialShellBytes: 330 * 1024,
+	initialShellBytes: 350 * 1024,
 	largestChunkBytes: 200 * 1024,
-	// Includes walkthroughs, accessibility, organized Settings, release notes, and their telemetry.
-	totalBytes: 710 * 1024,
-	totalGzipBytes: 253 * 1024,
+	// Includes walkthroughs, accessibility, Settings, release notes, and character breakdown.
+	// Breakdown adds ~27 KiB raw / 14 KiB gzip versus the 709.3 / 252.1 KiB baseline.
+	// Its panel is lazy-loaded; character records and geometry remain separate offline assets.
+	totalBytes: 750 * 1024,
+	totalGzipBytes: 273 * 1024,
 };
 
 function javascriptFiles(directory) {

@@ -4,6 +4,7 @@
 	"description": "An open source, cross platform, Chinese study app.",
 	"type": "module",
 	"scripts": {
+		"postinstall": "node scripts/install-character-breakdown.mjs",
 		"build": "vite build",
 		"bundle:check": "npm run build && node scripts/check-bundle-size.mjs",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
@@ -13,6 +14,7 @@
 		"format": "prettier --write \"src/views/**/*.{js,ts,svelte}\"",
 		"format:check": "prettier --check \"src/views/**/*.{js,ts,svelte}\"",
 		"test": "vitest run",
+		"test:character-data": "node --test scripts/prepare-character-breakdown.test.mjs",
 		"test:a11y": "playwright test",
 		"test-coverage": "vitest run --coverage"
 	},

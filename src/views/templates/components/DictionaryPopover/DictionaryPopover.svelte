@@ -39,6 +39,8 @@
 		onmembershipchange?: (_event: BookmarkListMembershipEvent) => void;
 	} = $props();
 
+	let subview = $state(false);
+	let content: ReturnType<typeof DictionaryContent>;
 	const mobile = isMobileLayout();
 	const DESKTOP_WIDTH_PX = 420;
 	const DESKTOP_HEIGHT_PX = 380;
@@ -53,6 +55,7 @@
 		const lookup = normalizeDictionaryLookupRequest(request);
 		onlink?.({
 			text: lookup.text,
+			...(lookup.exactOnly ? { exactOnly: true } : {}),
 			...(lookup.lexicalId ? { lexicalId: lookup.lexicalId } : {}),
 		});
 	};
@@ -67,11 +70,13 @@
 	width={DESKTOP_WIDTH_PX}
 	height={DESKTOP_HEIGHT_PX}
 	mobileTitle="Dictionary"
+	hideMobileHeader={subview}
+	onback={subview ? () => content?.back() : undefined}
 	guideTarget="dictionary-popup"
 	{onclose}
 >
 	<div class="dictionary-popover__body" data-walkthrough-secondary="true">
-		{#if !mobile}
+		{#if !mobile && !subview}
 			<div class="dictionary-popover__header">
 				<span class="dictionary-popover__title">Dictionary</span>
 				<SyButton
@@ -84,7 +89,7 @@
 				</SyButton>
 			</div>
 		{/if}
-		{#if results.length > 1}
+		{#if results.length > 1 && !subview}
 			<div
 				role="group"
 				class="dictionary-popover__results-nav"
@@ -132,6 +137,10 @@
 		{/if}
 		<div class="dictionary-popover__content">
 			<DictionaryContent
+				bind:this={content}
+				context="popup"
+				{onclose}
+				onviewchange={(active) => (subview = active)}
 				{word}
 				{lists}
 				backgroundColor="white"

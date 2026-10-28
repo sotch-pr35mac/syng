@@ -67,11 +67,11 @@
 
 {#if show}
 	<div class="result-container">
-		<!-- Result badge with slide animation -->
+		<!-- Animate visibility changes without retaining a departing route. -->
 		<div
 			class="result-indicator"
-			in:slideFeedback|global={{ duration: 250, axis: slideAxis }}
-			out:slideFeedback|global={{ duration: 250, axis: slideAxis }}
+			in:slideFeedback={{ duration: 250, axis: slideAxis }}
+			out:slideFeedback={{ duration: 250, axis: slideAxis }}
 		>
 			<div class="indicator-content">
 				{#if isCorrect}

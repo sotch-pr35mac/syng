@@ -24,6 +24,7 @@ vi.mock('lucide-svelte', async () => {
 	return {
 		Award: mockIcon,
 		Brush: mockIcon,
+		Blocks: mockIcon,
 		Check: mockIcon,
 		ChevronDown: mockIcon,
 		ChevronLeft: mockIcon,

@@ -195,6 +195,14 @@ const CHARACTER_ANIMATION_STEP = step(
 	'/',
 	{ fallbackTarget: 'dictionary-entry' }
 );
+const CHARACTER_BREAKDOWN_STEP = step(
+	'breakdown',
+	'Character Breakdown',
+	'Select the Character Breakdown button to explore a character’s components and formation information where available. For words with several characters, use the arrows inside breakdown to move between them. Look up this character opens its dictionary entry. Opening breakdown pauses this guide; close it or go Back to return here and resume.',
+	'dictionary-breakdown',
+	'/',
+	{ fallbackTarget: 'dictionary-entry' }
+);
 
 export async function hasSuitableContent(kind: 'document' | 'list'): Promise<boolean> {
 	if (kind === 'document') {
@@ -294,6 +302,7 @@ export async function prepareGuide(
 					{ fallbackTarget: 'search-field' }
 				),
 				CHARACTER_ANIMATION_STEP,
+				CHARACTER_BREAKDOWN_STEP,
 				step(
 					'bookmarks',
 					'Organize your words',
@@ -360,6 +369,7 @@ export async function prepareGuide(
 					{ fallbackTarget: 'search-field' }
 				),
 				CHARACTER_ANIMATION_STEP,
+				CHARACTER_BREAKDOWN_STEP,
 			];
 			if (!isMobileLayout()) {
 				steps.push(

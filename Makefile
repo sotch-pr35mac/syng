@@ -26,7 +26,8 @@ build-ci:
 
 start:
 	npm run build
-	cargo tauri dev
+	# The CLI static server does not decode Unicode asset paths (stroke JSON filenames).
+	cargo tauri dev --no-dev-server
 
 start-ios:
 	npm run build
@@ -74,6 +75,7 @@ fix-lint:
 test:
 	cd src/native && cargo test
 	npm test
+	npm run test:character-data
 	npm run test:a11y
 
 audit:

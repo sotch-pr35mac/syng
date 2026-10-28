@@ -103,6 +103,30 @@ beforeEach(() => {
 });
 
 it.each([
+	{ guide: 'app' as const, mobile: false },
+	{ guide: 'app' as const, mobile: true },
+	{ guide: 'dictionary' as const, mobile: false },
+	{ guide: 'dictionary' as const, mobile: true },
+])(
+	'teaches manual character breakdown in the $guide guide (mobile=$mobile)',
+	async ({ guide, mobile }) => {
+		state.mobile = mobile;
+		const prepared = await prepareGuide(guide, {}, () => true);
+		const breakdown = prepared.steps.find((item) => item.id === 'breakdown');
+		expect(breakdown).toMatchObject({
+			title: 'Character Breakdown',
+			target: 'dictionary-breakdown',
+			fallbackTarget: 'dictionary-entry',
+			route: '/',
+		});
+		expect(breakdown.body).toContain('Select the Character Breakdown button');
+		expect(breakdown.body).toContain('where available');
+		expect(breakdown.body).toContain('Look up this character');
+		expect(breakdown.body).toContain('pauses this guide');
+	}
+);
+
+it.each([
 	{ platform: 'desktop', mobile: false, ipad: false, swipe: false },
 	{ platform: 'iPad', mobile: false, ipad: true, swipe: true },
 	{ platform: 'phone', mobile: true, ipad: false, swipe: true },

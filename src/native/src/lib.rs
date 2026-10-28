@@ -32,9 +32,13 @@ use tauri::Manager;
 #[cfg(desktop)]
 use windows::open_character_window;
 
+fn app_context() -> tauri::Context<tauri::Wry> {
+    tauri::generate_context!()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let app_context = tauri::generate_context!();
+    let app_context = app_context();
     let mut builder = tauri::Builder::default();
 
     #[cfg(target_os = "linux")]
@@ -243,4 +247,61 @@ pub fn run() {
             #[cfg(not(target_os = "macos"))]
             let _ = (app_handle, event);
         });
+}
+
+#[cfg(test)]
+mod asset_tests {
+    #[test]
+    fn embedded_app_allows_local_ipc_connections() {
+        use std::collections::HashMap;
+        use tauri::utils::config::CspDirectiveSources;
+
+        let context = super::app_context();
+        let policy: HashMap<String, CspDirectiveSources> = context
+            .config()
+            .app
+            .security
+            .csp
+            .clone()
+            .expect("Embedded pages must have a CSP")
+            .into();
+        let connections: Vec<String> = policy["connect-src"].clone().into();
+        // Custom schemes on macOS/Linux/iOS; HTTP(S) origins on Windows/Android.
+        for source in [
+            "'self'",
+            "ipc:",
+            "http://ipc.localhost",
+            "https://ipc.localhost",
+        ] {
+            assert!(connections.iter().any(|s| s == source), "Missing {source}");
+        }
+        for broad_source in ["*", "http:", "https:"] {
+            assert!(!connections.iter().any(|s| s == broad_source));
+        }
+    }
+
+    #[test]
+    fn embedded_assets_include_shared_character_graphics() {
+        // Desktop `make start` (with --no-dev-server) and release builds use these assets.
+        // Check the real generated context, not a filesystem mock or a browser route stub.
+        let context = super::app_context();
+        assert!(context.config().build.dev_url.is_none());
+        for (character, expected_strokes) in [('试', 8), ('考', 6), ('西', 6), ('要', 9)] {
+            let path = format!("resources/hanzi-writer-data/data/{character}.json");
+            let bytes = context
+                .assets()
+                .get(&path.as_str().into())
+                .unwrap_or_else(|| panic!("Missing embedded asset: {path}"));
+            let geometry: serde_json::Value = serde_json::from_slice(&bytes)
+                .expect("Stroke requests must return JSON, not the index.html fallback");
+            assert_eq!(
+                geometry["strokes"].as_array().unwrap().len(),
+                expected_strokes
+            );
+            assert_eq!(
+                geometry["medians"].as_array().unwrap().len(),
+                expected_strokes
+            );
+        }
+    }
 }

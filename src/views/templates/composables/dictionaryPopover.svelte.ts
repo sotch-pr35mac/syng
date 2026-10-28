@@ -1,16 +1,16 @@
-import { invoke } from '@tauri-apps/api/core';
-import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
+import {
+	lookupDictionary,
+	normalizeDictionaryLookupRequest,
+	type DictionaryLookupRequest,
+} from '@/utils/dictionaryLookup.js';
+export {
+	normalizeDictionaryLookupRequest,
+	getDictionaryLookupText,
+	type DictionaryLookupRequest,
+} from '@/utils/dictionaryLookup.js';
 import type { SearchEntry } from '@/types/search.js';
 import { handleError, telemetry } from '@/utils/index.js';
 import type { WordOpeningSource } from '@/types/telemetry.js';
-
-export type DictionaryLookupRequest =
-	| string
-	| {
-			text: string;
-			lexicalId?: string;
-			anchor?: DOMRect;
-	  };
 
 export type DictionaryPopoverController = {
 	readonly word: SearchEntry | undefined;
@@ -22,21 +22,6 @@ export type DictionaryPopoverController = {
 	select: (_index: number) => void;
 	close: () => void;
 };
-
-export function normalizeDictionaryLookupRequest(request: DictionaryLookupRequest): {
-	text: string;
-	lexicalId?: string;
-	anchor?: DOMRect;
-} {
-	if (typeof request === 'string') {
-		return { text: request };
-	}
-	return request;
-}
-
-export function getDictionaryLookupText(request: DictionaryLookupRequest): string {
-	return normalizeDictionaryLookupRequest(request).text;
-}
 
 /**
  * Shared dictionary-popover state for cross-reference links (e.g. measure words) tapped inside
@@ -56,21 +41,12 @@ export function createDictionaryPopover(source?: WordOpeningSource): DictionaryP
 		const lookup = normalizeDictionaryLookupRequest(request);
 		const requestId = ++lookupRequest;
 		try {
-			const found = lookup.lexicalId
-				? await invoke<SearchEntry | null>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_ID, {
-						id: lookup.lexicalId,
-					}).then((unit) => (unit ? [unit] : []))
-				: await invoke<SearchEntry[]>(NATIVE_COMMANDS.DICTIONARY.QUERY_BY_CHINESE, {
-						text: lookup.text,
-					});
+			const { results: found, resultIndex: selected } = await lookupDictionary(lookup);
 			if (requestId !== lookupRequest || !found.length) {
 				return;
 			}
-			const exactMatchIndex = found.findIndex(
-				(result) => result.simplified === lookup.text || result.traditional === lookup.text
-			);
 			results = found;
-			resultIndex = exactMatchIndex >= 0 ? exactMatchIndex : 0;
+			resultIndex = selected;
 			word = results[resultIndex];
 			if (lookup.anchor) {
 				anchor = lookup.anchor;

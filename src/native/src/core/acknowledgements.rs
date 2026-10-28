@@ -27,6 +27,11 @@ const MONTSERRAT_OFL: &str = include_str!("../../resources/licenses/Montserrat-O
 const MONTSERRAT_AUTHORS: &str = include_str!("../../resources/licenses/Montserrat-AUTHORS.txt");
 const HANZI_WRITER_DATA: &str =
     include_str!("../../resources/licenses/hanzi-writer-data-ArphicPublicLicense.txt");
+const DONG_CHINESE_NOTICE: &str = include_str!("../../resources/licenses/Dong-Chinese-NOTICE.txt");
+const MMH_DICTIONARY_NOTICE: &str =
+    include_str!("../../resources/licenses/Make-Me-a-Hanzi-Dictionary-NOTICE.txt");
+const DONG_CHINESE: &str = include_str!("../../resources/licenses/Dong-Chinese-CC-BY-SA-4.0.txt");
+const MMH_DICTIONARY: &str = include_str!("../../resources/licenses/Make-Me-a-Hanzi-LGPL-3.0.txt");
 const POUCHDB: &str = include_str!("../../resources/licenses/PouchDB-Apache-2.0.txt");
 const CHINESE_DICTIONARY_MIT: &str =
     include_str!("../../resources/licenses/LICENSE-CHINESE-DICTIONARY-MIT.txt");
@@ -45,6 +50,18 @@ const WIKTIONARY_ATTRIBUTION_URL: &str =
 #[tauri::command]
 pub fn get_acknowledgements() -> Vec<Acknowledgement> {
     vec![
+        Acknowledgement {
+            name: "Dong Chinese — character breakdown".into(),
+            license: "Creative Commons Attribution-ShareAlike 4.0".into(),
+            text: format!("{DONG_CHINESE_NOTICE}\n\n{DONG_CHINESE}"),
+            url: Some("https://www.dong-chinese.com/wiki".into()),
+        },
+        Acknowledgement {
+            name: "Make Me a Hanzi — dictionary data".into(),
+            license: "GNU Lesser General Public License v3.0 or later".into(),
+            text: format!("{MMH_DICTIONARY_NOTICE}\n\n{MMH_DICTIONARY}\n\n{SYNG_GPL}"),
+            url: Some("https://github.com/skishore/makemeahanzi".into()),
+        },
         Acknowledgement {
             name: "Syng".into(),
             license: "GNU General Public License v3.0 (with App Store exception)".into(),
@@ -147,6 +164,49 @@ mod tests {
             "ae3fd3831737b4f742aa65341e632174ab14f6cc0416cb40147a6fe7508a744e",
         ),
     ];
+
+    #[test]
+    fn character_breakdown_notices_ship_identically_on_every_platform() {
+        for name in [
+            "Character-Breakdown-NOTICE.txt",
+            "Dong-Chinese-NOTICE.txt",
+            "Make-Me-a-Hanzi-Dictionary-NOTICE.txt",
+            "Dong-Chinese-CC-BY-SA-4.0.txt",
+            "Make-Me-a-Hanzi-LGPL-3.0.txt",
+        ] {
+            let original = fs::read(Path::new("resources/licenses").join(name)).unwrap();
+            for directory in RESOURCE_DIRECTORIES {
+                assert_eq!(fs::read(Path::new(directory).join(name)).unwrap(), original);
+            }
+            assert_eq!(
+                fs::read(Path::new("../views/resources/character-breakdown/licenses").join(name))
+                    .unwrap(),
+                original
+            );
+        }
+        let entries = get_acknowledgements();
+        let dong = entries
+            .iter()
+            .find(|entry| entry.name == "Dong Chinese — character breakdown")
+            .unwrap();
+        assert_eq!(
+            dong.text,
+            format!("{DONG_CHINESE_NOTICE}\n\n{DONG_CHINESE}")
+        );
+        assert!(!dong.text.contains(MMH_DICTIONARY));
+        let dictionary = entries
+            .iter()
+            .find(|entry| entry.name == "Make Me a Hanzi — dictionary data")
+            .unwrap();
+        assert_eq!(
+            dictionary.text,
+            format!("{MMH_DICTIONARY_NOTICE}\n\n{MMH_DICTIONARY}\n\n{SYNG_GPL}")
+        );
+        assert!(!dictionary.text.contains(DONG_CHINESE));
+        assert!(entries.iter().any(
+            |entry| entry.license == "Arphic Public License" && entry.text == HANZI_WRITER_DATA
+        ));
+    }
 
     fn sha256(contents: &[u8]) -> String {
         let mut hasher = Sha256::new();
