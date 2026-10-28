@@ -54,8 +54,6 @@
 	color: var(--sy-text--muted);
 	background-color: var(--sy-color--white);
 	font-size: 0.6875rem;
-	/* Preserve 2.5.0's label space: a 1px line plus two 1em paragraph margins.
-	   Put that space in the line box so plain and wrapped labels render alike. */
 	line-height: calc(2em + 1px);
 	text-align: center;
 	border-radius: var(--sy-border-radius);
