@@ -23,6 +23,7 @@
 		QUIZ_RESULT_DISPLAY_TIME,
 	} from '@/composables/study.js';
 	import { quizRoute } from '@/composables/quiz.svelte.js';
+	import { isAndroid } from '@/utils/device.js';
 
 	const RESULT_TOAST_DISPLAY_TIME = 3000;
 	const TIMER_SIZE = 44;
@@ -197,7 +198,13 @@
 
 <!-- Pointer pause shortcut; the timer button provides the keyboard action. -->
 <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<div class="mobile-quiz" onclick={handlePageClick} role="region" aria-label="Quiz content">
+<div
+	class="mobile-quiz"
+	class:mobile-quiz--android={isAndroid()}
+	onclick={handlePageClick}
+	role="region"
+	aria-label="Quiz content"
+>
 	<p class="sy-sr-only" role="status" aria-atomic="true">
 		{#if quizRoute.showFinalResults}
 			Quiz complete. {quizRoute.finalCorrect} of {quizRoute.finalTotal} correct.
@@ -275,11 +282,9 @@
 	</div>
 
 	<div class="mobile-quiz__dock">
+		<!-- Feedback transitions stay local so route navigation removes this quiz immediately. -->
 		{#if showResultToast && !quizRoute.showFinalResults}
-			<div
-				class="mobile-quiz__result-banner"
-				transition:fly|global={{ y: 16, duration: 250 }}
-			>
+			<div class="mobile-quiz__result-banner" transition:fly={{ y: 16, duration: 250 }}>
 				<ResultIndicator
 					suspended={walkthroughStore.quizSuspended}
 					show={showResultToast}
@@ -433,6 +438,14 @@
 		box-shadow: var(--sy-mobile-overlay-shadow);
 		z-index: var(--sy-z-index--top-1);
 		box-sizing: border-box;
+	}
+
+	/* Android WebView can reuse the animated dock's pixels when the answer's
+	 * scroll layer changes. Give each region its own compositing layer. */
+	.mobile-quiz--android .mobile-quiz__content,
+	.mobile-quiz--android .mobile-quiz__dock {
+		isolation: isolate;
+		transform: translateZ(0);
 	}
 
 	.mobile-quiz__content {

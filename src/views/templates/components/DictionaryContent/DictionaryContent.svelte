@@ -320,6 +320,9 @@
 			lexicalDisplayId(mobileBreakdown.word) === lexicalDisplayId(word)
 		) {
 			void tick().then(() => {
+				if (!host?.isConnected) {
+					return undefined;
+				}
 				entry?.scrollPosition(mobileBreakdown.scroll);
 				host.querySelector<HTMLButtonElement>(
 					'button[aria-label="Character Breakdown"]'
