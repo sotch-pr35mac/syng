@@ -123,6 +123,7 @@ test('lookup is available when breakdown data fails to load', async ({ page }) =
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 	const panel = page.getByRole('region', { name: 'Character breakdown' });
 	await expect(panel).toContainText('Character data could not be loaded.');
+	await expect(panel.getByRole('button', { name: 'Retry', exact: true })).toHaveCount(0);
 	await panel.getByRole('button', { name: 'Look up this character', exact: true }).click();
 	await expect(page.getByText('Character lookup: 汉', { exact: true })).toBeVisible();
 });

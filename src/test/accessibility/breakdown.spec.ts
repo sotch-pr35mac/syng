@@ -72,6 +72,24 @@ test('first lazy opening focuses the mounted panel rather than its removed loadi
 	await expect(page.getByRole('button', { name: 'Back to dictionary' })).toBeFocused();
 });
 
+test('a failed packaged panel shows Back without a retry action or another import attempt', async ({
+	page,
+}) => {
+	let requests = 0;
+	await page.route('**/CharacterBreakdown.svelte*', async (route) => {
+		requests++;
+		await route.abort();
+	});
+	await page.goto('/src/test/accessibility/index.html?breakdown&popup');
+	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await expect(page.getByRole('status')).toHaveText('Character breakdown could not be loaded.');
+	await expect(page.getByRole('button', { name: 'Retry', exact: true })).toHaveCount(0);
+	await page.getByRole('button', { name: 'Back', exact: true }).click();
+	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
+	await expect(page.getByRole('status')).toHaveText('Character breakdown could not be loaded.');
+	expect(requests).toBe(1);
+});
+
 test('nested measure-word lookup opens its canonical lexical ID', async ({ page }) => {
 	await page.goto('/src/test/accessibility/index.html?breakdown&popup');
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
@@ -151,7 +169,7 @@ test('companion: real data, forgiving hover, stable notes, manual close and word
 	await expect(panel).toContainText('Formation information is not available');
 });
 for (const mobile of [false, true]) {
-	test(`popup replacement preserves root and nested history (${mobile ? 'mobile' : 'desktop'})`, async ({
+	test(`popup replacement preserves local navigation without page history (${mobile ? 'mobile' : 'desktop'})`, async ({
 		page,
 	}) => {
 		if (mobile) {
@@ -161,12 +179,24 @@ for (const mobile of [false, true]) {
 			`/src/test/accessibility/index.html?breakdown&popup${mobile ? '&mobile' : ''}`
 		);
 		await expect(page.getByRole('region', { name: 'Character breakdown' })).toHaveCount(0);
+		const pageHistory = await page.evaluate(() => ({
+			length: history.length,
+			state: history.state,
+			url: location.href,
+		}));
 		const root = page.locator('.dictionary-content-container').first();
 		await root.evaluate((node) => (node.scrollTop = 10));
 		const scroll = await root.evaluate((node) => node.scrollTop);
 		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 		const panel = page.getByRole('region', { name: 'Character breakdown' });
 		await expect(panel).toBeVisible();
+		expect(
+			await page.evaluate(() => ({
+				length: history.length,
+				state: history.state,
+				url: location.href,
+			}))
+		).toEqual(pageHistory);
 		await expect(panel.getByRole('heading', { name: 'Character breakdown' })).toHaveCount(0);
 		await expect(panel.getByRole('button', { name: 'Close dictionary' })).toBeVisible();
 		await panel.locator('.formation').getByRole('button', { name: '青', exact: true }).click();
@@ -185,11 +215,7 @@ for (const mobile of [false, true]) {
 		await panel.getByRole('button', { name: 'Component 2: Sound' }).click();
 		await panel.getByRole('button', { name: 'Look up 青', exact: true }).click();
 		await expect(panel).not.toBeVisible();
-		if (mobile) {
-			await page.goBack();
-		} else {
-			await page.getByRole('button', { name: 'Back', exact: true }).click();
-		}
+		await page.getByRole('button', { name: 'Back', exact: true }).click();
 		await expect(panel).toBeVisible();
 		await expect(panel.getByRole('button', { name: 'Component 2: Sound' })).toHaveAttribute(
 			'aria-pressed',
@@ -198,6 +224,14 @@ for (const mobile of [false, true]) {
 		await panel.getByRole('button', { name: 'Back to dictionary' }).click();
 		await expect(panel).not.toBeVisible();
 		await expect(root).toBeVisible();
+		expect(
+			await page.evaluate(() => ({
+				length: history.length,
+				state: history.state,
+				url: location.href,
+			}))
+		).toEqual(pageHistory);
+		await expect(page.getByRole('dialog', { name: 'Dictionary', exact: true })).toBeVisible();
 		expect(await root.evaluate((node) => node.scrollTop)).toBe(scroll);
 		await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 		await panel.getByRole('button', { name: 'Close dictionary' }).click();
@@ -236,7 +270,7 @@ test('mobile full entry uses a route; study and narrow entries never auto-open',
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 	await expect(page.getByRole('button', { name: 'Back to dictionary' })).toBeVisible();
 });
-test('mobile popup history preserves the underlying study breakdown and selection', async ({
+test('mobile popup Back preserves the underlying study breakdown and its history', async ({
 	page,
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
@@ -244,6 +278,10 @@ test('mobile popup history preserves the underlying study breakdown and selectio
 	await page.getByRole('button', { name: 'Character breakdown', exact: true }).click();
 	const study = page.locator('.entry').getByRole('region', { name: 'Character breakdown' });
 	await study.getByRole('button', { name: 'Component 2: Sound' }).click();
+	const studyHistory = await page.evaluate(() => ({
+		length: history.length,
+		state: history.state,
+	}));
 	await study.getByRole('button', { name: 'Look up 青', exact: true }).click();
 	const popup = page.getByRole('dialog');
 	await popup.getByRole('button', { name: 'Character breakdown', exact: true }).click();
@@ -252,7 +290,7 @@ test('mobile popup history preserves the underlying study breakdown and selectio
 		.getByRole('button', { name: 'Look up this character', exact: true })
 		.click();
 	await expect(popupBreakdown).not.toBeVisible();
-	await page.goBack();
+	await popup.getByRole('button', { name: 'Back', exact: true }).click();
 	await expect(popupBreakdown).toBeVisible();
 	await expect(study).toBeVisible();
 	await expect(study.getByRole('button', { name: 'Component 2: Sound' })).toHaveAttribute(
@@ -261,6 +299,9 @@ test('mobile popup history preserves the underlying study breakdown and selectio
 	);
 	await popupBreakdown.getByRole('button', { name: 'Close dictionary', exact: true }).click();
 	await expect(popup).not.toBeVisible();
+	expect(await page.evaluate(() => ({ length: history.length, state: history.state }))).toEqual(
+		studyHistory
+	);
 	await expect(study).toBeVisible();
 	await expect(study.getByRole('button', { name: 'Component 2: Sound' })).toHaveAttribute(
 		'aria-pressed',

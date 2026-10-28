@@ -95,16 +95,13 @@ test('shipped corpus has valid geometry references, all roles, and exact eligibi
 			Number(row.verified && !!(row.formation || row.components.length))
 		);
 		const glyph =
-			row.glyph?.kind === 'bundled'
-				? JSON.parse(
-						readFileSync(
-							`src/views/resources/hanzi-writer-data/data/${row.character}.json`
-						)
-					)
-				: row.glyph?.kind === 'arphic'
-					? JSON.parse(readFileSync(`${root}/arphic/${filename}`))
-					: row.glyph;
-		if (row.glyph?.kind === 'arphic') {
+			row.glyph?.kind === 'resource'
+				? JSON.parse(readFileSync(`src/views/${decodeURIComponent(row.glyph.path)}`))
+				: row.glyph;
+		if (
+			row.glyph?.kind === 'resource' &&
+			row.glyph.path.startsWith('resources/character-breakdown/arphic/')
+		) {
 			arphicCount++;
 			assert.equal(glyph._notice.license, 'Arphic-Public-License');
 			assert.match(glyph._notice.modified, /^\d{4}-\d{2}-\d{2}$/);

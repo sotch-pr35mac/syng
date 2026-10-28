@@ -48,13 +48,11 @@
 	let loading = $state(true),
 		failed = $state(false),
 		hover = $state<number | null>(null);
-	let retry = $state(0);
 	const characters = $derived([...word[selection.script]]);
 	const character = $derived(characters[selection.index] ?? characters[0]);
 	const active = $derived(hover ?? selection.pinned);
 	$effect(() => {
 		const requested = character;
-		void retry;
 		let cancelled = false;
 		record = null;
 		geometry = null;
@@ -320,12 +318,6 @@
 		</div>
 		{#if loading}<p role="status">Loading character data…</p>
 		{:else if failed}<p role="status">Character data could not be loaded.</p>
-			<SyButton
-				onclick={() => {
-					interact('retry');
-					retry++;
-				}}>Retry</SyButton
-			>
 		{:else}
 			{#if record?.formation || record?.components.length}
 				{#if !record.verified}<p class="verification">Unverified by Dong Chinese</p>{/if}

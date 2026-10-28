@@ -73,8 +73,7 @@ export interface BreakdownInteraction {
 		| 'component_deselected'
 		| 'component_previewed'
 		| 'entry_changed'
-		| 'nested_breakdown_opened'
-		| 'retry';
+		| 'nested_breakdown_opened';
 	character_position?: number;
 	component_position?: number;
 	script?: 'simplified' | 'traditional';

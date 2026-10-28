@@ -2,8 +2,8 @@
  * Offline character records, shared stroke geometry, and component hit testing.
  * All fetches read packaged resources; dictionary lookups use the native database.
  * Session promise caches share concurrent reads and avoid parsing the same file
- * on every visit. Failed promises are evicted, not retried automatically: a later
- * explicit load (including the UI Retry button) can try again.
+ * on every visit. Packaged assets are immutable during a session, so failed reads
+ * remain cached and are surfaced to the caller without retrying.
  */
 import { lookupDictionary } from '@/utils/dictionaryLookup.js';
 import type { SearchEntry } from '@/types/search.js';
@@ -35,10 +35,7 @@ async function json<T>(url: string): Promise<T> {
 }
 /** Load the generated character/eligibility index once; absence is distinct from load failure. */
 export function breakdownIndex(): Promise<Record<string, number>> {
-	indexPromise ??= json<Record<string, number>>(`${ROOT}/index.json`).catch((error) => {
-		indexPromise = undefined;
-		throw error;
-	});
+	indexPromise ??= json<Record<string, number>>(`${ROOT}/index.json`);
 	return indexPromise;
 }
 /** Read a Unicode-keyed record; null means unsupported, while missing/corrupt assets reject. */
@@ -49,51 +46,32 @@ export async function loadBreakdown(character: string): Promise<CharacterBreakdo
 	}
 	if (!records.has(character)) {
 		// LGPL radical fields are packaged separately from the CC BY-SA character notes.
-		radicalsPromise ??= json<{ radicals: Record<string, string> }>(
-			`${ROOT}/radicals.json`
-		).catch((error) => {
-			radicalsPromise = undefined;
-			throw error;
-		});
+		radicalsPromise ??= json<{ radicals: Record<string, string> }>(`${ROOT}/radicals.json`);
 		records.set(
 			character,
 			Promise.all([
 				json<CharacterBreakdownRecord>(`${ROOT}/chars/${characterKey(character)}.json`),
 				radicalsPromise,
-			])
-				.then(([record, { radicals }]) => ({ ...record, radical: radicals[character] }))
-				.catch((error) => {
-					records.delete(character);
-					throw error;
-				})
+			]).then(([record, { radicals }]) => ({ ...record, radical: radicals[character] }))
 		);
 	}
 	return records.get(character);
 }
-/** Read shared, separately licensed Arphic, or inline geometry; null permits a font-only glyph. */
+/** Read inline vectors or their declared packaged resource; null permits a font-only glyph. */
 export function loadBreakdownGeometry(
 	record: CharacterBreakdownRecord
 ): Promise<CharacterGeometry | null> {
 	if (record.glyph?.kind === 'inline') {
 		return Promise.resolve(record.glyph);
 	}
-	if (record.glyph?.kind !== 'bundled' && record.glyph?.kind !== 'arphic') {
+	if (record.glyph?.kind !== 'resource') {
 		return Promise.resolve(null);
 	}
-	if (!geometry.has(record.character)) {
-		geometry.set(
-			record.character,
-			json<CharacterGeometry>(
-				record.glyph.kind === 'arphic'
-					? `${ROOT}/arphic/${characterKey(record.character)}.json`
-					: `resources/hanzi-writer-data/data/${encodeURIComponent(record.character)}.json`
-			).catch((error) => {
-				geometry.delete(record.character);
-				throw error;
-			})
-		);
+	const { path } = record.glyph;
+	if (!geometry.has(path)) {
+		geometry.set(path, json<CharacterGeometry>(path));
 	}
-	return geometry.get(record.character);
+	return geometry.get(path);
 }
 /** Only real, exact entries become links; prefix matches must not masquerade as a radical. */
 export function lookupCharacter(character: string): Promise<SearchEntry[]> {
@@ -103,12 +81,7 @@ export function lookupCharacter(character: string): Promise<SearchEntry[]> {
 	if (!dictionary.has(character)) {
 		dictionary.set(
 			character,
-			lookupDictionary({ text: character, exactOnly: true })
-				.then(({ results }) => results)
-				.catch((error) => {
-					dictionary.delete(character);
-					throw error;
-				})
+			lookupDictionary({ text: character, exactOnly: true }).then(({ results }) => results)
 		);
 	}
 	return dictionary.get(character);

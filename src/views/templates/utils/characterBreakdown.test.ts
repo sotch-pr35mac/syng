@@ -16,7 +16,7 @@ it('joins separately licensed notes, radicals, and Arphic geometry for display',
 		verified: true,
 		formation: 'Source note',
 		components: [],
-		glyph: { kind: 'arphic' },
+		glyph: { kind: 'resource', path: 'resources/character-breakdown/arphic/20041.json' },
 	};
 	const data: CharacterGeometry = { strokes: ['M 0 0'], medians: [[[0, 0]]] };
 	const files = {
@@ -38,13 +38,13 @@ it('joins separately licensed notes, radicals, and Arphic geometry for display',
 	await loadBreakdown('𠁁');
 	expect(fetchMock).toHaveBeenCalledTimes(4);
 });
-it('reports HTML asset fallbacks with the path and retries failed graphics requests', async () => {
+it('reports and caches a packaged graphics failure without repeating the request', async () => {
 	const record: CharacterBreakdownRecord = {
 		character: '要',
 		verified: true,
 		formation: '',
 		components: [],
-		glyph: { kind: 'bundled' },
+		glyph: { kind: 'resource', path: 'resources/hanzi-writer-data/data/%E8%A6%81.json' },
 	};
 	const data: CharacterGeometry = { strokes: ['M 0 0'], medians: [[[0, 0]]] };
 	const fetchMock = vi
@@ -64,8 +64,8 @@ it('reports HTML asset fallbacks with the path and retries failed graphics reque
 		message: 'Could not load character data: resources/hanzi-writer-data/data/%E8%A6%81.json',
 		cause: { message: 'Received HTML instead of character JSON' },
 	});
-	expect(await loadBreakdownGeometry(record)).toEqual(data);
-	expect(fetchMock).toHaveBeenCalledTimes(2);
+	await expect(loadBreakdownGeometry(record)).rejects.toThrow('Could not load character data');
+	expect(fetchMock).toHaveBeenCalledTimes(1);
 });
 describe('component hit regions', () => {
 	const geometry: CharacterGeometry = {

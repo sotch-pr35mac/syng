@@ -28,8 +28,8 @@ export interface CharacterBreakdownRecord {
 	components: BreakdownComponent[];
 	radical?: string;
 	strokeCount?: number;
-	glyph?: ({ kind: 'inline' } & CharacterGeometry) | { kind: 'bundled' | 'arphic' };
-	glyphSource?: 'makemeahanzi' | 'dong-chinese';
+	/** Inline vectors or an app-relative packaged JSON resource; licensing lives in data metadata. */
+	glyph?: ({ kind: 'inline' } & CharacterGeometry) | { kind: 'resource'; path: string };
 }
 export interface BreakdownSelection {
 	script: CharacterScript;

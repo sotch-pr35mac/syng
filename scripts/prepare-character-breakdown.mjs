@@ -63,6 +63,10 @@ export function validGeometry(data) {
 }
 export function convertCharacter(d, radical, bundled, report) {
 	const char = d.char ?? radical?.character;
+	const sharedGlyph = {
+		kind: 'resource',
+		path: `resources/hanzi-writer-data/data/${encodeURIComponent(char)}.json`,
+	};
 	const components = array(d.components)
 		.filter((p) => p && typeof p === 'object')
 		.map((p) => ({
@@ -102,7 +106,7 @@ export function convertCharacter(d, radical, bundled, report) {
 			JSON.stringify(bundled.strokes) === JSON.stringify(im.data.strokes) &&
 			JSON.stringify(bundled.medians) === JSON.stringify(im.data.medians);
 		record.glyph = same
-			? { kind: 'bundled' }
+			? sharedGlyph
 			: { kind: 'inline', strokes: im.data.strokes, medians: im.data.medians };
 		record.glyphSource = im.source;
 		report[same ? 'reusedGraphics' : 'retainedGraphics']++;
@@ -114,7 +118,7 @@ export function convertCharacter(d, radical, bundled, report) {
 			report.disabledMappings.push(char);
 		}
 	} else if (validGeometry(bundled)) {
-		record.glyph = { kind: 'bundled' };
+		record.glyph = sharedGlyph;
 		record.glyphSource = 'makemeahanzi';
 		report.reusedGraphics++;
 	}
@@ -211,7 +215,10 @@ export function generate(dongPath, radicalPath, output, graphics) {
 				}) + '\n'
 			);
 			expectedArphic.add(filename);
-			r.glyph = { kind: 'arphic' };
+			r.glyph = {
+				kind: 'resource',
+				path: `resources/character-breakdown/arphic/${filename}`,
+			};
 		}
 		writeFileSync(join(output, 'chars', filename), JSON.stringify(r) + '\n');
 		report.records++;
@@ -245,7 +252,7 @@ export function generate(dongPath, radicalPath, output, graphics) {
 		join(output, 'manifest.json'),
 		JSON.stringify(
 			{
-				version: 2,
+				version: 3,
 				modified: MODIFIED,
 				sources: SOURCES,
 				licenses: {

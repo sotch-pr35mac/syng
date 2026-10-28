@@ -94,10 +94,9 @@
 		};
 	}
 	async function loadPanel() {
-		if (Panel) {
+		if (Panel || panelFailed) {
 			return;
 		}
-		panelFailed = false;
 		try {
 			Panel = (await import('@/components/CharacterBreakdown/CharacterBreakdown.svelte'))
 				.default;
@@ -306,7 +305,9 @@
 		measure();
 		const unsubscribe = subscribeSystemTypography(measure);
 		window.addEventListener('resize', measure);
-		if (isMobile()) {
+		// A popup rendered in SySnapSheet navigates within the sheet. Other mobile
+		// replacement views keep their browser/system Back history.
+		if (isMobile() && !(mobile && context === 'popup')) {
 			history = breakdownHistory((depth) => {
 				if (depth === 0 && context !== 'screen') {
 					closeReason = 'back';
@@ -378,8 +379,7 @@
 									? 'Character breakdown could not be loaded.'
 									: 'Loading character breakdown…'}
 							</p>
-							{#if panelFailed}<SyButton onclick={loadPanel}>Retry</SyButton
-								>{/if}{/if}
+						{/if}
 					{:else}
 						<div class="nested-header">
 							<SyButton style="ghost" center onclick={back}
