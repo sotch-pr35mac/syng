@@ -73,7 +73,7 @@ fix-lint:
 	npm run fix-lint
 
 test:
-	cd src/native && cargo test
+	cd src/native && cargo test $(CARGO_TEST_FLAGS)
 	npm test
 	npm run test:character-data
 	npm run test:a11y

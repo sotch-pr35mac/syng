@@ -148,11 +148,9 @@
 					>
 						<navItem.icon size="24" aria-hidden="true" />
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
-						<p>
-							{navItem.title}
-						</p>
-					</div>
+					<span class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
+						{navItem.title}
+					</span>
 				</a>
 			{/if}
 		{/each}
@@ -182,11 +180,9 @@
 							<span class="sy-sr-only">Update available</span>
 						{/if}
 					</span>
-					<div class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
-						<p>
-							{navItem.title}
-						</p>
-					</div>
+					<span class="sy-tooltip--body sy-tooltip--body-right" aria-hidden="true">
+						{navItem.title}
+					</span>
 				</a>
 			{/if}
 		{/each}
