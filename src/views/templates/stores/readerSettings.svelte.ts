@@ -19,6 +19,7 @@ const READER_COLUMN_COUNT_MAX = 3;
 const READER_PDF_ZOOM_MIN = 0.5;
 const READER_PDF_ZOOM_MAX = 4;
 
+let revision = 0;
 let settings = $state<ReaderThemeSettings>({ ...DEFAULT_READER_SETTINGS });
 
 function isReaderColorThemeId(value: unknown): value is ReaderColorThemeId {
@@ -56,6 +57,7 @@ function normalizeSettings(value: unknown): ReaderThemeSettings {
 		...DEFAULT_READER_SETTINGS,
 		...storedSettings,
 		...getReaderColorThemeSettings(colorTheme),
+		showPinyin: storedSettings.showPinyin === true,
 		fontSizePercent: clampFontSizePercent(storedSettings.fontSizePercent),
 		lineHeight: clampNumber(
 			storedSettings.lineHeight,
@@ -95,16 +97,23 @@ function saveSettings(nextSettings: ReaderThemeSettings): void {
 }
 
 async function loadSettings(): Promise<void> {
+	const started = revision;
 	try {
 		const preferenceManager = getPreferenceManager();
 		await preferenceManager.waitForInit();
+		if (started !== revision) {
+			return;
+		}
 		settings = normalizeSettings(preferenceManager.get(READER_SETTINGS_PREFERENCE_KEY));
 	} catch {
-		settings = { ...DEFAULT_READER_SETTINGS };
+		if (started === revision) {
+			settings = { ...DEFAULT_READER_SETTINGS };
+		}
 	}
 }
 
 function updateSettings(patch: Partial<ReaderThemeSettings>): void {
+	revision += 1;
 	settings = {
 		...settings,
 		...patch,
@@ -113,6 +122,7 @@ function updateSettings(patch: Partial<ReaderThemeSettings>): void {
 }
 
 function resetSettings(): void {
+	revision += 1;
 	settings = { ...DEFAULT_READER_SETTINGS };
 	saveSettings(settings);
 }
@@ -139,6 +149,7 @@ export const readerSettingsStore = {
 	get settings(): ReaderThemeSettings {
 		return settings;
 	},
+	setShowPinyin: (showPinyin: boolean) => updateSettings({ showPinyin }),
 	loadSettings,
 	updateSettings,
 	resetSettings,

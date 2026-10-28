@@ -1,3 +1,4 @@
+import type { Pinyin } from '@/types/dictionary.js';
 export type ReaderFormat = 'text' | 'webpage' | 'epub' | 'pdf';
 
 export type ReaderResourceKind = 'reflowable-document' | 'fixed-page' | 'asset' | 'navigation';
@@ -105,6 +106,7 @@ export type NormalizedReaderLocator =
 	  };
 
 export interface ReaderThemeSettings {
+	showPinyin: boolean;
 	view: 'paged' | 'scroll';
 	colorTheme: ReaderColorThemeId;
 	fontFamily: string;
@@ -171,7 +173,7 @@ export interface ReaderInlineSpan {
 export interface ReaderTableCell {
 	text: string;
 	is_header?: boolean;
-	spans?: ReaderInlineSpan[];
+	spans?: ReaderInlineSpan[] | null;
 }
 
 export interface ReaderTableRow {
@@ -238,7 +240,7 @@ export interface ReaderContentBlock {
 	participates_in_linear_text?: boolean;
 	heading_level?: ReaderHeadingLevel;
 	text_align?: ReaderTextAlign;
-	spans?: ReaderInlineSpan[];
+	spans?: ReaderInlineSpan[] | null;
 	extensions?: ReaderBlockExtensions;
 }
 
@@ -319,6 +321,7 @@ export interface ReaderDocument extends ReaderImportPayload {
  * `block_id` identifies the source block; `table_cell` when set means offsets are relative to that cell's text.
  */
 export interface ReaderToken {
+	pinyin?: Pinyin;
 	text: string;
 	start: number;
 	end: number;

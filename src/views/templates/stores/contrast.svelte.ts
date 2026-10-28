@@ -120,6 +120,13 @@ export const contrastStore = {
 	get increaseContrast(): boolean {
 		return increaseContrast;
 	},
+	/** Receive the main window's palette without becoming a preference writer. */
+	setWindowToneColors(colors: string[]): void {
+		customToneColors = colors
+			.slice(0, TONE_COLOR_COUNT)
+			.map((color) => (typeof color === 'string' ? color : ''));
+		applyAppearance();
+	},
 	initialize,
 	loadSettings,
 	setIncreaseContrast,

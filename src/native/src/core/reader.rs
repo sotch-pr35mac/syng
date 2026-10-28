@@ -303,6 +303,8 @@ pub struct PrepareReaderImportArgs {
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
 pub struct ReaderToken {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pinyin: Option<chinese_dictionary::Pinyin>,
     pub text: String,
     pub start: usize,
     pub end: usize,
@@ -904,7 +906,7 @@ pub async fn import_reader_document(
 }
 
 #[tauri::command]
-pub fn tokenize_reader_text(text: String) -> Vec<ReaderToken> {
+pub fn tokenize_reader_text(text: String, include_pinyin: Option<bool>) -> Vec<ReaderToken> {
     let mut cursor = 0;
     chinese_dictionary::tokenize(&text)
         .into_iter()
@@ -918,6 +920,13 @@ pub fn tokenize_reader_text(text: String) -> Vec<ReaderToken> {
             let end = start + utf16_len(&token_text);
             cursor = byte_end;
             Some(ReaderToken {
+                pinyin: if include_pinyin.unwrap_or(false) {
+                    chinese_dictionary::query_by_chinese(&token_text)
+                        .first()
+                        .map(|entry| (*entry).to_owned().pinyin)
+                } else {
+                    None
+                },
                 text: token_text,
                 start,
                 end,
@@ -1026,8 +1035,31 @@ mod tests {
     }
 
     #[test]
+    fn enriches_reader_pronunciation_only_when_requested() {
+        let plain = tokenize_reader_text("🙂银行，学习。".to_string(), None);
+        let annotated = tokenize_reader_text("🙂银行，学习。".to_string(), Some(true));
+        assert!(plain.iter().all(|token| token.pinyin.is_none()));
+        assert_eq!(plain.len(), annotated.len());
+        for (before, after) in plain.iter().zip(&annotated) {
+            assert_eq!(
+                (&before.text, before.start, before.end),
+                (&after.text, after.start, after.end)
+            );
+            let expected = chinese_dictionary::query_by_chinese(&before.text);
+            assert_eq!(
+                after.pinyin.as_ref(),
+                expected
+                    .first()
+                    .map(|entry| (*entry).to_owned().pinyin)
+                    .as_ref()
+            );
+        }
+        assert!(annotated.iter().any(|token| token.pinyin.is_some()));
+    }
+
+    #[test]
     fn tokenizes_chinese_text() {
-        let tokens = tokenize_reader_text("你好今天的天气还好。".to_string());
+        let tokens = tokenize_reader_text("你好今天的天气还好。".to_string(), None);
         assert!(tokens
             .iter()
             .any(|token| token.text == "你好" && token.start == 0));
@@ -1036,27 +1068,31 @@ mod tests {
 
     #[test]
     fn tokenizes_affected_headwords_with_utf16_offsets() {
-        let tokens = tokenize_reader_text("🙂以后，用于；万。舍不得".to_string());
+        let tokens = tokenize_reader_text("🙂以后，用于；万。舍不得".to_string(), None);
 
         assert_eq!(
             tokens,
             vec![
                 ReaderToken {
+                    pinyin: None,
                     text: "以后".to_string(),
                     start: 2,
                     end: 4,
                 },
                 ReaderToken {
+                    pinyin: None,
                     text: "用于".to_string(),
                     start: 5,
                     end: 7,
                 },
                 ReaderToken {
+                    pinyin: None,
                     text: "万".to_string(),
                     start: 8,
                     end: 9,
                 },
                 ReaderToken {
+                    pinyin: None,
                     text: "舍不得".to_string(),
                     start: 10,
                     end: 13,

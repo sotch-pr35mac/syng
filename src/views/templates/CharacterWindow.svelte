@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { contrastStore } from '@/stores/contrast.svelte.js';
+	import CharacterAnimationCells from '@/components/DictionaryContent/CharacterAnimationCells.svelte';
 	import { onMount } from 'svelte';
 	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -8,15 +10,25 @@
 	import { handleError } from '@/utils/error.js';
 	import { createCharacterAnimation } from '@/composables/characterAnimation.svelte.js';
 
-	type CharacterWindowWord = {
-		simplified: string;
-		traditional: string;
-		initialScript?: CharacterScript;
-	};
+	import {
+		CHARACTER_DISPLAY_SETTINGS_EVENT,
+		type CharacterWindowWord,
+		type CharacterDisplaySettings,
+	} from '@/utils/characterDisplay.js';
 
 	const enableDrag = platform() === 'macos';
 	const animation = createCharacterAnimation();
-	let word: CharacterWindowWord | undefined;
+	let word = $state<CharacterWindowWord | undefined>();
+	let displaySettings = $state<CharacterDisplaySettings>({
+		showPinyin: false,
+		colorByTone: false,
+	});
+	function applyDisplaySettings(next: Partial<CharacterDisplaySettings>): void {
+		displaySettings = { ...displaySettings, ...next };
+		if (next.toneColors) {
+			contrastStore.setWindowToneColors(next.toneColors);
+		}
+	}
 	let activeScript = $state<CharacterScript>(CHARACTER_SETS.SIMPLIFIED);
 
 	function switchScript(script: CharacterScript): void {
@@ -51,6 +63,9 @@
 					return;
 				}
 				word = event.payload;
+				applyDisplaySettings(
+					word.displaySettings ?? { showPinyin: false, colorByTone: false }
+				);
 				if (word.initialScript) {
 					activeScript = word.initialScript;
 				}
@@ -61,6 +76,13 @@
 			listen('character-window-hidden', () => {
 				animation.stop();
 				word = undefined;
+			})
+		);
+		register(
+			listen<Partial<CharacterDisplaySettings>>(CHARACTER_DISPLAY_SETTINGS_EVENT, (event) => {
+				if (!disposed) {
+					applyDisplaySettings(event.payload);
+				}
 			})
 		);
 		const colorSchemeQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -148,7 +170,12 @@
 				</SyButton>
 			</div>
 			<div class="character-container">
-				<div id="character-target" data-testid="character-target"></div>
+				<CharacterAnimationCells
+					characters={word?.[activeScript] ?? ''}
+					pinyin={word?.pinyin}
+					showPinyin={displaySettings.showPinyin}
+					colorByTone={displaySettings.colorByTone}
+				/>
 			</div>
 		{/if}
 	</div>
@@ -202,12 +229,8 @@
 	.character-container {
 		display: flex;
 		align-items: center;
-		height: 65%;
-	}
-	#character-target {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 190%;
+		flex: 1;
+		min-height: 0;
+		overflow: auto;
 	}
 </style>

@@ -1,3 +1,9 @@
+vi.mock('@/stores/pinyinSettings.svelte.js', () => ({
+	pinyinSettingsStore: { loadSettings: vi.fn().mockResolvedValue(undefined) },
+}));
+vi.mock('@/stores/readerSettings.svelte.js', () => ({
+	readerSettingsStore: { loadSettings: vi.fn().mockResolvedValue(undefined) },
+}));
 import { beforeEach, expect, it, vi } from 'vitest';
 import { initializeInterviews } from '@/utils/interviews.js';
 import { whatsNewStore } from '@/stores/whatsNew.svelte.js';

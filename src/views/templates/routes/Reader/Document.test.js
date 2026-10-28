@@ -395,3 +395,28 @@ it.each([
 		expect(readerSettingsStore.settings).toEqual(savedSettings);
 	}
 );
+
+it('releases page navigation after preparation fails so the user can retry', async () => {
+	const failure = new Error('Page preparation failed');
+	const message = 'There was an error turning the page. Please try again.';
+	const alert = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+	// This failure is deliberate. Capture and assert its report rather than printing
+	// a misleading stack trace; any additional console errors still fail this test.
+	const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+	vi.spyOn(readerRoute, 'canGoNext', 'get').mockReturnValue(true);
+	const prepare = vi
+		.spyOn(readerRoute, 'preparePageTurn')
+		.mockRejectedValueOnce(failure)
+		.mockResolvedValue(undefined);
+	const { findByText, getByRole } = renderReaderDocument('reader-1');
+	await findByText('Story');
+	const next = getByRole('button', { name: 'Next page', exact: true });
+	await fireEvent.click(next);
+	await waitFor(() => expect(alert).toHaveBeenCalledExactlyOnceWith(message));
+	await waitFor(() => expect(next.disabled).toBe(false));
+	await fireEvent.click(next);
+	await waitFor(() => expect(prepare).toHaveBeenCalledTimes(2));
+	expect(next.disabled).toBe(false);
+	expect(alert).toHaveBeenCalledExactlyOnceWith(message);
+	expect(errorLog.mock.calls).toEqual([['[handleError]', message, failure]]);
+});

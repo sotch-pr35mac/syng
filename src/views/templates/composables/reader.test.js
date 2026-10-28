@@ -294,3 +294,162 @@ it('returns to the library when a routed document cannot be loaded', async () =>
 	expect(readerRoute.activeDocument).toBeUndefined();
 	expect(window.location.hash).toBe('#/read');
 });
+
+it('discards pronunciation responses from a document that has been replaced', async () => {
+	const { readerRoute } = await setup();
+	const { readerSettingsStore } = await import('@/stores/readerSettings.svelte.js');
+	readerSettingsStore.setShowPinyin(true);
+	let finishOld;
+	vi.mocked(invoke).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishOld = resolve;
+			})
+	);
+	const oldOpening = readerRoute.openDocument({
+		...document,
+		blocks: [{ id: 'shared', kind: 'paragraph', text: '你好' }],
+	});
+	vi.mocked(invoke).mockResolvedValue([
+		{
+			text: '学习',
+			start: 0,
+			end: 2,
+			pinyin: { marks: 'xué xí', numbers: 'xue2xi2', tones: [2, 2] },
+		},
+	]);
+	await readerRoute.openDocument({
+		...document,
+		_id: 'reader-2',
+		text: '学习',
+		blocks: [{ id: 'shared', kind: 'paragraph', text: '学习' }],
+	});
+	finishOld([
+		{
+			text: '你好',
+			start: 0,
+			end: 2,
+			pinyin: { marks: 'nǐ hǎo', numbers: 'ni3hao3', tones: [3, 3] },
+		},
+	]);
+	await oldOpening;
+	expect(readerRoute.activeDocument._id).toBe('reader-2');
+	expect(readerRoute.getBlockSegments(readerRoute.currentPage.blocks[0])).toEqual([
+		expect.objectContaining({ text: '学习', annotation: 'xué xí' }),
+	]);
+});
+
+it('ignores pending pronunciation when switched off and enriches again when enabled', async () => {
+	const { readerRoute } = await setup();
+	const { readerSettingsStore } = await import('@/stores/readerSettings.svelte.js');
+	readerSettingsStore.setShowPinyin(true);
+	let finishEnrichment;
+	vi.mocked(invoke).mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishEnrichment = resolve;
+			})
+	);
+	const opening = readerRoute.openDocument({
+		...document,
+		blocks: [{ id: 'b', kind: 'paragraph', text: '你好' }],
+	});
+	readerSettingsStore.setShowPinyin(false);
+	vi.mocked(invoke).mockResolvedValue([{ text: '你好', start: 0, end: 2 }]);
+	await readerRoute.refreshPinyin();
+	const annotated = [
+		{
+			text: '你好',
+			start: 0,
+			end: 2,
+			pinyin: { marks: 'nǐ hǎo', numbers: 'ni3hao3', tones: [3, 3] },
+		},
+	];
+	finishEnrichment(annotated);
+	await opening;
+	expect(
+		readerRoute
+			.getBlockSegments(readerRoute.currentPage.blocks[0])
+			.some((segment) => segment.annotation)
+	).toBe(false);
+	readerSettingsStore.setShowPinyin(true);
+	vi.mocked(invoke).mockResolvedValue(annotated);
+	await readerRoute.refreshPinyin();
+	expect(invoke).toHaveBeenCalledTimes(3);
+	expect(readerRoute.getBlockSegments(readerRoute.currentPage.blocks[0])[0].annotation).toBe(
+		'nǐ hǎo'
+	);
+});
+
+it('retains native imported ruby flow when pinyin is off', async () => {
+	const { readerRoute } = await setup();
+	const { readerSettingsStore } = await import('@/stores/readerSettings.svelte.js');
+	readerSettingsStore.setShowPinyin(false);
+	await readerRoute.openDocument({
+		...document,
+		text: '学习中文',
+		blocks: [
+			{
+				id: 'b',
+				kind: 'paragraph',
+				text: '学习中文',
+				spans: [{ start: 0, end: 4, style: 'ruby', annotation: 'xué xí zhōng wén' }],
+				extensions: { block_style: { text_indent: '2em' } },
+			},
+		],
+	});
+	await readerRoute.setPageLayout({
+		contentWidth: 400,
+		contentHeight: 600,
+		fontSize: 20,
+		lineHeight: 40,
+		blockGap: 28,
+		headingLineHeight: 40,
+		headingGap: 28,
+	});
+	expect(readerRoute.currentPage.blocks[0].textLines).toBeUndefined();
+});
+
+it('reserves empty table cells and empty rows in pinyin page-turn snapshots', async () => {
+	const { readerRoute } = await setup();
+	const { readerSettingsStore } = await import('@/stores/readerSettings.svelte.js');
+	readerSettingsStore.setShowPinyin(true);
+	await readerRoute.openDocument({
+		...document,
+		text: '',
+		blocks: [
+			{
+				id: 'table',
+				kind: 'table',
+				text: '',
+				participates_in_linear_text: false,
+				extensions: {
+					table: {
+						rows: [
+							{ cells: [{ text: '' }, { text: '学习' }] },
+							{ cells: [{ text: '' }, { text: '' }] },
+							{ cells: [{ text: '中文' }, { text: '' }] },
+						],
+					},
+				},
+			},
+		],
+	});
+	await readerRoute.setPageLayout({
+		contentWidth: 400,
+		contentHeight: 600,
+		fontSize: 20,
+		lineHeight: 40,
+		blockGap: 28,
+		headingLineHeight: 40,
+		headingGap: 28,
+	});
+	const snapshot = readerRoute.currentPage.blocks[0].tableSnapshot;
+	expect(snapshot.cells).toHaveLength(6);
+	expect(snapshot.cells[1].x - snapshot.cells[0].x).toBeCloseTo(200);
+	const rowHeight = snapshot.cells[2].y - snapshot.cells[0].y;
+	expect(rowHeight).toBeGreaterThan(0);
+	const emptyRowHeight = 2 * 19 * 0.35 + 1;
+	expect(snapshot.cells[4].y - snapshot.cells[2].y).toBeCloseTo(emptyRowHeight);
+	expect(snapshot.height).toBeCloseTo(2 * rowHeight + emptyRowHeight);
+});

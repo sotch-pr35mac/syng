@@ -1,4 +1,6 @@
 <script lang="ts">
+	import ColorizedPinyinSyllables from '@/components/ColorizedText/ColorizedPinyinSyllables.svelte';
+	import type { Pinyin } from '@/types/dictionary.js';
 	import CharacterSetLabel from '@/components/DictionaryContent/CharacterSetLabel.svelte';
 	import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
@@ -9,6 +11,8 @@
 		simplified?: string;
 		traditional?: string;
 		tones?: number[];
+		pinyin?: Pinyin;
+		colorPinyinByTone?: boolean;
 		colorByTone?: boolean;
 		variant?: 'display' | 'inline';
 		stacked?: boolean;
@@ -19,6 +23,8 @@
 		simplified = '',
 		traditional = '',
 		tones = [],
+		pinyin,
+		colorPinyinByTone = false,
 		colorByTone = false,
 		variant = 'display',
 		stacked = false,
@@ -69,6 +75,34 @@
 				</span>{#if index > 0}）{/if}
 			{/each}
 		</span>
+	{:else if pinyin?.marks}
+		{#each characterForms as form (form.script)}
+			<span class="preferred-characters__form">
+				{#if form.showLabel}<CharacterSetLabel script={form.script} {variant} />{/if}
+				<span class="preferred-characters__word">
+					<span
+						class="preferred-characters__lexical sy-text--selectable"
+						lang={scriptLanguage(form.script)}
+						data-testid={lexicalTestIdPrefix
+							? `${lexicalTestIdPrefix}-${form.script}`
+							: undefined}
+					>
+						{#if colorByTone}<ChineseCharacters
+								characters={form.characters}
+								{tones}
+								{colorByTone}
+							/>{:else}{form.characters}{/if}
+					</span>
+					<span class="preferred-characters__pinyin" lang="zh-Latn"
+						><ColorizedPinyinSyllables
+							pinyin={pinyin.marks}
+							tones={pinyin.tones}
+							colorByTone={colorPinyinByTone}
+						/></span
+					>
+				</span>
+			</span>
+		{/each}
 	{:else}
 		{#each characterForms as form (form.script)}
 			<span class="preferred-characters__form">
@@ -94,6 +128,18 @@
 </span>
 
 <style>
+	.preferred-characters__word {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+	}
+	.preferred-characters__pinyin {
+		font-size: 0.35em;
+		font-weight: var(--sy-font-weight--light);
+		line-height: 1.5;
+		white-space: normal;
+	}
+
 	.preferred-characters {
 		display: inline-flex;
 		align-items: baseline;

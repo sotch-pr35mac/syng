@@ -22,6 +22,8 @@
 	import ExampleSentence from '@/components/DictionaryContent/ExampleSentence.svelte';
 	import EntryTopline from '@/components/DictionaryContent/EntryTopline.svelte';
 	import MeasureWord from '@/components/DictionaryContent/MeasureWord.svelte';
+	import { pinyinSettingsStore } from '@/stores/pinyinSettings.svelte.js';
+	import { getPreferenceManager } from '@/utils/appServices.js';
 	import { invoke } from '@tauri-apps/api/core';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
@@ -36,6 +38,7 @@
 	import { resolveHskLevels } from '@/utils/hsk.js';
 	import {
 		lexicalDisplayId,
+		lexicalPinyin,
 		formatPartOfSpeech,
 		lexicalDefinitions,
 		lexicalExamples,
@@ -269,6 +272,16 @@
 					invoke(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
 						word: {
 							traditional: word.traditional,
+							pinyin: lexicalPinyin(word),
+							displaySettings: {
+								showPinyin: pinyinSettingsStore.showCharacterPinyin,
+								colorByTone:
+									dictionaryDisplaySettingsStore.settings.colorPinyinByTone,
+								toneColors: getPreferenceManager().get('toneColors')
+									?.hasCustomColors
+									? getPreferenceManager().get('toneColors').colors
+									: [],
+							},
 							simplified: word.simplified,
 							...(initialScript ? { initialScript } : {}),
 						},

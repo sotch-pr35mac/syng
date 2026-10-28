@@ -17,6 +17,9 @@ import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
 import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+import { notifyCharacterDisplay } from '@/utils/characterDisplay.js';
+
+vi.mock('@/utils/characterDisplay.js', () => ({ notifyCharacterDisplay: vi.fn() }));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
@@ -84,6 +87,7 @@ it('updates the tone colors preference and tracks the settings event', () => {
 	updateToneColorsPreference(colors);
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('toneColors', colors);
+	expect(notifyCharacterDisplay).toHaveBeenCalledWith({ toneColors: colors.colors });
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.changed', {
 		setting: 'toneColors',
 	});

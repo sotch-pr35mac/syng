@@ -34,6 +34,8 @@ const createDefaultPreferences = () => ({
 	_id: 'config',
 	beta: createPreference(true, false),
 	increaseContrast: createPreference(false, false),
+	showCharacterPinyin: createPreference(false, false),
+	showFlashcardPinyin: createPreference(false, false),
 	characterSet: createPreference(false, CHARACTER_SETS.BOTH),
 	colorCharactersByTone: createPreference(false, true),
 	colorPinyinByTone: createPreference(false, false),

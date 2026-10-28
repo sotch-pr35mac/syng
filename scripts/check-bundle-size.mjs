@@ -14,10 +14,10 @@ const BUDGETS = {
 	// Static imports include both layouts and the character window in the initial module graph.
 	initialShellBytes: 350 * 1024,
 	largestChunkBytes: 200 * 1024,
-	// Includes walkthroughs, accessibility, Settings, release notes, and character breakdown.
-	// Breakdown adds ~27 KiB raw / 14 KiB gzip versus the 709.3 / 252.1 KiB baseline.
-	// Its panel is lazy-loaded; character records and geometry remain separate offline assets.
-	totalBytes: 750 * 1024,
+	// Includes character breakdown plus optional pinyin controls and Reader annotation layout.
+	// Combined build: 349.1 KiB initial, 752.0 KiB total, 267.7 KiB gzip.
+	// Breakdown stays lazy-loaded; character records and geometry remain offline assets.
+	totalBytes: 755 * 1024,
 	totalGzipBytes: 273 * 1024,
 };
 
@@ -94,9 +94,7 @@ const initialShellBytes = shellChunks.length
 			)
 		)
 	: dependencyGraphBytes([resolve(ENTRY_FILE)]);
-const largest = chunks.reduce((current, chunk) =>
-	chunk.bytes > current.bytes ? chunk : current
-);
+const largest = chunks.reduce((current, chunk) => (chunk.bytes > current.bytes ? chunk : current));
 const totalBytes = chunks.reduce((total, chunk) => total + chunk.bytes, 0);
 const totalGzipBytes = chunks.reduce((total, chunk) => total + chunk.gzipBytes, 0);
 
@@ -104,11 +102,7 @@ console.log(`JavaScript bundle budget (${chunks.length} chunks)`);
 const checks = [
 	result('bootstrap chunk', entry.bytes, BUDGETS.entryBytes),
 	result('largest initial shell graph', initialShellBytes, BUDGETS.initialShellBytes),
-	result(
-		`largest chunk (${basename(largest.path)})`,
-		largest.bytes,
-		BUDGETS.largestChunkBytes
-	),
+	result(`largest chunk (${basename(largest.path)})`, largest.bytes, BUDGETS.largestChunkBytes),
 	result('all chunks', totalBytes, BUDGETS.totalBytes),
 	result('all chunks, gzip', totalGzipBytes, BUDGETS.totalGzipBytes),
 ];

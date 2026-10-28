@@ -6,6 +6,7 @@
 	import WhatsNewTesting from '@/components/WhatsNew/WhatsNewTesting.svelte';
 	import WalkthroughSettings from '@/components/Walkthrough/WalkthroughSettings.svelte';
 	import WalkthroughReset from '@/components/Walkthrough/WalkthroughReset.svelte';
+	import PinyinSettings from '@/components/SettingsOption/PinyinSettings.svelte';
 	import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
 	import CharacterSetSelector from '@/components/SettingsOption/CharacterSetSelector.svelte';
 	import HskVariantSelector from '@/components/SettingsOption/HskVariantSelector.svelte';
@@ -343,6 +344,8 @@
 					showLabel={false}
 				/>{/snippet}
 			{@render setting('Increase Contrast', contrast, true)}
+			{#snippet pinyin()}<PinyinSettings />{/snippet}
+			{@render setting('Show pinyin', pinyin)}
 			{#snippet coloring()}
 				<ToneColoringSettings
 					variant={controlVariant}

@@ -13,6 +13,9 @@
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
 	import { isIPad } from '@/utils/device.js';
+	import { pinyinSettingsStore } from '@/stores/pinyinSettings.svelte.js';
+	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+	import { lexicalPinyin } from '@/types/dictionary.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
@@ -157,6 +160,11 @@
 				{#if flashcardsRoute.listContent.length > 0 && activeWord}
 					<h1>
 						<PreferredCharacters
+							pinyin={pinyinSettingsStore.showFlashcardPinyin
+								? lexicalPinyin(activeWord)
+								: undefined}
+							colorPinyinByTone={dictionaryDisplaySettingsStore.settings
+								.colorPinyinByTone}
 							simplified={activeWord.simplified}
 							traditional={activeWord.traditional}
 							lexicalTestIdPrefix="flashcard-front"
