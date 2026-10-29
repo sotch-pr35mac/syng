@@ -205,7 +205,8 @@
 	.character-window--content {
 		display: flex;
 		flex-direction: column;
-		height: 100%;
+		flex: 1;
+		min-height: 0;
 		background-color: var(--sy-color--grey-2);
 	}
 	.character-window--character-not-found--container {
@@ -228,7 +229,7 @@
 	}
 	.character-container {
 		display: flex;
-		align-items: center;
+		align-items: safe center;
 		flex: 1;
 		min-height: 0;
 		overflow: auto;

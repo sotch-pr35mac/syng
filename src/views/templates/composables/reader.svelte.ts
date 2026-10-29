@@ -648,19 +648,44 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 	}
 }
 
+function findPreparedPageIndex(original: ReaderPage, position = original.start): number {
+	// Atomic pages can share a text offset with their neighbors. Retain a source
+	// block and its local position across reflow, rather than treating start as an ID.
+	const anchor =
+		original.blocks.find(
+			(block) => block.start_offset <= position && position < block.end_offset
+		) ?? original.blocks[0];
+	if (anchor) {
+		const offset = anchor.sourceStart + Math.max(0, position - anchor.start_offset);
+		const index = pages.findIndex((page) =>
+			page.blocks.some(
+				(block) =>
+					block.sourceBlockId === anchor.sourceBlockId &&
+					(block.layout_mode === 'atomic' ||
+						(block.sourceStart <= offset && offset < block.sourceEnd))
+			)
+		);
+		if (index !== -1) {
+			return index;
+		}
+	}
+	return findPageIndexForPosition(pages, position);
+}
+
 async function preparePageTokens(targetIndex = pageIndex): Promise<void> {
 	const preparation = ++preparationRevision;
 	const request = documentRequest;
 	const document = activeDocument;
 	const showPinyin = readerSettingsStore.settings.showPinyin;
 	const position = readingAnchor;
-	const targetPosition = pages[targetIndex]?.start;
-	if (!document || targetPosition === undefined) {
+	const requestedPage = pages[targetIndex];
+	const visiblePage = pages[pageIndex];
+	if (!document || !requestedPage || !visiblePage) {
 		return;
 	}
 	// Repagination can bring another source block onto the page. Prepare until coverage settles.
 	for (;;) {
-		const targetPage = pages[findPageIndexForPosition(pages, targetPosition)];
+		const targetPage = pages[findPreparedPageIndex(requestedPage)];
 		if (!targetPage) {
 			return;
 		}
@@ -732,7 +757,7 @@ async function preparePageTokens(targetIndex = pageIndex): Promise<void> {
 		}
 		tokenMap = { ...tokenMap, ...Object.fromEntries(results) };
 		pages = createPagesForCurrentLayout(document);
-		pageIndex = findPageIndexForPosition(pages, position);
+		pageIndex = findPreparedPageIndex(visiblePage, position);
 	}
 }
 

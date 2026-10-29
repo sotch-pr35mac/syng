@@ -453,3 +453,68 @@ it('reserves empty table cells and empty rows in pinyin page-turn snapshots', as
 	expect(snapshot.cells[4].y - snapshot.cells[2].y).toBeCloseTo(emptyRowHeight);
 	expect(snapshot.height).toBeCloseTo(2 * rowHeight + emptyRowHeight);
 });
+
+it.each([false, true])(
+	'prepares the requested text page after a zero-offset image (pinyin %s)',
+	async (showPinyin) => {
+		const { readerRoute } = await setup();
+		const { readerSettingsStore } = await import('@/stores/readerSettings.svelte.js');
+		readerSettingsStore.setShowPinyin(showPinyin);
+		await readerRoute.setPageLayout({
+			contentWidth: 100,
+			contentHeight: 70,
+			fontSize: 20,
+			lineHeight: 40,
+			blockGap: 28,
+			headingLineHeight: 40,
+			headingGap: 28,
+		});
+		await readerRoute.openDocument({
+			...document,
+			blocks: [
+				{
+					id: 'cover',
+					kind: 'image',
+					text: '',
+					participates_in_linear_text: false,
+					extensions: {
+						image: {
+							asset_id: 'cover',
+							mime_type: 'image/png',
+							width: 100,
+							height: 200,
+						},
+					},
+				},
+				{ id: 'text', kind: 'paragraph', text: '你好', start_offset: 0, end_offset: 2 },
+			],
+		});
+
+		expect(readerRoute.pageCount).toBe(2);
+		expect(readerRoute.getPage(0).start).toBe(readerRoute.getPage(1).start);
+		vi.mocked(invoke)
+			.mockClear()
+			.mockResolvedValue([
+				{
+					text: '你好',
+					start: 0,
+					end: 2,
+					pinyin: { marks: 'nǐ hǎo', numbers: 'ni3hao3', tones: [3, 3] },
+				},
+			]);
+		expect(await readerRoute.preparePageTurn('next')).toBe(1);
+		expect(invoke).toHaveBeenCalledWith(
+			'tokenize_reader_text',
+			expect.objectContaining({ text: '你好' })
+		);
+		expect(readerRoute.pageIndex).toBe(0);
+		await readerRoute.nextPage();
+		expect(readerRoute.pageIndex).toBe(1);
+		expect(readerRoute.currentPage.blocks[0].sourceBlockId).toBe('text');
+		expect(readerRoute.getBlockSegments(readerRoute.currentPage.blocks[0])[0].token.text).toBe(
+			'你好'
+		);
+		await readerRoute.previousPage();
+		expect(readerRoute.currentPage.blocks[0].sourceBlockId).toBe('cover');
+	}
+);

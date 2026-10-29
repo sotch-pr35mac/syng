@@ -454,6 +454,13 @@ export function createReaderDocumentController(options: ReaderDocumentController
 				lineHeight: parsePixelValue(styles.lineHeight, fontSize * 2),
 				fontFamily: styles.fontFamily,
 				fontWeight: styles.fontWeight,
+				tokenBorderWidth: block.querySelector('.reader-word')
+					? parsePixelValue(
+							getComputedStyle(block.querySelector('.reader-word')!)
+								.borderBottomWidth,
+							0
+						)
+					: undefined,
 				textIndent: resolveReaderTextIndent(styles.textIndent, fontSize, block.clientWidth),
 			};
 		}

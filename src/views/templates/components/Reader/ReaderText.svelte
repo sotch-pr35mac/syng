@@ -79,6 +79,7 @@
 		<span
 			class="reader-text-unit"
 			class:reader-text-unit--measured={!!run}
+			class:reader-text-unit--wrapped={run?.wrapBase}
 			class:reader-text-unit--annotated={!!segment.annotation}
 			style={run
 				? `width:${run.width}px;height:${run.baseHeight}px;top:${above}px`
@@ -108,8 +109,12 @@
 		white-space: pre;
 	}
 	.reader-text-unit--measured .reader-pronunciation--wrapped {
-		white-space: normal;
-		word-break: break-all;
+		white-space: break-spaces;
+		line-break: anywhere;
+	}
+	.reader-text-unit--measured.reader-text-unit--wrapped {
+		white-space: break-spaces;
+		line-break: anywhere;
 	}
 
 	.reader-text-unit--annotated:not(.reader-text-unit--measured),

@@ -171,3 +171,64 @@ it('reserves first-line indentation without indenting continuation lines or page
 	expect(pages[0].blocks[0].textLines[0].indent).toBe(40);
 	expect(pages[1].blocks[0].textLines[0].indent).toBe(0);
 });
+
+it('counts actual glyph rows in narrow annotated runs, including explicit breaks', () => {
+	const [line] = layoutReaderText(
+		[{ type: 'text', text: '学习中文', annotation: 'MMMM', annotationSource: 'generated' }],
+		{ ...metrics, width: 30 }
+	);
+	// Four 20px glyphs cannot share any of the 30px rows.
+	expect(line.runs[0].baseHeight).toBe(4 * 24);
+	// Fallback Latin glyphs are 7.8px: only three fit each row.
+	expect(line.runs[0].annotationHeight).toBeCloseTo(2 * 20 * 0.65 * 1.2);
+	expect(line.height).toBeCloseTo(line.runs[0].baseHeight + line.runs[0].annotationHeight);
+	const [explicit] = layoutReaderText(
+		[{ type: 'text', text: '学\n习', annotation: 'xué\nxí', annotationSource: 'imported' }],
+		{ ...metrics, width: 100 }
+	);
+	expect(explicit.runs[0].baseHeight).toBe(48);
+	expect(explicit.runs[0].annotationHeight).toBeCloseTo(2 * 20 * 0.65 * 1.2);
+});
+
+it('paginates using the full wrapped annotation height', () => {
+	const source = '学习中文';
+	const segments = [
+		{
+			type: 'text' as const,
+			text: source,
+			annotation: 'MMMM',
+			annotationSource: 'generated' as const,
+		},
+	];
+	const lines = layoutReaderText(segments, { ...metrics, width: 30 });
+	const document = {
+		text: source.repeat(2),
+		blocks: ['a', 'b'].map((id, index) => ({
+			id,
+			kind: 'paragraph',
+			text: source,
+			start_offset: index * source.length,
+			end_offset: (index + 1) * source.length,
+		})),
+	} as ReaderDocument;
+	const pages = createReaderPages(
+		document,
+		{
+			contentWidth: 30,
+			contentHeight: 240,
+			fontSize: 20,
+			lineHeight: 40,
+			blockGap: 0,
+			headingLineHeight: 40,
+			headingGap: 0,
+		},
+		{ a: lines, b: lines }
+	);
+	expect(pages).toHaveLength(2);
+	expect(
+		pages
+			.flatMap((page) => page.blocks)
+			.map((block) => block.text)
+			.join('')
+	).toBe(document.text);
+});

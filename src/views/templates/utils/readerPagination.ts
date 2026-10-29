@@ -1,6 +1,7 @@
 import { NO_TONE_INDEX } from '@/utils/tones.js';
 import {
 	READER_ANNOTATION_LINE_HEIGHT,
+	wrapReaderText,
 	READER_PINYIN_SCALE,
 	type ReaderTextLine,
 } from '@/utils/readerTextLayout.js';
@@ -777,21 +778,7 @@ function setCanvasFont(context: CanvasRenderingContext2D, style: SnapshotTextSty
 }
 
 function wrapText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-	const lines: string[] = [];
-	for (const paragraph of text.split('\n')) {
-		let currentLine = '';
-		for (const character of Array.from(paragraph)) {
-			const nextLine = `${currentLine}${character}`;
-			if (currentLine && context.measureText(nextLine).width > maxWidth) {
-				lines.push(currentLine);
-				currentLine = character;
-			} else {
-				currentLine = nextLine;
-			}
-		}
-		lines.push(currentLine);
-	}
-	return lines;
+	return wrapReaderText(text, maxWidth, (value) => context.measureText(value).width);
 }
 
 function drawPageText(
@@ -848,24 +835,27 @@ function drawPageText(
 				};
 				for (const run of line.runs) {
 					setCanvasFont(context, baseStyle);
-					const baseLines = wrapText(
-						context,
-						run.text.replace(/\n$/, ''),
-						Math.max(1, run.width)
-					);
-					baseLines.forEach((text, index) =>
-						context.fillText(
-							text,
-							x +
-								(run.annotation
+					const baseRows =
+						run.baseRows ??
+						wrapText(context, run.text.replace(/\n$/, ''), Math.max(1, run.width)).map(
+							(text, index) => ({
+								text,
+								x: run.annotation
 									? Math.max(0, (run.width - context.measureText(text).width) / 2)
-									: 0),
+									: 0,
+								y: index * baseStyle.lineHeight,
+							})
+						);
+					for (const row of baseRows) {
+						context.fillText(
+							row.text,
+							x + row.x,
 							cursorY +
 								line.above +
-								index * baseStyle.lineHeight +
+								row.y +
 								(baseStyle.lineHeight - baseStyle.fontSize) / 2
-						)
-					);
+						);
+					}
 					if (run.annotation) {
 						const annotationStyle = {
 							...baseStyle,

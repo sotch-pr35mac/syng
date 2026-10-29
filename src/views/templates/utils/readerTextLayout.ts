@@ -6,6 +6,7 @@ const ANNOTATED_BASE_LINE_HEIGHT = 1.2;
 const LATIN_EXTENDED_END = 0x024f;
 const FALLBACK_LATIN_WIDTH = 0.6;
 const WIDTH_EPSILON = 0.01;
+const DEFAULT_TOKEN_BORDER_WIDTH = 1;
 const DEFAULT_ROOT_FONT_SIZE = 16;
 const CSS_PIXELS_PER_INCH = 96;
 const POINTS_PER_INCH = 72;
@@ -15,6 +16,31 @@ export interface ReaderTextRun extends ReaderSegment {
 	baseHeight: number;
 	annotationHeight: number;
 	wrapAnnotation: boolean;
+	wrapBase?: boolean;
+	baseRows?: Array<{ text: string; x: number; y: number }>;
+}
+
+const graphemes = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+
+/** Match the grapheme break opportunities of the narrow, annotated runs. */
+export function wrapReaderText(
+	text: string,
+	width: number,
+	measure: (text: string) => number
+): string[] {
+	const lines: string[] = [];
+	for (const paragraph of text.split('\n')) {
+		let line = '';
+		for (const { segment } of graphemes.segment(paragraph)) {
+			if (line && measure(line + segment) > width) {
+				lines.push(line);
+				line = '';
+			}
+			line += segment;
+		}
+		lines.push(line);
+	}
+	return lines;
 }
 export interface ReaderTextLine {
 	metrics: ReaderTextMetrics;
@@ -33,6 +59,7 @@ export interface ReaderTextMetrics {
 	fontWeight?: string;
 	/** Resolved first-line indentation in CSS pixels. */
 	textIndent?: number;
+	tokenBorderWidth?: number;
 }
 
 export function resolveReaderTextIndent(
@@ -82,6 +109,71 @@ export function measureReaderText(
 			size * (character.codePointAt(0)! > LATIN_EXTENDED_END ? 1 : FALLBACK_LATIN_WIDTH),
 		0
 	);
+}
+
+function layoutAnnotatedBase(
+	segment: ReaderSegment,
+	width: number,
+	metrics: ReaderTextMetrics,
+	lineHeight: number
+) {
+	const rows: NonNullable<ReaderTextRun['baseRows']> = [];
+	const border = metrics.tokenBorderWidth ?? DEFAULT_TOKEN_BORDER_WIDTH;
+	let y = 0;
+	let used = 0;
+	let lineCount = 0;
+	let wrapped = false;
+	let boxes: Array<{ text: string[]; width: number; height: number; step: number }> = [];
+	function flush() {
+		if (!boxes.length) {
+			return;
+		}
+		const height = Math.max(...boxes.map((box) => box.height));
+		let x = (width - used) / 2;
+		for (const box of boxes) {
+			box.text.forEach((text, index) =>
+				rows.push({
+					text,
+					x: x + (box.width - measureReaderText(text, metrics)) / 2,
+					y: y + height - box.height + index * box.step,
+				})
+			);
+			x += box.width;
+		}
+		y += height;
+		lineCount += 1;
+		used = 0;
+		boxes = [];
+	}
+	// Buttons are inline boxes: separate dictionary targets cannot share a
+	// partial text row, even when their enclosing authored annotation is shared.
+	for (const part of segment.parts ?? [segment]) {
+		const pieces =
+			!segment.parts || part.token
+				? [part.text]
+				: Array.from(graphemes.segment(part.text), ({ segment }) => segment);
+		for (const piece of pieces) {
+			const boxWidth = Math.min(
+				width,
+				Math.max(...piece.split('\n').map((line) => measureReaderText(line, metrics)))
+			);
+			if (used + boxWidth > width + WIDTH_EPSILON) {
+				flush();
+			}
+			const text = wrapReaderText(piece.replace(/\n$/, ''), width, (value) =>
+				measureReaderText(value, metrics)
+			);
+			wrapped ||= text.length > 1;
+			const step = lineHeight + (part.token ? border : 0);
+			boxes.push({ text, width: boxWidth, height: Math.ceil(text.length * step), step });
+			used += boxWidth;
+			if (piece.endsWith('\n')) {
+				flush();
+			}
+		}
+	}
+	flush();
+	return { rows, height: y, wrapped: wrapped || lineCount > 1 };
 }
 
 /** One layout feeds pagination, the visible text, and page-turn snapshots. */
@@ -150,9 +242,15 @@ export function layoutReaderText(
 				availableWidth,
 				segment.annotation ? Math.ceil(Math.max(baseWidth, annotationWidth)) + 1 : baseWidth
 			);
-			const baseHeight = Math.max(1, Math.ceil(baseWidth / availableWidth)) * baseLineHeight;
+			const wrappedBase =
+				segment.annotation && (baseWidth > runWidth || text.includes('\n') || segment.parts)
+					? layoutAnnotatedBase(segment, runWidth, metrics, baseLineHeight)
+					: undefined;
+			const baseHeight = wrappedBase?.wrapped ? wrappedBase.height : baseLineHeight;
 			const annotationHeight = segment.annotation
-				? Math.max(1, Math.ceil(annotationWidth / availableWidth)) *
+				? wrapReaderText(segment.annotation, runWidth, (value) =>
+						measureReaderText(value, metrics, true)
+					).length *
 					metrics.fontSize *
 					READER_PINYIN_SCALE *
 					READER_ANNOTATION_LINE_HEIGHT
@@ -175,6 +273,8 @@ export function layoutReaderText(
 					baseHeight,
 					annotationHeight,
 					wrapAnnotation: annotationWidth > availableWidth,
+					wrapBase: wrappedBase?.wrapped,
+					baseRows: wrappedBase?.rows,
 				});
 			}
 			usedWidth += runWidth;
