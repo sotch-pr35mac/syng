@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tableCellTokenKey } from '@/utils/readerDocument.js';
+	import ReaderText from '@/components/Reader/ReaderText.svelte';
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
@@ -6,6 +8,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import ReaderThemeSelector from '@/components/Reader/ReaderThemeSelector.svelte';
+	import ReaderPinyinToggle from '@/components/Reader/ReaderPinyinToggle.svelte';
 	import ReaderTextSizeSelector from '@/components/Reader/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import CssPageCurlOverlay from '@/components/Reader/CssPageCurlOverlay.svelte';
@@ -129,6 +132,7 @@
 						onchange={reader.changeReaderFontSize}
 					/>
 				</div>
+				<ReaderPinyinToggle />
 			</div>
 		</SyPopover>
 		<section
@@ -150,7 +154,7 @@
 				class="mobile-reader-document__page mobile-reader-document__page--base"
 				class:mobile-reader-document__page--ios={isIos()}
 				class:mobile-reader-document__page--android={isAndroid()}
-				class:mobile-reader-document__page--turning={reader.turningPage}
+				class:mobile-reader-document__page--turning={Boolean(pageCurl)}
 				class:mobile-reader-document__page--vertical={reader.activeDocumentVerticalWriting}
 			>
 				{#each currentPage.blocks as block (block.id)}
@@ -168,37 +172,40 @@
 								aria-label="Table"
 								data-reader-atomic-block-id={block.sourceBlockId}
 							>
-								<table class="mobile-reader-document__data-table">
+								<table
+									style:table-layout={reader.readerSettings.showPinyin
+										? 'fixed'
+										: undefined}
+									class="mobile-reader-document__data-table"
+								>
 									<tbody>
 										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
 												{#each row.cells as cell, colIndex (colIndex)}
 													<svelte:element
 														this={cell.is_header ? 'th' : 'td'}
+														data-reader-source-block-id={tableCellTokenKey(
+															tableSource.id,
+															rowIndex,
+															colIndex
+														)}
 													>
-														{#each readerRoute.getTableCellSegments(tableSource.id, rowIndex, colIndex, cell.text) as segment, segIndex (segIndex)}
-															{#if segment.type === 'token'}
-																<button
-																	class="mobile-reader-document__token"
-																	type="button"
-																	lang="zh"
-																	aria-haspopup="dialog"
-																	class:mobile-reader-document__token--active={readerRoute.tokensMatchDictionarySelection(
-																		segment.token,
-																		readerRoute.dictionaryToken
-																	)}
-																	onclick={(event) =>
-																		reader.openToken(
-																			event,
-																			segment.token
-																		)}
-																>
-																	{segment.text}
-																</button>
-															{:else}
-																{segment.text}
-															{/if}
-														{/each}
+														<ReaderText
+															segments={readerRoute.getTableCellSegments(
+																tableSource.id,
+																rowIndex,
+																colIndex,
+																cell.text
+															)}
+															selected={readerRoute.dictionaryToken}
+															onopen={reader.openToken}
+															lines={readerRoute.getTableCellLines(
+																tableSource.id,
+																rowIndex,
+																colIndex,
+																cell.text
+															)}
+														/>
 													</svelte:element>
 												{/each}
 											</tr>
@@ -266,26 +273,14 @@
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
 							style={reader.getBlockCssStyle(sourceBlock)}
+							data-reader-source-block-id={block.sourceBlockId}
 						>
-							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
-								{#if segment.type === 'token'}
-									<button
-										class="mobile-reader-document__token"
-										type="button"
-										lang="zh"
-										aria-haspopup="dialog"
-										class:mobile-reader-document__token--active={readerRoute.tokensMatchDictionarySelection(
-											segment.token,
-											readerRoute.dictionaryToken
-										)}
-										onclick={(event) => reader.openToken(event, segment.token)}
-									>
-										{segment.text}
-									</button>
-								{:else}
-									{segment.text}
-								{/if}
-							{/each}
+							<ReaderText
+								segments={readerRoute.getBlockSegments(block)}
+								lines={block.textLines}
+								selected={readerRoute.dictionaryToken}
+								onopen={reader.openToken}
+							/>
 						</svelte:element>
 					{/if}
 				{/each}
@@ -648,26 +643,6 @@
 	h5.mobile-reader-document__block,
 	h6.mobile-reader-document__block {
 		font-size: 1em;
-	}
-
-	.mobile-reader-document__token {
-		display: inline;
-		border: 0;
-		padding: 0;
-		margin: 0;
-		background: transparent;
-		color: inherit;
-		font: inherit;
-	}
-
-	.mobile-reader-document__token:active {
-		color: var(--reader-link-color, var(--sy-color--blue));
-	}
-
-	.mobile-reader-document__token--active {
-		background: var(--reader-selection-background, #dbeafe);
-		color: var(--reader-selection-text, #111827);
-		border-radius: 3px;
 	}
 
 	@media (forced-colors: active) {

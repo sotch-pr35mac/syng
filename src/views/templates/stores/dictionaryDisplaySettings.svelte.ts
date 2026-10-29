@@ -7,6 +7,7 @@ import {
 	HSK_VARIANT_VALUES,
 	type HskVariant,
 } from '@/types/dictionaryDisplay.js';
+import { notifyCharacterDisplay } from '@/utils/characterDisplay.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
 
 export const DEFAULT_DICTIONARY_DISPLAY_SETTINGS: Readonly<DictionaryDisplaySettings> = {
@@ -93,6 +94,7 @@ function setColorCharactersByTone(colorCharactersByTone: boolean): void {
 function setColorPinyinByTone(colorPinyinByTone: boolean): void {
 	settings.colorPinyinByTone = colorPinyinByTone;
 	getPreferenceManager().set('colorPinyinByTone', colorPinyinByTone);
+	notifyCharacterDisplay({ colorByTone: colorPinyinByTone });
 }
 
 function setColorListsByTone(colorListsByTone: boolean): void {

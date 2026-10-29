@@ -124,6 +124,7 @@ export function getReaderColorThemeSettings(
 }
 
 export const DEFAULT_READER_SETTINGS: ReaderThemeSettings = {
+	showPinyin: false,
 	view: 'paged',
 	...getReaderColorThemeSettings(DEFAULT_READER_COLOR_THEME.id),
 	fontFamily: 'var(--sy-font-family)',

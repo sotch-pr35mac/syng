@@ -54,7 +54,7 @@ export function tableCellTokenKey(blockId: string, row: number, col: number): st
 	return `${blockId}::${row}::${col}`;
 }
 
-export type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end'>;
+export type NativeReaderToken = Pick<ReaderToken, 'text' | 'start' | 'end' | 'pinyin'>;
 
 /**
  * Converts native tokenizer output into UTF-16 offsets for a rendered block.

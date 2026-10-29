@@ -12,6 +12,9 @@
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { EMPTY_FLASHCARDS_LIST_MESSAGE, LOADING_STUDY_MESSAGE } from '@/composables/study.js';
 	import { flashcardsRoute } from '@/composables/flashcards.svelte.js';
+	import { pinyinSettingsStore } from '@/stores/pinyinSettings.svelte.js';
+	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+	import { lexicalPinyin } from '@/types/dictionary.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 
 	const listFromUrl = $derived(new URLSearchParams(router.querystring).get('list'));
@@ -96,6 +99,11 @@
 				<h1>
 					{#if activeWord}
 						<PreferredCharacters
+							pinyin={pinyinSettingsStore.showFlashcardPinyin
+								? lexicalPinyin(activeWord)
+								: undefined}
+							colorPinyinByTone={dictionaryDisplaySettingsStore.settings
+								.colorPinyinByTone}
 							simplified={activeWord.simplified}
 							traditional={activeWord.traditional}
 							stacked={true}

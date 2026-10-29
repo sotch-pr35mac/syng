@@ -51,12 +51,15 @@ export function createCharacterAnimation() {
 		if (!target) {
 			return;
 		}
-		target.replaceChildren();
+		const cells = target.querySelectorAll<HTMLElement>('[data-character-writer]');
+		for (const cell of cells) {
+			cell.replaceChildren();
+		}
 		const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
 		try {
-			for (const character of characters) {
+			for (const [index, character] of Array.from(characters).entries()) {
 				writers.push(
-					HanziWriter.create('character-target', character, {
+					HanziWriter.create(cells[index] ?? target, character, {
 						width: 200,
 						height: 200,
 						padding: 5,

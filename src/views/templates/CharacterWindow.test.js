@@ -7,6 +7,7 @@ import HanziWriter from 'hanzi-writer';
 
 const eventMocks = vi.hoisted(() => ({
 	displayCharactersListener: undefined,
+	displaySettingsListener: undefined,
 	hiddenListener: undefined,
 	unlisten: vi.fn(),
 }));
@@ -55,6 +56,9 @@ vi.mock('@tauri-apps/api/event', () => ({
 			eventMocks.displayCharactersListener = callback;
 			wait(() => callback({ payload: WORD }));
 		}
+		if (event === 'character-display-settings-changed') {
+			eventMocks.displaySettingsListener = callback;
+		}
 		if (event === 'character-window-hidden') {
 			eventMocks.hiddenListener = callback;
 		}
@@ -92,7 +96,7 @@ it('starts a new word immediately after closing during playback and ignores the 
 	expect(followingWriter.animateCharacter).not.toHaveBeenCalled();
 	expect(previousWriter.hideCharacter).toHaveBeenLastCalledWith({ duration: 0 });
 	unmount();
-	expect(eventMocks.unlisten).toHaveBeenCalledTimes(2);
+	expect(eventMocks.unlisten).toHaveBeenCalledTimes(3);
 });
 
 it('should highlight the tab that you click on', async () => {
@@ -151,7 +155,7 @@ it('opens on a requested script', async () => {
 
 	await waitFor(() =>
 		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
-			'character-target',
+			expect.any(HTMLElement),
 			'漢',
 			expect.any(Object)
 		)
@@ -170,7 +174,7 @@ it('keeps the current script when no initial script is requested', async () => {
 
 	await waitFor(() =>
 		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
-			'character-target',
+			expect.any(HTMLElement),
 			'漢',
 			expect.any(Object)
 		)
@@ -193,4 +197,32 @@ it('shows missing character data with the real writer and recovers when switchin
 	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(4));
 	expect(queryByText('Character Data Not Found')).toBeNull();
 	expect(queryByTestId('control-button')).toBeTruthy();
+});
+
+it('updates pinyin without restarting writers and falls back safely for unmatched syllables', async () => {
+	window.matchMedia = mockMatchMedia;
+	const view = render(CharacterWindow);
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(2));
+	eventMocks.displayCharactersListener({
+		payload: {
+			...WORD,
+			pinyin: { marks: 'hàn zì', numbers: 'han4zi4', tones: [4, 4] },
+			displaySettings: { showPinyin: false, colorByTone: false },
+		},
+	});
+	await waitFor(() => expect(HanziWriter.create).toHaveBeenCalledTimes(4));
+	expect(view.queryByText('hàn')).toBeNull();
+	eventMocks.displaySettingsListener({ payload: { showPinyin: true, colorByTone: true } });
+	await waitFor(() => expect(view.getByText('hàn')).toBeTruthy());
+	expect(view.getByText('hàn').classList.contains('colored-pinyin--tone-4')).toBe(true);
+	expect(HanziWriter.create).toHaveBeenCalledTimes(4);
+	eventMocks.displayCharactersListener({
+		payload: {
+			...WORD,
+			pinyin: { marks: 'huār', numbers: 'huar1', tones: [1] },
+			displaySettings: { showPinyin: true, colorByTone: false },
+		},
+	});
+	await waitFor(() => expect(view.getByText('huār')).toBeTruthy());
+	expect(view.container.querySelectorAll('.pronunciation')).toHaveLength(1);
 });

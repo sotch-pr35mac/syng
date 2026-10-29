@@ -78,7 +78,7 @@ it('loads character data and starts stroke animation', async () => {
 	await waitFor(() => expect(container.querySelector('#character-target')).toBeTruthy());
 	await waitFor(() =>
 		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
-			'character-target',
+			expect.any(HTMLElement),
 			'汉',
 			expect.any(Object)
 		)
@@ -96,7 +96,7 @@ it('opens on the requested script and still allows manual switching', async () =
 
 	await waitFor(() =>
 		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
-			'character-target',
+			expect.any(HTMLElement),
 			'漢',
 			expect.any(Object)
 		)
@@ -107,7 +107,7 @@ it('opens on the requested script and still allows manual switching', async () =
 
 	await waitFor(() =>
 		expect(vi.mocked(HanziWriter.create)).toHaveBeenCalledWith(
-			'character-target',
+			expect.any(HTMLElement),
 			'汉',
 			expect.any(Object)
 		)

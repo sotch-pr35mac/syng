@@ -181,9 +181,10 @@
 			if (!popoverElement) {
 				return;
 			}
-			const popoverRect = popoverElement.getBoundingClientRect();
-			measuredWidth = popoverRect.width;
-			measuredHeight = popoverRect.height;
+			// The entrance animation scales the visual rectangle. Position auto-sized
+			// popovers using their layout size so the final panel stays on screen.
+			measuredWidth = popoverElement.offsetWidth;
+			measuredHeight = popoverElement.offsetHeight;
 		};
 		updateMeasuredSize();
 		if (typeof ResizeObserver === 'undefined') {

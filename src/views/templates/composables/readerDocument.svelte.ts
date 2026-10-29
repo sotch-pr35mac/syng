@@ -10,8 +10,11 @@
  * derived values, effects, and the page-turn/overflow/layout logic — lives here
  * so the two views stay in lockstep.
  */
-import { onMount, tick } from 'svelte';
+import { onMount, tick, untrack } from 'svelte';
+import { handleError } from '@/utils/error.js';
 import type { ReaderPageSwipeOptions } from '@/actions/readerPageSwipe.svelte.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { resolveReaderTextIndent, type ReaderTextMetrics } from '@/utils/readerTextLayout.js';
 import { readerRoute } from '@/composables/reader.svelte.js';
 import { subscribeSystemTypography } from '@/composables/systemTypography.js';
 import {
@@ -132,6 +135,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	let targetPageImage = $state<string | undefined>(undefined);
 	let pendingTargetPageIndex = $state<number | undefined>(undefined);
 	let layoutRefreshPending = false;
+	let pinyinRefreshPending = false;
 	const pageCurl = $derived<ReaderPageCurl | undefined>(
 		turningPage && currentPageImage && targetPageImage && turningPageDirection
 			? {
@@ -161,6 +165,15 @@ export function createReaderDocumentController(options: ReaderDocumentController
 	);
 
 	onMount(() => {
+		let disposed = false;
+		void document.fonts?.ready
+			.then(() => {
+				if (!disposed) {
+					return readerRoute.refreshPinyin();
+				}
+				return undefined;
+			})
+			.catch(() => {});
 		const stopTelemetry = readerRoute.mountTelemetry();
 		readerRoute.refresh().catch(() => {});
 		readerSettingsStore.loadSettings().catch(() => {});
@@ -176,6 +189,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		});
 
 		return () => {
+			disposed = true;
 			stopTelemetry();
 			stopTypography();
 			colorSchemeQuery.removeEventListener('change', updateSystemColorScheme);
@@ -220,6 +234,17 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		return () => {
 			resizeObserver.disconnect();
 		};
+	});
+
+	$effect(() => {
+		readerSettings.showPinyin;
+		untrack(() => {
+			if (turningPage) {
+				pinyinRefreshPending = true;
+				return;
+			}
+			void readerRoute.refreshPinyin().catch(() => {});
+		});
 	});
 
 	$effect(() => {
@@ -386,6 +411,7 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		pageContentHeight = contentHeight;
 
 		await readerRoute.setPageLayout({
+			fontFamily: pageStyles.fontFamily,
 			contentWidth,
 			contentHeight,
 			fontSize,
@@ -410,6 +436,35 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		if (!pageElement || turningPage) {
 			return;
 		}
+
+		const flowMetrics: Record<string, ReaderTextMetrics> = {};
+		for (const block of pageElement.querySelectorAll<HTMLElement>(
+			'[data-reader-source-block-id]'
+		)) {
+			const styles = getComputedStyle(block);
+			const fontSize = parsePixelValue(styles.fontSize, options.pageFontSize);
+			flowMetrics[block.dataset.readerSourceBlockId!] = {
+				width: Math.max(
+					1,
+					block.clientWidth -
+						parsePixelValue(styles.paddingLeft, 0) -
+						parsePixelValue(styles.paddingRight, 0)
+				),
+				fontSize,
+				lineHeight: parsePixelValue(styles.lineHeight, fontSize * 2),
+				fontFamily: styles.fontFamily,
+				fontWeight: styles.fontWeight,
+				tokenBorderWidth: block.querySelector('.reader-word')
+					? parsePixelValue(
+							getComputedStyle(block.querySelector('.reader-word')!)
+								.borderBottomWidth,
+							0
+						)
+					: undefined,
+				textIndent: resolveReaderTextIndent(styles.textIndent, fontSize, block.clientWidth),
+			};
+		}
+		await readerRoute.updateFlowMetrics(flowMetrics);
 
 		const measuredBlocks = pageElement.querySelectorAll<HTMLElement>(
 			'[data-reader-atomic-block-id]'
@@ -439,46 +494,58 @@ export function createReaderDocumentController(options: ReaderDocumentController
 			return;
 		}
 
-		const targetPageIndex =
-			direction === 'next' ? readerRoute.pageIndex + 1 : readerRoute.pageIndex - 1;
-		const targetPage = readerRoute.getPage(targetPageIndex);
-		if (!targetPage || !currentPage) {
-			return;
-		}
-
+		turningPage = true;
 		try {
-			await tick();
-			const pageElement = options.getPageElement();
-			if (!pageElement || window.matchMedia(REDUCED_MOTION_QUERY).matches) {
-				turningPage = true;
-				await readerRoute.goToPage(targetPageIndex);
-				clearPageTurn();
+			const targetPageIndex = await readerRoute.preparePageTurn(direction);
+			if (targetPageIndex === undefined) {
 				return;
 			}
-
-			currentPageImage = createReaderPageSnapshot(
-				currentPage,
-				pageElement
-			).source.toDataURL();
-			targetPageImage = createReaderPageSnapshot(targetPage, pageElement).source.toDataURL();
-			pendingTargetPageIndex = targetPageIndex;
-			turningPageDirection = direction;
-			turningPage = true;
-		} catch {
-			turningPage = true;
+			const targetPage = readerRoute.getPage(targetPageIndex);
+			if (!targetPage || !currentPage) {
+				return;
+			}
+			await tick();
+			const pageElement = options.getPageElement();
+			if (pageElement && !window.matchMedia(REDUCED_MOTION_QUERY).matches) {
+				try {
+					currentPageImage = createReaderPageSnapshot(
+						currentPage,
+						pageElement,
+						dictionaryDisplaySettingsStore.settings.colorPinyinByTone
+					).source.toDataURL();
+					targetPageImage = createReaderPageSnapshot(
+						targetPage,
+						pageElement,
+						dictionaryDisplaySettingsStore.settings.colorPinyinByTone
+					).source.toDataURL();
+					pendingTargetPageIndex = targetPageIndex;
+					turningPageDirection = direction;
+					return;
+				} catch {
+					// A snapshot failure can still fall back to an ordinary page turn.
+				}
+			}
 			await readerRoute.goToPage(targetPageIndex);
-			clearPageTurn();
+		} catch (error) {
+			handleError('There was an error turning the page. Please try again.', error);
+		} finally {
+			// Only a running curl keeps navigation locked until completePageTurn().
+			if (pendingTargetPageIndex === undefined) {
+				clearPageTurn();
+			}
 		}
 	}
 
 	async function completePageTurn(): Promise<void> {
-		const targetPageIndex = pendingTargetPageIndex;
-		if (targetPageIndex === undefined) {
+		try {
+			if (pendingTargetPageIndex !== undefined) {
+				await readerRoute.goToPage(pendingTargetPageIndex);
+			}
+		} catch (error) {
+			handleError('There was an error turning the page. Please try again.', error);
+		} finally {
 			clearPageTurn();
-			return;
 		}
-		await readerRoute.goToPage(targetPageIndex);
-		clearPageTurn();
 	}
 
 	function clearPageTurn(): void {
@@ -487,6 +554,10 @@ export function createReaderDocumentController(options: ReaderDocumentController
 		currentPageImage = undefined;
 		targetPageImage = undefined;
 		pendingTargetPageIndex = undefined;
+		if (pinyinRefreshPending) {
+			pinyinRefreshPending = false;
+			void readerRoute.refreshPinyin().catch(() => {});
+		}
 		if (layoutRefreshPending) {
 			layoutRefreshPending = false;
 			updatePageLayout().catch(() => {});

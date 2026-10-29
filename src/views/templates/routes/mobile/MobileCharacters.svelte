@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CharacterAnimationCells from '@/components/DictionaryContent/CharacterAnimationCells.svelte';
 	import { onMount } from 'svelte';
 	import { ChevronLeft, Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -7,6 +8,10 @@
 	import { isIPad } from '@/utils/device.js';
 	import { createCharacterAnimation } from '@/composables/characterAnimation.svelte.js';
 	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
+
+	import { pinyinSettingsStore } from '@/stores/pinyinSettings.svelte.js';
+	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+	import { lexicalPinyin } from '@/types/dictionary.js';
 
 	const animation = createCharacterAnimation();
 	let activeScript = $state<CharacterScript>(
@@ -137,7 +142,12 @@
 			</div>
 		{:else}
 			<div class="mobile-characters__character-container">
-				<div id="character-target" data-testid="character-target"></div>
+				<CharacterAnimationCells
+					{characters}
+					pinyin={word ? lexicalPinyin(word) : undefined}
+					showPinyin={pinyinSettingsStore.showCharacterPinyin}
+					colorByTone={dictionaryDisplaySettingsStore.settings.colorPinyinByTone}
+				/>
 			</div>
 		{/if}
 	</div>
@@ -252,19 +262,5 @@
 		box-sizing: border-box;
 		min-height: 100%;
 		padding: var(--sy-space--large);
-	}
-
-	#character-target {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: center;
-		min-width: 0;
-		max-width: 100%;
-	}
-
-	#character-target :global(svg) {
-		max-width: 100%;
-		height: auto;
 	}
 </style>

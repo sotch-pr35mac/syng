@@ -9,6 +9,8 @@ import elasticScroll from 'elastic-scroll-polyfill';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { pinyinSettingsStore } from '@/stores/pinyinSettings.svelte.js';
+import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
 import { contrastStore } from '@/stores/contrast.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { handleError } from '@/utils/error.js';
@@ -145,6 +147,8 @@ export const runStartupActions = () => {
 			privacySettingsStore.loadSettings(),
 			dictionaryDisplaySettingsStore.loadSettings(),
 			contrastStore.loadSettings(),
+			pinyinSettingsStore.loadSettings(),
+			readerSettingsStore.loadSettings(),
 		]);
 	};
 

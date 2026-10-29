@@ -2,6 +2,7 @@ import { telemetry } from '@/utils/telemetry.js';
 import { invoke } from '@tauri-apps/api/core';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { getPreferenceManager } from '@/utils/appServices.js';
+import { notifyCharacterDisplay } from '@/utils/characterDisplay.js';
 import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import type { CharacterSet, HskVariant } from '@/types/dictionaryDisplay.js';
@@ -51,6 +52,7 @@ export const updateToneColorsPreference = (data: ToneColorsPreference): void => 
 	}
 	// The picker reuses and mutates its array; keep the persisted comparison value independent.
 	getPreferenceManager().set('toneColors', { ...data, colors: [...data.colors] });
+	notifyCharacterDisplay({ toneColors: data.hasCustomColors ? [...data.colors] : [] });
 	telemetry.trackEvent('settings.changed', { setting: 'toneColors' }).catch(() => {});
 };
 

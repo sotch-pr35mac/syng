@@ -140,11 +140,17 @@ it.each([
 	await user.click(getByText('Write Characters'));
 
 	expect(invoke).toHaveBeenCalledWith(NATIVE_COMMANDS.WINDOW.OPEN_CHARACTER_WINDOW, {
-		word: {
+		word: expect.objectContaining({
 			traditional: TEST_WORD.traditional,
 			simplified: TEST_WORD.simplified,
+			pinyin: { marks: 'a1', numbers: '', tones: [] },
+			displaySettings: {
+				showPinyin: false,
+				colorByTone: dictionaryDisplaySettingsStore.settings.colorPinyinByTone,
+				toneColors: [],
+			},
 			...(initialScript ? { initialScript } : {}),
-		},
+		}),
 	});
 });
 

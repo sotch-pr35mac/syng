@@ -1,3 +1,11 @@
+import { NO_TONE_INDEX } from '@/utils/tones.js';
+import {
+	READER_ANNOTATION_LINE_HEIGHT,
+	wrapReaderText,
+	READER_PINYIN_SCALE,
+	type ReaderTextLine,
+} from '@/utils/readerTextLayout.js';
+import type { Pinyin } from '@/types/dictionary.js';
 import type {
 	ReaderContentBlock,
 	ReaderDocument,
@@ -26,6 +34,7 @@ const LOW_SURROGATE_MIN = 0xdc00;
 const LOW_SURROGATE_MAX = 0xdfff;
 
 export interface ReaderPageLayout {
+	fontFamily?: string;
 	contentWidth: number;
 	contentHeight: number;
 	fontSize: number;
@@ -43,6 +52,11 @@ export type ReaderPageBlockLayoutMode = 'flow' | 'atomic';
 
 export interface ReaderPageBlock {
 	id: string;
+	textLines?: ReaderTextLine[];
+	tableSnapshot?: {
+		height: number;
+		cells: Array<{ x: number; y: number; width: number; lines: ReaderTextLine[] }>;
+	};
 	sourceBlockId: string;
 	kind: ReaderContentBlock['kind'];
 	text: string;
@@ -64,14 +78,19 @@ export interface ReaderPage {
 
 export interface ReaderSegment {
 	type: 'text' | 'token';
+	/** Separate lookup targets within a single authored annotation. */
+	parts?: ReaderSegment[];
 	text: string;
 	token?: ReaderToken;
 	annotation?: string;
+	annotationSource?: 'generated' | 'imported';
+	pinyin?: Pinyin;
 }
 
 interface LineSlice {
 	start: number;
 	end: number;
+	height?: number;
 }
 
 interface PaginationState {
@@ -313,7 +332,8 @@ function pushCurrentPage(state: PaginationState): void {
 
 export function createReaderPages(
 	document: ReaderDocument | undefined,
-	layout: ReaderPageLayout | undefined
+	layout: ReaderPageLayout | undefined,
+	flowLines: Record<string, ReaderTextLine[]> = {}
 ): ReaderPage[] {
 	if (!document) {
 		return [];
@@ -352,10 +372,14 @@ export function createReaderPages(
 
 		const charactersPerLine = getCharacterCapacity(normalizedLayout, sourceBlock.kind);
 		const lineHeight = getBlockLineHeight(normalizedLayout, sourceBlock.kind);
-		const lineSlices = createLineSlices(sourceBlock.text, charactersPerLine);
+		const lineSlices: LineSlice[] =
+			flowLines[sourceBlock.id] ?? createLineSlices(sourceBlock.text, charactersPerLine);
 
 		if (isUnsplittableFlowBlock(sourceBlock)) {
-			const blockHeight = Math.max(lineHeight, lineSlices.length * lineHeight);
+			const blockHeight = Math.max(
+				lineHeight,
+				lineSlices.reduce((height, line) => height + (line.height ?? lineHeight), 0)
+			);
 			const blockDoesNotFit =
 				state.pageBlocks.length > 0 &&
 				state.usedHeight + blockHeight > normalizedLayout.contentHeight;
@@ -374,16 +398,17 @@ export function createReaderPages(
 		}
 
 		for (const lineSlice of lineSlices) {
+			const actualLineHeight = lineSlice.height ?? lineHeight;
 			const lineDoesNotFit =
 				state.pageBlocks.length > 0 &&
-				state.usedHeight + lineHeight > normalizedLayout.contentHeight;
+				state.usedHeight + actualLineHeight > normalizedLayout.contentHeight;
 
 			if (lineDoesNotFit) {
 				pushCurrentPage(state);
 			}
 
 			appendPageBlock(state.pageBlocks, sourceBlock, lineSlice.start, lineSlice.end);
-			state.usedHeight += lineHeight;
+			state.usedHeight += actualLineHeight;
 		}
 
 		const blockEnd =
@@ -393,6 +418,15 @@ export function createReaderPages(
 	}
 
 	pushCurrentPage(state);
+	for (const page of state.pages) {
+		for (const block of page.blocks) {
+			if (flowLines[block.sourceBlockId]) {
+				block.textLines = flowLines[block.sourceBlockId].filter(
+					(line) => line.start >= block.sourceStart && line.end <= block.sourceEnd
+				);
+			}
+		}
+	}
 
 	if (!state.pages.length) {
 		const startOffset = document.blocks[0] ? blockBaseOffset(document.blocks[0]) : 0;
@@ -431,7 +465,8 @@ export function findPageIndexForPosition(pages: ReaderPage[], position: number):
 export function createReaderSegments(
 	block: ReaderPageBlock,
 	sourceTokens: ReaderToken[],
-	sourceSpans: ReaderInlineSpan[] = []
+	sourceSpans: ReaderInlineSpan[] | null = [],
+	showPinyin = false
 ): ReaderSegment[] {
 	if (block.layout_mode === 'atomic') {
 		return [{ type: 'text', text: block.text || '\u00a0' }];
@@ -440,7 +475,7 @@ export function createReaderSegments(
 	const visibleTokens = sourceTokens.filter(
 		(token) => token.end > block.sourceStart && token.start < block.sourceEnd
 	);
-	const rubySpans = sourceSpans.filter(
+	const importedSpans = (sourceSpans ?? []).filter(
 		(span) =>
 			span.style === 'ruby' &&
 			typeof span.annotation === 'string' &&
@@ -448,10 +483,39 @@ export function createReaderSegments(
 			span.end > block.sourceStart &&
 			span.start < block.sourceEnd
 	);
+	const rubySpans = [
+		...importedSpans.map((span) => ({
+			...span,
+			source: 'imported' as const,
+			pinyin: undefined as Pinyin | undefined,
+		})),
+		...(showPinyin
+			? visibleTokens
+					.filter(
+						(token) =>
+							token.pinyin?.marks &&
+							!importedSpans.some(
+								(span) => span.start < token.end && span.end > token.start
+							)
+					)
+					.map((token) => ({
+						start: token.start,
+						end: token.end,
+						style: 'ruby',
+						annotation: token.pinyin!.marks,
+						source: 'generated' as const,
+						pinyin: token.pinyin,
+					}))
+			: []),
+	];
 	const boundaries = new Set<number>([0, block.text.length]);
 	for (const token of visibleTokens) {
-		boundaries.add(Math.max(token.start, block.sourceStart) - block.sourceStart);
-		boundaries.add(Math.min(token.end, block.sourceEnd) - block.sourceStart);
+		if (!rubySpans.some((span) => span.start < token.start && span.end > token.start)) {
+			boundaries.add(Math.max(token.start, block.sourceStart) - block.sourceStart);
+		}
+		if (!rubySpans.some((span) => span.start < token.end && span.end > token.end)) {
+			boundaries.add(Math.min(token.end, block.sourceEnd) - block.sourceStart);
+		}
 	}
 	for (const span of rubySpans) {
 		boundaries.add(Math.max(span.start, block.sourceStart) - block.sourceStart);
@@ -476,12 +540,31 @@ export function createReaderSegments(
 			(span) => span.start <= absoluteStart && span.end >= absoluteEnd
 		);
 		const text = block.text.slice(start, end);
+		if (rubySpan) {
+			const parts = createReaderSegments(
+				{ ...block, text, sourceStart: absoluteStart, sourceEnd: absoluteEnd },
+				visibleTokens
+			);
+			if (parts.length > 1) {
+				segments.push({
+					type: 'text',
+					text,
+					parts,
+					annotation: rubySpan.annotation,
+					annotationSource: rubySpan.source,
+					pinyin: rubySpan.pinyin,
+				});
+				continue;
+			}
+		}
 
 		if (sourceToken) {
 			segments.push({
 				type: 'token',
 				text,
 				annotation: rubySpan?.annotation,
+				annotationSource: rubySpan?.source,
+				pinyin: rubySpan?.pinyin,
 				token: {
 					text: sourceToken.text,
 					start: sourceToken.start,
@@ -495,6 +578,8 @@ export function createReaderSegments(
 				type: 'text',
 				text,
 				annotation: rubySpan?.annotation,
+				annotationSource: rubySpan?.source,
+				pinyin: rubySpan?.pinyin,
 			});
 		}
 	}
@@ -601,6 +686,8 @@ interface SnapshotPageStyle {
 	bodyGap: number;
 	headingGap: number;
 	devicePixelRatio: number;
+	toneColors: string[];
+	colorPinyinByTone: boolean;
 }
 
 export interface ReaderPageSnapshot {
@@ -643,7 +730,10 @@ function createTextStyle(
 	};
 }
 
-function readSnapshotPageStyle(pageElement: HTMLElement): SnapshotPageStyle {
+function readSnapshotPageStyle(
+	pageElement: HTMLElement,
+	colorPinyinByTone = false
+): SnapshotPageStyle {
 	const styles = getComputedStyle(pageElement);
 	const rect = pageElement.getBoundingClientRect();
 	const fontSize = parsePixelValue(styles.fontSize, FALLBACK_FONT_SIZE);
@@ -669,6 +759,14 @@ function readSnapshotPageStyle(pageElement: HTMLElement): SnapshotPageStyle {
 		),
 		bodyGap: fontSize * BODY_GAP_EM,
 		headingGap: fontSize * HEADING_GAP_EM,
+		colorPinyinByTone,
+		toneColors: Array.from(
+			{ length: 5 },
+			(_, index) =>
+				styles.getPropertyValue(`--sy-tone-color--${index + 1}`).trim() ||
+				styles.getPropertyValue(`--sy-tone-theme--${index + 1}`).trim() ||
+				textColor
+		),
 		devicePixelRatio: Math.min(window.devicePixelRatio || 1, SNAPSHOT_PIXEL_RATIO_LIMIT),
 	};
 }
@@ -680,21 +778,7 @@ function setCanvasFont(context: CanvasRenderingContext2D, style: SnapshotTextSty
 }
 
 function wrapText(context: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
-	const lines: string[] = [];
-	for (const paragraph of text.split('\n')) {
-		let currentLine = '';
-		for (const character of Array.from(paragraph)) {
-			const nextLine = `${currentLine}${character}`;
-			if (currentLine && context.measureText(nextLine).width > maxWidth) {
-				lines.push(currentLine);
-				currentLine = character;
-			} else {
-				currentLine = nextLine;
-			}
-		}
-		lines.push(currentLine);
-	}
-	return lines;
+	return wrapReaderText(text, maxWidth, (value) => context.measureText(value).width);
 }
 
 function drawPageText(
@@ -711,6 +795,118 @@ function drawPageText(
 		const blockGap = block.kind === 'heading' ? style.headingGap : style.bodyGap;
 		setCanvasFont(context, textStyle);
 
+		if (block.tableSnapshot) {
+			for (const cell of block.tableSnapshot.cells) {
+				drawPageText(
+					context,
+					{
+						...page,
+						blocks: [
+							{
+								...block,
+								tableSnapshot: undefined,
+								textLines: cell.lines,
+								kind: 'paragraph',
+							},
+						],
+					},
+					{
+						...style,
+						paddingLeft: style.paddingLeft + cell.x,
+						paddingTop: cursorY + cell.y,
+						paddingRight: style.width - style.paddingLeft - cell.x - cell.width,
+					}
+				);
+			}
+			cursorY += block.tableSnapshot.height + blockGap;
+			continue;
+		}
+		if (block.textLines) {
+			for (const line of block.textLines) {
+				if (cursorY + line.height > contentBottom) {
+					return;
+				}
+				let x = style.paddingLeft + (line.indent ?? 0);
+				const baseStyle = {
+					...textStyle,
+					...line.metrics,
+					fontWeight: line.metrics.fontWeight ?? '400',
+					color: textStyle.color,
+				};
+				for (const run of line.runs) {
+					setCanvasFont(context, baseStyle);
+					const baseRows =
+						run.baseRows ??
+						wrapText(context, run.text.replace(/\n$/, ''), Math.max(1, run.width)).map(
+							(text, index) => ({
+								text,
+								x: run.annotation
+									? Math.max(0, (run.width - context.measureText(text).width) / 2)
+									: 0,
+								y: index * baseStyle.lineHeight,
+							})
+						);
+					for (const row of baseRows) {
+						context.fillText(
+							row.text,
+							x + row.x,
+							cursorY +
+								line.above +
+								row.y +
+								(baseStyle.lineHeight - baseStyle.fontSize) / 2
+						);
+					}
+					if (run.annotation) {
+						const annotationStyle = {
+							...baseStyle,
+							fontWeight: '400',
+							fontSize: baseStyle.fontSize * READER_PINYIN_SCALE,
+							lineHeight:
+								baseStyle.fontSize *
+								READER_PINYIN_SCALE *
+								READER_ANNOTATION_LINE_HEIGHT,
+						};
+						setCanvasFont(context, annotationStyle);
+						let toneIndex = 0;
+						const annotationTop =
+							cursorY +
+							line.above +
+							(run.annotationSource === 'imported'
+								? -run.annotationHeight
+								: run.baseHeight);
+						for (const [row, text] of wrapText(
+							context,
+							run.annotation,
+							Math.max(1, run.width)
+						).entries()) {
+							let annotationX =
+								x + Math.max(0, (run.width - context.measureText(text).width) / 2);
+							for (const piece of text.match(/\s+|\S+/g) ?? []) {
+								const tone = run.pinyin?.tones[toneIndex] ?? NO_TONE_INDEX;
+								context.fillStyle =
+									style.colorPinyinByTone && run.annotationSource === 'generated'
+										? style.toneColors[tone - 1]
+										: textStyle.color;
+								context.fillText(
+									piece,
+									annotationX,
+									annotationTop + row * annotationStyle.lineHeight
+								);
+								annotationX += context.measureText(piece).width;
+								if (piece.trim()) {
+									toneIndex += 1;
+								}
+							}
+						}
+					}
+					x += run.width;
+				}
+				cursorY += line.height;
+			}
+			cursorY += blockGap;
+			continue;
+		}
+
 		const halfLeading = (textStyle.lineHeight - textStyle.fontSize) / 2;
 		for (const line of wrapText(context, block.text, contentWidth)) {
 			if (cursorY + textStyle.lineHeight > contentBottom) {
@@ -726,9 +922,10 @@ function drawPageText(
 
 export function createReaderPageSnapshot(
 	page: ReaderPage,
-	pageElement: HTMLElement
+	pageElement: HTMLElement,
+	colorPinyinByTone = false
 ): ReaderPageSnapshot {
-	const style = readSnapshotPageStyle(pageElement);
+	const style = readSnapshotPageStyle(pageElement, colorPinyinByTone);
 	const canvas = document.createElement('canvas');
 	const context = canvas.getContext('2d');
 	if (!context) {

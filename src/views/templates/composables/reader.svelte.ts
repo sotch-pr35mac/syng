@@ -1,3 +1,9 @@
+import { readerSettingsStore } from '@/stores/readerSettings.svelte.js';
+import {
+	layoutReaderText,
+	resolveReaderTextIndent,
+	type ReaderTextMetrics,
+} from '@/utils/readerTextLayout.js';
 import { invoke } from '@tauri-apps/api/core';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { readerDocumentsStore } from '@/stores/readerDocuments.svelte.js';
@@ -43,6 +49,11 @@ import {
 } from '@/utils/readerPagination.js';
 
 const TEXT_CONTEXT_LENGTH = 32;
+const SMALL_TEXT_SCALE = 0.86;
+const HEADING_SCALE = 1.35;
+const TABLE_TEXT_SCALE = 0.95;
+const TABLE_CELL_INLINE_PADDING = 0.45;
+const TABLE_CELL_BLOCK_PADDING = 0.35;
 const DELETE_CONFIRMATION_NAME_LIMIT = 5;
 const BYTES_PER_KIB = 1024;
 const BYTES_PER_MIB = BYTES_PER_KIB * BYTES_PER_KIB;
@@ -58,10 +69,14 @@ function navigateToReaderLibrary(): void {
 
 let activeDocument = $state<ReaderDocument | undefined>(undefined);
 let pageIndex = $state(0);
+let readingAnchor = 0;
+let preparationRevision = 0;
 let pages = $state<ReaderPage[]>([]);
 let pageLayout = $state<ReaderPageLayout | undefined>(undefined);
 let measuredAtomicBlockHeights = $state<Record<string, number>>({});
 let importing = $state(false);
+let enrichedBlocks: Record<string, boolean> = {};
+let flowMetrics: Record<string, ReaderTextMetrics> = {};
 let tokenMap = $state<Record<string, ReaderToken[]>>({});
 let dictionaryResults = $state<SearchEntry[]>([]);
 let dictionaryResultIndex = $state(0);
@@ -126,7 +141,10 @@ function trackImportFailed(
 		.catch(() => {});
 }
 
-async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> {
+async function tokenizeBlock(
+	block: ReaderContentBlock,
+	includePinyin = false
+): Promise<ReaderToken[]> {
 	if (!participatesInLinearText(block)) {
 		return [];
 	}
@@ -134,6 +152,7 @@ async function tokenizeBlock(block: ReaderContentBlock): Promise<ReaderToken[]> 
 		NATIVE_COMMANDS.READER.TOKENIZE_TEXT,
 		{
 			text: block.text,
+			...(includePinyin ? { includePinyin: true } : {}),
 		}
 	);
 	return alignReaderTokens(block.text, tokenTexts, block.id);
@@ -143,12 +162,14 @@ async function tokenizeTableCell(
 	blockId: string,
 	row: number,
 	col: number,
-	text: string
+	text: string,
+	includePinyin = false
 ): Promise<ReaderToken[]> {
 	const tokenTexts = await invoke<Array<string | NativeReaderToken>>(
 		NATIVE_COMMANDS.READER.TOKENIZE_TEXT,
 		{
 			text,
+			...(includePinyin ? { includePinyin: true } : {}),
 		}
 	);
 	const base = alignReaderTokens(text, tokenTexts, blockId);
@@ -161,23 +182,28 @@ async function tokenizeTableCell(
 function createLocator(page: ReaderPage): ReaderLocator {
 	const documentText = activeDocument?.text ?? '';
 	const exact = documentText.slice(
-		page.start,
-		Math.min(page.end, page.start + TEXT_CONTEXT_LENGTH)
+		readingAnchor,
+		Math.min(page.end, readingAnchor + TEXT_CONTEXT_LENGTH)
 	);
-	const prefix = documentText.slice(Math.max(0, page.start - TEXT_CONTEXT_LENGTH), page.start);
+	const prefix = documentText.slice(
+		Math.max(0, readingAnchor - TEXT_CONTEXT_LENGTH),
+		readingAnchor
+	);
 	const suffix = documentText.slice(
-		Math.min(documentText.length, page.start + exact.length),
-		Math.min(documentText.length, page.start + exact.length + TEXT_CONTEXT_LENGTH)
+		Math.min(documentText.length, readingAnchor + exact.length),
+		Math.min(documentText.length, readingAnchor + exact.length + TEXT_CONTEXT_LENGTH)
 	);
 	const now = new Date().toISOString();
 	return {
 		resource_href: 'text',
-		position: page.start,
-		total_progression: documentText.length ? Math.min(1, page.start / documentText.length) : 0,
+		position: readingAnchor,
+		total_progression: documentText.length
+			? Math.min(1, readingAnchor / documentText.length)
+			: 0,
 		page_index: page.index,
 		text_position: {
-			start: page.start,
-			end: Math.min(page.end, page.start + exact.length),
+			start: readingAnchor,
+			end: Math.min(page.end, readingAnchor + exact.length),
 		},
 		text_quote: {
 			exact,
@@ -194,13 +220,140 @@ function getPageIndexForLocator(document: ReaderDocument, documentPages: ReaderP
 }
 
 function createPagesForCurrentLayout(document: ReaderDocument): ReaderPage[] {
-	if (!pageLayout) {
-		return createReaderPages(document, undefined);
+	const lines: Record<string, ReturnType<typeof layoutReaderText>> = {};
+	if (pageLayout) {
+		for (const block of document.blocks) {
+			if (!participatesInLinearText(block)) {
+				continue;
+			}
+			const hasImported = block.spans?.some(
+				(span) => span.style === 'ruby' && span.annotation
+			);
+			if (
+				!readerSettingsStore.settings.showPinyin ||
+				(!hasImported && !tokenMap[block.id]?.some((token) => token.pinyin))
+			) {
+				continue;
+			}
+			const segments = createReaderSegments(
+				{
+					id: block.id,
+					sourceBlockId: block.id,
+					kind: block.kind,
+					text: block.text,
+					sourceText: block.text,
+					sourceStart: 0,
+					sourceEnd: block.text.length,
+					start_offset: block.start_offset ?? 0,
+					end_offset: block.end_offset ?? block.text.length,
+				},
+				tokenMap[block.id] ?? [],
+				block.spans,
+				readerSettingsStore.settings.showPinyin
+			);
+			const heading = block.kind === 'heading';
+			const small = block.extensions?.block_style?.small_text ? SMALL_TEXT_SCALE : 1;
+			const scale = heading ? (pageLayout.headingFontScale ?? HEADING_SCALE) : small;
+			const fontSize = pageLayout.fontSize * scale;
+			lines[block.id] = layoutReaderText(
+				segments,
+				flowMetrics[block.id] ?? {
+					width: pageLayout.contentWidth,
+					fontSize,
+					lineHeight: heading ? fontSize * HEADING_SCALE : pageLayout.lineHeight * small,
+					fontFamily: pageLayout.fontFamily ?? 'sans-serif',
+					fontWeight: heading ? '700' : '400',
+					textIndent: resolveReaderTextIndent(
+						block.extensions?.block_style?.text_indent,
+						fontSize,
+						pageLayout.contentWidth
+					),
+				}
+			);
+		}
 	}
-	return createReaderPages(document, {
-		...pageLayout,
-		measuredAtomicBlockHeights,
-	});
+	const result = createReaderPages(
+		document,
+		pageLayout ? { ...pageLayout, measuredAtomicBlockHeights } : undefined,
+		lines
+	);
+	if (pageLayout) {
+		for (const page of result) {
+			for (const block of page.blocks) {
+				const source = document.blocks.find(
+					(candidate) => candidate.id === block.sourceBlockId
+				);
+				const table = source?.extensions?.table;
+				if (!table || !source) {
+					continue;
+				}
+				const cells: NonNullable<ReaderPageBlock['tableSnapshot']>['cells'] = [];
+				let y = 0;
+				for (const [rowIndex, row] of table.rows.entries()) {
+					let x = 0;
+					let height = 0;
+					for (const [colIndex, cell] of row.cells.entries()) {
+						const cellLines = getTableCellLines(
+							source.id,
+							rowIndex,
+							colIndex,
+							cell.text
+						);
+						if (!cellLines) {
+							continue;
+						}
+						const metrics = getTableCellMetrics(source.id, rowIndex, colIndex)!;
+						const paddingX = metrics.fontSize * TABLE_CELL_INLINE_PADDING;
+						const paddingY = metrics.fontSize * TABLE_CELL_BLOCK_PADDING;
+						cells.push({
+							x: x + paddingX,
+							y: y + paddingY,
+							width: metrics.width,
+							lines: cellLines,
+						});
+						x += metrics.width + 2 * paddingX + 1;
+						height = Math.max(
+							height,
+							cellLines.reduce((sum, line) => sum + line.height, 0) + 2 * paddingY + 1
+						);
+					}
+					y += height;
+				}
+				if (cells.length) {
+					block.tableSnapshot = { height: y, cells };
+				}
+			}
+		}
+	}
+	return result;
+}
+
+async function updateFlowMetrics(metrics: Record<string, ReaderTextMetrics>): Promise<void> {
+	if (!activeDocument) {
+		return;
+	}
+	const changes = Object.entries(metrics).filter(
+		([key, value]) => JSON.stringify(value) !== JSON.stringify(flowMetrics[key])
+	);
+	if (!changes.length) {
+		return;
+	}
+	flowMetrics = { ...flowMetrics, ...Object.fromEntries(changes) };
+	const position = readingAnchor;
+	pages = createPagesForCurrentLayout(activeDocument);
+	pageIndex = findPageIndexForPosition(pages, position);
+	await preparePageTokens();
+}
+
+async function refreshPinyin(): Promise<void> {
+	if (!activeDocument) {
+		return;
+	}
+	const position = readingAnchor;
+	pages = createPagesForCurrentLayout(activeDocument);
+	pageIndex = findPageIndexForPosition(pages, position);
+	closeDictionary();
+	await preparePageTokens();
 }
 
 async function saveCurrentProgress(): Promise<void> {
@@ -224,8 +377,11 @@ async function openDocument(document: ReaderDocument): Promise<void> {
 	flushReadingActivity();
 	const requestId = ++documentRequest;
 	activeDocument = ensureReaderDocumentForRendering(document);
+	readingAnchor = document.progress?.position ?? 0;
 	readerDocumentRouteStore.set(activeDocument._id);
 	tokenMap = {};
+	enrichedBlocks = {};
+	flowMetrics = {};
 	measuredAtomicBlockHeights = {};
 	lastPageTurnDirection = undefined;
 	closeDictionary();
@@ -492,61 +648,131 @@ async function deleteDocuments(documents: ReaderDocument[]): Promise<boolean> {
 	}
 }
 
-async function preparePageTokens(): Promise<void> {
-	const page = pages[pageIndex];
-	if (!page || !activeDocument) {
+function findPreparedPageIndex(original: ReaderPage, position = original.start): number {
+	// Atomic pages can share a text offset with their neighbors. Retain a source
+	// block and its local position across reflow, rather than treating start as an ID.
+	const anchor =
+		original.blocks.find(
+			(block) => block.start_offset <= position && position < block.end_offset
+		) ?? original.blocks[0];
+	if (anchor) {
+		const offset = anchor.sourceStart + Math.max(0, position - anchor.start_offset);
+		const index = pages.findIndex((page) =>
+			page.blocks.some(
+				(block) =>
+					block.sourceBlockId === anchor.sourceBlockId &&
+					(block.layout_mode === 'atomic' ||
+						(block.sourceStart <= offset && offset < block.sourceEnd))
+			)
+		);
+		if (index !== -1) {
+			return index;
+		}
+	}
+	return findPageIndexForPosition(pages, position);
+}
+
+async function preparePageTokens(targetIndex = pageIndex): Promise<void> {
+	const preparation = ++preparationRevision;
+	const request = documentRequest;
+	const document = activeDocument;
+	const showPinyin = readerSettingsStore.settings.showPinyin;
+	const position = readingAnchor;
+	const requestedPage = pages[targetIndex];
+	const visiblePage = pages[pageIndex];
+	if (!document || !requestedPage || !visiblePage) {
 		return;
 	}
-
-	const sourceBlocksById = new Map(
-		activeDocument.blocks.map((block) => [block.id, block] as const)
-	);
-	const missingBlockIds = Array.from(
-		new Set(
-			page.blocks.map((block) => block.sourceBlockId).filter((blockId) => !tokenMap[blockId])
-		)
-	);
-	const missingBlocks = missingBlockIds
-		.map((blockId) => sourceBlocksById.get(blockId))
-		.filter((block): block is ReaderContentBlock => Boolean(block));
-
-	const cellEntries: Array<readonly [string, ReaderToken[]]> = [];
-	for (const block of missingBlocks) {
-		if (!isTableBlock(block)) {
-			continue;
+	// Repagination can bring another source block onto the page. Prepare until coverage settles.
+	for (;;) {
+		const targetPage = pages[findPreparedPageIndex(requestedPage)];
+		if (!targetPage) {
+			return;
 		}
-		const table = getTableExtension(block);
-		if (!table) {
-			continue;
-		}
-		for (let rowIndex = 0; rowIndex < table.rows.length; rowIndex += 1) {
-			const row = table.rows[rowIndex]!;
-			for (let colIndex = 0; colIndex < row.cells.length; colIndex += 1) {
-				const key = tableCellTokenKey(block.id, rowIndex, colIndex);
-				if (tokenMap[key]) {
-					continue;
-				}
-				const cellText = row.cells[colIndex]!.text;
-				cellEntries.push([
-					key,
-					await tokenizeTableCell(block.id, rowIndex, colIndex, cellText),
-				]);
+		const sourceIds = new Set(targetPage.blocks.map((block) => block.sourceBlockId));
+		const blocks = document.blocks.filter((block) => sourceIds.has(block.id));
+		const jobs: Array<{
+			key: string;
+			text: string;
+			blockId: string;
+			row?: number;
+			col?: number;
+		}> = [];
+		for (const block of blocks) {
+			const table = getTableExtension(block);
+			if (isTableBlock(block) && table) {
+				table.rows.forEach((row, rowIndex) =>
+					row.cells.forEach((cell, col) =>
+						jobs.push({
+							key: tableCellTokenKey(block.id, rowIndex, col),
+							text: cell.text,
+							blockId: block.id,
+							row: rowIndex,
+							col,
+						})
+					)
+				);
+			} else if (participatesInLinearText(block)) {
+				jobs.push({ key: block.id, text: block.text, blockId: block.id });
 			}
 		}
+		const missing = jobs.filter(
+			(job) => !tokenMap[job.key] || (showPinyin && !enrichedBlocks[job.key])
+		);
+		if (!missing.length) {
+			return;
+		}
+		const results = await Promise.all(
+			missing.map(async (job) => {
+				try {
+					const tokens =
+						job.row === undefined
+							? await tokenizeBlock(
+									{ id: job.blockId, kind: 'paragraph', text: job.text },
+									showPinyin
+								)
+							: await tokenizeTableCell(
+									job.blockId,
+									job.row,
+									job.col!,
+									job.text,
+									showPinyin
+								);
+					return [job.key, tokens] as const;
+				} catch (error) {
+					handleError('Could not prepare Reader pronunciation.', error, { silent: true });
+					return [job.key, tokenMap[job.key] ?? []] as const;
+				}
+			})
+		);
+		if (
+			request !== documentRequest ||
+			preparation !== preparationRevision ||
+			showPinyin !== readerSettingsStore.settings.showPinyin
+		) {
+			return;
+		}
+		for (const job of missing) {
+			enrichedBlocks[job.key] = showPinyin;
+		}
+		tokenMap = { ...tokenMap, ...Object.fromEntries(results) };
+		pages = createPagesForCurrentLayout(document);
+		pageIndex = findPreparedPageIndex(visiblePage, position);
 	}
+}
 
-	const flowEntries = await Promise.all(
-		missingBlocks
-			.filter((block) => participatesInLinearText(block))
-			.map(async (block) => [block.id, await tokenizeBlock(block)] as const)
-	);
-
-	const nextTokenMap = {
-		...tokenMap,
-		...Object.fromEntries(flowEntries),
-		...Object.fromEntries(cellEntries),
-	};
-	tokenMap = nextTokenMap;
+async function preparePageTurn(direction: 'next' | 'previous'): Promise<number | undefined> {
+	const request = documentRequest;
+	const next = pageIndex + (direction === 'next' ? 1 : -1);
+	if (!pages[next]) {
+		return undefined;
+	}
+	await preparePageTokens(next);
+	if (request !== documentRequest) {
+		return undefined;
+	}
+	const target = pageIndex + (direction === 'next' ? 1 : -1);
+	return pages[target] ? target : undefined;
 }
 
 async function goToPage(nextPageIndex: number): Promise<void> {
@@ -556,6 +782,7 @@ async function goToPage(nextPageIndex: number): Promise<void> {
 	const direction = nextPageIndex > pageIndex ? 'next' : 'previous';
 	lastPageTurnDirection = direction;
 	pageIndex = nextPageIndex;
+	readingAnchor = pages[pageIndex].start;
 	readingActivity[direction === 'next' ? 'next_count' : 'previous_count'] += 1;
 	readingActivityTimer ??= setTimeout(flushReadingActivity, READING_ACTIVITY_INTERVAL_MS);
 	closeDictionary();
@@ -590,9 +817,10 @@ async function setPageLayout(layout: ReaderPageLayout): Promise<void> {
 		return;
 	}
 
-	const currentPosition = pages[pageIndex]?.start ?? activeDocument?.progress?.position ?? 0;
+	const currentPosition = readingAnchor;
 	pageLayout = normalizedLayout;
 	measuredAtomicBlockHeights = {};
+	flowMetrics = {};
 
 	if (!activeDocument) {
 		return;
@@ -624,7 +852,7 @@ async function updateMeasuredAtomicBlockHeights(
 		return;
 	}
 
-	const currentPosition = pages[pageIndex]?.start ?? activeDocument.progress?.position ?? 0;
+	const currentPosition = readingAnchor;
 	measuredAtomicBlockHeights = {
 		...measuredAtomicBlockHeights,
 		...Object.fromEntries(changedEntries),
@@ -663,7 +891,14 @@ function buildTableSegments(tableBlock: ReaderContentBlock): ReaderSegment[] {
 				end_offset: cell.text.length,
 				layout_mode: 'flow',
 			};
-			segments.push(...createReaderSegments(syntheticBlock, cellTokens, cell.spans ?? []));
+			segments.push(
+				...createReaderSegments(
+					syntheticBlock,
+					cellTokens,
+					cell.spans ?? [],
+					readerSettingsStore.settings.showPinyin
+				)
+			);
 			if (colIndex < row.cells.length - 1) {
 				segments.push({ type: 'text', text: '\t' });
 			}
@@ -689,8 +924,49 @@ function getBlockSegments(pageBlock: ReaderPageBlock): ReaderSegment[] {
 	return createReaderSegments(
 		pageBlock,
 		tokenMap[pageBlock.sourceBlockId] ?? [],
-		sourceBlock?.spans ?? []
+		sourceBlock?.spans ?? [],
+		readerSettingsStore.settings.showPinyin
 	);
+}
+
+function getTableCellMetrics(
+	blockId: string,
+	row: number,
+	col: number
+): ReaderTextMetrics | undefined {
+	if (!pageLayout || !activeDocument) {
+		return undefined;
+	}
+	const table = activeDocument.blocks.find((block) => block.id === blockId)?.extensions?.table;
+	if (!table) {
+		return undefined;
+	}
+	const fontSize = pageLayout.fontSize * TABLE_TEXT_SCALE;
+	return (
+		flowMetrics[tableCellTokenKey(blockId, row, col)] ?? {
+			width: Math.max(
+				1,
+				pageLayout.contentWidth / Math.max(1, table.rows[row].cells.length) -
+					fontSize * TABLE_CELL_INLINE_PADDING * 2 -
+					1
+			),
+			fontSize,
+			lineHeight: pageLayout.lineHeight * TABLE_TEXT_SCALE,
+			fontFamily: pageLayout.fontFamily ?? 'sans-serif',
+			fontWeight: table.rows[row].cells[col].is_header ? '700' : '400',
+		}
+	);
+}
+
+function getTableCellLines(blockId: string, row: number, col: number, text: string) {
+	// Preserve native table/ruby flow when generated pinyin is disabled.
+	if (!readerSettingsStore.settings.showPinyin) {
+		return undefined;
+	}
+	const metrics = getTableCellMetrics(blockId, row, col);
+	return metrics
+		? layoutReaderText(getTableCellSegments(blockId, row, col, text), metrics)
+		: undefined;
 }
 
 function getTableCellSegments(
@@ -714,7 +990,12 @@ function getTableCellSegments(
 	};
 	const sourceBlock = activeDocument?.blocks.find((block) => block.id === tableBlockId);
 	const cellSpans = sourceBlock?.extensions?.table?.rows[rowIndex]?.cells[colIndex]?.spans ?? [];
-	return createReaderSegments(syntheticBlock, tokenMap[key] ?? [], cellSpans);
+	return createReaderSegments(
+		syntheticBlock,
+		tokenMap[key] ?? [],
+		cellSpans,
+		readerSettingsStore.settings.showPinyin
+	);
 }
 
 async function openDictionary(token: ReaderToken, anchor?: DOMRect): Promise<void> {
@@ -861,6 +1142,9 @@ function tokensMatchDictionarySelection(
 }
 
 export const readerRoute = {
+	refreshPinyin,
+	updateFlowMetrics,
+	preparePageTurn,
 	mountTelemetry,
 	flushReadingActivity,
 	get documents(): ReaderDocument[] {
@@ -936,6 +1220,7 @@ export const readerRoute = {
 	updateMeasuredAtomicBlockHeights,
 	getBlockSegments,
 	getTableCellSegments,
+	getTableCellLines,
 	openDictionary,
 	lookupDictionaryWord,
 	selectDictionaryResult,

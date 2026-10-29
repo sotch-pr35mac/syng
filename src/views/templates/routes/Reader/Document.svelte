@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tableCellTokenKey } from '@/utils/readerDocument.js';
+	import ReaderText from '@/components/Reader/ReaderText.svelte';
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
@@ -7,6 +9,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 	import ReaderThemeSelector from '@/components/Reader/ReaderThemeSelector.svelte';
+	import ReaderPinyinToggle from '@/components/Reader/ReaderPinyinToggle.svelte';
 	import ReaderTextSizeSelector from '@/components/Reader/ReaderTextSizeSelector.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import CssPageCurlOverlay from '@/components/Reader/CssPageCurlOverlay.svelte';
@@ -28,7 +31,6 @@
 	const HEADING_FONT_SCALE = 1.35;
 	const LIST_NESTING_INDENT_EM = 1.25;
 	const PAGE_CURL_DURATION_MS = 760;
-	const READER_SETTINGS_POPOVER_WIDTH_PX = 470;
 	const IPAD_READER_PAGE_SWIPE_POINTER_TYPES = ['touch'] as const;
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
@@ -110,7 +112,6 @@
 				anchor={reader.readerSettingsPopoverAnchor}
 				ignoreElement={reader.readerSettingsButtonElement}
 				horizontalAlign="end"
-				width={READER_SETTINGS_POPOVER_WIDTH_PX}
 				mobileTitle="Reader settings"
 				onclose={reader.closeReaderSettingsPopover}
 			>
@@ -132,6 +133,7 @@
 							onchange={reader.changeReaderFontSize}
 						/>
 					</div>
+					<ReaderPinyinToggle />
 				</div>
 			</SyPopover>
 		</div>
@@ -164,7 +166,7 @@
 				use:walkthroughTarget={'reader-page'}
 				bind:this={pageElement}
 				class="reader__page reader__page--base"
-				class:reader__page--turning={reader.turningPage}
+				class:reader__page--turning={Boolean(pageCurl)}
 				class:reader__page--vertical={reader.activeDocumentVerticalWriting}
 			>
 				{#each currentPage.blocks as block (block.id)}
@@ -182,67 +184,40 @@
 								aria-label="Table"
 								data-reader-atomic-block-id={block.sourceBlockId}
 							>
-								<table class="reader__data-table">
+								<table
+									style:table-layout={reader.readerSettings.showPinyin
+										? 'fixed'
+										: undefined}
+									class="reader__data-table"
+								>
 									<tbody>
 										{#each tableSource.extensions.table.rows as row, rowIndex (rowIndex)}
 											<tr>
 												{#each row.cells as cell, colIndex (colIndex)}
 													<svelte:element
 														this={cell.is_header ? 'th' : 'td'}
+														data-reader-source-block-id={tableCellTokenKey(
+															tableSource.id,
+															rowIndex,
+															colIndex
+														)}
 													>
-														{#each readerRoute.getTableCellSegments(tableSource.id, rowIndex, colIndex, cell.text) as segment, segIndex (segIndex)}
-															{#if segment.type === 'token'}
-																{#if segment.annotation}
-																	<ruby class="reader__ruby">
-																		<button
-																			class="reader__token"
-																			type="button"
-																			lang="zh"
-																			aria-haspopup="dialog"
-																			class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-																				segment.token,
-																				readerRoute.dictionaryToken
-																			)}
-																			onclick={(event) =>
-																				reader.openToken(
-																					event,
-																					segment.token
-																				)}
-																		>
-																			{segment.text}
-																		</button>
-																		<rt>{segment.annotation}</rt
-																		>
-																	</ruby>
-																{:else}
-																	<button
-																		class="reader__token"
-																		type="button"
-																		lang="zh"
-																		aria-haspopup="dialog"
-																		class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-																			segment.token,
-																			readerRoute.dictionaryToken
-																		)}
-																		onclick={(event) =>
-																			reader.openToken(
-																				event,
-																				segment.token
-																			)}
-																	>
-																		{segment.text}
-																	</button>
-																{/if}
-															{:else if segment.annotation}
-																<ruby class="reader__ruby">
-																	{segment.text}<rt
-																		>{segment.annotation}</rt
-																	>
-																</ruby>
-															{:else}
-																{segment.text}
-															{/if}
-														{/each}
+														<ReaderText
+															segments={readerRoute.getTableCellSegments(
+																tableSource.id,
+																rowIndex,
+																colIndex,
+																cell.text
+															)}
+															selected={readerRoute.dictionaryToken}
+															onopen={reader.openToken}
+															lines={readerRoute.getTableCellLines(
+																tableSource.id,
+																rowIndex,
+																colIndex,
+																cell.text
+															)}
+														/>
 													</svelte:element>
 												{/each}
 											</tr>
@@ -308,51 +283,14 @@
 								? String(sourceBlock.extensions.list_item.ordinal)
 								: undefined}
 							style={reader.getBlockCssStyle(sourceBlock)}
+							data-reader-source-block-id={block.sourceBlockId}
 						>
-							{#each readerRoute.getBlockSegments(block) as segment, index (index)}
-								{#if segment.type === 'token'}
-									{#if segment.annotation}
-										<ruby class="reader__ruby">
-											<button
-												class="reader__token"
-												type="button"
-												lang="zh"
-												aria-haspopup="dialog"
-												class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-													segment.token,
-													readerRoute.dictionaryToken
-												)}
-												onclick={(event) =>
-													reader.openToken(event, segment.token)}
-											>
-												{segment.text}
-											</button>
-											<rt>{segment.annotation}</rt>
-										</ruby>
-									{:else}
-										<button
-											class="reader__token"
-											type="button"
-											lang="zh"
-											aria-haspopup="dialog"
-											class:reader__token--active={readerRoute.tokensMatchDictionarySelection(
-												segment.token,
-												readerRoute.dictionaryToken
-											)}
-											onclick={(event) =>
-												reader.openToken(event, segment.token)}
-										>
-											{segment.text}
-										</button>
-									{/if}
-								{:else if segment.annotation}
-									<ruby class="reader__ruby">
-										{segment.text}<rt>{segment.annotation}</rt>
-									</ruby>
-								{:else}
-									{segment.text}
-								{/if}
-							{/each}
+							<ReaderText
+								segments={readerRoute.getBlockSegments(block)}
+								lines={block.textLines}
+								selected={readerRoute.dictionaryToken}
+								onopen={reader.openToken}
+							/>
 						</svelte:element>
 					{/if}
 				{/each}
@@ -466,6 +404,8 @@
 	}
 
 	.reader__settings-popover {
+		width: 32rem;
+		max-width: calc(100vw - 34px);
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--large);
@@ -779,31 +719,6 @@
 	h5.reader__block,
 	h6.reader__block {
 		font-size: 1em;
-	}
-
-	.reader__token {
-		display: inline;
-		border: 0;
-		padding: 0;
-		margin: 0;
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-		border-bottom: 1px solid transparent;
-	}
-
-	.reader__token:hover,
-	.reader__token--active {
-		color: var(--reader-link-color, var(--sy-color--blue));
-		border-bottom-color: var(--reader-link-color, var(--sy-color--blue));
-	}
-
-	.reader__ruby rt {
-		color: var(--reader-muted-text, var(--sy-text--muted));
-		font-size: 0.52em;
-		font-weight: 500;
-		line-height: 1;
 	}
 
 	@media (forced-colors: active) {
