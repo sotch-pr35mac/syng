@@ -2,6 +2,7 @@
 	import Bookmarks from '@/routes/Bookmarks.svelte';
 	import MobileBookmarks from '@/routes/mobile/MobileBookmarks.svelte';
 	import SearchEmptyState from '@/components/Search/SearchEmptyState.svelte';
+	import Search from '@/routes/Search.svelte';
 	import { searchStore } from '@/composables/search.svelte.js';
 	import { mobileBookmarksSnapStore } from '@/stores/mobileBookmarks.svelte.js';
 	import type { BookmarkWordEntry } from '@/stores/bookmarks.svelte.js';
@@ -41,7 +42,9 @@
 </script>
 
 <main>
-	{#if showSearch}
+	{#if parameters.has('searchRoute')}
+		<Search />
+	{:else if showSearch}
 		<SearchEmptyState variant={mobile ? 'mobile' : 'desktop'} />
 	{:else if mobile}
 		<MobileBookmarks />

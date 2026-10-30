@@ -87,6 +87,16 @@
 	} = $props();
 
 	let verticalActions = $state(true);
+	/** @type {HTMLDivElement | undefined} */
+	let toplineElement = $state();
+	/** @type {HTMLDivElement | undefined} */
+	let actionsElement = $state();
+	/** @type {HTMLDivElement | undefined} */
+	let actionBarElement = $state();
+	/** @type {HTMLDivElement | undefined} */
+	let tagsElement = $state();
+	/** @type {number | undefined} */
+	let headerContentWidth = $state();
 
 	/**
 	 * Measure the horizontal candidate, not the constrained vertical layout. Text
@@ -105,10 +115,7 @@
 			flushSync(() => {
 				verticalActions = false;
 			});
-			const topline = header.querySelector('.dictionary-content__topline');
-			const bar = header.querySelector('.sy-button-bar--container');
-			const tags = header.querySelector('.dictionary-content__tags');
-			if (!topline || !bar) {
+			if (!toplineElement || !actionBarElement) {
 				return;
 			}
 			const headerStyle = getComputedStyle(header);
@@ -118,13 +125,12 @@
 				header.clientWidth -
 				Number.parseFloat(headerStyle.paddingLeft) -
 				Number.parseFloat(headerStyle.paddingRight);
-			header.style.setProperty('--dictionary-header-content-width', `${contentWidth}px`);
-			const obstacles = [bar, tags]
+			const obstacles = [actionBarElement, tagsElement]
 				.filter(Boolean)
 				.map((element) => element.getBoundingClientRect());
 			const headerBounds = header.getBoundingClientRect();
 			let overlaps = obstacles.some((bounds) => bounds.left < headerBounds.left);
-			const walker = document.createTreeWalker(topline, NodeFilter.SHOW_TEXT);
+			const walker = document.createTreeWalker(toplineElement, NodeFilter.SHOW_TEXT);
 			const range = document.createRange();
 			let textNode;
 			while (!overlaps && (textNode = walker.nextNode())) {
@@ -143,6 +149,7 @@
 				);
 			}
 			flushSync(() => {
+				headerContentWidth = contentWidth;
 				verticalActions = overlaps;
 			});
 		};
@@ -154,11 +161,17 @@
 		const resizeObserver =
 			typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
 		resizeObserver?.observe(header);
-		for (const element of header.querySelectorAll(
-			'.dictionary-content__topline, .dictionary-content__actions'
-		)) {
-			resizeObserver?.observe(element);
-		}
+		$effect(() => {
+			const elements = [toplineElement, actionsElement].filter(Boolean);
+			for (const element of elements) {
+				resizeObserver?.observe(element);
+			}
+			return () => {
+				for (const element of elements) {
+					resizeObserver?.unobserve(element);
+				}
+			};
+		});
 		// Includes text, tag and dropdown-trigger changes without observing our own classes.
 		const mutationObserver = new MutationObserver(schedule);
 		mutationObserver.observe(header, { subtree: true, childList: true, characterData: true });
@@ -176,7 +189,6 @@
 				unsubscribe();
 				window.removeEventListener('resize', schedule);
 				document.fonts?.removeEventListener('loadingdone', schedule);
-				header.style.removeProperty('--dictionary-header-content-width');
 			},
 		};
 	}
@@ -483,13 +495,19 @@
 		<section
 			class="dictionary-content dictionary-content--header"
 			class:dictionary-content--vertical-actions={verticalActions}
+			style:--dictionary-header-content-width={headerContentWidth === undefined
+				? undefined
+				: `${headerContentWidth}px`}
 			use:fitHeader
 		>
-			<div class="dictionary-content__topline">
+			<div class="dictionary-content__topline" bind:this={toplineElement}>
 				<EntryTopline {word} {separateTraditionalCharacters} />
 			</div>
-			<div class="dictionary-content__actions">
-				<SyButtonBar orientation={verticalActions ? 'vertical' : 'horizontal'}>
+			<div class="dictionary-content__actions" bind:this={actionsElement}>
+				<SyButtonBar
+					bind:element={actionBarElement}
+					orientation={verticalActions ? 'vertical' : 'horizontal'}
+				>
 					{#each actions as action, index (index)}
 						{#if action.dropdown}
 							<SyDropdown
@@ -545,7 +563,7 @@
 					{/each}
 				</SyButtonBar>
 				{#if getHskLevels().length || getPartsOfSpeech().length}
-					<div class="dictionary-content__tags">
+					<div class="dictionary-content__tags" bind:this={tagsElement}>
 						{#if getHskLevels().length}
 							<SyTag
 								variant="yellow"

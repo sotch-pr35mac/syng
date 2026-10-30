@@ -22,17 +22,22 @@
 		size?: string;
 		/** Stack grouped controls top to bottom; horizontal preserves the default layout. */
 		orientation?: 'horizontal' | 'vertical';
+		/** Optional root-element binding for callers that measure the grouped controls. */
+		element?: HTMLDivElement;
 		children?: Snippet;
 	}
 
 	/** @type {Props} */
-	const {
+	/* eslint-disable prefer-const -- Svelte requires let for the bound element in this props destructure. */
+	let {
 		size = 'medium',
 		orientation = 'horizontal',
+		element = $bindable(),
 		class: className,
 		children,
 		...restProps
 	}: Props = $props();
+	/* eslint-enable prefer-const */
 
 	const getClasses = () => {
 		return ['sy-button-bar--container', `sy-button-bar--container--${size}`].join(' ');
@@ -41,6 +46,7 @@
 
 <div
 	{...restProps}
+	bind:this={element}
 	class={[getClasses(), className]}
 	class:sy-button-bar--vertical={orientation === 'vertical'}
 >
