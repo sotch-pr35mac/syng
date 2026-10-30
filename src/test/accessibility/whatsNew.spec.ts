@@ -159,7 +159,7 @@ test('2.7.0 presents credited highlights, feedback, and its other improvements',
 	);
 	await expect(page.getByRole('link', { name: 'hello@bytecraft.xyz' })).toHaveAttribute(
 		'href',
-		'mailto:hello@bytecraft.xyz?subject=Syng+feature+request'
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
 	);
 	await page.getByRole('button', { name: 'Other improvements', exact: true }).click();
 	await expect(
