@@ -1,9 +1,49 @@
 import IncreaseContrastSettings from '@/components/SettingsOption/IncreaseContrastSettings.svelte';
-import { BookOpen, Contrast, Settings } from 'lucide-svelte';
+import { Blocks, BookOpen, Contrast, Languages, Settings } from 'lucide-svelte';
 import { RELEASES } from '@/utils/whatsNew.js';
 import type { ReleaseContent } from '@/types/whatsNew.js';
 
 export const releaseContent: ReleaseContent[] = [
+	{
+		...RELEASES.find((release) => release.version === '2.7.0')!,
+		highlights: [
+			{
+				title: 'Character breakdowns',
+				body: 'Open Character Breakdown from any dictionary entry to explore how each character is formed, inspect its components and radical, and look up related characters.',
+				credit: 'Thanks to an anonymous Syng user for suggesting this feature.',
+				icon: Blocks,
+			},
+			{
+				title: 'Pinyin where you want it',
+				body: 'Choose whether to show pinyin in Reader, on flashcard fronts, and beneath character animations, with your tone colors applied throughout.',
+				credit: 'Thanks to Daniel for suggesting these additional pinyin options.',
+				icon: Languages,
+			},
+		],
+		feedback: {
+			prompt: 'Is there a feature you wish Syng had?',
+			email: 'hello@bytecraft.xyz',
+			outcome: 'and it might make it into a future release.',
+			subject: 'Syng Feature Request',
+		},
+		improvements: [
+			{
+				text: 'Fixed incorrect alternative pronunciations appearing in some dictionary entries.',
+			},
+			{
+				text: 'Fixed unexpected navigation scrollbars and misplaced tooltips.',
+			},
+			{
+				text: 'Improved dictionary entry layouts so actions, metadata, and long pronunciation text remain readable in narrow windows and with larger text.',
+			},
+			{
+				text: 'Fixed quiz feedback rendering artifacts on Android.',
+			},
+			{
+				text: 'Fixed the background behind Android status and navigation safe areas in dark mode.',
+			},
+		],
+	},
 	{
 		...RELEASES.find((release) => release.version === '2.6.0')!,
 		highlights: [

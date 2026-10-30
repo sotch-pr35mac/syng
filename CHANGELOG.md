@@ -1,6 +1,21 @@
 # Change Log
 All notable changes to this project will be documented in this file. This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.7.0] - 2026-10-30
+### Added
+- Added interactive character breakdowns to dictionary entries, including formations, components, radicals, stroke counts, and related lookups; thanks to an anonymous Syng user for suggesting this feature
+- Added optional pinyin display in Reader, on flashcard fronts, and beneath character animations, with tone coloring; thanks to Daniel for suggesting these additional options
+
+### Changed
+- Improved Reader wrapping, pagination, table layout, and word selection when pinyin or imported annotations are shown
+- Improved dictionary entry layouts so actions, metadata, and long pronunciation text remain readable in narrow windows and with larger text
+
+### Fixed
+- Fixed incorrect alternative pronunciations appearing in some dictionary entries
+- Fixed unexpected navigation scrollbars and misplaced tooltips
+- Fixed quiz feedback rendering artifacts on Android
+- Fixed the background behind Android status and navigation safe areas in dark mode
+
 ## [2.6.0] - 2026-10-23
 ### Added
 - Added interactive What's New notes after selected updates

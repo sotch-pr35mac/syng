@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { openUrl } from '@tauri-apps/plugin-opener';
 	import { push } from 'svelte-spa-router';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
@@ -38,6 +39,22 @@
 		expanded = !expanded;
 		whatsNewStore.expanded = expanded;
 	}
+
+	function feedbackUrl(feedback: NonNullable<ReleaseContent['feedback']>): string {
+		const query = feedback.subject ? `?subject=${encodeURIComponent(feedback.subject)}` : '';
+		return `mailto:${feedback.email}${query}`;
+	}
+
+	function openFeedbackEmail(
+		event: MouseEvent,
+		feedback: NonNullable<ReleaseContent['feedback']>
+	): void {
+		event.preventDefault();
+		const url = feedbackUrl(feedback);
+		openUrl(url).catch(() => {
+			window.open(url, '_blank', 'noopener,noreferrer');
+		});
+	}
 </script>
 
 {#snippet releaseNotes(release: ReleaseContent, archived = false)}
@@ -56,6 +73,9 @@
 							>{highlight.title}</svelte:element
 						>
 						<p>{highlight.body}</p>
+						{#if highlight.credit}<p class="highlight__credit">
+								{highlight.credit}
+							</p>{/if}
 						{#if highlight.component}
 							<div class="highlight__control">
 								<highlight.component {variant} source="whats_new" />
@@ -87,6 +107,17 @@
 				</li>
 			{/each}
 		</ul>
+		{#if release.feedback && !archived}
+			<p class="release-feedback">
+				{release.feedback.prompt} Email me at
+				<a
+					href={feedbackUrl(release.feedback)}
+					onclick={(event) => openFeedbackEmail(event, release.feedback!)}
+					>{release.feedback.email}</a
+				>
+				{release.feedback.outcome}
+			</p>
+		{/if}
 		{#if release.improvements.length}
 			{#if !archived}
 				<div class="improvements-toggle">
@@ -192,6 +223,15 @@
 	}
 	.highlight__hint {
 		color: var(--sy-text--muted);
+	}
+	.highlight__credit {
+		color: var(--sy-text--muted);
+	}
+	.release-feedback {
+		margin: 0 0 0 calc(22px + var(--sy-space--large));
+	}
+	.release-feedback a {
+		color: var(--sy-text--blue);
 	}
 	.improvements-toggle {
 		display: flex;

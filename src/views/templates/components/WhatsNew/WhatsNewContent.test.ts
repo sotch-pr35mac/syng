@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import WhatsNewContent from '@/components/WhatsNew/WhatsNewContent.svelte';
 import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 
+const opener = vi.hoisted(() => ({ openUrl: vi.fn(async () => {}) }));
+vi.mock('@tauri-apps/plugin-opener', () => opener);
+
 vi.mock('@/stores/whatsNew.svelte.js', () => ({
 	whatsNewStore: {
 		range: { from: '2.4.0', to: '2.6.0' },
@@ -20,7 +23,19 @@ vi.mock('@/components/WhatsNew/whatsNewContent.js', () => ({
 		version,
 		date: '2026-10-20',
 		announce: true,
-		highlights: [{ title: `Highlight ${version}`, body: `Description ${version}` }],
+		highlights: [
+			{
+				title: `Highlight ${version}`,
+				body: `Description ${version}`,
+				credit: `Credit ${version}`,
+			},
+		],
+		feedback: {
+			prompt: `Feedback prompt ${version}.`,
+			email: 'hello@bytecraft.xyz',
+			outcome: 'Feedback outcome.',
+			subject: 'Syng Feature Request',
+		},
 		improvements: [{ text: `Improvement ${version}` }],
 	})),
 }));
@@ -33,9 +48,19 @@ it('keeps the latest highlights visible and cumulative and older releases expand
 	await waitFor(() => expect(onready).toHaveBeenCalledOnce());
 	expect(whatsNewStore.markPresented).toHaveBeenCalledOnce();
 	expect(getByRole('heading', { name: 'Highlight 2.6.0' })).toBeTruthy();
+	expect(getByText('Credit 2.6.0')).toBeTruthy();
 	expect(getByText('Highlight 2.5.0').closest('details')?.open).toBe(false);
 	expect(getByText('Highlight 2.4.0').closest('details')?.open).toBe(false);
+	expect(queryByText('Feedback prompt 2.5.0.')).toBeNull();
 	expect(queryByText('Improvement 2.6.0')).toBeNull();
+	const feedback = getByRole('link', { name: 'hello@bytecraft.xyz' });
+	expect(feedback.getAttribute('href')).toBe(
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
+	);
+	await user.click(feedback);
+	expect(opener.openUrl).toHaveBeenCalledExactlyOnceWith(
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
+	);
 
 	await user.click(getByRole('button', { name: 'Other improvements' }));
 	expect(getByText('Improvement 2.6.0')).toBeTruthy();

@@ -139,6 +139,39 @@ for (const scenario of [
 	});
 }
 
+test('2.7.0 presents credited highlights, feedback, and its other improvements', async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 393, height: 852 });
+	await page.goto(`${fixture}&mobile&version=2.7.0&baseline=2.6.0&appearance=contrast#/read`);
+	await expect(page.getByRole('heading', { name: 'What’s New in Syng 2.7.0' })).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Character breakdowns' })).toBeVisible();
+	await expect(
+		page.getByText('Thanks to an anonymous Syng user for suggesting this feature.')
+	).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Pinyin where you want it' })).toBeVisible();
+	await expect(
+		page.getByText('Thanks to Daniel for suggesting these additional pinyin options.')
+	).toBeVisible();
+	const feedback = page.locator('.release-feedback');
+	await expect(feedback).toContainText(
+		'Email me at hello@bytecraft.xyz and it might make it into a future release.'
+	);
+	await expect(page.getByRole('link', { name: 'hello@bytecraft.xyz' })).toHaveAttribute(
+		'href',
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
+	);
+	await page.getByRole('button', { name: 'Other improvements', exact: true }).click();
+	await expect(
+		page.getByText(
+			'Fixed the background behind Android status and navigation safe areas in dark mode.'
+		)
+	).toBeVisible();
+	expect((await new AxeBuilder({ page }).disableRules(['region']).analyze()).violations).toEqual(
+		[]
+	);
+});
+
 test('new installs stay suppressed after setup, while notes remain available manually', async ({
 	page,
 }) => {

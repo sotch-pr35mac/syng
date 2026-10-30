@@ -9,12 +9,15 @@
 ##### Don't just learn Chinese, master it.
 
 ## __About__
-Syng is a free, cross-platform, open-source, Chinese-To-English and English-To-Chinese dictionary. Syng is your study assistant to help you learn Chinese no matter where you are in your journey.
+Syng is a cross-platform, open-source, Chinese-To-English and English-To-Chinese dictionary. Syng is your study assistant to help you learn Chinese no matter where you are in your journey.
 
 ## __What's new?__
 Check out the [release page](https://github.com/sotch-pr35mac/syng/releases) for the latest information on new features and fixes.
 
-Syng v2 is now officially out of beta! Syng v2 is a ground-up rewrite focusing on speed and user experience. Syng v2 now has feature parity with v1.
+Syng 2.7.0 highlights:
+
+- Explore character formations, components, radicals, and related characters with Character Breakdown
+- Choose where pinyin appears in Reader, on flashcards, and beneath character animations
 
 ## __Screenshots__
 More screenshots available on [the Syng website](https://www.getsyng.com).

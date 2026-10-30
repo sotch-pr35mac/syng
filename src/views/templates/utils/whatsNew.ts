@@ -7,6 +7,7 @@ import type { ReleaseHistory, ReleaseMetadata, ReleaseRange } from '@/types/what
 
 // Keep startup metadata small. Detailed, interactive notes load with the page.
 export const RELEASES: ReleaseMetadata[] = [
+	{ version: '2.7.0', date: '2026-10-30', announce: true },
 	{ version: '2.6.0', date: '2026-10-20', announce: true },
 ];
 
