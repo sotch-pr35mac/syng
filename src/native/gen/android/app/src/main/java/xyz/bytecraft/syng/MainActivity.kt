@@ -1,5 +1,6 @@
 package xyz.bytecraft.syng
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import androidx.activity.enableEdgeToEdge
@@ -37,5 +38,13 @@ class MainActivity : TauriActivity() {
         .build()
     }
     ViewCompat.requestApplyInsets(contentView)
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    // The manifest handles uiMode without recreating this activity. Reload the
+    // native background and system icon colors alongside the WebView's CSS theme.
+    window.setBackgroundDrawableResource(R.color.splash_background)
+    enableEdgeToEdge()
   }
 }
