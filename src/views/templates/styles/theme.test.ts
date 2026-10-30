@@ -140,6 +140,32 @@ describe.each(schemes)('%s Contrast appearance', (scheme) => {
 });
 
 describe.each(schemes)('%s theme roles', (scheme) => {
+	it.each(appearances)('%s Android safe areas match the navigation chrome', (appearance) => {
+		const resourceDirectory = new URL(
+			`../../../native/gen/android/app/src/main/res/${scheme === 'dark' ? 'values-night' : 'values'}/`,
+			import.meta.url
+		);
+		const themesXml = readFileSync(new URL('themes.xml', resourceDirectory), 'utf8');
+		const nativeTheme = themesXml.match(
+			/<style name="Theme\.syng"[^>]*>([\s\S]*?)<\/style>/
+		)?.[1];
+		const backgroundResource = nativeTheme?.match(
+			/<item name="android:windowBackground">@color\/([^<]+)<\/item>/
+		)?.[1];
+		expect(
+			backgroundResource,
+			'Android must explicitly color its native safe areas'
+		).toBeTruthy();
+		const colorsXml = readFileSync(new URL('colors.xml', resourceDirectory), 'utf8');
+		const nativeColor = colorsXml.match(
+			new RegExp(`<color name="${backgroundResource}">#FF([0-9a-f]{6})</color>`, 'i')
+		)?.[1];
+		expect(nativeColor, 'The native background must be opaque').toBeTruthy();
+		expect(`#${nativeColor?.toLowerCase()}`).toBe(
+			themeColors(scheme, appearance)('--sy-color--white')
+		);
+	});
+
 	it.each(appearances)('%s uses the theme white for filled labels', (appearance) => {
 		const color = themeColors(scheme, appearance);
 		expect(color('--sy-text--on-fill')).toBe(color('--sy-color--white'));

@@ -1,7 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.syng" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <!-- Customize your theme here. -->
+        <!-- Native inset padding is outside the WebView; match Syng's chrome. -->
+        <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
     <style name="Theme.syng.Starting" parent="Theme.SplashScreen">
