@@ -2,12 +2,25 @@
 import { expect, test, type Locator } from '@playwright/test';
 
 async function sampleTransition(indicator: Locator) {
+	// Svelte stages transitions through a zero-duration animation before creating
+	// the real timeline. Pause only the latter so sampling cannot race the handoff.
 	await expect
-		.poll(() => indicator.evaluate((element) => element.getAnimations().length))
-		.toBeGreaterThan(0);
+		.poll(() =>
+			indicator.evaluate((element) => {
+				const transition = element.getAnimations().find((animation) => {
+					const duration = Number(animation.effect?.getTiming().duration);
+					return duration > 0;
+				});
+				transition?.pause();
+				return transition?.playState;
+			})
+		)
+		.toBe('paused');
 	return indicator.evaluate(async (element) => {
-		const animation = element.getAnimations()[0];
-		animation.pause();
+		const animation = element.getAnimations().find((candidate) => {
+			const duration = Number(candidate.effect?.getTiming().duration);
+			return duration > 0;
+		})!;
 		const duration = Number(animation.effect!.getTiming().duration);
 		const content = element.querySelector<HTMLElement>('.indicator-content')!;
 		const samples = [];
