@@ -20,18 +20,36 @@
 	 */
 	interface Props extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
 		size?: string;
+		/** Stack grouped controls top to bottom; horizontal preserves the default layout. */
+		orientation?: 'horizontal' | 'vertical';
+		/** Optional root-element binding for callers that measure the grouped controls. */
+		element?: HTMLDivElement;
 		children?: Snippet;
 	}
 
 	/** @type {Props} */
-	const { size = 'medium', class: className, children, ...restProps }: Props = $props();
+	/* eslint-disable prefer-const -- Svelte requires let for the bound element in this props destructure. */
+	let {
+		size = 'medium',
+		orientation = 'horizontal',
+		element = $bindable(),
+		class: className,
+		children,
+		...restProps
+	}: Props = $props();
+	/* eslint-enable prefer-const */
 
 	const getClasses = () => {
 		return ['sy-button-bar--container', `sy-button-bar--container--${size}`].join(' ');
 	};
 </script>
 
-<div {...restProps} class={[getClasses(), className]}>
+<div
+	{...restProps}
+	bind:this={element}
+	class={[getClasses(), className]}
+	class:sy-button-bar--vertical={orientation === 'vertical'}
+>
 	{@render children?.()}
 </div>
 
@@ -143,5 +161,48 @@
 	) {
 		border-left: none;
 		border-right: none;
+	}
+	.sy-button-bar--vertical {
+		flex-direction: column;
+		flex-wrap: nowrap;
+		align-items: stretch;
+	}
+	:global(.sy-button-bar--vertical > .sy-dropdown--container > .sy-button),
+	:global(
+		.sy-button-bar--vertical > .sy-dropdown--container > .sy-dropdown--trigger > .sy-button
+	) {
+		width: 100%;
+	}
+	:global(.sy-button-bar--container.sy-button-bar--vertical > .sy-button--grouped),
+	:global(
+		.sy-button-bar--container.sy-button-bar--vertical
+			> .sy-dropdown--container
+			.sy-button--grouped
+	) {
+		border-radius: 0;
+	}
+	:global(.sy-button-bar--container.sy-button-bar--vertical > .sy-button--grouped:first-child),
+	:global(
+		.sy-button-bar--container.sy-button-bar--vertical
+			> .sy-dropdown--container:first-child
+			.sy-button--grouped--first
+	) {
+		border-radius: var(--sy-space) var(--sy-space) 0 0;
+	}
+	:global(.sy-button-bar--container.sy-button-bar--vertical > .sy-button--grouped:last-child),
+	:global(
+		.sy-button-bar--container.sy-button-bar--vertical
+			> .sy-dropdown--container:last-child
+			.sy-button--grouped--last
+	) {
+		border-radius: 0 0 var(--sy-space) var(--sy-space);
+	}
+	:global(.sy-button-bar--container.sy-button-bar--vertical > .sy-button--grouped:only-child),
+	:global(
+		.sy-button-bar--container.sy-button-bar--vertical
+			> .sy-dropdown--container:only-child
+			.sy-button--grouped
+	) {
+		border-radius: var(--sy-space);
 	}
 </style>

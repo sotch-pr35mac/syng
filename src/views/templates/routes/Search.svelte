@@ -21,7 +21,6 @@
 	import type { SearchEntry } from '@/types/search.js';
 	import { lexicalDisplayId } from '@/types/dictionary.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
-	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import { isIPad } from '@/utils/device.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
@@ -102,10 +101,7 @@
 	}
 </script>
 
-<div
-	class="search-page-container"
-	use:responsiveLayout={{ thresholdRem: 44, className: 'search-page-container--stacked' }}
->
+<div class="search-page-container">
 	<div
 		class="search-bar-container"
 		class:search-bar-container--ipad={isIPadDevice}
@@ -236,20 +232,6 @@
 		box-sizing: border-box;
 		width: calc(100% - 2 * (var(--sy-space--small) + var(--sy-space)));
 		min-width: 0;
-	}
-	:global(.search-page-container--stacked) .search-content-container {
-		flex-direction: column;
-	}
-	:global(.search-page-container--stacked) .search-results {
-		flex: 1;
-		min-height: 0;
-		height: auto;
-	}
-	:global(.search-page-container--stacked) .dictionary-content {
-		flex: 2;
-		min-width: 0;
-		min-height: 0;
-		height: auto;
 	}
 	.search-bar-container--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));

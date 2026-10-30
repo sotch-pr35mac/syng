@@ -23,7 +23,6 @@
 	import { onMount } from 'svelte';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
-	import { responsiveLayout } from '@/actions/responsiveLayout.js';
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
@@ -234,10 +233,7 @@
 	{/each}
 {/snippet}
 
-<div
-	class="bookmarks--container"
-	use:responsiveLayout={{ thresholdRem: 44, className: 'bookmarks--container--stacked' }}
->
+<div class="bookmarks--container">
 	<div
 		class="bookmarks--header"
 		class:bookmarks--header--ipad={isIPadDevice}
@@ -422,19 +418,6 @@
 		align-items: center;
 		justify-content: space-between;
 		flex-wrap: wrap;
-	}
-	:global(.bookmarks--container--stacked) .bookmarks--content {
-		flex-direction: column;
-	}
-	:global(.bookmarks--container--stacked) .bookmarks--word-listing {
-		flex: 1;
-		min-height: 0;
-		height: auto;
-	}
-	:global(.bookmarks--container--stacked) .dictionary-content {
-		flex: 2;
-		min-height: 0;
-		height: auto;
 	}
 	.bookmarks--header--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));

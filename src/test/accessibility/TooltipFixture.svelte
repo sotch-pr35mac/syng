@@ -5,6 +5,8 @@
 	import type { LexicalUnit } from '@/types/dictionary.js';
 	import { setBookmarkManagerForTest, setPreferenceManagerForTest } from '@/utils/appServices.js';
 
+	const parameters = new URLSearchParams(location.search);
+	const headerCase = parameters.has('dictionaryHeader');
 	setPreferenceManagerForTest({
 		waitForInit: async () => undefined,
 		get: () => false,
@@ -15,9 +17,13 @@
 	} as unknown as Parameters<typeof setBookmarkManagerForTest>[0]);
 	const word: LexicalUnit = {
 		id: '1:西瓜',
-		simplified: '西瓜',
-		traditional: '西瓜',
-		pinyin: { marks: 'xī guā', numbers: 'xi1 gua1', tones: [1, 1] },
+		simplified: parameters.get('characters') ?? '西瓜',
+		traditional: parameters.get('traditional') ?? parameters.get('characters') ?? '西瓜',
+		pinyin: {
+			marks: parameters.get('pinyinText') ?? 'xī guā',
+			numbers: 'xi1 gua1',
+			tones: [1, 1],
+		},
 		commonness: 0,
 		alternative_pronunciations: [],
 		measure_words: [],
@@ -28,7 +34,18 @@
 				commentary: [],
 				qualifiers: [],
 				lexical_kinds: [],
-				parts_of_speech: [],
+				parts_of_speech:
+					headerCase && !parameters.has('noTags')
+						? (
+								[
+									'noun',
+									'verb',
+									'adjective',
+									'onomatopoeia',
+									'interrogative-pronoun',
+								] as const
+							).map((value) => ({ value, sources: ['cc-cedict'] }))
+						: [],
 				alternative_pronunciations: [],
 				measure_words: [],
 			},
@@ -36,18 +53,23 @@
 		hsk: {
 			hsk_2015: [],
 			proficiency_standard_2021: [],
-			hsk_exam_syllabus_2025: ['One'],
+			hsk_exam_syllabus_2025: parameters.has('noTags') ? [] : ['One'],
 		},
 	};
 </script>
 
 <div class="shell">
-	<aside><Navigation /></aside>
+	{#if !headerCase}<aside><Navigation /></aside>{/if}
 	<main>
-		<DictionaryContent {word} lists={['Bookmarks', 'Study']} />
-		<div class="study-example">
-			<StudyListItem value={{ name: 'Sample words', wordCount: 4 }} />
-		</div>
+		<DictionaryContent
+			{word}
+			lists={parameters.has('singleList') ? ['Bookmarks'] : ['Bookmarks', 'Study']}
+		/>
+		{#if !headerCase}
+			<div class="study-example">
+				<StudyListItem value={{ name: 'Sample words', wordCount: 4 }} />
+			</div>
+		{/if}
 	</main>
 </div>
 
