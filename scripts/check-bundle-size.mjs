@@ -17,9 +17,10 @@ const BUDGETS = {
 	initialShellBytes: 353 * 1024,
 	largestChunkBytes: 200 * 1024,
 	// Includes character breakdown plus optional pinyin controls and Reader annotation layout.
-	// Combined build: 352.1 KiB initial, 755.4 KiB total, 268.8 KiB gzip.
-	// Breakdown stays lazy-loaded; character records and geometry remain offline assets.
-	totalBytes: 757 * 1024,
+	// Includes the lazy-loaded 2.7 release notes, credits, and feature-request mail action.
+	// Combined build: 351.7 KiB initial, 758.2 KiB total, 270.3 KiB gzip.
+	// Breakdown and What’s New stay lazy-loaded; character data remains in offline assets.
+	totalBytes: 760 * 1024,
 	totalGzipBytes: 273 * 1024,
 };
 

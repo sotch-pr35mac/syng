@@ -22,6 +22,7 @@
 	const parameters = new URLSearchParams(location.search);
 	const mobile = parameters.has('mobile');
 	const testingRelease = parameters.has('whatsnew');
+	const currentVersion = parameters.get('version') ?? '2.6.0';
 	let releaseReady = $state(false);
 	let releaseBlocked = $state(parameters.has('blocked'));
 	const baseline = parameters.get('baseline');
@@ -80,7 +81,7 @@
 						}))
 					: [];
 			}
-			if (command === 'plugin:app|version') return '2.6.0';
+			if (command === 'plugin:app|version') return currentVersion;
 			if (command === 'telemetry_get_prefs')
 				return {
 					enabled: false,

@@ -29,6 +29,7 @@ export type ReleasePlatform = 'desktop' | 'ios' | 'android';
 export interface ReleaseHighlight {
 	title: string;
 	body: string;
+	credit?: string;
 	icon?: typeof Icon;
 	controlHint?: string;
 	platforms?: ReleasePlatform[];
@@ -38,5 +39,11 @@ export interface ReleaseHighlight {
 
 export interface ReleaseContent extends ReleaseMetadata {
 	highlights: ReleaseHighlight[];
+	feedback?: {
+		prompt: string;
+		email: string;
+		outcome: string;
+		subject?: string;
+	};
 	improvements: { text: string; platform?: 'ios' }[];
 }
