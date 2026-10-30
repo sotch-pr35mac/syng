@@ -6,7 +6,8 @@
 	 */
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
-	import { onDestroy } from 'svelte';
+	import { flushSync, onDestroy } from 'svelte';
+	import { subscribeSystemTypography } from '@/composables/systemTypography.js';
 
 	import { Check, Brush, Plus, Blocks } from 'lucide-svelte';
 	import { handleError, telemetry } from '@/utils';
@@ -84,6 +85,101 @@
 		onlink,
 		onmembershipchange,
 	} = $props();
+
+	let verticalActions = $state(true);
+
+	/**
+	 * Measure the horizontal candidate, not the constrained vertical layout. Text
+	 * ranges distinguish an actual collision from a wide, mostly empty text block.
+	 * All orientation changes happen in one animation frame, with controls retained.
+	 * @param {HTMLElement} header
+	 */
+	function fitHeader(header) {
+		let disposed = false;
+		let frame = 0;
+		const measure = () => {
+			frame = 0;
+			if (disposed || !header.isConnected || header.clientWidth === 0) {
+				return;
+			}
+			flushSync(() => {
+				verticalActions = false;
+			});
+			const topline = header.querySelector('.dictionary-content__topline');
+			const bar = header.querySelector('.sy-button-bar--container');
+			const tags = header.querySelector('.dictionary-content__tags');
+			if (!topline || !bar) {
+				return;
+			}
+			const headerStyle = getComputedStyle(header);
+			const gap = Number.parseFloat(headerStyle.columnGap) || 0;
+			// Tag tooltips must fit this pane, which can be narrower than the viewport.
+			const contentWidth =
+				header.clientWidth -
+				Number.parseFloat(headerStyle.paddingLeft) -
+				Number.parseFloat(headerStyle.paddingRight);
+			header.style.setProperty('--dictionary-header-content-width', `${contentWidth}px`);
+			const obstacles = [bar, tags]
+				.filter(Boolean)
+				.map((element) => element.getBoundingClientRect());
+			const headerBounds = header.getBoundingClientRect();
+			let overlaps = obstacles.some((bounds) => bounds.left < headerBounds.left);
+			const walker = document.createTreeWalker(topline, NodeFilter.SHOW_TEXT);
+			const range = document.createRange();
+			let textNode;
+			while (!overlaps && (textNode = walker.nextNode())) {
+				if (!textNode.textContent?.trim()) {
+					continue;
+				}
+				range.selectNodeContents(textNode);
+				overlaps = Array.from(range.getClientRects()).some((textBounds) =>
+					obstacles.some(
+						(bounds) =>
+							textBounds.top < bounds.bottom &&
+							textBounds.bottom > bounds.top &&
+							textBounds.right + gap > bounds.left &&
+							textBounds.left < bounds.right
+					)
+				);
+			}
+			flushSync(() => {
+				verticalActions = overlaps;
+			});
+		};
+		const schedule = () => {
+			if (!disposed && !frame) {
+				frame = requestAnimationFrame(measure);
+			}
+		};
+		const resizeObserver =
+			typeof ResizeObserver === 'undefined' ? undefined : new ResizeObserver(schedule);
+		resizeObserver?.observe(header);
+		for (const element of header.querySelectorAll(
+			'.dictionary-content__topline, .dictionary-content__actions'
+		)) {
+			resizeObserver?.observe(element);
+		}
+		// Includes text, tag and dropdown-trigger changes without observing our own classes.
+		const mutationObserver = new MutationObserver(schedule);
+		mutationObserver.observe(header, { subtree: true, childList: true, characterData: true });
+		const unsubscribe = subscribeSystemTypography(schedule);
+		window.addEventListener('resize', schedule);
+		document.fonts?.addEventListener('loadingdone', schedule);
+		void document.fonts?.ready.then(schedule);
+		schedule();
+		return {
+			destroy() {
+				disposed = true;
+				cancelAnimationFrame(frame);
+				resizeObserver?.disconnect();
+				mutationObserver.disconnect();
+				unsubscribe();
+				window.removeEventListener('resize', schedule);
+				document.fonts?.removeEventListener('loadingdone', schedule);
+				header.style.removeProperty('--dictionary-header-content-width');
+			},
+		};
+	}
 
 	const componentId = $props.id();
 	const notesLabelId = `${componentId}-notes-label`;
@@ -384,10 +480,16 @@
 >
 	<p class="sy-sr-only" role="status" aria-atomic="true">{membershipStatus}</p>
 	{#if word}
-		<section class="dictionary-content dictionary-content--header">
-			<EntryTopline {word} {separateTraditionalCharacters} />
+		<section
+			class="dictionary-content dictionary-content--header"
+			class:dictionary-content--vertical-actions={verticalActions}
+			use:fitHeader
+		>
+			<div class="dictionary-content__topline">
+				<EntryTopline {word} {separateTraditionalCharacters} />
+			</div>
 			<div class="dictionary-content__actions">
-				<SyButtonBar>
+				<SyButtonBar orientation={verticalActions ? 'vertical' : 'horizontal'}>
 					{#each actions as action, index (index)}
 						{#if action.dropdown}
 							<SyDropdown
@@ -550,25 +652,101 @@
 		padding: var(--sy-space--extra-large);
 	}
 	.dictionary-content--header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
 		gap: var(--sy-space);
+	}
+	.dictionary-content__topline {
+		grid-area: 1 / 1;
+		min-width: 0;
+	}
+	.dictionary-content__actions {
+		grid-area: 1 / 1;
+		justify-self: end;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		width: max-content;
+	}
+	.dictionary-content__actions :global(.sy-button-bar--container) {
+		flex-wrap: nowrap;
 	}
 	.dictionary-content__tags {
 		display: flex;
 		flex-wrap: wrap;
 		justify-content: flex-end;
 		gap: var(--sy-space--small);
-		margin-left: auto;
 		padding: var(--sy-space--large);
+		box-sizing: border-box;
+		/* The bar determines intrinsic width; metadata must not widen its column. */
+		width: 0;
+		min-width: 100%;
 	}
-	.dictionary-content__actions {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		margin-left: auto;
+	.dictionary-content__tags :global(.sy-tag) {
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+		overflow-wrap: anywhere;
+	}
+	.dictionary-content--vertical-actions {
+		grid-template-columns: minmax(0, 1fr) max-content;
+	}
+	.dictionary-content--vertical-actions .dictionary-content__actions {
+		display: contents;
+	}
+	.dictionary-content--vertical-actions :global(.sy-button-bar--container) {
+		grid-area: 1 / 2 / 3 / 3;
+	}
+	.dictionary-content--vertical-actions :global(.sy-button-bar--container .sy-tooltip--body) {
+		/* Keep the tooltip and its 0.375rem hover extension beside the button column. */
+		top: 0;
+		left: auto;
+		right: calc(100% + 0.375rem);
+		margin: 0;
+		transform: none;
+		min-width: 0;
+		max-width: calc(
+			var(--dictionary-header-content-width) - 100% - var(--sy-space--large) - 0.375rem
+		);
+		overflow-wrap: anywhere;
+	}
+	.dictionary-content--vertical-actions .dictionary-content__tags {
+		grid-area: 2 / 1;
+		width: auto;
+		min-width: 0;
+		justify-content: flex-start;
+	}
+	.dictionary-content--vertical-actions
+		.dictionary-content__tags
+		:global(.sy-tag .sy-tooltip--body) {
+		left: 0;
+		right: auto;
+		min-width: 0;
+		max-width: calc(var(--dictionary-header-content-width) - 2 * var(--sy-space--large));
+	}
+	.dictionary-content--vertical-actions
+		.dictionary-content__topline
+		:global(.preferred-characters),
+	.dictionary-content--vertical-actions
+		.dictionary-content__topline
+		:global(.preferred-characters__form),
+	.dictionary-content--vertical-actions
+		.dictionary-content__topline
+		:global(.preferred-characters__lexical) {
+		min-width: 0;
+		max-width: 100%;
+		overflow-wrap: anywhere;
+	}
+	.dictionary-content--vertical-actions
+		.dictionary-content__topline
+		:global(.chinese-characters--pinyin-container),
+	.dictionary-content--vertical-actions
+		.dictionary-content__topline
+		:global(.chinese-characters--alternative-pronunciation) {
+		overflow-wrap: anywhere;
+		min-width: 0;
+		flex-wrap: wrap;
 	}
 	.dictionary-content--section-title {
 		font-size: 1.8em;

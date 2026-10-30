@@ -13,12 +13,13 @@ const BUDGETS = {
 	// are intentionally part of the app shell, alongside the shared accessibility support.
 	// Static imports include both layouts and the character window in the initial module graph.
 	// Includes shared glyph/word wrapping for Reader pagination and snapshots.
-	initialShellBytes: 351 * 1024,
+	// Also includes content-aware dictionary header layout and vertical action grouping.
+	initialShellBytes: 353 * 1024,
 	largestChunkBytes: 200 * 1024,
 	// Includes character breakdown plus optional pinyin controls and Reader annotation layout.
-	// Combined build: 350.1 KiB initial, 753.5 KiB total, 268.3 KiB gzip.
+	// Combined build: 352.1 KiB initial, 755.4 KiB total, 268.8 KiB gzip.
 	// Breakdown stays lazy-loaded; character records and geometry remain offline assets.
-	totalBytes: 755 * 1024,
+	totalBytes: 757 * 1024,
 	totalGzipBytes: 273 * 1024,
 };
 
