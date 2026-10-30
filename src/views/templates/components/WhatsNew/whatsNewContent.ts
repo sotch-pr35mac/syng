@@ -24,7 +24,7 @@ export const releaseContent: ReleaseContent[] = [
 			prompt: 'Is there a feature you wish Syng had?',
 			email: 'hello@bytecraft.xyz',
 			outcome: 'and it might make it into a future release.',
-			subject: 'Syng feature request',
+			subject: 'Syng Feature Request',
 		},
 		improvements: [
 			{

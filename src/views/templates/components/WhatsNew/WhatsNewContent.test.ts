@@ -34,7 +34,7 @@ vi.mock('@/components/WhatsNew/whatsNewContent.js', () => ({
 			prompt: `Feedback prompt ${version}.`,
 			email: 'hello@bytecraft.xyz',
 			outcome: 'Feedback outcome.',
-			subject: 'Syng feature request',
+			subject: 'Syng Feature Request',
 		},
 		improvements: [{ text: `Improvement ${version}` }],
 	})),
@@ -55,11 +55,11 @@ it('keeps the latest highlights visible and cumulative and older releases expand
 	expect(queryByText('Improvement 2.6.0')).toBeNull();
 	const feedback = getByRole('link', { name: 'hello@bytecraft.xyz' });
 	expect(feedback.getAttribute('href')).toBe(
-		'mailto:hello@bytecraft.xyz?subject=Syng+feature+request'
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
 	);
 	await user.click(feedback);
 	expect(opener.openUrl).toHaveBeenCalledExactlyOnceWith(
-		'mailto:hello@bytecraft.xyz?subject=Syng+feature+request'
+		'mailto:hello@bytecraft.xyz?subject=Syng%20Feature%20Request'
 	);
 
 	await user.click(getByRole('button', { name: 'Other improvements' }));

@@ -41,9 +41,7 @@
 	}
 
 	function feedbackUrl(feedback: NonNullable<ReleaseContent['feedback']>): string {
-		const query = feedback.subject
-			? `?${new URLSearchParams({ subject: feedback.subject })}`
-			: '';
+		const query = feedback.subject ? `?subject=${encodeURIComponent(feedback.subject)}` : '';
 		return `mailto:${feedback.email}${query}`;
 	}
 
