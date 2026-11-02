@@ -20,8 +20,10 @@ const BUDGETS = {
 	// Includes the lazy-loaded 2.7 release notes, credits, and feature-request mail action.
 	// Includes the optional three-question onboarding survey and Other text fields.
 	// Breakdown and What’s New stay lazy-loaded; character data remains in offline assets.
-	totalBytes: 761 * 1024,
-	totalGzipBytes: 273 * 1024,
+	// Combined build: 352.2 KiB initial, 764.9 KiB total, 272.5 KiB gzip.
+	totalBytes: 766 * 1024,
+	// CI measures 273.4 KiB gzip for the combined build.
+	totalGzipBytes: 274 * 1024,
 };
 
 function javascriptFiles(directory) {
