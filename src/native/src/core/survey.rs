@@ -1,5 +1,18 @@
-//! Explicit unlinked survey delivery, independent of telemetry and age classification.
+//! Durable delivery for the optional About you survey, separate from the telemetry queue.
+//!
+//! Explicit sharing saves a single response in `onboarding-survey.sqlite` in app data.
+//! A worker retries it across restarts for up to 30 days. A survey-only UUID identifies
+//! the response; each edit increments its revision so retries cannot create duplicates
+//! or let an old acknowledgment erase newer answers. Terminal delivery or expiry clears
+//! the payload and retry metadata, retaining the UUID/revision receipt for later edits.
+//!
+//! Survey collection does not depend on telemetry preferences or age classification.
+//! Operational diagnostics do respect telemetry preferences and contain only controlled
+//! operation names/error codes, never answers, submission IDs, raw errors, or HTTP bodies.
+//! Queue/network failures are nonfatal to onboarding. This file owns local persistence
+//! and delivery; `survey_contract` owns the shared wire format and input validation.
 use super::survey_contract::{SurveyAnswers, SurveyResponse};
+use super::telemetry::telemetry_track_error;
 use crate::utils::syrver::{syrver_url, ONBOARDING_SURVEY_PATH};
 use rusqlite::{params, Connection, OptionalExtension};
 use std::{
@@ -12,20 +25,26 @@ use std::{
 };
 use tauri::{AppHandle, Manager, State};
 use tokio::sync::Notify;
+/// Maximum pending-delivery lifetime assigned when a response is first queued or revised.
 const LIFETIME: i64 = 30 * 86400;
+/// UTC epoch seconds used for local expiry and retry scheduling.
 fn now() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs() as i64
 }
+/// Keep filesystem, SQLite, and serialization details out of the command error boundary.
 fn unavailable(_: impl std::fmt::Display) -> String {
     "unavailable".into()
 }
+/// Single-slot persistent response and deduplication receipt; guarded by the manager mutex.
 struct Queue {
     db: Connection,
 }
 impl Queue {
+    /// Open/create the queue without changing an existing pending response.
+    /// New Unix files are owner-only. Returns a controlled error if storage is unavailable.
     fn open(path: &Path) -> Result<Self, String> {
         let mut options = std::fs::OpenOptions::new();
         options.create(true).append(true);
@@ -38,10 +57,30 @@ impl Queue {
         let db = Connection::open(path).map_err(unavailable)?;
         db.busy_timeout(Duration::from_secs(2))
             .map_err(unavailable)?;
-        db.execute_batch("PRAGMA secure_delete=ON; PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL;
- CREATE TABLE IF NOT EXISTS response (slot INTEGER PRIMARY KEY CHECK(slot=1), id TEXT NOT NULL, revision INTEGER NOT NULL, payload TEXT, expires INTEGER NOT NULL, next_attempt INTEGER NOT NULL, attempts INTEGER NOT NULL);").map_err(unavailable)?;
+        // Overwrite deleted database cells, use a transient rollback journal, and
+        // synchronize commits for offline durability. These settings are not encryption
+        // or a guarantee of erasure from filesystem snapshots/backups.
+        // This schema is static SQL; all runtime values below use bound parameters.
+        db.execute_batch(
+            "PRAGMA secure_delete = ON;
+             PRAGMA journal_mode = DELETE;
+             PRAGMA synchronous = FULL;
+             CREATE TABLE IF NOT EXISTS response (
+                 slot INTEGER PRIMARY KEY CHECK (slot = 1),
+                 id TEXT NOT NULL,
+                 revision INTEGER NOT NULL,
+                 payload TEXT,
+                 expires INTEGER NOT NULL,
+                 next_attempt INTEGER NOT NULL,
+                 attempts INTEGER NOT NULL
+             );",
+        )
+        .map_err(unavailable)?;
         Ok(Self { db })
     }
+    /// Validate/normalize answers and atomically save them before returning success.
+    /// Identical pending answers are a no-op; edits reuse the UUID with a new revision
+    /// and restart the delivery lifetime. Rejects invalid input or unavailable storage.
     fn enqueue(&mut self, mut answers: SurveyAnswers, timestamp: i64) -> Result<(), String> {
         if !answers.validate() {
             return Err("invalid_input".into());
@@ -81,6 +120,10 @@ impl Queue {
             .map_err(unavailable)?;
         transaction.commit().map_err(unavailable)
     }
+    /// Clear expired payloads, then return a validated response whose retry time is due.
+    /// Persist the next backoff (with jitter) before handing the response to the network,
+    /// so restarting mid-request does not cause immediate repeated sends. Returns None
+    /// when no response is due; storage or persisted-payload errors remain reportable.
     fn due(&self, timestamp: i64) -> Result<Option<SurveyResponse>, String> {
         self.db
             .execute(
@@ -88,7 +131,16 @@ impl Queue {
                 [timestamp],
             )
             .map_err(unavailable)?;
-        let row: Option<(String,u32)> = self.db.query_row("SELECT payload,attempts FROM response WHERE payload IS NOT NULL AND next_attempt<=?1",[timestamp],|row|Ok((row.get(0)?,row.get(1)?))).optional().map_err(unavailable)?;
+        let row: Option<(String, u32)> = self
+            .db
+            .query_row(
+                "SELECT payload, attempts FROM response
+                 WHERE payload IS NOT NULL AND next_attempt <= ?1",
+                [timestamp],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .optional()
+            .map_err(unavailable)?;
         let Some((payload, attempts)) = row else {
             return Ok(None);
         };
@@ -106,7 +158,9 @@ impl Queue {
             .map_err(unavailable)?;
         Ok(Some(response))
     }
-    // Clear only the acknowledged revision: a newer explicit share may already be queued.
+    /// Apply a delivery result only to its revision; a newer share may already be queued.
+    /// None clears terminal payloads but preserves the receipt. Some(delay) extends the
+    /// scheduled retry when the server asks for a longer wait. Storage errors propagate.
     fn finish(&self, revision: u32, retry: Option<i64>, timestamp: i64) -> Result<(), String> {
         match retry {
             None => self.db.execute(
@@ -122,12 +176,15 @@ impl Queue {
         Ok(())
     }
 }
+/// App-lifetime queue owner; initialization starts at most one background worker.
 #[derive(Default)]
 pub struct SurveyManager {
     queue: Mutex<Option<Queue>>,
     started: AtomicBool,
     wake: Notify,
 }
+/// Open storage lazily and wake/start delivery without awaiting the network.
+/// Initialization failures propagate to the command caller for nonfatal reporting.
 fn initialize(app: &AppHandle, manager: &SurveyManager) -> Result<(), String> {
     let mut guard = manager.queue.lock().map_err(unavailable)?;
     if guard.is_none() {
@@ -139,35 +196,73 @@ fn initialize(app: &AppHandle, manager: &SurveyManager) -> Result<(), String> {
     if !manager.started.swap(true, Ordering::SeqCst) {
         let app = app.clone();
         tauri::async_runtime::spawn(async move {
+            let mut queue_error_reported = false;
             loop {
                 let manager = app.state::<SurveyManager>();
                 tokio::select! { _ = manager.wake.notified() => {}, _ = tokio::time::sleep(Duration::from_secs(15)) => {} }
-                let response = manager.queue.lock().ok().and_then(|guard| {
+                let response = manager.queue.lock().map_err(unavailable).and_then(|guard| {
                     guard
                         .as_ref()
-                        .and_then(|queue| queue.due(now()).ok().flatten())
+                        .ok_or_else(|| "unavailable".to_string())?
+                        .due(now())
                 });
+                let response = match response {
+                    Ok(response) => {
+                        queue_error_reported = false;
+                        response
+                    }
+                    Err(_) => {
+                        // One report per continuous failure, rather than every 15-second poll.
+                        if !queue_error_reported {
+                            report_failure(&app, "survey_read_queue", "unavailable");
+                            queue_error_reported = true;
+                        }
+                        continue;
+                    }
+                };
                 let Some(response) = response else {
                     continue;
                 };
-                let retry = deliver(&response).await;
-                if let Ok(guard) = manager.queue.lock() {
-                    if let Some(queue) = guard.as_ref() {
-                        let _ = queue.finish(response.revision, retry, now());
-                    }
-                };
+                let retry = deliver(&app, &response).await;
+                let finished = manager.queue.lock().map_err(unavailable).and_then(|guard| {
+                    guard
+                        .as_ref()
+                        .ok_or_else(|| "unavailable".to_string())?
+                        .finish(response.revision, retry, now())
+                });
+                if finished.is_err() {
+                    report_failure(&app, "survey_finish_delivery", "unavailable");
+                }
             }
         });
     }
     manager.wake.notify_one();
     Ok(())
 }
-async fn deliver(response: &SurveyResponse) -> Option<i64> {
+/// Report controlled diagnostics through the existing consent-gated error pipeline.
+/// Never pass raw storage/network errors or response data. Telemetry failures are ignored
+/// to avoid recursion; diagnostics do not change queue state or delivery eligibility.
+fn report_failure(app: &AppHandle, operation: &'static str, code: &'static str) {
+    eprintln!("Survey operation failed: {operation} ({code})");
+    let _ = telemetry_track_error(
+        "app.error".into(),
+        "Survey operation failed.".into(),
+        serde_json::json!({"operation": operation, "code": code}),
+        app.state(),
+    );
+}
+
+/// Attempt one unauthenticated survey POST, with a timeout and no redirect following.
+/// None means success or permanent rejection; Some(delay) means retry, honoring bounded
+/// Retry-After hints on top of the queue's backoff. Only controlled failures are reported;
+/// response bodies are never read into diagnostics. The caller finalizes queue state.
+async fn deliver(app: &AppHandle, response: &SurveyResponse) -> Option<i64> {
     let Ok(client) = reqwest::Client::builder()
         .timeout(Duration::from_secs(15))
         .redirect(reqwest::redirect::Policy::none())
         .build()
     else {
+        report_failure(app, "survey_deliver", "client_unavailable");
         return Some(0);
     };
     let Ok(result) = client
@@ -176,6 +271,7 @@ async fn deliver(response: &SurveyResponse) -> Option<i64> {
         .send()
         .await
     else {
+        report_failure(app, "survey_deliver", "request_failed");
         return Some(0);
     };
     let delay = result
@@ -193,14 +289,24 @@ async fn deliver(response: &SurveyResponse) -> Option<i64> {
         .clamp(0, LIFETIME);
     match result.status().as_u16() {
         200..=299 => None,
-        408 | 429 | 500..=599 => Some(delay),
-        _ => None,
+        408 | 429 | 500..=599 => {
+            report_failure(app, "survey_deliver", "retryable_response");
+            Some(delay)
+        }
+        _ => {
+            report_failure(app, "survey_deliver", "rejected_response");
+            None
+        }
     }
 }
+/// Resume pending delivery at startup; errors are reported by the frontend wrapper.
 #[tauri::command]
 pub fn survey_init(app: AppHandle, state: State<'_, SurveyManager>) -> Result<(), String> {
     initialize(&app, &state)
 }
+/// Save explicitly shared answers durably, then wake asynchronous delivery.
+/// Success means queued locally, not accepted by the server. Returns only controlled
+/// invalid_input/unavailable errors; the frontend reports them without blocking onboarding.
 #[tauri::command]
 pub fn survey_submit(
     app: AppHandle,

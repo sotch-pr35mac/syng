@@ -1,5 +1,18 @@
-//! Unlinked survey wire contract; keep Syng and Syrver copies identical.
+//! Client wire types and validation for Syng's About you survey.
+//!
+//! The native app validates before persistence/delivery. Syrver defines its request types
+//! separately and currently accepts answer content as supplied; the validation rules here
+//! are client policy, not a guarantee about every response stored by the service. Keep JSON
+//! field names and schema versions compatible when changing either side. Stable option
+//! identifiers describe answers; labels are UI-only. The client rejects unknown fields.
+//! Optional Other text is bounded but may identify someone, so do not log answer data.
+//!
+//! The envelope carries only a survey-specific UUID, schema version, revision, and answers.
+//! No account, session, telemetry, or persistent device identifier belongs in this format.
+//! Validation also normalizes answers for comparison and deduplication; a successful
+//! validation is required before using the normalized value.
 use serde::{Deserialize, Serialize};
+/// Optional selections and Other details; absent fields and empty goal lists are omitted.
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Default)]
 #[serde(deny_unknown_fields)]
 pub struct SurveyAnswers {
@@ -16,15 +29,23 @@ pub struct SurveyAnswers {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub discovery_source_other: Option<String>,
 }
+/// Versioned delivery envelope; newer revisions replace the same response on the server.
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct SurveyResponse {
+    /// Random v4 UUID used exclusively for this survey response and its retries.
     pub submission_id: String,
+    /// Contract version understood by both client and server (currently 1).
     pub schema_version: u32,
+    /// Positive, increasing revision for explicit edits; retries reuse the same value.
     pub revision: u32,
     pub answers: SurveyAnswers,
 }
 impl SurveyAnswers {
+    /// Check known choices, unique goals, Other-field constraints, and at least one selection.
+    /// Sorts goals, trims Other text, and drops blank text in place. On false the value may
+    /// be partially normalized and must not be persisted or sent. Other text alone is not
+    /// an answer: nonblank text requires its matching Other option to be selected.
     pub fn validate(&mut self) -> bool {
         let learning_context_options = [
             "school_or_university_classes",
@@ -92,8 +113,9 @@ impl SurveyAnswers {
         self.learning_context.is_some() || self.discovery_source.is_some() || !self.goals.is_empty()
     }
 }
-// Match HTML maxlength's UTF-16 units so emoji and supplementary characters have
-// the same limit in the webview and at both native/service trust boundaries.
+/// Trim optional text and omit blanks; reject controls, orphan text, and oversized input.
+/// The 200-unit limit matches HTML maxlength's UTF-16 counting, including emoji. Controls
+/// are rejected before trimming; a successful call may replace or remove the field.
 fn normalize_other(value: &mut Option<String>, selected: bool) -> bool {
     let Some(text) = value else {
         return true;
@@ -113,6 +135,9 @@ fn normalize_other(value: &mut Option<String>, selected: bool) -> bool {
     true
 }
 impl SurveyResponse {
+    /// Validate schema/revision/UUID before normalizing and validating the answers.
+    /// Does not establish that the UUID is unique or the revision is newer: the persistent
+    /// queue and backend's conditional write enforce those delivery/deduplication rules.
     pub fn validate(&mut self) -> bool {
         self.schema_version == 1
             && self.revision > 0
