@@ -26,6 +26,17 @@ for (const scenario of [
 		await expect(buttons).toHaveCount(4);
 		await page.evaluate(() => document.fonts.ready);
 		await buttons.first().click({ trial: true });
+		// Actionability can consider consecutive frames stable near the end of the
+		// popup's scale animation. Measure touch targets only after it has finished.
+		await themes.evaluate(async (element) => {
+			for (
+				let ancestor: Element | null = element;
+				ancestor;
+				ancestor = ancestor.parentElement
+			) {
+				await Promise.all(ancestor.getAnimations().map((animation) => animation.finished));
+			}
+		});
 		const geometry = await themes.evaluate((element) => {
 			const buttons = Array.from(element.querySelectorAll('button'));
 			const rows = new Map<number, number>();

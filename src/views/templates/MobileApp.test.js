@@ -1,3 +1,4 @@
+import { setPreferenceManagerForTest } from '@/utils/appServices.js';
 import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
@@ -86,12 +87,13 @@ vi.mock('@/utils/telemetry.js', () => ({
 }));
 
 beforeEach(() => {
+	setPreferenceManagerForTest({ get: vi.fn(), set: vi.fn() });
 	vi.mocked(telemetry.trackScreen).mockClear();
 	databaseMigrationStore.resetForTest();
 	window.location.hash = '#/';
 	privacySettingsStore.setPrivacySettingsForTest({
 		childPrivacyMode: false,
-		completedOnboardingVersion: 2,
+		completedOnboardingVersion: 3,
 	});
 	window.matchMedia = vi.fn().mockImplementation(() => ({
 		matches: false,

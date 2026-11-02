@@ -55,3 +55,7 @@ pub use telemetry::{
     TelemetryManager,
 };
 pub use tools::{convert_characters, pinyinify, prettify_pinyin, tokenize_pinyin};
+
+pub mod survey;
+pub mod survey_contract;
+pub use survey::{survey_init, survey_submit, SurveyManager};

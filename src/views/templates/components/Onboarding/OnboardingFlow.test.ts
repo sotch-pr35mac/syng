@@ -1,3 +1,7 @@
+import { submitSurvey } from '@/utils/onboardingSurvey.js';
+vi.mock('@/utils/onboardingSurvey.js', () => ({
+	submitSurvey: vi.fn().mockResolvedValue(undefined),
+}));
 import { beforeEach, expect, it, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
@@ -98,6 +102,7 @@ beforeEach(async () => {
 		showAlternativePronunciations: false,
 		childPrivacyMode: false,
 		completedOnboardingVersion: 0,
+		completedAboutYouVersion: 1,
 	});
 	preferenceManager = {
 		waitForInit: vi.fn(() => Promise.resolve()),
@@ -113,6 +118,7 @@ beforeEach(async () => {
 		completedOnboardingVersion: 0,
 	});
 	onboardingStore.reset();
+	vi.mocked(submitSurvey).mockReset().mockResolvedValue(undefined);
 	vi.mocked(submitInterviewSignup).mockReset().mockResolvedValue(undefined);
 	vi.mocked(initializeInterviews).mockReset().mockResolvedValue(undefined);
 	vi.mocked(telemetry.trackEvent).mockClear();
@@ -156,7 +162,7 @@ async function continueFromWelcome(user: ReturnType<typeof userEvent.setup>) {
 	return view;
 }
 
-it('walks Welcome → Preferences → Privacy → Interview and persists version 2 after skipping', async () => {
+it('walks Welcome → Preferences → Privacy → Interview and persists version 3 after skipping', async () => {
 	const user = userEvent.setup();
 	const { getByRole, getByText, queryByLabelText, getByLabelText } =
 		await continueFromWelcome(user);
@@ -225,7 +231,7 @@ it('walks Welcome → Preferences → Privacy → Interview and persists version
 
 	await waitFor(() => expect(getByText('Help Shape Syng')).toBeTruthy());
 	await user.click(getByRole('button', { name: 'Skip' }));
-	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2);
+	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 3);
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('onboarding.started', {});
 	expect(telemetry.trackEvent).toHaveBeenCalledWith('onboarding.step_viewed', {
 		step: 'welcome',
@@ -331,14 +337,14 @@ it('waits for the child-privacy telemetry write before allowing completion', asy
 	const getStarted = getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
 	expect(getStarted.disabled).toBe(true);
 	expect(preferenceManager.set).not.toHaveBeenCalledWith('childPrivacyMode', true);
-	expect(preferenceManager.set).not.toHaveBeenCalledWith('completedOnboardingVersion', 2);
+	expect(preferenceManager.set).not.toHaveBeenCalledWith('completedOnboardingVersion', 3);
 
 	finishPrivacyWrite();
 	await waitFor(() => expect(getStarted.disabled).toBe(false));
 	expect(preferenceManager.set).toHaveBeenCalledWith('childPrivacyMode', true);
 
 	await user.click(getStarted);
-	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2);
+	expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 3);
 });
 
 it('waits for the region telemetry reset before accepting an age answer', async () => {
@@ -418,13 +424,17 @@ it('uses mobile layout classes when requested', () => {
 	expect(container.querySelector('.onboarding-flow--desktop')).toBeNull();
 });
 
-it('shows only the invitation for existing users, with explicit consent and no repeat prompt', async () => {
-	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+it('requires explicit consent for the first-run interview invitation', async () => {
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 0 });
 	const user = userEvent.setup();
 	const { getByRole, getByLabelText, queryByText } = render(OnboardingFlow);
+	while (!onboardingStore.isLastStep) {
+		onboardingStore.nextStep();
+	}
+	await waitFor(() => expect(getByLabelText('Preferred name')).toBeTruthy());
 	expect(queryByText('Welcome to Syng')).toBeNull();
 	expect(queryByText('Country or region')).toBeNull();
-	expect(getByRole('status', { name: 'Step 1 of 1' })).toBeTruthy();
+	expect(getByRole('status', { name: 'Step 4 of 4' })).toBeTruthy();
 	expect(
 		(getByRole('checkbox', { name: /I agree to be contacted/ }) as HTMLInputElement).checked
 	).toBe(false);
@@ -459,19 +469,23 @@ it('skips the invitation entirely for existing child-mode users', async () => {
 	expect(queryByText('Help Shape Syng')).toBeNull();
 	expect(queryByLabelText('Email address')).toBeNull();
 	await waitFor(() =>
-		expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 2)
+		expect(preferenceManager.set).toHaveBeenCalledWith('completedOnboardingVersion', 3)
 	);
 	expect(submitInterviewSignup).not.toHaveBeenCalled();
 });
 
 it('keeps local save retries idempotent, changes the ID for edited details, and permits skipping after storage failure', async () => {
-	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 0 });
 	telemetryState.enabled = false;
 	vi.mocked(submitInterviewSignup).mockRejectedValue('Error echoing private@example.invalid');
 	const user = userEvent.setup();
 	const { getByRole, getByLabelText, queryByText } = render(OnboardingFlow, {
 		variant: 'mobile',
 	});
+	while (!onboardingStore.isLastStep) {
+		onboardingStore.nextStep();
+	}
+	await waitFor(() => expect(getByLabelText('Preferred name')).toBeTruthy());
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'river@example.invalid');
 	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
@@ -495,7 +509,7 @@ it('keeps local save retries idempotent, changes the ID for edited details, and 
 });
 
 it('prevents duplicate clicks during local storage and completes as soon as the signup is queued with telemetry disabled', async () => {
-	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 1 });
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 0 });
 	telemetryState.enabled = false;
 	let finish!: () => void;
 	vi.mocked(submitInterviewSignup).mockImplementationOnce(
@@ -506,6 +520,10 @@ it('prevents duplicate clicks during local storage and completes as soon as the 
 	);
 	const user = userEvent.setup();
 	const { getByRole, getByLabelText } = render(OnboardingFlow);
+	while (!onboardingStore.isLastStep) {
+		onboardingStore.nextStep();
+	}
+	await waitFor(() => expect(getByLabelText('Preferred name')).toBeTruthy());
 	await user.type(getByLabelText('Preferred name'), 'River');
 	await user.type(getByLabelText('Email address'), 'invalid');
 	await user.click(getByRole('checkbox', { name: /I agree to be contacted/ }));
@@ -520,4 +538,201 @@ it('prevents duplicate clicks during local storage and completes as soon as the 
 	finish();
 	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
 	expect(telemetry.setPref).not.toHaveBeenCalled();
+});
+
+it.each([1, 2])(
+	'offers only the survey to returning version %s and dismisses it once',
+	async (version) => {
+		preferences.completedAboutYouVersion = 0;
+		privacySettingsStore.setPrivacySettingsForTest({
+			completedOnboardingVersion: version,
+			childPrivacyMode: true,
+		});
+		const user = userEvent.setup();
+		const view = render(OnboardingFlow);
+		expect(view.getByText('About you')).toBeTruthy();
+		expect(view.queryByRole('button', { name: 'Back' })).toBeNull();
+		expect(onboardingStore.steps.map((step) => step.id)).toEqual(['about_you']);
+		await user.click(view.getByRole('button', { name: 'Skip survey' }));
+		await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
+		expect(preferences.completedAboutYouVersion).toBe(1);
+		expect(preferences.completedOnboardingVersion).toBe(3);
+		expect(submitSurvey).not.toHaveBeenCalled();
+		expect(telemetry.setPref).not.toHaveBeenCalled();
+		view.unmount();
+		render(OnboardingFlow);
+		expect(onboardingStore.steps).toEqual([]);
+	}
+);
+
+it('preserves optional answers across questions and shares only after the final action', async () => {
+	preferences.completedAboutYouVersion = 0;
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 2 });
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	expect(view.getAllByRole('radio').every((input) => !(input as HTMLInputElement).checked)).toBe(
+		true
+	);
+	await user.click(view.getByLabelText('Independent study'));
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByLabelText('Read Chinese'));
+	await user.click(view.getByLabelText('Build vocabulary'));
+	await user.click(view.getByRole('button', { name: 'Back' }));
+	expect((view.getByLabelText('Independent study') as HTMLInputElement).checked).toBe(true);
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	expect((view.getByLabelText('Read Chinese') as HTMLInputElement).checked).toBe(true);
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	expect(submitSurvey).not.toHaveBeenCalled();
+	await user.click(view.getByLabelText('GitHub'));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	expect(submitSurvey).toHaveBeenCalledWith({
+		learning_context: 'independent_study',
+		goals: ['read_chinese', 'build_vocabulary'],
+		discovery_source: 'github',
+	});
+	await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain(
+		'independent_study'
+	);
+});
+
+it.each([false, true])(
+	'finishes without a repeat prompt when sharing fails: %s',
+	async (withAnswers) => {
+		preferences.completedAboutYouVersion = 0;
+		privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 2 });
+		vi.mocked(submitSurvey).mockRejectedValue('unavailable');
+		const user = userEvent.setup();
+		const view = render(OnboardingFlow);
+		if (withAnswers) {
+			await user.click(view.getByLabelText('Just exploring'));
+		}
+		await user.click(view.getByRole('button', { name: 'Next' }));
+		await user.click(view.getByRole('button', { name: 'Next' }));
+		await user.click(
+			view.getByRole('button', {
+				name: 'Continue',
+			})
+		);
+		await waitFor(() => expect(privacySettingsStore.hasCompletedOnboarding).toBe(true));
+		expect(submitSurvey).toHaveBeenCalledTimes(withAnswers ? 1 : 0);
+		expect(preferences.completedAboutYouVersion).toBe(1);
+	}
+);
+
+it('remembers first-run survey dismissal without completing Privacy', async () => {
+	preferences.completedAboutYouVersion = 0;
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	expect(view.getByText('About you')).toBeTruthy();
+	await user.click(view.getByRole('button', { name: 'Skip survey' }));
+	await waitFor(() => expect(view.getByText('Privacy')).toBeTruthy());
+	expect(privacySettingsStore.hasCompletedOnboarding).toBe(false);
+	view.unmount();
+	render(OnboardingFlow);
+	expect(onboardingStore.steps.map((step) => step.id)).not.toContain('about_you');
+	expect(onboardingStore.steps.map((step) => step.id)).toContain('privacy');
+});
+
+it('guards repeated clicks while queueing and permits explicit replacement after navigating back', async () => {
+	preferences.completedAboutYouVersion = 0;
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	await user.click(view.getByLabelText('Independent study'));
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	let finish!: () => void;
+	vi.mocked(submitSurvey).mockImplementationOnce(
+		() =>
+			new Promise<void>((resolve) => {
+				finish = resolve;
+			})
+	);
+	await user.dblClick(view.getByRole('button', { name: 'Continue' }));
+	expect(submitSurvey).toHaveBeenCalledTimes(1);
+	expect((view.getByRole('button', { name: 'Back' }) as HTMLButtonElement).disabled).toBe(true);
+	finish();
+	await waitFor(() => expect(view.getByText('Privacy')).toBeTruthy());
+	await user.click(view.getByRole('button', { name: 'Back' }));
+	expect(view.getByText(/Question 3 of 3/)).toBeTruthy();
+	await user.click(view.getByLabelText('GitHub'));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	expect(submitSurvey).toHaveBeenCalledTimes(2);
+	expect(vi.mocked(submitSurvey).mock.calls[1][0]).toEqual({
+		learning_context: 'independent_study',
+		discovery_source: 'github',
+	});
+});
+
+it('starts at the first survey question after revisiting Welcome from Chinese display', async () => {
+	preferences.completedAboutYouVersion = 0;
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	await user.click(view.getByRole('button', { name: 'Back' }));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	expect(view.getByText(/Question 1 of 3/)).toBeTruthy();
+});
+
+it('preserves Other details between questions and submits all three only on Continue', async () => {
+	preferences.completedAboutYouVersion = 0;
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 2 });
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	await user.click(view.getByText('Something else', { exact: true }));
+	await user.type(view.getByRole('textbox'), 'Community workshop');
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByText('Something else', { exact: true }));
+	await user.type(view.getByRole('textbox'), 'Read family recipes');
+	await user.click(view.getByRole('button', { name: 'Back' }));
+	expect((view.getByRole('textbox') as HTMLInputElement).value).toBe('Community workshop');
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	expect((view.getByRole('textbox') as HTMLInputElement).value).toBe('Read family recipes');
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByText('Somewhere else', { exact: true }));
+	await user.type(view.getByRole('textbox'), 'Library noticeboard');
+	expect(submitSurvey).not.toHaveBeenCalled();
+	await user.click(view.getByRole('button', { name: 'Continue' }));
+	expect(submitSurvey).toHaveBeenCalledWith({
+		learning_context: 'something_else',
+		learning_context_other: 'Community workshop',
+		goals: ['something_else'],
+		goals_other: 'Read family recipes',
+		discovery_source: 'somewhere_else',
+		discovery_source_other: 'Library noticeboard',
+	});
+	expect(JSON.stringify(vi.mocked(telemetry.trackEvent).mock.calls)).not.toContain(
+		'Library noticeboard'
+	);
+});
+
+it('removes Other details when deselected or cleared and skips without sharing text', async () => {
+	preferences.completedAboutYouVersion = 0;
+	privacySettingsStore.setPrivacySettingsForTest({ completedOnboardingVersion: 2 });
+	const user = userEvent.setup();
+	const view = render(OnboardingFlow);
+	await user.click(view.getByLabelText('Something else'));
+	await user.type(view.getByRole('textbox'), 'Discard this');
+	await user.click(view.getByLabelText('Independent study'));
+	expect(view.queryByRole('textbox')).toBeNull();
+	expect(onboardingStore.surveyAnswers.learning_context_other).toBeUndefined();
+	await user.click(view.getByLabelText('Something else'));
+	await user.type(view.getByRole('textbox'), 'Clear this');
+	await user.click(view.getByRole('button', { name: 'Clear answer' }));
+	expect(onboardingStore.surveyAnswers.learning_context_other).toBeUndefined();
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByLabelText('Something else'));
+	await user.type(view.getByRole('textbox'), 'Deselected goal');
+	await user.click(view.getByLabelText('Something else'));
+	expect(onboardingStore.surveyAnswers.goals_other).toBeUndefined();
+	await user.click(view.getByRole('button', { name: 'Next' }));
+	await user.click(view.getByLabelText('Somewhere else'));
+	await user.type(view.getByRole('textbox'), 'Never send this');
+	await user.click(view.getByRole('button', { name: 'Skip survey' }));
+	expect(submitSurvey).not.toHaveBeenCalled();
 });

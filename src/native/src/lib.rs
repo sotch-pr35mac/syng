@@ -21,10 +21,10 @@ use core::{
     prettify_pinyin, query, query_by_chinese, query_by_english, query_by_id, query_by_ids,
     query_by_pinyin, read_bookmark_recovery_report, read_legacy_migration_file,
     resolve_legacy_lexical_units, save_bookmark_recovery_report, score_quiz, set_network_online,
-    start_quiz, telemetry_get_prefs, telemetry_get_queued_events, telemetry_init,
-    telemetry_sanitize_error, telemetry_set_pref, telemetry_track_error, telemetry_track_event,
-    telemetry_track_screen, tokenize_pinyin, tokenize_reader_text, InterviewManager, NetworkStatus,
-    QuizState, TelemetryManager,
+    start_quiz, survey_init, survey_submit, telemetry_get_prefs, telemetry_get_queued_events,
+    telemetry_init, telemetry_sanitize_error, telemetry_set_pref, telemetry_track_error,
+    telemetry_track_event, telemetry_track_screen, tokenize_pinyin, tokenize_reader_text,
+    InterviewManager, NetworkStatus, QuizState, SurveyManager, TelemetryManager,
 };
 use system_typography::get_system_typography;
 #[cfg(any(desktop, target_os = "ios"))]
@@ -98,6 +98,7 @@ pub fn run() {
         })
         .manage(QuizState::default())
         .manage(InterviewManager::default())
+        .manage(SurveyManager::default())
         .manage(TelemetryManager::default())
         .manage(NetworkStatus::default());
 
@@ -138,6 +139,8 @@ pub fn run() {
             telemetry_init,
             interview_signup,
             interviews_init,
+            survey_init,
+            survey_submit,
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,
@@ -186,6 +189,8 @@ pub fn run() {
             telemetry_init,
             interview_signup,
             interviews_init,
+            survey_init,
+            survey_submit,
             telemetry_track_event,
             telemetry_track_screen,
             telemetry_track_error,

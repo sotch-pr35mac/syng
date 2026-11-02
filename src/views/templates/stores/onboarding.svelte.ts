@@ -2,6 +2,11 @@ import { pendingOnboardingSteps, type OnboardingStepId } from '@/types/onboardin
 import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 import { isPrivacyStepComplete, normalizeRegionCode } from '@/utils/privacyPolicy.js';
 
+import { getPreferenceManager } from '@/utils/appServices.js';
+import { SURVEY_SCHEMA_VERSION, type SurveyAnswers } from '@/types/onboardingSurvey.js';
+let surveyCompletedAtStart = $state(false);
+let surveyQuestionIndex = $state(0);
+let surveyAnswers = $state<SurveyAnswers>({});
 let currentStepIndex = $state(0);
 let regionCode = $state<string | null>(null);
 let isBelowApplicableAge = $state<boolean | null>(null);
@@ -12,7 +17,9 @@ let ageClassificationApplied = $state(false);
 let startingVersion = $state(0);
 const steps = $derived(
 	pendingOnboardingSteps(startingVersion).filter(
-		(step) => step.id !== 'interview' || !privacySettingsStore.childPrivacyMode
+		(step) =>
+			(step.id !== 'interview' || !privacySettingsStore.childPrivacyMode) &&
+			(step.id !== 'about_you' || !surveyCompletedAtStart)
 	)
 );
 
@@ -61,6 +68,11 @@ function reset(): void {
 	startingVersion = privacySettingsStore.forceOnboardingReplay
 		? 0
 		: privacySettingsStore.completedOnboardingVersion;
+	surveyCompletedAtStart =
+		!privacySettingsStore.forceOnboardingReplay &&
+		getPreferenceManager().get('completedAboutYouVersion') === SURVEY_SCHEMA_VERSION;
+	surveyQuestionIndex = 0;
+	surveyAnswers = {};
 	currentStepIndex = 0;
 	regionCode = null;
 	isBelowApplicableAge = null;
@@ -71,6 +83,23 @@ function reset(): void {
 }
 
 export const onboardingStore = {
+	get surveyQuestionIndex() {
+		return surveyQuestionIndex;
+	},
+	set surveyQuestionIndex(value: number) {
+		surveyQuestionIndex = value;
+	},
+	get surveyAnswers() {
+		return surveyAnswers;
+	},
+	set surveyAnswers(value: SurveyAnswers) {
+		surveyAnswers = value;
+	},
+	async completeSurvey() {
+		const preferences = getPreferenceManager();
+		preferences.set('completedAboutYouVersion', SURVEY_SCHEMA_VERSION);
+		await preferences.waitForPendingWrites?.();
+	},
 	get steps() {
 		return steps;
 	},

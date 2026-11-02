@@ -1,3 +1,6 @@
+vi.mock('@/utils/onboardingSurvey.js', () => ({
+	initializeSurvey: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/stores/pinyinSettings.svelte.js', () => ({
 	pinyinSettingsStore: { loadSettings: vi.fn().mockResolvedValue(undefined) },
 }));

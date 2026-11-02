@@ -51,6 +51,7 @@ const createDefaultPreferences = () => ({
 	readerSettings: createPreference(false, { ...DEFAULT_READER_SETTINGS }),
 	childPrivacyMode: createPreference(false, false),
 	completedOnboardingVersion: createPreference(false, 0),
+	completedAboutYouVersion: createPreference(false, 0),
 	forceOnboardingReplay: createPreference(false, false),
 	walkthrough: createPreference(false, createWalkthroughPreferences(true)),
 });
@@ -176,6 +177,11 @@ export class PreferenceManager {
 
 		this._config[property].value = value;
 		this._writeQueue = this._writeQueue.then(() => this._persistConfig());
+	}
+
+	/** Wait for queued preference writes before leaving a one-time flow. */
+	waitForPendingWrites() {
+		return this._writeQueue;
 	}
 
 	_isConflictError(error) {
