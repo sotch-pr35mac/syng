@@ -2,8 +2,8 @@
 import { expect, test, type Locator } from '@playwright/test';
 
 async function sampleTransition(indicator: Locator) {
-	// Svelte stages transitions through a zero-duration animation before creating
-	// the real timeline. Pause only the latter so sampling cannot race the handoff.
+	// The init script pauses the real timeline at creation, before a slow test
+	// runner can miss it. Wait for Svelte's zero-duration staging animation to finish.
 	await expect
 		.poll(() =>
 			indicator.evaluate((element) => {
@@ -11,7 +11,6 @@ async function sampleTransition(indicator: Locator) {
 					const duration = Number(animation.effect?.getTiming().duration);
 					return duration > 0;
 				});
-				transition?.pause();
 				return transition?.playState;
 			})
 		)
@@ -135,6 +134,19 @@ for (const mobile of [false, true]) {
 			page,
 		}) => {
 			const longAnswer = answer.startsWith('long');
+			await page.addInitScript(() => {
+				const animate = Element.prototype.animate;
+				Element.prototype.animate = function (keyframes, options) {
+					const animation = animate.call(this, keyframes, options);
+					if (
+						this.matches('.result-indicator') &&
+						Number(animation.effect?.getTiming().duration) > 0
+					) {
+						animation.pause();
+					}
+					return animation;
+				};
+			});
 			await page.setViewportSize({
 				width: mobile || longAnswer ? 320 : 1100,
 				height: 800,

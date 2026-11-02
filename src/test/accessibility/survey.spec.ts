@@ -49,6 +49,16 @@ for (const scenario of [
 		await page.evaluate(() => {
 			document.documentElement.dataset.appearance = 'contrast';
 		});
+		// The attribute alone does not establish the rendered palette for the audit.
+		// Check both text and filled controls before axe snapshots computed styles.
+		await expect(page.locator('.about-you__counter')).toHaveCSS(
+			'color',
+			scenario.scheme === 'light' ? 'rgb(112, 112, 112)' : 'rgb(154, 155, 156)'
+		);
+		await expect(page.getByRole('button', { name: 'Continue', exact: true })).toHaveCSS(
+			'background-color',
+			scenario.scheme === 'light' ? 'rgb(0, 113, 235)' : 'rgb(118, 175, 249)'
+		);
 		const audit = await new AxeBuilder({ page })
 			.withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
 			.analyze();
@@ -78,6 +88,9 @@ test('survey supports native keyboard selection and a visible row focus state', 
 		page.getByRole('radio', { name: 'Intensive or study-abroad program' })
 	).toBeChecked();
 	await page.getByRole('button', { name: 'Next' }).click();
+	// The step schedules heading focus after mounting. Let it finish before
+	// directing keyboard input, or it can steal focus between key presses.
+	await expect(page.locator('legend')).toBeFocused();
 	const other = page.getByRole('checkbox', { name: 'Something else' });
 	await other.focus();
 	await page.keyboard.press('Space');
