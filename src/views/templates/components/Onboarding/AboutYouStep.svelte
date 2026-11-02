@@ -89,9 +89,7 @@
 						};
 					}}
 				/>
-				<p id="survey-other-help">
-					Up to 200 characters. Please don’t include personal details.
-				</p>
+				<p id="survey-other-help">Up to {SURVEY_OTHER_MAX_LENGTH} characters.</p>
 			</div>
 		{/if}
 		{#if question.key !== 'goals' && onboardingStore.surveyAnswers[question.key]}
@@ -191,6 +189,9 @@
 	.about-you__other span,
 	#survey-other-help {
 		color: var(--sy-text--muted);
+	}
+	#survey-other-help {
+		font-size: var(--sy-font-size--small);
 	}
 	.about-you__clear {
 		align-self: flex-start;
