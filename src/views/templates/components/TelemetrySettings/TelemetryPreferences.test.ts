@@ -41,7 +41,7 @@ beforeEach(async () => {
 		.mockImplementation(async (key, value) => {
 			confirmedPrefs[key as keyof TelemetryPrefs] = value;
 		});
-	setPreferenceManagerForTest({ set: vi.fn() } as never);
+	setPreferenceManagerForTest({ set: vi.fn(), get: vi.fn() } as never);
 	privacySettingsStore.setPrivacySettingsForTest({ childPrivacyMode: false });
 	onboardingStore.reset();
 	await onboardingStore.selectRegion('CN');

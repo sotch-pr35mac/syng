@@ -6,6 +6,7 @@
  * Structure: NATIVE_COMMANDS.<DOMAIN>.<ACTION>
  */
 export const NATIVE_COMMANDS = {
+	SURVEY: { INIT: 'survey_init', SUBMIT: 'survey_submit' },
 	INTERVIEWS: {
 		SIGNUP: 'interview_signup',
 		INIT: 'interviews_init',

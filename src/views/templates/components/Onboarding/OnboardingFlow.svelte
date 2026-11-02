@@ -5,6 +5,9 @@
 	import { fly } from 'svelte/transition';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import OnboardingProgress from '@/components/Onboarding/OnboardingProgress.svelte';
+	import AboutYouStep from '@/components/Onboarding/AboutYouStep.svelte';
+	import { hasSurveyAnswers } from '@/types/onboardingSurvey.js';
+	import { submitSurvey } from '@/utils/onboardingSurvey.js';
 	import WelcomeStep from '@/components/Onboarding/WelcomeStep.svelte';
 	import ChinesePreferencesStep from '@/components/Onboarding/ChinesePreferencesStep.svelte';
 	import PrivacyStep from '@/components/Onboarding/PrivacyStep.svelte';
@@ -27,10 +30,22 @@
 
 	let reduceMotion = $state(false);
 	let submittingInterview = $state(false);
+	let savingSurvey = $state(false);
+	const isSurvey = $derived(onboardingStore.currentStepId === 'about_you');
 	const isInterview = $derived(onboardingStore.currentStepId === 'interview');
 	const transitionDuration = $derived(reduceMotion ? 0 : STEP_TRANSITION_MS);
-	const primaryLabel = $derived(onboardingStore.isLastStep ? 'Get Started' : 'Continue');
-	const primaryDisabled = $derived(!onboardingStore.canContinue || submittingInterview);
+	const primaryLabel = $derived(
+		isSurvey
+			? onboardingStore.surveyQuestionIndex < 2
+				? 'Next'
+				: 'Continue'
+			: onboardingStore.isLastStep
+				? 'Get Started'
+				: 'Continue'
+	);
+	const primaryDisabled = $derived(
+		!onboardingStore.canContinue || submittingInterview || savingSurvey
+	);
 
 	onMount(() => {
 		if (onboardingStore.steps.length === 0) {
@@ -51,14 +66,15 @@
 
 	$effect(() => {
 		const step = onboardingStore.currentStepId;
-		if (step) {
+		if (step && step !== 'about_you') {
 			telemetry.trackEvent('onboarding.step_viewed', { step }).catch(() => {});
 		}
 	});
 
 	function focusStep(node: HTMLElement) {
 		const timer = setTimeout(() => {
-			const heading = node.querySelector<HTMLElement>('h1, h2');
+			node.closest('.onboarding-flow__body')?.scrollTo?.(0, 0);
+			const heading = node.querySelector<HTMLElement>(isSurvey ? 'legend' : 'h1, h2');
 			if (heading) {
 				heading.tabIndex = -1;
 				heading.focus({ preventScroll: true });
@@ -68,11 +84,29 @@
 	}
 
 	function handleBack(): void {
+		if (savingSurvey) {
+			return;
+		}
+		if (isSurvey && onboardingStore.surveyQuestionIndex > 0) {
+			onboardingStore.surveyQuestionIndex -= 1;
+			return;
+		}
 		onboardingStore.previousStep();
+		if (onboardingStore.currentStepId === 'about_you') {
+			onboardingStore.surveyQuestionIndex = 2;
+		}
 	}
 
 	async function handlePrimaryAction(): Promise<void> {
-		if (!onboardingStore.canContinue || submittingInterview) {
+		if (!onboardingStore.canContinue || submittingInterview || savingSurvey) {
+			return;
+		}
+		if (isSurvey) {
+			if (onboardingStore.surveyQuestionIndex < 2) {
+				onboardingStore.surveyQuestionIndex += 1;
+				return;
+			}
+			await finishSurvey(true);
 			return;
 		}
 		if (!onboardingStore.isLastStep) {
@@ -82,6 +116,27 @@
 		await completeOnboarding();
 	}
 
+	async function finishSurvey(share: boolean): Promise<void> {
+		if (savingSurvey) {
+			return;
+		}
+		savingSurvey = true;
+		try {
+			if (share && hasSurveyAnswers(onboardingStore.surveyAnswers)) {
+				await submitSurvey(JSON.parse(JSON.stringify(onboardingStore.surveyAnswers))).catch(
+					() => {}
+				);
+			}
+			await onboardingStore.completeSurvey().catch(() => {});
+			if (onboardingStore.isLastStep) {
+				await completeOnboarding();
+			} else {
+				onboardingStore.nextStep();
+			}
+		} finally {
+			savingSurvey = false;
+		}
+	}
 	async function completeOnboarding(): Promise<void> {
 		// Set Search before completing so the shell remounts the router at `#/`,
 		// not at a leftover hash, and not after awaiting telemetry.
@@ -116,7 +171,7 @@
 	{/if}
 	<div class="onboarding-flow__card">
 		<div class="onboarding-flow__body">
-			{#key onboardingStore.currentStepId}
+			{#key `${onboardingStore.currentStepId}-${isSurvey ? onboardingStore.surveyQuestionIndex : ''}`}
 				<div
 					class="onboarding-flow__step"
 					use:focusStep
@@ -126,6 +181,8 @@
 						<WelcomeStep />
 					{:else if onboardingStore.currentStepId === 'chinese_preferences'}
 						<ChinesePreferencesStep {variant} />
+					{:else if isSurvey}
+						<AboutYouStep disabled={savingSurvey} />
 					{:else if onboardingStore.currentStepId === 'privacy'}
 						<PrivacyStep {variant} />
 					{:else if isInterview}
@@ -141,11 +198,14 @@
 		<div
 			class="onboarding-flow__actions"
 			class:onboarding-flow__actions--interview={isInterview}
+			class:onboarding-flow__actions--survey={isSurvey}
 		>
 			<div class="onboarding-flow__back">
-				{#if !onboardingStore.isFirstStep}
-					<SyButton style="ghost" disabled={submittingInterview} onclick={handleBack}
-						>Back</SyButton
+				{#if !onboardingStore.isFirstStep || (isSurvey && onboardingStore.surveyQuestionIndex > 0)}
+					<SyButton
+						style="ghost"
+						disabled={submittingInterview || savingSurvey}
+						onclick={handleBack}>Back</SyButton
 					>
 				{/if}
 				{#if isInterview}
@@ -158,11 +218,23 @@
 					>
 				{/if}
 			</div>
-			<OnboardingProgress
-				currentStepIndex={onboardingStore.currentStepIndex}
-				steps={onboardingStore.steps}
-			/>
+			{#if onboardingStore.steps.length > 1}
+				<OnboardingProgress
+					currentStepIndex={onboardingStore.currentStepIndex}
+					steps={onboardingStore.steps}
+				/>
+			{/if}
 			<div class="onboarding-flow__primary">
+				{#if isSurvey}
+					<SyButton
+						aria-label="Skip survey"
+						style="filled"
+						disabled={savingSurvey}
+						onclick={() => {
+							void finishSurvey(false);
+						}}>Skip</SyButton
+					>
+				{/if}
 				{#if isInterview}
 					<SyButton
 						type="submit"
@@ -280,6 +352,23 @@
 		box-shadow: var(--sy-mobile-dock-shadow);
 	}
 
+	.onboarding-flow__actions--survey {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.onboarding-flow__actions--survey .onboarding-flow__back {
+		flex: 1;
+	}
+	.onboarding-flow__actions--survey .onboarding-flow__primary {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+	}
+	.onboarding-flow__actions--survey :global(.onboarding-progress) {
+		order: -2;
+		flex-basis: 100%;
+	}
+
 	.onboarding-flow__back {
 		display: flex;
 		min-width: 5rem;
@@ -288,6 +377,7 @@
 
 	.onboarding-flow__primary {
 		justify-self: end;
+		grid-column: -2 / -1;
 	}
 
 	.onboarding-flow__back {

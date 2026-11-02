@@ -15,6 +15,8 @@ pub const SYRVER_PRODUCTION_BASE_URL: &str =
 pub const TELEMETRY_EVENTS_PATH: &str = "/v1/telemetry";
 /// Syrver endpoint path that mints a per-installation telemetry token.
 pub const TELEMETRY_INSTALLATIONS_PATH: &str = "/v1/telemetry/installations";
+/// Anonymous, explicitly shared onboarding survey responses.
+pub const ONBOARDING_SURVEY_PATH: &str = "/v1/onboarding-survey";
 /// Authenticated, explicitly consented interview contact collection.
 pub const INTERVIEWS_PATH: &str = "/v1/interviews";
 /// Stable update checks; placeholders are expanded by the Tauri updater.

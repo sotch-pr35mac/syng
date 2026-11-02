@@ -25,6 +25,7 @@ import { isMobile } from '@/utils/device.js';
 import { initializeNetworkStatus, networkStatus } from '@/utils/networkStatus.svelte.js';
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import { telemetry } from '@/utils/telemetry.js';
+import { initializeSurvey } from '@/utils/onboardingSurvey.js';
 import { initializeInterviews } from '@/utils/interviews.js';
 import { createAppServices } from '@/utils/appServices.js';
 import { resolveIsMasBuild } from '@/composables/settings.js';
@@ -140,6 +141,7 @@ export const runStartupActions = () => {
 	const telemetryInit = telemetry.init().catch((error) => {
 		console.error('Telemetry initialization failed', error);
 	});
+	void initializeSurvey().catch(() => {});
 	let firstSetup = true;
 
 	const loadDisplayPreferences = async () => {
