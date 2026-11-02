@@ -533,14 +533,20 @@ export async function prepareGuide(
 				step(
 					'flip',
 					'Reveal the entry',
-					'Try remembering the meaning, then select Flip to reveal or hide the dictionary entry.',
+					'Try remembering the meaning, then select Flip to reveal or hide the dictionary entry.' +
+						(isMobileLayout()
+							? ''
+							: ' With a keyboard, press Space to flip when no control is focused.'),
 					'flashcards-flip',
 					studyRoute
 				),
 				step(
 					'navigate',
 					'Practice at your own pace',
-					'Use Previous and Next to move through this list. You can flip or revisit cards as often as you like.',
+					'Use Previous and Next to move through this list. You can flip or revisit cards as often as you like.' +
+						(isMobileLayout()
+							? ''
+							: ' With a keyboard, press Left arrow for the previous card or Right arrow for the next card.'),
 					'flashcards-navigation',
 					studyRoute
 				),

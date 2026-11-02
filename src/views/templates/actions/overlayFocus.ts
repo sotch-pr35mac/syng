@@ -27,6 +27,11 @@ type OverlayEntry = {
 	outsidePointer: boolean;
 };
 const overlays: OverlayEntry[] = [];
+/** Whether a dialog, popup, or menu currently owns overlay interaction. */
+export function hasActiveOverlay(): boolean {
+	return overlays.length > 0;
+}
+
 const backgroundState = new Map<HTMLElement, { inert: string | null; hidden: string | null }>();
 const FOCUSABLE_SELECTOR =
 	'a[href], area[href], button, input:not([type="hidden"]), select, textarea, iframe, [contenteditable="true"], [tabindex]';

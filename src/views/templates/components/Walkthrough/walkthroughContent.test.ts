@@ -333,3 +333,18 @@ it('selects created and reused samples while their walkthrough request remains c
 	await addExample('list', examples, remember, false, 'study', () => true);
 	expect(bookmarksRoute.setActiveList).toHaveBeenCalledExactlyOnceWith(examples.listName);
 });
+
+it.each([
+	{ platform: 'desktop', mobile: false, ipad: false },
+	{ platform: 'iPad', mobile: false, ipad: true },
+	{ platform: 'phone', mobile: true, ipad: false },
+])('offers flashcard shortcuts only on supported shells: $platform', async ({ mobile, ipad }) => {
+	state.mobile = mobile;
+	state.ipad = ipad;
+	state.contents.Bookmarks = [{ lexical_id: 'one' }];
+	const prepared = await prepareGuide('flashcards', { listName: 'Bookmarks' }, () => true);
+	expect(prepared.steps.find((step) => step.id === 'flip').body.includes('Space')).toBe(!mobile);
+	expect(prepared.steps.find((step) => step.id === 'navigate').body.includes('Right arrow')).toBe(
+		!mobile
+	);
+});
