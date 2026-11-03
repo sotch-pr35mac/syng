@@ -28,6 +28,9 @@
 
 	onboardingStore.reset();
 
+	let scrollContainer: HTMLDivElement | undefined = $state();
+	let scrollportSize: DOMRectReadOnly | undefined = $state();
+	let previewScrollOffset = $state(0);
 	let reduceMotion = $state(false);
 	let submittingInterview = $state(false);
 	let savingSurvey = $state(false);
@@ -170,7 +173,14 @@
 		<div class="onboarding-flow__titlebar" data-tauri-drag-region aria-hidden="true"></div>
 	{/if}
 	<div class="onboarding-flow__card">
-		<div class="onboarding-flow__body">
+		<div
+			class="onboarding-flow__body"
+			bind:this={scrollContainer}
+			bind:contentRect={scrollportSize}
+			style:scroll-padding-top={onboardingStore.currentStepId === 'chinese_preferences'
+				? `calc(var(--onboarding-body-padding-top) + ${previewScrollOffset}px)`
+				: undefined}
+		>
 			{#key `${onboardingStore.currentStepId}-${isSurvey ? onboardingStore.surveyQuestionIndex : ''}`}
 				<div
 					class="onboarding-flow__step"
@@ -180,7 +190,12 @@
 					{#if onboardingStore.currentStepId === 'welcome'}
 						<WelcomeStep />
 					{:else if onboardingStore.currentStepId === 'chinese_preferences'}
-						<ChinesePreferencesStep {variant} />
+						<ChinesePreferencesStep
+							{variant}
+							{scrollContainer}
+							availableHeight={scrollportSize?.height ?? 0}
+							onpreviewoffsetchange={(offset) => (previewScrollOffset = offset)}
+						/>
 					{:else if isSurvey}
 						<AboutYouStep disabled={savingSurvey} />
 					{:else if onboardingStore.currentStepId === 'privacy'}
@@ -322,6 +337,7 @@
 	}
 
 	.onboarding-flow__body {
+		--onboarding-body-padding-top: var(--sy-space--extra-large);
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
@@ -329,7 +345,8 @@
 	}
 
 	.onboarding-flow--mobile .onboarding-flow__body {
-		padding-top: max(var(--sy-space--extra-large), env(safe-area-inset-top));
+		--onboarding-body-padding-top: max(var(--sy-space--extra-large), env(safe-area-inset-top));
+		padding-top: var(--onboarding-body-padding-top);
 	}
 
 	.onboarding-flow__step {
