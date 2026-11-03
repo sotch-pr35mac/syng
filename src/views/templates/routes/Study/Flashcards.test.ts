@@ -208,6 +208,50 @@ describe('desktop flashcard shortcuts', () => {
 		expect(flashcardsRoute.showDetails).toBe(true);
 	});
 
+	it('accepts the neutral scroll surface but leaves new focusable descendants alone', async () => {
+		const view = await readyDesktop();
+		const content = view.container.querySelector<HTMLElement>('.flashcard--content')!;
+		// Chromium can focus a scroll container even without an explicit tabindex.
+		expect(press(' ', {}, content).defaultPrevented).toBe(true);
+		expect(flashcardsRoute.showDetails).toBe(true);
+		press('ArrowRight', {}, content);
+		expect(flashcardsRoute.activeIndex).toBe(1);
+		const customControl = document.createElement('div');
+		customControl.tabIndex = -1;
+		content.append(customControl);
+		customControl.focus();
+		for (const key of [' ', 'ArrowRight', 'ArrowLeft']) {
+			expect(press(key, {}, customControl).defaultPrevented).toBe(false);
+		}
+		expect(flashcardsRoute.activeIndex).toBe(1);
+		expect(flashcardsRoute.showDetails).toBe(false);
+		customControl.remove();
+	});
+
+	it('applies shared guards to toolbar arrows and handles each press only once', async () => {
+		const view = await readyDesktop();
+		const flip = view.getByRole('button', { name: 'Flip' });
+		flip.focus();
+		press('ArrowRight', {}, flip);
+		expect(flashcardsRoute.activeIndex).toBe(1);
+		for (const options of [{ repeat: true }, { ctrlKey: true }, { isComposing: true }]) {
+			press('ArrowRight', options, flip);
+			expect(flashcardsRoute.activeIndex).toBe(1);
+		}
+		const popup = document.createElement('div');
+		document.body.append(popup);
+		const action = overlayFocus(popup, { initialFocus: 'none' });
+		try {
+			expect(press('ArrowRight', {}, flip).defaultPrevented).toBe(false);
+			expect(flashcardsRoute.activeIndex).toBe(1);
+		} finally {
+			action && action.destroy?.();
+			popup.remove();
+		}
+		press('ArrowLeft', {}, flip);
+		expect(flashcardsRoute.activeIndex).toBe(0);
+	});
+
 	it('yields to text entry, controls, walkthroughs, modifiers, composition and handled events', async () => {
 		const view = await readyDesktop();
 		const container = view.container.querySelector('.flashcard--container');

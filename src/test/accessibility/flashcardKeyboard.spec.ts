@@ -40,6 +40,11 @@ for (const device of ['desktop', 'ipad']) {
 		await page.getByRole('button', { name: 'Flip', exact: true }).focus();
 		await page.keyboard.press('Space');
 		await expect(announcement).toContainText('Details shown.');
+		await page.keyboard.press('ArrowLeft');
+		await expect(status).toContainText('1 of 2');
+		await expect(announcement).toContainText('Front shown.');
+		await page.keyboard.press('ArrowRight');
+		await expect(status).toContainText('2 of 2');
 		await expect(next).toHaveAttribute('aria-keyshortcuts', 'ArrowRight');
 	});
 }

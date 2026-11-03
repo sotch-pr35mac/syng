@@ -19,9 +19,33 @@
 	import { lexicalPinyin } from '@/types/dictionary.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
 	const IME_KEY_CODE = 229;
-	let flashcardContainer: HTMLDivElement;
+	let flashcardContainer: HTMLDivElement | undefined;
+	let flashcardContent: HTMLDivElement | undefined;
 
 	function handleKeydown(event: KeyboardEvent): void {
+		// Page shortcuts belong only to these neutral focus destinations. Descendant
+		// controls keep their own keys unless they explicitly opt in below.
+		const target = event.target;
+		const routeLandmark = flashcardContainer?.closest('main#sy-main-content');
+		if (
+			target === document.body ||
+			target === document.documentElement ||
+			target === routeLandmark ||
+			target === flashcardContainer ||
+			target === flashcardContent
+		) {
+			handleShortcut(event);
+		}
+	}
+
+	function handleToolbarKeydown(event: KeyboardEvent): void {
+		// Space retains native button activation; only arrows opt into card navigation.
+		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+			handleShortcut(event);
+		}
+	}
+
+	function handleShortcut(event: KeyboardEvent): void {
 		if (
 			router.location !== '/study/flashcards' ||
 			flashcardsRoute.loading ||
@@ -40,34 +64,9 @@
 			return;
 		}
 
-		const target = event.target;
-		if (!(target instanceof Element)) {
-			return;
-		}
-		// Skip to content and keyboard route navigation focus the enclosing landmark.
-		const routeLandmark = flashcardContainer?.closest('main#sy-main-content');
 		if (
-			target !== routeLandmark &&
-			target !== document.body &&
-			target !== document.documentElement &&
-			!flashcardContainer?.contains(target)
-		) {
-			return;
-		}
-		if (target.closest('[inert], [aria-hidden="true"], [role="dialog"], [role="menu"]')) {
-			return;
-		}
-		// Native controls own their keys. Only the flashcard toolbar opts into arrows.
-		const control = target.closest(
-			'button, a[href], input, textarea, select, summary, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="link"], [role="textbox"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], [role="listbox"], [tabindex]:not([tabindex="-1"])'
-		);
-		if (
-			control &&
-			!(
-				event.key !== ' ' &&
-				control.matches('button') &&
-				control.closest('.flashcard--header--section')
-			)
+			event.target instanceof Element &&
+			event.target.closest('[inert], [aria-hidden="true"], [role="dialog"], [role="menu"]')
 		) {
 			return;
 		}
@@ -184,6 +183,7 @@
 					aria-keyshortcuts={action.shortcut}
 					disabled={action.disabled}
 					onclick={action.action}
+					onkeydown={handleToolbarKeydown}
 					style="ghost"
 					center={true}
 				>
@@ -215,6 +215,7 @@
 					aria-keyshortcuts={action.shortcut}
 					disabled={action.disabled}
 					onclick={action.action}
+					onkeydown={handleToolbarKeydown}
 					style="ghost"
 					center={true}
 				>
@@ -225,7 +226,11 @@
 			{/each}
 		</div>
 	</div>
-	<div class="flashcard--content" use:scrollRestore={'flashcard-content'}>
+	<div
+		class="flashcard--content"
+		bind:this={flashcardContent}
+		use:scrollRestore={'flashcard-content'}
+	>
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">

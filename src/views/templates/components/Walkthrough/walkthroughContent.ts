@@ -534,9 +534,7 @@ export async function prepareGuide(
 					'flip',
 					'Reveal the entry',
 					'Try remembering the meaning, then select Flip to reveal or hide the dictionary entry.' +
-						(isMobileLayout()
-							? ''
-							: ' With a keyboard, press Space to flip when no control is focused.'),
+						(isMobileLayout() ? '' : ' With a keyboard, press Space to flip.'),
 					'flashcards-flip',
 					studyRoute
 				),
