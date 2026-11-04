@@ -17,17 +17,29 @@
 	import MobileNavigation from '@/components/Navigation/MobileNavigation.svelte';
 	import Study from '@/routes/Study.svelte';
 	import MobileStudy from '@/routes/mobile/MobileStudy.svelte';
+	import Tools from '@/routes/Tools.svelte';
+	import MobileTools from '@/routes/mobile/MobileTools.svelte';
+	import { toolsSelectionStore } from '@/stores/tools.svelte.js';
+	import { toolsStore } from '@/composables/tools.svelte.js';
 
 	const parameters = new URLSearchParams(location.search);
 	const vocabulary = parameters.has('vocabulary');
 	const overviewStudy = parameters.has('overviewStudy');
+	const overviewExtras = parameters.has('overviewExtras');
 	const mobile = parameters.has('mobile');
 	const preferences: Record<string, unknown> = {
 		walkthrough: {
 			...createWalkthroughPreferences(),
-			guides: overviewStudy
-				? { app: { status: 'in-progress', stepId: 'study', context: {} } }
-				: {},
+			guides:
+				overviewStudy || overviewExtras
+					? {
+							app: {
+								status: 'in-progress',
+								stepId: overviewExtras ? 'extras' : 'study',
+								context: {},
+							},
+						}
+					: {},
 		},
 	};
 	const documents: ReaderDocument[] = [];
@@ -99,7 +111,14 @@
 			return [];
 		},
 	});
+	if (overviewExtras) {
+		toolsSelectionStore.set('prettify');
+		toolsStore.setPrettifyInput('ni3 hao3');
+	}
 	onMount(() => {
+		if (overviewExtras) {
+			return () => walkthroughStore.interrupt();
+		}
 		void walkthroughStore.start(
 			overviewStudy ? 'app' : vocabulary ? 'study' : 'reader-library',
 			{},
@@ -109,7 +128,7 @@
 	});
 </script>
 
-{#if overviewStudy}
+{#if overviewStudy || overviewExtras}
 	<div class="overview-shell" class:mobile>
 		{#if mobile}
 			<MobileNavigation />
@@ -117,7 +136,12 @@
 			<aside><Navigation /></aside>
 		{/if}
 		<div class="overview-content">
-			{#if mobile}<MobileStudy />{:else}<Study />{/if}
+			{#if overviewExtras}
+				{#if mobile}<MobileTools />{:else}<Tools />{/if}
+				<button class="resume-tour" onclick={() => walkthroughStore.start('app', {}, true)}
+					>Resume App Tour</button
+				>
+			{:else if mobile}<MobileStudy />{:else}<Study />{/if}
 		</div>
 	</div>
 {:else}
@@ -131,9 +155,14 @@
 		{/if}
 	</main>
 {/if}
-<WalkthroughHost />
+{#if walkthroughStore.phase !== 'idle'}<WalkthroughHost />{/if}
 
 <style>
+	.resume-tour {
+		position: fixed;
+		bottom: 0;
+		right: 0;
+	}
 	.overview-shell {
 		display: flex;
 		height: 100vh;

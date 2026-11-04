@@ -10,7 +10,7 @@ import {
 import type { PinyinSegment } from '@/types/tools.js';
 import { telemetry } from '@/utils/telemetry.js';
 import { toolsRoute } from '@/composables/toolsRoute.svelte.js';
-import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
+import { toolsSelectionStore } from '@/stores/tools.svelte.js';
 
 vi.mock('@/utils/telemetry.js', () => ({
 	telemetry: { trackEvent: vi.fn(() => Promise.resolve()) },
@@ -48,6 +48,7 @@ const segments: PinyinSegment[] = [
 beforeEach(() => {
 	vi.mocked(telemetry.trackEvent).mockClear();
 	resetToolsStoreForTest();
+	toolsSelectionStore.set(null);
 	vi.mocked(invoke).mockReset();
 });
 
@@ -89,7 +90,7 @@ it('does not record failed operations or failed copies as successful', async () 
 	await toolsRoute.copyText('private result');
 	expect(telemetry.trackEvent).not.toHaveBeenCalled();
 	vi.mocked(navigator.clipboard.writeText).mockResolvedValue(undefined);
-	toolsActiveTabStore.set('pinyinify');
+	toolsSelectionStore.set('pinyinify');
 	await toolsRoute.copyText('private result');
 	expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('tools.copied', {
 		tool: 'pinyinify',
@@ -187,4 +188,31 @@ it('runs automatic pinyin prettify and stores the decision', async () => {
 it('formats segment results for copy output', () => {
 	expect(segmentsToPinyinText(segments)).toBe('Hellonǐ hǎoworld');
 	expect(segmentsToCharacterText(segments, 'simplified')).toBe('Hello你好world');
+});
+
+it('records tool openings once per selection and attributes an asynchronous copy to its source', async () => {
+	toolsRoute.selectTool('frequency');
+	toolsRoute.selectTool('frequency');
+	toolsRoute.selectTool(null);
+	expect(telemetry.trackEvent).toHaveBeenCalledExactlyOnceWith('tools.opened', {
+		tool: 'frequency',
+	});
+	toolsRoute.selectTool('converter');
+	let finish!: () => void;
+	Object.defineProperty(navigator, 'clipboard', {
+		configurable: true,
+		value: {
+			writeText: vi.fn(
+				() =>
+					new Promise<void>((resolve) => {
+						finish = resolve;
+					})
+			),
+		},
+	});
+	const copying = toolsRoute.copyText('private result');
+	toolsRoute.selectTool('prettify');
+	finish();
+	await copying;
+	expect(telemetry.trackEvent).toHaveBeenLastCalledWith('tools.copied', { tool: 'converter' });
 });

@@ -14,10 +14,10 @@ mod windows;
 #[cfg(desktop)]
 use core::updater::check_for_update;
 use core::{
-    answer_question, classify, convert_characters, export_list_data, get_acknowledgements,
-    get_incorrect_questions, get_next_question, get_region_options, import_list_data,
-    import_reader_document, init_dictionary, interview_signup, interviews_init, is_dev_build,
-    is_mas_build, persist_bookmark_recovery_report, pinyinify, prepare_reader_import,
+    analyze_word_frequency, answer_question, classify, convert_characters, export_list_data,
+    get_acknowledgements, get_incorrect_questions, get_next_question, get_region_options,
+    import_list_data, import_reader_document, init_dictionary, interview_signup, interviews_init,
+    is_dev_build, is_mas_build, persist_bookmark_recovery_report, pinyinify, prepare_reader_import,
     prettify_pinyin, query, query_by_chinese, query_by_english, query_by_id, query_by_ids,
     query_by_pinyin, read_bookmark_recovery_report, read_legacy_migration_file,
     resolve_legacy_lexical_units, save_bookmark_recovery_report, score_quiz, set_network_online,
@@ -150,6 +150,7 @@ pub fn run() {
             telemetry_set_pref,
             read_legacy_migration_file,
             pinyinify,
+            analyze_word_frequency,
             convert_characters,
             prettify_pinyin,
             tokenize_pinyin,
@@ -200,6 +201,7 @@ pub fn run() {
             telemetry_set_pref,
             read_legacy_migration_file,
             pinyinify,
+            analyze_word_frequency,
             convert_characters,
             prettify_pinyin,
             tokenize_pinyin,

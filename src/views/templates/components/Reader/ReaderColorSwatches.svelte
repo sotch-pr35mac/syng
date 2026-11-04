@@ -66,7 +66,7 @@
 		border-radius: 50%;
 		box-shadow: var(--sy-shadow);
 		cursor: pointer;
-		transition: box-shadow var(--sy-transition-duration);
+		transition: box-shadow var(--sy-transition-duration--control);
 		background-color: color-mix(in srgb, var(--swatch-color) 70%, #ffffff);
 	}
 
@@ -78,6 +78,10 @@
 
 	.reader-color-swatches__swatch:hover {
 		box-shadow: var(--sy-shadow--active);
+	}
+
+	.reader-color-swatches__swatch:active {
+		transition: none;
 	}
 
 	.reader-color-swatches__swatch--selected {

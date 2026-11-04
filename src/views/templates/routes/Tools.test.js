@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import Tools from '@/routes/Tools.svelte';
 import { resetToolsStoreForTest } from '@/composables/tools.svelte.js';
-import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
+import { toolsSelectionStore } from '@/stores/tools.svelte.js';
 
 const THIRD_TONE = 3;
 
@@ -12,7 +12,8 @@ vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		ChevronDown: mockIcon,
-		ChevronRight: mockIcon,
+		ChevronLeft: mockIcon,
+		ChevronUp: mockIcon,
 		Copy: mockIcon,
 		Info: mockIcon,
 		Play: mockIcon,
@@ -22,6 +23,10 @@ vi.mock('lucide-svelte', async () => {
 
 vi.mock('@tauri-apps/plugin-os', () => ({
 	platform: () => 'macos',
+}));
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(async () => {}) },
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({
@@ -47,16 +52,15 @@ const pinyinSegments = [
 
 beforeEach(() => {
 	resetToolsStoreForTest();
-	toolsActiveTabStore.set('pinyinify');
+	toolsSelectionStore.set(null);
 	vi.mocked(invoke).mockReset();
 });
 
-it('renders the default pinyinify tool', () => {
-	const { getByRole, getByLabelText } = render(Tools);
-
+it('starts on the toolbox without a selected tool', () => {
+	const { getByRole, queryByLabelText } = render(Tools);
 	expect(getByRole('heading', { name: 'Extras' })).toBeTruthy();
-	expect(getByRole('heading', { name: 'Pinyinify' })).toBeTruthy();
-	expect(getByLabelText('Pinyinify input')).toBeTruthy();
+	expect(getByRole('region', { name: 'Extras tools' })).toBeTruthy();
+	expect(queryByLabelText('Pinyinify input')).toBeNull();
 });
 
 it('switches tools and runs conversion', async () => {
@@ -68,7 +72,7 @@ it('switches tools and runs conversion', async () => {
 	});
 	const { getByRole, getByLabelText, getByText } = render(Tools);
 
-	await user.click(getByRole('tab', { name: 'Convert' }));
+	await user.click(getByRole('button', { name: 'Convert', exact: true }));
 	await fireEvent.input(getByLabelText('Converter input'), { target: { value: '繁体字' } });
 	await user.click(getByRole('button', { name: 'To Traditional' }));
 	await user.click(getByRole('button', { name: /Process/ }));
@@ -89,7 +93,7 @@ it('shows automatic conversion decisions', async () => {
 	});
 	const { getByRole, getByLabelText, getByText } = render(Tools);
 
-	await user.click(getByRole('tab', { name: 'Convert' }));
+	await user.click(getByRole('button', { name: 'Convert', exact: true }));
 	await fireEvent.input(getByLabelText('Converter input'), { target: { value: '繁體字' } });
 	await user.click(getByRole('button', { name: /Process/ }));
 
@@ -100,6 +104,7 @@ it('renders pinyinify output from the native command', async () => {
 	const user = userEvent.setup();
 	vi.mocked(invoke).mockResolvedValueOnce(pinyinSegments);
 	const { getByLabelText, getByRole, getByText } = render(Tools);
+	await user.click(getByRole('button', { name: 'Pinyinify', exact: true }));
 
 	await fireEvent.input(getByLabelText('Pinyinify input'), { target: { value: '你好' } });
 	await user.click(getByRole('button', { name: /Process/ }));
@@ -107,19 +112,21 @@ it('renders pinyinify output from the native command', async () => {
 	await waitFor(() => expect(getByText('nǐ hǎo')).toBeTruthy());
 });
 
-it('navigates tabs by keyboard and exposes selected conversion options', async () => {
+it('opens tools by keyboard, restores focus, and preserves input and controls', async () => {
 	const user = userEvent.setup();
-	const { getByRole } = render(Tools);
-	getByRole('tab', { name: 'Pinyinify' }).focus();
-	await user.keyboard('{ArrowRight}');
-	expect(document.activeElement).toBe(getByRole('tab', { name: 'Convert', selected: true }));
-	expect(getByRole('tabpanel', { name: 'Convert' })).toBeTruthy();
-	const traditional = getByRole('button', { name: 'To Traditional', pressed: false });
-	await user.click(traditional);
-	expect(getByRole('button', { name: 'To Traditional', pressed: true })).toBe(traditional);
-	const collapse = getByRole('button', { name: 'Collapse Convert input', expanded: true });
-	await user.click(collapse);
-	expect(getByRole('button', { name: 'Expand Convert input', expanded: false })).toBeTruthy();
+	const { getByRole, getByLabelText } = render(Tools);
+	getByRole('button', { name: 'Pinyinify', exact: true }).focus();
+	await user.keyboard('{Tab}{Enter}');
+	expect(document.activeElement).toBe(getByRole('heading', { name: 'Convert' }));
+	await user.click(getByRole('button', { name: 'To Traditional', pressed: false }));
+	await fireEvent.input(getByLabelText('Converter input'), { target: { value: '你好' } });
+	await user.click(getByRole('button', { name: 'Collapse Convert input', expanded: true }));
+	await user.click(getByRole('button', { name: 'All tools' }));
+	expect(document.activeElement).toBe(getByRole('button', { name: 'Convert', exact: true }));
+	await user.keyboard('{Enter}');
+	await user.click(getByRole('button', { name: 'Expand Convert input', expanded: false }));
+	expect(getByRole('button', { name: 'To Traditional', pressed: true })).toBeTruthy();
+	expect(getByLabelText('Converter input').value).toBe('你好');
 });
 
 it('announces processing and completion without making all output a live region', async () => {
@@ -131,10 +138,13 @@ it('announces processing and completion without making all output a live region'
 	);
 	const user = userEvent.setup();
 	const { getByRole, getByLabelText } = render(Tools);
+	await user.click(getByRole('button', { name: 'Pinyinify', exact: true }));
 	await fireEvent.input(getByLabelText('Pinyinify input'), { target: { value: '你好' } });
 	await user.click(getByRole('button', { name: /Process/ }));
 	expect(getByRole('status').textContent).toContain('Processing');
+	await user.click(getByRole('button', { name: 'All tools' }));
 	finish(pinyinSegments);
+	await user.click(getByRole('button', { name: 'Pinyinify', exact: true }));
 	await waitFor(() => expect(getByRole('status').textContent).toContain('Output ready'));
 	expect(getByRole('region', { name: 'Pinyinify output' }).getAttribute('aria-live')).toBeNull();
 	expect(getByRole('button', { name: 'Copy pinyinify output' })).toBeTruthy();

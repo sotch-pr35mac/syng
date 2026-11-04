@@ -6,6 +6,8 @@ const sourceRoot = resolve(process.env.SYNG_ACCESSIBILITY_SOURCE_ROOT || '.');
 
 export default defineConfig({
 	plugins: [svelte()],
+	// Worktrees can share node_modules; their fixture dependency caches must stay separate.
+	cacheDir: resolve('.cache/vite-accessibility'),
 	optimizeDeps: {
 		entries: [
 			process.env.SYNG_ACCESSIBILITY_SOURCE_ROOT

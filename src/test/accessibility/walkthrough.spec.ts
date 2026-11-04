@@ -130,3 +130,41 @@ for (const scenario of [
 		});
 	}
 }
+
+for (const mobile of [false, true]) {
+	test(`${mobile ? 'phone' : 'desktop'} App Tour resumes on the toolbox and permits opening a tool`, async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: mobile ? PHONE_WIDTH : DESKTOP_WIDTH, height: 852 });
+		await page.goto(
+			`/src/test/accessibility/index.html?walkthrough&overviewExtras${mobile ? '&mobile' : ''}#/tools`
+		);
+		await expect(page.getByRole('heading', { name: 'Prettify', exact: true })).toBeVisible();
+		await page.getByRole('button', { name: 'Resume App Tour' }).click();
+		const card = page.getByRole('dialog');
+		await expect(card.getByRole('heading')).toHaveText('Prepare Chinese text');
+		await expect(card).toContainText('count words and explore HSK levels');
+		const toolbox = page.getByRole('region', { name: 'Extras tools' });
+		await expect(toolbox).toHaveAttribute('aria-describedby', 'walkthrough-description');
+		await expect(toolbox.getByRole('button')).toHaveCount(5);
+		await page.getByRole('button', { name: 'Prettify', exact: true }).click();
+		await expect(page.getByRole('textbox')).toHaveValue('ni3 hao3');
+		const back = page.getByRole('button', { name: 'All tools', exact: true });
+		await expect(back).toHaveAttribute('aria-describedby', 'walkthrough-description');
+		await back.click();
+		await expect(toolbox).toHaveAttribute('aria-describedby', 'walkthrough-description');
+		await card.getByRole('button', { name: 'Finish tour' }).click();
+		await expect(card).toHaveCount(0);
+		const events = await page.evaluate(
+			() =>
+				Reflect.get(window, '__syngTelemetryCalls') as {
+					name: string;
+					payload: Record<string, unknown>;
+				}[]
+		);
+		expect(events.filter((event) => event.name === 'tools.opened')).toEqual([
+			{ name: 'tools.opened', payload: { tool: 'prettify' } },
+		]);
+		expect(events).toContainEqual(expect.objectContaining({ name: 'walkthrough.completed' }));
+	});
+}

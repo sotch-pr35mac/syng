@@ -74,7 +74,7 @@ export type WalkthroughTargetId =
 	| 'quiz-continue'
 	| 'quiz-results'
 	| 'quiz-results-actions'
-	| 'extras-tabs'
+	| 'extras-tools'
 	| 'settings-walkthroughs';
 
 export type WalkthroughStep = {

@@ -3,28 +3,24 @@ import {
 	segmentsToPinyinText,
 	toolsStore,
 } from '@/composables/tools.svelte.js';
-import type { ToolName } from '@/types/tools.js';
+import type { TextConversionToolName } from '@/types/tools.js';
 import type {
 	TextConversionControlGroup,
 	TextConversionToolConfig,
 	TextConversionToolVariant,
 } from '@/types/textConversionTool.js';
 
-export const textConversionTabs: { name: ToolName; label: string }[] = [
-	{ name: 'pinyinify', label: 'Pinyinify' },
-	{ name: 'converter', label: 'Convert' },
-	{ name: 'colorize', label: 'Colorize' },
-	{ name: 'prettify', label: 'Prettify' },
-];
-
-export const textConversionPlaceholders: Record<ToolName, string[]> = {
+export const textConversionPlaceholders: Record<TextConversionToolName, string[]> = {
 	pinyinify: ['中文', '你好，今天怎么样？', 'Paste Chinese text to add pinyin.'],
 	converter: ['繁體字', '简体字', 'Paste Simplified or Traditional Chinese.'],
 	colorize: ['中文', 'ni3 hao3', 'nǐ hǎo', 'Paste characters or pinyin to color by tone.'],
 	prettify: ['ni3 hao3', 'nǐ hǎo', 'Paste pinyin with numbers or tone marks.'],
 };
 
-export const textConversionToolInfo: Record<ToolName, { title: string; body: string }> = {
+export const textConversionToolInfo: Record<
+	TextConversionToolName,
+	{ title: string; body: string }
+> = {
 	pinyinify: {
 		title: 'Pinyinify',
 		body: 'Pinyinify segments Chinese text with the dictionary and adds pinyin with tone marks while preserving punctuation, spacing, and non-Chinese text.',
@@ -44,7 +40,7 @@ export const textConversionToolInfo: Record<ToolName, { title: string; body: str
 };
 
 export function textConversionHeadingId(
-	tool: ToolName,
+	tool: TextConversionToolName,
 	variant: TextConversionToolVariant
 ): string {
 	return `${variant === 'mobile' ? 'mobile-' : ''}${tool}-heading`;
@@ -66,7 +62,7 @@ export function colorizeOutputText(): string {
 	return segmentsToCharacterText(toolsStore.colorizeResult, toolsStore.colorizeResolvedScript);
 }
 
-export const textConversionToolConfigs: Record<ToolName, TextConversionToolConfig> = {
+export const textConversionToolConfigs: Record<TextConversionToolName, TextConversionToolConfig> = {
 	pinyinify: {
 		name: 'pinyinify',
 		label: 'Pinyinify',

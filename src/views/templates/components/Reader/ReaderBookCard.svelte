@@ -174,9 +174,9 @@
 		color: var(--reader-book-ink-light);
 		text-align: left;
 		transition:
-			box-shadow var(--sy-transition-duration),
-			transform var(--sy-transition-duration),
-			border-color var(--sy-transition-duration);
+			box-shadow var(--sy-transition-duration--control),
+			transform var(--sy-transition-duration--artwork),
+			border-color var(--sy-transition-duration--control);
 	}
 
 	.reader-book-card__cover::before {
@@ -218,9 +218,17 @@
 	@media (hover: hover) {
 		.reader-book-card:hover .reader-book-card__cover {
 			box-shadow: var(--sy-shadow--active);
-			transform: translateY(-2px);
-			transition-property: box-shadow, transform;
-			transition-duration: var(--sy-transition-duration);
+			transform: translateY(var(--sy-hover-lift));
+		}
+	}
+
+	.reader-book-card__cover:active {
+		transition: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.reader-book-card:hover .reader-book-card__cover {
+			transform: none;
 		}
 	}
 

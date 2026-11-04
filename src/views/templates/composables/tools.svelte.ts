@@ -1,3 +1,7 @@
+import type { WordFrequencyResult, WordFrequencyEntry } from '@/types/tools.js';
+import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
+import { HSK_VARIANTS, type HskVariant } from '@/types/dictionaryDisplay.js';
+import { resolveHskLevels } from '@/utils/hsk.js';
 import { invoke } from '@tauri-apps/api/core';
 import { handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
@@ -5,6 +9,7 @@ import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js
 import { NATIVE_COMMANDS } from '@/types/nativeCommands.js';
 import type {
 	ToolName,
+	TextConversionToolName,
 	CharacterScript,
 	ColorizeMode,
 	ConvertCharactersResult,
@@ -17,32 +22,43 @@ import type {
 	ResolvedPrettifyDirection,
 } from '@/types/tools.js';
 
-const toolRequestIds: Record<ToolName, number> = {
+const toolRequestIds: Record<TextConversionToolName, number> = {
 	pinyinify: 0,
 	converter: 0,
 	colorize: 0,
 	prettify: 0,
 };
-const operationStates = $state<Record<ToolName, { busy: boolean; status: string }>>({
+const operationStates = $state<Record<TextConversionToolName, { busy: boolean; status: string }>>({
 	pinyinify: { busy: false, status: '' },
 	converter: { busy: false, status: '' },
 	colorize: { busy: false, status: '' },
 	prettify: { busy: false, status: '' },
 });
 
-function beginOperation(tool: ToolName, input: string): number {
+function beginOperation(tool: TextConversionToolName, input: string): number {
 	toolRequestIds[tool] += 1;
 	operationStates[tool] = { busy: Boolean(input), status: input ? 'Processing…' : '' };
 	return toolRequestIds[tool];
 }
 
-function finishOperation(tool: ToolName, requestId: number, failed = false): void {
+function finishOperation(tool: TextConversionToolName, requestId: number, failed = false): void {
 	if (requestId === toolRequestIds[tool]) {
 		operationStates[tool] = {
 			busy: false,
 			status: failed ? 'Processing failed.' : 'Output ready.',
 		};
 	}
+}
+
+/** Only static tool/mode identifiers and length leave the device, never pasted text. */
+function trackToolCompletion(tool: ToolName, mode: string, input: string): void {
+	void telemetry
+		.trackEvent('tools.completed', {
+			tool,
+			mode,
+			input_length: Array.from(input.trim()).length,
+		})
+		.catch(() => {});
 }
 
 let pinyinifyInput = $state('');
@@ -81,13 +97,7 @@ function doPinyinify(): void {
 			}
 			pinyinifyResult = result;
 			finishOperation('pinyinify', requestId);
-			telemetry
-				.trackEvent('tools.completed', {
-					tool: 'pinyinify',
-					mode: 'automatic',
-					input_length: Array.from(input.trim()).length,
-				})
-				.catch(() => {});
+			trackToolCompletion('pinyinify', 'automatic', input);
 			return undefined;
 		})
 		.catch((error) => {
@@ -117,13 +127,7 @@ function doConvert(): void {
 			}
 			converterResult = result.text;
 			finishOperation('converter', requestId);
-			telemetry
-				.trackEvent('tools.completed', {
-					tool: 'converter',
-					mode: direction,
-					input_length: Array.from(input.trim()).length,
-				})
-				.catch(() => {});
+			trackToolCompletion('converter', direction, input);
 			converterResolvedDirection = result.direction;
 			converterDecision =
 				converterDirection === 'automatic'
@@ -155,13 +159,7 @@ function doColorize(): void {
 	const script = colorizeScript;
 	const trackCompletion = () => {
 		finishOperation('colorize', requestId);
-		return telemetry
-			.trackEvent('tools.completed', {
-				tool: 'colorize',
-				mode: `${mode}:${script}`,
-				input_length: Array.from(input.trim()).length,
-			})
-			.catch(() => {});
+		trackToolCompletion('colorize', `${mode}:${script}`, input);
 	};
 	// Segment first; whether any token resolved to a dictionary word tells us if the
 	// input is Chinese characters (color the characters) or free-form pinyin (color
@@ -244,13 +242,7 @@ function doPrettify(): void {
 			}
 			prettifyResult = result.text;
 			finishOperation('prettify', requestId);
-			telemetry
-				.trackEvent('tools.completed', {
-					tool: 'prettify',
-					mode: direction,
-					input_length: Array.from(input.trim()).length,
-				})
-				.catch(() => {});
+			trackToolCompletion('prettify', direction, input);
 			prettifyResolvedDirection = result.direction;
 			prettifyDecision =
 				prettifyDirection === 'automatic'
@@ -336,7 +328,7 @@ function describePrettifyDirection(direction: ResolvedPrettifyDirection): string
 }
 
 export const toolsStore = {
-	operationState(tool: ToolName): { busy: boolean; status: string } {
+	operationState(tool: TextConversionToolName): { busy: boolean; status: string } {
 		return operationStates[tool];
 	},
 	get pinyinifyInput(): string {
@@ -430,7 +422,7 @@ export const toolsStore = {
 };
 
 export function resetToolsStoreForTest(): void {
-	for (const tool of Object.keys(operationStates) as ToolName[]) {
+	for (const tool of Object.keys(operationStates) as TextConversionToolName[]) {
 		toolRequestIds[tool] += 1;
 		operationStates[tool] = { busy: false, status: '' };
 	}
@@ -455,3 +447,85 @@ export function resetToolsStoreForTest(): void {
 	prettifyResolvedDirection = null;
 	prettifyDecision = '';
 }
+
+// Frequency results retain only dictionary metadata; full definitions load on demand.
+
+export const commonFrequencyWords: readonly string[] =
+	'的 地 得 了 着 著 过 過 是 在 和 与 與 也 都 就 吗 嗎 呢 吧 啊'.split(' ');
+const frequencyState = $state({
+	input: '',
+	analyzedInput: '',
+	result: null as WordFrequencyResult | null,
+	busy: false,
+	error: '',
+	collapsed: false,
+	hideCommon: false,
+	visibleRows: 50,
+	hskVariant: null as HskVariant | null,
+});
+let frequencyRequest = 0;
+
+export function frequencyLevels(entry: WordFrequencyEntry, variant: HskVariant): string[] {
+	const memberships = resolveHskLevels(entry.hsk, variant);
+	return ['1', '2', '3', '4', '5', '6', '7–9'].filter((level) => memberships.includes(level));
+}
+export function frequencyBreakdown(entries: WordFrequencyEntry[], variant: HskVariant) {
+	const labels =
+		variant === HSK_VARIANTS.HSK_2015
+			? ['1', '2', '3', '4', '5', '6']
+			: ['1', '2', '3', '4', '5', '6', '7–9'];
+	return [...labels, 'Not listed'].map((level) => {
+		const words = entries.filter(
+			(entry) => (frequencyLevels(entry, variant)[0] ?? 'Not listed') === level
+		);
+		return {
+			level,
+			distinct: words.length,
+			occurrences: words.reduce((total, entry) => total + entry.count, 0),
+		};
+	});
+}
+export const frequencyTool = {
+	state: frequencyState,
+	initialize() {
+		frequencyState.hskVariant ??= dictionaryDisplaySettingsStore.settings.hskVariant;
+	},
+	setInput(value: string) {
+		frequencyRequest += 1;
+		frequencyState.input = value;
+		frequencyState.busy = false;
+		frequencyState.error = '';
+	},
+	async analyze() {
+		const request = ++frequencyRequest;
+		const input = frequencyState.input;
+		frequencyState.error = '';
+		if (!input.trim()) {
+			frequencyState.result = null;
+			frequencyState.busy = false;
+			return;
+		}
+		frequencyState.busy = true;
+		try {
+			const result = await invoke<WordFrequencyResult>(
+				NATIVE_COMMANDS.TOOLS.ANALYZE_WORD_FREQUENCY,
+				{ text: input }
+			);
+			if (request !== frequencyRequest) {
+				return;
+			}
+			frequencyState.result = result;
+			frequencyState.analyzedInput = input;
+			frequencyState.visibleRows = 50;
+			trackToolCompletion('frequency', 'automatic', input);
+		} catch {
+			if (request === frequencyRequest) {
+				frequencyState.error = 'Analysis failed. Please try again.';
+			}
+		} finally {
+			if (request === frequencyRequest) {
+				frequencyState.busy = false;
+			}
+		}
+	},
+};

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { invoke } from '@tauri-apps/api/core';
 import MobileTools from '@/routes/mobile/MobileTools.svelte';
 import { resetToolsStoreForTest } from '@/composables/tools.svelte.js';
-import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
+import { toolsSelectionStore } from '@/stores/tools.svelte.js';
 
 const THIRD_TONE = 3;
 
@@ -12,13 +12,18 @@ vi.mock('lucide-svelte', async () => {
 	const mockIcon = (await import('@/components/__mocks__/FeatherIcon.svelte')).default;
 	return {
 		ChevronDown: mockIcon,
-		ChevronRight: mockIcon,
+		ChevronLeft: mockIcon,
+		ChevronUp: mockIcon,
 		Copy: mockIcon,
 		Info: mockIcon,
 		Play: mockIcon,
 		X: mockIcon,
 	};
 });
+
+vi.mock('@/utils/telemetry.js', () => ({
+	telemetry: { trackEvent: vi.fn(async () => {}) },
+}));
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(),
@@ -43,23 +48,22 @@ const pinyinSegments = [
 
 beforeEach(() => {
 	resetToolsStoreForTest();
-	toolsActiveTabStore.set('pinyinify');
+	toolsSelectionStore.set(null);
 	vi.mocked(invoke).mockReset();
 });
 
-it('renders with the default pinyinify tab', () => {
-	const { getByRole, getByLabelText } = render(MobileTools);
-
-	expect(getByRole('heading', { name: 'Pinyinify' })).toBeTruthy();
-	expect(getByLabelText('Pinyinify input')).toBeTruthy();
+it('starts on the toolbox', () => {
+	const { getByRole, queryByLabelText } = render(MobileTools);
+	expect(getByRole('region', { name: 'Extras tools' })).toBeTruthy();
+	expect(queryByLabelText('Pinyinify input')).toBeNull();
 });
 
-it('switches tabs and persists the active tab state', async () => {
+it('opens a tool and restores it after leaving Extras', async () => {
 	const user = userEvent.setup();
 	const { getByRole, unmount } = render(MobileTools);
 
-	await user.click(getByRole('tab', { name: 'Convert' }));
-	expect(toolsActiveTabStore.value).toBe('converter');
+	await user.click(getByRole('button', { name: 'Convert', exact: true }));
+	expect(toolsSelectionStore.value).toBe('converter');
 	unmount();
 
 	const { getByRole: getByRoleAfterRemount } = render(MobileTools);
@@ -70,6 +74,7 @@ it('runs pinyinify and renders output', async () => {
 	const user = userEvent.setup();
 	vi.mocked(invoke).mockResolvedValueOnce(pinyinSegments);
 	const { getByLabelText, getByRole, getByText } = render(MobileTools);
+	await user.click(getByRole('button', { name: 'Pinyinify', exact: true }));
 
 	await fireEvent.input(getByLabelText('Pinyinify input'), { target: { value: '你好' } });
 	await user.click(getByRole('button', { name: /Process/ }));

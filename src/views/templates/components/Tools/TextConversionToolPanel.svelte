@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { ChevronDown, ChevronRight, Copy, Info, Play } from 'lucide-svelte';
+	import { Copy, Play } from 'lucide-svelte';
+	import ToolPageHeader from '@/components/Tools/ToolPageHeader.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
-	import type { ToolName } from '@/types/tools.js';
+	import type { TextConversionToolName } from '@/types/tools.js';
 	import type {
 		TextConversionControlGroup,
 		TextConversionToolVariant,
@@ -13,7 +14,7 @@
 	interface Props {
 		busy?: boolean;
 		status?: string;
-		tool: ToolName;
+		tool: TextConversionToolName;
 		label: string;
 		headingId: string;
 		inputLabel: string;
@@ -23,6 +24,8 @@
 		outputText: string;
 		collapsed: boolean;
 		variant?: TextConversionToolVariant;
+		draggableTitle?: boolean;
+		onBack: () => void;
 		controlGroups?: TextConversionControlGroup[];
 		decisionText?: string;
 		outputLarge?: boolean;
@@ -30,8 +33,8 @@
 		onInputChange: (text: string) => void;
 		onProcess: () => void;
 		onCopy: (text: string) => void;
-		onInfo: (tool: ToolName) => void;
-		onToggleCollapse: (tool: ToolName) => void;
+		onInfo: (tool: TextConversionToolName) => void;
+		onToggleCollapse: (tool: TextConversionToolName) => void;
 	}
 
 	const {
@@ -47,6 +50,8 @@
 		outputText,
 		collapsed,
 		variant = 'desktop',
+		draggableTitle = false,
+		onBack,
 		controlGroups = [],
 		decisionText = '',
 		outputLarge = false,
@@ -73,36 +78,16 @@
 	class:text-conversion-tool--mobile={isMobile}
 	aria-labelledby={headingId}
 >
-	<div class="text-conversion-tool__heading">
-		<h2 id={headingId}>{label}</h2>
-		<button
-			type="button"
-			class="text-conversion-tool__icon-button sy-tooltip--container"
-			aria-label={`Learn about ${label}`}
-			onclick={() => onInfo(tool)}
-		>
-			<Info size="15" />
-			{#if !isMobile}
-				<div class="sy-tooltip--body sy-tooltip--body-bottom">
-					<p>Learn about this tool</p>
-				</div>
-			{/if}
-		</button>
-		<button
-			type="button"
-			class="text-conversion-tool__icon-button"
-			aria-label={collapsed ? `Expand ${label} input` : `Collapse ${label} input`}
-			aria-expanded={!collapsed}
-			aria-controls={!collapsed ? `${headingId}-input` : undefined}
-			onclick={() => onToggleCollapse(tool)}
-		>
-			{#if collapsed}
-				<ChevronRight size="17" />
-			{:else}
-				<ChevronDown size="17" />
-			{/if}
-		</button>
-	</div>
+	<ToolPageHeader
+		{label}
+		{headingId}
+		{collapsed}
+		{variant}
+		{draggableTitle}
+		{onBack}
+		onInfo={() => onInfo(tool)}
+		onToggleCollapse={() => onToggleCollapse(tool)}
+	/>
 
 	{#if !collapsed}
 		<!-- autocorrect is spread because Svelte's textarea types omit it (non-standard attr). -->
@@ -183,33 +168,6 @@
 		gap: var(--sy-space--large);
 		width: 100%;
 	}
-	.text-conversion-tool__heading {
-		display: flex;
-		align-items: center;
-		gap: var(--sy-space);
-	}
-	.text-conversion-tool__heading h2 {
-		min-width: 0;
-		overflow-wrap: anywhere;
-		margin: 0;
-		font-size: var(--sy-font-size--large);
-	}
-	.text-conversion-tool__icon-button {
-		flex-shrink: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		padding: 0;
-		border: 0;
-		background: transparent;
-		color: var(--sy-text--muted);
-		cursor: pointer;
-	}
-	.text-conversion-tool__icon-button:hover {
-		color: var(--sy-text--blue);
-	}
 	.text-conversion-tool textarea {
 		width: 100%;
 		box-sizing: border-box;
@@ -265,17 +223,6 @@
 	}
 	.text-conversion-tool--mobile {
 		gap: var(--sy-mobile-space--large);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__heading {
-		gap: var(--sy-mobile-space--medium);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__heading h2 {
-		font-size: var(--sy-font-size--mobile-large);
-		font-weight: var(--sy-font-weight--bold);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__icon-button {
-		width: var(--sy-mobile-touch-target);
-		height: var(--sy-mobile-touch-target);
 	}
 	.text-conversion-tool--mobile textarea {
 		min-height: 132px;

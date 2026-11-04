@@ -1,4 +1,4 @@
-import type { ToolName } from '@/types/tools.js';
+import type { TextConversionToolName } from '@/types/tools.js';
 
 export type TextConversionToolVariant = 'desktop' | 'mobile';
 
@@ -18,7 +18,7 @@ export interface TextConversionControlGroup {
 }
 
 export interface TextConversionToolConfig {
-	name: ToolName;
+	name: TextConversionToolName;
 	label: string;
 	inputLabel: string;
 	outputLabel: string;
