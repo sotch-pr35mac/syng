@@ -471,6 +471,8 @@
 	}
 	.companion.open .breakdown-host {
 		width: 18.75rem;
+		box-shadow: var(--sy-pane-shadow);
+		z-index: var(--sy-z-index--base-1);
 		transition: width 0.22s ease;
 	}
 	.companion .breakdown-inner {

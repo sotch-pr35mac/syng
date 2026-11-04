@@ -404,8 +404,12 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		await page.goto(`${fixtureUrl}?reader&importError&fontSize=32`);
 		await page.getByRole('button', { name: 'Import text', exact: true }).click();
 		const dialog = page.getByRole('dialog', { name: 'Import from Clipboard' });
+		// Opening the dialog defers heading focus; let it finish before keyboard submission.
+		await expect(dialog.getByRole('heading', { name: 'Import from Clipboard' })).toBeFocused();
 		await dialog.getByRole('textbox', { name: 'Text', exact: true }).fill('Keep this passage');
-		await dialog.getByRole('button', { name: 'Import', exact: true }).focus();
+		const importButton = dialog.getByRole('button', { name: 'Import', exact: true });
+		await expect(importButton).toBeEnabled();
+		await importButton.focus();
 		await page.keyboard.press('Enter');
 		const error = dialog.getByRole('alert');
 		await expect(error).toHaveText('Could not save the document. Please try again.');
