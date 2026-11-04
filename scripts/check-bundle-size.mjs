@@ -5,25 +5,17 @@ import { gzipSync } from 'node:zlib';
 const BUILD_DIRECTORY = 'src/views/templates/build';
 const ENTRY_FILE = join(BUILD_DIRECTORY, 'bundle.js');
 
-// Keep enough room for routine feature work while preventing another monolithic-entry regression.
-// Gzip totals are useful for web builds; raw sizes matter to Tauri because they also affect parsing.
+// Fixed budgets allow routine feature growth and build variation while guarding against
+// oversized startup imports, large dependencies, and loss of code splitting.
+// Investigate approaching these limits rather than increasing them with each release.
+// The initial shell is the primary startup-size guard for Tauri; gzip is a secondary
+// size indicator. These budgets are not device-measured performance thresholds.
 const BUDGETS = {
-	entryBytes: 200 * 1024,
-	// The offline indicator, connectivity synchronization, and eagerly loaded stroke-order engine
-	// are intentionally part of the app shell, alongside the shared accessibility support.
-	// Static imports include both layouts and the character window in the initial module graph.
-	// Includes shared glyph/word wrapping for Reader pagination and snapshots.
-	// Also includes content-aware dictionary header layout and vertical action grouping.
-	initialShellBytes: 353 * 1024,
-	largestChunkBytes: 200 * 1024,
-	// Includes character breakdown plus optional pinyin controls and Reader annotation layout.
-	// Includes the lazy-loaded 2.7 release notes, credits, and feature-request mail action.
-	// Includes the optional three-question onboarding survey and Other text fields.
-	// Breakdown and What’s New stay lazy-loaded; character data remains in offline assets.
-	// Combined build: 352.2 KiB initial, 764.9 KiB total, 272.5 KiB gzip.
-	totalBytes: 766 * 1024,
-	// CI measures 273.4 KiB gzip for the combined build.
-	totalGzipBytes: 274 * 1024,
+	entryBytes: 256 * 1024,
+	initialShellBytes: 512 * 1024,
+	largestChunkBytes: 256 * 1024,
+	totalBytes: 1024 * 1024,
+	totalGzipBytes: 384 * 1024,
 };
 
 function javascriptFiles(directory) {

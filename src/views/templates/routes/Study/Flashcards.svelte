@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+	import { hasActiveOverlay } from '@/actions/overlayFocus.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
 	import WalkthroughFeatureInvitation from '@/components/Walkthrough/WalkthroughFeatureInvitation.svelte';
 
@@ -17,6 +18,73 @@
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { lexicalPinyin } from '@/types/dictionary.js';
 	import PreferredCharacters from '@/components/DictionaryContent/PreferredCharacters.svelte';
+	const IME_KEY_CODE = 229;
+	let flashcardContainer: HTMLDivElement | undefined;
+	let flashcardContent: HTMLDivElement | undefined;
+
+	function handleKeydown(event: KeyboardEvent): void {
+		// Page shortcuts belong only to these neutral focus destinations. Descendant
+		// controls keep their own keys unless they explicitly opt in below.
+		const target = event.target;
+		const routeLandmark = flashcardContainer?.closest('main#sy-main-content');
+		if (
+			target === document.body ||
+			target === document.documentElement ||
+			target === routeLandmark ||
+			target === flashcardContainer ||
+			target === flashcardContent
+		) {
+			handleShortcut(event);
+		}
+	}
+
+	function handleToolbarKeydown(event: KeyboardEvent): void {
+		// Space retains native button activation; only arrows opt into card navigation.
+		if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+			handleShortcut(event);
+		}
+	}
+
+	function handleShortcut(event: KeyboardEvent): void {
+		if (
+			router.location !== '/study/flashcards' ||
+			flashcardsRoute.loading ||
+			flashcardsRoute.error ||
+			!activeWord ||
+			hasActiveOverlay() ||
+			event.defaultPrevented ||
+			event.isComposing ||
+			event.keyCode === IME_KEY_CODE ||
+			event.altKey ||
+			event.ctrlKey ||
+			event.metaKey ||
+			event.shiftKey ||
+			!['ArrowLeft', 'ArrowRight', ' '].includes(event.key)
+		) {
+			return;
+		}
+
+		if (
+			event.target instanceof Element &&
+			event.target.closest('[inert], [aria-hidden="true"], [role="dialog"], [role="menu"]')
+		) {
+			return;
+		}
+
+		// Consume held keys and list boundaries too, so they cannot scroll the page.
+		event.preventDefault();
+		if (event.repeat) {
+			return;
+		}
+		if (event.key === 'ArrowLeft') {
+			flashcardsRoute.previous();
+		} else if (event.key === 'ArrowRight') {
+			flashcardsRoute.next();
+		} else {
+			flashcardsRoute.flip();
+		}
+	}
+
 	const isMacos = platform() === 'macos';
 	const isIPadDevice = isIPad();
 	const listFromUrl = $derived(new URLSearchParams(router.querystring).get('list'));
@@ -40,14 +108,18 @@
 		{
 			icon: ChevronLeft,
 			label: 'Exit',
-			guideTarget: 'study-exit',
+			shortcut: undefined,
+			title: undefined,
+			guideTarget: 'study-exit' as const,
 			disabled: false,
 			action: flashcardsRoute.exit,
 		},
 		{
 			icon: ArrowLeft,
 			label: 'Previous',
-			guideTarget: 'flashcards-navigation',
+			shortcut: 'ArrowLeft',
+			title: 'Previous (Left arrow)',
+			guideTarget: 'flashcards-navigation' as const,
 			disabled: !flashcardsRoute.canGoPrevious,
 			action: flashcardsRoute.previous,
 		},
@@ -58,19 +130,25 @@
 		{
 			icon: flashcardsRoute.showDetails ? RotateCcw : RotateCw,
 			label: 'Flip',
-			guideTarget: 'flashcards-flip',
+			shortcut: 'Space',
+			title: 'Flip (Space)',
+			guideTarget: 'flashcards-flip' as const,
 			disabled: false,
 			action: flashcardsRoute.flip,
 		},
 		{
 			icon: ArrowRight,
 			label: 'Next',
-			guideTarget: 'flashcards-navigation',
+			shortcut: 'ArrowRight',
+			title: 'Next (Right arrow)',
+			guideTarget: 'flashcards-navigation' as const,
 			disabled: !flashcardsRoute.canGoNext,
 			action: flashcardsRoute.next,
 		},
 	]);
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <WalkthroughFeatureInvitation
 	guide="flashcards"
@@ -82,7 +160,7 @@
 		Boolean(flashcardsRoute.activeWord)}
 />
 
-<div class="flashcard--container">
+<div class="flashcard--container" bind:this={flashcardContainer}>
 	<p class="sy-sr-only" role="status" aria-atomic="true">
 		{#if flashcardsRoute.loading}
 			{LOADING_STUDY_MESSAGE}
@@ -101,8 +179,11 @@
 			{#each leftActions as action (action.label)}
 				<SyButton
 					guideTarget={action.guideTarget}
+					title={action.title}
+					aria-keyshortcuts={action.shortcut}
 					disabled={action.disabled}
 					onclick={action.action}
+					onkeydown={handleToolbarKeydown}
 					style="ghost"
 					center={true}
 				>
@@ -130,8 +211,11 @@
 			{#each rightActions as action (action.label)}
 				<SyButton
 					guideTarget={action.guideTarget}
+					title={action.title}
+					aria-keyshortcuts={action.shortcut}
 					disabled={action.disabled}
 					onclick={action.action}
+					onkeydown={handleToolbarKeydown}
 					style="ghost"
 					center={true}
 				>
@@ -142,7 +226,11 @@
 			{/each}
 		</div>
 	</div>
-	<div class="flashcard--content" use:scrollRestore={'flashcard-content'}>
+	<div
+		class="flashcard--content"
+		bind:this={flashcardContent}
+		use:scrollRestore={'flashcard-content'}
+	>
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="flashcard--back">
 				<div class="flashcard--back--container">

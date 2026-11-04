@@ -206,7 +206,7 @@
 {#if ready}
 	<div class="fixture">
 		<details><summary>Test preferences</summary><PinyinSettings /></details>
-		<main>
+		<main id="sy-main-content" tabindex="-1">
 			{#if surface === 'reader'}
 				{#if mobile}<MobileReaderDocument params={{ id: book._id }} />{:else}<Document
 						params={{ id: book._id }}
