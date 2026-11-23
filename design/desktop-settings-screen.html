@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Syng desktop Settings · surface roles study</title>
+  <link rel="stylesheet" href="mockup-sy-controls.css">
+  <style>
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Regular.woff2') format('woff2');font-weight:400}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-SemiBold.woff2') format('woff2');font-weight:600}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Bold.woff2') format('woff2');font-weight:700}
+    *{box-sizing:border-box}
+    :root{font-family:Montserrat,Arial,sans-serif;background:#e9edf2;color:#394553}
+    body{margin:0}
+    button,input{font:inherit}
+    button{cursor:pointer}
+    .board{max-width:1330px;margin:auto;padding:30px 22px 48px}
+    .intro{max-width:790px;margin:0 auto 22px;text-align:center}
+    .eyebrow{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#5280b9}
+    .intro h1{font-size:clamp(25px,4vw,37px);letter-spacing:-.055em;margin:7px 0}
+    .intro p{font-size:12px;line-height:1.55;color:#677588;margin:0}
+    .control-bar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;margin:0 auto 18px}
+    .control-group{display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #d8e0e9;background:#fff;border-radius:12px}
+    .control-group span{font-size:10px;font-weight:700;color:#7b8796;padding:0 7px}
+    .control-group button{min-height:33px;border:0;border-radius:8px;padding:0 11px;background:transparent;color:#617186;font-size:10px;font-weight:700}
+    .control-group button.active{background:#e9f2ff;color:#2c7ee7}
+    .window{
+      --surface-canvas:#f0f1f2;--surface-content:#fff;--surface-chrome:#fafafa;--surface-well:#e8eaec;--surface-floating:#fff;
+      --selection-fill:var(--surface-content);--text:#474c5a;--muted:#77818d;--secondary:#69798c;--line:#474c5a20;--seam:#474c5a2b;--blue:#2c7ee7;
+      position:relative;width:100%;height:720px;display:flex;overflow:hidden;border:1px solid #bfc8d1;border-radius:15px;
+      background:var(--surface-canvas);box-shadow:0 22px 65px #2536512b;color:var(--text)
+    }
+    body.dark .window{
+      --surface-canvas:#2c2c2e;--surface-content:#202022;--surface-chrome:#252527;--surface-well:#313133;--surface-floating:#1b1b1d;
+      --selection-fill:var(--surface-content);--text:#f5f5f6;--muted:#a5a5ad;--secondary:#b5bdc9;--line:#ffffff20;--seam:#ffffff25;--blue:#76aff9;
+      border-color:#414146
+    }
+    .window.current{
+      --surface-canvas:#fff;--surface-content:#fff;--surface-chrome:#fff;--surface-well:#fff;--surface-floating:#fff;
+      --selection-fill:#fff;--muted:#9a9b9c;--secondary:#788598;--line:#f5f5f5;--seam:#f5f5f5
+    }
+    body.dark .window.current{
+      --surface-canvas:#232323;--surface-content:#232323;--surface-chrome:#232323;--surface-well:#232323;--surface-floating:#232323;
+      --selection-fill:#232323;--text:#fff;--muted:#9a9b9c;--secondary:#a7b3c2;--line:#2c2c2c;--seam:#2c2c2c
+    }
+    svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .rail{position:relative;z-index:1;width:93px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:var(--surface-chrome)}
+    .window.current .rail{background:#f5f5f5;box-shadow:inset 0 0 4px #0002}
+    body.dark .window.current .rail{background:#2c2c2c}
+    .traffic{height:62px;width:100%;display:flex;align-items:flex-start;justify-content:center;gap:8px;padding-top:18px}
+    .traffic span{width:11px;height:11px;border-radius:50%}
+    .traffic span:nth-child(1){background:#ff5f57}.traffic span:nth-child(2){background:#febc2e}.traffic span:nth-child(3){background:#28c840}
+    .rail-stack{display:flex;flex-direction:column;align-items:center;gap:9px}
+    .rail-stack.primary{flex:1;padding-top:19px}
+    .rail-stack.secondary{padding-bottom:24px}
+    .nav-pill{position:absolute;z-index:1;top:0;left:20px;width:51px;height:51px;border-radius:50%;background:var(--selection-fill);box-shadow:0 1px 3px #202b3a30,0 5px 10px #202b3a1e;pointer-events:none;will-change:transform}
+    body.dark .nav-pill{box-shadow:0 2px 4px #0009,0 6px 12px #0006}
+    .rail-item{position:relative;z-index:2;width:51px;height:51px;display:grid;place-items:center;border:0;border-radius:50%;background:transparent;color:var(--muted)}
+    .rail-item svg{width:24px;height:24px}
+    .rail-item:hover{color:var(--blue)}
+    .rail-item.active{color:var(--blue)}
+    body.dark .rail-item.active{color:var(--text)}
+    .workspace{position:relative;z-index:2;flex:1;min-width:0;display:flex;flex-direction:column;border-left:1px solid var(--seam);background:var(--surface-canvas);box-shadow:-2px 0 5px #202b3a1f,-7px 0 17px #202b3a18}
+    body.dark .workspace{box-shadow:-2px 0 6px #0009,-7px 0 19px #0006}
+    .page-header{position:relative;z-index:3;flex:none;padding:23px 33px 0;background:var(--surface-chrome);border-bottom:1px solid var(--seam);box-shadow:0 2px 4px #202b3a12,0 7px 17px #202b3a0d}
+    body.dark .page-header{box-shadow:0 2px 5px #0008,0 7px 17px #0004}
+    .window.current .page-header{box-shadow:none}
+    .page-header h2{margin:0 0 17px;font-size:26px;line-height:1.2;letter-spacing:-.05em}
+    .tabs{display:flex;align-items:center;gap:18px;min-height:40px}
+    .tab{height:40px;padding:0 5px 11px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:13px}
+    .tab.active{border-bottom-color:var(--blue);color:var(--text);font-weight:700}
+    .page-scroll{flex:1;min-height:0;overflow:auto;padding:27px 33px 44px;scrollbar-color:var(--muted) transparent}
+    .tab-panel[hidden]{display:none}
+    .general-layout{display:grid;grid-template-columns:174px minmax(0,700px);align-items:start;gap:27px}
+    .index{position:sticky;top:0;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface-well);box-shadow:inset 0 1px 3px #202b3a15}
+    .index button{width:100%;min-height:40px;display:flex;align-items:center;padding:8px 11px;border:0;border-left:2px solid transparent;border-radius:7px;background:transparent;color:var(--secondary);font-size:11px;text-align:left}
+    .index button.active{border-left-color:var(--blue);background:var(--surface-content);color:var(--text);font-weight:700}
+    .window.current .index{padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+    .window.current .index button.active{background:transparent;color:var(--blue)}
+    .sections{min-width:0}
+    .settings-section{margin-bottom:31px;scroll-margin-top:24px}
+    .settings-section h3{margin:0 0 11px 2px;font-size:17px;letter-spacing:-.025em}
+    .settings-card{overflow:visible;border:1px solid var(--line);border-radius:14px;background:var(--surface-content);box-shadow:0 1px 2px #202b3a10,0 5px 14px #202b3a0c}
+    body.dark .settings-card{box-shadow:0 1px 3px #0006,0 5px 15px #0003}
+    .window.current .settings-card{border-color:transparent;border-radius:0;box-shadow:none}
+    .window.quiet .rail,.window.quiet .workspace,.window.quiet .page-header,.window.quiet .settings-card,.window.quiet .appearance-preview,.window.quiet .nav-pill{box-shadow:none}
+    .appearance-preview{position:sticky;top:12px;z-index:2;margin:0 0 16px;padding:12px 14px;border:1px solid var(--line);border-radius:13px;background:var(--surface-floating);box-shadow:0 3px 8px #202b3a20,0 11px 23px #202b3a15}
+    body.dark .appearance-preview{box-shadow:0 3px 9px #0009,0 11px 23px #0006}
+    .preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+    .preview-head strong{color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+    .preview-contexts{display:flex;gap:2px;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface-well)}
+    .preview-contexts button{min-height:25px;padding:0 9px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:10px}
+    .preview-contexts button.active{background:var(--surface-content);box-shadow:0 1px 3px #0002;color:var(--blue);font-weight:700}
+    .preview-sample{display:flex;align-items:center;gap:16px;min-height:63px;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surface-canvas)}
+    .preview-main{flex:1;min-width:0}
+    .preview-word-line{display:flex;align-items:baseline;gap:3px;white-space:nowrap}
+    .preview-word{font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:25px;line-height:1.1}
+    .preview-reader-prefix,.preview-reader-suffix{display:none;font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:15px}
+    .preview-list-gloss{display:none;margin-left:10px;color:var(--secondary);font-size:11px}
+    .preview-pinyin{display:none;margin-top:2px;color:var(--secondary);font-size:11px}
+    .appearance-preview.show-pinyin .preview-pinyin{display:block}
+    .preview-translation{margin-top:2px;color:var(--secondary);font-size:10px}
+    .preview-tone-key{display:flex;gap:8px;padding-left:14px;border-left:1px solid var(--line);font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:16px}
+    .preview-tone-key .tone{color:var(--muted)}
+    .appearance-preview.color-characters .preview-word .tone[data-tone='1'],.appearance-preview.color-characters .preview-tone-key .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview.color-characters .preview-word .tone[data-tone='2'],.appearance-preview.color-characters .preview-tone-key .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='3']{color:var(--preview-tone-3)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='4']{color:var(--preview-tone-4)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='5']{color:var(--preview-tone-5)}
+    .appearance-preview.color-pinyin .preview-pinyin .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview.color-pinyin .preview-pinyin .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview[data-context='list'] .preview-word .tone[data-tone]{color:var(--text)}
+    .appearance-preview[data-context='list'].color-lists .preview-word .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview[data-context='list'].color-lists .preview-word .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview[data-context='reader'] .preview-reader-prefix,.appearance-preview[data-context='reader'] .preview-reader-suffix{display:inline}
+    .appearance-preview[data-context='reader'] .preview-word,.appearance-preview[data-context='list'] .preview-word{font-size:18px}
+    .appearance-preview[data-context='flashcard'] .preview-sample{text-align:center;background:var(--surface-content)}
+    .appearance-preview[data-context='flashcard'] .preview-word-line{justify-content:center}
+    .appearance-preview[data-context='flashcard'] .preview-translation{display:none}
+    .appearance-preview[data-context='list'] .preview-list-gloss{display:inline}
+    .appearance-preview[data-context='list'] .preview-translation{display:none}
+    .appearance-preview.high-contrast .preview-sample{border-width:2px;border-color:var(--text);background:var(--surface-content)}
+    .appearance-preview.high-contrast .preview-translation,.appearance-preview.high-contrast .preview-list-gloss{color:var(--text)}
+    .settings-row{position:relative;min-height:69px;display:grid;grid-template-columns:175px minmax(0,1fr);align-items:center;gap:18px;padding:14px 19px}
+    .settings-row+.settings-row::before{content:'';position:absolute;top:0;left:19px;right:19px;height:1px;background:var(--line)}
+    .row-label{font-size:12px;line-height:1.4}
+    .row-control{min-width:0;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+    .row-control.stack{display:block}
+    .row-note{margin:0 0 9px;color:var(--muted);font-size:11px;line-height:1.45}
+    .select-button{min-width:178px;justify-content:space-between}
+    .select-button svg{width:14px;height:14px;transform:rotate(90deg)}
+    .segmented{display:inline-flex;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:var(--surface-well)}
+    .segmented button{min-height:34px;padding:0 11px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--secondary);font-size:10px}
+    .segmented button:last-child{border-right:0}
+    .segmented button.active{background:var(--surface-content);color:var(--blue);font-weight:700;box-shadow:0 1px 3px #0002}
+    .mini-toggle{position:relative;width:39px;height:24px;flex:none;border:1px solid var(--line);border-radius:99px;background:var(--surface-well)}
+    .mini-toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--surface-content);box-shadow:0 1px 2px #0003;transition:transform .18s}
+    .mini-toggle[aria-checked='true']{border-color:transparent;background:var(--blue)}
+    .mini-toggle[aria-checked='true']::after{transform:translateX(15px)}
+    .toggle-line{display:flex;align-items:center;gap:8px;margin:4px 0;color:var(--secondary);font-size:11px}
+    .toggle-line .mini-toggle{margin-left:auto}
+    .swatch-setting{min-height:40px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--secondary);font-size:11px}
+    .swatch-setting input{width:40px;height:36px;padding:3px;border:0;background:transparent;cursor:pointer}
+    .swatch-setting input::-webkit-color-swatch{border:1px solid var(--line);border-radius:50%}
+    .swatch-setting input::-moz-color-swatch{border:1px solid var(--line);border-radius:50%}
+    .reset-tones{margin-top:7px}
+    .dropdown-wrap{position:relative}
+    .popover{position:absolute;z-index:9;top:42px;left:0;width:230px;padding:5px;border:1px solid var(--line);border-radius:11px;background:var(--surface-floating);box-shadow:0 10px 30px #1e2a3d38,0 2px 8px #1e2a3d1c}
+    body.dark .popover{box-shadow:0 10px 30px #0009,0 2px 8px #0006}
+    .popover[hidden]{display:none}
+    .popover button{width:100%;min-height:35px;padding:7px 10px;border:0;border-radius:6px;background:transparent;color:var(--text);font-size:11px;text-align:left}
+    .popover button:hover,.popover button:focus-visible{background:var(--surface-well)}
+    .simple-panel{max-width:700px}
+    .simple-panel h3{margin:0 0 12px;font-size:17px}
+    .simple-panel .settings-card{padding:20px 22px}
+    .simple-panel p{margin:0 0 16px;color:var(--secondary);font-size:12px;line-height:1.6}
+    .notice{position:absolute;right:35px;bottom:30px;z-index:10;min-width:190px;max-width:300px;min-height:43px;display:none;align-items:center;justify-content:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface-floating);box-shadow:0 8px 25px #0003;color:var(--text);font-size:11px;text-align:center}
+    .notice.show{display:flex}
+    .footer{max-width:820px;margin:17px auto 0;text-align:center;color:#718094;font-size:11px;line-height:1.55}
+    @media(max-width:900px){.general-layout{grid-template-columns:145px minmax(0,1fr);gap:17px}.page-scroll{padding:22px}.page-header{padding:22px 22px 0}.settings-row{grid-template-columns:130px minmax(0,1fr)}}
+    @media(max-width:640px){.window{height:660px}.rail{width:65px}.rail-item{width:43px;height:43px}.nav-pill{left:11px;width:43px;height:43px}.traffic{gap:4px}.traffic span{width:8px;height:8px}.general-layout{grid-template-columns:1fr}.index{position:static;display:flex;overflow:auto}.settings-row{grid-template-columns:1fr;gap:8px}.tabs{gap:8px}.tab{font-size:10px}.page-header h2{font-size:22px}}
+    @media(prefers-reduced-motion:reduce){.mini-toggle::after{transition:none}}
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></symbol>
+    <symbol id="i-read" viewBox="0 0 24 24"><path d="M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h14v18l-7-5-7 5V3Z"/></symbol>
+    <symbol id="i-study" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6M22 8v8"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  </svg>
+  <main class="board">
+    <header class="intro"><div class="eyebrow">Syng / desktop surface study</div><h1>Settings, with clearer layers.</h1><p>The current desktop sidebar, tabs, section index, and two-column controls with the same neutral surface roles tested on mobile.</p></header>
+    <div class="control-bar">
+      <div class="control-group" role="group" aria-label="Surface treatment"><span>Surfaces</span><button type="button" class="active" data-surfaces="roles" aria-pressed="true">Roles</button><button type="button" data-surfaces="current" aria-pressed="false">Current</button></div>
+      <div class="control-group" role="group" aria-label="Depth treatment"><span>Depth</span><button type="button" class="active" data-depth="layered" aria-pressed="true">Layered</button><button type="button" data-depth="quiet" aria-pressed="false">Quiet</button></div>
+      <div class="control-group" role="group" aria-label="Appearance"><span>Theme</span><button type="button" class="active" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></div>
+    </div>
+    <div class="window" aria-label="Desktop Settings screen mockup">
+      <aside class="rail" aria-label="Primary navigation">
+        <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="nav-pill" aria-hidden="true"></div>
+        <div class="rail-stack primary">
+          <button class="rail-item" type="button" aria-label="Search"><svg><use href="#i-search"/></svg></button>
+          <button class="rail-item" type="button" aria-label="Read"><svg><use href="#i-read"/></svg></button>
+          <button class="rail-item" type="button" aria-label="Bookmarks"><svg><use href="#i-save"/></svg></button>
+          <button class="rail-item" type="button" aria-label="Study"><svg><use href="#i-study"/></svg></button>
+          <button class="rail-item" type="button" aria-label="Extras"><svg><use href="#i-more"/></svg></button>
+        </div>
+        <div class="rail-stack secondary"><button class="rail-item active" type="button" aria-label="Settings" aria-current="page"><svg><use href="#i-settings"/></svg></button></div>
+      </aside>
+      <div class="workspace">
+        <header class="page-header"><h2>Settings</h2><div class="tabs" role="tablist" aria-label="Settings sections">
+          <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="general">General</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="telemetry">Telemetry</button>
+          <button class="tab" type="button" role="tab" aria-selected="false" data-tab="acknowledgements">Acknowledgements</button>
+        </div></header>
+        <div class="page-scroll">
+          <div class="tab-panel" data-panel="general">
+            <div class="general-layout">
+              <nav class="index" aria-label="General settings sections">
+                <button class="active" type="button" data-section="help">Help &amp; Maintenance</button>
+                <button type="button" data-section="dictionary">Chinese &amp; Dictionary</button>
+                <button type="button" data-section="appearance">Appearance</button>
+              </nav>
+              <div class="sections">
+                <section class="settings-section" data-target="help"><h3>Help &amp; Maintenance</h3><div class="settings-card">
+                  <div class="settings-row"><span class="row-label">Walkthrough</span><div class="row-control"><div class="sy-button-bar" role="group" aria-label="Choose and start a walkthrough"><div class="dropdown-wrap"><button class="sy-button sy-button--filled select-button" type="button" id="guide-trigger" aria-expanded="false" aria-haspopup="menu"><span id="guide-label">App tour</span><svg><use href="#i-chevron"/></svg></button><div class="popover" role="menu" aria-label="Choose walkthrough" hidden><button type="button" role="menuitem">App tour</button><button type="button" role="menuitem">Dictionary</button><button type="button" role="menuitem">Bookmarks</button><button type="button" role="menuitem">Importing and your library</button><button type="button" role="menuitem">Reading a document</button><button type="button" role="menuitem">Choosing what to study</button><button type="button" role="menuitem">Flashcards</button><button type="button" role="menuitem">Quizzes</button></div></div><button class="sy-button sy-button--filled" type="button" data-preview="The selected walkthrough would start">Start</button></div></div></div>
+                  <div class="settings-row"><span class="row-label">What’s New</span><div class="row-control"><button class="sy-button sy-button--filled" type="button" data-preview="What’s New would open">View changes</button></div></div>
+                </div></section>
+                <section class="settings-section" data-target="dictionary"><h3>Chinese &amp; Dictionary</h3><div class="settings-card">
+                  <div class="settings-row"><span class="row-label">Character set</span><div class="row-control"><div class="segmented" role="group" aria-label="Character set"><button class="active" type="button" aria-pressed="true">Both</button><button type="button" aria-pressed="false">Simplified</button><button type="button" aria-pressed="false">Traditional</button></div></div></div>
+                  <div class="settings-row"><span class="row-label">HSK standard</span><div class="row-control"><div class="segmented" role="group" aria-label="HSK standard"><button class="active" type="button" aria-pressed="true">HSK 2015</button><button type="button" aria-pressed="false">2021 Standard</button></div></div></div>
+                  <div class="settings-row"><span class="row-label">Dictionary details</span><div class="row-control stack"><div class="toggle-line">Show qualifiers<button class="mini-toggle" type="button" role="switch" aria-label="Show qualifiers" aria-checked="true"></button></div><div class="toggle-line">Show parts of speech<button class="mini-toggle" type="button" role="switch" aria-label="Show parts of speech" aria-checked="true"></button></div><div class="toggle-line">Show alternative pronunciations<button class="mini-toggle" type="button" role="switch" aria-label="Show alternative pronunciations" aria-checked="true"></button></div></div></div>
+                </div></section>
+                <section class="settings-section" data-target="appearance"><h3>Appearance</h3>
+                  <div class="appearance-preview color-characters color-pinyin show-pinyin" data-context="character" aria-label="Live appearance preview">
+                    <div class="preview-head"><strong>Live preview</strong><div class="preview-contexts" role="group" aria-label="Preview context"><button class="active" type="button" data-preview-context="character" aria-pressed="true">Character</button><button type="button" data-preview-context="flashcard" aria-label="Flashcard fronts" aria-pressed="false">Cards</button><button type="button" data-preview-context="reader" aria-pressed="false">Reader</button><button type="button" data-preview-context="list" aria-pressed="false">List</button></div></div>
+                    <div class="preview-sample"><div class="preview-main"><div class="preview-word-line"><span class="preview-reader-prefix">我每天</span><span class="preview-word"><span class="tone" data-tone="2">学</span><span class="tone" data-tone="2">习</span></span><span class="preview-reader-suffix">中文。</span><span class="preview-list-gloss">to study; to learn</span></div><div class="preview-pinyin"><span class="tone" data-tone="2">xué</span> <span class="tone" data-tone="2">xí</span></div><div class="preview-translation">to study; to learn</div></div><div class="preview-tone-key" aria-label="First through fourth and neutral tone samples"><span class="tone" data-tone="1">妈</span><span class="tone" data-tone="2">麻</span><span class="tone" data-tone="3">马</span><span class="tone" data-tone="4">骂</span><span class="tone" data-tone="5">吗</span></div></div>
+                  </div>
+                  <div class="settings-card">
+                  <div class="settings-row"><span class="row-label">Increase Contrast</span><div class="row-control"><button class="mini-toggle" type="button" role="switch" aria-label="Increase Contrast" aria-checked="false"></button></div></div>
+                  <div class="settings-row"><span class="row-label">Show pinyin</span><div class="row-control stack"><p class="row-note">Display pronunciation beneath Chinese characters.</p><div class="toggle-line">Character animations<button class="mini-toggle" type="button" role="switch" aria-label="Pinyin in character animations" aria-checked="true"></button></div><div class="toggle-line">Flashcard fronts<button class="mini-toggle" type="button" role="switch" aria-label="Pinyin on flashcard fronts" aria-checked="true"></button></div><div class="toggle-line">Reader<button class="mini-toggle" type="button" role="switch" aria-label="Pinyin in Reader" aria-checked="false"></button></div></div></div>
+                  <div class="settings-row"><span class="row-label">Tone Coloring</span><div class="row-control stack"><div class="toggle-line">Color characters by tone<button class="mini-toggle" type="button" role="switch" aria-label="Color characters by tone" aria-checked="true"></button></div><div class="toggle-line">Color pinyin by tone<button class="mini-toggle" type="button" role="switch" aria-label="Color pinyin by tone" aria-checked="true"></button></div><div class="toggle-line">Apply tone coloring to lists<button class="mini-toggle" type="button" role="switch" aria-label="Apply tone coloring to lists" aria-checked="false"></button></div></div></div>
+                  <div class="settings-row"><span class="row-label">Tone Colors</span><div class="row-control stack"><label class="swatch-setting">First Tone<input type="color" value="#2880f2" aria-label="First Tone color"></label><label class="swatch-setting">Second Tone<input type="color" value="#e48e1c" aria-label="Second Tone color"></label><label class="swatch-setting">Third Tone<input type="color" value="#e43978" aria-label="Third Tone color"></label><label class="swatch-setting">Fourth Tone<input type="color" value="#43b866" aria-label="Fourth Tone color"></label><label class="swatch-setting">No Tone<input type="color" value="#9a9b9c" aria-label="No Tone color"></label><button class="sy-button sy-button--ghost reset-tones" type="button" data-reset-tones>Reset to theme colors</button></div></div>
+                </div></section>
+              </div>
+            </div>
+          </div>
+          <div class="tab-panel simple-panel" data-panel="telemetry" hidden><h3>Telemetry</h3><div class="settings-card"><p>Choose what usage data Syng may send. You can opt out of telemetry in part or in full at any time.</p><div class="toggle-line">Enable Telemetry<button class="mini-toggle" type="button" role="switch" aria-label="Enable Telemetry" aria-checked="false"></button></div></div></div>
+          <div class="tab-panel simple-panel" data-panel="acknowledgements" hidden><h3>Acknowledgements</h3><div class="settings-card"><p>Syng is free and open-source software, built on the work of others. Full license texts ship with the application.</p><p>No acknowledgements available in this preview.</p></div></div>
+        </div>
+      </div>
+      <div class="notice" role="status" aria-live="polite"></div>
+    </div>
+    <p class="footer">Canvas sits behind Settings; chrome anchors the icon rail and tab header; content groups hold the settings rows; the section index is a quiet well. Open the Walkthrough menu to see the floating role. Appearance has a sticky preview that responds to its controls. Compare Layered and Quiet to judge the shadows separately from the neutral roles. Rail taps show the pill contract and taper in motion, then settle at full size. Settings content remains on screen. Controls are local to the mockup.</p>
+  </main>
+  <script>
+    const win = document.querySelector('.window');
+    const scroll = win.querySelector('.page-scroll');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const notice = win.querySelector('.notice');
+    const rail = win.querySelector('.rail');
+    const pill = rail.querySelector('.nav-pill');
+    const navButtons = [...rail.querySelectorAll('.rail-item')];
+    let navPosition = 0, navVelocity = 0, navTarget = 0, navFrame = 0, navTime = 0;
+    let travelOrigin = 0, travelDistance = 0, travelDirection = 1;
+    const navY = button => button.getBoundingClientRect().top - rail.getBoundingClientRect().top;
+    function paintPill() {
+      // Compression and directional taper give the traveling selection a soft droplet shape.
+      const progress = travelDistance ? Math.min(1, Math.abs(navPosition - travelOrigin) / travelDistance) : 0;
+      const morph = Math.sin(Math.PI * progress);
+      const topRadius = 50 + 11 * morph * travelDirection;
+      const bottomRadius = 50 - 11 * morph * travelDirection;
+      pill.style.transform = 'translate3d(0,' + navPosition + 'px,0) scale(' + (1 - .30 * morph) + ',' + (1 - .16 * morph) + ')';
+      pill.style.borderRadius = topRadius + '% ' + topRadius + '% ' + bottomRadius + '% ' + bottomRadius + '%';
+    }
+    function snapPill() {
+      cancelAnimationFrame(navFrame); navFrame = 0; navTime = 0; navVelocity = 0;
+      const button = rail.querySelector('.rail-item.active');
+      navPosition = navTarget = navY(button);
+      travelOrigin = navPosition; travelDistance = 0;
+      pill.style.left = button.getBoundingClientRect().left - rail.getBoundingClientRect().left + 'px';
+      pill.style.width = button.offsetWidth + 'px';
+      pill.style.height = button.offsetHeight + 'px';
+      paintPill();
+    }
+    function animatePill(time) {
+      const dt = navTime ? Math.min((time - navTime) / 1000, 1 / 30) : 1 / 60;
+      navTime = time;
+      const stiffness = 330, damping = 2 * Math.sqrt(stiffness) * .96;
+      navVelocity += (stiffness * (navTarget - navPosition) - damping * navVelocity) * dt;
+      navPosition += navVelocity * dt;
+      if (Math.abs(navTarget - navPosition) < .2 && Math.abs(navVelocity) < .8) {
+        navPosition = navTarget; navVelocity = 0; navFrame = 0; navTime = 0;
+        travelOrigin = navPosition; travelDistance = 0;
+      } else navFrame = requestAnimationFrame(animatePill);
+      paintPill();
+    }
+    navButtons.forEach(button => button.addEventListener('click', () => {
+      navButtons.forEach(item => {
+        item.classList.toggle('active', item === button);
+        if (item === button) item.setAttribute('aria-current', 'page');
+        else item.removeAttribute('aria-current');
+      });
+      travelOrigin = navPosition;
+      navTarget = navY(button);
+      travelDirection = Math.sign(navTarget - travelOrigin) || 1;
+      travelDistance = Math.abs(navTarget - travelOrigin);
+      if (reducedMotion.matches) snapPill();
+      else if (!navFrame) navFrame = requestAnimationFrame(animatePill);
+    }));
+    new ResizeObserver(snapPill).observe(rail);
+    reducedMotion.addEventListener('change', snapPill);
+    snapPill();
+    const appearancePreview = win.querySelector('.appearance-preview');
+    const previewContextButtons = [...appearancePreview.querySelectorAll('[data-preview-context]')];
+    const appearanceControls = [...win.querySelectorAll('[data-target="appearance"] .mini-toggle')];
+    const toneInputs = [...win.querySelectorAll('[data-target="appearance"] input[type="color"]')];
+    let noticeTimer = 0;
+    const isOn = label => appearanceControls.find(button => button.getAttribute('aria-label') === label)?.getAttribute('aria-checked') === 'true';
+    function updateAppearancePreview() {
+      const context = appearancePreview.dataset.context;
+      const pinyinVisible = context === 'character' ? isOn('Pinyin in character animations') :
+        context === 'flashcard' ? isOn('Pinyin on flashcard fronts') :
+        context === 'reader' ? isOn('Pinyin in Reader') : false;
+      appearancePreview.classList.toggle('show-pinyin', pinyinVisible);
+      appearancePreview.classList.toggle('high-contrast', isOn('Increase Contrast'));
+      appearancePreview.classList.toggle('color-characters', isOn('Color characters by tone'));
+      appearancePreview.classList.toggle('color-pinyin', isOn('Color pinyin by tone'));
+      appearancePreview.classList.toggle('color-lists', isOn('Apply tone coloring to lists') && isOn('Color characters by tone'));
+      toneInputs.forEach((input, index) => appearancePreview.style.setProperty('--preview-tone-' + (index + 1), input.value));
+    }
+    function setPreviewContext(context) {
+      appearancePreview.dataset.context = context;
+      previewContextButtons.forEach(button => {
+        const active = button.dataset.previewContext === context;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      updateAppearancePreview();
+    }
+    previewContextButtons.forEach(button => button.addEventListener('click', () => setPreviewContext(button.dataset.previewContext)));
+    toneInputs.forEach(input => input.addEventListener('input', () => setPreviewContext('character')));
+    win.querySelector('[data-reset-tones]').addEventListener('click', () => {
+      ['#2880f2','#e48e1c','#e43978','#43b866','#9a9b9c'].forEach((value, index) => { toneInputs[index].value = value; });
+      setPreviewContext('character');
+    });
+    updateAppearancePreview();
+    document.querySelectorAll('[data-surfaces]').forEach(button => button.addEventListener('click', () => {
+      win.classList.toggle('current', button.dataset.surfaces === 'current');
+      document.querySelectorAll('[data-surfaces]').forEach(item => { const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-pressed', String(active)); });
+    }));
+    document.querySelectorAll('[data-depth]').forEach(button => button.addEventListener('click', () => {
+      win.classList.toggle('quiet', button.dataset.depth === 'quiet');
+      document.querySelectorAll('[data-depth]').forEach(item => { const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-pressed', String(active)); });
+    }));
+    document.querySelectorAll('[data-theme]').forEach(button => button.addEventListener('click', () => {
+      document.body.classList.toggle('dark', button.dataset.theme === 'dark');
+      document.querySelectorAll('[data-theme]').forEach(item => { const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-pressed', String(active)); });
+    }));
+    win.querySelectorAll('.tab').forEach(button => button.addEventListener('click', () => {
+      win.querySelectorAll('.tab').forEach(item => { const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-selected', String(active)); });
+      win.querySelectorAll('.tab-panel').forEach(panel => { panel.hidden = panel.dataset.panel !== button.dataset.tab; });
+      scroll.scrollTop = 0;
+    }));
+    win.querySelectorAll('[data-section]').forEach(button => button.addEventListener('click', () => {
+      const target = win.querySelector('[data-target="' + button.dataset.section + '"]');
+      const top = target.getBoundingClientRect().top - scroll.getBoundingClientRect().top + scroll.scrollTop - 24;
+      scroll.scrollTo({top,behavior:reducedMotion.matches?'auto':'smooth'});
+      win.querySelectorAll('[data-section]').forEach(item => item.classList.toggle('active', item === button));
+    }));
+    win.querySelectorAll('.segmented').forEach(group => group.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      group.querySelectorAll('button').forEach(item => { const active = item === button; item.classList.toggle('active', active); item.setAttribute('aria-pressed', String(active)); });
+    }));
+    win.querySelectorAll('.mini-toggle').forEach(button => button.addEventListener('click', () => {
+      button.setAttribute('aria-checked', String(button.getAttribute('aria-checked') !== 'true'));
+      if (appearanceControls.includes(button)) {
+        const label = button.getAttribute('aria-label');
+        if (label === 'Pinyin in character animations') setPreviewContext('character');
+        else if (label === 'Pinyin on flashcard fronts') setPreviewContext('flashcard');
+        else if (label === 'Pinyin in Reader') setPreviewContext('reader');
+        else if (label === 'Apply tone coloring to lists') setPreviewContext('list');
+        else if (label === 'Color characters by tone') setPreviewContext('character');
+        else if (label === 'Color pinyin by tone') setPreviewContext(isOn('Pinyin in character animations') ? 'character' : isOn('Pinyin on flashcard fronts') ? 'flashcard' : 'reader');
+        else updateAppearancePreview();
+      }
+    }));
+    const trigger = win.querySelector('#guide-trigger');
+    const popover = win.querySelector('.popover');
+    function setPopover(open) { popover.hidden = !open; trigger.setAttribute('aria-expanded', String(open)); }
+    trigger.addEventListener('click', () => setPopover(popover.hidden));
+    popover.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
+      win.querySelector('#guide-label').textContent = button.textContent;
+      setPopover(false);
+      trigger.focus();
+    }));
+    document.addEventListener('click', event => { if (!event.target.closest('.dropdown-wrap')) setPopover(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') setPopover(false); });
+    win.querySelectorAll('[data-preview]').forEach(button => button.addEventListener('click', () => {
+      notice.textContent = button.dataset.preview;
+      notice.classList.add('show');
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => notice.classList.remove('show'), 2600);
+    }));
+  </script>
+</body>
+</html>

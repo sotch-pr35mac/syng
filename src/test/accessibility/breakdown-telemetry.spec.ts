@@ -88,7 +88,7 @@ test('sidebar resizing does not duplicate lifecycle events and previews are boun
 	expect(previews.length).toBeGreaterThan(0);
 	expect(previews.length).toBeLessThanOrEqual(2);
 	await page.getByRole('button', { name: '语', exact: true }).click();
-	await panel.getByRole('button', { name: 'Traditional', exact: true }).click();
+	await panel.getByRole('tab', { name: 'Traditional', exact: true }).click();
 	await page.getByRole('button', { name: '清清🙂', exact: true }).click();
 	await panel.getByRole('button', { name: 'Next character' }).click();
 	await panel.getByRole('button', { name: 'Close character breakdown' }).click();

@@ -48,6 +48,7 @@
 		aria-labelledby={`mobile-tools-${toolsRoute.activeTab}-tab`}
 		tabindex="0"
 		class="mobile-tools__content"
+		data-sy-primary-scroll
 	>
 		<TextConversionToolPanel
 			variant="mobile"
@@ -85,12 +86,14 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 	.mobile-tools__header {
 		flex-shrink: 0;
 		padding: calc(var(--sy-mobile-space--extra-small) * 5);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--chrome);
 		border-bottom: var(--sy-mobile-surface-border);
 	}
 	.mobile-tools__tabs {

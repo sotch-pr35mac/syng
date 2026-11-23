@@ -218,7 +218,7 @@
 		padding: var(--sy-space--large);
 		border: var(--sy-input--border);
 		border-radius: var(--sy-border-radius);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--medium);
@@ -247,7 +247,7 @@
 		padding: var(--sy-space--large);
 		border: var(--sy-border);
 		border-radius: var(--sy-border-radius);
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 	}
 	.text-conversion-tool__output--large {
 		font-size: var(--sy-font-size--large);

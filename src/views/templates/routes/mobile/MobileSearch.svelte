@@ -137,7 +137,11 @@
 </script>
 
 <div class="mobile-search">
-	<div class="mobile-search__content" use:scrollRestore={'mobile-search-content'}>
+	<div
+		class="mobile-search__content"
+		data-sy-primary-scroll
+		use:scrollRestore={'mobile-search-content'}
+	>
 		{#if search.activeWord}
 			<div
 				class="mobile-search__dict-wrapper"
@@ -146,6 +150,7 @@
 			>
 				<DictionaryContent
 					word={search.activeWord}
+					backgroundColor="canvas"
 					lists={search.bookmarks}
 					onlink={handleDictionaryLink}
 				/>
@@ -202,7 +207,7 @@
 			aria-label="Search results"
 			aria-busy={search.isSearching}
 			use:walkthroughTarget={'search-results'}
-			class="mobile-search__results"
+			class="mobile-search__results sy-snap-sheet__expanded-content"
 			class:mobile-search__results--empty={search.status === 'ready' &&
 				!search.fullResults.length}
 			use:scrollRestore={'mobile-search-results'}
@@ -234,7 +239,9 @@
 		position: relative;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-search__content {
@@ -242,11 +249,13 @@
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior: none;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-search__dict-wrapper {
-		padding-bottom: calc(110px + env(safe-area-inset-bottom));
+		padding-bottom: calc(72px + max(12px, env(safe-area-inset-bottom)));
 	}
 
 	.mobile-search__empty {
@@ -259,7 +268,7 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: calc(110px + env(safe-area-inset-bottom));
+		bottom: calc(72px + max(12px, env(safe-area-inset-bottom)));
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -280,6 +289,11 @@
 		flex: 1;
 		min-width: 0;
 	}
+
+	/* The default ghost input margins consume the collapsed capsule's remaining height. */
+	:global(.sy-snap-sheet--collapsed) .mobile-search__search-row :global(.sy-text-input) {
+		margin-block: 0;
+	}
 	.mobile-search__results {
 		flex: 1;
 		overflow-y: auto;
@@ -291,8 +305,6 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
-		/* The sheet is rendered at full height even when only partly revealed. */
-		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
 		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 </style>

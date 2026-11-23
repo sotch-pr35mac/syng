@@ -311,6 +311,7 @@
 		>
 			<DictionaryContent
 				word={activeWord}
+				backgroundColor="canvas"
 				showEmptyState={bookmarksRoute.contentStatus === 'ready'}
 				emptyStatePose="collect"
 				{lists}
@@ -412,7 +413,7 @@
 		display: flex;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		margin: 0;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--chrome);
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
@@ -442,7 +443,7 @@
 		min-width: 0;
 		z-index: var(--sy-z-index--base);
 		flex-direction: column;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		height: 100%;
 		overflow-y: scroll;
 		overflow-x: hidden;

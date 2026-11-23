@@ -5,6 +5,7 @@ npm-debug.log
 .buildconfig
 .DS_Store
 coverage/
+storybook-static/
 playwright-report/
 test-results/
 

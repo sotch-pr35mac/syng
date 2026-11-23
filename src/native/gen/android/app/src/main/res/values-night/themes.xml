@@ -2,7 +2,7 @@
     <!-- Base application theme. -->
     <style name="Theme.syng" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Native inset padding is outside the WebView; match Syng's chrome. -->
-        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:windowBackground">@color/app_chrome_background</item>
     </style>
 
     <style name="Theme.syng.Starting" parent="Theme.SplashScreen">

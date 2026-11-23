@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, vi } from 'vitest';
 import { fireEvent, render, waitFor, within } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import MobileSettings from '@/routes/mobile/MobileSettings.svelte';
-import { settingsActiveTabStore, settingsScrollStore } from '@/stores/settings.svelte.js';
+import { mobileSettingsDetailStore, settingsScrollStore } from '@/stores/settings.svelte.js';
 import { contrastStore } from '@/stores/contrast.svelte.js';
 import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
 import * as settings from '@/composables/settings.js';
@@ -46,7 +46,7 @@ beforeEach(async () => {
 			command === 'read_bookmark_recovery_report' ? null : false
 		);
 	bookmarkRecoveryStore.resetForTest();
-	settingsActiveTabStore.set('general');
+	mobileSettingsDetailStore.set('home');
 	settingsScrollStore.resetForTest();
 	databaseMigrationStore.resetForTest();
 	preferenceManager = {
@@ -77,25 +77,26 @@ beforeEach(async () => {
 	vi.mocked(telemetry.trackEvent).mockClear();
 });
 
-it('shows Increase Contrast in General only and keeps its state across mobile tabs', async () => {
+it('keeps Increase Contrast in Appearance across detail navigation', async () => {
 	vi.mocked(invoke).mockImplementation(async (command) =>
 		command === 'get_acknowledgements' ? [] : null
 	);
-	settingsActiveTabStore.set('acknowledgements');
 	const user = userEvent.setup();
 	const { getByRole, queryByRole } = render(MobileSettings);
 	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
-	await user.click(getByRole('tab', { name: 'General' }));
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	const contrast = getByRole('checkbox', { name: 'Increase Contrast' });
-	expect(contrast.closest('[role="tabpanel"]')).toBe(getByRole('tabpanel', { name: 'General' }));
+	expect(getByRole('region', { name: 'Appearance' }).contains(contrast)).toBe(true);
 	expect(getByRole('group', { name: 'Increase Contrast' }).contains(contrast)).toBe(true);
 	expect(getByRole('group', { name: 'Increase Contrast' }).querySelector('p')).toBeNull();
 	await user.click(contrast);
 	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
 	expect(contrast.checked).toBe(true);
-	await user.click(getByRole('tab', { name: 'Telemetry' }));
+	await user.click(getByRole('button', { name: 'Settings' }));
+	await user.click(getByRole('button', { name: /Telemetry/ }));
 	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
-	await user.click(getByRole('tab', { name: 'General' }));
+	await user.click(getByRole('button', { name: 'Settings' }));
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	expect(getByRole('checkbox', { name: 'Increase Contrast' }).checked).toBe(true);
 });
 
@@ -106,6 +107,7 @@ it('reopens saved recovery reports from phone settings', async () => {
 	const user = userEvent.setup();
 	const { getByRole, queryByRole } = render(MobileSettings);
 	expect(queryByRole('heading', { name: 'Bookmark Recovery' })).toBeNull();
+	await user.click(getByRole('button', { name: /Help & Maintenance/ }));
 	await waitFor(() => expect(getByRole('heading', { name: 'Bookmark Recovery' })).toBeTruthy());
 	await user.click(getByRole('button', { name: 'View recovery reports' }));
 	expect(bookmarkRecoveryStore.report).toBe('Saved phone report');
@@ -115,7 +117,9 @@ it.each([null, '', ' \n '])(
 	'hides recovery settings when no saved report exists (%s)',
 	async (report) => {
 		vi.mocked(invoke).mockResolvedValue(report);
-		const { queryByRole } = render(MobileSettings);
+		const user = userEvent.setup();
+		const { getByRole, queryByRole } = render(MobileSettings);
+		await user.click(getByRole('button', { name: /Help & Maintenance/ }));
 
 		await waitFor(() => expect(invoke).toHaveBeenCalledWith('read_bookmark_recovery_report'));
 		expect(queryByRole('heading', { name: 'Bookmark Recovery' })).toBeNull();
@@ -126,7 +130,7 @@ it.each([null, '', ' \n '])(
 it('starts a dismissible database migration preview from development settings', async () => {
 	const user = userEvent.setup();
 	const { getByRole, getByText } = render(MobileSettings);
-
+	await user.click(getByRole('button', { name: /Developer/ }));
 	expect(getByText('Database Migration')).toBeTruthy();
 	await user.click(getByRole('button', { name: 'Preview migration screen' }));
 
@@ -134,11 +138,15 @@ it('starts a dismissible database migration preview from development settings', 
 	expect(databaseMigrationStore.isPreview).toBe(true);
 });
 
-it('renders the mobile general settings without desktop-only options', () => {
+it('renders mobile detail settings without desktop-only options', async () => {
+	const user = userEvent.setup();
 	const { getByRole, queryByRole, queryByText } = render(MobileSettings);
 
 	expect(queryByRole('heading', { name: 'Settings' })).toBeNull();
+	await user.click(getByRole('button', { name: /Chinese & Dictionary/ }));
 	expect(getByRole('heading', { name: 'Character set' })).toBeTruthy();
+	await user.click(getByRole('button', { name: 'Settings' }));
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	expect(getByRole('heading', { name: 'Tone Coloring' })).toBeTruthy();
 	expect(getByRole('heading', { name: 'Tone Colors' })).toBeTruthy();
 	expect(queryByText('Updates')).toBeNull();
@@ -148,7 +156,7 @@ it('renders the mobile general settings without desktop-only options', () => {
 it('replays onboarding from the dev-only general setting', async () => {
 	const user = userEvent.setup();
 	const { getByRole, getByText } = render(MobileSettings);
-
+	await user.click(getByRole('button', { name: /Developer/ }));
 	expect(getByText('Replay onboarding')).toBeTruthy();
 	await user.click(getByRole('button', { name: 'Show again' }));
 
@@ -159,7 +167,7 @@ it('replays onboarding from the dev-only general setting', async () => {
 it('updates the character-set radio preference', async () => {
 	const user = userEvent.setup();
 	const { getByRole } = render(MobileSettings);
-
+	await user.click(getByRole('button', { name: /Chinese & Dictionary/ }));
 	await user.click(getByRole('radio', { name: 'Traditional' }));
 
 	expect(preferenceManager.set).toHaveBeenCalledWith('characterSet', 'traditional');
@@ -170,8 +178,8 @@ it('updates the character-set radio preference', async () => {
 
 it('updates the independent tone-coloring toggles', async () => {
 	const user = userEvent.setup();
-	const { getByLabelText } = render(MobileSettings);
-
+	const { getByLabelText, getByRole } = render(MobileSettings);
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	await user.click(getByLabelText('Color characters by tone'));
 	await user.click(getByLabelText('Color pinyin by tone'));
 	await user.click(getByLabelText('Apply tone coloring to lists'));
@@ -183,7 +191,9 @@ it('updates the independent tone-coloring toggles', async () => {
 });
 
 it('updates tone colors through the shared settings handler', async () => {
-	const { getByLabelText } = render(MobileSettings);
+	const user = userEvent.setup();
+	const { getByLabelText, getByRole } = render(MobileSettings);
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	const firstTone = getByLabelText('First Tone');
 
 	await fireEvent.change(firstTone, { target: { value: '#111111' } });
@@ -200,6 +210,7 @@ it('updates tone colors through the shared settings handler', async () => {
 it('restores the theme palette only after an explicit reset', async () => {
 	const user = userEvent.setup();
 	const { getByLabelText, getByRole } = render(MobileSettings);
+	await user.click(getByRole('button', { name: /Appearance/ }));
 	await fireEvent.change(getByLabelText('First Tone'), { target: { value: '#112233' } });
 	await user.click(getByRole('button', { name: 'Reset to theme colors' }));
 	expect(preferenceManager.set).toHaveBeenLastCalledWith('toneColors', {
@@ -219,17 +230,20 @@ it('shows every telemetry option on the telemetry tab', async () => {
 	const { getByText, getByRole } = render(MobileSettings);
 
 	await user.click(getByText('Telemetry'));
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.section_selected', {
+		section: 'telemetry',
+	});
 
 	await waitFor(() => expect(getByRole('checkbox', { name: 'Enable Telemetry' })).toBeTruthy());
 	expect(getByRole('checkbox', { name: 'Event Tracking' })).toBeTruthy();
 	expect(getByRole('checkbox', { name: 'Screen Views' })).toBeTruthy();
 	expect(getByRole('checkbox', { name: 'Error Reporting' })).toBeTruthy();
 	expect(getByRole('checkbox', { name: 'Device Context' })).toBeTruthy();
-	expect(getByText('Queued Telemetry Events')).toBeTruthy();
+	expect(getByRole('button', { name: 'Inspect queue →' })).toBeTruthy();
 });
 
-it('restores the last active settings tab', async () => {
-	settingsActiveTabStore.set('telemetry');
+it('restores the last active settings detail', async () => {
+	mobileSettingsDetailStore.set('telemetry');
 	const { getByRole } = render(MobileSettings);
 
 	await waitFor(() => expect(getByRole('checkbox', { name: 'Enable Telemetry' })).toBeTruthy());
@@ -277,6 +291,7 @@ it('resets feature tours and invitations from developer settings', async () => {
 	walkthroughStore.preferences.featureInvitations = { flashcards: true, quiz: true };
 	const user = userEvent.setup();
 	const view = render(MobileSettings);
+	await user.click(view.getByRole('button', { name: /Developer/ }));
 	await user.click(view.getByRole('button', { name: 'Reset feature tours' }));
 	expect(
 		await view.findByText(
@@ -308,43 +323,50 @@ it('hides feature-tour reset in release builds', async () => {
 	expect(view.queryByRole('button', { name: 'Reset feature tours' })).toBeNull();
 });
 
-it('groups settings by purpose with Help first and developer tools last', async () => {
+it('groups top-level settings and opens the matching detail', async () => {
+	const user = userEvent.setup();
 	const view = render(MobileSettings);
-	const general = view.getByRole('tabpanel', { name: 'General' });
 	expect(
-		within(general)
+		within(view.getByLabelText('Settings groups'))
 			.getAllByRole('heading', { level: 2 })
 			.map((heading) => heading.textContent)
-	).toEqual(['Help & Maintenance', 'Chinese & Dictionary', 'Appearance', 'Developer']);
+	).toEqual(['Preferences', 'Privacy', 'Help & information', 'Developer']);
+	await user.click(view.getByRole('button', { name: /Help & Maintenance/ }));
 	expect(
 		within(view.getByRole('region', { name: 'Help & Maintenance' })).getByRole('group', {
 			name: 'Walkthrough',
 		})
 	).toBeTruthy();
+	await user.click(view.getByRole('button', { name: 'Settings' }));
+	await user.click(view.getByRole('button', { name: /Chinese & Dictionary/ }));
 	expect(
 		within(view.getByRole('region', { name: 'Chinese & Dictionary' })).getByRole('heading', {
 			name: 'Dictionary details',
 		})
 	).toBeTruthy();
-	expect(
-		within(view.getByRole('region', { name: 'Appearance' })).getByRole('checkbox', {
-			name: 'Increase Contrast',
-		})
-	).toBeTruthy();
-	expect(
-		within(view.getByRole('region', { name: 'Developer' })).getByRole('button', {
-			name: 'Reset feature tours',
-		})
-	).toBeTruthy();
-	const hsk = general.querySelector('fieldset.hsk-variant-selector');
+	const hsk = view.container.querySelector('fieldset.hsk-variant-selector');
 	expect(
 		document
 			.getElementById(hsk.getAttribute('aria-describedby'))
 			.textContent.replace(/\s+/g, ' ')
 	).toContain('level labels shown on dictionary entries');
+	await user.click(view.getByRole('button', { name: 'Settings' }));
+	await user.click(view.getByRole('button', { name: /Appearance/ }));
+	expect(
+		within(view.getByRole('region', { name: 'Appearance' })).getByRole('checkbox', {
+			name: 'Increase Contrast',
+		})
+	).toBeTruthy();
+	await user.click(view.getByRole('button', { name: 'Settings' }));
+	await user.click(view.getByRole('button', { name: /Developer/ }));
+	expect(
+		within(view.getByRole('region', { name: 'Developer' })).getByRole('button', {
+			name: 'Reset feature tours',
+		})
+	).toBeTruthy();
 });
 
-it('remembers General scroll across tab switches and route remounts', async () => {
+it('remembers Appearance scroll across detail switches and route remounts', async () => {
 	const user = userEvent.setup();
 	vi.mocked(invoke).mockImplementation(async (command) =>
 		command === 'get_acknowledgements'
@@ -354,13 +376,15 @@ it('remembers General scroll across tab switches and route remounts', async () =
 				: false
 	);
 	const view = render(MobileSettings);
-	await waitFor(() => expect(view.getByRole('heading', { name: 'Developer' })).toBeTruthy());
+	await user.click(view.getByRole('button', { name: /Appearance/ }));
 	const scroller = view.container.querySelector('.mobile-settings__content');
 	scroller.scrollTop = 420;
 	await fireEvent.scroll(scroller);
-	await user.click(view.getByRole('tab', { name: 'Acknowledgements' }));
+	await user.click(view.getByRole('button', { name: 'Settings' }));
+	await user.click(view.getByRole('button', { name: /Acknowledgements/ }));
 	expect(view.container.querySelector('.mobile-settings__content').scrollTop).toBe(0);
-	await user.click(view.getByRole('tab', { name: 'General' }));
+	await user.click(view.getByRole('button', { name: 'Settings' }));
+	await user.click(view.getByRole('button', { name: /Appearance/ }));
 	await waitFor(() =>
 		expect(view.container.querySelector('.mobile-settings__content').scrollTop).toBe(420)
 	);
@@ -374,11 +398,8 @@ it('remembers General scroll across tab switches and route remounts', async () =
 it('omits the entire Developer group and navigation choice in release builds', async () => {
 	vi.spyOn(settings, 'isDevBuild').mockReturnValue(false);
 	vi.spyOn(settings, 'resolveIsDevBuild').mockResolvedValue(false);
-	const user = userEvent.setup();
 	const view = render(MobileSettings);
 	await waitFor(() => expect(settings.resolveIsDevBuild).toHaveBeenCalled());
 	expect(view.queryByRole('region', { name: 'Developer' })).toBeNull();
-	expect(view.queryByRole('button', { name: 'Developer' })).toBeNull();
-	await user.click(view.getByRole('button', { name: 'Jump to section' }));
-	expect(view.queryByRole('menuitemradio', { name: 'Developer' })).toBeNull();
+	expect(view.queryByRole('button', { name: /Developer/ })).toBeNull();
 });

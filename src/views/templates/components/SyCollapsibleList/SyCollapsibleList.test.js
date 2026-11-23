@@ -1,6 +1,23 @@
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, vi } from 'vitest';
 import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
+
+const originalAnimate = Element.prototype.animate;
+beforeEach(() => {
+	Element.prototype.animate = vi.fn(() => {
+		const animation = { cancel: vi.fn(), onfinish: null };
+		queueMicrotask(() => animation.onfinish?.());
+		return animation;
+	});
+});
+afterEach(() => {
+	if (originalAnimate) {
+		Element.prototype.animate = originalAnimate;
+	} else {
+		delete Element.prototype.animate;
+	}
+});
 
 const ITEMS = [
 	{ id: '1', label: 'First' },
@@ -56,7 +73,9 @@ it('should collapse a previously expanded item when its header is clicked again'
 	expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(1);
 
 	await user.click(first);
-	expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(0);
+	await waitFor(() =>
+		expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(0)
+	);
 });
 
 it('should only keep one item expanded at a time', async () => {
@@ -69,7 +88,9 @@ it('should only keep one item expanded at a time', async () => {
 
 	const [first, second] = getAllByRole('button');
 	await user.click(first);
-	expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(1);
+	await waitFor(() =>
+		expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(1)
+	);
 
 	await user.click(second);
 	expect(document.querySelectorAll('.sy-collapsible-list--detail')).toHaveLength(1);

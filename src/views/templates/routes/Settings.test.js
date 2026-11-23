@@ -125,6 +125,9 @@ it('shows Increase Contrast with General options only and keeps its state across
 	expect(preferenceManager.set).toHaveBeenCalledWith('increaseContrast', true);
 	expect(contrast.checked).toBe(true);
 	await user.click(getByRole('tab', { name: 'Telemetry' }));
+	expect(telemetry.trackEvent).toHaveBeenCalledWith('settings.section_selected', {
+		section: 'telemetry',
+	});
 	expect(queryByRole('checkbox', { name: 'Increase Contrast' })).toBeNull();
 	await user.click(getByRole('tab', { name: 'General' }));
 	expect(getByRole('checkbox', { name: 'Increase Contrast' }).checked).toBe(true);
@@ -174,7 +177,7 @@ it('renders and updates desktop dictionary display settings', async () => {
 	expect(getByText('Tone Coloring')).toBeTruthy();
 	expect(getByText('Tone Colors')).toBeTruthy();
 	expect(getByRole('heading', { name: 'Dictionary details' })).toBeTruthy();
-	expect(getByRole('radio', { name: 'Simplified + Traditional' }).checked).toBe(true);
+	expect(getByRole('radio', { name: 'Both' }).checked).toBe(true);
 	expect(getByLabelText('Color characters by tone').checked).toBe(true);
 	expect(getByLabelText('Color pinyin by tone').checked).toBe(false);
 	expect(getByLabelText('Apply tone coloring to lists').checked).toBe(false);

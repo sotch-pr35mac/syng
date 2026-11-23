@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tick, type Component, type ComponentType, type Snippet } from 'svelte';
+	import { onDestroy, tick, type Component, type ComponentType, type Snippet } from 'svelte';
 	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import {
 		DROPDOWN_DIRECTIONS,
@@ -75,11 +75,14 @@
 	let listElement = $state<HTMLElement>();
 	let fixedStyle = $state('');
 	let active = $state(false);
+	let rendered = $state(false);
 	let restoreFocus = $state(true);
+	let closeTimer: ReturnType<typeof setTimeout> | undefined;
 	let searchText = '';
 	let lastTypeTime = 0;
 	const TYPEAHEAD_RESET_MS = 600;
 	const FIXED_DROPDOWN_OFFSET_PX = 4;
+	const CLOSE_FALLBACK_MS = 250;
 
 	function menuItems(): HTMLButtonElement[] {
 		return [
@@ -105,6 +108,19 @@
 		restoreFocus = restore;
 		active = false;
 		searchText = '';
+		clearTimeout(closeTimer);
+		closeTimer = setTimeout(() => {
+			if (!active) {
+				rendered = false;
+			}
+		}, CLOSE_FALLBACK_MS);
+	}
+
+	function finishMenuClose(event: TransitionEvent): void {
+		if (event.target === listElement && event.propertyName === 'opacity' && !active) {
+			clearTimeout(closeTimer);
+			rendered = false;
+		}
 	}
 
 	function updateFixedPosition(): void {
@@ -121,7 +137,8 @@
 		const top = viewportTop + gutter;
 		const bottom = viewportTop + viewportHeight - gutter;
 		const rect = triggerElement.getBoundingClientRect();
-		const naturalHeight = listElement.scrollHeight;
+		const naturalHeight =
+			listElement.scrollHeight + listElement.offsetHeight - listElement.clientHeight;
 		const below = Math.max(0, bottom - rect.bottom - FIXED_DROPDOWN_OFFSET_PX);
 		const above = Math.max(0, rect.top - top - FIXED_DROPDOWN_OFFSET_PX);
 		const upwards =
@@ -156,14 +173,24 @@
 	}
 
 	async function openMenu(trigger: HTMLElement, edge?: 'first' | 'last'): Promise<void> {
+		clearTimeout(closeTimer);
 		triggerElement = trigger;
 		restoreFocus = true;
+		if (!rendered) {
+			rendered = true;
+			await tick();
+		}
+		if (!rendered || !listElement) {
+			return;
+		}
+		updateFixedPosition();
+		// Establish the closed geometry before enabling the transition.
+		listElement.getBoundingClientRect();
 		active = true;
 		await tick();
 		if (!active) {
 			return;
 		}
-		updateFixedPosition();
 		const items = menuItems();
 		const selected = items.find((item) => item.getAttribute('aria-checked') === 'true');
 		focusItem(
@@ -296,14 +323,16 @@
 			window.visualViewport?.removeEventListener('scroll', updateFixedPosition);
 		};
 	});
+	onDestroy(() => clearTimeout(closeTimer));
 </script>
 
 <div class="sy-dropdown--container" class:sy-dropdown--active={active} bind:this={containerElement}>
 	{@render children?.(active, triggerProps)}
-	{#if active}
+	{#if rendered}
 		<div
 			use:menuPortal
 			use:overlayFocus={{
+				active,
 				initialFocus: 'none',
 				returnFocus: triggerElement,
 				restoreFocus,
@@ -314,11 +343,15 @@
 			bind:this={listElement}
 			id={`${dropdownId}-menu`}
 			role="menu"
+			aria-hidden={!active}
+			inert={!active}
 			aria-label={menuLabel}
 			aria-labelledby={menuLabel ? undefined : `${dropdownId}-trigger`}
 			tabindex="-1"
 			onkeydown={handleMenuKeydown}
+			ontransitionend={finishMenuClose}
 			class={`sy-dropdown--list ${fixed ? 'sy-dropdown--fixed-list' : `sy-dropdown--list--${position} sy-dropdown--list--${direction}`}`}
+			class:sy-dropdown--list--open={active}
 			class:sy-dropdown--list--mobile={mobile}
 			style={fixed ? fixedStyle : undefined}
 		>
@@ -340,15 +373,20 @@
 		max-width: calc(100vw - 2rem);
 		position: absolute;
 		width: max-content;
-		background-color: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
+		padding: var(--sy-menu-inset);
+		background-color: var(--sy-surface--floating);
+		border: var(--sy-surface-border);
+		border-radius: var(--sy-border-radius--menu);
 		z-index: var(--sy-z-index--top-3);
 		box-sizing: border-box;
-		box-shadow: var(--sy-shadow--active);
-		visibility: hidden;
+		box-shadow: var(--sy-shadow--raised);
 		opacity: 0;
-		transition: all ease;
-		transition-duration: var(--sy-transition-duration);
+		pointer-events: none;
+		transform: translateY(-4px) scale(0.82, 0.62);
+		transform-origin: left top;
+		transition:
+			transform var(--sy-motion--overlay-fast) var(--sy-ease--overlay),
+			opacity 140ms ease-out;
 	}
 	.sy-dropdown--list--mobile {
 		box-shadow: var(--sy-mobile-overlay-shadow);
@@ -367,16 +405,23 @@
 	.sy-dropdown--list--up {
 		bottom: 100%;
 		margin-bottom: var(--sy-space);
+		transform: translateY(4px) scale(0.82, 0.62);
+		transform-origin: left bottom;
 	}
 	.sy-dropdown--list--left {
 		left: 0;
 	}
 	.sy-dropdown--list--right {
 		right: 0;
+		transform-origin: right top;
 	}
-	.sy-dropdown--active .sy-dropdown--list {
-		visibility: visible;
+	.sy-dropdown--list--right.sy-dropdown--list--up {
+		transform-origin: right bottom;
+	}
+	.sy-dropdown--list--open {
 		opacity: 1;
+		pointer-events: auto;
+		transform: translateY(0) scale(1);
 	}
 	.sy-dropdown--fixed-list {
 		position: fixed;
@@ -384,13 +429,18 @@
 		z-index: calc(var(--sy-z-index--top) + 1);
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		visibility: visible;
-		opacity: 1;
 		/* Geometry follows the trigger directly; animating it adds a trailing delay. */
-		transition-property: opacity;
+		transform: none;
+		transition: opacity var(--sy-motion--overlay-fast) ease-out;
 	}
 	.sy-dropdown--fixed-list .sy-dropdown--list--content {
 		max-height: none;
 		overflow-y: visible;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sy-dropdown--list {
+			transform: none;
+			transition: opacity 100ms ease-out;
+		}
 	}
 </style>

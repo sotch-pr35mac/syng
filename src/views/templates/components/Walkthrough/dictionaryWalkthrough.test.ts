@@ -108,7 +108,7 @@ it.each(['app', 'dictionary'] as const)(
 					headers: { 'content-type': 'application/json' },
 				})
 		);
-		render(DictionaryContent, { props: { word, context: 'popup' } });
+		render(DictionaryContent, { props: { word, context: 'popup', backgroundColor: 'white' } });
 		await tour.start(guide);
 		render(WalkthroughHost);
 		while (tour.step.id !== 'breakdown') {
@@ -258,7 +258,7 @@ describe.each([
 		await screen.findByRole('heading', { name: 'Explore the popup dictionary' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 		await waitFor(() => expect(searchStore.popoverWord).toBeUndefined());
-		expect(tour.phase).toBe('guiding');
+		await waitFor(() => expect(tour.phase).toBe('guiding'));
 		expect(tour.step.id).toBe('save');
 	});
 });

@@ -1,4 +1,4 @@
-import { fireEvent, render } from '@testing-library/svelte';
+import { fireEvent, render, waitFor } from '@testing-library/svelte';
 import { vi } from 'vitest';
 import SyPopover from '@/components/SyPopover/SyPopover.svelte';
 
@@ -21,5 +21,5 @@ it('should render mobile popovers through the snap sheet with a close action', a
 
 	await fireEvent.click(getByLabelText('Close'));
 
-	expect(onclose).toHaveBeenCalled();
+	await waitFor(() => expect(onclose).toHaveBeenCalledOnce());
 });

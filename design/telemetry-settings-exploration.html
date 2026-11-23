@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Syng · Telemetry settings exploration</title>
+  <style>
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Regular.woff2') format('woff2');font-weight:400}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-SemiBold.woff2') format('woff2');font-weight:600}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Bold.woff2') format('woff2');font-weight:700}
+    *{box-sizing:border-box}
+    :root{font-family:Montserrat,Arial,sans-serif;color:#474c5a;background:#e6e8eb}
+    body{margin:0;padding:28px}
+    button{font:inherit;cursor:pointer}
+    .board{max-width:1280px;margin:auto}
+    .board-note{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 18px;color:#53606b;font-size:12px;line-height:1.5}
+    .board-note p{margin:0;max-width:750px}
+    .theme-button{flex:none;border:1px solid #b9bec5;border-radius:9px;background:#fff;padding:9px 13px;color:#474c5a;font-size:12px}
+    .app{--canvas:#f0f1f2;--chrome:#fafafa;--content:#fff;--well:#e8eaec;--floating:#fff;--text:#474c5a;--muted:#69717c;--line:#d8dce0;--accent:#2c7ee7;--shadow:0 2px 5px #1f283612,0 8px 18px #1f28360d;display:flex;min-height:780px;overflow:hidden;border:1px solid #c1c6cc;border-radius:14px;background:var(--canvas);color:var(--text);box-shadow:0 22px 56px #24314429}
+    .app.dark{--canvas:#2d2d2d;--chrome:#242424;--content:#1e1e1e;--well:#313131;--floating:#171717;--text:#f0f0f0;--muted:#b8b8b8;--line:#494949;--accent:#8ab9ff;--shadow:0 3px 8px #0008,0 9px 20px #0005;border-color:#454545}
+    .rail{width:86px;flex:none;background:var(--chrome);box-shadow:inset -1px 0 var(--line);display:flex;flex-direction:column;align-items:center;gap:11px;padding:20px 0}
+    .traffic{display:flex;gap:6px;margin:0 0 24px}.traffic span{height:9px;width:9px;border-radius:50%}.traffic span:nth-child(1){background:#ff6059}.traffic span:nth-child(2){background:#ffbd2e}.traffic span:nth-child(3){background:#28c841}
+    .nav-icon{display:grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;color:var(--muted);background:transparent}
+    .nav-icon.active{color:var(--accent);background:var(--content);box-shadow:0 1px 3px #0002,0 4px 9px #0001}
+    .nav-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .rail-spacer{flex:1}
+    .workspace{display:flex;flex-direction:column;min-width:0;flex:1;box-shadow:-3px 0 10px #1d283818}
+    .header{position:relative;z-index:1;flex:none;padding:23px 31px 0;background:var(--chrome);box-shadow:var(--shadow)}
+    h1{font-size:26px;line-height:1.2;margin:0 0 14px;font-weight:700}
+    .tabs{display:flex;gap:25px}.tab{height:43px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);padding:0 2px 11px;font-size:13px}.tab.active{color:var(--text);font-weight:700;border-bottom-color:var(--accent)}
+    .scroll{flex:1;min-height:0;overflow:auto;padding:26px 31px 38px;scrollbar-color:var(--muted) transparent}
+    .page{max-width:970px;margin:auto}
+    .intro{margin:0 0 17px}.intro h2{margin:0 0 4px;font-size:20px;line-height:1.3}.intro p{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+    .notice{padding:17px 20px;border-radius:9px;background:var(--well);box-shadow:inset 0 1px 3px #1c273b17}
+    .dark .notice{box-shadow:inset 0 1px 3px #0006}
+    .notice h3{margin:0 0 7px;font-size:14px}.notice p{margin:0;font-size:12px;line-height:1.65;max-width:106ch}
+    .settings-view{max-width:760px;margin:auto}
+    .choices-section{margin-top:25px}
+    .inspect-section{margin-top:25px}
+    .inspect-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;padding:19px 20px}
+    .inspect-card strong{font-size:13px}.inspect-card p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.5}
+    .action-button{min-height:38px;padding:8px 13px;border:1px solid var(--line);border-radius:9px;background:var(--floating);color:var(--text);box-shadow:var(--shadow);font-size:11px;font-weight:700;white-space:nowrap}
+    .action-button:hover{background:var(--well)}
+    .queue-view{max-width:970px;margin:auto}
+    .queue-back{padding:0;border:0;background:transparent;color:var(--accent);font-size:12px;font-weight:700}
+    .queue-heading{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:12px 0 17px}
+    .queue-heading h2{margin:0 0 5px;font-size:20px}.queue-heading p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+    .queue-toolbar{position:sticky;top:-26px;z-index:2;display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 0;background:var(--canvas)}
+    .queue-search{flex:1;min-width:200px;height:38px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--content);color:var(--text);font:inherit;font-size:11px}
+    .queue-filters{display:flex;gap:4px;padding:3px;border-radius:9px;background:var(--well)}
+    .queue-filters button{min-height:32px;padding:5px 10px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:10px;font-weight:600}
+    .queue-filters button[aria-pressed='true']{background:var(--content);color:var(--text);box-shadow:var(--shadow)}
+    .queue-count{margin:0 0 8px;color:var(--muted);font-size:10px}
+    .queue-more{display:block;margin:18px auto 0}
+    .section-heading{margin:0 0 10px 2px;font-size:16px;line-height:1.3}
+    .group{background:var(--content);border-radius:9px;box-shadow:var(--shadow);overflow:hidden}
+    .master-row,.pref-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;align-items:center;padding:15px 17px}
+    .master-row{min-height:80px}.pref-row{min-height:62px}
+    .row-title{margin:0 0 4px;font-size:13px;font-weight:600}.row-detail{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+    .divider{height:1px;background:var(--line);margin:0 17px}
+    .status{display:inline-block;margin-left:5px;font-size:11px;color:var(--accent)}
+    .subhead{margin:20px 2px 8px;font-size:12px;font-weight:700}
+    .switch{position:relative;display:block;width:42px;height:25px;flex:none;padding:0;border:1px solid var(--line);border-radius:20px;background:var(--well);transition:background .2s,border-color .2s}
+    .switch:after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:var(--content);box-shadow:0 1px 3px #0005;transition:transform .2s}
+    .switch[aria-checked='true']{background:var(--accent);border-color:var(--accent)}.switch[aria-checked='true']:after{transform:translateX(17px)}
+    .switch:disabled{opacity:.5;cursor:not-allowed}
+    .event{border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}
+    .event summary{display:grid;grid-template-columns:70px minmax(0,1fr) 140px 16px;gap:12px;align-items:center;min-height:50px;padding:11px 17px;cursor:pointer;font-size:11px;list-style:none}.event summary::-webkit-details-marker{display:none}.event summary:after{content:'⌄';font-family:Arial,sans-serif;font-size:17px;color:var(--muted);line-height:1}
+    .event[open] summary:after{transform:rotate(180deg)}
+    .badge{padding:3px 6px;border-radius:4px;background:var(--well);font-size:9px;font-weight:700;white-space:nowrap}.badge.error{color:#b05454}
+    .event-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.event-time{color:var(--muted);font-size:10px;text-align:right}
+    pre{margin:0;padding:13px 17px 15px;background:var(--well);color:var(--text);font-size:10px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+    .footnote{margin:11px 2px 0;color:var(--muted);font-size:11px;line-height:1.55}
+    .footnote a{color:var(--accent);text-underline-offset:2px}
+    [hidden]{display:none!important}
+    button:focus-visible,summary:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+    @media(max-width:930px){.app{min-height:820px}.page{max-width:690px}}
+    @media(max-width:640px){body{padding:12px}.board-note{align-items:flex-start}.rail{width:58px}.nav-icon{width:40px;height:40px}.nav-icon svg{width:20px;height:20px}.traffic{display:none}.header{padding:21px 18px 0}.header h1{font-size:21px}.tabs{gap:16px}.tab{font-size:11px}.scroll{padding:20px 17px}.notice{padding:15px}.app{min-height:830px}.board-note{font-size:11px}.inspect-card{grid-template-columns:1fr}.queue-toolbar{top:-20px}.queue-search{flex-basis:100%;min-width:0}.queue-filters{width:100%;justify-content:space-between}.event summary{grid-template-columns:62px minmax(0,1fr) 16px;gap:8px}.event-time{grid-column:2;grid-row:2;text-align:left}}
+    @media(prefers-reduced-motion:reduce){.switch,.switch:after{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="board">
+    <div class="board-note"><p><strong>Telemetry settings concept.</strong> The 50 queued events are illustrative. The full-width inspection view and its find/filter controls are proposals; this does not change the live app.</p><button class="theme-button" type="button" id="theme" aria-pressed="false">Preview dark mode</button></div>
+    <main class="app" id="app">
+      <nav class="rail" aria-label="Main navigation">
+        <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+        <button type="button" class="nav-icon" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg></button>
+        <button type="button" class="nav-icon" aria-label="Reader"><svg viewBox="0 0 24 24"><path d="M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></svg></button>
+        <button type="button" class="nav-icon" aria-label="Library"><svg viewBox="0 0 24 24"><path d="M5 3h14v18l-7-5-7 5V3Z"/></svg></button>
+        <button type="button" class="nav-icon" aria-label="Study"><svg viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6M22 8v8"/></svg></button>
+        <div class="rail-spacer"></div>
+        <button type="button" class="nav-icon active" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2"/></svg></button>
+      </nav>
+      <div class="workspace">
+        <header class="header"><h1>Settings</h1><div class="tabs" role="tablist" aria-label="Settings sections"><button class="tab" type="button" role="tab" aria-selected="false">General</button><button class="tab active" type="button" role="tab" aria-selected="true">Telemetry</button><button class="tab" type="button" role="tab" aria-selected="false">Acknowledgements</button></div></header>
+        <div class="scroll"><div class="page">
+          <div class="settings-view" id="settings-view">
+          <div class="intro"><h2>Telemetry</h2><p>Choose what Syng records, then inspect events waiting to be sent.</p></div>
+          <section class="notice" aria-labelledby="privacy-heading"><h3 id="privacy-heading">Privacy and control</h3><p>We love privacy, and you should too! That's why Syng's telemetry service is designed from the ground up to be open, transparent, and put you in control of your data. Telemetry data is used only to diagnose issues, improve platform compatibility, and better understand app usage. Telemetry data is accessible only to the project maintainer and is never shared with third parties or used for advertising. You can inspect telemetry payloads, and can opt out of telemetry in part or in full at any time.</p></section>
+            <section class="choices-section" aria-labelledby="choices-heading">
+              <h3 class="section-heading" id="choices-heading">Your choices</h3>
+              <div class="group">
+                <div class="master-row"><div><p class="row-title">Enable telemetry <span class="status" id="status">On</span></p><p class="row-detail">Turn off new usage events. Queued events and preference changes may still be sent.</p></div><button type="button" class="switch" role="switch" aria-label="Enable telemetry" aria-checked="true" id="master"></button></div>
+                <div class="divider"></div>
+                <div class="pref-row"><div><p class="row-title">Event tracking</p><p class="row-detail">Feature use and settings changes</p></div><button type="button" class="switch category" role="switch" aria-label="Event tracking" aria-checked="true"></button></div>
+                <div class="divider"></div>
+                <div class="pref-row"><div><p class="row-title">Screen views</p><p class="row-detail">Which app screens are visited</p></div><button type="button" class="switch category" role="switch" aria-label="Screen views" aria-checked="true"></button></div>
+                <div class="divider"></div>
+                <div class="pref-row"><div><p class="row-title">Error reporting</p><p class="row-detail">Application errors and failures</p></div><button type="button" class="switch category" role="switch" aria-label="Error reporting" aria-checked="true"></button></div>
+                <div class="divider"></div>
+                <div class="pref-row"><div><p class="row-title">Device context</p><p class="row-detail">OS version, architecture, locale and timezone</p></div><button type="button" class="switch category" role="switch" aria-label="Device context" aria-checked="true"></button></div>
+              </div>
+            </section>
+            <section class="inspect-section" aria-labelledby="inspection-heading">
+              <h3 class="section-heading" id="inspection-heading">Pending payloads</h3>
+              <div class="group inspect-card"><div><strong>Inspect what Syng is waiting to send</strong><p>Open a full-width view of recent queued payloads. Successfully sent events disappear from the queue.</p></div><button type="button" class="action-button" id="open-queue">Inspect queue →</button></div>
+              <p class="footnote"><a href="https://getsyng.com/privacy">Privacy policy</a></p>
+            </section>
+          </div>
+          <div class="queue-view" id="queue-view" hidden>
+            <button type="button" class="queue-back" id="back-to-settings">← Telemetry settings</button>
+            <div class="queue-heading"><div><h2 id="queue-title" tabindex="-1">Pending payloads</h2><p>Recent unsent events from this device. Rows disappear when delivery succeeds.</p></div></div>
+            <div class="queue-toolbar" aria-label="Find pending payloads">
+              <input class="queue-search" id="queue-search" type="search" placeholder="Find an event" aria-label="Find a queued event">
+              <div class="queue-filters" role="group" aria-label="Event family"><button type="button" data-family="all" aria-pressed="true">All</button><button type="button" data-family="event" aria-pressed="false">Events</button><button type="button" data-family="screen_view" aria-pressed="false">Screens</button><button type="button" data-family="error" aria-pressed="false">Errors</button></div>
+            </div>
+            <p class="queue-count" id="queue-count" aria-live="polite"></p>
+            <div class="group" id="queue-list" aria-labelledby="queue-title"></div>
+            <p class="footnote" id="queue-empty" hidden>No pending payloads match this search.</p>
+            <button type="button" class="action-button queue-more" id="queue-more">Show 10 more</button>
+            <p class="footnote">This view shows up to 50 of the newest pending events. Older events may still be queued; this is not a history of sent data.</p>
+          </div>
+        </div></div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const app = document.getElementById('app');
+    const theme = document.getElementById('theme');
+    theme.addEventListener('click', () => { const dark = app.classList.toggle('dark'); theme.setAttribute('aria-pressed', String(dark)); theme.textContent = dark ? 'Preview light mode' : 'Preview dark mode'; });
+    const master = document.getElementById('master');
+    const status = document.getElementById('status');
+    document.querySelectorAll('.switch').forEach((control) => control.addEventListener('click', () => { const checked = control.getAttribute('aria-checked') !== 'true'; control.setAttribute('aria-checked', String(checked)); if (control === master) { status.textContent = checked ? 'On' : 'Off'; document.querySelectorAll('.category').forEach((category) => { category.disabled = !checked; }); } }));
+
+    const queueList = document.getElementById('queue-list');
+    const sampleNames = {
+      event: ['settings.changed', 'reader.import_started', 'study.session_finished', 'dictionary.word_opened'],
+      screen_view: ['settings.telemetry', 'reader.document', 'study.flashcards', 'search.results'],
+      error: ['reader.import_failed', 'dictionary.lookup_failed', 'update.check_failed'],
+    };
+    const families = ['event', 'screen_view', 'event', 'error'];
+    for (let index = 0; index < 50; index += 1) {
+      const family = families[index % families.length];
+      const names = sampleNames[family];
+      const name = names[Math.floor(index / families.length) % names.length];
+      const event = document.createElement('details');
+      event.className = 'event';
+      event.dataset.family = family;
+      event.dataset.name = name;
+      const summary = document.createElement('summary');
+      const badge = document.createElement('span');
+      badge.className = `badge${family === 'error' ? ' error' : ''}`;
+      badge.textContent = family === 'screen_view' ? 'SCREEN' : family.toUpperCase();
+      const eventName = document.createElement('span');
+      eventName.className = 'event-name';
+      eventName.textContent = name;
+      const eventTime = document.createElement('span');
+      eventTime.className = 'event-time';
+      eventTime.textContent = `${index + 1} min ago`;
+      summary.append(badge, eventName, eventTime);
+      const payload = document.createElement('pre');
+      payload.textContent = JSON.stringify({ family, name, timestamp_ms: 1794357600000 - index * 60000, payload: { sample: true, source: 'telemetry mockup' } }, null, 2);
+      event.append(summary, payload);
+      queueList.append(event);
+    }
+
+    const settingsView = document.getElementById('settings-view');
+    const queueView = document.getElementById('queue-view');
+    const queueSearch = document.getElementById('queue-search');
+    const queueCount = document.getElementById('queue-count');
+    const queueEmpty = document.getElementById('queue-empty');
+    const queueMore = document.getElementById('queue-more');
+    const filterButtons = [...document.querySelectorAll('.queue-filters button')];
+    const queueRows = [...queueList.querySelectorAll('.event')];
+    let activeFamily = 'all';
+    let visibleLimit = 10;
+    function filterQueue() {
+      const query = queueSearch.value.trim().toLowerCase();
+      const matchingRows = queueRows.filter((row) => (activeFamily === 'all' || row.dataset.family === activeFamily) && row.dataset.name.includes(query));
+      const visibleRows = matchingRows.slice(0, visibleLimit);
+      queueRows.forEach((row) => { row.hidden = !visibleRows.includes(row); });
+      const suffix = query || activeFamily !== 'all' ? 'matching recent payloads' : 'recent pending payloads';
+      queueCount.textContent = `Showing ${visibleRows.length} of ${matchingRows.length} ${suffix}`;
+      queueEmpty.hidden = matchingRows.length !== 0;
+      queueMore.hidden = matchingRows.length <= visibleLimit;
+      queueMore.textContent = `Show ${Math.min(10, Math.max(0, matchingRows.length - visibleLimit))} more`;
+    }
+    function showQueue(visible) {
+      settingsView.hidden = visible;
+      queueView.hidden = !visible;
+      document.querySelector('.scroll').scrollTop = 0;
+      (visible ? document.getElementById('queue-title') : document.getElementById('open-queue')).focus();
+    }
+    document.getElementById('open-queue').addEventListener('click', () => showQueue(true));
+    document.getElementById('back-to-settings').addEventListener('click', () => showQueue(false));
+    queueSearch.addEventListener('input', () => { visibleLimit = 10; filterQueue(); });
+    filterButtons.forEach((button) => button.addEventListener('click', () => {
+      activeFamily = button.dataset.family;
+      visibleLimit = 10;
+      filterButtons.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button)));
+      filterQueue();
+    }));
+    queueMore.addEventListener('click', () => { visibleLimit += 10; filterQueue(); });
+    filterQueue();
+  </script>
+</body>
+</html>

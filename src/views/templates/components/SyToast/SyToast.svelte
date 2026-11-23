@@ -22,6 +22,7 @@
 	interface Props {
 		visible?: boolean;
 		message?: string;
+		detail?: string;
 		actionLabel?: string;
 		corner?: Corner;
 		onaction?: () => void;
@@ -32,6 +33,7 @@
 	const {
 		visible = false,
 		message = '',
+		detail = '',
 		actionLabel = '',
 		corner = 'top-right',
 		onaction = () => {},
@@ -61,12 +63,16 @@
 >
 	<div class="sy-toast--body">
 		<span class="sy-toast--message">{message}</span>
-		{#if actionLabel}
-			<button class="sy-toast--action" onclick={onaction}>{actionLabel}</button>
-		{/if}
+		{#if detail}<span class="sy-toast--detail">{detail}</span>{/if}
 	</div>
+	{#if actionLabel}
+		<button class="sy-toast--action" onclick={onaction}>{actionLabel}</button>
+	{/if}
 	<SyButton
 		style="ghost"
+		shape="circle"
+		size="small"
+		class="sy-toast--close"
 		onclick={ondismiss}
 		aria-label="Dismiss notification"
 		tabindex={visible ? 0 : -1}
@@ -77,51 +83,65 @@
 
 <style>
 	.sy-toast {
+		--sy-toast-start-x: 5px;
+		--sy-toast-start-y: -7px;
 		position: fixed;
 		z-index: var(--sy-z-index--top);
 		display: flex;
 		flex-direction: row;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
-		gap: var(--sy-space--large);
-		width: 280px;
-		max-width: calc(100vw - 60px);
+		gap: 14px;
+		box-sizing: border-box;
+		width: 355px;
+		max-width: calc(100vw - 36px);
 		visibility: hidden;
-		padding: var(--sy-space--large);
-		background-color: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow--active);
+		padding: 13px 14px;
+		background-color: var(--sy-surface--floating);
+		border: var(--sy-surface-border);
+		border-radius: var(--sy-border-radius--floating);
+		box-shadow: var(--sy-shadow--raised);
 		opacity: 0;
 		pointer-events: none;
+		transform: translate(var(--sy-toast-start-x), var(--sy-toast-start-y)) scale(0.94, 0.88);
 		transition:
-			transform var(--sy-transition-duration),
-			opacity var(--sy-transition-duration);
+			transform var(--sy-motion--overlay-fast) var(--sy-ease--overlay),
+			opacity var(--sy-motion--overlay-fast) var(--sy-ease--overlay),
+			visibility 0s linear var(--sy-motion--overlay-fast);
 	}
 	.sy-toast--top-right {
 		top: var(--sy-space--extra-large);
 		right: var(--sy-space--extra-large);
-		transform: translateY(calc(-100% - var(--sy-space--extra-large)));
+		transform-origin: right top;
 	}
 	.sy-toast--top-left {
+		--sy-toast-start-x: -5px;
 		top: var(--sy-space--extra-large);
 		left: var(--sy-space--extra-large);
-		transform: translateY(calc(-100% - var(--sy-space--extra-large)));
+		transform-origin: left top;
 	}
 	.sy-toast--bottom-right {
+		--sy-toast-start-y: 7px;
 		bottom: calc(var(--sy-space--extra-large) + var(--sy-toast-bottom-offset, 0px));
 		right: var(--sy-space--extra-large);
-		transform: translateY(calc(100% + var(--sy-space--extra-large)));
+		transform-origin: right bottom;
 	}
 	.sy-toast--bottom-left {
+		--sy-toast-start-x: -5px;
+		--sy-toast-start-y: 7px;
 		bottom: calc(var(--sy-space--extra-large) + var(--sy-toast-bottom-offset, 0px));
 		left: var(--sy-space--extra-large);
-		transform: translateY(calc(100% + var(--sy-space--extra-large)));
+		transform-origin: left bottom;
 	}
 	.sy-toast--visible {
 		visibility: visible;
-		transform: translateY(0);
+		transform: translate(0, 0) scale(1);
 		opacity: 1;
 		pointer-events: auto;
+		transition:
+			transform var(--sy-motion--overlay-fast) var(--sy-ease--overlay),
+			opacity var(--sy-motion--overlay-fast) var(--sy-ease--overlay),
+			visibility 0s;
 	}
 	.sy-toast--body {
 		display: flex;
@@ -131,10 +151,15 @@
 	}
 	.sy-toast--message {
 		font-size: var(--sy-font-size--small);
-		font-weight: var(--sy-font-weight--normal);
+		font-weight: var(--sy-font-weight--bold);
 		color: var(--sy-color--black);
 	}
+	.sy-toast--detail {
+		color: var(--sy-text--secondary);
+		font-size: var(--sy-font-size--small);
+	}
 	.sy-toast--action {
+		align-self: center;
 		background: none;
 		border: none;
 		padding: 0;
@@ -149,5 +174,23 @@
 		color: var(--sy-text--blue);
 		transition-property: color;
 		transition-duration: var(--sy-transition-duration);
+	}
+	.sy-toast :global(.sy-toast--close) {
+		flex: none;
+		margin: 0;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sy-toast,
+		.sy-toast--visible {
+			transform: none;
+			transition:
+				opacity 100ms ease-out,
+				visibility 0s linear 100ms;
+		}
+		.sy-toast--visible {
+			transition:
+				opacity 100ms ease-out,
+				visibility 0s;
+		}
 	}
 </style>

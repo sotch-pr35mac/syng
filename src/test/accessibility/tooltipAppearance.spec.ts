@@ -18,7 +18,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		{ name: 'HSK tag', selector: '.sy-tag.sy-tooltip--container' },
 		{ name: 'study button', selector: 'button[aria-label="Flashcards for Sample words"]' },
 	]) {
-		test(`${colorScheme} ${example.name} retains release 2.5.0 tooltip appearance`, async ({
+		test(`${colorScheme} ${example.name} keeps released tooltip geometry with the floating surface`, async ({
 			page,
 		}, testInfo) => {
 			await page.emulateMedia({ colorScheme });
@@ -30,7 +30,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			const bounds = (await tooltip.boundingBox())!;
 			const shadow = await tooltip.evaluate((element) => getComputedStyle(element).boxShadow);
 			// Compare the tooltip itself; adjacent controls have independent hover effects.
-			// Check its shadow separately so surrounding page pixels cannot mask a mismatch.
+			// The shadow is an intentional design-system change; keep it identical in
+			// the released-geometry comparison so the test isolates typography and size.
 			const actual = await tooltip.screenshot({
 				animations: 'disabled',
 				path: testInfo.outputPath('current.png'),
@@ -39,7 +40,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			// Render the released CSS AND its paragraph-wrapped markup in the same
 			// browser/location. This avoids platform-specific font rasterization baselines.
 			await page.addStyleTag({
-				content: `${releaseStyles}\n.sy-tooltip--body > p { margin: 1em 0; }`,
+				content: `${releaseStyles}\n.sy-tooltip--body > p { margin: 1em 0; }\n.sy-tooltip--container .sy-tooltip--body { background-color: var(--sy-surface--floating); box-shadow: var(--sy-shadow--floating-compact, var(--sy-shadow--active)); }`,
 			});
 			await tooltip.evaluate((element) => {
 				if (!element.querySelector('p')) {
@@ -54,7 +55,10 @@ for (const colorScheme of ['light', 'dark'] as const) {
 				animations: 'disabled',
 				path: testInfo.outputPath('release-2.5.0.png'),
 			});
-			expect(actual.equals(released), 'Tooltip pixels should match release 2.5.0').toBe(true);
+			expect(
+				actual.equals(released),
+				'Tooltip geometry and typography should match the released treatment'
+			).toBe(true);
 		});
 	}
 }

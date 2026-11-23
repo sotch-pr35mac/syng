@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Syng · Mobile direction studies</title>
+  <style>
+    @font-face { font-family: Montserrat; src: url('../src/views/templates/fonts/montserrat/Montserrat-Regular.woff2') format('woff2'); font-weight: 400; }
+    @font-face { font-family: Montserrat; src: url('../src/views/templates/fonts/montserrat/Montserrat-SemiBold.woff2') format('woff2'); font-weight: 600; }
+    @font-face { font-family: Montserrat; src: url('../src/views/templates/fonts/montserrat/Montserrat-Bold.woff2') format('woff2'); font-weight: 700; }
+    :root { font-family: Montserrat, sans-serif; color: #343b48; background: #e8ebf0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button { font: inherit; cursor: pointer; }
+    .board { padding: 48px 24px 64px; max-width: 1430px; margin: auto; }
+    .intro { max-width: 900px; margin: 0 auto 34px; }
+    .eyebrow { color: #456ea7; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 700; }
+    h1 { margin: 9px 0; font-size: clamp(27px, 3vw, 38px); letter-spacing: -.045em; }
+    .intro p { margin: 0; color: #647083; line-height: 1.6; font-size: 14px; }
+    .screens { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+    .study { width: 390px; }
+    .caption { margin: 0 0 12px; padding: 0 4px; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .caption b { font-size: 15px; }
+    .caption span { color: #687588; font-size: 11px; }
+    .phone { width: 390px; height: 804px; border: 8px solid #202632; border-radius: 43px; background: #f6f7f8; box-shadow: 0 30px 65px #27334b32, inset 0 0 0 1px #ffffff66; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+    .status { height: 38px; flex: none; background: #fff; display: flex; justify-content: space-between; align-items: center; padding: 7px 28px 0; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 700; color: #232936; }
+    .island { width: 94px; height: 24px; border-radius: 18px; background: #202632; position: absolute; top: 6px; left: 50%; transform: translateX(-50%); }
+    .top { flex: none; background: #fff; border-bottom: 1px solid #e6e9ed; padding: 4px 16px 11px; }
+    .nav { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; }
+    .nav button { width: 100%; min-height: 44px; border: 0; border-radius: 13px; background: transparent; color: #8a96a5; display: grid; place-items: center; padding: 0; }
+    .nav button.selected { color: #256ecb; background: #eaf3ff; }
+    .nav svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
+    .nav-label { margin: 3px 0 0; color: #69778b; font-size: 10px; text-align: center; letter-spacing: .02em; }
+    .screen { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+    .screen-head { padding: 23px 24px 13px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .screen-head h2 { font-size: 28px; margin: 3px 0 0; letter-spacing: -.06em; line-height: 1.1; }
+    .screen-head p { margin: 6px 0 0; color: #758094; font-size: 11px; line-height: 1.45; }
+    .small-label { color: #73829a; text-transform: uppercase; letter-spacing: .14em; font-size: 10px; font-weight: 700; }
+    .circle-button { border: 1px solid #e3e8ee; background: #fff; color: #4176b8; width: 36px; height: 36px; border-radius: 12px; font-size: 20px; line-height: 1; }
+    .pane { background: #fff; border: 1px solid #e5e9ef; border-radius: 20px; }
+    .search-content { padding: 0 16px; }
+    .word { padding: 19px 19px 17px; }
+    .word-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .hanzi { font-family: -apple-system, 'PingFang SC', 'Noto Sans CJK SC', sans-serif; font-size: 55px; line-height: 1.16; letter-spacing: .02em; color: #313947; }
+    .tone1 { color: #2880f2; } .tone2 { color: #bb7119; }
+    .pinyin { color: #416fb7; font-size: 14px; font-weight: 600; margin-top: 5px; }
+    .definition { border-top: 1px solid #edf0f2; margin-top: 19px; padding-top: 17px; line-height: 1.5; font-size: 15px; }
+    .definition b { color: #7890aa; font-size: 11px; margin-right: 7px; }
+    .example { margin-top: 15px; color: #566578; font-size: 11px; line-height: 1.65; }
+    .example strong { display: block; font-size: 13px; color: #3e4e60; }
+    .pill { border-radius: 99px; background: #edf5ff; color: #3274c8; border: 0; padding: 8px 11px; font-size: 10px; font-weight: 700; }
+    .search-sheet { margin-top: auto; background: #fff; border-radius: 25px 25px 0 0; box-shadow: 0 -9px 30px #4b607528; border-top: 1px solid #e6ebef; padding: 8px 15px 0; z-index: 1; }
+    .handle { width: 36px; height: 4px; border-radius: 9px; background: #cbd3dd; margin: 0 auto 12px; }
+    .search-field { display: flex; align-items: center; gap: 10px; background: #f3f6f8; border: 1px solid #e4e9ee; border-radius: 13px; height: 46px; padding: 0 13px; color: #7d8b9d; font-size: 13px; }
+    .search-field b { color: #3778c6; border-right: 1px solid #cfd8e2; padding-right: 10px; }
+    .result-title { display: flex; justify-content: space-between; margin: 17px 3px 5px; font-size: 11px; color: #8793a2; }
+    .result-title b { color: #58677a; }
+    .result { display: flex; align-items: center; gap: 11px; min-height: 49px; padding: 5px 4px; border-top: 1px solid #edf0f2; }
+    .result .glyph { font-family: -apple-system, 'PingFang SC', sans-serif; font-size: 20px; min-width: 49px; }
+    .result .meta { font-size: 11px; color: #7a8797; line-height: 1.5; }
+    .result .meta strong { display: block; color: #414d5c; font-size: 12px; }
+    .result .arrow { margin-left: auto; color: #a9b3bf; font-size: 20px; }
+    .home { height: 27px; flex: none; background: #fff; display: grid; place-items: center; }
+    .home:after { content: ''; display: block; width: 110px; height: 4px; border-radius: 4px; background: #202632; }
+    .flash-content { padding: 0 16px; flex: 1; display: flex; flex-direction: column; }
+    .progress { display: flex; gap: 5px; margin: 3px 8px 16px; }
+    .progress span { height: 4px; border-radius: 5px; background: #dce4ed; flex: 1; }
+    .progress span.done { background: #4289de; }
+    .flash-card { flex: 1; max-height: 378px; border-radius: 24px; border: 1px solid #e0e7ee; background: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; box-shadow: 0 3px 12px #5060780c; }
+    .card-top { display: flex; justify-content: space-between; color: #8b99a9; font-size: 10px; font-weight: 600; }
+    .card-center { text-align: center; }
+    .card-center .hanzi { font-size: 93px; }
+    .card-center .pinyin { font-size: 17px; margin-top: 15px; }
+    .card-foot { display: flex; justify-content: center; color: #8b99a9; font-size: 11px; }
+    .study-hint { text-align: center; color: #788699; font-size: 11px; margin: 17px 0; }
+    .dock { margin-top: auto; background: #fff; border-top: 1px solid #e4e9ee; padding: 11px 15px 2px; }
+    .dock-top { display: flex; justify-content: space-between; align-items: center; color: #7a8798; font-size: 11px; margin-bottom: 12px; }
+    .dock-top strong { color: #435165; }
+    .dock-actions { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 8px; }
+    .dock-actions button { min-height: 52px; border-radius: 15px; border: 1px solid #e2e9ef; background: #f5f7f9; color: #3f526b; font-size: 12px; font-weight: 700; }
+    .dock-actions button.primary { border-color: #2c7ee7; background: #2c7ee7; color: #fff; }
+    .settings-scroll { overflow: hidden; padding: 0 16px 10px; flex: 1; }
+    .group-heading { margin: 15px 9px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .14em; color: #7b8da1; font-weight: 700; }
+    .group { border: 1px solid #e5eaf0; border-radius: 18px; background: #fff; overflow: hidden; }
+    .setting { min-height: 56px; display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-top: 1px solid #edf0f3; font-size: 12px; }
+    .setting:first-child { border-top: 0; }
+    .setting .icon { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; background: #edf5ff; color: #3979c7; font-size: 16px; flex: none; }
+    .setting .icon.gold { background: #fff5e8; color: #c57b1e; }
+    .setting .icon.pink { background: #fff0f5; color: #d45582; }
+    .setting .copy { flex: 1; min-width: 0; line-height: 1.4; }
+    .setting .copy small { display: block; color: #8491a0; font-size: 10px; margin-top: 2px; }
+    .setting .end { color: #a3afba; font-size: 19px; }
+    .setting .value { color: #7e8998; font-size: 10px; }
+    .toggle { width: 38px; height: 23px; border-radius: 20px; background: #2c7ee7; padding: 3px; }
+    .toggle:after { content: ''; display: block; width: 17px; height: 17px; background: white; border-radius: 50%; margin-left: auto; }
+    .settings-note { color: #8792a0; line-height: 1.5; font-size: 10px; padding: 10px 9px; }
+    .notes { max-width: 1220px; margin: 29px auto 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .notes p { margin: 0; font-size: 12px; line-height: 1.55; color: #667387; }
+    .notes strong { color: #364456; }
+    @media (max-width: 850px) { .notes { grid-template-columns: 1fr; max-width: 390px; } }
+    @media (max-width: 430px) { .board { padding: 26px 8px; } .study, .phone { width: min(390px, calc(100vw - 16px)); } .phone { height: 780px; } }
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <symbol id="search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="read" viewBox="0 0 24 24"><path d="M12 5c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></symbol>
+    <symbol id="bookmark" viewBox="0 0 24 24"><path d="M5 3h14v18l-7-5-7 5V3Z"/></symbol>
+    <symbol id="study" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6M22 8v8"/></symbol>
+    <symbol id="extras" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="settings" viewBox="0 0 24 24"><path d="M10 3h4l.6 2.3 2 .9 2.1-1.1 2.8 2.8-1.1 2.1.9 2L23 12v4l-2.3.6-.9 2 1.1 2.1-2.8 2.8-2.1-1.1-2 .9L14 25h-4l-.6-2.3-2-.9-2.1 1.1-2.8-2.8 1.1-2.1-.9-2L1 16v-4l2.3-.6.9-2-1.1-2.1 2.8-2.8 2.1 1.1 2-.9L10 3Z" transform="translate(0 -2) scale(1 .92)"/><circle cx="12" cy="12" r="3"/></symbol>
+  </svg>
+  <main class="board">
+    <div class="intro"><div class="eyebrow">Syng · mobile design study</div><h1>More app, still Syng.</h1><p>Three illustrative screens. The top navigation stays in place, and the bottom remains available for the actions people use throughout a session. The changes focus on hierarchy, surface roles, and tactile feedback.</p></div>
+    <div class="screens">
+      <section class="study"><div class="caption"><b>01 / Search</b><span>content + working sheet</span></div><div class="phone">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="top"><div class="nav"><button class="selected" aria-label="Search"><svg><use href="#search"/></svg></button><button aria-label="Read"><svg><use href="#read"/></svg></button><button aria-label="Bookmarks"><svg><use href="#bookmark"/></svg></button><button aria-label="Study"><svg><use href="#study"/></svg></button><button aria-label="Extras"><svg><use href="#extras"/></svg></button><button aria-label="Settings"><svg><use href="#settings"/></svg></button></div><div class="nav-label">SEARCH</div></div>
+        <div class="screen"><div class="screen-head"><div><div class="small-label">Dictionary</div><h2>Search</h2><p>Find a word. Stay with its meaning.</p></div><button class="circle-button" aria-label="More options">⋯</button></div>
+          <div class="search-content"><div class="pane word"><div class="word-top"><div><div class="hanzi"><span class="tone1">学</span><span class="tone2">习</span></div><div class="pinyin">xué xí</div></div><button class="pill">＋ Save</button></div><div class="definition"><b>VERB</b> to study; to learn</div><div class="example"><strong>我每天学习中文。</strong>I study Chinese every day.</div></div></div>
+          <div class="search-sheet"><div class="handle"></div><div class="search-field"><b>EN</b><span>study</span><span style="margin-left:auto">⌕</span></div><div class="result-title"><b>Results</b><span>12 words</span></div><div class="result"><div class="glyph">学习</div><div class="meta"><strong>xué xí</strong>to study; to learn</div><div class="arrow">›</div></div><div class="result"><div class="glyph">研究</div><div class="meta"><strong>yán jiū</strong>to research; to study</div><div class="arrow">›</div></div></div>
+        </div><div class="home"></div>
+      </div></section>
+      <section class="study"><div class="caption"><b>02 / Flashcards</b><span>focus + repeated actions</span></div><div class="phone">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="top"><div class="nav"><button aria-label="Search"><svg><use href="#search"/></svg></button><button aria-label="Read"><svg><use href="#read"/></svg></button><button aria-label="Bookmarks"><svg><use href="#bookmark"/></svg></button><button class="selected" aria-label="Study"><svg><use href="#study"/></svg></button><button aria-label="Extras"><svg><use href="#extras"/></svg></button><button aria-label="Settings"><svg><use href="#settings"/></svg></button></div><div class="nav-label">STUDY</div></div>
+        <div class="screen"><div class="screen-head"><div><div class="small-label">Daily practice · HSK 1</div><h2>Flashcards</h2><p>4 of 12 cards</p></div><button class="circle-button" aria-label="Close session">×</button></div><div class="flash-content"><div class="progress"><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="flash-card"><div class="card-top"><span>FRONT</span><span>04 / 12</span></div><div class="card-center"><div class="hanzi"><span class="tone1">学</span><span class="tone2">习</span></div><div class="pinyin">xué xí</div></div><div class="card-foot">Tap Flip to reveal meaning</div></div><p class="study-hint">Your place is saved while you study.</p></div><div class="dock"><div class="dock-top"><span><strong>Daily practice</strong> · 4 of 12</span><span>Exit session</span></div><div class="dock-actions"><button>← Previous</button><button class="primary">↻ Flip</button><button>Next →</button></div></div></div><div class="home"></div>
+      </div></section>
+      <section class="study"><div class="caption"><b>03 / Settings</b><span>clear groups + quiet controls</span></div><div class="phone">
+        <div class="island"></div><div class="status"><span>9:41</span><span>●●●  ▰</span></div>
+        <div class="top"><div class="nav"><button aria-label="Search"><svg><use href="#search"/></svg></button><button aria-label="Read"><svg><use href="#read"/></svg></button><button aria-label="Bookmarks"><svg><use href="#bookmark"/></svg></button><button aria-label="Study"><svg><use href="#study"/></svg></button><button aria-label="Extras"><svg><use href="#extras"/></svg></button><button class="selected" aria-label="Settings"><svg><use href="#settings"/></svg></button></div><div class="nav-label">SETTINGS</div></div>
+        <div class="screen"><div class="screen-head"><div><div class="small-label">Make it yours</div><h2>Settings</h2><p>Preferences for learning and reading.</p></div></div><div class="settings-scroll">
+          <div class="group-heading">Learning</div><div class="group"><div class="setting"><div class="icon">文</div><div class="copy">Chinese & Dictionary<small>Characters, HSK, definitions</small></div><div class="end">›</div></div><div class="setting"><div class="icon gold">◉</div><div class="copy">Appearance<small>Tone colors and contrast</small></div><div class="end">›</div></div></div>
+          <div class="group-heading">Privacy</div><div class="group"><div class="setting"><div class="icon">◌</div><div class="copy">Telemetry<small>Usage and age settings</small></div><div class="end">›</div></div></div>
+          <div class="group-heading">Help & information</div><div class="group"><div class="setting"><div class="icon">?</div><div class="copy">Guides & maintenance</div><div class="end">›</div></div><div class="setting"><div class="icon">i</div><div class="copy">Acknowledgements</div><div class="end">›</div></div></div><div class="settings-note">Changes take effect as you make them. No save step needed.</div>
+        </div></div><div class="home"></div>
+      </div></section>
+    </div>
+    <div class="notes"><p><strong>Search:</strong> one prominent word surface; the sheet has the only strong shadow because it moves above content.</p><p><strong>Study:</strong> a quiet card, compact progress, and a distinct bottom control dock keep attention on the word.</p><p><strong>Settings:</strong> grouped rows replace the crowded tabs while keeping the same preferences and Syng palette.</p></div>
+  </main>
+</body>
+</html>

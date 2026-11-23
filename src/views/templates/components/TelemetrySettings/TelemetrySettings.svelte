@@ -1,8 +1,14 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
+	import { ChevronLeft } from 'lucide-svelte';
 	import { openUrl } from '@tauri-apps/plugin-opener';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyToggle from '@/components/SyToggle/SyToggle.svelte';
+	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
+	import SyRadio from '@/components/SyRadio/SyRadio.svelte';
+	import SyRadioGroup from '@/components/SyRadio/SyRadioGroup.svelte';
 	import SyCollapsibleList from '@/components/SyCollapsibleList/SyCollapsibleList.svelte';
+	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '@/utils/telemetry.js';
 	import { handleError } from '@/utils/error.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
@@ -10,13 +16,23 @@
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
+		onQueueChange?: (open: boolean) => void;
 	}
 
 	const TELEMETRY_REFRESH_INTERVAL_MS = 5000;
 	const MAX_DISPLAY_EVENTS = 50;
+	const QUEUE_PAGE_SIZE = 10;
 	const PRIVACY_POLICY_URL = 'https://getsyng.com/privacy';
+	const queueFamilies = [
+		{ value: 'all', label: 'All' },
+		{ value: 'event', label: 'Events' },
+		{ value: 'screen_view', label: 'Screens' },
+		{ value: 'error', label: 'Errors' },
+	] as const;
+	type QueueFamily = (typeof queueFamilies)[number]['value'];
 
-	const { variant = 'desktop' }: Props = $props();
+	const { variant = 'desktop', onQueueChange }: Props = $props();
+	const queueTriggerId = $props.id();
 
 	let prefs = $state<TelemetryPrefs>({
 		enabled: true,
@@ -27,10 +43,53 @@
 	});
 
 	let queuedEvents = $state<TelemetryEvent[]>([]);
+	let queueSnapshot = $state<TelemetryEvent[]>([]);
+	let showingQueue = $state(false);
+	let queueSearch = $state('');
+	let queueFamily = $state<QueueFamily>('all');
+	let visibleLimit = $state(QUEUE_PAGE_SIZE);
+	let queueHeading = $state<HTMLHeadingElement>();
 	let savingPreference = $state(false);
 	let preferenceError = $state('');
 	let refreshInterval: ReturnType<typeof setInterval>;
 	const telemetryLocked = $derived(privacySettingsStore.childPrivacyMode);
+	const filteredEvents = $derived(
+		queueSnapshot.filter(
+			(event) =>
+				(queueFamily === 'all' || event.family === queueFamily) &&
+				event.name.toLocaleLowerCase().includes(queueSearch.trim().toLocaleLowerCase())
+		)
+	);
+	const visibleEvents = $derived(filteredEvents.slice(0, visibleLimit));
+	const hasQueueFilter = $derived(queueFamily !== 'all' || queueSearch.trim().length > 0);
+
+	const openQueue = async () => {
+		try {
+			queueSnapshot = await telemetry.getQueuedEvents(MAX_DISPLAY_EVENTS);
+			queuedEvents = queueSnapshot;
+		} catch (_) {
+			queueSnapshot = [...queuedEvents];
+		}
+		visibleLimit = QUEUE_PAGE_SIZE;
+		showingQueue = true;
+		onQueueChange?.(true);
+		telemetry.trackScreen('settings_telemetry_queue').catch(() => {});
+		await tick();
+		queueHeading?.focus();
+	};
+
+	const closeQueue = async () => {
+		showingQueue = false;
+		onQueueChange?.(false);
+		queueSnapshot = [];
+		await tick();
+		document.getElementById(queueTriggerId)?.focus();
+	};
+
+	const selectFamily = (family: QueueFamily) => {
+		queueFamily = family;
+		visibleLimit = QUEUE_PAGE_SIZE;
+	};
 
 	onMount(async () => {
 		try {
@@ -115,131 +174,239 @@
 </script>
 
 <div class="telemetry--container" class:telemetry--container--mobile={variant === 'mobile'}>
-	{#if isAndroid()}
-		<p class="telemetry--privacy-notice">
-			We respect your privacy.
-			<a class="telemetry--privacy-link" href={PRIVACY_POLICY_URL} onclick={openPrivacyPolicy}
-				>View our privacy policy to learn more.</a
-			>
-		</p>
-	{/if}
-
-	<div class="telemetry--disclosure">
-		<p class="telemetry--disclosure-text">
-			We hate creepy data collection, and you should too! That's why Syng's telemetry service
-			is designed to be open and transparent. You can inspect exactly what is sent below, and
-			you can opt out of telemetry in part or in full at any time. Telemetry data is used only
-			to diagnose issues, improve compatibility, and better understand how the app is used.
-			It's accessible only to the project maintainer and is never used for advertising or
-			shared with third parties.
-		</p>
-	</div>
-
 	{#if preferenceError}
 		<p role="alert">{preferenceError}</p>
 	{/if}
+	{#if !showingQueue}
+		<div class="telemetry--settings-view">
+			<h2 class="telemetry--title">Telemetry</h2>
+			<p class="telemetry--intro">
+				Choose what Syng records, then inspect events waiting to be sent.
+			</p>
+			{#if isAndroid()}
+				<p class="telemetry--privacy-notice">
+					We respect your privacy.
+					<a
+						class="telemetry--privacy-link"
+						href={PRIVACY_POLICY_URL}
+						onclick={openPrivacyPolicy}>View our privacy policy to learn more.</a
+					>
+				</p>
+			{/if}
 
-	<div class="telemetry--setting telemetry--setting--center">
-		<div>
-			<p class="telemetry--setting-label">Enable Telemetry</p>
-			<p class="telemetry--setting-description">
-				Allow Syng to collect usage data. Disabling stops new usage events; queued events
-				and preference changes can still be sent.
+			<div class="telemetry--disclosure">
+				<p class="telemetry--disclosure-text">
+					We love privacy, and you should too! That's why Syng's telemetry service is
+					designed from the ground up to be open, transparent, and put you in control of
+					your data. Telemetry data is used only to diagnose issues, improve platform
+					compatibility, and better understand app usage. Telemetry data is accessible
+					only to the project maintainer and is never shared with third parties or used
+					for advertising. You can inspect telemetry payloads, and can opt out of
+					telemetry in part or in full at any time.
+				</p>
+			</div>
+
+			<section class="telemetry--choices" aria-labelledby="telemetry-choices-heading">
+				<h3 class="telemetry--section-title" id="telemetry-choices-heading">
+					Your choices
+				</h3>
+				<div class="telemetry--choices-surface">
+					<div class="telemetry--setting telemetry--setting--center">
+						<div>
+							<p class="telemetry--setting-label">Enable Telemetry</p>
+							<p class="telemetry--setting-description">
+								Allow Syng to collect usage data. Disabling stops new usage events;
+								queued events and preference changes can still be sent.
+							</p>
+						</div>
+						<SyToggle
+							value="enabled"
+							accessibleLabel="Enable Telemetry"
+							checked={telemetryLocked ? false : prefs.enabled}
+							disabled={telemetryLocked || savingPreference}
+							onchange={(checked) => setPref('enabled', checked)}
+						/>
+					</div>
+
+					{#if prefs.enabled && !telemetryLocked}
+						<div class="telemetry--categories">
+							<div class="telemetry--setting telemetry--setting--center">
+								<div>
+									<p class="telemetry--setting-label">Event Tracking</p>
+									<p class="telemetry--setting-description">
+										Feature usage, settings changes, etc
+									</p>
+								</div>
+								<SyToggle
+									value="track_events"
+									accessibleLabel="Event Tracking"
+									checked={prefs.track_events}
+									disabled={savingPreference}
+									onchange={(checked) => setPref('track_events', checked)}
+								/>
+							</div>
+							<div class="telemetry--setting telemetry--setting--center">
+								<div>
+									<p class="telemetry--setting-label">Screen Views</p>
+									<p class="telemetry--setting-description">
+										Which app screens are visited
+									</p>
+								</div>
+								<SyToggle
+									value="track_screen_views"
+									accessibleLabel="Screen Views"
+									checked={prefs.track_screen_views}
+									disabled={savingPreference}
+									onchange={(checked) => setPref('track_screen_views', checked)}
+								/>
+							</div>
+							<div class="telemetry--setting telemetry--setting--center">
+								<div>
+									<p class="telemetry--setting-label">Error Reporting</p>
+									<p class="telemetry--setting-description">
+										Application errors and failures
+									</p>
+								</div>
+								<SyToggle
+									value="track_errors"
+									accessibleLabel="Error Reporting"
+									checked={prefs.track_errors}
+									disabled={savingPreference}
+									onchange={(checked) => setPref('track_errors', checked)}
+								/>
+							</div>
+							<div class="telemetry--setting telemetry--setting--center">
+								<div>
+									<p class="telemetry--setting-label">Device Context</p>
+									<p class="telemetry--setting-description">
+										OS version, architecture, locale, and timezone for
+										compatibility analysis
+									</p>
+								</div>
+								<SyToggle
+									value="include_device_context"
+									accessibleLabel="Device Context"
+									checked={prefs.include_device_context}
+									disabled={savingPreference}
+									onchange={(checked) =>
+										setPref('include_device_context', checked)}
+								/>
+							</div>
+						</div>
+					{/if}
+				</div>
+			</section>
+			<section class="telemetry--inspection" aria-labelledby="telemetry-inspection-heading">
+				<h3 class="telemetry--section-title" id="telemetry-inspection-heading">
+					Pending payloads
+				</h3>
+				<div class="telemetry--inspection-card">
+					<div>
+						<p class="telemetry--inspection-title">
+							Inspect what Syng is waiting to send
+						</p>
+						<p class="telemetry--inspection-description">
+							Open a full-width snapshot of recent queued payloads. Successfully sent
+							events remain visible until you leave this view.
+						</p>
+					</div>
+					<SyButton
+						id={queueTriggerId}
+						classes={['telemetry--inspect-button']}
+						onclick={openQueue}>Inspect queue →</SyButton
+					>
+				</div>
+			</section>
+			{#if !isAndroid()}
+				<a
+					class="telemetry--privacy-link"
+					href={PRIVACY_POLICY_URL}
+					onclick={openPrivacyPolicy}>Privacy policy</a
+				>
+			{/if}
+		</div>
+	{:else}
+		<div
+			class="telemetry--queue-view"
+			use:swipeBack={{ enabled: variant === 'mobile', onBack: () => void closeQueue() }}
+		>
+			<button class="telemetry--back" type="button" onclick={closeQueue}
+				><ChevronLeft size="18" aria-hidden="true" />Telemetry Settings</button
+			>
+			<h2 class="telemetry--queue-title" tabindex="-1" bind:this={queueHeading}>
+				Pending payloads
+			</h2>
+			<div class="telemetry--queue-toolbar">
+				<SyTextInput
+					type="search"
+					value={queueSearch}
+					placeholder="Find an event"
+					aria-label="Find a queued event"
+					oninput={(value) => {
+						queueSearch = value;
+						visibleLimit = QUEUE_PAGE_SIZE;
+					}}
+				/>
+				<fieldset class="telemetry--queue-filters">
+					<legend>Event family</legend>
+					<SyRadioGroup selectedValue={queueFamily} {variant}>
+						{#each queueFamilies as family (family.value)}
+							<label
+								><SyRadio
+									name="telemetry-queue-family"
+									value={family.value}
+									checked={queueFamily === family.value}
+									onchange={() => selectFamily(family.value)}
+								/><span>{family.label}</span></label
+							>
+						{/each}
+					</SyRadioGroup>
+				</fieldset>
+			</div>
+			<p class="telemetry--queue-count" aria-live="polite">
+				Showing {visibleEvents.length} of {filteredEvents.length}
+				{hasQueueFilter ? 'matching snapshot payloads' : 'snapshot payloads'}
+			</p>
+			<div class="telemetry--queue-list">
+				<SyCollapsibleList
+					items={visibleEvents}
+					emptyText={queueSnapshot.length === 0
+						? 'No pending payloads right now.'
+						: 'No pending payloads match this search.'}
+				>
+					{#snippet header(event)}
+						<span class="telemetry--badge telemetry--badge--{event.family}">
+							{familyLabel(event.family)}
+						</span>
+						<span class="telemetry--event-meta">
+							<span class="telemetry--event-name">{event.name}</span>
+							<span class="telemetry--event-time"
+								>{formatTimestamp(event.timestamp_ms)}</span
+							>
+						</span>
+					{/snippet}
+					{#snippet detail(event)}
+						<pre class="telemetry--event-payload sy-text--selectable">{JSON.stringify(
+								event,
+								null,
+								2
+							)}</pre>
+					{/snippet}
+				</SyCollapsibleList>
+			</div>
+			{#if filteredEvents.length > visibleLimit}
+				<div class="telemetry--queue-more">
+					<SyButton onclick={() => (visibleLimit += QUEUE_PAGE_SIZE)}>
+						Show {Math.min(QUEUE_PAGE_SIZE, filteredEvents.length - visibleLimit)} more
+					</SyButton>
+				</div>
+			{/if}
+			<p class="telemetry--queue-footnote">
+				This snapshot shows up to 50 of the newest pending events when you opened it. Older
+				events may still be queued; this is not a history of sent data.
 			</p>
 		</div>
-		<SyToggle
-			value="enabled"
-			accessibleLabel="Enable Telemetry"
-			checked={telemetryLocked ? false : prefs.enabled}
-			disabled={telemetryLocked || savingPreference}
-			onchange={(checked) => setPref('enabled', checked)}
-		/>
-	</div>
-
-	{#if prefs.enabled && !telemetryLocked}
-		<div class="telemetry--categories">
-			<div class="telemetry--setting telemetry--setting--center">
-				<div>
-					<p class="telemetry--setting-label">Event Tracking</p>
-					<p class="telemetry--setting-description">
-						Feature usage, settings changes, etc
-					</p>
-				</div>
-				<SyToggle
-					value="track_events"
-					accessibleLabel="Event Tracking"
-					checked={prefs.track_events}
-					disabled={savingPreference}
-					onchange={(checked) => setPref('track_events', checked)}
-				/>
-			</div>
-			<div class="telemetry--setting telemetry--setting--center">
-				<div>
-					<p class="telemetry--setting-label">Screen Views</p>
-					<p class="telemetry--setting-description">Which app screens are visited</p>
-				</div>
-				<SyToggle
-					value="track_screen_views"
-					accessibleLabel="Screen Views"
-					checked={prefs.track_screen_views}
-					disabled={savingPreference}
-					onchange={(checked) => setPref('track_screen_views', checked)}
-				/>
-			</div>
-			<div class="telemetry--setting telemetry--setting--center">
-				<div>
-					<p class="telemetry--setting-label">Error Reporting</p>
-					<p class="telemetry--setting-description">Application errors and failures</p>
-				</div>
-				<SyToggle
-					value="track_errors"
-					accessibleLabel="Error Reporting"
-					checked={prefs.track_errors}
-					disabled={savingPreference}
-					onchange={(checked) => setPref('track_errors', checked)}
-				/>
-			</div>
-			<div class="telemetry--setting telemetry--setting--center">
-				<div>
-					<p class="telemetry--setting-label">Device Context</p>
-					<p class="telemetry--setting-description">
-						OS version, architecture, locale, and timezone for compatibility analysis
-					</p>
-				</div>
-				<SyToggle
-					value="include_device_context"
-					accessibleLabel="Device Context"
-					checked={prefs.include_device_context}
-					disabled={savingPreference}
-					onchange={(checked) => setPref('include_device_context', checked)}
-				/>
-			</div>
-		</div>
 	{/if}
-
-	<div class="telemetry--preview">
-		<h2 class="telemetry--preview-title">Queued Telemetry Events</h2>
-		<p class="telemetry--preview-subtitle">
-			These are queued payloads awaiting delivery. Successfully sent events disappear from
-			this preview.
-		</p>
-		<SyCollapsibleList items={queuedEvents} emptyText="No events recorded yet.">
-			{#snippet header(event)}
-				<span class="telemetry--badge telemetry--badge--{event.family}">
-					{familyLabel(event.family)}
-				</span>
-				<span class="telemetry--event-name">{event.name}</span>
-				<span class="telemetry--event-time">{formatTimestamp(event.timestamp_ms)}</span>
-			{/snippet}
-			{#snippet detail(event)}
-				<pre class="telemetry--event-payload sy-text--selectable">{JSON.stringify(
-						event,
-						null,
-						2
-					)}</pre>
-			{/snippet}
-		</SyCollapsibleList>
-	</div>
 </div>
 
 <style>
@@ -248,7 +415,40 @@
 		flex-direction: column;
 		gap: var(--sy-space--extra-large);
 		flex: 1;
-		overflow-y: auto;
+		min-width: 0;
+		overflow: visible;
+	}
+
+	.telemetry--settings-view,
+	.telemetry--queue-view {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.telemetry--settings-view {
+		gap: var(--sy-space--extra-large);
+		max-width: 48rem;
+		margin-inline: auto;
+	}
+
+	.telemetry--title,
+	.telemetry--queue-title {
+		margin: 0;
+		font: var(--sy-type--local-title);
+	}
+
+	.telemetry--intro {
+		margin: calc(-1 * var(--sy-space--large)) 0 0;
+		font: var(--sy-type--supporting);
+		color: var(--sy-text--muted);
+	}
+
+	.telemetry--section-title {
+		margin: 0 0 var(--sy-space--large);
+		font-size: var(--sy-font-size--medium);
+		font-weight: var(--sy-font-weight--bold);
 	}
 
 	.telemetry--privacy-notice {
@@ -268,8 +468,10 @@
 		flex-direction: column;
 		gap: var(--sy-space--large);
 		padding: var(--sy-space--extra-large);
-		background-color: var(--sy-color--grey-2);
-		border-radius: var(--sy-border-radius);
+		background-color: var(--sy-surface--well);
+		border: var(--sy-surface-border);
+		border-radius: var(--sy-border-radius--content-list);
+		box-shadow: var(--sy-inner-shadow);
 	}
 
 	.telemetry--disclosure-text {
@@ -283,6 +485,7 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		gap: var(--sy-space--large);
+		padding: var(--sy-space--extra-large);
 	}
 
 	.telemetry--setting--center {
@@ -304,28 +507,133 @@
 	.telemetry--categories {
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--extra-large);
-		padding-left: var(--sy-space--extra-large);
-		border-left: 2px solid var(--sy-color--grey-2);
+		border-top: var(--sy-border);
 	}
 
-	.telemetry--preview {
+	.telemetry--categories .telemetry--setting + .telemetry--setting {
+		border-top: var(--sy-border);
+	}
+
+	.telemetry--choices-surface,
+	.telemetry--inspection-card {
+		background: var(--sy-surface--content);
+		border-radius: var(--sy-border-radius--content-list);
+		outline: 1px solid var(--sy-content-card-edge, transparent);
+		box-shadow: var(--sy-shadow--content);
+	}
+
+	.telemetry--choices-surface {
+		overflow: hidden;
+	}
+
+	.telemetry--inspection-card {
 		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space--large);
-		flex: 1;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sy-space--extra-large);
+		padding: var(--sy-space--extra-large);
 	}
 
-	.telemetry--preview-title {
-		margin: 0;
-		font-size: var(--sy-font-size--medium);
+	.telemetry--inspection-card :global(.telemetry--inspect-button) {
+		flex: none;
+		white-space: nowrap;
+	}
+
+	.telemetry--inspection-title {
+		margin: 0 0 var(--sy-space);
+		font-size: var(--sy-font-size--small);
 		font-weight: var(--sy-font-weight--bold);
 	}
 
-	.telemetry--preview-subtitle {
+	.telemetry--inspection-description,
+	.telemetry--queue-footnote {
 		margin: 0;
 		font-size: var(--sy-font-size--small);
-		color: var(--sy-text--dark);
+		color: var(--sy-text--muted);
+		line-height: var(--sy-line-height--body);
+	}
+
+	.telemetry--settings-view > .telemetry--privacy-link {
+		align-self: flex-start;
+		font-size: var(--sy-font-size--small);
+	}
+
+	.telemetry--queue-view {
+		gap: var(--sy-space--large);
+	}
+
+	.telemetry--back {
+		align-self: flex-start;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--sy-space);
+		min-height: var(--sy-mobile-touch-target);
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--sy-text--blue);
+		font: inherit;
+		cursor: pointer;
+	}
+
+	.telemetry--back:focus-visible {
+		outline: var(--sy-focus-width) solid var(--sy-focus-color);
+		outline-offset: var(--sy-focus-offset);
+	}
+
+	@media (hover: hover) {
+		.telemetry--back:hover {
+			text-decoration: underline;
+			text-underline-offset: 3px;
+		}
+	}
+
+	.telemetry--queue-toolbar {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--sy-space--large);
+		padding-block: var(--sy-space);
+	}
+
+	.telemetry--queue-toolbar :global(.sy-text-input) {
+		flex: 1;
+		min-width: 12rem;
+		min-height: 44px;
+		margin: 0;
+	}
+
+	.telemetry--queue-filters {
+		width: min(100%, 340px);
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
+	.telemetry--queue-filters legend {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+	}
+
+	.telemetry--queue-count {
+		margin: 0;
+		font-size: var(--sy-font-size--small);
+		color: var(--sy-text--muted);
+	}
+
+	.telemetry--queue-list :global(.sy-collapsible-list) {
+		flex: none;
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.telemetry--queue-more {
+		align-self: center;
 	}
 
 	.telemetry--badge {
@@ -352,20 +660,29 @@
 		color: var(--sy-text--on-fill);
 	}
 
-	.telemetry--event-name {
+	.telemetry--event-meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--sy-space--large);
 		flex: 1;
+		min-width: 0;
+	}
+
+	.telemetry--event-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 		font-weight: var(--sy-font-weight--normal);
 	}
 
 	.telemetry--event-time {
-		color: var(--sy-text--dark);
+		color: var(--sy-text--muted);
 		flex-shrink: 0;
 	}
 
 	.telemetry--event-payload {
 		margin: 0;
-		padding: var(--sy-space--large);
-		background-color: var(--sy-color--grey-2);
 		font-size: 0.6875rem;
 		line-height: 1.5;
 		overflow-x: auto;
@@ -376,9 +693,21 @@
 	}
 
 	.telemetry--container--mobile {
-		gap: calc(var(--sy-mobile-space--extra-small) * 5);
-		overflow: visible;
 		min-height: 0;
+	}
+
+	.telemetry--container--mobile .telemetry--settings-view {
+		gap: var(--sy-mobile-space--large);
+	}
+
+	.telemetry--container--mobile .telemetry--title,
+	.telemetry--container--mobile .telemetry--intro {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	.telemetry--container--mobile .telemetry--disclosure {
@@ -387,12 +716,14 @@
 
 	.telemetry--container--mobile .telemetry--disclosure-text,
 	.telemetry--container--mobile .telemetry--setting-description,
-	.telemetry--container--mobile .telemetry--preview-subtitle {
+	.telemetry--container--mobile .telemetry--inspection-description,
+	.telemetry--container--mobile .telemetry--queue-footnote {
 		font-size: var(--sy-font-size--mobile-small);
 	}
 
 	.telemetry--container--mobile .telemetry--setting {
 		gap: var(--sy-mobile-space--medium);
+		padding: var(--sy-mobile-space--medium);
 	}
 
 	.telemetry--container--mobile .telemetry--setting-label {
@@ -400,12 +731,29 @@
 	}
 
 	.telemetry--container--mobile .telemetry--categories {
-		gap: calc(var(--sy-mobile-space--extra-small) * 5);
-		padding-left: var(--sy-mobile-space--medium);
+		gap: 0;
 	}
 
-	.telemetry--container--mobile .telemetry--preview-title {
-		font-size: var(--sy-font-size--mobile-medium);
+	.telemetry--container--mobile .telemetry--choices-surface,
+	.telemetry--container--mobile .telemetry--inspection-card {
+		border: var(--sy-mobile-surface-border);
+		outline: none;
+		box-shadow: none;
+	}
+
+	.telemetry--container--mobile .telemetry--inspection-card {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: var(--sy-mobile-space--medium);
+		padding: var(--sy-mobile-space--medium);
+	}
+
+	.telemetry--container--mobile .telemetry--queue-toolbar :global(.sy-text-input) {
+		flex-basis: 100%;
+	}
+
+	.telemetry--container--mobile .telemetry--queue-filters {
+		width: 100%;
 	}
 
 	.telemetry--container--mobile :global(.sy-collapsible-list--header) {
@@ -413,7 +761,9 @@
 		padding: var(--sy-mobile-space--medium);
 	}
 
-	.telemetry--container--mobile .telemetry--event-time {
-		display: none;
+	.telemetry--container--mobile .telemetry--event-meta {
+		align-items: flex-start;
+		flex-direction: column;
+		gap: var(--sy-mobile-space--extra-small);
 	}
 </style>

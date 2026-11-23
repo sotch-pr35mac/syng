@@ -44,8 +44,9 @@
 	--sy-focus-color: #2368c2;
 	--sy-focus-width: 2px;
 	--sy-focus-offset: 2px;
-	--sy-input--border: var(--sy-border);
+	--sy-input--border: var(--sy-surface-border);
 	--sy-input--border-mobile: var(--sy-mobile-surface-border);
+	--sy-content-on-content-edge: transparent;
 
 	--sy-tone-theme--1: var(--sy-color--blue-3);
 	--sy-tone-theme--2: var(--sy-text--yellow);
@@ -79,6 +80,8 @@
 	--sy-font-size--mobile-extra-large: 1.125rem;
 	--sy-font-size--mobile-heading: 1.375rem;
 	--sy-font-size--result-caption: 0.875rem;
+	--sy-font-size--button-medium: 0.8125rem;
+	--sy-settings-option-font-size: var(--sy-font-size--medium);
 	--sy-font-size--character-set-label: 0.3em;
 	--sy-font-size--character-set-label-inline: 0.75em;
 
@@ -90,6 +93,32 @@
 	--sy-font-size--display-extra-small: calc(2vh * var(--sy-system-text-scale));
 	--sy-line-height--body: 1.5;
 
+	/* Typography roles reference existing desktop and phone usage in this branch.
+	   Color, Reader content size, and study display sizes remain separate. */
+	--sy-type--page-title: var(--sy-font-weight--bold) var(--sy-font-size--heading) / normal
+		var(--sy-font-family);
+	--sy-type--section-title: var(--sy-font-weight--normal) 1.8em / normal var(--sy-font-family);
+	--sy-type--local-title: var(--sy-font-weight--bold) var(--sy-font-size--large) / normal
+		var(--sy-font-family);
+	--sy-type--body: var(--sy-font-weight--normal) var(--sy-font-size--medium) /
+		var(--sy-line-height--body) var(--sy-font-family);
+	--sy-type--control-label: var(--sy-font-weight--normal) var(--sy-font-size--button-medium) /
+		normal var(--sy-font-family);
+	--sy-type--supporting: var(--sy-font-weight--normal) var(--sy-font-size--small) /
+		var(--sy-line-height--body) var(--sy-font-family);
+	--sy-type--page-title-mobile: var(--sy-font-weight--bold) var(--sy-font-size--mobile-heading) /
+		normal var(--sy-font-family);
+	--sy-type--section-title-mobile: var(--sy-font-weight--bold) var(--sy-font-size--small) / normal
+		var(--sy-font-family);
+	--sy-type--local-title-mobile: var(--sy-font-weight--bold) var(--sy-font-size--mobile-large) /
+		normal var(--sy-font-family);
+	--sy-type--body-mobile: var(--sy-font-weight--normal) var(--sy-font-size--mobile-medium) /
+		var(--sy-line-height--body) var(--sy-font-family);
+	--sy-type--control-label-mobile: var(--sy-font-weight--normal)
+		var(--sy-font-size--button-medium) / normal var(--sy-font-family);
+	--sy-type--supporting-mobile: var(--sy-font-weight--normal) var(--sy-font-size--mobile-small) /
+		normal var(--sy-font-family);
+
 	/* Proximity */
 	--sy-space: 5px;
 	--sy-space--none: 0px;
@@ -97,6 +126,10 @@
 	--sy-space--medium: var(--sy-space);
 	--sy-space--large: calc(var(--sy-space) * 2);
 	--sy-space--extra-large: calc(var(--sy-space) * 4);
+	/* Match a page title bar to its large action row as text scales. */
+	--sy-desktop-page-header-min-height: calc(
+		var(--sy-space--extra-large) * 2 + var(--sy-space--large) * 2 + 1.25em
+	);
 	--sy-mobile-space: 4px;
 	--sy-mobile-space--extra-small: calc(var(--sy-mobile-space) / 2);
 	--sy-mobile-space--small: var(--sy-mobile-space);
@@ -112,6 +145,8 @@
 	--sy-reader-import-modal-width: calc(var(--sy-space--extra-large) * 26);
 	--sy-reader-import-textarea-min-height: calc(var(--sy-space--extra-large) * 11);
 	--sy-reader-import-preview-max-height: calc(var(--sy-space--extra-large) * 9);
+	--sy-study-collection-max-width: 780px;
+	--sy-study-empty-copy-max-width: 35ch;
 
 	/* Layering */
 	--sy-z-index--top: 99999999;
@@ -130,32 +165,48 @@
 	/* Borders */
 	--sy-border: 1px solid var(--sy-color--grey-2);
 	--sy-border-radius: 5px;
+	--sy-border-radius--content-list: 9px;
+	--sy-border-radius--floating: 11px;
+	--sy-border-radius--modal: 12px;
+	--sy-border-radius--menu: 14px;
+	--sy-border-radius--menu-item: 10px;
+	--sy-menu-inset: 4px;
+	--sy-surface-border: var(--sy-mobile-surface-border);
+	/* Canvas treatment is shared by every true canvas surface. */
+	--sy-surface--canvas-texture: url('./static-grain.svg');
+	--sy-surface--canvas-texture-blend: overlay;
 
 	/* Transitions & Animations */
 	--sy-transition-duration: 0.25s;
+	--sy-motion--overlay-fast: 190ms;
+	--sy-motion--overlay-regular: 240ms;
+	--sy-ease--overlay: cubic-bezier(0.22, 1, 0.36, 1);
+	--sy-overlay-backdrop-opacity: 0.56;
+	--sy-shadow--dialog: 0 16px 40px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
+	--sy-modal-padding: 18px;
 }
 
 :root[data-appearance='contrast'] {
 	/* Small colored text and white labels need different shades on light surfaces. */
-	--sy-text--muted: #707070;
+	--sy-text--muted: #646464;
 	--sy-text--secondary: var(--sy-text--muted);
 	--sy-text--placeholder: var(--sy-text--muted);
 	--sy-text--light: var(--sy-text--muted);
-	--sy-text--blue: #006bdf;
-	--sy-text--yellow: #a06000;
-	--sy-text--red: #da0069;
-	--sy-text--green: #008039;
+	--sy-text--blue: #005fc8;
+	--sy-text--yellow: #8e5500;
+	--sy-text--red: #bf005c;
+	--sy-text--green: #006d31;
 	--sy-fill--blue: #0071eb;
 	--sy-fill--yellow: #a96500;
 	--sy-fill--red: #e5006f;
 	--sy-fill--green: #00873c;
-	--sy-icon--muted: #8c8c8c;
-	--sy-icon--hover: #007cff;
-	--sy-control--border: #8c8c8c;
+	--sy-icon--muted: #777777;
+	--sy-icon--hover: #005fc8;
+	--sy-control--border: #777777;
 	--sy-timer--neutral: var(--sy-control--border);
 	--sy-input--border: 1px solid var(--sy-control--border);
 	--sy-input--border-mobile: var(--sy-input--border);
-	--sy-control--track-off: #8c8c8c;
+	--sy-control--track-off: #777777;
 	--sy-focus-color: var(--sy-text--blue);
 	--sy-tone-theme--1: var(--sy-text--blue);
 	--sy-tone-theme--4: var(--sy-text--green);
@@ -175,13 +226,25 @@
 		--sy-color--grey-4: #9a9b9c;
 		--sy-color--grey-5: #d7d7d7;
 		--sy-color--green: var(--sy-color--green-3);
+		/* Neutral material roles shared by every app surface. */
+		--sy-surface--canvas: #f0f1f2;
+		--sy-surface--chrome: #fafafa;
+		--sy-surface--content: #ffffff;
+		--sy-surface--well: #e8eaec;
+		--sy-surface--floating: #ffffff;
+		--sy-navigation-selection-fill: var(--sy-surface--content);
+		--sy-stroke-order-unanimated: #a7afb8;
+		--sy-content-list-title: #77818d;
 
 		/* Shadows */
 		--sy-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+		--sy-shadow--content: var(--sy-shadow);
 		--sy-shadow--active: 0px 0px 10px rgba(0, 0, 0, 0.1);
+		--sy-shadow--raised: 0 12px 30px rgba(30, 42, 61, 0.19), 0 2px 8px rgba(30, 42, 61, 0.1);
 		--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.1);
 		--sy-box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
-		--sy-mobile-surface-border: 1px solid rgba(71, 76, 90, 0.12);
+		--sy-surface-edge-color: rgba(71, 76, 90, 0.12);
+		--sy-mobile-surface-border: 1px solid var(--sy-surface-edge-color);
 		--sy-mobile-state-pressed: rgba(71, 76, 90, 0.08);
 		--sy-mobile-overlay-shadow: 0px 8px 24px rgba(0, 0, 0, 0.14);
 		--sy-mobile-dock-shadow: 0 -1px 0 rgba(71, 76, 90, 0.12);
@@ -200,16 +263,35 @@
 		--sy-color--grey-4: #9a9b9c;
 		--sy-color--grey-5: #9f9fa0;
 		--sy-color--green: var(--sy-color--green-1);
+		--sy-surface--canvas: #2d2d2d;
+		--sy-surface--chrome: #242424;
+		--sy-surface--content: #1e1e1e;
+		--sy-surface--well: #313131;
+		--sy-surface--floating: #171717;
+		--sy-navigation-selection-fill: var(--sy-surface--content);
+		--sy-stroke-order-unanimated: #777f89;
+		--sy-content-list-title: #a5a5ad;
 
 		--sy-control--border: var(--sy-text--muted);
 		--sy-focus-color: var(--sy-text--blue);
 
+		/* Light outer shadows mark raised interactive controls. Passive content
+		   casts a dark shadow; flat content has no shadow. Detached overlays keep
+		   their stronger dark elevation, and pressed wells remain inset. */
 		/* Shadows */
 		--sy-shadow: 0px 1px 4px rgba(154, 154, 154, 0.5);
+		--sy-shadow--content: 0px 1px 4px rgba(0, 0, 0, 0.5);
 		--sy-shadow--active: 0px 0px 10px rgba(220, 220, 220, 0.25);
+		--sy-shadow--raised: 0 14px 34px rgba(0, 0, 0, 0.4), 0 2px 9px rgba(0, 0, 0, 0.24);
+		/* Small detached surfaces keep a fine edge without borrowing the control glow. */
+		--sy-shadow--floating-compact:
+			0 0 0 1px rgba(255, 255, 255, 0.08), 0 6px 16px rgba(0, 0, 0, 0.36),
+			0 1px 3px rgba(0, 0, 0, 0.22);
 		--sy-inner-shadow: inset 0px 1px 4px rgba(0, 0, 0, 0.1);
 		--sy-box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.05);
-		--sy-mobile-surface-border: 1px solid rgba(255, 255, 255, 0.1);
+		--sy-surface-edge-color: rgba(255, 255, 255, 0.1);
+		--sy-mobile-surface-border: 1px solid var(--sy-surface-edge-color);
+		--sy-content-on-content-edge: var(--sy-surface-edge-color);
 		--sy-mobile-state-pressed: rgba(255, 255, 255, 0.08);
 		--sy-mobile-overlay-shadow: 0px 8px 24px rgba(0, 0, 0, 0.32);
 		--sy-mobile-dock-shadow: 0 -1px 0 rgba(255, 255, 255, 0.1);
@@ -220,7 +302,7 @@
 		--sy-text--muted: #9a9b9c;
 		--sy-text--blue: #76aff9;
 		--sy-text--yellow: #e9a344;
-		--sy-text--red: #ec6c9d;
+		--sy-text--red: #ee6e9f;
 		--sy-text--green: #60bd79;
 		--sy-fill--blue: var(--sy-text--blue);
 		--sy-fill--yellow: var(--sy-text--yellow);
@@ -231,6 +313,17 @@
 		--sy-control--border: var(--sy-text--muted);
 		--sy-control--track-off: var(--sy-text--muted);
 	}
+}
+
+:root[data-appearance='contrast'] {
+	--sy-content-list-title: var(--sy-text--muted);
+	--sy-surface--canvas-texture: none;
+}
+
+.sy-content-list-title {
+	font: var(--sy-type--section-title);
+	margin: var(--sy-space--small) var(--sy-space--large);
+	color: var(--sy-content-list-title);
 }
 
 html {
@@ -252,7 +345,9 @@ html {
 body {
 	font-family: var(--sy-font-family);
 	color: var(--sy-color--black);
-	background-color: var(--sy-color--grey-2);
+	background-color: var(--sy-surface--canvas);
+	background-image: var(--sy-surface--canvas-texture);
+	background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	margin: 0;
 	overflow: hidden;
 	overscroll-behavior: none;
@@ -267,6 +362,12 @@ body {
 	user-select: none;
 	/* Standard syntax */
 	cursor: default;
+}
+
+@media (prefers-contrast: more), (forced-colors: active) {
+	:root {
+		--sy-surface--canvas-texture: none;
+	}
 }
 
 * {

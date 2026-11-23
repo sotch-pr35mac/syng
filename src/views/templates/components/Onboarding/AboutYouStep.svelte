@@ -148,17 +148,17 @@
 	}
 	.survey-choice:has(input:checked) {
 		border-color: var(--sy-text--blue);
-		background: color-mix(in srgb, var(--sy-text--blue) 10%, var(--sy-color--white));
+		background: color-mix(in srgb, var(--sy-text--blue) 10%, var(--sy-surface--content));
 		box-shadow: inset 0 0 0 1px var(--sy-text--blue);
 	}
 	@media (hover: hover) {
 		.survey-choice:hover:not(:has(input:disabled)) {
 			border-color: var(--sy-text--blue);
-			background: color-mix(in srgb, var(--sy-text--blue) 7%, var(--sy-color--white));
+			background: color-mix(in srgb, var(--sy-text--blue) 7%, var(--sy-surface--content));
 		}
 	}
 	.survey-choice:active:not(:has(input:disabled)) {
-		background: color-mix(in srgb, var(--sy-text--blue) 15%, var(--sy-color--white));
+		background: color-mix(in srgb, var(--sy-text--blue) 15%, var(--sy-surface--content));
 	}
 	.survey-choice:has(input:focus-visible) {
 		outline: 2px solid var(--sy-focus-color);

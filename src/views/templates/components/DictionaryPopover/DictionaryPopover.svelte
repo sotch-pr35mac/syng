@@ -41,12 +41,20 @@
 
 	let subview = $state(false);
 	let content: ReturnType<typeof DictionaryContent>;
+	let popover: ReturnType<typeof SyPopover>;
 	const mobile = isMobileLayout();
 	const DESKTOP_WIDTH_PX = 420;
 	const DESKTOP_HEIGHT_PX = 380;
 	const MAX_DOT_RESULTS = 8;
 
 	const visible = $derived(Boolean(word));
+	function requestClose(): void {
+		if (mobile) {
+			popover?.dismiss();
+		} else {
+			onclose();
+		}
+	}
 	const showDots = $derived(!mobile && results.length <= MAX_DOT_RESULTS);
 	const handleContentLink = (request: DictionaryLookupRequest) => {
 		// Keep nested popover lookups anchored to the original trigger instead of
@@ -62,6 +70,7 @@
 </script>
 
 <SyPopover
+	bind:this={popover}
 	{id}
 	{returnFocus}
 	{visible}
@@ -69,13 +78,14 @@
 	{reopenKey}
 	width={DESKTOP_WIDTH_PX}
 	height={DESKTOP_HEIGHT_PX}
+	animateFromAnchor
 	mobileTitle="Dictionary"
 	hideMobileHeader={subview}
 	onback={subview ? () => content?.back() : undefined}
 	guideTarget="dictionary-popup"
 	{onclose}
 >
-	<div class="dictionary-popover__body" data-walkthrough-secondary="true">
+	<div class="dictionary-popover__body" data-walkthrough-secondary={visible ? 'true' : undefined}>
 		{#if !mobile && !subview}
 			<div class="dictionary-popover__header">
 				<span class="dictionary-popover__title">Dictionary</span>
@@ -83,7 +93,7 @@
 					style="ghost"
 					size="small"
 					aria-label="Close dictionary"
-					onclick={onclose}
+					onclick={requestClose}
 				>
 					<X size="16" />
 				</SyButton>
@@ -139,7 +149,7 @@
 			<DictionaryContent
 				bind:this={content}
 				context="popup"
-				{onclose}
+				onclose={requestClose}
 				onviewchange={(active) => (subview = active)}
 				{word}
 				{lists}
@@ -166,6 +176,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: var(--sy-space) var(--sy-space--large);
+		background: var(--sy-surface--content);
 		border-bottom: var(--sy-border);
 		flex-shrink: 0;
 	}
@@ -182,7 +193,7 @@
 		gap: var(--sy-space);
 		padding: var(--sy-space) var(--sy-space--large);
 		border-bottom: var(--sy-border);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		flex-shrink: 0;
 	}
 

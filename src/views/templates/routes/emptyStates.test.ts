@@ -52,7 +52,7 @@ const word = {
 	notes: '',
 } as unknown as BookmarkWordEntry;
 const emptyBookmarks = 'This list is empty. Search for a word, then add it to this list.';
-const emptyStudy = 'Add words to a list to start studying.';
+const emptyStudy = 'Save words from Search or Reader, then practice them here.';
 const emptySearch = 'No results found. Try another word in Chinese, English, or pinyin.';
 const getListContent = vi.fn<() => Promise<BookmarkWordEntry[]>>();
 const getListSummaries = vi.fn<() => Promise<BookmarkListSummary[]>>();

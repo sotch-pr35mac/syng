@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Syng mobile Settings · nested list study</title>
+  <link rel="stylesheet" href="mockup-sy-controls.css">
+  <style>
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Regular.woff2') format('woff2');font-weight:400}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-SemiBold.woff2') format('woff2');font-weight:600}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Bold.woff2') format('woff2');font-weight:700}
+    *{box-sizing:border-box}
+    :root{font-family:Montserrat,Arial,sans-serif;background:#e9edf2;color:#394553}
+    body{margin:0}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .board{max-width:970px;margin:auto;padding:34px 20px 56px}
+    .intro{max-width:690px;margin:0 auto 22px;text-align:center}
+    .eyebrow{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#5280b9}
+    .intro h1{font-size:clamp(25px,4vw,37px);letter-spacing:-.055em;margin:7px 0}
+    .intro p{font-size:12px;line-height:1.55;color:#677588;margin:0}
+    .control-bar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:12px;margin:0 auto 18px}
+    .control-group{display:flex;align-items:center;gap:5px;padding:4px;border:1px solid #d8e0e9;background:#fff;border-radius:12px}
+    .control-group span{font-size:10px;font-weight:700;color:#7b8796;padding:0 7px}
+    .control-group button{min-height:33px;border:0;border-radius:8px;padding:0 11px;background:transparent;color:#617186;font-size:10px;font-weight:700}
+    .control-group button.active{background:#e9f2ff;color:#2c7ee7}
+    .phone{
+      --surface-canvas:#f0f1f2;--surface-content:#fff;--surface-chrome:#fafafa;--surface-well:#e8eaec;--surface-floating:#fff;
+      --selection-fill:var(--surface-content);--text:#474c5a;--muted:#77818d;--secondary:#69798c;--line:#474c5a1f;--chrome-seam:#474c5a2b;
+      --blue:#2c7ee7;--nav-muted:#737c86;--divider:#474c5a38;
+      --nav-shadow:0 1px 2px #202b3a24,0 2px 5px #202b3a12;
+      position:relative;width:min(390px,100%);height:844px;margin:auto;display:flex;flex-direction:column;
+      overflow:hidden;border:8px solid #202632;border-radius:43px;background:var(--surface-canvas);
+      box-shadow:0 28px 65px #25365137;color:var(--text)
+    }
+    body.dark .phone{
+      --surface-canvas:#2c2c2e;--surface-content:#202022;--surface-chrome:#252527;--surface-well:#313133;--surface-floating:#1b1b1d;
+      --selection-fill:var(--surface-content);--text:#f5f5f6;--muted:#a5a5ad;--secondary:#b5bdc9;--line:#ffffff20;--chrome-seam:#ffffff25;
+      --blue:#76aff9;--nav-muted:#a4a8ad;--divider:#ffffff38;
+      --nav-shadow:0 1px 3px #0008,0 3px 6px #0003
+    }
+    .status{height:41px;flex:none;display:flex;align-items:end;justify-content:space-between;padding:0 24px 6px;background:var(--surface-chrome);font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px;font-weight:700;color:var(--text)}
+    .status-icons{display:flex;align-items:center;gap:5px;font-size:11px;letter-spacing:-.08em}
+    .battery{display:inline-grid;place-items:center;width:24px;height:13px;border-radius:4px;background:var(--text);color:var(--surface-chrome);font-size:9px;letter-spacing:0}
+    .island{position:absolute;z-index:10;top:8px;left:50%;transform:translateX(-50%);width:105px;height:25px;border-radius:18px;background:#202632}
+    .app-viewport{position:relative;flex:1;min-height:0;overflow:hidden;background:var(--surface-canvas)}
+    .app-scroll{height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
+    .app-scroll::-webkit-scrollbar{display:none}
+    .brand{height:63px;display:grid;place-items:center;background:var(--surface-chrome);color:var(--text);font-size:24px;font-weight:700;letter-spacing:-.055em}
+    .phone.bare .brand{display:none}
+    .wordmark{transform-origin:center;will-change:transform}
+    .navigation{position:sticky;top:0;z-index:5;padding:2px 12px 7px;background:var(--surface-chrome);border-bottom:1px solid var(--chrome-seam)}
+    .nav-track{position:relative;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:37px;height:43px;gap:2px;padding:2px;border:1px solid var(--line);border-radius:13px;background:var(--surface-well);box-shadow:inset 0 1px 2px #202b3a0d}
+    .nav-dividers{position:absolute;inset:2px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;pointer-events:none}
+    .nav-dividers span{position:relative}
+    .nav-dividers span:not(:last-child)::after{content:'';position:absolute;right:-1px;top:11.5px;width:1px;height:16px;background:var(--divider);opacity:1;transition:opacity .08s}
+    .nav-dividers span.covered::after{opacity:0}
+    .nav-indicator{position:absolute;top:4px;left:0;width:0;height:35px;z-index:1;border-radius:9px;background:var(--selection-fill);box-shadow:var(--nav-shadow);pointer-events:none;will-change:transform}
+    .nav-item{position:relative;z-index:2;display:grid;place-items:center;height:44px;margin:-3.5px 0;min-width:0;padding:0;border:0;border-radius:9px;background:transparent;color:var(--nav-muted)}
+    .nav-item.active{color:var(--blue)}
+    body.dark .nav-item.active{color:var(--text)}
+    svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .nav-item svg{width:19px;height:19px}
+    .screen{min-height:760px;padding:25px 16px 70px;background:var(--surface-canvas)}
+    .view[hidden]{display:none}
+    .group{margin-bottom:27px}
+    .group-label{margin:0 0 9px 14px;color:var(--muted);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+    .group-note{margin:8px 13px 0;color:var(--muted);font-size:11px;line-height:1.45}
+    .list{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--surface-content)}
+    .list-row{position:relative;width:100%;min-height:66px;display:flex;align-items:center;gap:12px;padding:11px 14px;border:0;background:var(--surface-content);color:var(--text);text-align:left}
+    .list-row+.list-row::before,.setting-row+.setting-row::before,.choice-row+.choice-row::before{content:'';position:absolute;top:0;left:59px;right:0;height:1px;background:var(--line)}
+    .list-row:active{background:var(--surface-well)}
+    .row-icon{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:10px;background:var(--surface-well);color:var(--blue)}
+    .row-icon svg{width:18px;height:18px}
+    .row-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+    .row-title{font-size:13px;font-weight:600;line-height:1.3}
+    .row-desc{color:var(--muted);font-size:10.5px;line-height:1.35}
+    .chevron{flex:none;width:17px;height:17px;color:var(--muted);stroke-width:2.2}
+    .detail-head{margin:0 0 25px}
+    .back{min-height:44px;display:inline-flex;align-items:center;gap:3px;margin:-9px 0 5px -7px;padding:0 7px;border:0;background:transparent;color:var(--blue);font-size:12px;font-weight:600}
+    .back svg{width:17px;height:17px;transform:rotate(180deg)}
+    .detail-head h2{margin:0 0 4px;font-size:27px;line-height:1.12;letter-spacing:-.05em}
+    .detail-head p{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+    .appearance-preview{position:sticky;top:53px;z-index:4;margin:0 0 26px;padding:10px 11px 11px;border:1px solid var(--line);border-radius:16px;background:var(--surface-floating);box-shadow:0 7px 18px #202b3a24,0 1px 4px #202b3a16}
+    body.dark .appearance-preview{box-shadow:0 7px 18px #0008,0 1px 4px #0005}
+    .preview-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+    .preview-head strong{flex:none;color:var(--muted);font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+    .preview-contexts{display:flex;min-width:0;padding:2px;border:1px solid var(--line);border-radius:8px;background:var(--surface-well)}
+    .preview-contexts button{min-height:25px;min-width:0;padding:0 6px;border:0;border-radius:5px;background:transparent;color:var(--muted);font-size:9px;font-weight:600;white-space:nowrap}
+    .preview-contexts button.active{background:var(--surface-content);box-shadow:0 1px 3px #0002;color:var(--blue)}
+    .preview-sample{min-height:76px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-canvas);color:var(--text)}
+    .preview-main{display:flex;align-items:baseline;gap:2px;min-height:30px}
+    .preview-word{font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:27px;line-height:1.1}
+    .preview-reader-prefix,.preview-reader-suffix{display:none;font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:17px}
+    .preview-list-gloss{display:none;margin-left:auto;color:var(--secondary);font-size:10px}
+    .preview-pinyin{display:none;margin-top:1px;color:var(--secondary);font-size:11px}
+    .appearance-preview.show-pinyin .preview-pinyin{display:block}
+    .preview-translation{margin-top:2px;color:var(--secondary);font-size:10px}
+    .preview-tone-key{display:flex;justify-content:flex-end;gap:7px;margin-top:-12px;font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:12px}
+    .preview-tone-key .tone{color:var(--muted)}
+    .appearance-preview.color-characters .preview-word .tone[data-tone='1'],.appearance-preview.color-characters .preview-tone-key .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview.color-characters .preview-word .tone[data-tone='2'],.appearance-preview.color-characters .preview-tone-key .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='3']{color:var(--preview-tone-3)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='4']{color:var(--preview-tone-4)}
+    .appearance-preview.color-characters .preview-tone-key .tone[data-tone='5']{color:var(--preview-tone-5)}
+    .appearance-preview.color-pinyin .preview-pinyin .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview.color-pinyin .preview-pinyin .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview[data-context='list'] .preview-word .tone[data-tone]{color:var(--text)}
+    .appearance-preview[data-context='list'].color-lists .preview-word .tone[data-tone='1']{color:var(--preview-tone-1)}
+    .appearance-preview[data-context='list'].color-lists .preview-word .tone[data-tone='2']{color:var(--preview-tone-2)}
+    .appearance-preview[data-context='reader'] .preview-reader-prefix,.appearance-preview[data-context='reader'] .preview-reader-suffix{display:inline}
+    .appearance-preview[data-context='reader'] .preview-word{font-size:19px}
+    .appearance-preview[data-context='flashcard'] .preview-sample{text-align:center;background:var(--surface-content)}
+    .appearance-preview[data-context='flashcard'] .preview-main{justify-content:center}
+    .appearance-preview[data-context='flashcard'] .preview-translation{display:none}
+    .appearance-preview[data-context='list'] .preview-word{font-size:19px}
+    .appearance-preview[data-context='list'] .preview-list-gloss{display:inline}
+    .appearance-preview[data-context='list'] .preview-translation{display:none}
+    .appearance-preview[data-context='list'] .preview-tone-key{margin-top:4px}
+    .appearance-preview.high-contrast .preview-sample{border-width:2px;border-color:var(--text);background:var(--surface-content)}
+    .appearance-preview.high-contrast .preview-translation,.appearance-preview.high-contrast .preview-list-gloss{color:var(--text)}
+    .setting-row{position:relative;min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;color:var(--text)}
+    .setting-row+.setting-row::before{left:14px}
+    .setting-row .row-copy{gap:4px}
+    .setting-row .row-title{font-size:12px;font-weight:500}
+    .setting-row .row-desc{font-size:10px}
+    .switch{position:relative;width:44px;height:27px;flex:none;border:1px solid var(--line);border-radius:99px;background:var(--surface-well);transition:background .18s}
+    .switch::after{content:'';position:absolute;top:2px;left:2px;width:21px;height:21px;border-radius:50%;background:var(--surface-content);box-shadow:0 1px 3px #0003;transition:transform .18s}
+    .switch[aria-checked='true']{background:var(--blue);border-color:transparent}
+    .switch[aria-checked='true']::after{transform:translateX(17px)}
+    .choice-row{position:relative;min-height:48px;display:flex;align-items:center;justify-content:space-between;width:100%;padding:10px 14px;border:0;background:var(--surface-content);color:var(--text);text-align:left;font-size:12px}
+    .choice-row+.choice-row::before{left:14px}
+    .choice-row[aria-checked='true']{color:var(--blue);font-weight:600}
+    .choice-row .check{visibility:hidden;width:17px;height:17px;stroke-width:2.5}
+    .choice-row[aria-checked='true'] .check{visibility:visible}
+    .swatch-row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;min-height:49px;padding:6px 14px;border-top:1px solid var(--line);font-size:12px}
+    .swatch-row:first-child{border-top:0}
+    .swatch-row input{width:36px;height:36px;padding:4px;border:0;background:transparent;cursor:pointer}
+    .swatch-row input::-webkit-color-swatch{border:1px solid var(--line);border-radius:50%}
+    .swatch-row input::-moz-color-swatch{border:1px solid var(--line);border-radius:50%}
+    .action-row{min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+    .action-row:first-child{border-top:0}
+    .action-row span{font-size:12px}
+    .walkthrough-control{padding:11px 14px}
+    .walkthrough-list{overflow:visible}
+    .walkthrough-control .sy-button-bar{width:100%}
+    .walkthrough-control .dropdown-wrap{position:relative;flex:1;min-width:0}
+    .walkthrough-control .guide-trigger{width:100%;justify-content:space-between;text-align:left}
+    .walkthrough-control .guide-trigger svg{width:15px;height:15px;flex:none;transform:rotate(90deg)}
+    .walkthrough-control .guide-menu{position:absolute;z-index:9;top:calc(100% + 6px);left:0;min-width:100%;padding:4px;border:1px solid var(--line);border-radius:7px;background:var(--surface-floating);box-shadow:0 8px 24px #0003}
+    .walkthrough-control .guide-menu[hidden]{display:none}
+    .walkthrough-control .guide-menu button{display:block;width:100%;min-height:44px;padding:0 10px;border:0;border-radius:4px;background:transparent;color:var(--text);font:inherit;font-size:11px;text-align:left}
+    .walkthrough-control .guide-menu button:hover,.walkthrough-control .guide-menu button:focus-visible{background:var(--surface-well)}
+    .text-card{padding:16px;background:var(--surface-content);border:1px solid var(--line);border-radius:16px}
+    .text-card p{margin:0;color:var(--secondary);font-size:11px;line-height:1.55}
+    .text-card .sy-button{margin:14px 0 0}
+    .sample-notice{position:absolute;z-index:8;left:35px;right:35px;bottom:39px;min-height:47px;display:none;align-items:center;justify-content:center;padding:8px 14px;border:1px solid var(--line);border-radius:15px;background:var(--surface-floating);box-shadow:0 8px 26px #0003;color:var(--text);font-size:11px;text-align:center}
+    .sample-notice.show{display:flex}
+    .home{height:25px;flex:none;display:grid;place-items:center;background:var(--surface-canvas)}
+    .home::after{content:'';width:108px;height:4px;border-radius:5px;background:var(--text)}
+    .footer{max-width:660px;margin:17px auto 0;text-align:center;color:#718094;font-size:11px;line-height:1.55}
+    @media(max-width:460px){.board{padding:24px 8px 40px}.phone{height:min(844px,calc(100dvh - 150px));min-height:650px}}
+    @media(max-width:340px){.navigation{padding-left:4px;padding-right:4px}}
+    @media(prefers-reduced-motion:reduce){.switch,.switch::after{transition:none}}
+  </style>
+</head>
+<body>
+  <svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></symbol>
+    <symbol id="i-read" viewBox="0 0 24 24"><path d="M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h14v18l-7-5-7 5V3Z"/></symbol>
+    <symbol id="i-study" viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6M22 8v8"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12 5 5L20 6"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 4h14a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4Zm0 14a2 2 0 0 1 2-2h14M8 8h8m-8 4h6"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.5 4.5a5.5 5.5 0 0 0-7.8 0L12 5.2l-.7-.7a5.5 5.5 0 0 0-7.8 7.8L12 21l8.5-8.7a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.4 9a2.7 2.7 0 0 1 5.2.8c0 2-2.6 2.2-2.6 4.2m0 3h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+  </svg>
+  <main class="board">
+    <header class="intro"><div class="eyebrow">Syng / mobile settings study</div><h1>Settings, one level deeper.</h1><p>The current settings destinations become one grouped list. Tap a row to reach its controls directly.</p></header>
+    <div class="control-bar">
+      <div class="control-group" role="group" aria-label="Navigation header"><span>Header</span><button type="button" class="active" data-header="wordmark" aria-pressed="true">Syng</button><button type="button" data-header="bare" aria-pressed="false">Bare</button></div>
+      <div class="control-group" role="group" aria-label="Appearance"><span>Theme</span><button type="button" class="active" data-theme="light" aria-pressed="true">Light</button><button type="button" data-theme="dark" aria-pressed="false">Dark</button></div>
+    </div>
+    <div class="phone" aria-label="Mobile Settings screen mockup">
+      <div class="island" aria-hidden="true"></div>
+      <div class="status" aria-hidden="true"><span>9:41</span><span class="status-icons">●●● ▰ <span class="battery">85</span></span></div>
+      <div class="app-viewport">
+        <div class="app-scroll">
+          <div class="brand"><span class="wordmark">Syng</span></div>
+          <nav class="navigation" aria-label="Primary navigation">
+            <div class="nav-track">
+              <div class="nav-dividers" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="nav-indicator" aria-hidden="true"></div>
+              <button type="button" class="nav-item" aria-label="Search"><svg><use href="#i-search"/></svg></button>
+              <button type="button" class="nav-item" aria-label="Read"><svg><use href="#i-read"/></svg></button>
+              <button type="button" class="nav-item" aria-label="Bookmarks"><svg><use href="#i-save"/></svg></button>
+              <button type="button" class="nav-item" aria-label="Study"><svg><use href="#i-study"/></svg></button>
+              <button type="button" class="nav-item" aria-label="Extras"><svg><use href="#i-more"/></svg></button>
+              <button type="button" class="nav-item active" aria-label="Settings" aria-current="page"><svg><use href="#i-settings"/></svg></button>
+            </div>
+          </nav>
+          <div class="screen">
+            <div class="view" data-view="home">
+              <section class="group" aria-labelledby="preferences-title">
+                <h2 class="group-label" id="preferences-title">Preferences</h2>
+                <div class="list">
+                  <button class="list-row" type="button" data-open="appearance"><span class="row-icon"><svg><use href="#i-sun"/></svg></span><span class="row-copy"><span class="row-title">Appearance</span><span class="row-desc">Contrast, pinyin, and tone colors</span></span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+                  <button class="list-row" type="button" data-open="dictionary"><span class="row-icon"><svg><use href="#i-book"/></svg></span><span class="row-copy"><span class="row-title">Chinese &amp; Dictionary</span><span class="row-desc">Characters, HSK, and entry details</span></span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+                </div>
+              </section>
+              <section class="group" aria-labelledby="privacy-title">
+                <h2 class="group-label" id="privacy-title">Privacy</h2>
+                <div class="list">
+                  <button class="list-row" type="button" data-open="telemetry"><span class="row-icon"><svg><use href="#i-heart"/></svg></span><span class="row-copy"><span class="row-title">Telemetry</span><span class="row-desc">Choose what Syng sends</span></span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+                </div>
+              </section>
+              <section class="group" aria-labelledby="support-title">
+                <h2 class="group-label" id="support-title">Help &amp; information</h2>
+                <div class="list">
+                  <button class="list-row" type="button" data-open="help"><span class="row-icon"><svg><use href="#i-help"/></svg></span><span class="row-copy"><span class="row-title">Help &amp; Maintenance</span><span class="row-desc">Feature guides and What’s New</span></span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+                  <button class="list-row" type="button" data-open="acknowledgements"><span class="row-icon"><svg><use href="#i-info"/></svg></span><span class="row-copy"><span class="row-title">Acknowledgements</span><span class="row-desc">Open-source credits and licenses</span></span><svg class="chevron"><use href="#i-chevron"/></svg></button>
+                </div>
+              </section>
+            </div>
+            <section class="view" data-view="appearance" hidden>
+              <div class="detail-head"><button class="back" type="button"><svg><use href="#i-chevron"/></svg>Settings</button><h2>Appearance</h2><p>Make learning content easier to read at a glance.</p></div>
+              <div class="appearance-preview color-characters color-pinyin show-pinyin" data-context="character" aria-label="Live appearance preview">
+                <div class="preview-head"><strong>Live preview</strong><div class="preview-contexts" role="group" aria-label="Preview context"><button class="active" type="button" data-preview-context="character" aria-pressed="true">Character</button><button type="button" data-preview-context="flashcard" aria-label="Flashcard fronts" aria-pressed="false">Cards</button><button type="button" data-preview-context="reader" aria-pressed="false">Reader</button><button type="button" data-preview-context="list" aria-pressed="false">List</button></div></div>
+                <div class="preview-sample"><div class="preview-main"><span class="preview-reader-prefix">我每天</span><span class="preview-word"><span class="tone" data-tone="2">学</span><span class="tone" data-tone="2">习</span></span><span class="preview-reader-suffix">中文。</span><span class="preview-list-gloss">to study; to learn</span></div><div class="preview-pinyin"><span class="tone" data-tone="2">xué</span> <span class="tone" data-tone="2">xí</span></div><div class="preview-translation">to study; to learn</div><div class="preview-tone-key" aria-label="First through fourth and neutral tone samples"><span class="tone" data-tone="1">妈</span><span class="tone" data-tone="2">麻</span><span class="tone" data-tone="3">马</span><span class="tone" data-tone="4">骂</span><span class="tone" data-tone="5">吗</span></div></div>
+              </div>
+              <div class="group"><h3 class="group-label">Display</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Increase Contrast</span></span><button class="switch" type="button" role="switch" aria-label="Increase Contrast" aria-checked="false"></button></div>
+              </div></div>
+              <div class="group"><h3 class="group-label">Show pinyin</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Character animations</span></span><button class="switch" type="button" role="switch" aria-label="Show pinyin in character animations" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Flashcard fronts</span></span><button class="switch" type="button" role="switch" aria-label="Show pinyin on flashcard fronts" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Reader</span></span><button class="switch" type="button" role="switch" aria-label="Show pinyin in Reader" aria-checked="false"></button></div>
+              </div></div>
+              <div class="group"><h3 class="group-label">Tone coloring</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Color characters by tone</span></span><button class="switch" type="button" role="switch" aria-label="Color characters by tone" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Color pinyin by tone</span></span><button class="switch" type="button" role="switch" aria-label="Color pinyin by tone" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Apply tone coloring to lists</span></span><button class="switch" type="button" role="switch" aria-label="Apply tone coloring to lists" aria-checked="false"></button></div>
+              </div></div>
+              <div class="group"><h3 class="group-label">Tone colors</h3><div class="list">
+                <label class="swatch-row">First Tone<input type="color" value="#2880f2" aria-label="First Tone color"></label>
+                <label class="swatch-row">Second Tone<input type="color" value="#e48e1c" aria-label="Second Tone color"></label>
+                <label class="swatch-row">Third Tone<input type="color" value="#e43978" aria-label="Third Tone color"></label>
+                <label class="swatch-row">Fourth Tone<input type="color" value="#43b866" aria-label="Fourth Tone color"></label>
+                <label class="swatch-row">No Tone<input type="color" value="#9a9b9c" aria-label="No Tone color"></label>
+              </div><p class="group-note">Choose colors here without opening another settings page.</p></div>
+            </section>
+            <section class="view" data-view="dictionary" hidden>
+              <div class="detail-head"><button class="back" type="button"><svg><use href="#i-chevron"/></svg>Settings</button><h2>Chinese &amp; Dictionary</h2><p>Set how Chinese text and dictionary entries appear.</p></div>
+              <div class="group"><h3 class="group-label">Character set</h3><div class="list" role="radiogroup" aria-label="Character set">
+                <button class="choice-row" type="button" role="radio" aria-checked="true">Simplified + Traditional<svg class="check"><use href="#i-check"/></svg></button>
+                <button class="choice-row" type="button" role="radio" aria-checked="false">Simplified<svg class="check"><use href="#i-check"/></svg></button>
+                <button class="choice-row" type="button" role="radio" aria-checked="false">Traditional<svg class="check"><use href="#i-check"/></svg></button>
+              </div></div>
+              <div class="group"><h3 class="group-label">HSK standard</h3><div class="list" role="radiogroup" aria-label="HSK standard">
+                <button class="choice-row" type="button" role="radio" aria-checked="true">HSK 2015<svg class="check"><use href="#i-check"/></svg></button>
+                <button class="choice-row" type="button" role="radio" aria-checked="false">Proficiency Standard 2021<svg class="check"><use href="#i-check"/></svg></button>
+              </div><p class="group-note">Sets the level labels shown on dictionary entries.</p></div>
+              <div class="group"><h3 class="group-label">Dictionary details</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Show qualifiers</span></span><button class="switch" type="button" role="switch" aria-label="Show qualifiers" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Show parts of speech</span></span><button class="switch" type="button" role="switch" aria-label="Show parts of speech" aria-checked="true"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Show alternative pronunciations</span></span><button class="switch" type="button" role="switch" aria-label="Show alternative pronunciations" aria-checked="true"></button></div>
+              </div></div>
+            </section>
+            <section class="view" data-view="telemetry" hidden>
+              <div class="detail-head"><button class="back" type="button"><svg><use href="#i-chevron"/></svg>Settings</button><h2>Telemetry</h2><p>Choose the usage data Syng may send.</p></div>
+              <div class="group"><div class="text-card"><p>Telemetry helps diagnose issues and improve compatibility. You can turn it off in part or in full at any time.</p></div></div>
+              <div class="group"><h3 class="group-label">Collection</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Enable Telemetry</span><span class="row-desc">Allow Syng to collect usage data</span></span><button class="switch" type="button" role="switch" aria-label="Enable Telemetry" aria-checked="false"></button></div>
+              </div></div>
+              <div class="group telemetry-categories" hidden><h3 class="group-label">Categories</h3><div class="list">
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Event Tracking</span></span><button class="switch" type="button" role="switch" aria-label="Event Tracking" aria-checked="false"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Screen Views</span></span><button class="switch" type="button" role="switch" aria-label="Screen Views" aria-checked="false"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Error Reporting</span></span><button class="switch" type="button" role="switch" aria-label="Error Reporting" aria-checked="false"></button></div>
+                <div class="setting-row"><span class="row-copy"><span class="row-title">Device Context</span></span><button class="switch" type="button" role="switch" aria-label="Device Context" aria-checked="false"></button></div>
+              </div></div>
+              <div class="group"><h3 class="group-label">Queued Telemetry Events</h3><div class="text-card"><p>No events recorded yet.</p></div></div>
+            </section>
+            <section class="view" data-view="help" hidden>
+              <div class="detail-head"><button class="back" type="button"><svg><use href="#i-chevron"/></svg>Settings</button><h2>Help &amp; Maintenance</h2><p>Find a guide or revisit recent changes.</p></div>
+              <div class="group"><h3 class="group-label">Walkthrough</h3><div class="list walkthrough-list"><div class="walkthrough-control">
+                <div class="sy-button-bar" role="group" aria-label="Choose and start a walkthrough">
+                  <div class="dropdown-wrap"><button class="sy-button sy-button--filled sy-button--mobile guide-trigger" type="button" aria-haspopup="menu" aria-expanded="false"><span class="guide-label">App tour</span><svg><use href="#i-chevron"/></svg></button>
+                    <div class="guide-menu" role="menu" hidden><button type="button" role="menuitem" data-guide="App tour">App tour</button><button type="button" role="menuitem" data-guide="Dictionary">Dictionary</button><button type="button" role="menuitem" data-guide="Reading a document">Reading a document</button></div>
+                  </div>
+                  <button class="sy-button sy-button--filled sy-button--mobile guide-start" type="button" data-preview-action="App tour would open here">Start</button>
+                </div>
+              </div></div></div>
+              <div class="group"><h3 class="group-label">What’s New</h3><div class="list"><div class="action-row"><span>Recent changes</span><button class="sy-button sy-button--filled sy-button--mobile" type="button" data-preview-action="What’s New would open here">View changes</button></div></div></div>
+            </section>
+            <section class="view" data-view="acknowledgements" hidden>
+              <div class="detail-head"><button class="back" type="button"><svg><use href="#i-chevron"/></svg>Settings</button><h2>Acknowledgements</h2><p>Credits and licenses.</p></div>
+              <div class="group"><div class="text-card"><p>Syng is free and open-source software, built on the work of others. Each component is used under its own license; full license texts ship with the application.</p></div></div>
+              <div class="group"><h3 class="group-label">Open-source components</h3><div class="text-card"><p>No acknowledgements available in this preview.</p></div></div>
+            </section>
+          </div>
+        </div>
+        <div class="sample-notice" role="status" aria-live="polite"></div>
+      </div>
+      <div class="home" aria-hidden="true"></div>
+    </div>
+    <p class="footer">The former General tab’s sections appear alongside Telemetry and Acknowledgements at the top level. Tap any row, then use Settings to return. The Appearance preview stays visible while its controls scroll and updates as you change them. Action buttons use the same grouped and standalone treatments as Search. Controls are local to this mockup. Developer settings remain conditional in the app.</p>
+  </main>
+  <script>
+    const phone = document.querySelector('.phone');
+    const appScroll = phone.querySelector('.app-scroll');
+    const wordmark = phone.querySelector('.wordmark');
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const views = [...phone.querySelectorAll('[data-view]')];
+    const notice = phone.querySelector('.sample-notice');
+    const appearancePreview = phone.querySelector('.appearance-preview');
+    const previewContextButtons = [...appearancePreview.querySelectorAll('[data-preview-context]')];
+    const appearanceControls = [...phone.querySelectorAll('[data-view="appearance"] .switch')];
+    const toneInputs = [...phone.querySelectorAll('[data-view="appearance"] input[type="color"]')];
+    let noticeTimer = 0;
+    const isOn = label => appearanceControls.find(button => button.getAttribute('aria-label') === label)?.getAttribute('aria-checked') === 'true';
+    function updateAppearancePreview() {
+      const context = appearancePreview.dataset.context;
+      const pinyinVisible = context === 'character' ? isOn('Show pinyin in character animations') :
+        context === 'flashcard' ? isOn('Show pinyin on flashcard fronts') :
+        context === 'reader' ? isOn('Show pinyin in Reader') : false;
+      appearancePreview.classList.toggle('show-pinyin', pinyinVisible);
+      appearancePreview.classList.toggle('high-contrast', isOn('Increase Contrast'));
+      appearancePreview.classList.toggle('color-characters', isOn('Color characters by tone'));
+      appearancePreview.classList.toggle('color-pinyin', isOn('Color pinyin by tone'));
+      appearancePreview.classList.toggle('color-lists', isOn('Apply tone coloring to lists') && isOn('Color characters by tone'));
+      toneInputs.forEach((input, index) => appearancePreview.style.setProperty('--preview-tone-' + (index + 1), input.value));
+    }
+    function setPreviewContext(context) {
+      appearancePreview.dataset.context = context;
+      previewContextButtons.forEach(button => {
+        const active = button.dataset.previewContext === context;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      updateAppearancePreview();
+    }
+    previewContextButtons.forEach(button => button.addEventListener('click', () => setPreviewContext(button.dataset.previewContext)));
+    toneInputs.forEach(input => input.addEventListener('input', () => setPreviewContext('character')));
+    updateAppearancePreview();
+    function showView(name) {
+      views.forEach(view => { view.hidden = view.dataset.view !== name; });
+      appScroll.scrollTop = 0;
+      updateBrand();
+      const heading = phone.querySelector('[data-view="' + name + '"] h2');
+      if (name !== 'home' && heading) { heading.setAttribute('tabindex', '-1'); heading.focus({preventScroll:true}); }
+    }
+    phone.querySelectorAll('[data-open]').forEach(button => button.addEventListener('click', () => showView(button.dataset.open)));
+    phone.querySelectorAll('.back').forEach(button => button.addEventListener('click', () => showView('home')));
+    phone.querySelectorAll('.switch').forEach(button => button.addEventListener('click', () => {
+      button.setAttribute('aria-checked', String(button.getAttribute('aria-checked') !== 'true'));
+      const label = button.getAttribute('aria-label');
+      if (label === 'Enable Telemetry') {
+        phone.querySelector('.telemetry-categories').hidden = button.getAttribute('aria-checked') !== 'true';
+      }
+      if (appearanceControls.includes(button)) {
+        if (label === 'Show pinyin in character animations') setPreviewContext('character');
+        else if (label === 'Show pinyin on flashcard fronts') setPreviewContext('flashcard');
+        else if (label === 'Show pinyin in Reader') setPreviewContext('reader');
+        else if (label === 'Apply tone coloring to lists') setPreviewContext('list');
+        else if (label === 'Color characters by tone') setPreviewContext('character');
+        else if (label === 'Color pinyin by tone') setPreviewContext(isOn('Show pinyin in character animations') ? 'character' : isOn('Show pinyin on flashcard fronts') ? 'flashcard' : 'reader');
+        else updateAppearancePreview();
+      }
+    }));
+    phone.querySelectorAll('.choice-row').forEach(button => button.addEventListener('click', () => {
+      button.parentElement.querySelectorAll('.choice-row').forEach(row => row.setAttribute('aria-checked', String(row === button)));
+    }));
+    phone.querySelectorAll('[role="radiogroup"]').forEach(group => group.addEventListener('keydown', event => {
+      if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const choices = [...group.querySelectorAll('.choice-row')];
+      const current = choices.indexOf(document.activeElement);
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? choices.length - 1 :
+        (current + (event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1) + choices.length) % choices.length;
+      choices[next].click();
+      choices[next].focus();
+    }));
+    const guideTrigger = phone.querySelector('.guide-trigger');
+    const guideMenu = phone.querySelector('.guide-menu');
+    const guideStart = phone.querySelector('.guide-start');
+    function setGuideMenu(open) {
+      guideMenu.hidden = !open;
+      guideTrigger.setAttribute('aria-expanded', String(open));
+    }
+    guideTrigger.addEventListener('click', () => setGuideMenu(guideMenu.hidden));
+    guideStart.addEventListener('click', () => setGuideMenu(false));
+    guideMenu.querySelectorAll('[data-guide]').forEach(button => button.addEventListener('click', () => {
+      guideTrigger.querySelector('.guide-label').textContent = button.dataset.guide;
+      guideStart.dataset.previewAction = button.dataset.guide + ' guide would open here';
+      setGuideMenu(false);
+      guideTrigger.focus();
+    }));
+    document.addEventListener('click', event => {
+      if (!event.target.closest('.walkthrough-control')) setGuideMenu(false);
+    });
+    guideMenu.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { setGuideMenu(false); guideTrigger.focus(); }
+    });
+    phone.querySelectorAll('[data-preview-action]').forEach(button => button.addEventListener('click', () => {
+      notice.textContent = button.dataset.previewAction;
+      notice.classList.add('show');
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => notice.classList.remove('show'), 2600);
+    }));
+    const nav = phone.querySelector('.nav-track');
+    const indicator = nav.querySelector('.nav-indicator');
+    const navButtons = [...nav.querySelectorAll('.nav-item')];
+    const dividers = [...nav.querySelectorAll('.nav-dividers span')].slice(0, -1);
+    let navPosition = 0, navVelocity = 0, navTarget = 0, navFrame = 0, navTime = 0;
+    function paintNav() {
+      indicator.style.transform = 'translate3d(' + navPosition + 'px,0,0)';
+      const layer = nav.querySelector('.nav-dividers');
+      dividers.forEach(divider => {
+        const x = layer.offsetLeft + divider.offsetLeft + divider.offsetWidth;
+        divider.classList.toggle('covered', x >= navPosition - 3 && x <= navPosition + indicator.offsetWidth + 3);
+      });
+    }
+    function snapNav() {
+      cancelAnimationFrame(navFrame); navFrame = 0; navTime = 0; navVelocity = 0;
+      const active = nav.querySelector('.nav-item.active');
+      navTarget = navPosition = active.offsetLeft + 2;
+      indicator.style.width = active.offsetWidth - 4 + 'px';
+      paintNav();
+    }
+    function animateNav(time) {
+      const dt = navTime ? Math.min((time - navTime) / 1000, 1 / 30) : 1 / 60;
+      navTime = time;
+      const stiffness = 380, damping = 2 * Math.sqrt(stiffness);
+      navVelocity += (stiffness * (navTarget - navPosition) - damping * navVelocity) * dt;
+      navPosition += navVelocity * dt;
+      if (Math.abs(navTarget - navPosition) < .15 && Math.abs(navVelocity) < .5) {
+        navPosition = navTarget; navVelocity = 0; navFrame = 0; navTime = 0;
+      } else navFrame = requestAnimationFrame(animateNav);
+      paintNav();
+    }
+    nav.addEventListener('click', event => {
+      const button = event.target.closest('.nav-item');
+      if (!button) return;
+      navButtons.forEach(item => {
+        item.classList.toggle('active', item === button);
+        if (item === button) item.setAttribute('aria-current', 'page');
+        else item.removeAttribute('aria-current');
+      });
+      navTarget = button.offsetLeft + 2;
+      indicator.style.width = button.offsetWidth - 4 + 'px';
+      if (reducedMotion.matches) snapNav();
+      else if (!navFrame) navFrame = requestAnimationFrame(animateNav);
+    });
+    new ResizeObserver(snapNav).observe(nav);
+    reducedMotion.addEventListener('change', snapNav);
+    snapNav();
+    function updateBrand() {
+      const progress = Math.min(1, appScroll.scrollTop / 63);
+      wordmark.style.transform = reducedMotion.matches ? 'none' : 'scale(' + (1 - .55 * progress) + ')';
+    }
+    appScroll.addEventListener('scroll', updateBrand, {passive:true});
+    reducedMotion.addEventListener('change', updateBrand);
+    updateBrand();
+    document.querySelectorAll('[data-header]').forEach(button => button.addEventListener('click', () => {
+      phone.classList.toggle('bare', button.dataset.header === 'bare');
+      appScroll.scrollTop = 0;
+      updateBrand();
+      document.querySelectorAll('[data-header]').forEach(item => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+    }));
+    document.querySelectorAll('[data-theme]').forEach(button => button.addEventListener('click', () => {
+      document.body.classList.toggle('dark', button.dataset.theme === 'dark');
+      document.querySelectorAll('[data-theme]').forEach(item => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+    }));
+  </script>
+</body>
+</html>

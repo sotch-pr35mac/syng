@@ -3,6 +3,9 @@
 	import BreakdownText from '@/components/CharacterBreakdown/BreakdownText.svelte';
 	import type { DictionaryLookupRequest } from '@/composables/dictionaryPopover.svelte.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
+	import { isMobileLayout } from '@/utils/device.js';
 	import {
 		loadBreakdown,
 		loadBreakdownGeometry,
@@ -42,6 +45,8 @@
 	}: Props = $props();
 	const GLYPH_SIZE = 1024,
 		GLYPH_BASELINE = 900;
+	const scripts = ['simplified', 'traditional'] as const;
+	const tabId = $props.id();
 	let record = $state<CharacterBreakdownRecord | null>(null);
 	let geometry = $state<CharacterGeometry | null>(null);
 	let entries = $state<Record<string, SearchEntry[]>>({});
@@ -153,6 +158,20 @@
 		onselection({ ...selection, index, pinned: null });
 		hover = null;
 	}
+	function switchScript(script: BreakdownSelection['script']) {
+		if (script !== selection.script) {
+			oninteraction?.({
+				action: 'script_changed',
+				script,
+				character_position: Math.min(selection.index + 1, [...word[script]].length),
+			});
+		}
+		onselection({
+			script,
+			index: Math.min(selection.index, [...word[script]].length - 1),
+			pinned: null,
+		});
+	}
 	function pin(index: number, input: BreakdownInteraction['input'] = 'control') {
 		interact(
 			selection.pinned === index ? 'component_deselected' : 'component_selected',
@@ -246,182 +265,181 @@
 			</div>
 		{/if}
 		{#if word.simplified !== word.traditional}
-			<div class="scripts" role="group" aria-label="Character form">
-				{#each ['simplified', 'traditional'] as script (script)}
-					<button
-						type="button"
-						aria-pressed={selection.script === script}
-						onclick={() => {
-							if (script !== selection.script) {
-								oninteraction?.({
-									action: 'script_changed',
-									script: script as BreakdownSelection['script'],
-									character_position: Math.min(
-										selection.index + 1,
-										[...word[script]].length
-									),
-								});
-							}
-							onselection({
-								script: script as BreakdownSelection['script'],
-								index: Math.min(selection.index, [...word[script]].length - 1),
-								pinned: null,
-							});
-						}}>{script === 'simplified' ? 'Simplified' : 'Traditional'}</button
+			<div class="scripts" role="tablist" aria-label="Character form" use:tabNavigation>
+				{#each scripts as script (script)}
+					<SyTab
+						variant={isMobileLayout() ? 'mobile' : 'default'}
+						role="tab"
+						id={`${tabId}-${script}-tab`}
+						aria-controls={`${tabId}-panel`}
+						active={selection.script === script}
+						onclick={() => switchScript(script)}
+						>{script === 'simplified' ? 'Simplified' : 'Traditional'}</SyTab
 					>
 				{/each}
 			</div>
 		{/if}
-		<div class="glyph">
-			{#if geometry && record}
-				<svg
-					viewBox="0 0 1024 1024"
-					role="img"
-					aria-label={character}
-					onpointermove={move}
-					onpointerleave={() => (hover = null)}
-				>
-					<g transform="translate(0 900) scale(1 -1)">
-						{#each geometry.strokes as stroke, i (i)}
-							<path
-								d={stroke}
-								class:selected={active !== null &&
-									record.components[active]?.strokes?.includes(i)}
-								class:muted={active !== null &&
-									record.components[active]?.strokes?.length &&
-									!record.components[active]?.strokes?.includes(i)}
-							/>
-						{/each}
-					</g>
-				</svg>
-				{#if record.components.some((part) => part.strokes?.length)}<button
-						class="glyph-hit"
-						type="button"
-						aria-label="Select highlighted component"
-						tabindex="-1"
+		<div
+			id={`${tabId}-panel`}
+			role={word.simplified !== word.traditional ? 'tabpanel' : undefined}
+			aria-labelledby={word.simplified !== word.traditional
+				? `${tabId}-${selection.script}-tab`
+				: undefined}
+		>
+			<div class="glyph">
+				{#if geometry && record}
+					<svg
+						viewBox="0 0 1024 1024"
+						role="img"
+						aria-label={character}
 						onpointermove={move}
 						onpointerleave={() => (hover = null)}
-						onclick={(event) => {
-							move(event);
-							if (hover !== null) {
-								pin(hover, 'glyph');
-							}
-							hover = null;
-						}}
-					></button>{/if}
-			{:else}<span>{character}</span>{/if}
-		</div>
-		<div class="character-lookup">
-			<SyButton style="ghost" color="blue" center onclick={lookupCurrentCharacter}>
-				<Search size="16" /><span>Look up this character</span>
-			</SyButton>
-		</div>
-		{#if loading}<p role="status">Loading character data…</p>
-		{:else if failed}<p role="status">Character data could not be loaded.</p>
-		{:else}
-			{#if record?.formation || record?.components.length}
-				{#if !record.verified}<p class="verification">Unverified by Dong Chinese</p>{/if}
-				{#if record.formation}<p class="formation">
-						<BreakdownText text={record.formation} onlink={descriptionLookup} />
-					</p>{/if}
-				{#if record.components.length}
-					<div class="components" role="group" aria-label="Components">
-						{#each record.components as part, i (i)}
-							<div
-								class="component"
-								role="group"
-								aria-label="Component {i + 1}"
-								class:active={active === i}
-								onpointerenter={() => preview(i, 'control')}
-								onpointerleave={() => (hover = null)}
-							>
-								{#if part.character}
-									{#if entries[part.character]?.length}<button
-											type="button"
-											class="component-character link"
-											aria-label="Look up {part.character}"
-											onclick={(event) =>
-												lookup(
-													part.character,
-													event,
-													'component_lookup',
-													i
-												)}>{part.character}</button
-										>
-									{:else}<span class="component-character">{part.character}</span
-										>{/if}
-								{:else if geometry && part.strokes?.length}
-									<svg
-										class="fragment"
-										viewBox="0 0 1024 1024"
-										role="img"
-										aria-label="Unnamed component"
-										><g transform="translate(0 900) scale(1 -1)"
-											>{#each part.strokes as j (j)}<path
-													d={geometry.strokes[j]}
-												/>{/each}</g
-										></svg
-									>
-								{/if}
-								<button
-									type="button"
-									class="role"
-									aria-pressed={selection.pinned === i}
-									aria-label="Component {i + 1}: {part.roles
-										.map((r) => COMPONENT_ROLES[r])
-										.join(', ') || 'Unclassified'}"
-									onfocus={() => preview(i, 'keyboard')}
-									onblur={() => (hover = null)}
-									onclick={(event) =>
-										pin(i, event.detail === 0 ? 'keyboard' : 'control')}
-									>{part.roles.map((r) => COMPONENT_ROLES[r]).join(' · ') ||
-										'Component'}</button
+					>
+						<g transform="translate(0 900) scale(1 -1)">
+							{#each geometry.strokes as stroke, i (i)}
+								<path
+									d={stroke}
+									class:selected={active !== null &&
+										record.components[active]?.strokes?.includes(i)}
+									class:muted={active !== null &&
+										record.components[active]?.strokes?.length &&
+										!record.components[active]?.strokes?.includes(i)}
+								/>
+							{/each}
+						</g>
+					</svg>
+					{#if record.components.some((part) => part.strokes?.length)}<button
+							class="glyph-hit"
+							type="button"
+							aria-label="Select highlighted component"
+							tabindex="-1"
+							onpointermove={move}
+							onpointerleave={() => (hover = null)}
+							onclick={(event) => {
+								move(event);
+								if (hover !== null) {
+									pin(hover, 'glyph');
+								}
+								hover = null;
+							}}
+						></button>{/if}
+				{:else}<span>{character}</span>{/if}
+			</div>
+			<div class="character-lookup">
+				<SyButton style="ghost" color="blue" center onclick={lookupCurrentCharacter}>
+					<Search size="16" /><span>Look up this character</span>
+				</SyButton>
+			</div>
+			{#if loading}<p role="status">Loading character data…</p>
+			{:else if failed}<p role="status">Character data could not be loaded.</p>
+			{:else}
+				{#if record?.formation || record?.components.length}
+					{#if !record.verified}<p class="verification">
+							Unverified by Dong Chinese
+						</p>{/if}
+					{#if record.formation}<p class="formation">
+							<BreakdownText text={record.formation} onlink={descriptionLookup} />
+						</p>{/if}
+					{#if record.components.length}
+						<div class="components" role="group" aria-label="Components">
+							{#each record.components as part, i (i)}
+								<div
+									class="component"
+									role="group"
+									aria-label="Component {i + 1}"
+									class:active={active === i}
+									onpointerenter={() => preview(i, 'control')}
+									onpointerleave={() => (hover = null)}
 								>
-							</div>
-						{/each}
-					</div>
-					<div class="notes" aria-live="polite">
-						{#each record.components as part, i (i)}
-							<div class:shown={active === i} aria-hidden={active !== i}>
-								{#if part.note}<p>
-										<BreakdownText
-											text={part.note}
-											onlink={descriptionLookup}
-										/>
-									</p>{/if}
-								{#if part.changedForm}<small>Changed form</small>{/if}
-								{#if part.historicalSound}<small>Historical pronunciation</small
-									>{/if}
-								{#if part.originalMeaning}<small>Original meaning</small>{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-			{:else}<p class="formation">
-					Formation information is not available for this character.
-				</p>{/if}
-			{#if record?.radical || record?.strokeCount}
-				<dl>
-					{#if record.radical}<div>
-							<dt>Dictionary radical</dt>
-							<dd>
-								{#if entries[record.radical]?.length}<button
+									{#if part.character}
+										{#if entries[part.character]?.length}<button
+												type="button"
+												class="component-character link"
+												aria-label="Look up {part.character}"
+												onclick={(event) =>
+													lookup(
+														part.character,
+														event,
+														'component_lookup',
+														i
+													)}>{part.character}</button
+											>
+										{:else}<span class="component-character"
+												>{part.character}</span
+											>{/if}
+									{:else if geometry && part.strokes?.length}
+										<svg
+											class="fragment"
+											viewBox="0 0 1024 1024"
+											role="img"
+											aria-label="Unnamed component"
+											><g transform="translate(0 900) scale(1 -1)"
+												>{#each part.strokes as j (j)}<path
+														d={geometry.strokes[j]}
+													/>{/each}</g
+											></svg
+										>
+									{/if}
+									<button
 										type="button"
-										class="link"
-										aria-label="Look up radical {record.radical}"
+										class="role"
+										aria-pressed={selection.pinned === i}
+										aria-label="Component {i + 1}: {part.roles
+											.map((r) => COMPONENT_ROLES[r])
+											.join(', ') || 'Unclassified'}"
+										onfocus={() => preview(i, 'keyboard')}
+										onblur={() => (hover = null)}
 										onclick={(event) =>
-											lookup(record.radical, event, 'radical_lookup')}
-										>{record.radical}</button
-									>{:else}{record.radical}{/if}
-							</dd>
-						</div>{/if}
-					{#if record.strokeCount}<div>
-							<dt>Strokes</dt>
-							<dd>{record.strokeCount}</dd>
-						</div>{/if}
-				</dl>
+											pin(i, event.detail === 0 ? 'keyboard' : 'control')}
+										>{part.roles.map((r) => COMPONENT_ROLES[r]).join(' · ') ||
+											'Component'}</button
+									>
+								</div>
+							{/each}
+						</div>
+						<div class="notes" aria-live="polite">
+							{#each record.components as part, i (i)}
+								<div class:shown={active === i} aria-hidden={active !== i}>
+									{#if part.note}<p>
+											<BreakdownText
+												text={part.note}
+												onlink={descriptionLookup}
+											/>
+										</p>{/if}
+									{#if part.changedForm}<small>Changed form</small>{/if}
+									{#if part.historicalSound}<small>Historical pronunciation</small
+										>{/if}
+									{#if part.originalMeaning}<small>Original meaning</small>{/if}
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{:else}<p class="formation">
+						Formation information is not available for this character.
+					</p>{/if}
+				{#if record?.radical || record?.strokeCount}
+					<dl>
+						{#if record.radical}<div>
+								<dt>Dictionary radical</dt>
+								<dd>
+									{#if entries[record.radical]?.length}<button
+											type="button"
+											class="link"
+											aria-label="Look up radical {record.radical}"
+											onclick={(event) =>
+												lookup(record.radical, event, 'radical_lookup')}
+											>{record.radical}</button
+										>{:else}{record.radical}{/if}
+								</dd>
+							</div>{/if}
+						{#if record.strokeCount}<div>
+								<dt>Strokes</dt>
+								<dd>{record.strokeCount}</dd>
+							</div>{/if}
+					</dl>
+				{/if}
 			{/if}
-		{/if}
+		</div>
 	</div>
 </section>
 
@@ -432,7 +450,7 @@
 		height: 100%;
 		min-height: 0;
 		color: var(--sy-color--black);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		font-family: var(--sy-font-family);
 	}
 	header {
@@ -485,14 +503,6 @@
 		display: flex;
 		justify-content: center;
 		gap: 0.5rem;
-	}
-	.scripts button {
-		font-size: 0.75rem;
-		padding: 0 0.5rem;
-	}
-	.scripts button[aria-pressed='true'] {
-		color: var(--sy-text--blue);
-		box-shadow: inset 0 -2px var(--sy-text--blue);
 	}
 	.character-lookup {
 		display: flex;

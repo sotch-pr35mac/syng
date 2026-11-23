@@ -25,6 +25,7 @@
 	const actions = $derived([
 		{
 			icon: SquareStack,
+			label: 'Flashcards',
 			action: () => handleSelection('flashcards'),
 			guideTarget: 'study-flashcards' as const,
 			tooltip: `Flashcards for ${value.name}`,
@@ -32,6 +33,7 @@
 		},
 		{
 			icon: Award,
+			label: 'Quiz',
 			action: () => handleSelection('quiz'),
 			guideTarget: 'study-quiz' as const,
 			tooltip: `Start quiz for ${value.name}`,
@@ -41,13 +43,16 @@
 </script>
 
 <div class="study-list-item" class:study-list-item--mobile={variant === 'mobile'}>
-	<span class="study-list-item--name">
-		{value.name}
-		{#if eligibility.message}<small class="study-list-item--requirement"
+	<div class="study-list-item__details">
+		<span class="study-list-item__name">{value.name}</span>
+		<span class="study-list-item__count"
+			>{value.wordCount} saved {value.wordCount === 1 ? 'word' : 'words'}</span
+		>
+		{#if eligibility.message}<small class="study-list-item__requirement"
 				>{eligibility.message}</small
 			>{/if}
-	</span>
-	<span class="study-list-item--actions">
+	</div>
+	<div class="study-list-item__actions">
 		{#each actions as action (action.tooltip)}
 			<SyButton
 				guideTarget={action.guideTarget}
@@ -55,33 +60,23 @@
 				center={true}
 				onclick={action.action}
 				disabled={action.disabled}
-				size={variant === 'mobile' ? 'small' : 'large'}
-				style={variant === 'mobile' ? 'ghost' : 'filled'}
-				classes={[
-					'sy-tooltip--container',
-					variant === 'mobile' ? 'study-list-item--action-mobile' : '',
-				]}
+				disableHoverActions={action.disabled}
+				size="medium"
+				classes={['study-list-item__action', 'sy-tooltip--container']}
 			>
 				<action.icon size="18" />
+				<span>{action.label}</span>
 				<div class="sy-tooltip--body sy-tooltip--body-bottom">
-					<p>
-						{action.tooltip}
-					</p>
+					<p>{action.tooltip}</p>
 				</div>
 			</SyButton>
 		{/each}
-	</span>
+	</div>
 </div>
 
 <style>
-	.study-list-item--requirement {
-		display: block;
-		margin-top: var(--sy-space);
-		color: var(--sy-color--grey-5);
-		font-size: var(--sy-font-size--small);
-	}
 	.study-list-item {
-		padding: var(--sy-space--large);
+		padding: var(--sy-space--extra-large);
 		display: flex;
 		flex-direction: row;
 		align-items: center;
@@ -89,32 +84,67 @@
 		gap: var(--sy-space--large);
 	}
 	.study-list-item--mobile {
-		min-height: var(--sy-mobile-list-item-min-height);
-		padding: calc(var(--sy-mobile-space--extra-small) * 5) var(--sy-mobile-space--medium)
-			calc(var(--sy-mobile-space--extra-small) * 5) var(--sy-mobile-space--large);
-		background-color: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		border: var(--sy-mobile-surface-border);
+		align-items: stretch;
+		flex-direction: column;
+		padding: var(--sy-mobile-space--large);
+		gap: var(--sy-mobile-space--large);
 		box-sizing: border-box;
 	}
-	.study-list-item--name {
+	.study-list-item__details {
+		display: flex;
+		flex-direction: column;
 		min-width: 0;
+		gap: var(--sy-space);
 		overflow-wrap: anywhere;
-		font-family: var(--sy-font-family);
+	}
+	.study-list-item__name {
+		font: var(--sy-type--local-title-mobile);
 		color: var(--sy-color--black);
 	}
-	.study-list-item--mobile .study-list-item--name {
-		font-size: var(--sy-font-size--mobile-large);
+	.study-list-item__count,
+	.study-list-item__requirement {
+		font: var(--sy-type--supporting);
+		color: var(--sy-text--secondary);
 	}
-	.study-list-item--actions {
+	.study-list-item__requirement {
+		color: var(--sy-text--secondary);
+	}
+	.study-list-item__actions {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		justify-content: space-around;
+		gap: var(--sy-space--large);
 		flex-shrink: 0;
 	}
-	:global(.study-list-item--action-mobile) {
+	:global(.study-list-item__action) {
 		margin: 0;
-		color: var(--sy-color--grey-6);
+		min-width: 116px;
+		min-height: 40px;
+		gap: var(--sy-space--large);
+	}
+	:global(.study-list-item__action:disabled) {
+		background-color: var(--sy-surface--well);
+		color: var(--sy-text--secondary);
+		box-shadow: none;
+	}
+	.study-list-item--mobile .study-list-item__actions {
+		width: 100%;
+	}
+	.study-list-item--mobile :global(.study-list-item__action) {
+		flex: 1;
+		min-width: 0;
+	}
+	@media (max-width: 640px) {
+		.study-list-item:not(.study-list-item--mobile) {
+			align-items: stretch;
+			flex-direction: column;
+		}
+		.study-list-item:not(.study-list-item--mobile) .study-list-item__actions {
+			width: 100%;
+		}
+		.study-list-item:not(.study-list-item--mobile) :global(.study-list-item__action) {
+			flex: 1;
+			min-width: 0;
+		}
 	}
 </style>

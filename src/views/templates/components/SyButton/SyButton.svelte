@@ -158,14 +158,19 @@
 	}
 	.sy-button--filled {
 		box-shadow: var(--sy-shadow);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
+		transition:
+			box-shadow 150ms ease-out,
+			transform 150ms ease-out;
 	}
 	@media (hover: hover) {
 		.sy-button--filled:not(.sy-button--hover-actions-disabled):hover {
 			box-shadow: var(--sy-shadow--active);
 			background-color: var(--sy-color--grey-2);
-			transition-property: background-color, box-shadow;
-			transition-duration: var(--sy-transition-duration);
+			transition:
+				background-color var(--sy-transition-duration),
+				box-shadow 150ms ease-out,
+				transform 150ms ease-out;
 		}
 	}
 	.sy-button--filled:active {
@@ -195,7 +200,7 @@
 		font-size: 0.625rem;
 	}
 	.sy-button--medium {
-		font-size: 0.8125rem;
+		font-size: var(--sy-font-size--button-medium);
 	}
 	.sy-button--large {
 		font-size: 1rem;
@@ -271,7 +276,7 @@
 		}
 	}
 	.sy-button--mobile.sy-button--small {
-		font-size: 0.8125rem;
+		font-size: var(--sy-font-size--button-medium);
 	}
 	.sy-button--filled-color {
 		background-color: var(--sy-button-filled-background);
@@ -291,5 +296,18 @@
 	.sy-button--filled-color:disabled:hover {
 		background-color: var(--sy-color--grey-2);
 		color: var(--sy-color--grey-5);
+	}
+	.sy-button.sy-button--filled:not(:disabled):active {
+		box-shadow: var(--sy-inner-shadow);
+		transform: translateY(1px);
+		transition-duration: 90ms;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sy-button--filled {
+			transition: none;
+		}
+		.sy-button.sy-button--filled:not(:disabled):active {
+			transform: none;
+		}
 	}
 </style>

@@ -400,9 +400,9 @@
 				</mask>
 			</defs>
 			<rect
+				class="walkthrough__scrim"
 				width="100%"
 				height="100%"
-				fill="rgba(0, 0, 0, 0.26)"
 				mask="url(#walkthrough-mask)"
 			/>
 		</svg>
@@ -597,6 +597,10 @@
 	.walkthrough__shade {
 		inset: 0;
 	}
+	.walkthrough__scrim {
+		fill: var(--sy-color--modal-overlay);
+		opacity: var(--sy-overlay-backdrop-opacity);
+	}
 	.walkthrough__spotlight {
 		box-sizing: border-box;
 		border: 2px solid var(--sy-color--blue-2);
@@ -608,7 +612,7 @@
 		box-sizing: border-box;
 		z-index: var(--sy-z-index--top);
 		padding: var(--sy-space--extra-large);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		border-radius: calc(var(--sy-border-radius) * 2);
 		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
 	}

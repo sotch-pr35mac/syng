@@ -82,6 +82,9 @@ audit:
 	cd src/native && cargo audit
 	npm audit
 
+storybook:
+	npm run storybook
+
 icon:
 	cargo tauri icon assets/icon.png
 

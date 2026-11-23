@@ -215,7 +215,7 @@
 		{/if}
 	</p>
 
-	<div class="mobile-quiz__content" bind:this={contentElement}>
+	<div class="mobile-quiz__content" data-sy-primary-scroll bind:this={contentElement}>
 		{#if quizRoute.showFinalResults}
 			<QuizResults
 				score={quizRoute.finalScore}
@@ -420,7 +420,7 @@
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-quiz__result-banner {
@@ -432,7 +432,7 @@
 		justify-content: center;
 		padding: calc(var(--sy-mobile-space--extra-small) * 5)
 			calc(var(--sy-mobile-space--small) * 3);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border-radius: var(--sy-border-radius);
 		border: var(--sy-mobile-surface-border);
 		box-shadow: var(--sy-mobile-overlay-shadow);
@@ -505,12 +505,12 @@
 
 	.mobile-quiz__answer {
 		min-height: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-quiz__answer :global(.dictionary-content-container) {
 		min-height: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-quiz__empty {
@@ -537,7 +537,7 @@
 	}
 
 	.mobile-quiz__progress {
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-quiz__bar {
@@ -547,7 +547,7 @@
 		padding: calc(var(--sy-mobile-space--extra-small) * 3)
 			calc(var(--sy-mobile-space--extra-small) * 7)
 			max(calc(var(--sy-mobile-space--extra-small) * 5), env(safe-area-inset-bottom));
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border-top: var(--sy-border);
 		box-shadow: var(--sy-mobile-dock-shadow);
 		box-sizing: border-box;

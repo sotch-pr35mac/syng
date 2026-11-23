@@ -86,9 +86,9 @@ for (const colorScheme of ['light', 'dark'] as const) {
 					red: 'rgb(228, 57, 120)',
 				},
 				contrast: {
-					neutral: colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)',
-					blue: colorScheme === 'light' ? 'rgb(0, 107, 223)' : 'rgb(118, 175, 249)',
-					red: colorScheme === 'light' ? 'rgb(229, 0, 111)' : 'rgb(236, 108, 157)',
+					neutral: colorScheme === 'light' ? 'rgb(119, 119, 119)' : 'rgb(154, 155, 156)',
+					blue: colorScheme === 'light' ? 'rgb(0, 95, 200)' : 'rgb(118, 175, 249)',
+					red: colorScheme === 'light' ? 'rgb(229, 0, 111)' : 'rgb(238, 110, 159)',
 				},
 			};
 

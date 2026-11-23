@@ -119,7 +119,7 @@
 		font-family: var(--sy-font-family);
 		font-size: var(--sy-font-size--medium);
 		color: var(--sy-color--black);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border: var(--sy-input--border);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space--large);

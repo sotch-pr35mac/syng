@@ -150,7 +150,7 @@
 		justify-content: center;
 		padding: 0;
 		border-radius: 50%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		color: var(--sy-color--grey-6);
 		border: var(--sy-mobile-surface-border);
 		touch-action: manipulation;

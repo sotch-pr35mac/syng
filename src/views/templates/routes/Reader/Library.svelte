@@ -235,7 +235,7 @@
 		flex-direction: column;
 		height: 100vh;
 		width: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.reader-library-route__header {
@@ -244,8 +244,10 @@
 		justify-content: space-between;
 		flex-wrap: wrap;
 		gap: var(--sy-space);
+		min-height: var(--sy-desktop-page-header-min-height);
+		box-sizing: border-box;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--chrome);
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 	}

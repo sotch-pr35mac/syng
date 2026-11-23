@@ -100,7 +100,6 @@ it('starts a new word immediately after closing during playback and ignores the 
 });
 
 it('should highlight the tab that you click on', async () => {
-	const highlightClass = 'script-selector--active';
 	const user = userEvent.setup();
 	window.matchMedia = mockMatchMedia;
 	const word = vi.fn().mockReturnValue(WORD); // eslint-disable-line no-unused-vars
@@ -108,17 +107,13 @@ it('should highlight the tab that you click on', async () => {
 
 	// Make sure Simplified is selected by default
 	const traditionalTab = getByText('Traditional');
-	let traditionalClasses = traditionalTab.className.split(' ');
-	let simplifiedClasses = getByText('Simplified').className.split(' ');
-	expect(simplifiedClasses).toContain(highlightClass);
-	expect(traditionalClasses).not.toContain(highlightClass);
+	expect(getByText('Simplified').getAttribute('aria-selected')).toBe('true');
+	expect(traditionalTab.getAttribute('aria-selected')).toBe('false');
 
 	// Test highlight switches after clicking on the other tab
 	await user.click(traditionalTab);
-	traditionalClasses = getByText('Traditional').className.split(' ');
-	simplifiedClasses = getByText('Simplified').className.split(' ');
-	expect(simplifiedClasses).not.toContain(highlightClass);
-	expect(traditionalClasses).toContain(highlightClass);
+	expect(getByText('Simplified').getAttribute('aria-selected')).toBe('false');
+	expect(traditionalTab.getAttribute('aria-selected')).toBe('true');
 });
 
 it('should update the tooltip as you click it', async () => {
@@ -160,7 +155,7 @@ it('opens on a requested script', async () => {
 			expect.any(Object)
 		)
 	);
-	expect(getByText('Traditional').className).toContain('script-selector--active');
+	expect(getByText('Traditional').getAttribute('aria-selected')).toBe('true');
 });
 
 it('keeps the current script when no initial script is requested', async () => {
@@ -179,7 +174,7 @@ it('keeps the current script when no initial script is requested', async () => {
 			expect.any(Object)
 		)
 	);
-	expect(getByText('Traditional').className).toContain('script-selector--active');
+	expect(getByText('Traditional').getAttribute('aria-selected')).toBe('true');
 });
 
 it('shows missing character data with the real writer and recovers when switching scripts', async () => {

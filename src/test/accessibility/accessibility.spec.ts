@@ -161,13 +161,8 @@ for (const colorScheme of ['light', 'dark'] as const) {
 				name: 'Standard field',
 				exact: true,
 			});
-			const originalBorder = mobile
-				? colorScheme === 'light'
-					? 'rgba(71, 76, 90, 0.12)'
-					: 'rgba(255, 255, 255, 0.1)'
-				: colorScheme === 'light'
-					? 'rgb(245, 245, 245)'
-					: 'rgb(44, 44, 44)';
+			const originalBorder =
+				colorScheme === 'light' ? 'rgba(71, 76, 90, 0.12)' : 'rgba(255, 255, 255, 0.1)';
 			await expect(standardField).toHaveCSS('border-top-color', originalBorder);
 			const settingsIcon = page.locator(
 				mobile ? 'a[href="#/settings"]' : 'a[href="#/settings"] .navigation--item'
@@ -190,15 +185,15 @@ for (const colorScheme of ['light', 'dark'] as const) {
 			await expect(page.locator('html')).toHaveAttribute('data-appearance', 'contrast');
 			await expect(settingsIcon).toHaveCSS(
 				'color',
-				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
+				colorScheme === 'light' ? 'rgb(119, 119, 119)' : 'rgb(154, 155, 156)'
 			);
 			await expect(bookmarksIcon).toHaveCSS(
 				'color',
-				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
+				colorScheme === 'light' ? 'rgb(119, 119, 119)' : 'rgb(154, 155, 156)'
 			);
 			await expect(standardField).toHaveCSS(
 				'border-top-color',
-				colorScheme === 'light' ? 'rgb(140, 140, 140)' : 'rgb(154, 155, 156)'
+				colorScheme === 'light' ? 'rgb(119, 119, 119)' : 'rgb(154, 155, 156)'
 			);
 			await expect(toggle.locator('+ label')).toHaveCSS('outline-style', 'solid');
 			const contrastResults = await new AxeBuilder({ page })
@@ -253,12 +248,12 @@ test('original light palette, row hover and unbounded ghost inputs remain visibl
 	const result = page.getByRole('button', { name: /mother/ });
 	await expect(result).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
 	await result.hover();
-	await expect(result).toHaveCSS('background-color', 'rgb(245, 245, 245)');
+	await expect(result).toHaveCSS('background-color', 'rgb(232, 234, 236)');
 	await expect(result).toHaveCSS('appearance', 'none');
 	await page.screenshot({ path: testInfo.outputPath('result-hover.png') });
 	await result.click();
 	await navigationItem.hover();
-	await expect(result).toHaveCSS('background-color', 'rgb(245, 245, 245)');
+	await expect(result).toHaveCSS('background-color', 'rgb(232, 234, 236)');
 	await expect(result).toHaveAttribute('aria-current', 'true');
 
 	const ghost = page.getByRole('textbox', { name: 'Search dictionary' });
@@ -340,13 +335,30 @@ for (const mobile of [false, true]) {
 	for (const colorScheme of ['light', 'dark'] as const) {
 		test(`${colorScheme} ${mobile ? 'mobile' : 'desktop'} bookmark errors expose validation and follow contrast`, async ({
 			page,
-		}) => {
+		}, testInfo) => {
 			await page.emulateMedia({ colorScheme });
 			await page.setViewportSize({ width: mobile ? 320 : 1100, height: 800 });
 			await page.goto(`${fixtureUrl}?routes&savedWord${mobile ? '&mobile' : ''}`);
 			await page.getByRole('button', { name: 'Choose list: Bookmarks' }).click();
 			await page.getByRole('menuitem', { name: 'Create New' }).click();
 			const dialog = page.getByRole('dialog', { name: 'Create List' });
+			await expect(dialog).toBeVisible();
+			await expect(dialog).toHaveCSS('opacity', '1');
+			if (!mobile) {
+				const { modalLayer, paneLayer } = await page.evaluate(() => ({
+					modalLayer: Number.parseInt(
+						getComputedStyle(document.querySelector('.sy-modal--container')!).zIndex,
+						10
+					),
+					paneLayer: Number.parseInt(
+						getComputedStyle(document.querySelector('.bookmarks--word-listing')!)
+							.zIndex,
+						10
+					),
+				}));
+				expect(modalLayer).toBeGreaterThan(paneLayer);
+			}
+			await page.screenshot({ path: testInfo.outputPath('bookmark-modal-open.png') });
 			const input = dialog.getByRole('textbox', {
 				name: 'What would you like to call this list?',
 			});
@@ -362,7 +374,7 @@ for (const mobile of [false, true]) {
 			await page.evaluate(() => (document.documentElement.dataset.appearance = 'contrast'));
 			await expect(error).toHaveCSS(
 				'color',
-				colorScheme === 'light' ? 'rgb(218, 0, 105)' : 'rgb(236, 108, 157)'
+				colorScheme === 'light' ? 'rgb(191, 0, 92)' : 'rgb(238, 110, 159)'
 			);
 			// The pointer remains over Create. Wait for its existing background
 			// transition to finish before sampling contrast in the changed theme.
@@ -384,7 +396,7 @@ for (const mobile of [false, true]) {
 				const requirement = page.getByText('Quiz needs at least 4 words', { exact: true });
 				await expect(requirement).toHaveCSS(
 					'color',
-					colorScheme === 'light' ? 'rgb(112, 112, 112)' : 'rgb(154, 155, 156)'
+					colorScheme === 'light' ? 'rgb(100, 100, 100)' : 'rgb(154, 155, 156)'
 				);
 				await page.evaluate(
 					() => (document.documentElement.dataset.appearance = 'original')
@@ -417,7 +429,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		await page.evaluate(() => (document.documentElement.dataset.appearance = 'contrast'));
 		await expect(error).toHaveCSS(
 			'color',
-			colorScheme === 'light' ? 'rgb(218, 0, 105)' : 'rgb(236, 108, 157)'
+			colorScheme === 'light' ? 'rgb(191, 0, 92)' : 'rgb(238, 110, 159)'
 		);
 		const results = await new AxeBuilder({ page })
 			.include('[aria-modal="true"]')

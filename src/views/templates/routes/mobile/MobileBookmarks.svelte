@@ -277,7 +277,11 @@
 </script>
 
 <div class="mobile-bookmarks">
-	<div class="mobile-bookmarks__content" use:scrollRestore={'mobile-bookmarks-content'}>
+	<div
+		class="mobile-bookmarks__content"
+		data-sy-primary-scroll
+		use:scrollRestore={'mobile-bookmarks-content'}
+	>
 		{#if activeWord}
 			<div
 				class="mobile-bookmarks__dict-wrapper"
@@ -286,6 +290,7 @@
 			>
 				<DictionaryContent
 					word={activeWord}
+					backgroundColor="canvas"
 					{lists}
 					onlink={handleDictionaryLink}
 					onmembershipchange={handleMembershipChange}
@@ -369,7 +374,7 @@
 
 		<div
 			use:walkthroughTarget={'bookmarks-words'}
-			class="mobile-bookmarks__results"
+			class="mobile-bookmarks__results sy-snap-sheet__expanded-content"
 			class:mobile-bookmarks__results--empty={showEmptyState}
 			role="region"
 			aria-label="Saved words"
@@ -498,7 +503,9 @@
 		position: relative;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-bookmarks__content {
@@ -506,11 +513,13 @@
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior: none;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-bookmarks__dict-wrapper {
-		padding-bottom: calc(110px + env(safe-area-inset-bottom));
+		padding-bottom: calc(72px + max(12px, env(safe-area-inset-bottom)));
 	}
 
 	.mobile-bookmarks__empty {
@@ -523,7 +532,7 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		bottom: calc(110px + env(safe-area-inset-bottom));
+		bottom: calc(72px + max(12px, env(safe-area-inset-bottom)));
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -592,7 +601,6 @@
 		flex-direction: column;
 		min-height: 0;
 		/* The sheet is rendered at full height even when only partly revealed. */
-		margin-bottom: var(--sy-snap-sheet-hidden-height, 0px);
 		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 

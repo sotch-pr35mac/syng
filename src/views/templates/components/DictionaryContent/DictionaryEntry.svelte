@@ -48,17 +48,13 @@
 		lexicalPartsOfSpeech,
 	} from '@/types/dictionary.js';
 
-	/* Background Color Prop */
-	/* Possible Values */
-	// 'grey' - Grey Background
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {() => void} [onbreakdown]
 	 * @property {boolean} [breakdownOpen]
 	 * @property {any} word - Word Prop
 	 * @property {any} [lists] - Lists Prop
-	 * @property {string} [backgroundColor] - 'white' - White Background
+	 * @property {'grey' | 'white' | 'canvas'} [backgroundColor] - Legacy prop labels map to well, content, and canvas surface roles in theme.css
 	 * @property {boolean} [fixedActions] - Render action dropdowns with fixed positioning
 	 * @property {boolean} [showEmptyState] - Show Awa in an unselected page detail pane
 	 * @property {'search' | 'collect' | 'dictionary'} [emptyStatePose] - Match Awa to the page's empty state
@@ -584,7 +580,7 @@
 			</div>
 		</section>
 		<section class="dictionary-content">
-			<h2 class="dictionary-content--section-title">Definitions</h2>
+			<h2 class="sy-content-list-title">Definitions</h2>
 			<SyList
 				values={lexicalDefinitions(word)}
 				component={DefinitionItem}
@@ -593,13 +589,13 @@
 		</section>
 		{#if measureWords.length}
 			<section class="dictionary-content">
-				<h2 class="dictionary-content--section-title">Measure Words</h2>
+				<h2 class="sy-content-list-title">Measure Words</h2>
 				<SyList values={measureWords} component={MeasureWord} onevent={handleOpenLink} />
 			</section>
 		{/if}
 		{#if lexicalExamples(word).length}
 			<section class="dictionary-content">
-				<h2 class="dictionary-content--section-title">Examples</h2>
+				<h2 class="sy-content-list-title">Examples</h2>
 				<SyList
 					values={lexicalExamples(word)}
 					component={ExampleSentence}
@@ -609,12 +605,12 @@
 		{/if}
 		{#if typeof word.notes === 'string'}
 			<section class="dictionary-content">
-				<h2 id={notesLabelId} class="dictionary-content--section-title">Notes</h2>
+				<h2 id={notesLabelId} class="sy-content-list-title">Notes</h2>
 				<textarea
 					use:walkthroughTarget={'dictionary-notes'}
 					aria-label="Word notes"
 					use:cursorToEnd
-					placeholder="No Notes"
+					placeholder="Add a note…"
 					class="dictionary-content--notes {isMobile()
 						? 'dictionary-content--notes--mobile'
 						: ''}"
@@ -640,15 +636,22 @@
 
 <style>
 	.dictionary-content-container {
+		--sy-content-card-edge: transparent;
 		width: 100%;
 		overflow-y: scroll;
 		overflow-x: hidden;
 	}
 	.dictionary-content--background-grey {
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 	}
 	.dictionary-content--background-white {
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
+		--sy-content-card-edge: var(--sy-content-on-content-edge);
+	}
+	.dictionary-content--background-canvas {
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 	.dictionary-content__empty {
 		display: flex;
@@ -697,9 +700,9 @@
 		gap: var(--sy-space--small);
 		padding: var(--sy-space--large);
 		box-sizing: border-box;
-		/* The bar determines intrinsic width; metadata must not widen its column. */
+		/* The bar determines intrinsic width; tags may extend left into free header space. */
 		width: 0;
-		min-width: 100%;
+		min-width: 120%;
 	}
 	.dictionary-content__tags :global(.sy-tag) {
 		min-width: 0;
@@ -766,36 +769,44 @@
 		min-width: 0;
 		flex-wrap: wrap;
 	}
-	.dictionary-content--section-title {
-		font-size: 1.8em;
-		font-weight: 400;
-		margin: var(--sy-space--small) var(--sy-space--large);
-		color: var(--sy-text--muted);
-	}
 	.dictionary-content--notes {
 		display: block;
-		background-color: var(--sy-color--white);
-		border-radius: var(--sy-border-radius);
-		border: var(--sy-border);
+		background-color: var(--sy-surface--content);
+		border-radius: var(--sy-border-radius--content-list);
+		border: 1px solid var(--sy-content-card-edge);
 		box-sizing: border-box;
 		padding: var(--sy-space--extra-large);
 		margin: var(--sy-space--extra-large);
 		font-size: var(--sy-font-size--medium);
+		font-family: var(--sy-font-family);
+		line-height: var(--sy-line-height--body);
 		color: var(--sy-color--black);
 		height: auto;
 		width: calc(100% - calc(var(--sy-space--extra-large) + var(--sy-space--extra-large)));
+		box-shadow: var(--sy-shadow--content);
 	}
 	.dictionary-content--notes::placeholder {
 		color: var(--sy-text--placeholder);
 		opacity: 1;
 	}
 	.dictionary-content--notes:where(textarea) {
-		border: var(--sy-input--border);
+		border: 1px solid var(--sy-content-card-edge);
+	}
+	:global(:root[data-appearance='contrast']) .dictionary-content--notes:where(textarea) {
+		border-color: var(--sy-control--border);
 	}
 	.dictionary-content--notes--mobile {
 		margin: var(--sy-mobile-space--medium) 0;
 		width: 100%;
 		border: var(--sy-input--border-mobile);
 		box-shadow: none;
+	}
+	@media (forced-colors: active) {
+		.dictionary-content-container {
+			--sy-content-card-edge: ButtonText;
+		}
+		.dictionary-content--notes:where(textarea) {
+			border-color: ButtonText;
+		}
 	}
 </style>

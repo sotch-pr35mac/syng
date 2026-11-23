@@ -8,13 +8,10 @@ const PARTIAL_HEIGHT_RATIO = 0.38;
 const DRAG_START_Y = 700;
 const DRAG_END_Y = 100;
 
-// The sheet is rendered at full height and revealed by translating down, so the snap position
-// is encoded in the hidden-height property used by the transform and empty-state layout.
 const FULL_HEIGHT = Math.round(window.innerHeight * FULL_HEIGHT_RATIO);
 const PARTIAL_HEIGHT = Math.round(window.innerHeight * PARTIAL_HEIGHT_RATIO);
 const expectSnapHeight = (sheet, height) => {
-	const offset = Math.max(0, FULL_HEIGHT - height);
-	expect(sheet.style.getPropertyValue('--sy-snap-sheet-hidden-height')).toBe(`${offset}px`);
+	expect(sheet.style.height).toBe(`${height}px`);
 };
 
 it('should render at the collapsed height by default', () => {
@@ -62,6 +59,49 @@ it('should collapse to the collapsed height when collapse is called', async () =
 	await component.openFull();
 	await component.collapse();
 	expectSnapHeight(sheet, COLLAPSED_HEIGHT);
+});
+
+it('collapses and leaves the viewport before closing a dismissible sheet', async () => {
+	vi.stubGlobal('matchMedia', () => ({ matches: true }));
+	try {
+		const onclose = vi.fn();
+		const { container, component } = render(SySnapSheet, {
+			dismissible: true,
+			onclose,
+		});
+		const sheet = container.querySelector('.sy-snap-sheet');
+		await component.openFull();
+		await component.dismiss();
+		expect(onclose).toHaveBeenCalledOnce();
+		expect(sheet.classList.contains('sy-snap-sheet--offscreen')).toBe(true);
+		expectSnapHeight(sheet, COLLAPSED_HEIGHT);
+	} finally {
+		vi.unstubAllGlobals();
+	}
+});
+
+it('starts a new dismissal when reopened before the previous close completes', async () => {
+	vi.useFakeTimers();
+	try {
+		const onclose = vi.fn();
+		const { component } = render(SySnapSheet, { dismissible: true, onclose });
+		component.openFull();
+		const firstDismissal = component.dismiss();
+		await tick();
+		await vi.advanceTimersByTimeAsync(100);
+		component.openFull();
+		const secondDismissal = component.dismiss();
+		expect(secondDismissal).not.toBe(firstDismissal);
+		await tick();
+		await vi.advanceTimersByTimeAsync(260);
+		expect(onclose).not.toHaveBeenCalled();
+		expect(component.dismiss()).toBe(secondDismissal);
+		await vi.advanceTimersByTimeAsync(720);
+		await Promise.all([firstDismissal, secondDismissal]);
+		expect(onclose).toHaveBeenCalledOnce();
+	} finally {
+		vi.useRealTimers();
+	}
 });
 
 it('should fire the onSnapChange callback when the snap position changes', async () => {

@@ -25,8 +25,8 @@
 		width: 36px;
 		height: 36px;
 		border-radius: 50%;
-		background: var(--sy-color--white);
-		box-shadow: var(--sy-shadow);
+		background: var(--sy-surface--content);
+		box-shadow: var(--sy-shadow--floating-compact, var(--sy-shadow));
 		color: var(--sy-text--muted);
 	}
 </style>

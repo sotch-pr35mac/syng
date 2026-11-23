@@ -4,6 +4,22 @@ const MINIMUM_TOUCH_TARGET = 44;
 const PHONE_WIDTH = 393;
 const DESKTOP_WIDTH = 1100;
 
+for (const colorScheme of ['light', 'dark'] as const) {
+	test(`walkthrough shade uses the modal backdrop in ${colorScheme} appearance`, async ({
+		page,
+	}, testInfo) => {
+		await page.emulateMedia({ colorScheme });
+		await page.goto('/src/test/accessibility/index.html?walkthrough&overviewStudy');
+		const scrim = page.locator('.walkthrough__scrim');
+		await expect(scrim).toHaveCSS(
+			'fill',
+			colorScheme === 'light' ? 'rgba(71, 76, 90, 0.333)' : 'rgba(255, 255, 255, 0.333)'
+		);
+		await expect(scrim).toHaveCSS('opacity', '0.56');
+		await page.screenshot({ path: testInfo.outputPath('walkthrough-shade.png') });
+	});
+}
+
 for (const mobile of [false, true]) {
 	test(`${mobile ? 'phone' : 'desktop'} App Tour switches from Study navigation to newly added lists`, async ({
 		page,

@@ -16,6 +16,63 @@
 
 	const { document, editing = false, selected = false, onclick, onedit }: Props = $props();
 	const progressId = `reader-book-progress-${crypto.randomUUID()}`;
+	const coverColor = $derived(normalizeReaderDocumentColor(document.color));
+	/* eslint-disable @typescript-eslint/no-magic-numbers -- sRGB luminance constants and the cover's 70/30 paint mix. */
+	const lightCoverInk = $derived(getCoverInk(coverColor, 255));
+	const darkCoverInk = $derived(getCoverInk(coverColor, 0));
+	const progressPercent = $derived(getProgressPercent());
+
+	function getCoverInk(color: string, themeBase: number): string {
+		const channels = [1, 3, 5].map((position) =>
+			Number.parseInt(color.slice(position, position + 2), 16)
+		);
+		const blendedChannels = channels.map((channel) => channel * 0.7 + themeBase * 0.3);
+		const luminance = (rgb: number[]): number => {
+			const linearChannels = rgb.map((channel) => {
+				const value = channel / 255;
+				return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+			});
+			return (
+				linearChannels[0] * 0.2126 + linearChannels[1] * 0.7152 + linearChannels[2] * 0.0722
+			);
+		};
+		const coverLuminance = luminance(blendedChannels);
+		const charcoalLuminance = luminance([35, 35, 35]);
+		const contrast = (inkLuminance: number): number =>
+			(Math.max(coverLuminance, inkLuminance) + 0.05) /
+			(Math.min(coverLuminance, inkLuminance) + 0.05);
+
+		if (contrast(charcoalLuminance) >= 4.5) {
+			return '#232323';
+		}
+		return contrast(1) >= 4.5 ? '#ffffff' : '#000000';
+	}
+	/* eslint-enable @typescript-eslint/no-magic-numbers */
+
+	function getFormatLabel(sourceType: string): string {
+		switch (sourceType.toLowerCase()) {
+			case 'plain_text':
+				return 'Text';
+			case 'webpage':
+				return 'Webpage';
+			case 'epub':
+			case 'pdf':
+			case 'docx':
+			case 'rtf':
+				return sourceType.toUpperCase();
+			default:
+				return 'Document';
+		}
+	}
+
+	function getTitleSignature(title: string): string {
+		const characters = Array.from(title.trim());
+		return (
+			characters.find((character) => /[\p{L}\p{N}]/u.test(character)) ??
+			characters[0] ??
+			''
+		).toLocaleUpperCase();
+	}
 
 	function getProgressPercent(): number {
 		const progression = document.progress?.total_progression ?? 0;
@@ -31,7 +88,8 @@
 <div
 	class="reader-book-card"
 	class:reader-book-card--selected={selected}
-	style={`--reader-book-color: ${normalizeReaderDocumentColor(document.color)};`}
+	class:reader-book-card--editing={editing}
+	style={`--reader-book-color: ${coverColor}; --reader-book-ink-light: ${lightCoverInk}; --reader-book-ink-dark: ${darkCoverInk}; --reader-book-progress: ${progressPercent}%;`}
 >
 	<button
 		class="reader-book-card__cover"
@@ -52,12 +110,24 @@
 				{/if}
 			</span>
 		{/if}
-		<span class="reader-book-card__title">{document.title}</span>
-		<span
-			id={progressId}
-			class="reader-book-card__progress"
-			aria-label={`${getProgressPercent()}% read`}>{getProgressPercent()}%</span
+		<span class="reader-book-card__format">{getFormatLabel(document.source_type)}</span>
+		<span class="reader-book-card__signature" aria-hidden="true"
+			>{getTitleSignature(document.title)}</span
 		>
+		<span class="reader-book-card__title">{document.title}</span>
+		<span class="reader-book-card__progress">
+			<span id={progressId} class="reader-book-card__progress-label">
+				<span
+					>{progressPercent === 0
+						? 'Not started'
+						: progressPercent === 100
+							? 'Finished'
+							: 'Reading'}</span
+				>
+				{#if progressPercent > 0}<span>{progressPercent}%</span>{/if}
+			</span>
+			<span class="reader-book-card__progress-track" aria-hidden="true"></span>
+		</span>
 	</button>
 	{#if editing}
 		<SyButton
@@ -87,34 +157,61 @@
 
 	.reader-book-card__cover {
 		position: relative;
-		display: grid;
-		grid-template-rows: minmax(2.75rem, 1fr) auto minmax(2.75rem, 1fr);
+		display: flex;
+		flex-direction: column;
 		width: 100%;
 		aspect-ratio: 2 / 3;
 		min-height: 14.0625rem;
-		padding: 0;
+		padding: 17px 15px 14px 20px;
+		overflow: hidden;
 		font-family: inherit;
 		cursor: pointer;
 		box-sizing: border-box;
 		border: var(--sy-border);
 		border-radius: var(--sy-border-radius);
-		background:
-			linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-			color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #ffffff);
+		background: color-mix(in srgb, var(--reader-book-color) 70%, #ffffff);
 		box-shadow: var(--sy-shadow);
-		color: var(--sy-text--muted);
-		text-align: center;
+		color: var(--reader-book-ink-light);
+		text-align: left;
 		transition:
 			box-shadow var(--sy-transition-duration),
 			transform var(--sy-transition-duration),
 			border-color var(--sy-transition-duration);
 	}
 
+	.reader-book-card__cover::before {
+		content: '';
+		position: absolute;
+		inset: 0 auto 0 0;
+		width: 6px;
+		border-radius: var(--sy-border-radius) 0 0 var(--sy-border-radius);
+		background: linear-gradient(
+			90deg,
+			rgb(0 0 0 / 16%),
+			rgb(0 0 0 / 2%) 70%,
+			rgb(255 255 255 / 15%)
+		);
+		pointer-events: none;
+	}
+
+	.reader-book-card__cover::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: var(--sy-border-radius);
+		background: linear-gradient(
+			160deg,
+			rgb(255 255 255 / 14%),
+			transparent 40%,
+			rgb(0 0 0 / 9%)
+		);
+		pointer-events: none;
+	}
+
 	@media (prefers-color-scheme: dark) {
 		.reader-book-card__cover {
-			background:
-				linear-gradient(90deg, rgb(0 0 0 / 12%) 0 12px, transparent 12px),
-				color-mix(in srgb, var(--reader-book-color, var(--sy-color--white)) 70%, #000000);
+			background: color-mix(in srgb, var(--reader-book-color) 70%, #000000);
+			color: var(--reader-book-ink-dark);
 		}
 	}
 
@@ -144,7 +241,7 @@
 		border-radius: 50%;
 		border: 2px solid var(--sy-color--black);
 		color: var(--sy-color--white);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 
 	.reader-book-card__selection-indicator--selected {
@@ -157,33 +254,71 @@
 		left: var(--sy-space--large) !important;
 	}
 
+	.reader-book-card__format,
+	.reader-book-card__title,
+	.reader-book-card__progress {
+		position: relative;
+		z-index: 1;
+	}
+
+	.reader-book-card__format {
+		font-size: 0.625rem;
+		font-weight: var(--sy-font-weight--bold);
+		letter-spacing: 0.055em;
+		text-transform: uppercase;
+	}
+
+	.reader-book-card--editing .reader-book-card__format {
+		visibility: hidden;
+	}
+
 	.reader-book-card__title {
-		grid-row: 2;
-		padding: var(--sy-space--small) var(--sy-space) var(--sy-space--small)
-			calc(var(--sy-space) + 12px);
-		background: var(--sy-color--white);
-		box-shadow: 0 3px 8px rgb(0 0 0 / 14%);
-		color: var(--sy-color--black);
-		font-size: var(--sy-font-size--large);
-		font-weight: var(--sy-font-weight--medium);
-		line-height: 1.3;
-		text-align: center;
+		margin: 48px 0 auto;
+		max-width: 95%;
+		font-size: clamp(var(--sy-font-size--mobile-large), 1.6vw, 1.4375rem);
+		font-weight: var(--sy-font-weight--bold);
+		line-height: 1.19;
 		overflow-wrap: anywhere;
 	}
 
+	.reader-book-card__signature {
+		position: absolute;
+		z-index: 1;
+		right: -8px;
+		bottom: 16px;
+		font-size: 8.875rem;
+		font-weight: var(--sy-font-weight--bold);
+		line-height: 0.9;
+		opacity: 0.11;
+		pointer-events: none;
+	}
+
 	.reader-book-card__progress {
-		grid-row: 3;
-		align-self: end;
-		justify-self: center;
-		margin: var(--sy-space--small) var(--sy-space--large) var(--sy-space--large);
-		padding: var(--sy-space--small) var(--sy-space);
+		display: block;
+		width: 100%;
+	}
+
+	.reader-book-card__progress-label {
+		display: flex;
+		justify-content: space-between;
+		gap: var(--sy-space);
+		font-size: 0.6875rem;
+		font-weight: 600;
+	}
+
+	.reader-book-card__progress-track {
+		display: block;
+		height: 3px;
+		margin-top: 7px;
 		border-radius: var(--sy-border-radius);
-		background: var(--sy-color--white);
-		font-size: 0.78rem;
-		text-align: center;
-		color: var(--sy-color--black);
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		background: color-mix(in srgb, currentColor 25%, transparent);
+	}
+
+	.reader-book-card__progress-track::before {
+		content: '';
+		display: block;
+		width: var(--reader-book-progress);
+		height: 100%;
+		background: currentColor;
 	}
 </style>

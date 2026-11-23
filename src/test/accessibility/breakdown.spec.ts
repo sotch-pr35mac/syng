@@ -171,7 +171,7 @@ test('companion: real data, forgiving hover, stable notes, manual close and word
 for (const mobile of [false, true]) {
 	test(`popup replacement preserves local navigation without page history (${mobile ? 'mobile' : 'desktop'})`, async ({
 		page,
-	}) => {
+	}, testInfo) => {
 		if (mobile) {
 			await page.setViewportSize({ width: 390, height: 844 });
 		}
@@ -185,11 +185,38 @@ for (const mobile of [false, true]) {
 			url: location.href,
 		}));
 		const root = page.locator('.dictionary-content-container').first();
+		if (mobile) {
+			// The mobile sheet enters offscreen, then grows to its partial snap.
+			// Set the baseline after its geometry settles so scroll anchoring cannot
+			// change the baseline during the test's subsequent navigation.
+			await expect
+				.poll(() =>
+					root.evaluate((node) => {
+						const sheet = node.closest<HTMLElement>('.sy-snap-sheet');
+						const bounds = node.getBoundingClientRect();
+						const targetHeight = Number.parseFloat(sheet?.style.height ?? '0');
+						return (
+							targetHeight > 100 &&
+							!!sheet &&
+							Math.abs(
+								Number.parseFloat(getComputedStyle(sheet).height) - targetHeight
+							) < 1 &&
+							bounds.height > 0 &&
+							bounds.bottom <= window.innerHeight &&
+							node.scrollHeight - node.clientHeight >= 10
+						);
+					})
+				)
+				.toBe(true);
+		}
 		await root.evaluate((node) => (node.scrollTop = 10));
 		const scroll = await root.evaluate((node) => node.scrollTop);
 		await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 		const panel = page.getByRole('region', { name: 'Character Breakdown' });
 		await expect(panel).toBeVisible();
+		if (!mobile) {
+			await page.screenshot({ path: testInfo.outputPath('popup-character-breakdown.png') });
+		}
 		expect(
 			await page.evaluate(() => ({
 				length: history.length,

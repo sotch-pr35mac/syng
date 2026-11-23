@@ -98,6 +98,7 @@
 		aria-label="Reading library"
 		aria-busy={readerRoute.importing}
 		class="mobile-reader__library"
+		data-sy-primary-scroll
 		class:mobile-reader__library--empty={!library.documents.length}
 	>
 		{#if library.documents.length}
@@ -213,7 +214,9 @@
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 		font-family: var(--sy-font-family);
 	}
 
@@ -227,7 +230,7 @@
 		flex-wrap: wrap;
 		gap: var(--sy-space);
 		padding: 0 var(--sy-mobile-space--large);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--chrome);
 		border-bottom: var(--sy-mobile-surface-border);
 		box-sizing: border-box;
 		color: var(--sy-text--muted);

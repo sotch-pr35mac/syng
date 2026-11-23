@@ -291,13 +291,13 @@
 		align-items: center;
 		min-height: 100vh;
 		padding: var(--sy-space--extra-large);
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 	}
 
 	.onboarding-flow--mobile {
 		display: flex;
 		flex-direction: column;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.onboarding-flow--draggable {
@@ -316,7 +316,7 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.onboarding-flow--desktop .onboarding-flow__card {
@@ -361,7 +361,7 @@
 		padding: var(--sy-space--extra-large);
 		border-top: var(--sy-border);
 		flex-shrink: 0;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.onboarding-flow--mobile .onboarding-flow__actions {

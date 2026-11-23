@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Syng · General settings quieter layout exploration</title>
+  <style>
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Regular.woff2') format('woff2');font-weight:400}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-SemiBold.woff2') format('woff2');font-weight:600}
+    @font-face{font-family:Montserrat;src:url('../src/views/templates/fonts/montserrat/Montserrat-Bold.woff2') format('woff2');font-weight:700}
+    *{box-sizing:border-box}
+    :root{font-family:Montserrat,Arial,sans-serif;color:#474c5a;background:#e5e7ea}
+    body{margin:0;padding:22px}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .board{max-width:1450px;margin:auto}
+    .board-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 16px;color:#59636d;font-size:12px;line-height:1.45}
+    .board-head p{max-width:740px;margin:0}
+    .board-controls{display:flex;flex-wrap:wrap;gap:7px}
+    .board-controls button{min-height:34px;padding:6px 11px;border:1px solid #c6cbd1;border-radius:8px;background:#fff;color:#474c5a;font-size:11px}
+    .board-controls button[aria-pressed='true']{background:#dbe8f7;border-color:#8eb2dc;color:#2269b7;font-weight:700}
+    .window{--canvas:#f0f1f2;--chrome:#fafafa;--content:#fff;--well:#e8eaec;--floating:#fff;--text:#474c5a;--muted:#77818d;--line:#d6dbe0;--accent:#2c7ee7;--shadow:0 2px 5px #18233516,0 9px 19px #1823350d;container:app / inline-size;display:flex;width:100%;height:790px;overflow:hidden;border:1px solid #bdc3c9;border-radius:14px;background:var(--canvas);color:var(--text);box-shadow:0 24px 65px #25303f2c;transition:width .25s ease}
+    .window[data-size='compact']{width:min(100%,1080px)}
+    .window[data-size='narrow']{width:min(100%,780px)}
+    .window.dark{--canvas:#2d2d2d;--chrome:#242424;--content:#1e1e1e;--well:#313131;--floating:#171717;--text:#f1f1f1;--muted:#b5b5b5;--line:#494949;--accent:#8ab9ff;--shadow:0 3px 8px #0008,0 9px 19px #0005;border-color:#484848}
+    .rail{z-index:1;display:flex;flex:none;flex-direction:column;align-items:center;gap:8px;width:93px;padding:19px 0;background:var(--chrome);box-shadow:inset -1px 0 var(--line)}
+    .traffic{display:flex;gap:7px;margin-bottom:23px}.traffic span{width:10px;height:10px;border-radius:50%}.traffic span:nth-child(1){background:#ff5f57}.traffic span:nth-child(2){background:#febc2e}.traffic span:nth-child(3){background:#28c840}
+    .rail-button{display:grid;place-items:center;width:51px;height:51px;border:0;border-radius:50%;background:transparent;color:var(--muted)}
+    .rail-button.active{background:var(--content);color:var(--accent);box-shadow:0 2px 4px #0002,0 7px 12px #0001}
+    .rail-button svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .rail-spacer{flex:1}
+    .workspace{display:flex;flex:1;flex-direction:column;min-width:0;box-shadow:-3px 0 8px #1d28381c}
+    .header{z-index:2;flex:none;padding:23px 31px 0;background:var(--chrome);box-shadow:var(--shadow)}
+    .header h1{margin:0 0 14px;font-size:26px;line-height:1.2}
+    .tabs{display:flex;gap:25px}.tabs button{height:43px;padding:0 2px 11px;border:0;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:13px}.tabs button.active{border-bottom-color:var(--accent);color:var(--text);font-weight:700}
+    .scroll{flex:1;min-height:0;overflow:auto;padding:27px 31px 42px;scrollbar-color:var(--muted) transparent}
+    .general-layout{display:grid;grid-template-columns:188px minmax(0,1fr);gap:22px;max-width:1190px;margin:auto;align-items:start}
+    .index{position:sticky;top:0;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--line);border-radius:9px;background:var(--well);box-shadow:inset 0 1px 3px #0002}
+    .index button{min-height:40px;padding:7px 10px;border:0;border-inline-start:2px solid transparent;border-radius:5px;background:transparent;color:var(--muted);font-size:11px;text-align:left}
+    .index button.active{border-inline-start-color:var(--accent);color:var(--accent);font-weight:700}
+    .jump{display:none;min-height:42px;width:100%;margin-bottom:18px;padding:8px 12px;border:1px solid var(--line);border-radius:9px;background:var(--well);color:var(--text);font-size:12px}
+    .sections{min-width:0}
+    .overview{display:block}
+    .section{min-width:0;margin:0 0 36px;scroll-margin-top:24px}
+    .section h2{margin:0 0 10px 2px;font-size:16px;line-height:1.35}
+    .card{overflow:hidden;border-radius:9px;background:var(--content);box-shadow:var(--shadow)}
+    .row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;min-height:56px;padding:10px 15px;border-top:1px solid var(--line)}
+    .row:first-child{border-top:0}
+    .row-head{min-width:0}.row-head strong{display:block;font-size:13px;font-weight:600;line-height:1.35}.row-head small{display:block;margin-top:3px;color:var(--muted);font-size:11px;line-height:1.4}
+    .row-controls{display:flex;align-items:center;gap:7px;min-width:0}
+    .sy-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:39px;padding:7px 12px;border:0;border-radius:8px;background:var(--content);color:var(--text);font-size:12px;font-weight:600;box-shadow:var(--shadow)}
+    .sy-button:hover{background:var(--well)}.sy-button:active{box-shadow:inset 0 2px 4px #0003}
+    .sy-button:disabled{opacity:.5;cursor:default;box-shadow:none}
+    .sy-button.primary{background:var(--accent);color:#fff}
+    .select{min-height:39px;min-width:143px;padding:6px 9px;border:1px solid var(--line);border-radius:8px;background:var(--content);color:var(--text);font-size:12px;box-shadow:var(--shadow)}
+    .segmented{display:flex;gap:3px;padding:3px;border-radius:9px;background:var(--well)}
+    .segmented button{min-height:35px;padding:6px 9px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:11px;white-space:nowrap}
+    .segmented button[aria-pressed='true']{background:var(--content);color:var(--text);font-weight:700;box-shadow:var(--shadow)}
+    .dictionary-card .row{grid-template-columns:172px minmax(0,1fr)}
+    .dictionary-card .row-controls{justify-content:flex-start;flex-wrap:wrap}
+    .dictionary-card .row--stack{align-items:start}
+    .mini-options{display:grid;grid-template-columns:1fr;gap:5px;width:100%}
+    .mini-option{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:35px;color:var(--text);font-size:11px}
+    .switch{position:relative;flex:none;width:40px;height:24px;padding:0;border:1px solid var(--line);border-radius:20px;background:var(--well);transition:background .18s}
+    .switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--content);box-shadow:0 1px 3px #0004;transition:transform .18s}
+    .switch[aria-checked='true']{border-color:var(--accent);background:var(--accent)}.switch[aria-checked='true']::after{transform:translateX(16px)}
+    .appearance-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(290px,.9fr);gap:19px;align-items:start}
+    .appearance-settings{min-width:0}
+    .appearance-settings .row{grid-template-columns:160px minmax(0,1fr)}
+    .appearance-settings .row--stack{align-items:start}
+    .option-grid{display:grid;grid-template-columns:1fr;gap:2px;width:100%}
+    .option-grid .mini-option{min-height:39px}
+    .tone-palette{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .tone-reset{margin-top:7px;padding-inline:0;background:transparent;box-shadow:none;color:var(--accent)}
+    .tone-reset:hover{background:transparent;text-decoration:underline}
+    .tone-swatch{display:flex;align-items:center;gap:5px;min-height:39px;color:var(--muted);font-size:11px;white-space:nowrap}
+    .tone-swatch input{width:25px;height:25px;padding:0;border:0;border-radius:6px;background:transparent;cursor:pointer}
+    .preview-column{position:sticky;top:0;min-width:0;padding:17px;border-radius:9px;background:var(--floating);box-shadow:var(--shadow)}
+    .preview-column h3{margin:0 0 9px;font-size:12px}
+    .preview-column p{margin:0}
+    .preview-figure{padding:0;background:transparent}
+    .preview-label{color:var(--muted);font-size:10px}
+    .preview-word{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:9px 0 4px;font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:29px;line-height:1.2}
+    #preview-word{display:flex;align-items:baseline;flex-wrap:wrap;gap:10px}.word-form{display:inline-flex;align-items:baseline;gap:3px;white-space:nowrap}.word-form small{color:var(--muted);font-family:Montserrat,Arial,sans-serif;font-size:9px}
+    .preview-tags{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px}
+    .tag{padding:4px 6px;border-radius:5px;background:var(--well);font-family:Montserrat,Arial,sans-serif;font-size:9px;line-height:1.2;white-space:nowrap}
+    .tag.hsk{color:#9b6a12}.tag.pos{color:#24649e}.tag.qualifier{color:#258354}
+    .preview-pinyin,.preview-alt{font-size:12px;line-height:1.5}
+    .preview-alt{margin-top:6px!important;color:var(--muted)}
+    .preview-list{margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}
+    .preview-list-row{margin-top:6px;padding:10px;border-radius:8px;background:var(--well)}
+    .preview-list-row strong{font-family:-apple-system,'PingFang SC','Noto Sans CJK SC',sans-serif;font-size:17px}.preview-list-row small{display:block;margin-top:4px;color:var(--muted);font-size:10px}
+    .preview-figure.contrast{outline:1px solid var(--text)}
+    .preview-figure:not(.color-characters) .tone-char,.preview-figure:not(.color-pinyin) .tone-pinyin{color:var(--text)!important}
+    .dev-section[hidden]{display:none}
+    .toast{position:absolute;right:22px;bottom:19px;z-index:5;max-width:300px;padding:10px 14px;border-radius:9px;background:var(--floating);box-shadow:0 6px 23px #0003;color:var(--text);font-size:11px}
+    .toast[hidden]{display:none}
+    [hidden]{display:none!important}
+    button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    @container app (max-width:1140px){.general-layout{grid-template-columns:minmax(0,1fr)}.index{display:none}.jump{display:block}}
+    @container app (max-width:950px){.appearance-layout{grid-template-columns:minmax(0,1fr) minmax(260px,.85fr)}}
+    @container app (max-width:900px){.appearance-layout{grid-template-columns:1fr}.preview-column{position:static;grid-row:1}.appearance-settings{grid-row:2}}
+    @container app (max-width:760px){.rail{width:65px}.traffic{display:none}.rail-button{width:43px;height:43px}.rail-button svg{width:21px;height:21px}.header{padding:20px 18px 0}.scroll{padding:20px 18px 34px}}
+    @container app (max-width:560px){.dictionary-card .row,.appearance-settings .row{grid-template-columns:1fr}.option-grid{grid-template-columns:1fr}.tabs{gap:14px}.tabs button{font-size:11px}.row-controls{flex-wrap:wrap}.select{min-width:0}}
+    @media(prefers-reduced-motion:reduce){.window,.switch,.switch::after{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="board">
+    <div class="board-head"><p><strong>General Settings · quieter study.</strong> A single reading path replaces the side-by-side groups. Appearance keeps its own sticky preview column without covering controls. This is a mockup; the live app is unchanged.</p><div class="board-controls" aria-label="Mockup controls"><button type="button" data-size="wide" aria-pressed="true">Wide</button><button type="button" data-size="compact" aria-pressed="false">Compact</button><button type="button" data-size="narrow" aria-pressed="false">Narrow</button><button type="button" id="theme-button" aria-pressed="false">Dark mode</button><button type="button" id="recovery-button" aria-pressed="false">Recovery report</button><button type="button" id="developer-button" aria-pressed="false">Developer</button></div></div>
+    <main class="window" id="window" data-size="wide">
+      <nav class="rail" aria-label="Main navigation"><div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div><button class="rail-button" type="button" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="10" cy="10" r="6"/><path d="m14.5 14.5 6 6"/></svg></button><button class="rail-button" type="button" aria-label="Read"><svg viewBox="0 0 24 24"><path d="M12 5C9 3 6 3 2 4v15c4-1 7-1 10 1 3-2 6-2 10-1V4c-4-1-7-1-10 1Zm0 0v15"/></svg></button><button class="rail-button" type="button" aria-label="Bookmarks"><svg viewBox="0 0 24 24"><path d="M5 3h14v18l-7-5-7 5V3Z"/></svg></button><button class="rail-button" type="button" aria-label="Study"><svg viewBox="0 0 24 24"><path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v6c4 3 8 3 12 0v-6M22 8v8"/></svg></button><div class="rail-spacer"></div><button class="rail-button active" type="button" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M20 4l-2 2M6 18l-2 2"/></svg></button></nav>
+      <div class="workspace">
+        <header class="header"><h1>Settings</h1><div class="tabs" role="tablist" aria-label="Settings sections"><button class="active" type="button" role="tab" aria-selected="true">General</button><button type="button" role="tab" aria-selected="false">Telemetry</button><button type="button" role="tab" aria-selected="false">Acknowledgements</button></div></header>
+        <div class="scroll" id="scroll"><div class="general-layout">
+          <nav class="index" aria-label="General settings sections"><button class="active" type="button" data-jump="help">Help &amp; Maintenance</button><button type="button" data-jump="dictionary">Chinese &amp; Dictionary</button><button type="button" data-jump="appearance">Appearance</button><button class="dev-link" type="button" data-jump="developer" hidden>Developer</button></nav>
+          <div class="sections"><select class="jump" id="jump" aria-label="Jump to General settings section"><option value="help">Jump to section</option><option value="dictionary">Chinese &amp; Dictionary</option><option value="appearance">Appearance</option><option value="developer" class="dev-link" hidden>Developer</option></select>
+            <div class="overview">
+              <section class="section" id="help"><h2>Help &amp; Maintenance</h2><div class="card">
+                <div class="row"><div class="row-head"><strong>Walkthrough</strong><small>Replay a feature guide</small></div><div class="row-controls"><select class="select" aria-label="Choose walkthrough"><option>App tour</option><option>Dictionary</option><option>Bookmarks</option><option>Importing and your library</option><option>Reading a document</option><option>Choosing what to study</option><option>Flashcards</option><option>Quizzes</option></select><button type="button" class="sy-button primary" data-demo="The selected guide would start">Start</button></div></div>
+                <div class="row"><div class="row-head"><strong>What’s New</strong><small>Recent changes in Syng</small></div><button type="button" class="sy-button" data-demo="What’s New would open">View changes</button></div>
+                <div class="row"><div class="row-head"><strong>Updates</strong><small>Available outside the Mac App Store</small></div><button type="button" class="sy-button" data-demo="The update checker would open">Check updates</button></div>
+                <div class="row" id="recovery-row" hidden><div class="row-head"><strong>Bookmark Recovery</strong><small>When a saved report is available on supported platforms</small></div><button type="button" class="sy-button" data-demo="Saved recovery reports would open">View recovery reports</button></div>
+              </div></section>
+              <section class="section" id="dictionary"><h2>Chinese &amp; Dictionary</h2><div class="card dictionary-card">
+                <div class="row"><div class="row-head"><strong>Character set</strong></div><div class="row-controls"><div class="segmented" role="group" aria-label="Character set"><button type="button" data-choice="characters" data-value="both" aria-pressed="true">Both</button><button type="button" data-choice="characters" data-value="simplified" aria-pressed="false">Simplified</button><button type="button" data-choice="characters" data-value="traditional" aria-pressed="false">Traditional</button></div></div></div>
+                <div class="row"><div class="row-head"><strong>HSK standard</strong><small>Sets dictionary level labels</small></div><div class="row-controls"><div class="segmented" role="group" aria-label="HSK standard"><button type="button" data-choice="hsk" data-value="2015" aria-pressed="true">HSK 2015</button><button type="button" data-choice="hsk" data-value="2021" aria-pressed="false">2021 Standard</button></div></div></div>
+                <div class="row row--stack"><div class="row-head"><strong>Dictionary details</strong></div><div class="mini-options"><div class="mini-option">Qualifiers<button class="switch" type="button" role="switch" aria-label="Show qualifiers" aria-checked="true" data-preview="qualifier"></button></div><div class="mini-option">Parts of speech<button class="switch" type="button" role="switch" aria-label="Show parts of speech" aria-checked="true" data-preview="pos"></button></div><div class="mini-option">Alternative pronunciations<button class="switch" type="button" role="switch" aria-label="Show alternative pronunciations" aria-checked="true" data-preview="alt"></button></div></div></div>
+              </div></section>
+            </div>
+            <section class="section" id="appearance"><h2>Appearance</h2><div class="appearance-layout">
+              <div class="card appearance-settings">
+                <div class="row"><div class="row-head"><strong>Increase Contrast</strong></div><button class="switch" type="button" role="switch" aria-label="Increase Contrast" aria-checked="false" data-preview="contrast"></button></div>
+                <div class="row row--stack"><div class="row-head"><strong>Show pinyin</strong></div><div class="option-grid"><div class="mini-option">Character animations<button class="switch" type="button" role="switch" aria-label="Pinyin in character animations" aria-checked="true" data-preview="pinyin"></button></div><div class="mini-option">Flashcard fronts<button class="switch" type="button" role="switch" aria-label="Pinyin on flashcard fronts" aria-checked="true"></button></div><div class="mini-option">Reader<button class="switch" type="button" role="switch" aria-label="Pinyin in Reader" aria-checked="false"></button></div></div></div>
+                <div class="row row--stack"><div class="row-head"><strong>Tone Coloring</strong></div><div class="option-grid"><div class="mini-option">Characters<button class="switch" type="button" role="switch" aria-label="Color characters by tone" aria-checked="true" data-preview="characters-color"></button></div><div class="mini-option">Pinyin<button class="switch" type="button" role="switch" aria-label="Color pinyin by tone" aria-checked="true" data-preview="pinyin-color"></button></div><div class="mini-option">Lists<button class="switch" type="button" role="switch" aria-label="Apply tone coloring to lists" aria-checked="false" data-preview="lists-color"></button></div></div></div>
+                <div class="row row--stack"><div class="row-head"><strong>Tone Colors</strong><small>Choose a palette for each tone</small></div><div><div class="tone-palette"><label class="tone-swatch">1st<input type="color" value="#2880f2" data-tone="1" aria-label="First Tone color"></label><label class="tone-swatch">2nd<input type="color" value="#e48e1c" data-tone="2" aria-label="Second Tone color"></label><label class="tone-swatch">3rd<input type="color" value="#e43978" data-tone="3" aria-label="Third Tone color"></label><label class="tone-swatch">4th<input type="color" value="#43b866" data-tone="4" aria-label="Fourth Tone color"></label><label class="tone-swatch">None<input type="color" value="#9a9b9c" data-tone="5" aria-label="No Tone color"></label></div><button type="button" class="sy-button tone-reset" id="tone-reset" disabled>Reset to theme colors</button></div></div>
+              </div>
+              <aside class="preview-column" aria-label="Live appearance preview"><h3>Live preview</h3><div class="preview-figure color-characters color-pinyin" id="preview"><p class="preview-label">Dictionary entry</p><div class="preview-word"><span id="preview-word"><span class="word-form"><small>simp.</small><span class="tone-char" data-tone="4">汉</span><span class="tone-char" data-tone="3">语</span></span><span class="word-form"><small>trad.</small><span class="tone-char" data-tone="4">漢</span><span class="tone-char" data-tone="3">語</span></span></span><span class="preview-tags"><span class="tag hsk" id="preview-hsk">HSK 1</span><span class="tag pos" id="preview-pos">noun</span><span class="tag qualifier" id="preview-qualifier">linguistics</span></span></div><p class="preview-pinyin" id="preview-pinyin"><span class="tone-pinyin" data-tone="4">hàn</span> <span class="tone-pinyin" data-tone="3">yǔ</span></p><p class="preview-alt" id="preview-alt">alt. hàn yú · also pr.</p><div class="preview-list"><p class="preview-label">List result</p><div class="preview-list-row"><strong id="preview-list-word">汉语 · 漢語</strong><small>hàn yǔ · Chinese language</small></div></div></div></aside>
+            </div></section>
+            <section class="section dev-section" id="developer" hidden><h2>Developer <small style="color:var(--muted);font-size:10px;font-weight:400">Development builds only</small></h2><div class="card"><div class="row"><div class="row-head"><strong>Under Construction Features</strong></div><button class="switch" type="button" role="switch" aria-label="Under Construction Features" aria-checked="false"></button></div><div class="row"><div class="row-head"><strong>Database Migration</strong></div><button type="button" class="sy-button" data-demo="The migration preview would open">Preview</button></div><div class="row"><div class="row-head"><strong>Feature tour testing</strong></div><button type="button" class="sy-button" data-demo="Feature tour testing would open">Open</button></div><div class="row"><div class="row-head"><strong>What’s New testing</strong></div><button type="button" class="sy-button" data-demo="What’s New testing would open">Open</button></div><div class="row"><div class="row-head"><strong>Replay onboarding</strong><small>Show first-run setup again without removing data</small></div><button type="button" class="sy-button" data-demo="Onboarding would replay">Show again</button></div></div></section>
+          </div>
+        </div></div>
+      </div>
+      <div class="toast" id="toast" role="status" hidden></div>
+    </main>
+  </div>
+  <script>
+    const windowFrame = document.getElementById('window');
+    const scrollArea = document.getElementById('scroll');
+    const preview = document.getElementById('preview');
+    const boardSizeButtons = [...document.querySelectorAll('[data-size]')].filter((button) => button.tagName === 'BUTTON');
+    const jumpButtons = [...document.querySelectorAll('[data-jump]')];
+    const jumpPicker = document.getElementById('jump');
+    const toast = document.getElementById('toast');
+    let toastTimer;
+    function showToast(message) { toast.textContent = message; toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 2600); }
+    boardSizeButtons.forEach((button) => button.addEventListener('click', () => { windowFrame.dataset.size = button.dataset.size; boardSizeButtons.forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button))); }));
+    document.getElementById('theme-button').addEventListener('click', (event) => { const dark = windowFrame.classList.toggle('dark'); event.currentTarget.setAttribute('aria-pressed', String(dark)); event.currentTarget.textContent = dark ? 'Light mode' : 'Dark mode'; });
+    document.getElementById('developer-button').addEventListener('click', (event) => { const shown = document.getElementById('developer').hidden; document.getElementById('developer').hidden = !shown; document.querySelectorAll('.dev-link').forEach((element) => { element.hidden = !shown; }); event.currentTarget.setAttribute('aria-pressed', String(shown)); });
+    document.getElementById('recovery-button').addEventListener('click', (event) => { const shown = document.getElementById('recovery-row').hidden; document.getElementById('recovery-row').hidden = !shown; event.currentTarget.setAttribute('aria-pressed', String(shown)); });
+    function jumpTo(sectionId) { document.getElementById(sectionId).scrollIntoView({behavior:'smooth',block:'start'}); jumpButtons.forEach((button) => button.classList.toggle('active', button.dataset.jump === sectionId)); jumpPicker.value = sectionId; }
+    jumpButtons.forEach((button) => button.addEventListener('click', () => jumpTo(button.dataset.jump)));
+    jumpPicker.addEventListener('change', () => jumpTo(jumpPicker.value));
+    document.querySelectorAll('[data-demo]').forEach((button) => button.addEventListener('click', () => showToast(button.dataset.demo)));
+    document.querySelectorAll('.switch').forEach((control) => control.addEventListener('click', () => { const checked = control.getAttribute('aria-checked') !== 'true'; control.setAttribute('aria-checked', String(checked)); const target = control.dataset.preview; if (target === 'qualifier') document.getElementById('preview-qualifier').hidden = !checked; if (target === 'pos') document.getElementById('preview-pos').hidden = !checked; if (target === 'alt') document.getElementById('preview-alt').hidden = !checked; if (target === 'pinyin') document.getElementById('preview-pinyin').hidden = !checked; if (target === 'contrast') preview.classList.toggle('contrast', checked); if (target === 'characters-color') preview.classList.toggle('color-characters', checked); if (target === 'pinyin-color') preview.classList.toggle('color-pinyin', checked); if (target === 'lists-color') document.getElementById('preview-list-word').style.color = checked ? 'var(--tone-4)' : ''; }));
+    document.querySelectorAll('[data-choice]').forEach((button) => button.addEventListener('click', () => { const group = button.dataset.choice; document.querySelectorAll(`[data-choice='${group}']`).forEach((candidate) => candidate.setAttribute('aria-pressed', String(candidate === button))); if (group === 'characters') { const simplified = '<span class="word-form"><small>simp.</small><span class="tone-char" data-tone="4">汉</span><span class="tone-char" data-tone="3">语</span></span>'; const traditional = '<span class="word-form"><small>trad.</small><span class="tone-char" data-tone="4">漢</span><span class="tone-char" data-tone="3">語</span></span>'; const choice = button.dataset.value; document.getElementById('preview-word').innerHTML = choice === 'both' ? simplified + traditional : choice === 'traditional' ? traditional : simplified; document.getElementById('preview-list-word').textContent = choice === 'both' ? '汉语 · 漢語' : choice === 'traditional' ? '漢語' : '汉语'; applyToneColors(); } if (group === 'hsk') document.getElementById('preview-hsk').textContent = button.dataset.value === '2015' ? 'HSK 1' : 'HSK 1 · 2021'; }));
+    function applyToneColors() { document.querySelectorAll('[data-tone]').forEach((element) => { if (element.tagName === 'INPUT') return; element.style.color = `var(--tone-${element.dataset.tone})`; }); }
+    const toneInputs = [...document.querySelectorAll('.tone-swatch input')];
+    const themeToneColors = toneInputs.map((input) => input.value);
+    const toneReset = document.getElementById('tone-reset');
+    toneInputs.forEach((input) => input.addEventListener('input', () => { preview.style.setProperty(`--tone-${input.dataset.tone}`, input.value); toneReset.disabled = false; applyToneColors(); }));
+    toneReset.addEventListener('click', () => { toneInputs.forEach((input, index) => { input.value = themeToneColors[index]; preview.style.setProperty(`--tone-${input.dataset.tone}`, input.value); }); toneReset.disabled = true; applyToneColors(); });
+    document.querySelectorAll('.tone-swatch input').forEach((input) => preview.style.setProperty(`--tone-${input.dataset.tone}`, input.value));
+    applyToneColors();
+    scrollArea.addEventListener('scroll', () => { const sections = [...document.querySelectorAll('.section:not([hidden])')]; let active = sections[0].id; sections.forEach((section) => { if (section.getBoundingClientRect().top <= scrollArea.getBoundingClientRect().top + 35) active = section.id; }); jumpButtons.forEach((button) => button.classList.toggle('active', button.dataset.jump === active)); });
+  </script>
+</body>
+</html>

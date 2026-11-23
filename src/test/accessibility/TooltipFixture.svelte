@@ -63,6 +63,7 @@
 	<main>
 		<DictionaryContent
 			{word}
+			backgroundColor="grey"
 			lists={parameters.has('singleList') ? ['Bookmarks'] : ['Bookmarks', 'Study']}
 		/>
 		{#if !headerCase}

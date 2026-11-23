@@ -111,6 +111,11 @@ describe.each(schemes)('%s Contrast appearance', (scheme) => {
 			'--sy-color--white',
 			'--sy-color--grey-2',
 			'--sy-mobile-state-pressed',
+			'--sy-surface--canvas',
+			'--sy-surface--chrome',
+			'--sy-surface--content',
+			'--sy-surface--well',
+			'--sy-surface--floating',
 		]) {
 			checkContrast(`${token} / ${surface}`, color(token), color(surface));
 		}
@@ -162,7 +167,7 @@ describe.each(schemes)('%s theme roles', (scheme) => {
 		)?.[1];
 		expect(nativeColor, 'The native background must be opaque').toBeTruthy();
 		expect(`#${nativeColor?.toLowerCase()}`).toBe(
-			themeColors(scheme, appearance)('--sy-color--white')
+			themeColors(scheme, appearance)('--sy-surface--chrome')
 		);
 	});
 

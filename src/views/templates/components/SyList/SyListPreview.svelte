@@ -147,7 +147,7 @@
 
 	.sy-list-preview--mobile .sy-list-preview__rows {
 		overflow: hidden;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border: var(--sy-mobile-surface-border);
 		border-radius: var(--sy-border-radius);
 	}

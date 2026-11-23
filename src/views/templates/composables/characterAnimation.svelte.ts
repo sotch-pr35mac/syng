@@ -55,7 +55,9 @@ export function createCharacterAnimation() {
 		for (const cell of cells) {
 			cell.replaceChildren();
 		}
-		const darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		const theme = getComputedStyle(document.documentElement);
+		const strokeColor = theme.getPropertyValue('--sy-color--black').trim();
+		const outlineColor = theme.getPropertyValue('--sy-stroke-order-unanimated').trim();
 		try {
 			for (const [index, character] of Array.from(characters).entries()) {
 				writers.push(
@@ -63,8 +65,8 @@ export function createCharacterAnimation() {
 						width: 200,
 						height: 200,
 						padding: 5,
-						strokeColor: darkMode ? '#FFFFFF' : '#474C5A',
-						outlineColor: darkMode ? '#999999' : '#DDDDDD',
+						strokeColor,
+						outlineColor,
 						charDataLoader: async (requestedCharacter) => {
 							const response = await fetch(
 								`resources/hanzi-writer-data/data/${requestedCharacter}.json`,

@@ -23,6 +23,9 @@
 		"src/test/**/*.js",
 		"src/test/**/*.ts",
 		"src/test/**/*.svelte",
+		".storybook/**/*.ts",
+		"stories/desktop/**/*.ts",
+		"stories/desktop/**/*.svelte",
 		"vite.config.js"
 	],
 	"exclude": [

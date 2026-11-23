@@ -101,7 +101,7 @@ it('opens on the requested script and still allows manual switching', async () =
 			expect.any(Object)
 		)
 	);
-	expect(getByText('Traditional').className).toContain('script-selector--active');
+	expect(getByText('Traditional').getAttribute('aria-selected')).toBe('true');
 
 	await user.click(getByText('Simplified'));
 
@@ -112,5 +112,5 @@ it('opens on the requested script and still allows manual switching', async () =
 			expect.any(Object)
 		)
 	);
-	expect(getByText('Simplified').className).toContain('script-selector--active');
+	expect(getByText('Simplified').getAttribute('aria-selected')).toBe('true');
 });

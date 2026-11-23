@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import { Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 	import { CHARACTER_SETS, type CharacterScript } from '@/types/dictionaryDisplay.js';
@@ -104,29 +106,40 @@
 </script>
 
 <main class="character-window-container" aria-label="Character stroke order">
-	<div class="script-selector-container" data-tauri-drag-region={enableDrag ? true : undefined}>
-		<SyButton
-			style="ghost"
-			size="large"
+	<div
+		class="script-selector-container"
+		role="tablist"
+		aria-label="Character script"
+		use:tabNavigation
+		data-tauri-drag-region={enableDrag ? true : undefined}
+	>
+		<SyTab
+			role="tab"
+			id="character-window-simplified-tab"
+			aria-controls="character-window-panel"
+			active={activeScript === CHARACTER_SETS.SIMPLIFIED}
 			onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
-			aria-pressed={activeScript === CHARACTER_SETS.SIMPLIFIED}
 		>
-			<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}>
-				Simplified
-			</span>
-		</SyButton>
-		<SyButton
-			style="ghost"
-			size="large"
+			Simplified
+		</SyTab>
+		<SyTab
+			role="tab"
+			id="character-window-traditional-tab"
+			aria-controls="character-window-panel"
+			active={activeScript === CHARACTER_SETS.TRADITIONAL}
 			onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
-			aria-pressed={activeScript === CHARACTER_SETS.TRADITIONAL}
 		>
-			<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}>
-				Traditional
-			</span>
-		</SyButton>
+			Traditional
+		</SyTab>
 	</div>
-	<div class="character-window--content">
+	<div
+		class="character-window--content"
+		id="character-window-panel"
+		role="tabpanel"
+		aria-labelledby={activeScript === CHARACTER_SETS.SIMPLIFIED
+			? 'character-window-simplified-tab'
+			: 'character-window-traditional-tab'}
+	>
 		{#if animation.characterNotFound}
 			<div class="character-window--character-not-found--container">
 				<h1>Character Data Not Found</h1>
@@ -189,25 +202,25 @@
 		width: 100%;
 	}
 	.script-selector-container {
+		position: relative;
+		z-index: var(--sy-z-index--base-2);
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: center;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		margin: 0;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--chrome);
 		box-shadow: var(--sy-box-shadow);
-	}
-	.script-selector--active {
-		text-decoration: underline;
-		text-underline-position: under;
 	}
 	.character-window--content {
 		display: flex;
 		flex-direction: column;
 		flex: 1;
 		min-height: 0;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 	.character-window--character-not-found--container {
 		display: flex;
