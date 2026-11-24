@@ -18,6 +18,10 @@
 	--sy-tool-illustration-size: 8.25rem;
 	--sy-tool-illustration-size-mobile: 7.25rem;
 	--sy-tool-label-size: 0.8125rem;
+	--sy-radio-group-max-width: 480px;
+	--sy-tool-page-inset-mobile: calc(
+		var(--sy-mobile-space--large) + var(--sy-mobile-space--extra-small)
+	);
 	--sy-art-glow-opacity: 0.4;
 	--sy-art-glow-blur: 8px;
 

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { Copy, Play } from 'lucide-svelte';
+	import { Copy } from 'lucide-svelte';
+	import ToolProcessButton from '@/components/Tools/ToolProcessButton.svelte';
 	import ToolPageHeader from '@/components/Tools/ToolPageHeader.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
+	import SyRadio from '@/components/SyRadio/SyRadio.svelte';
+	import SyRadioGroup from '@/components/SyRadio/SyRadioGroup.svelte';
 	import type { TextConversionToolName } from '@/types/tools.js';
 	import type {
 		TextConversionControlGroup,
@@ -64,7 +66,6 @@
 	}: Props = $props();
 
 	const isMobile = $derived(variant === 'mobile');
-	const buttonBarSize = $derived(isMobile ? 'small' : 'medium');
 	const copyButtonClasses = $derived(isMobile ? [] : ['sy-tooltip--container']);
 	const visibleControlGroups = $derived(controlGroups.filter((group) => group.visible !== false));
 
@@ -102,32 +103,41 @@
 			{...{ autocorrect: 'off' }}
 			oninput={handleInput}
 		></textarea>
-		<div
-			class="text-conversion-tool__controls"
-			class:text-conversion-tool__controls--empty={visibleControlGroups.length === 0 &&
-				!decisionText}
-		>
-			{#each visibleControlGroups as group (group.id)}
-				<SyButtonBar size={buttonBarSize} aria-label={group.ariaLabel}>
-					{#each group.options as option (option.id)}
-						<SyButton
-							grouped
-							color={option.active ? 'blue' : undefined}
-							aria-pressed={option.active}
-							onclick={option.onSelect}
-						>
-							{isMobile ? (option.mobileLabel ?? option.label) : option.label}
-						</SyButton>
+		<div class="text-conversion-tool__controls">
+			{#if visibleControlGroups.length > 0 || decisionText}
+				<div class="text-conversion-tool__settings">
+					{#each visibleControlGroups as group (group.id)}
+						<fieldset class="text-conversion-tool__setting">
+							<legend class="sy-sr-only">{group.ariaLabel}</legend>
+							<SyRadioGroup
+								selectedValue={group.options.find((option) => option.active)?.id ??
+									''}
+								{variant}
+							>
+								{#each group.options as option (option.id)}
+									<label>
+										<SyRadio
+											name={`${headingId}-${group.id}`}
+											value={option.id}
+											checked={option.active}
+											onchange={option.onSelect}
+										/>
+										<span
+											>{isMobile
+												? (option.mobileLabel ?? option.label)
+												: option.label}</span
+										>
+									</label>
+								{/each}
+							</SyRadioGroup>
+						</fieldset>
 					{/each}
-				</SyButtonBar>
-			{/each}
-			{#if decisionText}
-				<p class="text-conversion-tool__decision">{decisionText}</p>
+					{#if decisionText}
+						<p class="text-conversion-tool__decision">{decisionText}</p>
+					{/if}
+				</div>
 			{/if}
-			<SyButton onclick={onProcess} center>
-				<Play size="16" />
-				<span>Process</span>
-			</SyButton>
+			<ToolProcessButton {variant} {onProcess} />
 		</div>
 	{/if}
 
@@ -188,9 +198,25 @@
 		flex-wrap: wrap;
 		gap: var(--sy-space);
 	}
-	.text-conversion-tool__controls--empty {
+	.text-conversion-tool__settings {
+		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
+		gap: var(--sy-space);
+		width: max-content;
+		max-width: 100%;
 	}
+	.text-conversion-tool__setting {
+		/* Keep the radio indicator and labels below the sticky tool header. */
+		isolation: isolate;
+		width: var(--sy-radio-group-max-width);
+		max-width: 100%;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
 	.text-conversion-tool__decision {
 		margin: 0;
 		color: var(--sy-text--muted);
@@ -216,11 +242,7 @@
 		word-break: break-word;
 		line-height: 1.6;
 	}
-	:global(.text-conversion-tool__controls .sy-button) {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sy-space);
-	}
+
 	.text-conversion-tool--mobile {
 		gap: var(--sy-mobile-space--large);
 	}
@@ -236,6 +258,12 @@
 		align-items: flex-start;
 		gap: var(--sy-mobile-space--medium);
 	}
+	.text-conversion-tool--mobile .text-conversion-tool__settings {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--sy-mobile-space--medium);
+	}
+
 	.text-conversion-tool--mobile .text-conversion-tool__decision {
 		font-size: var(--sy-font-size--mobile-small);
 		line-height: 1.4;

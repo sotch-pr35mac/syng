@@ -2,6 +2,7 @@
 	import ChineseCharacters from '@/components/DictionaryContent/ChineseCharacters.svelte';
 	import { dictionaryDisplaySettingsStore } from '@/stores/dictionaryDisplaySettings.svelte.js';
 	import { onMount, onDestroy } from 'svelte';
+	import ToolProcessButton from '@/components/Tools/ToolProcessButton.svelte';
 	import ToolPageHeader from '@/components/Tools/ToolPageHeader.svelte';
 	import type { TextConversionToolVariant } from '@/types/textConversionTool.js';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
@@ -98,11 +99,12 @@
 			autocapitalize="off"
 		></textarea>
 		<div class="actions">
-			<SyButton
-				onclick={() => frequencyTool.analyze()}
+			<ToolProcessButton
+				variant={layoutVariant}
+				onProcess={() => frequencyTool.analyze()}
 				disabled={frequency.busy || !frequency.input.trim()}
-				>{frequency.busy ? 'Analyzing…' : 'Analyze'}</SyButton
-			>
+				label={frequency.busy ? 'Analyzing…' : 'Analyze'}
+			/>
 		</div>
 	{/if}
 	<div role="status" aria-live="polite">

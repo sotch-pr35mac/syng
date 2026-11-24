@@ -199,7 +199,7 @@
 		position: relative;
 		box-sizing: border-box;
 		display: flex;
-		width: min(100%, 480px);
+		width: min(100%, var(--sy-radio-group-max-width));
 		max-width: 100%;
 		padding: 3px;
 		border: var(--sy-surface-border);

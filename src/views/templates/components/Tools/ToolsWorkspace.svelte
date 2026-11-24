@@ -8,6 +8,7 @@
 	import ToolsOverlays from '@/components/Tools/ToolsOverlays.svelte';
 	import { extrasTools, toolsRoute } from '@/composables/toolsRoute.svelte.js';
 	import { textConversionHeadingId } from '@/composables/textConversionTools.js';
+	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { scrollRestore } from '@/actions/scrollRestore.svelte.js';
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import { walkthroughStore } from '@/stores/walkthrough.svelte.js';
@@ -77,6 +78,10 @@
 		<div
 			class="tools-workspace__content"
 			data-sy-primary-scroll={mobile ? true : undefined}
+			use:swipeBack={{
+				enabled: mobile && toolsRoute.selectedTool !== null,
+				onBack: showToolbox,
+			}}
 			use:scrollRestore={`tools-${variant}-${toolsRoute.selectedTool ?? 'toolbox'}`}
 		>
 			{#if toolsRoute.selectedTool === null}
@@ -218,16 +223,16 @@
 		background-color: var(--sy-surface--canvas);
 		background-image: var(--sy-surface--canvas-texture);
 		background-blend-mode: var(--sy-surface--canvas-texture-blend);
-		padding-inline: var(--sy-mobile-space--large);
+		padding-inline: 0;
 	}
 	.tools-workspace--mobile .tools-workspace__header {
-		padding: var(--sy-mobile-space--large) 0;
+		padding: var(--sy-mobile-space--large);
 	}
 	.tools-workspace--mobile h1 {
 		font-size: var(--sy-font-size--mobile-heading);
 	}
 	.tools-workspace--mobile .tools-workspace__content {
-		padding-inline: var(--sy-mobile-space--extra-small);
+		padding-inline: var(--sy-tool-page-inset-mobile);
 	}
 	.tools-workspace--mobile .toolbox {
 		grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));

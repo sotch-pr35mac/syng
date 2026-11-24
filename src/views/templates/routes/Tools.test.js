@@ -74,7 +74,7 @@ it('switches tools and runs conversion', async () => {
 
 	await user.click(getByRole('button', { name: 'Convert', exact: true }));
 	await fireEvent.input(getByLabelText('Converter input'), { target: { value: '繁体字' } });
-	await user.click(getByRole('button', { name: 'To Traditional' }));
+	await user.click(getByRole('radio', { name: 'To Traditional' }));
 	await user.click(getByRole('button', { name: /Process/ }));
 
 	expect(invoke).toHaveBeenCalledWith('convert_characters', {
@@ -118,14 +118,14 @@ it('opens tools by keyboard, restores focus, and preserves input and controls', 
 	getByRole('button', { name: 'Pinyinify', exact: true }).focus();
 	await user.keyboard('{Tab}{Enter}');
 	expect(document.activeElement).toBe(getByRole('heading', { name: 'Convert' }));
-	await user.click(getByRole('button', { name: 'To Traditional', pressed: false }));
+	await user.click(getByRole('radio', { name: 'To Traditional', checked: false }));
 	await fireEvent.input(getByLabelText('Converter input'), { target: { value: '你好' } });
 	await user.click(getByRole('button', { name: 'Collapse Convert input', expanded: true }));
 	await user.click(getByRole('button', { name: 'All tools' }));
 	expect(document.activeElement).toBe(getByRole('button', { name: 'Convert', exact: true }));
 	await user.keyboard('{Enter}');
 	await user.click(getByRole('button', { name: 'Expand Convert input', expanded: false }));
-	expect(getByRole('button', { name: 'To Traditional', pressed: true })).toBeTruthy();
+	expect(getByRole('radio', { name: 'To Traditional', checked: true })).toBeTruthy();
 	expect(getByLabelText('Converter input').value).toBe('你好');
 });
 

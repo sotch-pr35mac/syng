@@ -93,6 +93,9 @@
 	}
 	.tool-page-header--mobile {
 		background-color: var(--sy-surface--chrome);
+		/* Fill the mobile scrollport while keeping controls aligned with the tool body. */
+		margin-inline: calc(-1 * var(--sy-tool-page-inset-mobile));
+		padding-inline: var(--sy-tool-page-inset-mobile);
 		padding-block: var(--sy-mobile-space--large) var(--sy-mobile-space--medium);
 	}
 	.tool-page-header--mobile h1 {
