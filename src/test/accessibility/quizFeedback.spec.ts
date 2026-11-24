@@ -16,6 +16,8 @@ async function sampleTransition(indicator: Locator) {
 		)
 		.toBe('paused');
 	return indicator.evaluate(async (element) => {
+		// Feedback text is mounted by the toggle and can request a font after page load.
+		await document.fonts.ready;
 		const animation = element.getAnimations().find((candidate) => {
 			const duration = Number(candidate.effect?.getTiming().duration);
 			return duration > 0;
@@ -164,7 +166,10 @@ for (const mobile of [false, true]) {
 				const first = samples[0];
 				for (const sample of samples) {
 					expect(sample.overflow).toBe('hidden');
-					expect(Math.abs(sample.height - first.height), direction).toBeLessThan(1);
+					expect(
+						Math.abs(sample.height - first.height),
+						`${direction}: ${JSON.stringify(samples)}`
+					).toBeLessThan(1);
 					expect(Math.abs(sample.width - first.width), direction).toBeLessThan(1);
 					for (const [index, child] of sample.children.entries()) {
 						expect(Math.abs(child.top - first.children[index].top)).toBeLessThan(1);

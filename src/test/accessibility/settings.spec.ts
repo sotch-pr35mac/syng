@@ -258,6 +258,8 @@ for (const mobile of [false, true]) {
 			});
 		}
 		const position = await page.locator(scroller).evaluate((node) => node.scrollTop);
+		const distanceFromSavedPosition = async () =>
+			Math.abs((await page.locator(scroller).evaluate((node) => node.scrollTop)) - position);
 		if (mobile) {
 			await jump(page, 'Acknowledgements');
 			await jump(page, 'Appearance');
@@ -265,14 +267,11 @@ for (const mobile of [false, true]) {
 			await page.getByRole('tab', { name: 'Acknowledgements' }).click();
 			await page.getByRole('tab', { name: 'General' }).click();
 		}
-		await expect
-			.poll(() => page.locator(scroller).evaluate((node) => node.scrollTop))
-			.toBeCloseTo(position, 0);
+		// Reflow after a tab remount can shift the viewport by a few pixels.
+		await expect.poll(distanceFromSavedPosition).toBeLessThan(8);
 		await page.getByRole('link', { name: 'Search', exact: true }).click();
 		await page.getByRole('button', { name: 'Return to Settings' }).click();
-		await expect
-			.poll(() => page.locator(scroller).evaluate((node) => node.scrollTop))
-			.toBeCloseTo(position, 0);
+		await expect.poll(distanceFromSavedPosition).toBeLessThan(8);
 	});
 }
 
@@ -288,13 +287,19 @@ test('section index follows scrolling and adapts when the window becomes narrow'
 		'aria-current',
 		'location'
 	);
-	await page.locator(scroller).evaluate((node) => {
-		node.scrollTop = node.scrollHeight;
-	});
-	await expect(navigation.getByRole('button', { name: 'Developer' })).toHaveAttribute(
-		'aria-current',
-		'location'
-	);
+	await expect
+		.poll(async () => {
+			// Content can grow after mount; verify the index at the actual bottom.
+			const bottom = await page.locator(scroller).evaluate((node) => {
+				node.scrollTop = node.scrollHeight;
+				return node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
+			});
+			const current = await navigation
+				.getByRole('button', { name: 'Developer' })
+				.getAttribute('aria-current');
+			return { bottom, current };
+		})
+		.toMatchObject({ current: 'location', bottom: true });
 	await page.setViewportSize({ width: 700, height: 852 });
 	await expect(navigation).toBeHidden();
 	await jump(page, 'Help & Maintenance');

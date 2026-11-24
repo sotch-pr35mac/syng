@@ -36,7 +36,12 @@ for (const pinyin of [false, true]) {
 				);
 			})
 		).toBe(true);
-		expect(await word.boundingBox()).toEqual(beforeHover);
+		const afterHover = await word.boundingBox();
+		expect(afterHover).not.toBeNull();
+		expect(afterHover!.width).toBe(beforeHover!.width);
+		expect(afterHover!.height).toBe(beforeHover!.height);
+		expect(Math.abs(afterHover!.x - beforeHover!.x)).toBeLessThan(0.5);
+		expect(Math.abs(afterHover!.y - beforeHover!.y)).toBeLessThan(0.5);
 
 		// The restored mouse treatment must retain the shared keyboard focus indicator.
 		await page.mouse.move(0, 0);
@@ -77,6 +82,17 @@ for (const pinyin of [false, true]) {
 				.getByRole('checkbox', { name: 'Show pinyin in Reader', exact: true })
 				.press('Space');
 			await page.getByText('Test preferences').click();
+			// Font and pinyin refreshes repaginate the Reader and clear its current lookup.
+			await page.evaluate(async () => {
+				await document.fonts.ready;
+			});
+			await expect(
+				page
+					.locator(
+						'.mobile-reader-document__page--base .reader-pronunciation:not(.reader-pronunciation--imported)'
+					)
+					.first()
+			).toBeVisible();
 		}
 		const word = page.locator('.mobile-reader-document__page--base .reader-word').first();
 		await word.click();

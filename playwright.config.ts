@@ -7,7 +7,7 @@ export default defineConfig({
 		? '**/accessibility.spec.ts'
 		: '**/baseline.spec.ts',
 	fullyParallel: true,
-	workers: process.env.CI ? 2 : 4,
+	workers: process.env.CI ? 2 : 14,
 	retries: process.env.CI ? 1 : 0,
 	use: {
 		viewport: { width: 1100, height: 800 },
