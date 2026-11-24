@@ -3,7 +3,6 @@
 	import {
 		BookOpen,
 		ChevronLeft,
-		ChevronRight,
 		CircleQuestionMark,
 		Info,
 		Settings2,
@@ -16,6 +15,7 @@
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyListNavigationRow from '@/components/SyList/SyListNavigationRow.svelte';
 	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { settingsScroll } from '@/actions/settingsScroll.js';
 	import {
@@ -187,17 +187,13 @@
 								<h2>{group.label}</h2>
 								<div class="mobile-settings__list">
 									{#each group.items as item (item.detail)}
-										<button
-											type="button"
-											class="mobile-settings__row"
+										<SyListNavigationRow
+											label={item.label}
+											description={item.description}
 											onclick={() => open(item.detail)}
 										>
-											<item.icon size="20" aria-hidden="true" /><span
-												><strong>{item.label}</strong><small
-													>{item.description}</small
-												></span
-											><ChevronRight size="17" aria-hidden="true" />
-										</button>
+											<item.icon size="20" aria-hidden="true" />
+										</SyListNavigationRow>
 									{/each}
 								</div>
 							</section>
@@ -205,16 +201,13 @@
 						{#if showDeveloper}<section class="mobile-settings__group">
 								<h2>Developer</h2>
 								<div class="mobile-settings__list">
-									<button
-										type="button"
-										class="mobile-settings__row"
+									<SyListNavigationRow
+										label="Developer"
+										description="Testing and advanced controls"
 										onclick={() => open('developer')}
-										><Settings2 size="20" aria-hidden="true" /><span
-											><strong>Developer</strong><small
-												>Testing and advanced controls</small
-											></span
-										><ChevronRight size="17" aria-hidden="true" /></button
 									>
+										<Settings2 size="20" aria-hidden="true" />
+									</SyListNavigationRow>
 								</div>
 							</section>{/if}
 					</div>
@@ -312,40 +305,6 @@
 		border: var(--sy-mobile-surface-border);
 		border-radius: 16px;
 		background: var(--sy-surface--content);
-	}
-	.mobile-settings__row {
-		display: flex;
-		align-items: center;
-		gap: 12px;
-		width: 100%;
-		min-height: 64px;
-		padding: 10px 14px;
-		border: 0;
-		border-top: var(--sy-mobile-surface-border);
-		background: transparent;
-		color: var(--sy-color--black);
-		font: inherit;
-		text-align: left;
-	}
-	.mobile-settings__row:first-child {
-		border-top: 0;
-	}
-	.mobile-settings__row:active {
-		background: var(--sy-surface--well);
-	}
-	.mobile-settings__row > span {
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		gap: 3px;
-		min-width: 0;
-	}
-	.mobile-settings__row strong {
-		font-size: var(--sy-font-size--mobile-medium);
-	}
-	.mobile-settings__row small {
-		color: var(--sy-text--secondary);
-		font-size: var(--sy-font-size--mobile-small);
 	}
 	.mobile-settings__panel {
 		min-width: 0;

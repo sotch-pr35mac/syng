@@ -95,8 +95,8 @@
 			<div class="study--empty">
 				<div class="study--empty-copy">
 					<Awa pose="practice" />
-					<h2>Make your saved words useful</h2>
-					<p>Save words from Search or Reader, then practice them here.</p>
+					<h2>No words to study yet</h2>
+					<p>Save words in Search or Reader to start practicing.</p>
 				</div>
 				<SyButton
 					size="large"

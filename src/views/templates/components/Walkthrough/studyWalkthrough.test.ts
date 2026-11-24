@@ -335,7 +335,7 @@ describe.each([
 		await bookmarksStore.refresh();
 		window.location.hash = '#/study';
 		render(component);
-		await screen.findByText('Save words from Search or Reader, then practice them here.');
+		await screen.findByText('Save words in Search or Reader to start practicing.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Learn how Study works' }));
 		await waitFor(() => expect(walkthroughStore.phase).toBe('guiding'));
 		render(WalkthroughHost);
@@ -360,7 +360,7 @@ describe.each([
 			).toBe(false);
 		});
 		expect(
-			screen.queryByText('Save words from Search or Reader, then practice them here.')
+			screen.queryByText('Save words in Search or Reader to start practicing.')
 		).toBeNull();
 		expect(window.location.hash).toBe('#/study');
 	});

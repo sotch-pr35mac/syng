@@ -52,7 +52,7 @@ const word = {
 	notes: '',
 } as unknown as BookmarkWordEntry;
 const emptyBookmarks = 'This list is empty. Search for a word, then add it to this list.';
-const emptyStudy = 'Save words from Search or Reader, then practice them here.';
+const emptyStudy = 'Save words in Search or Reader to start practicing.';
 const emptySearch = 'No results found. Try another word in Chinese, English, or pinyin.';
 const getListContent = vi.fn<() => Promise<BookmarkWordEntry[]>>();
 const getListSummaries = vi.fn<() => Promise<BookmarkListSummary[]>>();
@@ -198,6 +198,7 @@ describe.each(surfaces)('$name empty states', (surface) => {
 		await waitFor(() => expect(resolveLoad).toBeTypeOf('function'));
 		await act(() => resolveLoad([]));
 		expect(await view.findByText(emptyStudy)).toBeTruthy();
+		expect(view.getByRole('heading', { name: 'No words to study yet' })).toBeTruthy();
 		expect(view.getByRole('button', { name: 'Learn how Study works' })).toBeTruthy();
 		await userEvent.click(view.getByRole('button', { name: 'Search for words' }));
 		expect(window.location.hash).toBe('#/');

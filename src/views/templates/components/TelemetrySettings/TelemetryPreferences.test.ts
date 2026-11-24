@@ -13,7 +13,11 @@ vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve([{ code: 'CN', fallbackName: 'China' }])),
 }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
-vi.mock('@/utils/device.js', () => ({ isAndroid: () => false, isMobile: () => false }));
+const deviceState = vi.hoisted(() => ({ android: false }));
+vi.mock('@/utils/device.js', () => ({
+	isAndroid: () => deviceState.android,
+	isMobile: () => false,
+}));
 vi.mock('@/utils/error.js', () => ({ handleError: vi.fn() }));
 vi.mock('@/utils/telemetry.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('@/utils/telemetry.js')>()),
@@ -28,6 +32,7 @@ vi.mock('@/utils/telemetry.js', async (importOriginal) => ({
 let confirmedPrefs: TelemetryPrefs;
 
 beforeEach(async () => {
+	deviceState.android = false;
 	confirmedPrefs = {
 		enabled: true,
 		track_events: true,
@@ -50,6 +55,15 @@ beforeEach(async () => {
 	onboardingStore.reset();
 	await onboardingStore.selectRegion('CN');
 	vi.mocked(telemetry.setPref).mockClear();
+});
+
+it.each([false, true])('shows one footer privacy policy link when Android is %s', (android) => {
+	deviceState.android = android;
+	const view = render(TelemetrySettings);
+	const policyLinks = view.getAllByRole('link', { name: 'Privacy policy' });
+	expect(policyLinks).toHaveLength(1);
+	expect(policyLinks[0].getAttribute('href')).toBe('https://getsyng.com/privacy');
+	expect(view.queryByText('We respect your privacy.')).toBeNull();
 });
 
 const screens = [

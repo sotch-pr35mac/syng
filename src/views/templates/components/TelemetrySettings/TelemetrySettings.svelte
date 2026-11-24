@@ -12,7 +12,6 @@
 	import { telemetry, type TelemetryPrefs, type TelemetryEvent } from '@/utils/telemetry.js';
 	import { handleError } from '@/utils/error.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
-	import { isAndroid } from '@/utils/device.js';
 
 	interface Props {
 		variant?: 'desktop' | 'mobile';
@@ -183,17 +182,6 @@
 			<p class="telemetry--intro">
 				Choose what Syng records, then inspect events waiting to be sent.
 			</p>
-			{#if isAndroid()}
-				<p class="telemetry--privacy-notice">
-					We respect your privacy.
-					<a
-						class="telemetry--privacy-link"
-						href={PRIVACY_POLICY_URL}
-						onclick={openPrivacyPolicy}>View our privacy policy to learn more.</a
-					>
-				</p>
-			{/if}
-
 			<div class="telemetry--disclosure">
 				<p class="telemetry--disclosure-text">
 					We love privacy, and you should too! That's why Syng's telemetry service is
@@ -317,13 +305,9 @@
 					>
 				</div>
 			</section>
-			{#if !isAndroid()}
-				<a
-					class="telemetry--privacy-link"
-					href={PRIVACY_POLICY_URL}
-					onclick={openPrivacyPolicy}>Privacy policy</a
-				>
-			{/if}
+			<a class="telemetry--privacy-link" href={PRIVACY_POLICY_URL} onclick={openPrivacyPolicy}
+				>Privacy policy</a
+			>
 		</div>
 	{:else}
 		<div
@@ -449,13 +433,6 @@
 		margin: 0 0 var(--sy-space--large);
 		font-size: var(--sy-font-size--medium);
 		font-weight: var(--sy-font-weight--bold);
-	}
-
-	.telemetry--privacy-notice {
-		margin: 0 0 var(--sy-space--large);
-		font-size: var(--sy-font-size--medium);
-		color: var(--sy-text--dark);
-		line-height: 1.5;
 	}
 
 	.telemetry--privacy-link {
