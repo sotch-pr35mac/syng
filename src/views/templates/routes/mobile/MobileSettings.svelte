@@ -1,117 +1,240 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import {
+		BookOpen,
+		ChevronLeft,
+		CircleQuestionMark,
+		Info,
+		Settings2,
+		ShieldCheck,
+		Sun,
+	} from 'lucide-svelte';
 	import { router } from 'svelte-spa-router';
-	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
 	import GeneralSettings from '@/components/SettingsOption/GeneralSettings.svelte';
 	import TelemetrySettings from '@/components/TelemetrySettings/TelemetrySettings.svelte';
 	import AgeStatusSettings from '@/components/TelemetrySettings/AgeStatusSettings.svelte';
 	import Acknowledgements from '@/components/Acknowledgements/Acknowledgements.svelte';
-	import SyTab from '@/components/SyTab/SyTab.svelte';
-	import { tabNavigation } from '@/actions/tabNavigation.js';
+	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyListNavigationRow from '@/components/SyList/SyListNavigationRow.svelte';
+	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { settingsScroll } from '@/actions/settingsScroll.js';
-	import { settingsActiveTabStore, type SettingsTab } from '@/stores/settings.svelte.js';
+	import {
+		mobileSettingsDetailStore,
+		type MobileSettingsDetail,
+	} from '@/stores/settings.svelte.js';
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
+	import { whatsNewStore } from '@/stores/whatsNew.svelte.js';
+	import { isDevBuild, resolveIsDevBuild } from '@/composables/settings.js';
+	import { isAndroid } from '@/utils/device.js';
+	import { telemetry } from '@/utils/telemetry.js';
+
 	const destination = $derived(new URLSearchParams(router.querystring ?? ''));
-	$effect.pre(() => {
-		if (destination.has('section') || destination.has('setting')) {
-			settingsActiveTabStore.set('general');
-		}
-	});
-	const activeTab = $derived(settingsActiveTabStore.value as SettingsTab);
+	const detail = $derived(mobileSettingsDetailStore.value);
 	let scrollContainer = $state<HTMLDivElement>();
 	let generalReady = $state(false);
-	$effect.pre(() => {
-		void activeTab;
-		generalReady = false;
+	let telemetryQueueOpen = $state(false);
+	let showDeveloper = $state(isDevBuild());
+	onMount(() => {
+		let mounted = true;
+		void resolveIsDevBuild().then((development) => {
+			if (mounted) {
+				showDeveloper = development;
+			}
+			return undefined;
+		});
+		return () => {
+			mounted = false;
+		};
 	});
-	function setActiveTab(tab: SettingsTab): void {
-		settingsActiveTabStore.set(tab);
+	const titles: Record<MobileSettingsDetail, string> = {
+		home: 'Settings',
+		appearance: 'Appearance',
+		dictionary: 'Chinese & Dictionary',
+		help: 'Help & Maintenance',
+		telemetry: 'Telemetry',
+		acknowledgements: 'Acknowledgements',
+		developer: 'Developer',
+	};
+	const groups = [
+		{
+			label: 'Preferences',
+			items: [
+				{
+					detail: 'appearance',
+					label: 'Appearance',
+					description: 'Contrast, pinyin, and tone colors',
+					icon: Sun,
+				},
+				{
+					detail: 'dictionary',
+					label: 'Chinese & Dictionary',
+					description: 'Characters, HSK, and entry details',
+					icon: BookOpen,
+				},
+			],
+		},
+		{
+			label: 'Privacy',
+			items: [
+				{
+					detail: 'telemetry',
+					label: 'Telemetry',
+					description: 'Choose what Syng sends',
+					icon: ShieldCheck,
+				},
+			],
+		},
+		{
+			label: 'Help & information',
+			items: [
+				{
+					detail: 'help',
+					label: 'Help & Maintenance',
+					description: 'Feature guides and What’s New',
+					icon: CircleQuestionMark,
+				},
+				{
+					detail: 'acknowledgements',
+					label: 'Acknowledgements',
+					description: 'Credits and licenses',
+					icon: Info,
+				},
+			],
+		},
+	] as const;
+	$effect.pre(() => {
+		const section = destination.get('section');
+		const setting = destination.get('setting');
+		const target =
+			section === 'appearance' ||
+			section === 'dictionary' ||
+			section === 'help' ||
+			section === 'developer'
+				? section
+				: setting === 'contrast'
+					? 'appearance'
+					: setting === 'walkthrough'
+						? 'help'
+						: undefined;
+		if (target) {
+			mobileSettingsDetailStore.set(target);
+		}
+	});
+	$effect.pre(() => {
+		void detail;
+		generalReady = false;
+		telemetryQueueOpen = false;
+	});
+	function open(next: MobileSettingsDetail): void {
+		if (next === detail) {
+			return;
+		}
+		mobileSettingsDetailStore.set(next);
+		if (next !== 'home') {
+			telemetry.trackEvent('settings.section_selected', { section: next }).catch(() => {});
+		}
 	}
+	const generalSection = $derived(
+		detail === 'help' ||
+			detail === 'dictionary' ||
+			detail === 'appearance' ||
+			detail === 'developer'
+			? detail
+			: undefined
+	);
 </script>
 
 <div class="mobile-settings">
-	<header class="mobile-settings__header">
-		<div
-			class="mobile-settings__tabs"
-			role="tablist"
-			aria-label="Settings sections"
-			use:tabNavigation
-		>
-			<SyTab
-				variant="mobile"
-				role="tab"
-				id="mobile-settings-general-tab"
-				aria-controls="mobile-settings-panel"
-				active={activeTab === 'general'}
-				onclick={() => setActiveTab('general')}
-			>
-				General
-			</SyTab>
-			<SyTab
-				variant="mobile"
-				role="tab"
-				id="mobile-settings-telemetry-tab"
-				aria-controls="mobile-settings-panel"
-				active={activeTab === 'telemetry'}
-				onclick={() => setActiveTab('telemetry')}
-			>
-				Telemetry
-			</SyTab>
-			<SyTab
-				variant="mobile"
-				role="tab"
-				id="mobile-settings-acknowledgements-tab"
-				aria-controls="mobile-settings-panel"
-				active={activeTab === 'acknowledgements'}
-				onclick={() => setActiveTab('acknowledgements')}
-			>
-				Acknowledgements
-			</SyTab>
-		</div>
-	</header>
-
 	{#if destination.get('from') === 'whats-new'}
-		<div class="settings-return">
+		<div class="mobile-settings__return">
 			<SyButton style="ghost" size="large" onclick={whatsNewStore.back}
 				>Back to What’s New</SyButton
 			>
 		</div>
 	{/if}
-
-	{#key activeTab}
+	{#key detail}
 		<div
-			class="mobile-settings__content"
-			bind:this={scrollContainer}
-			use:settingsScroll={{
-				layout: 'mobile',
-				tab: activeTab,
-				ready: activeTab !== 'general' || generalReady,
-				destination: destination.has('section') || destination.has('setting'),
+			class="mobile-settings__page"
+			use:swipeBack={{
+				enabled: detail !== 'home' && !telemetryQueueOpen,
+				onBack: () => open('home'),
 			}}
 		>
+			{#if detail !== 'home'}
+				<header class="mobile-settings__detail-header">
+					<button type="button" class="mobile-settings__back" onclick={() => open('home')}
+						><ChevronLeft size="18" />Settings</button
+					>
+					<h1 id="mobile-settings-title" tabindex="-1">{titles[detail]}</h1>
+				</header>
+			{/if}
 			<div
-				role="tabpanel"
-				id="mobile-settings-panel"
-				aria-labelledby={`mobile-settings-${activeTab}-tab`}
-				tabindex="0"
-				class="mobile-settings__panel"
+				class="mobile-settings__content"
+				class:mobile-settings__content--android={isAndroid()}
+				data-sy-primary-scroll
+				bind:this={scrollContainer}
+				use:settingsScroll={{
+					layout: 'mobile',
+					tab: detail,
+					ready: !generalSection || generalReady,
+					destination: destination.has('section') || destination.has('setting'),
+				}}
 			>
-				{#if activeTab === 'general'}
-					<GeneralSettings
-						variant="mobile"
-						{scrollContainer}
-						onready={() => {
-							generalReady = true;
-						}}
-					/>
-				{:else if activeTab === 'telemetry'}
-					{#if privacySettingsStore.childPrivacyMode}
-						<AgeStatusSettings variant="mobile" />
-					{:else}
-						<TelemetrySettings variant="mobile" />
-					{/if}
+				{#if detail === 'home'}
+					<div class="mobile-settings__home" aria-label="Settings groups">
+						{#each groups as group (group.label)}
+							<section class="mobile-settings__group">
+								<h2>{group.label}</h2>
+								<div class="mobile-settings__list">
+									{#each group.items as item (item.detail)}
+										<SyListNavigationRow
+											label={item.label}
+											description={item.description}
+											onclick={() => open(item.detail)}
+										>
+											<item.icon size="20" aria-hidden="true" />
+										</SyListNavigationRow>
+									{/each}
+								</div>
+							</section>
+						{/each}
+						{#if showDeveloper}<section class="mobile-settings__group">
+								<h2>Developer</h2>
+								<div class="mobile-settings__list">
+									<SyListNavigationRow
+										label="Developer"
+										description="Testing and advanced controls"
+										onclick={() => open('developer')}
+									>
+										<Settings2 size="20" aria-hidden="true" />
+									</SyListNavigationRow>
+								</div>
+							</section>{/if}
+					</div>
 				{:else}
-					<Acknowledgements />
+					<div
+						role={generalSection ? undefined : 'region'}
+						aria-labelledby={generalSection ? undefined : 'mobile-settings-title'}
+						class="mobile-settings__panel"
+					>
+						{#if generalSection}
+							<GeneralSettings
+								variant="mobile"
+								section={generalSection}
+								{scrollContainer}
+								onready={() => {
+									generalReady = true;
+								}}
+							/>
+						{:else if detail === 'telemetry'}
+							{#if privacySettingsStore.childPrivacyMode}<AgeStatusSettings
+									variant="mobile"
+								/>{:else}<TelemetrySettings
+									variant="mobile"
+									onQueueChange={(open) => (telemetryQueueOpen = open)}
+								/>{/if}
+						{:else}<Acknowledgements />{/if}
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -119,46 +242,72 @@
 </div>
 
 <style>
-	.settings-return {
-		padding: var(--sy-space--large);
-		flex-shrink: 0;
-	}
 	.mobile-settings {
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		background-color: var(--sy-color--white);
+		background: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
-
-	.mobile-settings__header {
+	.mobile-settings__page {
 		display: flex;
+		flex: 1;
 		flex-direction: column;
-		padding: calc(var(--sy-mobile-space--extra-small) * 5);
-		background-color: var(--sy-color--white);
+		min-height: 0;
+	}
+	.mobile-settings__return {
+		padding: var(--sy-mobile-space--large);
+	}
+	.mobile-settings__detail-header {
+		flex: none;
+		padding: 10px 16px 12px;
+		background: var(--sy-surface--chrome);
 		border-bottom: var(--sy-mobile-surface-border);
-		flex-shrink: 0;
 	}
-
-	.mobile-settings__tabs {
-		flex-wrap: wrap;
-		display: flex;
+	.mobile-settings__detail-header h1 {
+		margin: 8px 0 0;
+		font-size: var(--sy-font-size--mobile-heading);
+	}
+	.mobile-settings__back {
+		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		gap: var(--sy-mobile-space--medium);
+		min-height: 44px;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--sy-text--blue);
+		font: inherit;
 	}
-
 	.mobile-settings__content {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
-		padding: calc(var(--sy-mobile-space--extra-small) * 5);
+		padding: 16px;
+	}
+	.mobile-settings__content--android {
+		/* Android WebView otherwise reuses stale tiles from earlier shell frames. */
+		transform: translateZ(0);
+	}
+	.mobile-settings__home {
 		display: flex;
 		flex-direction: column;
-		gap: calc(var(--sy-mobile-space--medium) * 3);
+		gap: 24px;
 	}
-
+	.mobile-settings__group h2 {
+		margin: 0 0 8px 12px;
+		color: var(--sy-text--muted);
+		font-size: var(--sy-font-size--small);
+		font-weight: 700;
+	}
+	.mobile-settings__list {
+		overflow: hidden;
+		border: var(--sy-mobile-surface-border);
+		border-radius: 16px;
+		background: var(--sy-surface--content);
+	}
 	.mobile-settings__panel {
-		flex-shrink: 0;
 		min-width: 0;
+		padding-bottom: 32px;
 	}
 </style>

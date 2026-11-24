@@ -189,7 +189,7 @@
 		padding: 0px;
 		margin: calc(var(--sy-space--small) + var(--sy-space--large))
 			calc(var(--sy-space--small) + var(--sy-space));
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		color: var(--sy-color--black);
 		font-size: 0.833333rem;
 		min-width: 0;
@@ -203,13 +203,14 @@
 	.sy-text-input--standard {
 		border-radius: var(--sy-border-radius);
 		border: var(--sy-input--border);
-		padding: var(--sy-space);
+		padding: var(--sy-space) var(--sy-space--large);
 		box-shadow: var(--sy-inner-shadow);
 	}
 	.sy-text-input--ghost {
 		height: 100%;
 		display: flex;
 		flex: 1;
+		background-color: transparent;
 	}
 	/* Ghost fields are intentionally unbounded; retain their caret without a focus box. */
 	.sy-text-input--ghost:focus,

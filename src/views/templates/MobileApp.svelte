@@ -27,6 +27,47 @@
 	runStartupActions();
 
 	let keyboardInset = $state(0);
+	let headerProgress = $state(0);
+	const HEADER_COLLAPSE_DISTANCE = 63;
+	const reducedHeaderMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+	function primaryScrollHeader(node: HTMLElement) {
+		let frame = 0;
+		const update = () => {
+			const scroller = node.querySelector<HTMLElement>('[data-sy-primary-scroll]');
+			headerProgress = reducedHeaderMotion?.matches
+				? 0
+				: Math.min(1, Math.max(0, (scroller?.scrollTop ?? 0) / HEADER_COLLAPSE_DISTANCE));
+		};
+		const schedule = () => {
+			if (!frame) {
+				frame = requestAnimationFrame(() => {
+					frame = 0;
+					update();
+				});
+			}
+		};
+		const onScroll = (event: Event) => {
+			if (
+				event.target instanceof HTMLElement &&
+				event.target.hasAttribute('data-sy-primary-scroll')
+			) {
+				schedule();
+			}
+		};
+		const observer = new MutationObserver(schedule);
+		observer.observe(node, { childList: true, subtree: true });
+		node.addEventListener('scroll', onScroll, true);
+		reducedHeaderMotion?.addEventListener('change', schedule);
+		schedule();
+		return {
+			destroy() {
+				observer.disconnect();
+				node.removeEventListener('scroll', onScroll, true);
+				reducedHeaderMotion?.removeEventListener('change', schedule);
+				cancelAnimationFrame(frame);
+			},
+		};
+	}
 	let onboardingReady = $state(false);
 	let startupReady = $state(false);
 	let startupFailed = $state(false);
@@ -184,10 +225,11 @@
 					document.getElementById('sy-main-content')?.focus();
 				}}>Skip to content</a
 			>
-			<MobileNavigation />
+			<MobileNavigation scrollProgress={headerProgress} />
 		{/if}
 		<main
 			id="sy-main-content"
+			use:primaryScrollHeader
 			use:routeAccessibility={router.location}
 			class="mobile-app__content"
 			tabindex="-1"

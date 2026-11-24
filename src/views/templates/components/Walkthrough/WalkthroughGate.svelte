@@ -64,11 +64,11 @@
 		right: 16px;
 		z-index: var(--sy-z-index--top);
 		padding: 16px;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);
 		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow--active);
+		box-shadow: var(--sy-shadow--floating-compact, var(--sy-shadow--active));
 	}
 	button {
 		min-height: 44px;

@@ -25,18 +25,51 @@ const readerDocument: ReaderDocument = {
 it('opens the native card button with Enter or Space, without handling other keys', async () => {
 	const user = userEvent.setup();
 	const onclick = vi.fn();
-	const { getByRole } = render(ReaderBookCard, { document: readerDocument, onclick });
+	const { getByRole, getByText } = render(ReaderBookCard, { document: readerDocument, onclick });
 	const card = getByRole('button', { name: 'Open Story' });
 	expect(card.tagName).toBe('BUTTON');
 	expect(card.hasAttribute('aria-pressed')).toBe(false);
+	expect(card.querySelector('.reader-book-card__signature')?.textContent).toBe('S');
+	expect(card.querySelector('.reader-book-card__progress-label')).toBeTruthy();
 	expect(document.getElementById(card.getAttribute('aria-describedby') ?? '')?.textContent).toBe(
-		'25%'
+		'Reading 25%'
 	);
+	expect(getByText('Text')).toBeTruthy();
 	await user.tab();
 	await user.keyboard('x{ArrowRight}');
 	expect(onclick).not.toHaveBeenCalled();
 	await user.keyboard('{Enter} ');
 	expect(onclick).toHaveBeenCalledTimes(2);
+});
+
+it('keeps the whole title visible and uses readable ink for custom light and dark covers', async () => {
+	const customDocument = {
+		...readerDocument,
+		title: 'A long book title for enlarged text and mixed 中文',
+		color: '#ffffff',
+		progress: undefined,
+	};
+	const { container, getByRole, getByText, rerender } = render(ReaderBookCard, {
+		document: customDocument,
+	});
+	const cover = getByRole('button', { name: `Open ${customDocument.title}` });
+	const card = container.querySelector('.reader-book-card');
+	expect(cover.textContent).toContain(customDocument.title);
+	expect(getByText('Not started')).toBeTruthy();
+	expect(card?.getAttribute('style')).toContain('--reader-book-ink-light: #232323');
+	expect(card?.getAttribute('style')).toContain('--reader-book-ink-dark: #232323');
+	await rerender({ document: { ...customDocument, color: '#000000' } });
+	expect(card?.getAttribute('style')).toContain('--reader-book-ink-light: #ffffff');
+	expect(card?.getAttribute('style')).toContain('--reader-book-ink-dark: #ffffff');
+});
+
+it('uses the first character of a Chinese title as its decorative signature', () => {
+	const { getByRole } = render(ReaderBookCard, {
+		document: { ...readerDocument, title: '城市的一天', source_type: 'webpage' },
+	});
+	const cover = getByRole('button', { name: 'Open 城市的一天' });
+	expect(cover.querySelector('.reader-book-card__signature')?.textContent).toBe('城');
+	expect(cover.textContent).toContain('城市的一天');
 });
 
 it('exposes selection and gives editing a separate button that does not select the card', async () => {

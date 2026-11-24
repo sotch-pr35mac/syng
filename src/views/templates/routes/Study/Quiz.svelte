@@ -356,7 +356,7 @@
 		display: flex;
 		padding: var(--sy-space--extra-large) var(--sy-space--large);
 		margin: 0;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		box-shadow: var(--sy-box-shadow);
 		z-index: var(--sy-z-index--base-2);
 		align-items: center;
@@ -375,7 +375,7 @@
 	.quiz--content {
 		min-height: 0;
 		display: flex;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		width: 100%;
 		height: 100%;
 		overflow-y: auto;

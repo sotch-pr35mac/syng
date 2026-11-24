@@ -351,7 +351,7 @@
 
 	.privacy-step__disclosure {
 		padding: var(--sy-space--extra-large);
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 		border-radius: var(--sy-border-radius);
 	}
 
@@ -390,7 +390,7 @@
 	.privacy-step__payload {
 		margin: 0;
 		padding: var(--sy-space--large);
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 		border-radius: var(--sy-border-radius);
 		font-size: 0.6875rem;
 		line-height: 1.5;

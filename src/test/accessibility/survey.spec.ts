@@ -53,7 +53,7 @@ for (const scenario of [
 		// Check both text and filled controls before axe snapshots computed styles.
 		await expect(page.locator('.about-you__counter')).toHaveCSS(
 			'color',
-			scenario.scheme === 'light' ? 'rgb(112, 112, 112)' : 'rgb(154, 155, 156)'
+			scenario.scheme === 'light' ? 'rgb(100, 100, 100)' : 'rgb(154, 155, 156)'
 		);
 		await expect(page.getByRole('button', { name: 'Continue', exact: true })).toHaveCSS(
 			'background-color',

@@ -217,6 +217,7 @@ it('renders populated study lists and opens flashcards', async () => {
 	const { findByText, getByRole, queryByText } = render(MobileStudy);
 
 	expect(await findByText('Bookmarks')).toBeTruthy();
+	expect(await findByText('4 saved words')).toBeTruthy();
 	await waitFor(() => expect(queryByText('Empty List')).toBeFalsy());
 
 	await user.click(getByRole('button', { name: 'Flashcards for Bookmarks' }));

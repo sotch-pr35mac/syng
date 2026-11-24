@@ -84,7 +84,9 @@
 			max(var(--sy-space--extra-large), env(safe-area-inset-right, 0px))
 			max(var(--sy-space--extra-large), env(safe-area-inset-bottom, 0px))
 			max(var(--sy-space--extra-large), env(safe-area-inset-left, 0px));
-		background: var(--sy-color--grey-2);
+		background: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 		color: var(--sy-text--dark);
 		overflow-wrap: anywhere;
 		line-height: var(--sy-line-height--body);
@@ -103,7 +105,7 @@
 		width: min(40rem, 100%);
 		max-height: 100%;
 		min-height: 0;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		border-radius: var(--sy-border-radius);
 		box-shadow: var(--sy-box-shadow);
 		overflow: hidden;
@@ -141,7 +143,7 @@
 	}
 	.whats-new--mobile {
 		padding: 0;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 	.whats-new--mobile .whats-new__card {
 		width: 100%;

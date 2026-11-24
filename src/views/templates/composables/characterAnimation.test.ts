@@ -18,6 +18,8 @@ const createdWriters: ReturnType<typeof mockWriter>[] = [];
 let animation: ReturnType<typeof createCharacterAnimation>;
 
 beforeEach(() => {
+	document.documentElement.style.setProperty('--sy-color--black', '#474c5a');
+	document.documentElement.style.setProperty('--sy-stroke-order-unanimated', '#a7afb8');
 	createdWriters.length = 0;
 	vi.mocked(HanziWriter.create)
 		.mockReset()
@@ -33,6 +35,8 @@ beforeEach(() => {
 
 afterEach(() => {
 	animation.stop();
+	document.documentElement.style.removeProperty('--sy-color--black');
+	document.documentElement.style.removeProperty('--sy-stroke-order-unanimated');
 	vi.unstubAllGlobals();
 });
 

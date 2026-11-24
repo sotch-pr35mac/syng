@@ -83,7 +83,11 @@
 				: 'Front shown.'}
 		{/if}
 	</p>
-	<div class="mobile-flashcards__content" use:scrollRestore={'mobile-flashcards-content'}>
+	<div
+		class="mobile-flashcards__content"
+		data-sy-primary-scroll
+		use:scrollRestore={'mobile-flashcards-content'}
+	>
 		{#if flashcardsRoute.showDetails && activeWord}
 			<div class="mobile-flashcards__back">
 				<DictionaryContent
@@ -197,7 +201,7 @@
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-flashcards__content {
@@ -231,12 +235,12 @@
 
 	.mobile-flashcards__back {
 		min-height: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-flashcards__back :global(.dictionary-content-container) {
 		min-height: 100%;
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 
 	.mobile-flashcards__bar {
@@ -247,7 +251,7 @@
 		padding: calc(var(--sy-mobile-space--extra-small) * 3)
 			calc(var(--sy-mobile-space--extra-small) * 7)
 			max(calc(var(--sy-mobile-space--extra-small) * 5), env(safe-area-inset-bottom));
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border-top: var(--sy-border);
 		box-shadow: var(--sy-mobile-dock-shadow);
 		box-sizing: border-box;

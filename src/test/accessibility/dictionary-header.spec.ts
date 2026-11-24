@@ -120,9 +120,11 @@ async function expectOrientation(page: Page, vertical: boolean) {
 	await expect
 		.poll(async () =>
 			page.locator(headerSelector).evaluate((header) => {
-				const buttons = Array.from(header.querySelectorAll('button')).map((button) =>
+				const obstacles = Array.from(header.querySelectorAll('button')).map((button) =>
 					button.getBoundingClientRect()
 				);
+				const tags = header.querySelector('.dictionary-content__tags');
+				if (tags) obstacles.push(tags.getBoundingClientRect());
 				const text = header.querySelector('.dictionary-content__topline')!;
 				const walker = document.createTreeWalker(text, NodeFilter.SHOW_TEXT);
 				const range = document.createRange();
@@ -132,7 +134,7 @@ async function expectOrientation(page: Page, vertical: boolean) {
 					range.selectNodeContents(node);
 					for (const bounds of range.getClientRects()) {
 						if (
-							buttons.some(
+							obstacles.some(
 								(button) =>
 									bounds.left < button.right &&
 									bounds.right > button.left &&
@@ -165,10 +167,8 @@ for (const platform of ['', '&mobile', '&ipad']) {
 			const bar = page.locator(`${headerSelector} .sy-button-bar--container`);
 			const tagBounds = (await tags.boundingBox())!;
 			const barBounds = (await bar.boundingBox())!;
-			expect(tagBounds.width).toBeLessThanOrEqual(barBounds.width + 1);
-			const firstTag = (await tags.locator('.sy-tag').first().boundingBox())!;
-			const lastTag = (await tags.locator('.sy-tag').last().boundingBox())!;
-			expect(lastTag.y).toBeGreaterThan(firstTag.y);
+			expect(tagBounds.width / barBounds.width).toBeCloseTo(1.2, 2);
+			expect(tagBounds.x + tagBounds.width).toBeCloseTo(barBounds.x + barBounds.width, 0);
 			await page.screenshot({ path: testInfo.outputPath('horizontal.png') });
 			const write = page.getByRole('button', { name: 'Write Characters', exact: true });
 			await write.focus();

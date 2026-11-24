@@ -64,7 +64,7 @@
 		justify-content: space-between;
 		gap: var(--sy-space--large);
 		min-height: 32px;
-		font-size: var(--sy-font-size--medium);
+		font-size: var(--sy-settings-option-font-size);
 	}
 
 	.tone-coloring-settings--mobile {

@@ -1,4 +1,4 @@
-import { render } from '@testing-library/svelte';
+import { render, waitFor } from '@testing-library/svelte';
 import { expect, it } from 'vitest';
 import SyTab from '@/components/SyTab/SyTab.svelte';
 
@@ -26,4 +26,21 @@ it('keeps ordinary button consumers compatible until their tablist is migrated',
 
 	expect(button.tabIndex).toBe(0);
 	expect(button.hasAttribute('aria-selected')).toBe(false);
+});
+
+it('keeps a mobile tab usable when text range geometry is unavailable', async () => {
+	const { container, getByRole } = render(SyTab, {
+		variant: 'mobile',
+		role: 'tab',
+		'aria-label': 'Convert',
+		active: true,
+	});
+	await waitFor(() =>
+		expect(container.querySelector('.sy-tab__indicator')?.getAttribute('style')).toContain(
+			'opacity: 1'
+		)
+	);
+	expect(getByRole('tab', { name: 'Convert', selected: true }).getAttribute('tabindex')).toBe(
+		'0'
+	);
 });

@@ -71,19 +71,32 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
-			<div class="study--help">
-				<WalkthroughHelp guide="study" label="Learn how Study works" />
+			<div class="study--practice">
+				<div class="study--collection-heading">
+					<div>
+						<h2>Ready to practice</h2>
+						<p>Choose a saved list, then a way to practice.</p>
+					</div>
+					<span
+						>{populatedLists.length}
+						{populatedLists.length === 1 ? 'list' : 'lists'}</span
+					>
+				</div>
+				<div class="study--help">
+					<WalkthroughHelp guide="study" label="Learn how Study works" />
+				</div>
+				<SyList
+					values={populatedLists}
+					component={StudyListItem}
+					onselection={handleSelection}
+				/>
 			</div>
-			<SyList
-				values={populatedLists}
-				component={StudyListItem}
-				onselection={handleSelection}
-			/>
 		{:else}
 			<div class="study--empty">
 				<div class="study--empty-copy">
 					<Awa pose="practice" />
-					<p>Add words to a list to start studying.</p>
+					<h2>No words to study yet</h2>
+					<p>Save words in Search or Reader to start practicing.</p>
 				</div>
 				<SyButton
 					size="large"
@@ -102,28 +115,73 @@
 <style>
 	.study--help {
 		text-align: center;
+		margin-top: var(--sy-space--extra-large);
 	}
 
 	.study--container {
 		display: flex;
 		flex-direction: column;
-		padding: 0px var(--sy-space--extra-large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--canvas);
 		overflow: hidden;
 		width: 100%;
 	}
 	.study--title {
-		padding: var(--sy-space--extra-large) var(--sy-space);
+		display: flex;
+		align-items: center;
+		min-height: var(--sy-desktop-page-header-min-height);
+		box-sizing: border-box;
+		padding: var(--sy-space--extra-large) var(--sy-space--large);
+		background-color: var(--sy-surface--chrome);
+		box-shadow: var(--sy-box-shadow);
+		z-index: var(--sy-z-index--base-2);
 	}
 	.study--title--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
 		padding-bottom: var(--sy-space--large);
+	}
+	.study--title h1 {
+		margin: 0;
+		color: var(--sy-color--black);
+		font-size: var(--sy-font-size--large);
+		font-weight: var(--sy-font-weight--bold);
+		overflow-wrap: anywhere;
 	}
 	.study--content {
 		flex: 1;
 		min-height: 0;
 		overflow-y: auto;
 		overflow-x: hidden;
+		padding: var(--sy-space--extra-large);
+		box-sizing: border-box;
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
+	}
+	.study--practice {
+		width: 100%;
+		max-width: var(--sy-study-collection-max-width);
+		margin: 0 auto;
+	}
+	.study--collection-heading {
+		display: flex;
+		align-items: end;
+		justify-content: space-between;
+		gap: var(--sy-space--large);
+		padding: 0 var(--sy-space--extra-large);
+		color: var(--sy-color--black);
+	}
+	.study--collection-heading h2 {
+		margin: 0;
+		font: var(--sy-type--local-title);
+	}
+	.study--collection-heading p,
+	.study--collection-heading span {
+		margin: var(--sy-space) 0 0;
+		font: var(--sy-type--supporting);
+		color: var(--sy-text--secondary);
+	}
+	.study--collection-heading span {
+		flex-shrink: 0;
 	}
 	.study--empty {
 		display: flex;
@@ -132,7 +190,7 @@
 		justify-content: center;
 		gap: var(--sy-space--extra-large);
 		width: 100%;
-		color: var(--sy-color--grey-4);
+		color: var(--sy-text--muted);
 		font-family: var(--sy-font-family);
 		text-align: center;
 	}
@@ -151,8 +209,16 @@
 		align-items: center;
 		gap: var(--sy-space--large);
 	}
+	.study--empty h2 {
+		margin: 0;
+		font: var(--sy-type--local-title);
+		color: var(--sy-color--black);
+	}
 	.study--empty p {
 		margin: 0;
+		max-width: var(--sy-study-empty-copy-max-width);
+		font: var(--sy-type--supporting);
+		color: var(--sy-text--secondary);
 	}
 	:global(.study--empty-action) {
 		display: inline-flex;

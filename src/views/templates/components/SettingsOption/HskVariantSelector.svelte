@@ -5,6 +5,8 @@
 		HSK_VARIANT_VALUES,
 		type HskVariant,
 	} from '@/types/dictionaryDisplay.js';
+	import SyRadio from '@/components/SyRadio/SyRadio.svelte';
+	import SyRadioGroup from '@/components/SyRadio/SyRadioGroup.svelte';
 	interface Props {
 		variant?: 'desktop' | 'mobile';
 		label?: string;
@@ -20,24 +22,22 @@
 	aria-describedby={describedBy}
 >
 	<legend>{label}</legend>
-	{#each HSK_VARIANT_VALUES as value (value)}
-		<label class="hsk-variant-selector__option"
-			><input
-				type="radio"
-				name="hsk-variant"
-				{value}
-				checked={dictionaryDisplaySettingsStore.settings.hskVariant === value}
-				onchange={() => onchange?.(value)}
-			/><span>{HSK_VARIANT_LABELS[value]}</span></label
-		>
-	{/each}
+	<SyRadioGroup selectedValue={dictionaryDisplaySettingsStore.settings.hskVariant} {variant}>
+		{#each HSK_VARIANT_VALUES as value (value)}
+			<label
+				><SyRadio
+					name="hsk-variant"
+					{value}
+					checked={dictionaryDisplaySettingsStore.settings.hskVariant === value}
+					onchange={() => onchange?.(value)}
+				/><span>{HSK_VARIANT_LABELS[value]}</span></label
+			>
+		{/each}
+	</SyRadioGroup>
 </fieldset>
 
 <style>
 	.hsk-variant-selector {
-		display: flex;
-		flex-direction: column;
-		gap: var(--sy-space--large);
 		margin: 0;
 		padding: var(--sy-space);
 		border: 0;
@@ -49,23 +49,7 @@
 		overflow: hidden;
 		clip: rect(0 0 0 0);
 	}
-	.hsk-variant-selector__option {
-		display: flex;
-		align-items: center;
-		gap: var(--sy-space--large);
-		min-height: 28px;
-		font-size: var(--sy-font-size--medium);
-		cursor: pointer;
-	}
-	.hsk-variant-selector__option input {
-		accent-color: var(--sy-color--blue-2);
-	}
 	.hsk-variant-selector--mobile {
-		gap: var(--sy-mobile-space--medium);
 		padding: 0;
-	}
-	.hsk-variant-selector--mobile .hsk-variant-selector__option {
-		min-height: var(--sy-mobile-touch-target);
-		font-size: var(--sy-font-size--mobile-medium);
 	}
 </style>

@@ -13,6 +13,7 @@
 	import { privacySettingsStore } from '@/stores/privacySettings.svelte.js';
 	import { platform } from '@tauri-apps/plugin-os';
 	import { isIPad } from '@/utils/device.js';
+	import { telemetry } from '@/utils/telemetry.js';
 	const isMacos = platform() === 'macos';
 	const destination = $derived(new URLSearchParams(router.querystring ?? ''));
 	$effect.pre(() => {
@@ -28,7 +29,11 @@
 		generalReady = false;
 	});
 	function setActiveTab(tab: SettingsTab): void {
+		if (tab === activeTab) {
+			return;
+		}
 		settingsActiveTabStore.set(tab);
+		telemetry.trackEvent('settings.section_selected', { section: tab }).catch(() => {});
 	}
 </script>
 
@@ -94,6 +99,9 @@
 				aria-labelledby={`settings-${activeTab}-tab`}
 				tabindex="0"
 				class="settings--panel"
+				class:settings--panel--general={activeTab === 'general'}
+				class:settings--panel--telemetry={activeTab === 'telemetry'}
+				class:settings--panel--acknowledgements={activeTab === 'acknowledgements'}
 			>
 				{#if activeTab === 'general'}
 					<GeneralSettings
@@ -123,8 +131,9 @@
 		flex-shrink: 0;
 	}
 	.settings--container {
-		padding: 0px var(--sy-space--extra-large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 		overflow: hidden;
 		width: 100%;
 		min-width: 0;
@@ -133,7 +142,12 @@
 		flex-direction: column;
 	}
 	.settings--title {
-		padding: var(--sy-space--extra-large) var(--sy-space);
+		padding: var(--sy-space--extra-large) var(--sy-space--extra-large) var(--sy-space--large);
+		background-color: var(--sy-surface--chrome);
+	}
+	.settings--title h1 {
+		margin: 0;
+		font-size: 1.625rem;
 	}
 	.settings--title--ipad {
 		padding-top: max(var(--sy-space--large), env(safe-area-inset-top, 0px));
@@ -143,24 +157,39 @@
 		flex-wrap: wrap;
 		display: flex;
 		gap: var(--sy-space--large);
-		padding: 0 var(--sy-space);
+		padding: 0 var(--sy-space--extra-large);
 		border-bottom: var(--sy-border);
-		margin-bottom: var(--sy-space--extra-large);
+		background-color: var(--sy-surface--chrome);
 	}
 	.settings--content {
 		min-height: 0;
 		min-width: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--sy-space--extra-large);
 		overflow-y: auto;
 		flex: 1;
-		padding-bottom: var(--sy-space--extra-large);
+		padding: var(--sy-space--extra-large);
 	}
 	.settings--panel {
 		flex-shrink: 0;
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--extra-large);
+	}
+	.settings--panel:not(.settings--panel--general) {
+		max-width: 52rem;
+		padding: var(--sy-space--extra-large);
+		background: var(--sy-surface--content);
+		border-radius: var(--sy-border-radius--content-list);
+		box-shadow: var(--sy-box-shadow);
+	}
+	.settings--panel.settings--panel--acknowledgements {
+		max-width: none;
+	}
+	.settings--panel.settings--panel--telemetry {
+		max-width: none;
+		padding: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 </style>

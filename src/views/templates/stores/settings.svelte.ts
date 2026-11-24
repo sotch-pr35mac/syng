@@ -5,9 +5,12 @@ import { createRouteState } from '@/stores/routeState.svelte.js';
  * to Settings lands on the same tab the user was viewing.
  */
 export const settingsActiveTabStore = createRouteState<string>('general');
+export type MobileSettingsDetail =
+	'home' | 'appearance' | 'dictionary' | 'help' | 'telemetry' | 'acknowledgements' | 'developer';
+export const mobileSettingsDetailStore = createRouteState<MobileSettingsDetail>('home');
 
 export type SettingsLayout = 'desktop' | 'mobile';
-export type SettingsTab = 'general' | 'telemetry' | 'acknowledgements';
+export type SettingsTab = 'general' | 'telemetry' | 'acknowledgements' | MobileSettingsDetail;
 
 // Session-only positions, kept separate from persisted user preferences.
 const scrollPositions: Partial<Record<`${SettingsLayout}:${SettingsTab}`, number>> = {};

@@ -3,7 +3,7 @@
 	 * Owns entry/breakdown navigation, responsive presentation, focus, and history.
 	 * DictionaryEntry renders the reusable entry body; it does not own this stack.
 	 */
-	import { onMount, tick, untrack } from 'svelte';
+	import { onMount, tick, untrack, type ComponentProps } from 'svelte';
 	import DictionaryEntry from '@/components/DictionaryContent/DictionaryEntry.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { ChevronLeft, ChevronRight, X } from 'lucide-svelte';
@@ -23,16 +23,13 @@
 	} from '@/composables/dictionaryPopover.svelte.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import type { BreakdownSelection } from '@/types/characterBreakdown.js';
-	const {
-		word,
-		context = 'page',
-		initialSelection,
-		onviewchange,
-		onexit,
-		onclose,
-		...entryProps
-	}: {
+	type Props = Omit<
+		ComponentProps<typeof DictionaryEntry>,
+		'word' | 'onbreakdown' | 'breakdownOpen' | 'backgroundColor'
+	> & {
 		word?: SearchEntry;
+		/** Required here so every placement chooses a defined surface role. */
+		backgroundColor: NonNullable<ComponentProps<typeof DictionaryEntry>['backgroundColor']>;
 		/**
 		 * page: companion pane or mobile route; popup: compact replacement views;
 		 * screen: routed mobile breakdown with an existing route Back step.
@@ -42,8 +39,16 @@
 		onviewchange?: (active: boolean) => void;
 		onexit?: () => void;
 		onclose?: () => void;
-		[key: string]: any;
-	} = $props();
+	};
+	const {
+		word,
+		context = 'page',
+		initialSelection,
+		onviewchange,
+		onexit,
+		onclose,
+		...entryProps
+	}: Props = $props();
 	/**
 	 * One local entry or breakdown view. Keeping covered views mounted preserves
 	 * character selection; saved focus/scroll restore the caller on Back.
@@ -463,7 +468,7 @@
 		flex-direction: column;
 		height: 100%;
 		min-height: 0;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 	.companion .breakdown-host {
 		flex: none;

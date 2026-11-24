@@ -344,7 +344,7 @@
 		min-height: 54px;
 		flex-shrink: 0;
 		padding: 0 var(--sy-mobile-space--small);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 		border-bottom: var(--sy-border);
 		box-sizing: border-box;
 	}
@@ -418,7 +418,7 @@
 		padding: calc(var(--sy-mobile-space--medium) * 3);
 		background: var(--reader-page-background, var(--sy-color--white));
 		border-radius: var(--sy-border-radius);
-		box-shadow: var(--sy-shadow);
+		box-shadow: var(--sy-shadow--content);
 		overflow: hidden;
 		box-sizing: border-box;
 		font-family: var(--reader-font-family, var(--sy-font-family));

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { untrack } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import {
 		SHEET_SNAPS,
 		COLLAPSED_HEIGHT,
@@ -16,9 +16,17 @@
 	// Above this release velocity (px/ms) we treat the gesture as a flick and jump
 	// one snap in the flick direction rather than settling to the nearest snap.
 	const FLICK_VELOCITY_THRESHOLD_PX_PER_MS = 0.5;
+	const SHEET_MOTION_DURATION_MS = 360;
+	// The sheet's CSS height excludes its 1px top and bottom borders.
+	const FULL_TOP_GAP = 10;
+	let contentTop = $state(0);
 
 	const getPartialHeight = () => Math.round(window.innerHeight * PARTIAL_HEIGHT_RATIO);
-	const getFullHeight = () => Math.round(window.innerHeight * FULL_HEIGHT_RATIO);
+	const getFullHeight = () =>
+		Math.min(
+			Math.round(window.innerHeight * FULL_HEIGHT_RATIO),
+			Math.max(COLLAPSED_HEIGHT, Math.floor(window.innerHeight - contentTop - FULL_TOP_GAP))
+		);
 
 	const SNAP_HEIGHTS: Record<SheetSnap, () => number> = {
 		collapsed: () => COLLAPSED_HEIGHT,
@@ -37,6 +45,7 @@
 		returnFocus = undefined,
 		onclose = undefined,
 		onback = undefined,
+		dismissible = false,
 	}: {
 		id?: string;
 		children?: Snippet;
@@ -48,28 +57,37 @@
 		returnFocus?: HTMLElement;
 		onclose?: () => void;
 		onback?: () => void;
+		dismissible?: boolean;
 	} = $props();
 
 	const getInitialSnap = () => initialSnap;
-	let snap = $state<SheetSnap>(getInitialSnap());
+	let snap = $state<SheetSnap>(untrack(() => dismissible) ? 'collapsed' : getInitialSnap());
 	let dragHeight = $state<number | null>(null);
 	let handleElement = $state<HTMLElement | undefined>(undefined);
 	let sheetElement = $state<HTMLElement | undefined>(undefined);
+	let presentation = $state<'offscreen' | 'visible'>(
+		untrack(() => dismissible) ? 'offscreen' : 'visible'
+	);
+	let dismissGeneration = 0;
+	let dismissal: { generation: number; promise: Promise<void> } | undefined;
+	const prefersReducedMotion = () =>
+		window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 
-	const sheetHeight = $derived(dragHeight ?? SNAP_HEIGHTS[snap]());
+	const sheetHeight = $derived(
+		dragHeight === null ? SNAP_HEIGHTS[snap]() : Math.min(dragHeight, getFullHeight())
+	);
 	// Transition applies whenever we're not actively dragging.
 	const transitioning = $derived(dragHeight === null);
 
-	// Render the sheet at full height and reveal it by translating down. Animating `transform`
-	// is compositor-accelerated
-	const fullSheetHeight = $derived.by(() => {
-		// Recompute alongside snap/drag changes so an orientation change between gestures is
-		// picked up; reading window.innerHeight is not itself reactive.
-		void snap;
-		void dragHeight;
-		return getFullHeight();
-	});
-	const sheetTranslateY = $derived(Math.max(0, fullSheetHeight - sheetHeight));
+	const collapsedProgress = $derived(
+		Math.max(
+			0,
+			Math.min(
+				1,
+				(getPartialHeight() - sheetHeight) / (getPartialHeight() - COLLAPSED_HEIGHT)
+			)
+		)
+	);
 
 	let activePointerId: number | null = null;
 	let dragStartY = 0;
@@ -81,16 +99,127 @@
 	}
 
 	export function collapse(): void {
-		applySnap('collapsed');
+		if (dismissible) {
+			void dismiss();
+		} else {
+			applySnap('collapsed');
+		}
 	}
 
 	export function openPartial(): void {
+		dismissGeneration += 1;
+		presentation = 'visible';
 		applySnap('partial');
 	}
 
 	export function openFull(): void {
+		dismissGeneration += 1;
+		presentation = 'visible';
 		applySnap('full');
 	}
+
+	function waitForMotion(): Promise<void> {
+		if (prefersReducedMotion()) {
+			return Promise.resolve();
+		}
+		return new Promise((resolve) => {
+			window.setTimeout(resolve, SHEET_MOTION_DURATION_MS);
+		});
+	}
+
+	/** Collapse, leave the viewport, then allow the owner to remove the sheet. */
+	export function dismiss(): Promise<void> {
+		if (!dismissible) {
+			return Promise.resolve();
+		}
+		if (dismissal?.generation === dismissGeneration) {
+			return dismissal.promise;
+		}
+		const generation = ++dismissGeneration;
+		const promise = (async () => {
+			dragHeight = null;
+			applySnap('collapsed');
+			await tick();
+			await waitForMotion();
+			if (generation !== dismissGeneration) {
+				return;
+			}
+			presentation = 'offscreen';
+			await tick();
+			await waitForMotion();
+			if (generation === dismissGeneration) {
+				onclose?.();
+			}
+		})().finally(() => {
+			if (dismissal?.generation === generation) {
+				dismissal = undefined;
+			}
+		});
+		dismissal = { generation, promise };
+		return promise;
+	}
+
+	onMount(() => {
+		// The phone shell's content begins below the responsive header and iOS safe area.
+		// Keep the full snap below that boundary as the header collapses or re-expands.
+		const container = sheetElement?.closest<HTMLElement>('.mobile-app__content');
+		if (!container) {
+			return undefined;
+		}
+		const update = () => {
+			contentTop = Math.max(0, container.getBoundingClientRect().top);
+		};
+		const observer = new ResizeObserver(update);
+		observer.observe(container);
+		// Header height is driven by an inline brand style. Observe that mutation
+		// before paint so a growing header cannot overtake a transitioning full sheet.
+		const header = container.previousElementSibling;
+		const heightTarget = header?.querySelector('.mobile-nav__brand') ?? header;
+		const mutations = new MutationObserver(update);
+		if (heightTarget) {
+			mutations.observe(heightTarget, { attributes: true, attributeFilter: ['style'] });
+		}
+		window.addEventListener('resize', update);
+		update();
+		return () => {
+			observer.disconnect();
+			mutations.disconnect();
+			window.removeEventListener('resize', update);
+		};
+	});
+
+	onMount(() => {
+		if (!dismissible) {
+			return undefined;
+		}
+		const openingGeneration = dismissGeneration;
+		let mounted = true;
+		let openingFrame = 0;
+		let settlingFrame = 0;
+		openingFrame = requestAnimationFrame(() => {
+			settlingFrame = requestAnimationFrame(async () => {
+				if (!mounted || openingGeneration !== dismissGeneration) {
+					return;
+				}
+				presentation = 'visible';
+				await waitForMotion();
+				if (
+					mounted &&
+					openingGeneration === dismissGeneration &&
+					presentation === 'visible' &&
+					snap === 'collapsed' &&
+					initialSnap !== 'collapsed'
+				) {
+					applySnap(initialSnap);
+				}
+			});
+		});
+		return () => {
+			mounted = false;
+			cancelAnimationFrame(openingFrame);
+			cancelAnimationFrame(settlingFrame);
+		};
+	});
 
 	// When reopenKey changes (e.g. a new word is tapped while the sheet is open),
 	// pop the sheet up so the user notices the content changed. Don't shrink an
@@ -153,7 +282,11 @@
 	function handleBodyDragEnd(releaseHeight: number, velocityPxPerMs: number): void {
 		const target = settleSnap(releaseHeight, velocityPxPerMs);
 		dragHeight = null;
-		applySnap(target);
+		if (target === 'collapsed' && dismissible) {
+			collapse();
+		} else {
+			applySnap(target);
+		}
 	}
 
 	function onPointerDown(event: PointerEvent): void {
@@ -181,7 +314,11 @@
 		activePointerId = null;
 		dragHeight = null;
 		handleElement?.releasePointerCapture?.(event.pointerId);
-		applySnap(target);
+		if (target === 'collapsed' && dismissible) {
+			collapse();
+		} else {
+			applySnap(target);
+		}
 	}
 	function handleResizeKeydown(event: KeyboardEvent): void {
 		const currentIndex = SHEET_SNAPS.indexOf(snap);
@@ -197,14 +334,17 @@
 		}
 		if (next) {
 			event.preventDefault();
-			applySnap(next);
+			if (next === 'collapsed' && dismissible) {
+				collapse();
+			} else {
+				applySnap(next);
+			}
 		}
 	}
 
 	function revealFocusedContent(event: FocusEvent): void {
 		// iOS can focus this dialog wrapper when a descendant button is tapped.
-		// Its full-height box deliberately extends below the viewport at smaller
-		// snaps; only descendant content should trigger focus-driven expansion.
+		// Only descendant content should trigger focus-driven expansion.
 		if (
 			snap === 'full' ||
 			event.target === sheetElement ||
@@ -240,15 +380,17 @@
 	aria-label={accessibleName}
 	tabindex="-1"
 	use:overlayFocus={{
-		active: snap !== 'collapsed',
+		active: snap !== 'collapsed' || dismissible,
 		initialFocus: 'keyboard',
 		returnFocus: returnFocus ?? defaultReturnFocus,
-		onclose: (reason) => (reason === 'escape' && onback ? onback() : (onclose ?? collapse)()),
+		onclose: (reason) => (reason === 'escape' && onback ? onback() : collapse()),
 	}}
 	class="sy-snap-sheet"
+	class:sy-snap-sheet--collapsed={snap === 'collapsed' && dragHeight === null}
+	class:sy-snap-sheet--offscreen={presentation === 'offscreen'}
 	use:walkthroughTarget={guideTarget}
 	class:sy-snap-sheet--transitioning={transitioning}
-	style="height: {fullSheetHeight}px; --sy-snap-sheet-hidden-height: {sheetTranslateY}px;"
+	style="height: {sheetHeight}px; max-height: {getFullHeight()}px; --sy-sheet-collapse: {collapsedProgress};"
 	use:snapSheetDrag={{
 		getCurrentHeight: () => sheetHeight,
 		getMinHeight: () => COLLAPSED_HEIGHT,
@@ -285,24 +427,35 @@
 
 <style>
 	.sy-snap-sheet {
-		transform: translate3d(0, var(--sy-snap-sheet-hidden-height), 0);
+		transform: translate3d(0, 0, 0);
 		position: fixed;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		background: var(--sy-color--white);
-		border-radius: var(--sy-mobile-space--extra-large) var(--sy-mobile-space--extra-large) 0 0;
-		border-top: var(--sy-mobile-surface-border);
+		bottom: calc(var(--sy-sheet-collapse) * max(12px, env(safe-area-inset-bottom, 0px)));
+		left: calc(var(--sy-sheet-collapse) * 12px);
+		right: calc(var(--sy-sheet-collapse) * 12px);
+		background: var(--sy-surface--floating);
+		border-radius: calc(32px + var(--sy-sheet-collapse) * 4px)
+			calc(32px + var(--sy-sheet-collapse) * 4px) calc(var(--sy-sheet-collapse) * 36px)
+			calc(var(--sy-sheet-collapse) * 36px);
+		border: var(--sy-mobile-surface-border);
 		box-shadow: var(--sy-mobile-overlay-shadow);
 		display: flex;
 		flex-direction: column;
 		overflow: hidden;
 		z-index: var(--sy-z-index--mobile-sheet);
-		will-change: transform;
+		will-change: transform, height;
+	}
+	.sy-snap-sheet--offscreen {
+		transform: translate3d(0, calc(100% + 40px + env(safe-area-inset-bottom, 0px)), 0);
 	}
 
 	.sy-snap-sheet--transitioning {
-		transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+		transition:
+			transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			bottom 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			right 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+			border-radius 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.sy-snap-sheet--transitioning {
@@ -319,6 +472,12 @@
 		touch-action: none;
 		cursor: grab;
 		user-select: none;
+	}
+	.sy-snap-sheet--collapsed .sy-snap-sheet__handle {
+		padding-bottom: 0;
+	}
+	.sy-snap-sheet--collapsed :global(.sy-snap-sheet__expanded-content) {
+		visibility: hidden;
 	}
 
 	.sy-snap-sheet__handle:active {

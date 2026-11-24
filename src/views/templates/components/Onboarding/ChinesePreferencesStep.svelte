@@ -189,7 +189,7 @@
 		min-width: 0;
 		align-self: start;
 		width: 100%;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 
 	.chinese-prefs__preview--sticky {
@@ -206,7 +206,7 @@
 		left: 0;
 		right: 0;
 		height: var(--onboarding-body-padding-top);
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 
 	.chinese-prefs__controls,

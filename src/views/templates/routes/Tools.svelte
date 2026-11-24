@@ -91,7 +91,7 @@
 		width: -webkit-fill-available;
 		overflow: hidden;
 		padding: 0 var(--sy-space--extra-large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 	}
 	.tools__title {
 		padding: var(--sy-space--extra-large) var(--sy-space);

@@ -15,6 +15,7 @@
 	import type { AlternativePronunciation, Definition } from '@/types/dictionary.js';
 	import type { SearchEntry } from '@/types/search.js';
 	import { resolveHskLevels } from '@/utils/hsk.js';
+	const { variant = 'onboarding' }: { variant?: 'onboarding' | 'settings' } = $props();
 
 	const PREVIEW_SIMPLIFIED = '汉语';
 	const PREVIEW_TRADITIONAL = '漢語';
@@ -68,7 +69,11 @@
 	);
 </script>
 
-<figure class="chinese-preview" aria-live="polite">
+<figure
+	class="chinese-preview"
+	class:chinese-preview--settings={variant === 'settings'}
+	aria-live="polite"
+>
 	<figcaption class="chinese-preview__label">Preview</figcaption>
 	<div class="chinese-preview__word">
 		<p class="chinese-preview__characters">
@@ -139,12 +144,19 @@
 	.chinese-preview {
 		margin: 0;
 		padding: var(--sy-space--extra-large);
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 		border-radius: var(--sy-border-radius);
 		display: flex;
 		flex-direction: column;
 		gap: var(--sy-space--large);
 		align-items: stretch;
+	}
+	.chinese-preview--settings {
+		padding: 0;
+		background-color: transparent;
+	}
+	.chinese-preview--settings .chinese-preview__list-row {
+		background-color: var(--sy-surface--well);
 	}
 
 	.chinese-preview__label,
@@ -201,7 +213,7 @@
 		flex-direction: column;
 		gap: var(--sy-space);
 		padding: var(--sy-space--large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border-radius: var(--sy-border-radius);
 	}
 

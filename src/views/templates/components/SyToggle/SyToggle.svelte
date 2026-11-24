@@ -86,15 +86,15 @@
 		background: var(--sy-toggle--track-on, var(--sy-fill--blue));
 	}
 	.sy-toggle:checked + .sy-toggle--label:after {
-		left: calc(100% - 0.09765625rem);
+		left: calc(100% - var(--sy-toggle-knob-inset, 0.09765625rem));
 		transform: translateX(-100%);
 	}
 	.sy-toggle--label {
 		cursor: pointer;
 		text-indent: -9999px;
-		width: 3.90625rem;
-		height: 1.9453125rem;
-		border-radius: 1.9453125rem;
+		width: var(--sy-toggle-track-width, 3.90625rem);
+		height: var(--sy-toggle-track-height, 1.9453125rem);
+		border-radius: var(--sy-toggle-track-height, 1.9453125rem);
 		background: var(--sy-toggle--track-off, var(--sy-control--track-off));
 		display: block;
 		position: relative;
@@ -103,16 +103,16 @@
 	.sy-toggle--label:after {
 		content: '';
 		position: absolute;
-		top: 0.09765625rem;
-		left: 0.09765625rem;
-		width: 1.7578125rem;
-		height: 1.7578125rem;
-		border-radius: 1.7578125rem;
+		top: var(--sy-toggle-knob-inset, 0.09765625rem);
+		left: var(--sy-toggle-knob-inset, 0.09765625rem);
+		width: var(--sy-toggle-knob-size, 1.7578125rem);
+		height: var(--sy-toggle-knob-size, 1.7578125rem);
+		border-radius: var(--sy-toggle-knob-size, 1.7578125rem);
 		background: var(--sy-toggle--knob, var(--sy-control--knob));
 		transition: var(--sy-transition-duration);
 	}
 	.sy-toggle--label:active:after {
-		width: 2.5390625rem;
+		width: var(--sy-toggle-knob-active-width, 2.5390625rem);
 	}
 	.sy-toggle:disabled + .sy-toggle--label {
 		cursor: not-allowed;

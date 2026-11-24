@@ -109,7 +109,7 @@
 	}
 
 	.tone-color-picker--tone label {
-		font-size: var(--sy-font-size--medium);
+		font-size: var(--sy-settings-option-font-size);
 	}
 
 	.tone-color-picker--tone input {

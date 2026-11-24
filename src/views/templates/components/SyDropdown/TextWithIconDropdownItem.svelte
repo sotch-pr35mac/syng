@@ -80,9 +80,12 @@
 		display: flex;
 		align-items: center;
 		cursor: pointer;
-		padding: var(--sy-space--large);
-		transition: all ease-in-out;
-		transition-duration: var(--sy-transition-duration) / 2;
+		min-height: 38px;
+		padding: 8px 10px;
+		border-radius: var(--sy-border-radius--menu-item);
+		transition:
+			background-color 120ms ease,
+			color 120ms ease;
 	}
 	.twi-dropdown-item--color--blue {
 		color: var(--sy-text--blue);
@@ -102,11 +105,7 @@
 	.twi-dropdown-item--hover--red:hover {
 		color: var(--sy-text--red);
 	}
-	.twi-dropdown-item--container:first-child,
-	.twi-dropdown-item--container:last-child {
-		border-radius: var(--sy-border-radius);
-	}
 	.twi-dropdown-item--container:hover {
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 	}
 </style>

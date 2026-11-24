@@ -48,7 +48,13 @@
 	const titleId = $props.id();
 </script>
 
-<div use:portal hidden={!visible} class="sy-modal--container" class:sy-modal--active={visible}>
+<div
+	use:portal
+	class="sy-modal--container"
+	class:sy-modal--active={visible}
+	aria-hidden={!visible}
+	inert={!visible}
+>
 	<div
 		class="sy-modal--content"
 		class:sy-modal--content--mobile={mobile}
@@ -93,15 +99,18 @@
 </div>
 
 <style>
-	.sy-modal--active {
-		display: block !important;
-	}
 	.sy-modal--container {
-		display: none;
-		position: absolute;
-		top: 25vh;
-		left: 60vh;
-		transition: all ease var(--sy-transition-duration);
+		position: fixed;
+		inset: 0;
+		z-index: var(--sy-z-index--top-1);
+		visibility: hidden;
+		pointer-events: none;
+		transition: visibility 0s linear var(--sy-motion--overlay-regular);
+	}
+	.sy-modal--container.sy-modal--active {
+		visibility: visible;
+		pointer-events: auto;
+		transition: visibility 0s;
 	}
 	.sy-modal--backdrop {
 		position: fixed;
@@ -111,6 +120,11 @@
 		height: 100%;
 		background-color: var(--sy-color--modal-overlay);
 		z-index: var(--sy-z-index--top-2);
+		opacity: 0;
+		transition: opacity var(--sy-motion--overlay-regular) var(--sy-ease--overlay);
+	}
+	.sy-modal--active .sy-modal--backdrop {
+		opacity: var(--sy-overlay-backdrop-opacity);
 	}
 	.sy-modal--content {
 		box-sizing: border-box;
@@ -120,12 +134,21 @@
 		position: fixed;
 		top: 50%;
 		left: 50%;
-		transform: translate(-50%, -50%);
-		background-color: var(--sy-color--white);
-		box-shadow: var(--sy-shadow--active);
-		border-radius: var(--sy-border-radius);
-		padding: var(--sy-space--large);
+		transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
+		background-color: var(--sy-surface--floating);
+		border: var(--sy-surface-border);
+		box-shadow: var(--sy-shadow--dialog);
+		border-radius: var(--sy-border-radius--modal);
+		padding: var(--sy-modal-padding);
 		z-index: var(--sy-z-index--top-1);
+		opacity: 0;
+		transition:
+			transform var(--sy-motion--overlay-regular) var(--sy-ease--overlay),
+			opacity var(--sy-motion--overlay-fast) var(--sy-ease--overlay);
+	}
+	.sy-modal--active .sy-modal--content {
+		transform: translate(-50%, -50%) scale(1);
+		opacity: 1;
 	}
 	.sy-modal--content--mobile {
 		width: calc(100vw - (var(--sy-mobile-space--medium) * 6));
@@ -154,5 +177,16 @@
 		flex-direction: row;
 		align-items: center;
 		justify-content: flex-end;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.sy-modal--container,
+		.sy-modal--backdrop,
+		.sy-modal--content {
+			transition: none;
+		}
+		.sy-modal--content,
+		.sy-modal--active .sy-modal--content {
+			transform: translate(-50%, -50%);
+		}
 	}
 </style>

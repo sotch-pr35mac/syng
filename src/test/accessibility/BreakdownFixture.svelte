@@ -20,7 +20,12 @@
 			measure_words: [],
 		})
 	) as unknown as SearchEntry[];
-	let word = $state(words[0]);
+	let word = $state<SearchEntry | undefined>(
+		parameters.has('initiallyClosed') ? undefined : words[0]
+	);
+	let popupAnchor = $state<DOMRect | undefined>(
+		parameters.has('initiallyClosed') ? undefined : new DOMRect(300, 60, 40, 30)
+	);
 	let currentHash = $state(location.hash);
 	const controller = createDictionaryPopover();
 	const breakdownEvents: { name: string; payload: Record<string, unknown> }[] = [];
@@ -103,7 +108,11 @@
 
 <main>
 	<nav aria-label="Fixture words">
-		{#each words as item (item.id)}<button onclick={() => (word = item)}
+		{#each words as item (item.id)}<button
+				onclick={() => {
+					word = item;
+					popupAnchor = new DOMRect(300, 60, 40, 30);
+				}}
 				>{item.simplified}</button
 			>{/each}
 	</nav>
@@ -111,12 +120,16 @@
 		{#if currentHash === '#/breakdown'}<MobileBreakdown />
 		{:else if popup}<DictionaryPopover
 				{word}
-				results={[word]}
-				anchor={new DOMRect(300, 60, 40, 30)}
-				onclose={() => (word = undefined)}
+				results={word ? [word] : []}
+				anchor={popupAnchor}
+				onclose={() => {
+					word = undefined;
+					popupAnchor = undefined;
+				}}
 			/>
 		{:else}<DictionaryContent
 				{word}
+				backgroundColor="grey"
 				context="page"
 				onlink={controller.lookup}
 			/>{/if}

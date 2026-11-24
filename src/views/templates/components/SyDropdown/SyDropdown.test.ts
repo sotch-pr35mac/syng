@@ -1,4 +1,4 @@
-import { render, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, it, vi } from 'vitest';
 import { tick } from 'svelte';
@@ -58,6 +58,21 @@ it('uses one native trigger and opens only from activation keys', async () => {
 	expect(trigger.getAttribute('aria-expanded')).toBe('true');
 	expect(getByRole('menu').getAttribute('aria-labelledby')).toBe(trigger.id);
 	expect(document.activeElement).toBe(getByRole('menuitem', { name: 'Alpha' }));
+});
+
+it('keeps an exiting menu inert and reverses its exit when reopened', async () => {
+	const { getByRole, queryByRole } = render(DropdownHarness);
+	const trigger = getByRole('button', { name: 'Options' });
+	await fireEvent.click(trigger);
+	const menu = getByRole('menu');
+	await fireEvent.click(trigger);
+	expect(queryByRole('menu')).toBeNull();
+	expect(menu.isConnected).toBe(true);
+	expect(menu.inert).toBe(true);
+	await fireEvent.click(trigger);
+	expect(getByRole('menu')).toBe(menu);
+	await fireEvent.click(trigger);
+	await waitFor(() => expect(menu.isConnected).toBe(false));
 });
 
 it('skips disabled items and separators with arrows, Home, End and typeahead', async () => {

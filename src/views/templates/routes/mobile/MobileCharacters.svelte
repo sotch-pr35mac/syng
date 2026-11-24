@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import { ChevronLeft, Pause, Play } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
+	import SyTab from '@/components/SyTab/SyTab.svelte';
+	import { tabNavigation } from '@/actions/tabNavigation.js';
 	import { mobileCharacterWindowWordStore } from '@/stores/mobileCharacterWindowWord.svelte.js';
 	import { swipeBack } from '@/actions/swipeBack.svelte.js';
 	import { isIPad } from '@/utils/device.js';
@@ -68,27 +70,32 @@
 			</SyButton>
 		</div>
 
-		<div class="mobile-characters__script-selector">
-			<SyButton
-				style="ghost"
-				size="large"
+		<div
+			class="mobile-characters__script-selector"
+			role="tablist"
+			aria-label="Character script"
+			use:tabNavigation
+		>
+			<SyTab
+				variant="mobile"
+				role="tab"
+				id="mobile-characters-simplified-tab"
+				aria-controls="mobile-characters-panel"
+				active={activeScript === CHARACTER_SETS.SIMPLIFIED}
 				onclick={() => switchScript(CHARACTER_SETS.SIMPLIFIED)}
-				aria-pressed={activeScript === CHARACTER_SETS.SIMPLIFIED}
 			>
-				<span class:script-selector--active={activeScript === CHARACTER_SETS.SIMPLIFIED}
-					>Simplified</span
-				>
-			</SyButton>
-			<SyButton
-				style="ghost"
-				size="large"
+				Simplified
+			</SyTab>
+			<SyTab
+				variant="mobile"
+				role="tab"
+				id="mobile-characters-traditional-tab"
+				aria-controls="mobile-characters-panel"
+				active={activeScript === CHARACTER_SETS.TRADITIONAL}
 				onclick={() => switchScript(CHARACTER_SETS.TRADITIONAL)}
-				aria-pressed={activeScript === CHARACTER_SETS.TRADITIONAL}
 			>
-				<span class:script-selector--active={activeScript === CHARACTER_SETS.TRADITIONAL}
-					>Traditional</span
-				>
-			</SyButton>
+				Traditional
+			</SyTab>
 		</div>
 
 		<div class="mobile-characters__controls">
@@ -127,7 +134,15 @@
 		</div>
 	</div>
 
-	<div class="mobile-characters__content">
+	<div
+		class="mobile-characters__content"
+		id="mobile-characters-panel"
+		role="tabpanel"
+		aria-labelledby={activeScript === CHARACTER_SETS.SIMPLIFIED
+			? 'mobile-characters-simplified-tab'
+			: 'mobile-characters-traditional-tab'}
+		data-sy-primary-scroll
+	>
 		{#if !word}
 			<div class="mobile-characters__empty">
 				<p>Select a word from Search to view stroke order</p>
@@ -159,16 +174,21 @@
 		flex-direction: column;
 		height: 100%;
 		width: 100%;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-characters__header {
+		position: relative;
+		z-index: var(--sy-z-index--base-2);
 		display: grid;
 		grid-template-columns: 56px minmax(0, 1fr) 56px;
 		align-items: center;
 		padding: var(--sy-space) var(--sy-space--large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--chrome);
 		border-bottom: var(--sy-mobile-surface-border);
+		box-shadow: var(--sy-box-shadow);
 		flex-shrink: 0;
 	}
 
@@ -189,11 +209,6 @@
 		justify-content: center;
 		gap: var(--sy-space);
 		min-width: 0;
-	}
-
-	.script-selector--active {
-		text-decoration: underline;
-		text-underline-position: under;
 	}
 
 	.mobile-characters__controls {

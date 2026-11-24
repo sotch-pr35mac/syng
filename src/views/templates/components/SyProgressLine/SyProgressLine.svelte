@@ -40,7 +40,7 @@
 	.progress-line--container {
 		width: 100%;
 		height: 10px;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--well);
 		display: flex;
 	}
 	.progress-line--progress {

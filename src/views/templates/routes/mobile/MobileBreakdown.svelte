@@ -26,6 +26,7 @@
 	{#if mobileBreakdown.word}
 		<DictionaryContent
 			word={mobileBreakdown.word}
+			backgroundColor="white"
 			lists={mobileBreakdown.lists}
 			context="screen"
 			initialSelection={mobileBreakdown.selection}
@@ -52,6 +53,6 @@
 	.mobile-breakdown {
 		height: 100%;
 		min-height: 0;
-		background: var(--sy-color--white);
+		background: var(--sy-surface--content);
 	}
 </style>

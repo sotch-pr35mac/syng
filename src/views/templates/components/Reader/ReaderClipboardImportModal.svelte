@@ -147,7 +147,7 @@
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space);
 		box-shadow: var(--sy-inner-shadow);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		box-sizing: border-box;
 		color: var(--sy-color--black);
 		font-family: var(--sy-font-family);

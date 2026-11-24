@@ -107,7 +107,14 @@ test('lookup follows the selected script', async ({ page }) => {
 	await mockCharacterLookup(page);
 	await page.getByRole('button', { name: 'Character Breakdown', exact: true }).click();
 	const panel = page.getByRole('region', { name: 'Character Breakdown' });
-	await panel.getByRole('button', { name: 'Traditional', exact: true }).click();
+	const scriptTabs = panel.getByRole('tablist', { name: 'Character form' });
+	const simplified = scriptTabs.getByRole('tab', { name: 'Simplified' });
+	const traditional = scriptTabs.getByRole('tab', { name: 'Traditional' });
+	await expect(simplified).toHaveAttribute('aria-selected', 'true');
+	await simplified.focus();
+	await simplified.press('ArrowRight');
+	await expect(traditional).toBeFocused();
+	await expect(traditional).toHaveAttribute('aria-selected', 'true');
 	await panel.getByRole('button', { name: 'Look up this character', exact: true }).click();
 	await expect(page.getByText('Character lookup: 語', { exact: true })).toBeVisible();
 });

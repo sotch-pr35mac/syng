@@ -49,5 +49,6 @@
 		justify-content: space-between;
 		gap: var(--sy-space--large);
 		min-height: 44px;
+		font-size: var(--sy-settings-option-font-size);
 	}
 </style>

@@ -80,21 +80,15 @@ beforeEach(() => {
 	vi.mocked(openUrl).mockClear();
 });
 
-it('shows the privacy notice and policy link on Android', () => {
+it('shows a single privacy policy link on Android', () => {
 	deviceState.isAndroid = true;
-	const { getByRole, getByText } = render(TelemetrySettings);
+	const { getAllByRole, queryByText } = render(TelemetrySettings);
 
-	expect(getByText(/We respect your privacy\./)).not.toBeNull();
-	const privacyLink = getByRole('link', {
-		name: 'View our privacy policy to learn more.',
-	}) as HTMLAnchorElement;
+	expect(queryByText(/We respect your privacy\./)).toBeNull();
+	const policyLinks = getAllByRole('link', { name: 'Privacy policy' });
+	expect(policyLinks).toHaveLength(1);
+	const privacyLink = policyLinks[0] as HTMLAnchorElement;
 	expect(privacyLink.href).toBe('https://getsyng.com/privacy');
-});
-
-it('does not show the privacy policy link outside Android', () => {
-	const { queryByRole } = render(TelemetrySettings);
-
-	expect(queryByRole('link', { name: 'View our privacy policy to learn more.' })).toBeNull();
 });
 
 it('opens the Android privacy policy in the external browser', async () => {
@@ -102,7 +96,7 @@ it('opens the Android privacy policy in the external browser', async () => {
 	const user = userEvent.setup();
 	const { getByRole } = render(TelemetrySettings);
 
-	await user.click(getByRole('link', { name: 'View our privacy policy to learn more.' }));
+	await user.click(getByRole('link', { name: 'Privacy policy' }));
 
 	expect(openUrl).toHaveBeenCalledOnce();
 	expect(openUrl).toHaveBeenCalledWith('https://getsyng.com/privacy');

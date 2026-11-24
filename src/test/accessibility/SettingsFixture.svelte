@@ -21,6 +21,7 @@
 
 	const parameters = new URLSearchParams(location.search);
 	const mobile = parameters.has('mobile');
+	const brandProgress = Math.min(1, Math.max(0, Number(parameters.get('brandProgress')) || 0));
 	const testingRelease = parameters.has('whatsnew');
 	const currentVersion = parameters.get('version') ?? '2.6.0';
 	let releaseReady = $state(false);
@@ -117,7 +118,9 @@
 
 <div class="shell" class:mobile>
 	{#if !testingRelease || (router.location !== '/whats-new' && !whatsNewStore.navigating)}
-		{#if mobile}<MobileNavigation />{:else}<aside><Navigation /></aside>{/if}
+		{#if mobile}<MobileNavigation scrollProgress={brandProgress} />{:else}<aside>
+				<Navigation />
+			</aside>{/if}
 	{/if}
 	<main aria-label="Settings fixture">
 		{#if testingRelease}

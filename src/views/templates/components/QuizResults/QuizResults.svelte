@@ -235,19 +235,19 @@
 	}
 
 	.quiz-results__incorrect-item {
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border-radius: var(--sy-border-radius);
 		padding: var(--sy-space--large);
-		box-shadow: var(--sy-shadow);
+		box-shadow: var(--sy-shadow--content);
 		border-left: var(--sy-result-accent-border-width) solid var(--sy-color--red);
 	}
 
 	.quiz-results--mobile .quiz-results__incorrect-item {
 		padding: var(--sy-mobile-space--large);
-		background-color: var(--sy-color--white);
+		background-color: var(--sy-surface--content);
 		border: none;
 		border-left: var(--sy-result-accent-border-width) solid var(--sy-color--red);
-		box-shadow: var(--sy-shadow);
+		box-shadow: var(--sy-shadow--content);
 		font-size: var(--sy-font-size--mobile-large);
 		line-height: 1.45;
 		overflow-wrap: anywhere;

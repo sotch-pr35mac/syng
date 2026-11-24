@@ -6,6 +6,8 @@
 	import { onMount, untrack } from 'svelte';
 	import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
 	import StudyListItem from '@/components/StudyListItem/StudyListItem.svelte';
+	import SyListContent from '@/components/SyList/SyListContent.svelte';
+	import SyListItem from '@/components/SyList/SyListItem.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { Search } from 'lucide-svelte';
 	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
@@ -51,6 +53,7 @@
 			? undefined
 			: 'study-lists'}
 		class="mobile-study__content"
+		data-sy-primary-scroll
 		class:mobile-study__content--empty={studyLists.status === 'ready' && !populatedLists.length}
 	>
 		{#if studyLists.status === 'loading'}
@@ -59,19 +62,38 @@
 			<p>Unable to load your lists. Please try again.</p>
 			<SyButton onclick={() => studyLists.load()}>Try again</SyButton>
 		{:else if populatedLists.length}
-			<div class="mobile-study__help">
-				<WalkthroughHelp guide="study" label="Learn how Study works" />
-			</div>
-			<div class="mobile-study__list">
-				{#each populatedLists as list (list.name)}
-					<StudyListItem value={list} variant="mobile" onselection={handleSelection} />
-				{/each}
+			<div class="mobile-study__practice">
+				<div class="mobile-study__collection-heading">
+					<div>
+						<h2>Ready to practice</h2>
+						<p>Choose a list and how to practice.</p>
+					</div>
+					<span
+						>{populatedLists.length}
+						{populatedLists.length === 1 ? 'list' : 'lists'}</span
+					>
+				</div>
+				<div class="mobile-study__help">
+					<WalkthroughHelp guide="study" label="Learn how Study works" />
+				</div>
+				<SyListContent>
+					{#each populatedLists as list (list.name)}
+						<SyListItem>
+							<StudyListItem
+								value={list}
+								variant="mobile"
+								onselection={handleSelection}
+							/>
+						</SyListItem>
+					{/each}
+				</SyListContent>
 			</div>
 		{:else}
 			<div class="mobile-study__empty">
 				<div class="mobile-study__empty-copy">
 					<Awa pose="practice" size={AWA_SIZES.mobile} />
-					<p>Add words to a list to start studying.</p>
+					<h2>No words to study yet</h2>
+					<p>Save words in Search or Reader to start practicing.</p>
 				</div>
 				<SyButton
 					size="large"
@@ -90,6 +112,7 @@
 <style>
 	.mobile-study__help {
 		text-align: center;
+		margin-top: var(--sy-mobile-space--large);
 	}
 
 	.mobile-study {
@@ -97,7 +120,9 @@
 		flex-direction: column;
 		height: 100%;
 		overflow: hidden;
-		background-color: var(--sy-color--grey-2);
+		background-color: var(--sy-surface--canvas);
+		background-image: var(--sy-surface--canvas-texture);
+		background-blend-mode: var(--sy-surface--canvas-texture-blend);
 	}
 
 	.mobile-study__content {
@@ -108,11 +133,30 @@
 		padding: var(--sy-mobile-space--large);
 		box-sizing: border-box;
 	}
-
-	.mobile-study__list {
+	.mobile-study__practice {
+		width: 100%;
+		max-width: var(--sy-study-collection-max-width);
+		margin: 0 auto;
+	}
+	.mobile-study__collection-heading {
 		display: flex;
-		flex-direction: column;
-		gap: calc(var(--sy-mobile-space--extra-small) * 5);
+		align-items: end;
+		justify-content: space-between;
+		gap: var(--sy-mobile-space--medium);
+		color: var(--sy-color--black);
+	}
+	.mobile-study__collection-heading h2 {
+		margin: 0;
+		font: var(--sy-type--local-title-mobile);
+	}
+	.mobile-study__collection-heading p,
+	.mobile-study__collection-heading span {
+		margin: var(--sy-mobile-space--small) 0 0;
+		font: var(--sy-type--supporting-mobile);
+		color: var(--sy-text--secondary);
+	}
+	.mobile-study__collection-heading span {
+		flex-shrink: 0;
 	}
 
 	.mobile-study__empty {
@@ -152,9 +196,16 @@
 		align-items: center;
 		gap: var(--sy-mobile-space--medium);
 	}
-
+	.mobile-study__empty h2 {
+		margin: 0;
+		font: var(--sy-type--local-title-mobile);
+		color: var(--sy-color--black);
+	}
 	.mobile-study__empty p {
 		margin: 0;
+		max-width: var(--sy-study-empty-copy-max-width);
+		font: var(--sy-type--supporting-mobile);
+		color: var(--sy-text--secondary);
 	}
 
 	:global(.mobile-study__empty-action) {

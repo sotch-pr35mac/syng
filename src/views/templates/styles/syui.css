@@ -32,7 +32,7 @@
 	z-index: var(--sy-z-index--top);
 	padding: 0.75rem;
 	color: var(--sy-text--blue);
-	background: var(--sy-color--white);
+	background: var(--sy-surface--floating);
 	border-radius: var(--sy-border-radius);
 }
 .sy-skip-link:focus {
@@ -52,7 +52,7 @@
 	transform: translate(0, -50%);
 	padding: var(--sy-space);
 	color: var(--sy-text--muted);
-	background-color: var(--sy-color--white);
+	background-color: var(--sy-surface--floating);
 	font-size: 0.6875rem;
 	line-height: calc(2em + 1px);
 	text-align: center;
@@ -60,7 +60,7 @@
 	position: absolute;
 	z-index: var(--sy-z-index--top);
 	box-sizing: border-box;
-	box-shadow: var(--sy-shadow--active);
+	box-shadow: var(--sy-shadow--floating-compact, var(--sy-shadow--active));
 	visibility: hidden;
 	opacity: 0;
 	transition: opacity var(--sy-transition-duration);
