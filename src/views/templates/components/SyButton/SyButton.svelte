@@ -147,6 +147,13 @@
 		font-family: var(--sy-font-family);
 		max-width: 100%;
 		overflow-wrap: anywhere;
+		transition-property: background-color, box-shadow;
+		transition-duration: var(--sy-transition-duration--control);
+	}
+	.sy-button:active,
+	.sy-button:disabled,
+	.sy-button--hover-actions-disabled {
+		transition: none;
 	}
 	.sy-button:focus-visible {
 		outline: 2px solid var(--sy-color--blue-2);
@@ -159,21 +166,16 @@
 	.sy-button--filled {
 		box-shadow: var(--sy-shadow);
 		background-color: var(--sy-surface--content);
-		transition:
-			box-shadow 150ms ease-out,
-			transform 150ms ease-out;
+		transition-property: background-color, box-shadow, transform;
+		transition-timing-function: ease, ease-out, ease-out;
 	}
 	@media (hover: hover) {
-		.sy-button--filled:not(.sy-button--hover-actions-disabled):hover {
+		.sy-button--filled:not(.sy-button--hover-actions-disabled):not(:disabled):hover {
 			box-shadow: var(--sy-shadow--active);
 			background-color: var(--sy-color--grey-2);
-			transition:
-				background-color var(--sy-transition-duration),
-				box-shadow 150ms ease-out,
-				transform 150ms ease-out;
 		}
 	}
-	.sy-button--filled:active {
+	.sy-button--filled:not(:disabled):active {
 		box-shadow: var(--sy-shadow--active);
 		background-color: var(--sy-color--grey-2);
 	}
@@ -182,6 +184,7 @@
 	}
 	.sy-button--ghost {
 		background: none;
+		transition-property: color;
 	}
 	.sy-button--ghost:active {
 		color: var(--sy-text--blue);
@@ -189,8 +192,6 @@
 	@media (hover: hover) {
 		.sy-button--ghost:not(.sy-button--hover-actions-disabled):hover {
 			color: var(--sy-text--blue);
-			transition-property: color;
-			transition-duration: var(--sy-transition-duration);
 		}
 		.sy-button--ghost:hover:disabled {
 			color: var(--sy-color--grey-5);

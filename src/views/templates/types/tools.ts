@@ -1,4 +1,5 @@
-export type ToolName = 'pinyinify' | 'converter' | 'colorize' | 'prettify';
+import type { HskLevels } from '@/types/hsk.js';
+export type TextConversionToolName = 'pinyinify' | 'converter' | 'colorize' | 'prettify';
 import type { LexicalUnit } from '@/types/dictionary.js';
 
 export interface PinyinSegment {
@@ -32,4 +33,17 @@ export interface PrettifyPinyinResult {
 	text: string;
 	direction: ResolvedPrettifyDirection;
 	detected_style: PinyinStyle;
+}
+
+export type ToolName = TextConversionToolName | 'frequency';
+export interface WordFrequencyEntry {
+	text: string;
+	count: number;
+	tones: number[];
+	hsk: HskLevels;
+}
+export interface WordFrequencyResult {
+	entries: WordFrequencyEntry[];
+	chinese_characters: number;
+	unmatched_characters: number;
 }

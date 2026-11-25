@@ -312,10 +312,11 @@
 		font-family: var(--sy-font-family);
 		color: var(--sy-icon--muted);
 		text-decoration: none;
-		transition: color var(--sy-transition-duration);
+		transition: color var(--sy-transition-duration--control);
 	}
 
 	.mobile-nav__tab:active {
+		transition: none;
 		background-color: var(--sy-mobile-state-pressed);
 	}
 

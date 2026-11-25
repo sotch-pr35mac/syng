@@ -3,6 +3,88 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
+/// Counts source spellings, preserving first appearance for frequency ties.
+#[derive(Serialize, Debug)]
+pub struct WordFrequencyEntry {
+    text: String,
+    count: usize,
+    tones: Vec<u8>,
+    hsk: dictionary::HskLevels,
+}
+
+#[derive(Serialize, Debug)]
+pub struct WordFrequencyResult {
+    entries: Vec<WordFrequencyEntry>,
+    chinese_characters: usize,
+    unmatched_characters: usize,
+}
+
+/// Keep dictionary scanning off the webview thread. No input is persisted or logged.
+#[tauri::command]
+pub async fn analyze_word_frequency(text: String) -> Result<WordFrequencyResult, String> {
+    tauri::async_runtime::spawn_blocking(move || count_word_frequency(&text))
+        .await
+        .map_err(|_| "Word analysis could not finish. Please try again.".to_string())
+}
+
+fn count_word_frequency(text: &str) -> WordFrequencyResult {
+    static HAN: OnceLock<regex::Regex> = OnceLock::new();
+    let han = HAN.get_or_init(|| regex::Regex::new(r"\p{Han}").expect("valid Han pattern"));
+    let chinese_characters = han.find_iter(text).count();
+    let mut matched_characters = 0;
+    let mut positions = std::collections::HashMap::<String, usize>::new();
+    let mut entries: Vec<WordFrequencyEntry> = Vec::new();
+    for token in dictionary::tokenize(text) {
+        let characters = han.find_iter(token).count();
+        if characters == 0 {
+            continue;
+        }
+        matched_characters += characters;
+        if let Some(position) = positions.get(token) {
+            entries[*position].count += 1;
+            continue;
+        }
+        let mut hsk = dictionary::HskLevels::default();
+        let mut tones = None;
+        for entry in dictionary::query_by_chinese(token) {
+            if entry.simplified() != token && entry.traditional() != token {
+                continue;
+            }
+            // Match the primary dictionary reading; HSK membership still combines readings.
+            tones.get_or_insert_with(|| entry.pinyin().tones().to_vec());
+            let memberships = entry.hsk();
+            for level in memberships.hsk_2015() {
+                if !hsk.hsk_2015.contains(&level) {
+                    hsk.hsk_2015.push(level);
+                }
+            }
+            for level in memberships.proficiency_standard_2021() {
+                if !hsk.proficiency_standard_2021.contains(&level) {
+                    hsk.proficiency_standard_2021.push(level);
+                }
+            }
+            for level in memberships.hsk_exam_syllabus_2025() {
+                if !hsk.hsk_exam_syllabus_2025.contains(&level) {
+                    hsk.hsk_exam_syllabus_2025.push(level);
+                }
+            }
+        }
+        positions.insert(token.to_string(), entries.len());
+        entries.push(WordFrequencyEntry {
+            text: token.to_string(),
+            count: 1,
+            tones: tones.unwrap_or_default(),
+            hsk,
+        });
+    }
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.count));
+    WordFrequencyResult {
+        entries,
+        chinese_characters,
+        unmatched_characters: chinese_characters.saturating_sub(matched_characters),
+    }
+}
+
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct PinyinSegment {
     pub source: String,
@@ -742,6 +824,57 @@ fn syllable_set() -> &'static HashSet<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn frequency_counts_forms_and_preserves_ties() {
+        let result = count_word_frequency("学习，學習。学习！你好 你好 English 123🙂");
+        let counts: Vec<_> = result
+            .entries
+            .iter()
+            .map(|entry| (entry.text.as_str(), entry.count))
+            .collect();
+        assert_eq!(counts, vec![("学习", 2), ("你好", 2), ("學習", 1)]);
+        assert_eq!(result.chinese_characters, 10);
+        assert_eq!(result.unmatched_characters, 0);
+        assert_eq!(result.entries[0].tones, vec![2, 2]);
+        assert_eq!(result.entries[1].tones, vec![3, 3]);
+        assert_eq!(result.entries[2].tones, vec![2, 2]);
+    }
+
+    #[test]
+    fn frequency_empty_and_unmatched_are_accounted_for() {
+        assert!(count_word_frequency("Hello! 123🙂").entries.is_empty());
+        let result = count_word_frequency("你好𰀀");
+        let matched: usize = result
+            .entries
+            .iter()
+            .map(|entry| entry.text.chars().count() * entry.count)
+            .sum();
+        assert_eq!(result.chinese_characters, 3);
+        assert_eq!(matched + result.unmatched_characters, 3);
+    }
+
+    #[test]
+    fn frequency_handles_large_input_and_combines_hsk_readings() {
+        let result = count_word_frequency(&"学习。".repeat(33_334));
+        assert_eq!(result.entries[0].count, 33_334);
+        let result = count_word_frequency("长，长");
+        let entry = result
+            .entries
+            .iter()
+            .find(|entry| entry.text == "长")
+            .unwrap();
+        let primary = dictionary::query_by_chinese("长");
+        assert_eq!(entry.tones, primary[0].pinyin().tones());
+        assert!(entry
+            .hsk
+            .proficiency_standard_2021
+            .contains(&dictionary::HskLevel::Two));
+        assert!(entry
+            .hsk
+            .proficiency_standard_2021
+            .contains(&dictionary::HskLevel::Six));
+    }
 
     fn lexical_unit(segment: &PinyinSegment) -> &dictionary::LexicalUnit {
         segment.lexical_unit.as_ref().unwrap()

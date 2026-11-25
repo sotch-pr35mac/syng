@@ -124,6 +124,14 @@ export const swipeBack: Action<HTMLElement, SwipeBackOptions | undefined> = (nod
 		node.style.transform = `translateX(${clampedDelta}px)`;
 	}
 
+	function handleTouchMove(event: TouchEvent): void {
+		// Cancelling pointermove alone does not stop native touch panning. Claim only
+		// an edge gesture with confirmed horizontal intent; leave other scrolling native.
+		if (dragging && event.cancelable) {
+			event.preventDefault();
+		}
+	}
+
 	function handlePointerUp(event: PointerEvent): void {
 		if (activePointerId !== event.pointerId) {
 			return;
@@ -185,6 +193,7 @@ export const swipeBack: Action<HTMLElement, SwipeBackOptions | undefined> = (nod
 
 	node.addEventListener('pointerdown', handlePointerDown);
 	node.addEventListener('pointermove', handlePointerMove);
+	node.addEventListener('touchmove', handleTouchMove, { passive: false });
 	node.addEventListener('pointerup', handlePointerUp);
 	node.addEventListener('pointercancel', handlePointerCancel);
 
@@ -195,6 +204,7 @@ export const swipeBack: Action<HTMLElement, SwipeBackOptions | undefined> = (nod
 		destroy() {
 			node.removeEventListener('pointerdown', handlePointerDown);
 			node.removeEventListener('pointermove', handlePointerMove);
+			node.removeEventListener('touchmove', handleTouchMove);
 			node.removeEventListener('pointerup', handlePointerUp);
 			node.removeEventListener('pointercancel', handlePointerCancel);
 			if (pendingBackTimeout !== null) {

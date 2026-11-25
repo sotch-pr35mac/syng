@@ -8,11 +8,11 @@
 	import ColorizedRawPinyinText from '@/components/ColorizedText/ColorizedRawPinyinText.svelte';
 	import { colorizeModeForOutput } from '@/composables/textConversionTools.js';
 	import { toolsStore } from '@/composables/tools.svelte.js';
-	import type { ToolName } from '@/types/tools.js';
+	import type { TextConversionToolName } from '@/types/tools.js';
 	import { lexicalPinyin, lexicalUnitFromToolSegment } from '@/types/dictionary.js';
 
 	interface Props {
-		tool: ToolName;
+		tool: TextConversionToolName;
 		outputText: string;
 	}
 

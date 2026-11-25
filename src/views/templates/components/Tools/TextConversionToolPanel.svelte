@@ -1,9 +1,12 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { ChevronDown, ChevronRight, Copy, Info, Play } from 'lucide-svelte';
+	import { Copy } from 'lucide-svelte';
+	import ToolProcessButton from '@/components/Tools/ToolProcessButton.svelte';
+	import ToolPageHeader from '@/components/Tools/ToolPageHeader.svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
-	import SyButtonBar from '@/components/SyButtonBar/SyButtonBar.svelte';
-	import type { ToolName } from '@/types/tools.js';
+	import SyRadio from '@/components/SyRadio/SyRadio.svelte';
+	import SyRadioGroup from '@/components/SyRadio/SyRadioGroup.svelte';
+	import type { TextConversionToolName } from '@/types/tools.js';
 	import type {
 		TextConversionControlGroup,
 		TextConversionToolVariant,
@@ -13,7 +16,7 @@
 	interface Props {
 		busy?: boolean;
 		status?: string;
-		tool: ToolName;
+		tool: TextConversionToolName;
 		label: string;
 		headingId: string;
 		inputLabel: string;
@@ -23,6 +26,8 @@
 		outputText: string;
 		collapsed: boolean;
 		variant?: TextConversionToolVariant;
+		draggableTitle?: boolean;
+		onBack: () => void;
 		controlGroups?: TextConversionControlGroup[];
 		decisionText?: string;
 		outputLarge?: boolean;
@@ -30,8 +35,8 @@
 		onInputChange: (text: string) => void;
 		onProcess: () => void;
 		onCopy: (text: string) => void;
-		onInfo: (tool: ToolName) => void;
-		onToggleCollapse: (tool: ToolName) => void;
+		onInfo: (tool: TextConversionToolName) => void;
+		onToggleCollapse: (tool: TextConversionToolName) => void;
 	}
 
 	const {
@@ -47,6 +52,8 @@
 		outputText,
 		collapsed,
 		variant = 'desktop',
+		draggableTitle = false,
+		onBack,
 		controlGroups = [],
 		decisionText = '',
 		outputLarge = false,
@@ -59,7 +66,6 @@
 	}: Props = $props();
 
 	const isMobile = $derived(variant === 'mobile');
-	const buttonBarSize = $derived(isMobile ? 'small' : 'medium');
 	const copyButtonClasses = $derived(isMobile ? [] : ['sy-tooltip--container']);
 	const visibleControlGroups = $derived(controlGroups.filter((group) => group.visible !== false));
 
@@ -73,36 +79,16 @@
 	class:text-conversion-tool--mobile={isMobile}
 	aria-labelledby={headingId}
 >
-	<div class="text-conversion-tool__heading">
-		<h2 id={headingId}>{label}</h2>
-		<button
-			type="button"
-			class="text-conversion-tool__icon-button sy-tooltip--container"
-			aria-label={`Learn about ${label}`}
-			onclick={() => onInfo(tool)}
-		>
-			<Info size="15" />
-			{#if !isMobile}
-				<div class="sy-tooltip--body sy-tooltip--body-bottom">
-					<p>Learn about this tool</p>
-				</div>
-			{/if}
-		</button>
-		<button
-			type="button"
-			class="text-conversion-tool__icon-button"
-			aria-label={collapsed ? `Expand ${label} input` : `Collapse ${label} input`}
-			aria-expanded={!collapsed}
-			aria-controls={!collapsed ? `${headingId}-input` : undefined}
-			onclick={() => onToggleCollapse(tool)}
-		>
-			{#if collapsed}
-				<ChevronRight size="17" />
-			{:else}
-				<ChevronDown size="17" />
-			{/if}
-		</button>
-	</div>
+	<ToolPageHeader
+		{label}
+		{headingId}
+		{collapsed}
+		{variant}
+		{draggableTitle}
+		{onBack}
+		onInfo={() => onInfo(tool)}
+		onToggleCollapse={() => onToggleCollapse(tool)}
+	/>
 
 	{#if !collapsed}
 		<!-- autocorrect is spread because Svelte's textarea types omit it (non-standard attr). -->
@@ -117,32 +103,41 @@
 			{...{ autocorrect: 'off' }}
 			oninput={handleInput}
 		></textarea>
-		<div
-			class="text-conversion-tool__controls"
-			class:text-conversion-tool__controls--empty={visibleControlGroups.length === 0 &&
-				!decisionText}
-		>
-			{#each visibleControlGroups as group (group.id)}
-				<SyButtonBar size={buttonBarSize} aria-label={group.ariaLabel}>
-					{#each group.options as option (option.id)}
-						<SyButton
-							grouped
-							color={option.active ? 'blue' : undefined}
-							aria-pressed={option.active}
-							onclick={option.onSelect}
-						>
-							{isMobile ? (option.mobileLabel ?? option.label) : option.label}
-						</SyButton>
+		<div class="text-conversion-tool__controls">
+			{#if visibleControlGroups.length > 0 || decisionText}
+				<div class="text-conversion-tool__settings">
+					{#each visibleControlGroups as group (group.id)}
+						<fieldset class="text-conversion-tool__setting">
+							<legend class="sy-sr-only">{group.ariaLabel}</legend>
+							<SyRadioGroup
+								selectedValue={group.options.find((option) => option.active)?.id ??
+									''}
+								{variant}
+							>
+								{#each group.options as option (option.id)}
+									<label>
+										<SyRadio
+											name={`${headingId}-${group.id}`}
+											value={option.id}
+											checked={option.active}
+											onchange={option.onSelect}
+										/>
+										<span
+											>{isMobile
+												? (option.mobileLabel ?? option.label)
+												: option.label}</span
+										>
+									</label>
+								{/each}
+							</SyRadioGroup>
+						</fieldset>
 					{/each}
-				</SyButtonBar>
-			{/each}
-			{#if decisionText}
-				<p class="text-conversion-tool__decision">{decisionText}</p>
+					{#if decisionText}
+						<p class="text-conversion-tool__decision">{decisionText}</p>
+					{/if}
+				</div>
 			{/if}
-			<SyButton onclick={onProcess} center>
-				<Play size="16" />
-				<span>Process</span>
-			</SyButton>
+			<ToolProcessButton {variant} {onProcess} />
 		</div>
 	{/if}
 
@@ -183,33 +178,6 @@
 		gap: var(--sy-space--large);
 		width: 100%;
 	}
-	.text-conversion-tool__heading {
-		display: flex;
-		align-items: center;
-		gap: var(--sy-space);
-	}
-	.text-conversion-tool__heading h2 {
-		min-width: 0;
-		overflow-wrap: anywhere;
-		margin: 0;
-		font-size: var(--sy-font-size--large);
-	}
-	.text-conversion-tool__icon-button {
-		flex-shrink: 0;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 28px;
-		height: 28px;
-		padding: 0;
-		border: 0;
-		background: transparent;
-		color: var(--sy-text--muted);
-		cursor: pointer;
-	}
-	.text-conversion-tool__icon-button:hover {
-		color: var(--sy-text--blue);
-	}
 	.text-conversion-tool textarea {
 		width: 100%;
 		box-sizing: border-box;
@@ -230,9 +198,25 @@
 		flex-wrap: wrap;
 		gap: var(--sy-space);
 	}
-	.text-conversion-tool__controls--empty {
+	.text-conversion-tool__settings {
+		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
+		gap: var(--sy-space);
+		width: max-content;
+		max-width: 100%;
 	}
+	.text-conversion-tool__setting {
+		/* Keep the radio indicator and labels below the sticky tool header. */
+		isolation: isolate;
+		width: var(--sy-radio-group-max-width);
+		max-width: 100%;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
 	.text-conversion-tool__decision {
 		margin: 0;
 		color: var(--sy-text--muted);
@@ -258,24 +242,9 @@
 		word-break: break-word;
 		line-height: 1.6;
 	}
-	:global(.text-conversion-tool__controls .sy-button) {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--sy-space);
-	}
+
 	.text-conversion-tool--mobile {
 		gap: var(--sy-mobile-space--large);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__heading {
-		gap: var(--sy-mobile-space--medium);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__heading h2 {
-		font-size: var(--sy-font-size--mobile-large);
-		font-weight: var(--sy-font-weight--bold);
-	}
-	.text-conversion-tool--mobile .text-conversion-tool__icon-button {
-		width: var(--sy-mobile-touch-target);
-		height: var(--sy-mobile-touch-target);
 	}
 	.text-conversion-tool--mobile textarea {
 		min-height: 132px;
@@ -289,6 +258,12 @@
 		align-items: flex-start;
 		gap: var(--sy-mobile-space--medium);
 	}
+	.text-conversion-tool--mobile .text-conversion-tool__settings {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--sy-mobile-space--medium);
+	}
+
 	.text-conversion-tool--mobile .text-conversion-tool__decision {
 		font-size: var(--sy-font-size--mobile-small);
 		line-height: 1.4;

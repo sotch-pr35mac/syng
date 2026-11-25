@@ -8,6 +8,33 @@
 	--sy-color--syng-red: #ef1063;
 	--sy-color--syng-purple: #9d29ad;
 
+	--sy-brand-gradient: linear-gradient(
+		135deg,
+		var(--sy-color--syng-orange),
+		var(--sy-color--syng-red),
+		var(--sy-color--syng-purple)
+	);
+	--sy-hover-lift: -2px;
+	--sy-tool-illustration-size: 8.25rem;
+	--sy-tool-illustration-size-mobile: 7.25rem;
+	--sy-tool-label-size: 0.8125rem;
+	--sy-radio-group-max-width: 480px;
+	--sy-tool-page-inset-mobile: calc(
+		var(--sy-mobile-space--large) + var(--sy-mobile-space--extra-small)
+	);
+	--sy-art-glow-opacity: 0.4;
+	--sy-art-glow-blur: 8px;
+
+	/* Extras illustrations share geometry and adapt only their paint between schemes. */
+	--sy-tool-art--outline: var(--sy-color--black);
+	--sy-tool-art--ink: var(--sy-color--black);
+	--sy-tool-art--surface: #f7f9fc;
+	--sy-tool-art--tint: #dcebfc;
+	--sy-tool-art--backing: #e7edf5;
+	--sy-tool-art--accent: var(--sy-color--blue-3);
+	--sy-tool-art--metal: #b9c3d1;
+	--sy-tool-art--muted: var(--sy-color--grey-3);
+
 	/* Theme Colors */
 	--sy-color--blue-1: #76aff9;
 	--sy-color--blue-2: #2c7ee7;
@@ -184,6 +211,8 @@
 	--sy-overlay-backdrop-opacity: 0.56;
 	--sy-shadow--dialog: 0 16px 40px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
 	--sy-modal-padding: 18px;
+	--sy-transition-duration--control: 0.15s;
+	--sy-transition-duration--artwork: 0.2s;
 }
 
 :root[data-appearance='contrast'] {
@@ -212,6 +241,13 @@
 	--sy-tone-theme--4: var(--sy-text--green);
 	/* Keep the tested surface behind text, including pressed mobile list rows. */
 	--sy-mobile-state-pressed: var(--sy-color--grey-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--sy-transition-duration--control: 0s;
+		--sy-transition-duration--artwork: 0s;
+	}
 }
 
 @media (prefers-color-scheme: light) {
@@ -253,6 +289,15 @@
 
 @media (prefers-color-scheme: dark) {
 	:root {
+		--sy-tool-art--outline: #a7b5c8;
+		--sy-tool-art--ink: #e7edf5;
+		--sy-tool-art--surface: #343d4b;
+		--sy-tool-art--tint: #294c74;
+		--sy-tool-art--backing: #293442;
+		--sy-tool-art--accent: var(--sy-color--blue-1);
+		--sy-tool-art--metal: #8f9fb5;
+		--sy-tool-art--muted: #b0bfd2;
+
 		/* Theme Colors */
 		--sy-color--black: #ffffff;
 		--sy-color--modal-overlay: #ffffff55;

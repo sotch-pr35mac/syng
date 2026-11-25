@@ -8,6 +8,7 @@ coverage/
 storybook-static/
 playwright-report/
 test-results/
+/.cache/vite-accessibility/
 
 # Local image-generation output
 /output/

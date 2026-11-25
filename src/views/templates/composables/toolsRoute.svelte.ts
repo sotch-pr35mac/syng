@@ -3,41 +3,45 @@ import {
 	textConversionToolConfigs,
 	textConversionToolInfo,
 } from '@/composables/textConversionTools.js';
-import { toolsActiveTabStore } from '@/stores/tools.svelte.js';
+import { toolsSelectionStore } from '@/stores/tools.svelte.js';
 import { handleError } from '@/utils/error.js';
 import { telemetry } from '@/utils/telemetry.js';
-import type { ToolName } from '@/types/tools.js';
+import type { ToolName, TextConversionToolName } from '@/types/tools.js';
 import { toolsStore } from '@/composables/tools.svelte.js';
 import type { TextConversionToolConfig } from '@/types/textConversionTool.js';
 
-/**
- * Shared, app-lifetime controller for the Extras route. Both the desktop
- * (`Tools.svelte`) and mobile (`MobileTools.svelte`) shells consume this so the
- * tab/placeholder/info/collapse/toast logic lives in exactly one place; the
- * routes only own their platform chrome. `activeTab` is backed by
- * `toolsActiveTabStore` so it persists across navigation and platforms.
- */
+/** Shared Extras navigation, placeholder, info, collapse, and copy state for both shells. */
+export const extrasTools: { name: ToolName; label: string }[] = [
+	...Object.values(textConversionToolConfigs).map(({ name, label }) => ({ name, label })),
+	{ name: 'frequency', label: 'Word Frequency' },
+];
+
 const PLACEHOLDER_ROTATION_MS = 2000;
 
 let placeholderIndex = $state(0);
-let infoTool = $state<ToolName | null>(null);
+let infoTool = $state<TextConversionToolName | null>(null);
 let showCopyToast = $state(false);
-let inputCollapsed = $state<Record<ToolName, boolean>>({
+let inputCollapsed = $state<Record<TextConversionToolName, boolean>>({
 	pinyinify: false,
 	converter: false,
 	colorize: false,
 	prettify: false,
 });
 
-function setActiveTab(tab: ToolName): void {
-	toolsActiveTabStore.set(tab);
+function selectTool(tool: ToolName | null): void {
+	if (tool && tool !== toolsSelectionStore.value) {
+		telemetry.trackEvent('tools.opened', { tool }).catch(() => {});
+	}
+	toolsSelectionStore.set(tool);
+	closeInfo();
+	dismissToast();
 }
 
-function toggleInput(tool: ToolName): void {
+function toggleInput(tool: TextConversionToolName): void {
 	inputCollapsed = { ...inputCollapsed, [tool]: !inputCollapsed[tool] };
 }
 
-function openInfo(tool: ToolName): void {
+function openInfo(tool: TextConversionToolName): void {
 	infoTool = tool;
 }
 
@@ -50,18 +54,21 @@ function dismissToast(): void {
 }
 
 async function copyText(text: string): Promise<void> {
-	const tool = toolsActiveTabStore.value;
+	const tool = toolsSelectionStore.value;
 	try {
 		await navigator.clipboard.writeText(text);
 		showCopyToast = true;
-		telemetry.trackEvent('tools.copied', { tool }).catch(() => {});
+		if (tool) {
+			telemetry.trackEvent('tools.copied', { tool }).catch(() => {});
+		}
 	} catch (error) {
 		handleError('Copy failed.', error);
 	}
 }
 
-function getActiveTool(): TextConversionToolConfig {
-	return textConversionToolConfigs[toolsActiveTabStore.value];
+function getActiveTool(): TextConversionToolConfig | null {
+	const selected = toolsSelectionStore.value;
+	return selected && selected !== 'frequency' ? textConversionToolConfigs[selected] : null;
 }
 
 function getActiveInfo(): { title: string; body: string } | null {
@@ -69,13 +76,16 @@ function getActiveInfo(): { title: string; body: string } | null {
 }
 
 function getActivePlaceholder(): string {
-	const placeholders = textConversionPlaceholders[toolsActiveTabStore.value];
+	if (!toolsSelectionStore.value || toolsSelectionStore.value === 'frequency') {
+		return '';
+	}
+	const placeholders = textConversionPlaceholders[toolsSelectionStore.value];
 	return placeholders[placeholderIndex % placeholders.length];
 }
 
 /**
- * Rotates the input placeholder while the route is mounted. Call from the route's
- * `onMount` and return the teardown so the ticker never runs while the route is hidden.
+ * Rotates the placeholder while a conversion panel is mounted. Return the teardown
+ * from the view's effect so the ticker stops on the toolbox and when leaving Extras.
  */
 function startPlaceholderRotation(): () => void {
 	const interval = window.setInterval(() => {
@@ -86,12 +96,13 @@ function startPlaceholderRotation(): () => void {
 
 export const toolsRoute = {
 	get operationState(): { busy: boolean; status: string } {
-		return toolsStore.operationState(toolsActiveTabStore.value);
+		const tool = getActiveTool();
+		return tool ? toolsStore.operationState(tool.name) : { busy: false, status: '' };
 	},
-	get activeTab(): ToolName {
-		return toolsActiveTabStore.value;
+	get selectedTool(): ToolName | null {
+		return toolsSelectionStore.value;
 	},
-	get activeTool(): TextConversionToolConfig {
+	get activeTool(): TextConversionToolConfig | null {
 		return getActiveTool();
 	},
 	get activeInfo(): { title: string; body: string } | null {
@@ -100,16 +111,16 @@ export const toolsRoute = {
 	get activePlaceholder(): string {
 		return getActivePlaceholder();
 	},
-	get infoTool(): ToolName | null {
+	get infoTool(): TextConversionToolName | null {
 		return infoTool;
 	},
 	get showCopyToast(): boolean {
 		return showCopyToast;
 	},
-	isInputCollapsed(tool: ToolName): boolean {
+	isInputCollapsed(tool: TextConversionToolName): boolean {
 		return inputCollapsed[tool];
 	},
-	setActiveTab,
+	selectTool,
 	toggleInput,
 	openInfo,
 	closeInfo,

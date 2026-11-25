@@ -424,12 +424,15 @@
 		background-color: var(--sy-fill--blue);
 		border-radius: var(--sy-border-radius);
 		font-size: var(--sy-font-size--display-medium);
+		transition-property: background-color, box-shadow;
+		transition-duration: var(--sy-transition-duration--control);
 	}
 	.quiz--option:hover {
 		box-shadow: var(--sy-shadow--active);
 		background-color: var(--sy-fill--blue);
-		transition-property: background-color, box-shadow;
-		transition-duration: var(--sy-transition-duration);
+	}
+	.quiz--option:active {
+		transition: none;
 	}
 	.title-message--container {
 		flex-direction: column;

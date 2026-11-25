@@ -54,7 +54,9 @@ pub use telemetry::{
     telemetry_set_pref, telemetry_track_error, telemetry_track_event, telemetry_track_screen,
     TelemetryManager,
 };
-pub use tools::{convert_characters, pinyinify, prettify_pinyin, tokenize_pinyin};
+pub use tools::{
+    analyze_word_frequency, convert_characters, pinyinify, prettify_pinyin, tokenize_pinyin,
+};
 
 pub mod survey;
 pub mod survey_contract;

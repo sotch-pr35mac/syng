@@ -348,6 +348,7 @@
 		align-items: center;
 		justify-content: center;
 		position: relative;
+		transition: color var(--sy-transition-duration--control);
 	}
 	.navigation--badge {
 		position: absolute;
@@ -362,8 +363,6 @@
 	@media (hover: hover) {
 		.navigation--item:hover {
 			color: var(--sy-icon--hover);
-			transition-property: color;
-			transition-duration: var(--sy-transition-duration);
 		}
 	}
 	:global(.navigation--item-active) {
@@ -372,10 +371,13 @@
 		box-shadow: none;
 		color: var(--sy-icon--muted) !important;
 		transition-property: background-color, box-shadow, border-radius, color !important;
-		transition-duration: var(--sy-transition-duration) !important;
+		transition-duration: var(--sy-transition-duration--control) !important;
 	}
 	:global(.navigation--item-active:hover) {
 		box-shadow: none;
 		border-radius: 100%;
+	}
+	.navigation--item:active {
+		transition: none !important;
 	}
 </style>

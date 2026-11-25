@@ -1,3 +1,4 @@
+import type { ToolName } from '@/types/tools.js';
 import type { SearchLang } from '@/types/search.js';
 import type { WalkthroughId } from '@/types/walkthrough.js';
 
@@ -51,7 +52,7 @@ export interface WhatsNewTelemetry {
 	target_setting?: string;
 }
 
-export type WordOpeningSource = 'search' | 'bookmarks' | 'reader' | 'flashcards' | 'quiz';
+export type WordOpeningSource = 'search' | 'bookmarks' | 'reader' | 'flashcards' | 'quiz' | 'tools';
 export type QueryTrigger = 'pause' | 'selection' | 'submit';
 
 export type BreakdownSurface = 'sidebar' | 'entry' | 'popup' | 'mobile_screen';
@@ -121,6 +122,7 @@ export interface TelemetryPayloads
 	'quiz.started': { word_count: number; source: 'bookmarks' | 'study' };
 	'flashcards.session_ended': { viewed_count: number; revealed_count: number };
 	'quiz.abandoned': { answered_count: number };
-	'tools.completed': { tool: string; mode: string; input_length: number };
-	'tools.copied': { tool: string };
+	'tools.opened': { tool: ToolName };
+	'tools.completed': { tool: ToolName; mode: string; input_length: number };
+	'tools.copied': { tool: ToolName };
 }

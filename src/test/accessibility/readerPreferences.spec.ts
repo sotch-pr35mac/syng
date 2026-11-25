@@ -36,6 +36,12 @@ for (const scenario of [
 			) {
 				await Promise.all(ancestor.getAnimations().map((animation) => animation.finished));
 			}
+			// The shared button press translation must also settle before grouping row tops.
+			await Promise.all(
+				Array.from(element.querySelectorAll('button')).flatMap((button) =>
+					button.getAnimations().map((animation) => animation.finished)
+				)
+			);
 		});
 		const geometry = await themes.evaluate((element) => {
 			const buttons = Array.from(element.querySelectorAll('button'));

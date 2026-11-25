@@ -346,3 +346,61 @@ for (const colorScheme of ['light', 'dark'] as const) {
 		}
 	}
 }
+
+for (const colorScheme of ['light', 'dark'] as const) {
+	for (const appearance of ['original', 'contrast']) {
+		test(`shared hover shadow: ${colorScheme}, ${appearance}`, async ({ page }, testInfo) => {
+			await page.emulateMedia({ colorScheme });
+			await page.goto('/src/test/accessibility/index.html?palette');
+			if (appearance === 'contrast') {
+				await page.getByRole('checkbox', { name: 'Increase Contrast' }).focus();
+				await page.keyboard.press('Space');
+				await expect(page.locator('html')).toHaveAttribute('data-appearance', 'contrast');
+			}
+			const search = page.getByRole('link', { name: 'Search', exact: true });
+			const activeIcon = search.locator('.navigation--item');
+			const selectionPill = page.locator('.navigation--selection-pill');
+			await expect(search).toHaveAttribute('aria-current', 'page');
+			const finishTransitions = (element: Element) =>
+				Promise.all(element.getAnimations().map((animation) => animation.finished));
+			// Contrast changes animate the icon and pill; sample both after they settle.
+			await activeIcon.evaluate(finishTransitions);
+			await selectionPill.evaluate(finishTransitions);
+			const restingShadow = await selectionPill.evaluate(
+				(element) => getComputedStyle(element).boxShadow
+			);
+			const restingColor = await activeIcon.evaluate(
+				(element) => getComputedStyle(element).color
+			);
+			await search.hover();
+			await expect(selectionPill).not.toHaveCSS('box-shadow', restingShadow);
+			await expect(activeIcon).toHaveCSS('color', restingColor);
+			await activeIcon.evaluate(finishTransitions);
+			await expect(search.locator('.sy-tooltip--body')).toHaveCSS('opacity', '1');
+			const highlightedShadow =
+				colorScheme === 'light'
+					? 'rgba(0, 0, 0, 0.1) 0px 0px 10px 0px'
+					: 'rgba(220, 220, 220, 0.25) 0px 0px 10px 0px';
+			await expect(selectionPill).toHaveCSS('box-shadow', highlightedShadow);
+			await page.screenshot({ path: testInfo.outputPath('navigation-shadow.png') });
+			const save = page.getByRole('button', { name: 'Save word', exact: true });
+			const buttonRestingShadow = await save.evaluate(
+				(element) => getComputedStyle(element).boxShadow
+			);
+			await save.hover();
+			await expect(save).toHaveCSS('box-shadow', highlightedShadow);
+			await expect(selectionPill).toHaveCSS('box-shadow', restingShadow);
+			await page.screenshot({ path: testInfo.outputPath('button-shadow.png') });
+			await save.evaluate((element) => ((element as HTMLButtonElement).disabled = true));
+			await expect(save).toHaveCSS('box-shadow', buttonRestingShadow);
+			await save.evaluate((element) => ((element as HTMLButtonElement).disabled = false));
+			await page.mouse.move(0, 0);
+			await expect(save).toHaveCSS('box-shadow', buttonRestingShadow);
+			const readIcon = page
+				.getByRole('link', { name: 'Read', exact: true })
+				.locator('.navigation--item');
+			await readIcon.hover();
+			await expect(readIcon).toHaveCSS('box-shadow', 'none');
+		});
+	}
+}

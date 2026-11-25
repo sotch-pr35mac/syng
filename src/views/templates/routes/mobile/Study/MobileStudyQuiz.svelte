@@ -496,9 +496,11 @@
 		font-size: var(--sy-font-size--mobile-extra-large);
 		line-height: 1.25;
 		overflow-wrap: anywhere;
+		transition: box-shadow var(--sy-transition-duration--control);
 	}
 
 	.mobile-quiz__option:active {
+		transition: none;
 		background-color: var(--sy-fill--blue);
 		box-shadow: var(--sy-shadow--active);
 	}

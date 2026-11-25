@@ -54,6 +54,7 @@ export const NATIVE_COMMANDS = {
 		TOKENIZE_TEXT: 'tokenize_reader_text',
 	},
 	TOOLS: {
+		ANALYZE_WORD_FREQUENCY: 'analyze_word_frequency',
 		PINYINIFY: 'pinyinify',
 		CONVERT_CHARACTERS: 'convert_characters',
 		PRETTIFY_PINYIN: 'prettify_pinyin',

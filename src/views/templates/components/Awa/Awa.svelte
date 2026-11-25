@@ -53,8 +53,8 @@
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		opacity: var(--awa-glow-opacity, 0.4);
-		filter: blur(var(--awa-glow-blur, 8px));
+		opacity: var(--awa-glow-opacity, var(--sy-art-glow-opacity));
+		filter: blur(var(--awa-glow-blur, var(--sy-art-glow-blur)));
 	}
 
 	/* Blur outside the masked layer so the halo follows the artwork's transparent outline. */
@@ -62,12 +62,7 @@
 		content: '';
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(
-			135deg,
-			var(--sy-color--syng-orange),
-			var(--sy-color--syng-red),
-			var(--sy-color--syng-purple)
-		);
+		background: var(--sy-brand-gradient);
 		-webkit-mask: var(--awa-silhouette) center / contain no-repeat;
 		mask: var(--awa-silhouette) center / contain no-repeat;
 	}

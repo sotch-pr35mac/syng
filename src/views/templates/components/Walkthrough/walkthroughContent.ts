@@ -328,8 +328,8 @@ export async function prepareGuide(
 				step(
 					'extras',
 					'Prepare Chinese text',
-					'Extras can add pinyin, convert simplified and traditional characters, and work with tone colors. Choose a tool, enter text, and process it.',
-					'extras-tabs',
+					'Choose a tool to add pinyin, convert characters, color tones, tidy pinyin, or count words and explore HSK levels. Use the back arrow to return to all tools.',
+					'extras-tools',
 					'/tools'
 				),
 			];
