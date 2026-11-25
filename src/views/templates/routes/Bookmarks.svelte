@@ -2,7 +2,7 @@
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
 
-	import { ChevronDown, ChevronUp, Trash2, FolderUp, SquareStack, Award } from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, Trash2, FileOutput, SquareStack, Award } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { getStudyEligibility, studyHref } from '@/composables/study.js';
@@ -185,7 +185,7 @@
 	]);
 	const listActions = $derived([
 		{
-			icon: FolderUp,
+			icon: FileOutput,
 			action: exportActiveList,
 			tooltip: 'Export',
 			exclude: [],
@@ -353,9 +353,10 @@
 				{/if}
 			</div>
 		{/snippet}
-		{#snippet footer()}
+		{#snippet footerStart()}
 			<SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
-			&nbsp;
+		{/snippet}
+		{#snippet footer()}
 			<SyButton
 				size="large"
 				color="green"

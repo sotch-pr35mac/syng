@@ -8,7 +8,7 @@
 		ChevronDown,
 		ChevronUp,
 		EllipsisVertical,
-		FolderUp,
+		FileOutput,
 		Trash2,
 		SquareStack,
 		Award,
@@ -193,7 +193,7 @@
 	}
 
 	const listActions = $derived([
-		{ id: 'export', text: 'Export', icon: FolderUp, component: TextWithIconDropdownItem },
+		{ id: 'export', text: 'Export', icon: FileOutput, component: TextWithIconDropdownItem },
 		...(activeList === DEFAULT_BOOKMARKS_LIST
 			? []
 			: [
@@ -452,9 +452,10 @@
 			{/if}
 		</div>
 	{/snippet}
-	{#snippet footer()}
+	{#snippet footerStart()}
 		<SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
-		&nbsp;
+	{/snippet}
+	{#snippet footer()}
 		<SyButton
 			size="large"
 			color="green"

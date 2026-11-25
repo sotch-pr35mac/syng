@@ -34,6 +34,13 @@ for (const mobile of [false, true]) {
 			}
 			await open.click();
 			const panel = page.getByRole('region', { name: 'Character Breakdown' });
+			if (!mobile) {
+				// Click actionability can consider frames stable near the spring's overshoot.
+				// Compare header geometry only once the popup has reached its final scale.
+				await expect(
+					page.getByRole('dialog', { name: 'Dictionary', exact: true })
+				).toHaveCSS('transform', 'none');
+			}
 			const originalHeader = panel.locator('header');
 			const originalBack = await panel
 				.getByRole('button', { name: 'Back to dictionary' })

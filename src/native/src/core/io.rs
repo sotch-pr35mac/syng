@@ -448,7 +448,9 @@ fn detect_list_import(content: &str, file_name: String) -> Result<ListImportPrev
     }
     // Plain text has no signature. Require Chinese headword data, while retaining unmatched
     // records in a recognizable export for the skipped-record report.
-    let has_chinese_headword = content.lines().any(|line| {
+    // Match the Pleco parser's line endings so CR-only category headers do not hide records.
+    let normalized = content.replace("\r\n", "\n").replace('\r', "\n");
+    let has_chinese_headword = normalized.lines().any(|line| {
         if line.trim_start().starts_with("//") {
             return false;
         }
@@ -468,17 +470,31 @@ fn detect_list_import(content: &str, file_name: String) -> Result<ListImportPrev
 #[tauri::command(async)]
 pub async fn prepare_list_import(
     app: tauri::AppHandle,
+    path: Option<String>,
 ) -> Result<Option<ListImportPreview>, String> {
-    const MAX_BYTES: u64 = 10 * 1024 * 1024;
-    let Some(path) = app
-        .dialog()
-        .file()
-        .set_title("Import Vocabulary List")
-        .add_filter("Vocabulary lists", &["syli", "sld", "txt", "xml"])
-        .add_filter("All files", &["*"])
-        .blocking_pick_file()
-    else {
-        return Ok(None);
+    let path = match path {
+        // Desktop drop events supply absolute local paths; picker URLs still use
+        // the plugin path below for mobile document-provider access.
+        Some(path) => {
+            let path = std::path::PathBuf::from(path);
+            if !path.is_absolute() || !path.is_file() {
+                return Err("Drop a single list file, not a folder.".into());
+            }
+            FilePath::Path(path)
+        }
+        None => {
+            let Some(path) = app
+                .dialog()
+                .file()
+                .set_title("Import Vocabulary List")
+                .add_filter("Vocabulary lists", &["syli", "sld", "txt", "xml"])
+                .add_filter("All files", &["*"])
+                .blocking_pick_file()
+            else {
+                return Ok(None);
+            };
+            path
+        }
     };
     let name = app
         .path()
@@ -491,8 +507,15 @@ pub async fn prepare_list_import(
         .fs()
         .open(path, options)
         .map_err(|_| "Could not open the selected file.")?;
+    read_list_import(file, name).map(Some)
+}
+
+/// Picker selections and desktop drops share the same size, encoding, and format checks.
+fn read_list_import(reader: impl Read, file_name: String) -> Result<ListImportPreview, String> {
+    const MAX_BYTES: u64 = 10 * 1024 * 1024;
     let mut bytes = vec![];
-    file.take(MAX_BYTES + 1)
+    reader
+        .take(MAX_BYTES + 1)
         .read_to_end(&mut bytes)
         .map_err(|_| "Could not read the selected file.")?;
     if bytes.len() as u64 > MAX_BYTES {
@@ -501,7 +524,7 @@ pub async fn prepare_list_import(
     let content = String::from_utf8(bytes).map_err(|_| {
         "This file is not UTF-8 text. Choose a Syng list or export again using UTF-8 in Pleco."
     })?;
-    detect_list_import(&content, name).map(Some)
+    detect_list_import(&content, file_name)
 }
 
 #[tauri::command(async)]
@@ -529,6 +552,63 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn list_reader_bounds_input_and_rejects_invalid_encoding_or_read_failures() {
+        let oversized = std::io::repeat(b'a');
+        assert!(read_list_import(oversized, "words.txt".into())
+            .unwrap_err()
+            .contains("exceeds 10 MiB"));
+        assert!(read_list_import(&[0xff][..], "words.txt".into())
+            .unwrap_err()
+            .contains("not UTF-8"));
+        struct Unreadable;
+        impl Read for Unreadable {
+            fn read(&mut self, _buffer: &mut [u8]) -> std::io::Result<usize> {
+                Err(std::io::Error::other("read failure"))
+            }
+        }
+        assert!(read_list_import(Unreadable, "words.txt".into())
+            .unwrap_err()
+            .contains("Could not read"));
+    }
+
+    #[test]
+    fn local_list_file_uses_content_detection_before_preview() {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("words.xml");
+        std::fs::write(&path, "你好\tni3 hao3\thello").unwrap();
+        let file = std::fs::File::open(path).unwrap();
+        match read_list_import(file, "words.xml".into()).unwrap() {
+            ListImportPreview::Pleco { preview } => {
+                assert_eq!(preview.source_format, "text");
+                let serialized = serde_json::to_value(preview).unwrap();
+                assert_eq!(serialized["file_name"], "words.xml");
+                assert_eq!(serialized["rows"].as_array().unwrap().len(), 1);
+            }
+            _ => panic!("Text vocabulary was mistaken for a Syng archive"),
+        }
+    }
+
+    #[test]
+    fn list_reader_detects_pleco_categories_with_supported_line_endings() {
+        for newline in ["\r", "\n", "\r\n"] {
+            let content = format!("// Chapter{newline}你好\tni3 hao3{newline}");
+            match read_list_import(content.as_bytes(), "words.txt".into()).unwrap() {
+                ListImportPreview::Pleco { preview } => {
+                    assert_eq!(preview.source_format, "text");
+                    let serialized = serde_json::to_value(preview).unwrap();
+                    let rows = serialized["rows"].as_array().unwrap();
+                    assert_eq!(rows.len(), 1);
+                    assert_eq!(rows[0]["category"], "Chapter");
+                    assert_eq!(rows[0]["headword"], "你好");
+                    assert_eq!(rows[0]["line"], 2);
+                    assert!(rows[0]["selected"].is_string());
+                }
+                _ => panic!("Text vocabulary was mistaken for a Syng archive"),
+            }
+        }
+    }
 
     #[test]
     fn detects_supported_formats_from_content_instead_of_extension() {

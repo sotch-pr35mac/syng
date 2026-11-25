@@ -31,8 +31,9 @@ vi.mock('lucide-svelte', async () => {
 		ChevronLeft: mockIcon,
 		ChevronRight: mockIcon,
 		ChevronUp: mockIcon,
-		FolderDown: mockIcon,
-		FolderUp: mockIcon,
+		FileInput: mockIcon,
+		FileOutput: mockIcon,
+		List: mockIcon,
 		Plus: mockIcon,
 		SquareStack: mockIcon,
 		Trash2: mockIcon,
@@ -42,6 +43,10 @@ vi.mock('lucide-svelte', async () => {
 
 vi.mock('@tauri-apps/api/core', () => ({
 	invoke: vi.fn(() => Promise.resolve(null)),
+}));
+
+vi.mock('@tauri-apps/api/webview', () => ({
+	getCurrentWebview: () => ({ onDragDropEvent: async () => () => {} }),
 }));
 
 vi.mock('@tauri-apps/plugin-dialog', () => ({
@@ -314,7 +319,7 @@ it('places import immediately before Create New in the desktop list dropdown', a
 		'Create New',
 	]);
 	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
-	expect(getByRole('dialog', { name: 'Import lists' })).toBeTruthy();
+	expect(getByRole('dialog', { name: 'Import List' })).toBeTruthy();
 	expect(bookmarksActiveListStore.value).toBe('Bookmarks');
 });
 

@@ -212,6 +212,7 @@
 	--sy-shadow--dialog: 0 16px 40px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
 	--sy-modal-padding: 18px;
 	--sy-transition-duration--control: 0.15s;
+	--sy-control-press-offset: 1px;
 	--sy-transition-duration--artwork: 0.2s;
 }
 

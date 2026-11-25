@@ -1,6 +1,6 @@
 import { HSK_LEVELS, type HskLevels, type HskLevel } from '@/types/hsk.js';
 import { HSK_VARIANTS, type HskVariant } from '@/types/dictionaryDisplay.js';
-const levelNumber: Record<HskLevel, string> = {
+export const HSK_LEVEL_LABELS: Record<HskLevel, string> = {
 	[HSK_LEVELS.ONE]: '1',
 	[HSK_LEVELS.TWO]: '2',
 	[HSK_LEVELS.THREE]: '3',
@@ -18,6 +18,6 @@ export function resolveHskLevels(hsk: HskLevels | undefined, variant: HskVariant
 		return [];
 	}
 	return levels
-		.map((level) => levelNumber[level])
+		.map((level) => HSK_LEVEL_LABELS[level])
 		.filter((level): level is string => Boolean(level));
 }

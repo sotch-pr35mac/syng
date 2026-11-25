@@ -28,8 +28,9 @@ vi.mock('lucide-svelte', async () => {
 		ChevronDown: mockIcon,
 		ChevronUp: mockIcon,
 		EllipsisVertical: mockIcon,
-		FolderDown: mockIcon,
-		FolderUp: mockIcon,
+		FileInput: mockIcon,
+		FileOutput: mockIcon,
+		List: mockIcon,
 		Plus: mockIcon,
 		SquareStack: mockIcon,
 		Trash2: mockIcon,
@@ -388,6 +389,6 @@ it('places import immediately before Create New in the mobile list dropdown', as
 		'Create New',
 	]);
 	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
-	expect(getByRole('dialog', { name: 'Import lists' })).toBeTruthy();
+	expect(getByRole('dialog', { name: 'Import List' })).toBeTruthy();
 	expect(bookmarksActiveListStore.value).toBe('Bookmarks');
 });

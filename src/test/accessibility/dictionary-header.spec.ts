@@ -242,6 +242,9 @@ for (const fontSize of [16, 24]) {
 		await expectOrientation(page, true);
 		const tag = page.locator(`${headerSelector} .sy-tag[title]`);
 		const tooltip = tag.locator('.sy-tooltip--body');
+		// The light font can move this tag after the header changes orientation.
+		// Finish font loading before choosing the hover coordinates.
+		await page.evaluate(() => document.fonts.ready);
 		await tag.hover();
 		await expect(tooltip).toHaveCSS('opacity', '1');
 		await expect(tooltip).toHaveText('HSK Exam Syllabus 2025');

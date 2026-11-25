@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ask } from '@tauri-apps/plugin-dialog';
-import { FolderDown, Plus } from 'lucide-svelte';
+import { FileInput, Plus } from 'lucide-svelte';
 import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
 import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
@@ -85,7 +85,9 @@ function getDropdownList() {
 			text: 'Import',
 			id: IMPORT_LIST_ID,
 			component: TextWithIconDropdownItem,
-			icon: FolderDown,
+			icon: FileInput,
+			color: 'blue',
+			hover: 'green',
 		},
 		{
 			text: 'Create New',

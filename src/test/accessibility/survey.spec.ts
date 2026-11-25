@@ -22,6 +22,10 @@ for (const scenario of [
 		await page.setViewportSize({ width: scenario.width, height: scenario.height });
 		await page.emulateMedia({ colorScheme: scenario.scheme, reducedMotion: 'reduce' });
 		await page.goto(fixture + scenario.query);
+		await expect(page.locator('legend')).toBeFocused();
+		// The bold heading can reflow large-text rows when its font loads. Finish
+		// initial focus/scroll and font loading before measuring the row-edge click.
+		await page.evaluate(() => document.fonts.ready);
 		const option = page.locator('.survey-choice').filter({ hasText: 'Independent study' });
 		await option.click({ position: { x: (await option.boundingBox())!.width - 10, y: 20 } });
 		await expect(page.getByRole('radio', { name: 'Independent study' })).toBeChecked();

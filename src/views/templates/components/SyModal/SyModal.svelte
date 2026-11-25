@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { X } from 'lucide-svelte';
+	import { ChevronLeft, X } from 'lucide-svelte';
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import { isMobile } from '@/utils/device.js';
 	import { portal } from '@/actions/portal.svelte.js';
@@ -20,6 +20,8 @@
 	 * @property {HTMLElement | (() => HTMLElement | null | undefined)} [returnFocus] - Focus target after closing
 	 * @property {import('svelte').Snippet} [body]
 	 * @property {import('svelte').Snippet} [footer]
+	 * @property {import('svelte').Snippet} [footerStart] - Secondary actions at the left edge
+	 * @property {() => void} [onback] - Optional leading back navigation
 	 * @property {() => void} [onclose] - Close handler
 	 */
 	/** @type {Props} */
@@ -32,6 +34,8 @@
 		returnFocus = undefined,
 		body,
 		footer,
+		footerStart,
+		onback,
 		onclose = () => {},
 	}: {
 		visible?: boolean;
@@ -42,6 +46,8 @@
 		returnFocus?: HTMLElement | (() => HTMLElement | null | undefined);
 		body?: Snippet;
 		footer?: Snippet;
+		footerStart?: Snippet;
+		onback?: () => void;
 		onclose?: () => void;
 	} = $props();
 	const mobile = isMobile();
@@ -73,7 +79,18 @@
 			onclose,
 		}}
 	>
-		<div class="sy-modal--header">
+		<div class="sy-modal--header" class:sy-modal--header-with-back={!!onback}>
+			{#if onback}
+				<SyButton
+					style="ghost"
+					size="large"
+					aria-label="Back"
+					disabled={!dismissible}
+					onclick={onback}
+				>
+					<ChevronLeft size="20" aria-hidden="true" />
+				</SyButton>
+			{/if}
 			<h2
 				id={titleId}
 				class="sy-modal--title"
@@ -92,6 +109,7 @@
 			{@render body?.()}
 		</div>
 		<div class="sy-modal--footer">
+			{#if footerStart}<div class="sy-modal--footer-start">{@render footerStart()}</div>{/if}
 			{@render footer?.()}
 		</div>
 	</div>
@@ -166,6 +184,12 @@
 		min-width: 0;
 		overflow-wrap: anywhere;
 		margin: var(--sy-space) 0px;
+	}
+	.sy-modal--header-with-back .sy-modal--title {
+		flex: 1;
+	}
+	.sy-modal--footer-start {
+		margin-inline-end: auto;
 	}
 	.sy-modal--body {
 		padding: var(--sy-space);

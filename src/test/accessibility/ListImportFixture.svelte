@@ -3,10 +3,14 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import type { ImportedList, ListImportPreview, PlecoRow } from '@/types/bookmarks.js';
 	import { setBookmarkManagerForTest } from '@/utils/appServices.js';
+	import { mockIPC, mockWindows } from '@tauri-apps/api/mocks';
+	import { emit } from '@tauri-apps/api/event';
 
 	let visible = $state(false);
 	let savedCount = $state(0);
 	let openedList = $state('');
+	let importedPath = $state('');
+	let savedWords = $state(0);
 	let savedLists: ImportedList[] = [];
 	const category = 'Reading / Chapter 3 / Everyday conversations';
 	const candidate = {
@@ -60,16 +64,49 @@
 		importLists: async (lists: ImportedList[]) => {
 			savedLists = lists;
 			savedCount = lists.length;
+			savedWords = lists.reduce((total, list) => total + list.lexicalIds.length, 0);
 		},
 	} as unknown as Parameters<typeof setBookmarkManagerForTest>[0]);
-	Reflect.set(window, '__TAURI_INTERNALS__', {
-		invoke: async (command: string) => {
+	mockIPC(
+		async (command, args) => {
+			if (command === 'get_hsk_lists') {
+				return [
+					{
+						id: 'new-one',
+						standard: 'hsk_exam_syllabus_2025',
+						level: 'One',
+						word_count: 2,
+					},
+					{
+						id: 'new-two',
+						standard: 'hsk_exam_syllabus_2025',
+						level: 'Two',
+						word_count: 1,
+					},
+					{
+						id: 'new-advanced',
+						standard: 'hsk_exam_syllabus_2025',
+						level: 'SevenToNine',
+						word_count: 3,
+					},
+					{ id: 'old-one', standard: 'hsk_2015', level: 'One', word_count: 2 },
+				];
+			}
+			if (command === 'prepare_hsk_list') {
+				return (args as { id: string }).id === 'new-two'
+					? [candidate.id]
+					: [candidate.id, `1:${'b'.repeat(64)}`];
+			}
 			if (command === 'prepare_list_import') {
+				importedPath = (args as { path?: string } | undefined)?.path ?? 'picker';
 				return prepared;
 			}
 			return null;
 		},
-	});
+		{ shouldMockEvents: true }
+	);
+	mockWindows('main');
+	Reflect.set(window, '__LIST_IMPORT_EMIT__', emit);
 </script>
 
 <main>
@@ -77,6 +114,8 @@
 	<SyButton onclick={() => (visible = true)}>Open import</SyButton>
 	<p data-testid="saved-lists">{savedCount} lists saved</p>
 	<p data-testid="opened-list">{openedList}</p>
+	<p data-testid="imported-path">{importedPath}</p>
+	<p data-testid="saved-words">{savedWords} words saved</p>
 	<ListImport
 		{visible}
 		onclose={() => (visible = false)}

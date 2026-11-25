@@ -1,5 +1,5 @@
 //! Local Pleco text and observed format-2 XML vocabulary import.
-//! Preparation never mutates learner data; categorized XML awaits format validation.
+//! Preparation preserves category memberships and never mutates learner data.
 use quick_xml::{events::Event, Reader, XmlVersion};
 use serde::Serialize;
 use std::{
@@ -9,7 +9,9 @@ use std::{
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_fs::{FsExt, OpenOptions};
 
-#[derive(Debug, Serialize)]
+const MAX_PREVIEW_BYTES: usize = 32 * 1024 * 1024;
+
+#[derive(Clone, Debug, Serialize)]
 pub struct PlecoRow {
     line: usize,
     original: String,
@@ -52,7 +54,7 @@ fn resolve(
         .into_iter()
         .chain(chinese_dictionary::query_by_traditional(simplified))
         .filter(|unit| {
-            traditional.map_or(true, |traditional| {
+            traditional.is_none_or(|traditional| {
                 unit.simplified() == simplified && unit.traditional() == traditional
             })
         })
@@ -105,6 +107,7 @@ pub(super) fn parse(content: &str, file_name: String) -> Result<PlecoPreview, St
         .unwrap_or("Imported Pleco List");
     let mut category = fallback.to_string();
     let mut rows = vec![];
+    let mut preview_bytes = 0usize;
     for (index, original) in content
         .replace("\r\n", "\n")
         .replace('\r', "\n")
@@ -127,7 +130,7 @@ pub(super) fn parse(content: &str, file_name: String) -> Result<PlecoPreview, St
         let pronunciation = fields.next().unwrap_or_default().trim();
         let definition = fields.next().unwrap_or_default().trim();
         let (candidates, selected, reason) = resolve(headword, pronunciation);
-        rows.push(PlecoRow {
+        let row = PlecoRow {
             line: index + 1,
             original: original.into(),
             category: category.clone(),
@@ -137,7 +140,17 @@ pub(super) fn parse(content: &str, file_name: String) -> Result<PlecoPreview, St
             candidates,
             selected,
             reason,
-        });
+        };
+        // Short records can expand into large dictionary candidate payloads; category
+        // names also repeat per row. Bound review data before retaining another row.
+        let row_bytes = serde_json::to_vec(&row)
+            .map_err(|_| "Could not prepare the Pleco text preview.")?
+            .len();
+        preview_bytes = preview_bytes.saturating_add(row_bytes);
+        if preview_bytes > MAX_PREVIEW_BYTES {
+            return Err("This text file expands into too much review data. Export fewer categories at a time.".into());
+        }
+        rows.push(row);
     }
     if rows.is_empty() {
         return Err("This file contains no vocabulary records.".into());
@@ -151,7 +164,6 @@ pub(super) fn parse(content: &str, file_name: String) -> Result<PlecoPreview, St
 
 const XML_STRUCTURE_ERROR: &str =
     "This Pleco XML structure is not supported. Export a UTF-8 text file from Pleco instead.";
-const XML_CATEGORY_ERROR: &str = "Categorized Pleco XML is not supported yet. Export a UTF-8 text file with Categories enabled to preserve your lists.";
 
 #[derive(Default)]
 struct XmlCard {
@@ -162,6 +174,8 @@ struct XmlCard {
     traditional: Option<String>,
     pronunciation: Option<String>,
     supported_reading: bool,
+    definition: Option<String>,
+    categories: Vec<String>,
 }
 
 /// Reads the observed format-2 vocabulary subset. Unknown structures fail rather than
@@ -191,6 +205,10 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
     let mut declaration_seen = false;
     let mut categories_seen = false;
     let mut cards_seen = false;
+    let mut categories = HashSet::new();
+    let mut assigned_categories = HashSet::new();
+    let mut card_count = 0;
+    let mut preview_bytes = 0usize;
     let mut card = XmlCard::default();
     let mut field = String::new();
     let mut field_kind = String::new();
@@ -212,9 +230,6 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
                 let name = std::str::from_utf8(element.name().as_ref())
                     .map_err(|_| XML_STRUCTURE_ERROR)?
                     .to_owned();
-                if name == "catassign" || path.last().is_some_and(|parent| parent == "categories") {
-                    return Err(XML_CATEGORY_ERROR.into());
-                }
                 let mut attributes = HashMap::new();
                 for attribute in element.attributes() {
                     let attribute =
@@ -238,7 +253,17 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
                         categories_seen = true
                     }
                     (Some("plecoflash"), "cards") if !cards_seen => cards_seen = true,
+                    (Some("categories"), "category") => {
+                        let name = attribute("name")
+                            .map(str::trim)
+                            .filter(|name| !name.is_empty())
+                            .ok_or("A Pleco XML category has no name.")?;
+                        if !categories.insert(name.to_owned()) {
+                            return Err("The Pleco XML repeats a category declaration.".into());
+                        }
+                    }
                     (Some("cards"), "card") => {
+                        card_count += 1;
                         card = XmlCard {
                             line: event_line,
                             chinese: attribute("language") == Some("chinese"),
@@ -267,6 +292,21 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
                         field_kind = "pron".into();
                         field.clear();
                     }
+                    (Some("entry"), "defn") if card.definition.is_none() => {
+                        card.definition = Some(String::new());
+                        field_kind = "defn".into();
+                        field.clear();
+                    }
+                    (Some("card"), "catassign") => {
+                        let name = attribute("category")
+                            .map(str::trim)
+                            .filter(|name| !name.is_empty())
+                            .ok_or("A Pleco XML category assignment has no name.")?;
+                        if !card.categories.iter().any(|category| category == name) {
+                            card.categories.push(name.to_owned());
+                        }
+                        assigned_categories.insert(name.to_owned());
+                    }
                     (Some("card"), "dictref") => {}
                     _ => return Err(XML_STRUCTURE_ERROR.into()),
                 }
@@ -280,12 +320,13 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
                     return Err("The Pleco XML file is malformed.".into());
                 }
                 match name.as_str() {
-                    "headword" | "pron" => {
+                    "headword" | "pron" | "defn" => {
                         let value = field.trim().to_owned();
                         match field_kind.as_str() {
                             "sc" => card.simplified = Some(value),
                             "tc" => card.traditional = Some(value),
                             "pron" => card.pronunciation = Some(value),
+                            "defn" => card.definition = Some(value),
                             _ => return Err(XML_STRUCTURE_ERROR.into()),
                         }
                         field_kind.clear();
@@ -328,18 +369,38 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
                         // Card ordinals distinguish repeated entries so separate cards never
                         // accidentally share a review choice. Reports still contain readable text.
                         let original =
-                            format!("XML card {}: {headword}\t{pronunciation}", rows.len() + 1);
-                        rows.push(PlecoRow {
+                            format!("XML card {card_count}: {headword}\t{pronunciation}");
+                        let row = PlecoRow {
                             line: card.line,
                             original,
                             category: fallback.into(),
                             headword,
                             pronunciation,
-                            definition: String::new(),
+                            definition: card.definition.take().unwrap_or_default(),
                             candidates,
                             selected,
                             reason,
-                        });
+                        };
+                        // Category expansion repeats review payloads. Bound that expansion,
+                        // including dictionary candidates, before allocating duplicate rows.
+                        let row_bytes = serde_json::to_vec(&row)
+                            .map_err(|_| "Could not prepare the Pleco XML preview.")?
+                            .len();
+                        preview_bytes = preview_bytes
+                            .saturating_add(row_bytes.saturating_mul(card.categories.len().max(1)));
+                        if preview_bytes > MAX_PREVIEW_BYTES {
+                            return Err("This XML expands into too much review data. Export fewer categories at a time.".into());
+                        }
+                        // Every membership of a card shares one review choice. Separate
+                        // cards retain distinct identities even when their words match.
+                        if card.categories.is_empty() {
+                            rows.push(row);
+                        } else {
+                            rows.extend(card.categories.iter().map(|category| PlecoRow {
+                                category: category.clone(),
+                                ..row.clone()
+                            }));
+                        }
                     }
                     _ => {}
                 }
@@ -414,6 +475,9 @@ pub(super) fn parse_xml(content: &str, file_name: String) -> Result<PlecoPreview
     }
     if rows.is_empty() {
         return Err("This file contains no vocabulary records.".into());
+    }
+    if !assigned_categories.is_subset(&categories) {
+        return Err("A Pleco XML card refers to an undeclared category. Export the file again with Categories enabled.".into());
     }
     Ok(PlecoPreview {
         source_format: "xml",
@@ -494,6 +558,27 @@ mod tests {
             assert!(parse(content, "list.txt".into()).is_err());
         }
     }
+
+    #[test]
+    fn text_bounds_dictionary_expansion_for_short_records() {
+        let preview = parse("行\n", "Words.txt".into()).unwrap();
+        let row_bytes = serde_json::to_vec(&preview.rows[0]).unwrap().len();
+        let record_count = 32 * 1024 * 1024 / row_bytes + 1;
+        let content = "行\n".repeat(record_count);
+        assert!(content.len() < 10 * 1024 * 1024);
+        assert!(
+            matches!(parse(&content, "Words.txt".into()), Err(error) if error.contains("too much review data"))
+        );
+    }
+
+    #[test]
+    fn text_bounds_repeated_category_names_in_review_data() {
+        let content = format!("// {}\n{}", "a".repeat(1024 * 1024), "你好\n".repeat(33));
+        assert!(content.len() < 10 * 1024 * 1024);
+        assert!(
+            matches!(parse(&content, "Words.txt".into()), Err(error) if error.contains("too much review data"))
+        );
+    }
     fn xml_document(cards: &str) -> String {
         format!(
             r#"<?xml version="1.0" encoding="UTF-8"?><plecoflash formatversion="2"><categories/><cards>{cards}</cards></plecoflash>"#
@@ -557,20 +642,77 @@ mod tests {
     }
 
     #[test]
-    fn xml_rejects_categories_until_their_structure_is_verified() {
+    fn xml_preserves_nested_and_shared_categories_with_definitions_for_review() {
+        let shared = xml_card("银行", "銀行", "yin2hang2")
+            .replace("</entry>", "<defn>bank &amp; lender <![CDATA[<reference>]]></defn></entry>")
+            .replace("</card>", r#"<catassign category="Reading"/><catassign category="Reading/Chapter 1"/><catassign category="Reading"/></card>"#);
+        let unassigned = xml_card("西瓜", "西瓜", "xi1gua1");
+        let repeated = xml_card("银行", "銀行", "yin2hang2")
+            .replace("</card>", r#"<catassign category="Reading"/></card>"#);
+        let categories = r#"<categories><category name="Reading"/><category name="Reading/Chapter 1"/><category name="Empty"/></categories>"#;
+        let document = xml_document(&format!("{shared}{unassigned}{repeated}"))
+            .replace("<categories/>", categories);
+        let preview = parse_xml(&document, "Words.xml".into()).unwrap();
+        assert_eq!(preview.rows.len(), 4);
+        assert_eq!(preview.rows[0].category, "Reading");
+        assert_eq!(preview.rows[1].category, "Reading/Chapter 1");
+        assert_eq!(preview.rows[2].category, "Words");
+        assert_eq!(preview.rows[0].definition, "bank & lender <reference>");
+        assert_eq!(preview.rows[0].original, preview.rows[1].original);
+        assert_ne!(preview.rows[0].original, preview.rows[3].original);
+        assert!(preview.rows.iter().all(|row| row.selected.is_some()));
+        assert_eq!(preview.rows[0].selected, preview.rows[1].selected);
+        // Export order does not determine whether a category reference is valid.
+        let reordered = document
+            .replace(categories, "")
+            .replace("</cards>", &format!("</cards>{categories}"));
+        assert_eq!(
+            parse_xml(&reordered, "Words.xml".into())
+                .unwrap()
+                .rows
+                .len(),
+            4
+        );
+    }
+
+    #[test]
+    fn xml_rejects_missing_or_undeclared_category_names_and_unknown_definition_markup() {
         let document = xml_document(&xml_card("你好", "你好", "ni3hao3"));
-        for categorized in [
+        for malformed in [
+            document.replace("<categories/>", "<categories><category/></categories>"),
+            document.replace("</card>", "<catassign/></card>"),
+            document.replace("</card>", r#"<catassign category=" "/></card>"#),
+            document.replace("</card>", r#"<catassign category="Study"/></card>"#),
             document.replace(
                 "<categories/>",
-                r#"<categories><category name="Study"/></categories>"#,
+                r#"<categories><category name="Study"/><category name="Study"/></categories>"#,
             ),
-            document.replace("</card>", r#"<catassign category="Study"/></card>"#),
+            document.replace("</entry>", "<defn><unknown>text</unknown></defn></entry>"),
+            document.replace("</entry>", "<defn>first</defn><defn>second</defn></entry>"),
         ] {
-            assert_eq!(
-                parse_xml(&categorized, "Words.xml".into()).unwrap_err(),
-                XML_CATEGORY_ERROR
-            );
+            assert!(parse_xml(&malformed, "Words.xml".into()).is_err());
         }
+    }
+
+    #[test]
+    fn xml_bounds_category_expansion_before_cloning_review_data() {
+        let mut categories = String::from("<categories>");
+        let mut assignments = String::new();
+        for index in 0..20 {
+            categories.push_str(&format!(r#"<category name="Chapter {index}"/>"#));
+            assignments.push_str(&format!(r#"<catassign category="Chapter {index}"/>"#));
+        }
+        categories.push_str("</categories>");
+        let card = xml_card("你好", "你好", "ni3hao3")
+            .replace(
+                "</entry>",
+                &format!("<defn>{}</defn></entry>", "a".repeat(2 * 1024 * 1024)),
+            )
+            .replace("</card>", &format!("{assignments}</card>"));
+        let document = xml_document(&card).replace("<categories/>", &categories);
+        assert!(parse_xml(&document, "Words.xml".into())
+            .unwrap_err()
+            .contains("too much review data"));
     }
 
     #[test]

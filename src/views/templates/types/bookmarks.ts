@@ -39,6 +39,14 @@ export interface ImportedList {
 	lexicalIds: string[];
 }
 
+/** Metadata only; packaged lexical IDs are loaded when the learner selects a list. */
+export interface HskListSummary {
+	id: string;
+	standard: Exclude<import('./dictionaryDisplay.js').HskVariant, 'none'>;
+	level: import('./hsk.js').HskLevel;
+	word_count: number;
+}
+
 /** Normalized Syng archive returned by the native version-aware reader. */
 export interface SyngListArchive {
 	meta: { version: 'V4'; name: string };
