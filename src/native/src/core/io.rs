@@ -1,6 +1,6 @@
 use super::dictionary::{resolve_legacy_lexical_unit, LegacyLexicalUnit};
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::Path;
 use tauri::Manager;
 use tauri_plugin_dialog::DialogExt;
@@ -417,6 +417,93 @@ pub async fn export_list_data(
     Ok(false)
 }
 
+/// Preparation identifies the content without changing learner data or saving recovery reports.
+#[derive(Debug, Serialize)]
+#[serde(tag = "format", rename_all = "lowercase")]
+pub enum ListImportPreview {
+    Syng { archive: BookmarksExport },
+    Pleco { preview: super::pleco::PlecoPreview },
+}
+
+fn detect_list_import(content: &str, file_name: String) -> Result<ListImportPreview, String> {
+    let content = content.trim_start_matches('\u{feff}');
+    let trimmed = content.trim_start();
+    if content
+        .chars()
+        .any(|character| character.is_control() && !matches!(character, '\n' | '\r' | '\t'))
+    {
+        return Err(
+            "This is not a supported text list. Choose a Syng list or Pleco UTF-8 text export."
+                .into(),
+        );
+    }
+    if trimmed.starts_with(['{', '[']) {
+        // Filename extensions are deliberately ignored, including for V1 JSON-lines archives.
+        return parse_import_archive("", content)
+            .map(|archive| ListImportPreview::Syng { archive });
+    }
+    if trimmed.starts_with('<') {
+        return super::pleco::parse_xml(content, file_name)
+            .map(|preview| ListImportPreview::Pleco { preview });
+    }
+    // Plain text has no signature. Require Chinese headword data, while retaining unmatched
+    // records in a recognizable export for the skipped-record report.
+    let has_chinese_headword = content.lines().any(|line| {
+        if line.trim_start().starts_with("//") {
+            return false;
+        }
+        line.split('\t').next().unwrap_or_default().chars().any(|character| {
+            matches!(character as u32, 0x3400..=0x4dbf | 0x4e00..=0x9fff | 0xf900..=0xfaff | 0x20000..=0x323af | 0x3007)
+        })
+    });
+    if !has_chinese_headword {
+        return Err(
+            "No recognizable vocabulary was found. Choose a Syng list or Pleco UTF-8 text export."
+                .into(),
+        );
+    }
+    super::pleco::parse(content, file_name).map(|preview| ListImportPreview::Pleco { preview })
+}
+
+#[tauri::command(async)]
+pub async fn prepare_list_import(
+    app: tauri::AppHandle,
+) -> Result<Option<ListImportPreview>, String> {
+    const MAX_BYTES: u64 = 10 * 1024 * 1024;
+    let Some(path) = app
+        .dialog()
+        .file()
+        .set_title("Import Vocabulary List")
+        .add_filter("Vocabulary lists", &["syli", "sld", "txt", "xml"])
+        .add_filter("All files", &["*"])
+        .blocking_pick_file()
+    else {
+        return Ok(None);
+    };
+    let name = app
+        .path()
+        .file_name(&path.to_string())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("Imported List".into());
+    let mut options = OpenOptions::new();
+    options.read(true);
+    let file = app
+        .fs()
+        .open(path, options)
+        .map_err(|_| "Could not open the selected file.")?;
+    let mut bytes = vec![];
+    file.take(MAX_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "Could not read the selected file.")?;
+    if bytes.len() as u64 > MAX_BYTES {
+        return Err("The file exceeds 10 MiB. Export fewer categories at a time.".into());
+    }
+    let content = String::from_utf8(bytes).map_err(|_| {
+        "This file is not UTF-8 text. Choose a Syng list or export again using UTF-8 in Pleco."
+    })?;
+    detect_list_import(&content, name).map(Some)
+}
+
 #[tauri::command(async)]
 pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksExport>, String> {
     let file_path = app
@@ -442,6 +529,57 @@ pub async fn import_list_data(app: tauri::AppHandle) -> Result<Option<BookmarksE
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn detects_supported_formats_from_content_instead_of_extension() {
+        for version in ["V2", "V3", "V4"] {
+            let archive =
+                serde_json::json!({"meta": {"version": version, "name": "Words"}, "entries": []});
+            assert!(matches!(
+                detect_list_import(&format!("\u{feff}  {archive}"), "words.txt".into()),
+                Ok(ListImportPreview::Syng { .. })
+            ));
+        }
+        let legacy = serde_json::json!({"traditional":"銀行", "simplified":"银行", "definitions":["bank"], "toneMarks":[2,2]});
+        assert!(matches!(
+            detect_list_import(&format!("{legacy}\n{legacy}"), "words.xml".into()),
+            Ok(ListImportPreview::Syng { .. })
+        ));
+        for content in ["你好", "// Chapter\n你好\tni3 hao3\thello"] {
+            assert!(matches!(
+                detect_list_import(content, "words.syli".into()),
+                Ok(ListImportPreview::Pleco { .. })
+            ));
+        }
+    }
+
+    #[test]
+    fn detects_pleco_xml_from_content_with_an_unrelated_extension() {
+        let content = r#"<plecoflash formatversion="2"><categories/><cards><card language="chinese"><entry><headword charset="sc">你好</headword><headword charset="tc">你好</headword><pron type="hypy" tones="numbers">ni3hao3</pron></entry><dictref dictid="TEST" entryid="1"/></card></cards></plecoflash>"#;
+        let detected = detect_list_import(content, "words.syli".into()).unwrap();
+        match detected {
+            ListImportPreview::Pleco { preview } => assert_eq!(preview.source_format, "xml"),
+            _ => panic!("Pleco XML was mistaken for a Syng archive"),
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_binary_xml_and_malformed_json_without_text_fallback() {
+        for content in [
+            "",
+            "plain prose",
+            "// empty",
+            "你好\0",
+            "{ malformed 你好",
+            "[你好]",
+            "<?xml version=\"1.0\"?><plecoflash/>",
+        ] {
+            assert!(
+                detect_list_import(content, "words.txt".into()).is_err(),
+                "{content}"
+            );
+        }
+    }
 
     #[test]
     fn automatic_recovery_reports_preserve_previous_imports() {

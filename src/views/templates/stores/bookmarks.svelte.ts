@@ -138,7 +138,17 @@ async function getWordByLexicalId(lexicalId: LexicalId): Promise<BookmarkWordEnt
 	return getBookmarkManager().getWordByLexicalId(lexicalId);
 }
 
+async function importLists(lists: import('@/types/bookmarks.js').ImportedList[]): Promise<void> {
+	await ensureManagerReady();
+	try {
+		await getBookmarkManager().importLists(lists);
+	} finally {
+		await refresh();
+	}
+}
+
 export const bookmarksStore = {
+	importLists,
 	get contentRevision(): number {
 		return contentRevision;
 	},

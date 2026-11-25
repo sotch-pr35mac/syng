@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ask } from '@tauri-apps/plugin-dialog';
-import { Plus } from 'lucide-svelte';
+import { FolderDown, Plus } from 'lucide-svelte';
 import DividerDropdownItem from '@/components/SyDropdown/DividerDropdownItem.svelte';
 import SimpleTextDropdownItem from '@/components/SyDropdown/SimpleTextDropdownItem.svelte';
 import TextWithIconDropdownItem from '@/components/SyDropdown/TextWithIconDropdownItem.svelte';
@@ -26,11 +26,14 @@ import { lexicalDisplayId, lexicalGlosses, lexicalPinyin } from '@/types/diction
 import {
 	BOOKMARK_LIST_MEMBERSHIP_OPERATIONS,
 	type BookmarkListMembershipEvent,
+	type SyngListArchive,
 } from '@/types/bookmarks.js';
 import { handleError, resolveNameConflict, telemetry } from '@/utils';
 
 export const DEFAULT_BOOKMARKS_LIST = 'Bookmarks';
 export const CREATE_NEW_LIST_ID = 'create-new';
+// List names are strings, so this action cannot shadow a saved list.
+export const IMPORT_LIST_ID = -1;
 export const RESTRICTED_LIST_NAMES = [CREATE_NEW_LIST_ID, DEFAULT_BOOKMARKS_LIST];
 
 const CREATE_NEW_PLACEHOLDERS = ['HSK 1', 'Week 3 Vocab', 'Internet Slang', 'Idioms', 'Chapter 7'];
@@ -77,6 +80,12 @@ function getDropdownList() {
 			.sort((listA, listB) => listA.text.localeCompare(listB.text)),
 		{
 			component: DividerDropdownItem,
+		},
+		{
+			text: 'Import',
+			id: IMPORT_LIST_ID,
+			component: TextWithIconDropdownItem,
+			icon: FolderDown,
 		},
 		{
 			text: 'Create New',
@@ -371,9 +380,13 @@ function exportActiveList(): Promise<boolean> {
 		});
 }
 
-function importList(): Promise<boolean> {
-	return invoke<any>(NATIVE_COMMANDS.BOOKMARKS.IMPORT_LIST)
-		.then((importArchive) => {
+function importList(preparedArchive?: SyngListArchive): Promise<boolean> {
+	return (
+		preparedArchive
+			? Promise.resolve(preparedArchive)
+			: invoke<SyngListArchive | null>(NATIVE_COMMANDS.BOOKMARKS.IMPORT_LIST)
+	)
+		.then(async (importArchive) => {
 			if (!importArchive) {
 				return false;
 			}
@@ -381,6 +394,11 @@ function importList(): Promise<boolean> {
 				typeof importArchive.recovery_report === 'string' &&
 				importArchive.recovery_report
 			) {
+				if (preparedArchive) {
+					await invoke(NATIVE_COMMANDS.BOOKMARKS.PERSIST_RECOVERY_REPORT, {
+						report: importArchive.recovery_report,
+					});
+				}
 				bookmarkRecoveryStore.show(importArchive.recovery_report);
 			}
 			const listName = resolveNameConflict(importArchive.meta.name, bookmarksStore.lists);

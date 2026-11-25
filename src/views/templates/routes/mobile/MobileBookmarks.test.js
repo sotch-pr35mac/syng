@@ -238,13 +238,13 @@ it('opens the snap sheet to partial when the bookmark filter is focused', async 
 
 it('opens the mobile overflow actions', async () => {
 	const user = userEvent.setup();
-	const { container, findByText } = render(MobileBookmarks);
+	const { container, findByText, queryByRole } = render(MobileBookmarks);
 
 	await waitFor(() => expect(container.querySelector('.mobile-bookmarks__results')).toBeTruthy());
 	const overflowButton = container.querySelector('button[aria-label="List actions"]');
 	await user.click(overflowButton);
 
-	expect(await findByText('Import')).toBeTruthy();
+	expect(queryByRole('menuitem', { name: 'Import', exact: true })).toBeNull();
 	expect(await findByText('Export')).toBeTruthy();
 });
 
@@ -338,18 +338,19 @@ it('shows the empty-list next step after removing the final bookmark', async () 
 
 it('navigates mobile bookmarks to a successfully imported list', async () => {
 	invoke.mockResolvedValueOnce({
-		meta: { name: 'Travel' },
-		entries: [IMPORTED_WORD],
+		format: 'syng',
+		archive: { meta: { name: 'Travel' }, entries: [IMPORTED_WORD] },
 	});
 	const user = userEvent.setup();
-	const { container, findByPlaceholderText, findByText } = render(MobileBookmarks);
+	const { container, findByPlaceholderText, findByText, getByRole } = render(MobileBookmarks);
 
 	await user.click(await findByText('西瓜'));
 	const filterInput = await findByPlaceholderText('Filter');
 	await user.type(filterInput, 'water');
-	const overflowButton = container.querySelector('button[aria-label="List actions"]');
-	await user.click(overflowButton);
-	await user.click(await findByText('Import'));
+	await user.click(getByRole('button', { name: 'Choose list: Bookmarks' }));
+	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
+	await user.click(getByRole('button', { name: 'Choose file' }));
+	await user.click(await findByText('Import list'));
 
 	await waitFor(() => expect(bookmarksActiveListStore.value).toBe('Travel'));
 	expect(filterInput.value).toBe('');
@@ -374,4 +375,19 @@ it('moves keyboard focus from a selected sheet row to its dictionary heading', a
 		);
 	});
 	expect(mobileBookmarksSnapStore.value).toBe('collapsed');
+});
+
+it('places import immediately before Create New in the mobile list dropdown', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getAllByRole } = render(MobileBookmarks);
+
+	await user.click(getByRole('button', { name: 'Choose list: Bookmarks' }));
+	expect(getAllByRole('menuitem').map((item) => item.textContent.trim())).toEqual([
+		'Bookmarks',
+		'Import',
+		'Create New',
+	]);
+	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
+	expect(getByRole('dialog', { name: 'Import lists' })).toBeTruthy();
+	expect(bookmarksActiveListStore.value).toBe('Bookmarks');
 });

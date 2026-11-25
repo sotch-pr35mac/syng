@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core';
 import Bookmarks from '@/routes/Bookmarks.svelte';
 import { bookmarksRoute } from '@/composables/bookmarks.svelte.js';
 import { bookmarksStore } from '@/stores/bookmarks.svelte.js';
+import { bookmarkRecoveryStore } from '@/stores/bookmarkRecovery.svelte.js';
 import {
 	bookmarksActiveListStore,
 	bookmarksActiveWordStore,
@@ -95,6 +96,7 @@ let words;
 let lists;
 
 beforeEach(async () => {
+	bookmarkRecoveryStore.resetForTest();
 	window.location.hash = '#/bookmarks';
 	vi.mocked(telemetry.trackEvent).mockClear();
 	invoke.mockResolvedValue(null);
@@ -257,12 +259,14 @@ it('does not count canceled or failed exports as saved', async () => {
 
 it('preserves the current desktop state when list import is cancelled', async () => {
 	const user = userEvent.setup();
-	const { findByPlaceholderText, findByText } = render(Bookmarks);
+	const { findByPlaceholderText, findByText, getByRole } = render(Bookmarks);
 
 	await user.click(await findByText('西瓜'));
 	const filterInput = await findByPlaceholderText('Filter');
 	await user.type(filterInput, 'water');
-	await user.click((await findByText('Import')).closest('button'));
+	await user.click(getByRole('button', { name: 'Choose list: Bookmarks' }));
+	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
+	await user.click(getByRole('button', { name: 'Choose file' }));
 
 	await waitFor(() => expect(invoke).toHaveBeenCalled());
 	expect(bookmarksActiveListStore.value).toBe('Bookmarks');
@@ -272,16 +276,20 @@ it('preserves the current desktop state when list import is cancelled', async ()
 
 it('navigates desktop bookmarks to the resolved imported list', async () => {
 	invoke.mockResolvedValueOnce({
-		meta: { name: 'Bookmarks' },
-		entries: [IMPORTED_WORD],
+		format: 'syng',
+		archive: { meta: { name: 'Bookmarks' }, entries: [IMPORTED_WORD] },
 	});
 	const user = userEvent.setup();
-	const { container, findByPlaceholderText, findByText } = render(Bookmarks);
+	const { container, findByPlaceholderText, findByText, getByRole } = render(Bookmarks);
 
 	await user.click(await findByText('西瓜'));
 	const filterInput = await findByPlaceholderText('Filter');
 	await user.type(filterInput, 'water');
-	await user.click((await findByText('Import')).closest('button'));
+	await user.click(getByRole('button', { name: 'Choose list: Bookmarks' }));
+	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
+	await user.click(getByRole('button', { name: 'Choose file' }));
+
+	await user.click(await findByText('Import list'));
 
 	await waitFor(() => expect(bookmarksActiveListStore.value).toBe('Bookmarks 2'));
 	expect(filterInput.value).toBe('');
@@ -292,4 +300,45 @@ it('navigates desktop bookmarks to the resolved imported list', async () => {
 	expect(words.find((word) => word.lexical_id === IMPORTED_WORD.lexical_id).notes).toBe(
 		'Imported note'
 	);
+});
+
+it('places import immediately before Create New in the desktop list dropdown', async () => {
+	const user = userEvent.setup();
+	const { getByRole, getAllByRole, queryByRole } = render(Bookmarks);
+
+	expect(queryByRole('button', { name: 'Import', exact: true })).toBeNull();
+	await user.click(getByRole('button', { name: 'Choose list: Bookmarks' }));
+	expect(getAllByRole('menuitem').map((item) => item.textContent.trim())).toEqual([
+		'Bookmarks',
+		'Import',
+		'Create New',
+	]);
+	await user.click(getByRole('menuitem', { name: 'Import', exact: true }));
+	expect(getByRole('dialog', { name: 'Import lists' })).toBeTruthy();
+	expect(bookmarksActiveListStore.value).toBe('Bookmarks');
+});
+
+it('saves a prepared archive recovery report before creating its list', async () => {
+	let finishReport;
+	invoke.mockImplementationOnce(
+		() =>
+			new Promise((resolve) => {
+				finishReport = resolve;
+			})
+	);
+	const report = 'One source word could not be recovered.';
+	const importing = bookmarksRoute.importList({
+		meta: { version: 'V4', name: 'Recovered list' },
+		entries: [IMPORTED_WORD],
+		recovery_report: report,
+	});
+	await waitFor(() =>
+		expect(invoke).toHaveBeenCalledWith('persist_bookmark_recovery_report', { report })
+	);
+	expect(lists).toEqual(['Bookmarks']);
+	expect(bookmarkRecoveryStore.active).toBe(false);
+	finishReport('saved-report.txt');
+	expect(await importing).toBe(true);
+	expect(lists).toContain('Recovered list');
+	expect(bookmarkRecoveryStore.report).toBe(report);
 });
