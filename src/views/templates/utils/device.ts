@@ -14,6 +14,8 @@ try {
 // additionally check !isIPad().
 export const isMobile = (): boolean => _platform === 'ios' || _platform === 'android';
 
+export const isWindows = (): boolean => _platform === 'windows';
+
 export const isIos = (): boolean => _platform === 'ios';
 
 export const isAndroid = (): boolean => _platform === 'android';

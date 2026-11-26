@@ -48,5 +48,9 @@ const { default: Fixture } = new URLSearchParams(location.search).has('wordFrequ
 												? await import('@test/accessibility/PaletteFixture.svelte')
 												: new URLSearchParams(location.search).has('routes')
 													? await import('@test/accessibility/RoutesFixture.svelte')
-													: await import('@test/accessibility/Fixture.svelte');
+													: new URLSearchParams(location.search).has(
+																'listImport'
+														  )
+														? await import('@test/accessibility/ListImportFixture.svelte')
+														: await import('@test/accessibility/Fixture.svelte');
 mount(Fixture, { target: document.getElementById('fixture')! });

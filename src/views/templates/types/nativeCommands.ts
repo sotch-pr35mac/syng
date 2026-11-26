@@ -41,6 +41,10 @@ export const NATIVE_COMMANDS = {
 	BOOKMARKS: {
 		EXPORT_LIST: 'export_list_data',
 		IMPORT_LIST: 'import_list_data',
+		PREPARE_IMPORT: 'prepare_list_import',
+		GET_HSK_LISTS: 'get_hsk_lists',
+		PREPARE_HSK_LIST: 'prepare_hsk_list',
+		SAVE_PLECO_REPORT: 'save_pleco_report',
 		PERSIST_RECOVERY_REPORT: 'persist_bookmark_recovery_report',
 		READ_RECOVERY_REPORT: 'read_bookmark_recovery_report',
 		SAVE_RECOVERY_REPORT: 'save_bookmark_recovery_report',

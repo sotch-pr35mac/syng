@@ -8,8 +8,7 @@
 		ChevronDown,
 		ChevronUp,
 		EllipsisVertical,
-		FolderDown,
-		FolderUp,
+		FileOutput,
 		Trash2,
 		SquareStack,
 		Award,
@@ -24,6 +23,7 @@
 	import Awa, { AWA_SIZES } from '@/components/Awa/Awa.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import SySnapSheet from '@/components/SySnapSheet/SySnapSheet.svelte';
+	import ListImport from '@/components/Bookmarks/ListImport.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { type SheetSnap } from '@/types/snapSheet.js';
@@ -32,10 +32,11 @@
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
+		IMPORT_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
 		type WordListPreviewItem,
 	} from '@/composables/bookmarks.svelte.js';
-	import type { BookmarkListMembershipEvent } from '@/types/bookmarks.js';
+	import type { BookmarkListMembershipEvent, SyngListArchive } from '@/types/bookmarks.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
 	import {
 		normalizeDictionaryLookupRequest,
@@ -44,6 +45,7 @@
 	import { DROPDOWN_DIRECTIONS, DROPDOWN_POSITIONS } from '@/types/dropdown.js';
 	import DictionaryListPreviewContent from '@/components/SyList/DictionaryListPreviewContent.svelte';
 
+	let importVisible = $state(false);
 	let dictionaryElement = $state<HTMLElement>();
 	let sheetRef = $state<SySnapSheet | undefined>(undefined);
 	let currentSnap = $state<SheetSnap>(mobileBookmarksSnapStore.value);
@@ -128,6 +130,10 @@
 	}
 
 	function handleListSelection(id: string | number): void {
+		if (id === IMPORT_LIST_ID) {
+			importVisible = true;
+			return;
+		}
 		if (typeof id !== 'string') {
 			return;
 		}
@@ -187,8 +193,7 @@
 	}
 
 	const listActions = $derived([
-		{ id: 'import', text: 'Import', icon: FolderDown, component: TextWithIconDropdownItem },
-		{ id: 'export', text: 'Export', icon: FolderUp, component: TextWithIconDropdownItem },
+		{ id: 'export', text: 'Export', icon: FileOutput, component: TextWithIconDropdownItem },
 		...(activeList === DEFAULT_BOOKMARKS_LIST
 			? []
 			: [
@@ -203,25 +208,23 @@
 				]),
 	]);
 	function handleListAction(action: string | number): void {
-		if (action === 'import') {
-			importList();
-		} else if (action === 'export') {
+		if (action === 'export') {
 			exportActiveList();
 		} else if (action === 'delete') {
 			deleteActiveList();
 		}
 	}
 
-	function importList(): void {
-		bookmarksRoute
-			.importList()
+	function importList(archive: SyngListArchive): Promise<boolean> {
+		return bookmarksRoute
+			.importList(archive)
 			.then((imported) => {
 				if (imported) {
 					filterValue = '';
 				}
-				return undefined;
+				return imported;
 			})
-			.catch(() => {});
+			.catch(() => false);
 	}
 
 	function exportActiveList(): void {
@@ -275,6 +278,16 @@
 		}
 	}
 </script>
+
+<ListImport
+	visible={importVisible}
+	onclose={() => (importVisible = false)}
+	onsyng={importList}
+	onimported={async (name) => {
+		filterValue = '';
+		await bookmarksRoute.setActiveList(name);
+	}}
+/>
 
 <div class="mobile-bookmarks">
 	<div
@@ -439,9 +452,10 @@
 			{/if}
 		</div>
 	{/snippet}
-	{#snippet footer()}
+	{#snippet footerStart()}
 		<SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
-		&nbsp;
+	{/snippet}
+	{#snippet footer()}
 		<SyButton
 			size="large"
 			color="green"

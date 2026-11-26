@@ -3,6 +3,9 @@
     windows_subsystem = "windows"
 )]
 
+use crate::core::hsk_lists::{get_hsk_lists, prepare_hsk_list};
+use crate::core::io::prepare_list_import;
+use crate::core::pleco::save_pleco_report;
 mod core;
 #[cfg(desktop)]
 mod menu;
@@ -125,6 +128,10 @@ pub fn run() {
             open_character_window,
             export_list_data,
             import_list_data,
+            prepare_list_import,
+            get_hsk_lists,
+            prepare_hsk_list,
+            save_pleco_report,
             persist_bookmark_recovery_report,
             read_bookmark_recovery_report,
             save_bookmark_recovery_report,
@@ -176,6 +183,10 @@ pub fn run() {
             resolve_legacy_lexical_units,
             export_list_data,
             import_list_data,
+            prepare_list_import,
+            get_hsk_lists,
+            prepare_hsk_list,
+            save_pleco_report,
             persist_bookmark_recovery_report,
             read_bookmark_recovery_report,
             save_bookmark_recovery_report,

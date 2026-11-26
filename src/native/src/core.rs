@@ -5,10 +5,12 @@
 
 pub mod acknowledgements;
 pub mod dictionary;
+pub mod hsk_lists;
 pub mod interviews;
 pub mod io;
 pub mod migration;
 pub mod network;
+pub mod pleco;
 pub mod quiz;
 pub mod reader;
 pub mod regions;

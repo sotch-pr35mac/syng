@@ -48,7 +48,97 @@ const joinDistinctNotes = (currentNotes, incomingNotes) => {
 	return `${current}\n\n---\n\n${incoming}`;
 };
 
+const IMPORT_BATCH_SIZE = 100;
+const IMPORT_CONFLICT_ATTEMPTS = 3;
+const CONFLICT_STATUS = 409;
+
 export class BookmarkManager {
+	/** Add grouped memberships, preserving all existing learner data. Retrying the same IDs is safe. */
+	async importLists(lists) {
+		if (lists.some((list) => list.lexicalIds.some((lexicalId) => !isLexicalId(lexicalId)))) {
+			throw new Error('Invalid imported dictionary identity.');
+		}
+		const existingLists = await readBookmarkDocuments(this._list_db);
+		for (const list of lists) {
+			const existing = existingLists.find((entry) => entry._id === list.id);
+			if (existing && existing.name !== list.name) {
+				throw new Error('The destination list changed.');
+			}
+			if (!existing) {
+				if (existingLists.some((entry) => entry.name === list.name)) {
+					throw new Error(
+						'A destination name is now in use. Close and prepare the import again.'
+					);
+				}
+				const result = await this._list_db.put({ _id: list.id, name: list.name });
+				if (result.ok !== true) {
+					throw new Error('Could not create an imported list.');
+				}
+				existingLists.push({ _id: list.id, name: list.name });
+			}
+		}
+		const documents = await readBookmarkDocuments(this._document_db);
+		const byLexicalId = new Map(documents.map((document) => [document.lexical_id, document]));
+		const memberships = new Map();
+		for (const list of lists) {
+			for (const lexicalId of list.lexicalIds) {
+				if (!memberships.has(lexicalId)) {
+					memberships.set(lexicalId, new Set());
+				}
+				memberships.get(lexicalId).add(list.id);
+			}
+		}
+		const updates = [...memberships].map(([lexicalId, listIds]) => {
+			const current = byLexicalId.get(lexicalId) ?? {
+				_id: lexicalId,
+				lexical_id: lexicalId,
+				notes: '',
+				lists: [],
+			};
+			return { ...current, lists: [...new Set([...current.lists, ...listIds])] };
+		});
+		for (let offset = 0; offset < updates.length; offset += IMPORT_BATCH_SIZE) {
+			let pending = updates.slice(offset, offset + IMPORT_BATCH_SIZE);
+			for (
+				let attempt = 0;
+				pending.length && attempt < IMPORT_CONFLICT_ATTEMPTS;
+				attempt += 1
+			) {
+				const results = await this._document_db.bulkDocs(pending);
+				if (results.length !== pending.length) {
+					throw new Error('Incomplete import write result.');
+				}
+				const retry = [];
+				for (let index = 0; index < results.length; index += 1) {
+					const result = results[index];
+					if (result.ok === true) {
+						continue;
+					}
+					if (
+						result.status !== CONFLICT_STATUS &&
+						result.name !== 'conflict' &&
+						result.error !== 'conflict'
+					) {
+						throw new Error(
+							'Some words could not be saved. Retry to complete the import.'
+						);
+					}
+					const current = await this._document_db.get(pending[index]._id);
+					retry.push({
+						...current,
+						lists: [
+							...new Set([...current.lists, ...memberships.get(current.lexical_id)]),
+						],
+					});
+				}
+				pending = retry;
+			}
+			if (pending.length) {
+				throw new Error('Some words changed during import. Retry to finish.');
+			}
+		}
+	}
+
 	/*
 	 * Description: Construct an instance of the bookmark manager.
 	 * Param: String: listDb: The name of the list database to use.

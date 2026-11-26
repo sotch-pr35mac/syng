@@ -2,15 +2,7 @@
 	import { walkthroughTarget } from '@/actions/walkthroughTarget.svelte.js';
 	import WalkthroughHelp from '@/components/Walkthrough/WalkthroughHelp.svelte';
 
-	import {
-		ChevronDown,
-		ChevronUp,
-		FolderDown,
-		Trash2,
-		FolderUp,
-		SquareStack,
-		Award,
-	} from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, Trash2, FileOutput, SquareStack, Award } from 'lucide-svelte';
 	import DictionaryContent from '@/components/DictionaryContent/DictionaryContent.svelte';
 	import DictionaryPopover from '@/components/DictionaryPopover/DictionaryPopover.svelte';
 	import { getStudyEligibility, studyHref } from '@/composables/study.js';
@@ -18,6 +10,7 @@
 	import SyButton from '@/components/SyButton/SyButton.svelte';
 	import SyDropdown from '@/components/SyDropdown/SyDropdown.svelte';
 	import SyList from '@/components/SyList/SyList.svelte';
+	import ListImport from '@/components/Bookmarks/ListImport.svelte';
 	import SyModal from '@/components/SyModal/SyModal.svelte';
 	import SyTextInput from '@/components/SyTextInput/SyTextInput.svelte';
 	import { onMount } from 'svelte';
@@ -26,6 +19,7 @@
 	import {
 		bookmarksRoute,
 		CREATE_NEW_LIST_ID,
+		IMPORT_LIST_ID,
 		DEFAULT_BOOKMARKS_LIST,
 	} from '@/composables/bookmarks.svelte.js';
 	import { createClickPositionTracker } from '@/composables/clickPosition.svelte.js';
@@ -44,6 +38,7 @@
 	const studyEligibility = $derived(
 		getStudyEligibility(wordList.length, bookmarksRoute.contentStatus)
 	);
+	let importVisible = $state(false);
 	let filterValue = $state('');
 	let visibleWordList = $state([]);
 
@@ -55,6 +50,10 @@
 
 	// Handle active list selection
 	const handleListSelection = (id) => {
+		if (id === IMPORT_LIST_ID) {
+			importVisible = true;
+			return;
+		}
 		if (id === CREATE_NEW_LIST_ID) {
 			bookmarksRoute.clearCreationError();
 			createNewModalVisible = true;
@@ -141,8 +140,8 @@
 			});
 	};
 	const exportActiveList = () => bookmarksRoute.exportActiveList();
-	const importList = () =>
-		bookmarksRoute.importList().then((imported) => {
+	const importList = (archive) =>
+		bookmarksRoute.importList(archive).then((imported) => {
 			if (imported) {
 				filterValue = '';
 			}
@@ -186,14 +185,7 @@
 	]);
 	const listActions = $derived([
 		{
-			icon: FolderDown,
-			action: importList,
-			tooltip: 'Import',
-			exclude: [],
-			disabled: false,
-		},
-		{
-			icon: FolderUp,
+			icon: FileOutput,
 			action: exportActiveList,
 			tooltip: 'Export',
 			exclude: [],
@@ -209,6 +201,16 @@
 		},
 	]);
 </script>
+
+<ListImport
+	visible={importVisible}
+	onclose={() => (importVisible = false)}
+	onsyng={importList}
+	onimported={async (name) => {
+		filterValue = '';
+		await bookmarksRoute.setActiveList(name);
+	}}
+/>
 
 {#snippet actionButtons(actions)}
 	{#each actions as action (action.tooltip)}
@@ -351,9 +353,10 @@
 				{/if}
 			</div>
 		{/snippet}
-		{#snippet footer()}
+		{#snippet footerStart()}
 			<SyButton size="large" onclick={closeNewModal}>Cancel</SyButton>
-			&nbsp;
+		{/snippet}
+		{#snippet footer()}
 			<SyButton
 				size="large"
 				color="green"

@@ -388,15 +388,15 @@ export async function prepareGuide(
 			steps = [
 				step(
 					'lists',
-					'Choose or create a list',
-					'Open this selector to switch lists or choose Create New. Your default Bookmarks list is always available.',
+					'Choose or add a list',
+					'Open this selector to switch lists, import lists, or choose Create New. Your default Bookmarks list is always available.',
 					'bookmarks-lists',
 					'/bookmarks'
 				),
 				step(
 					'management',
 					'List Management',
-					`${isMobileLayout() ? 'Open List actions' : 'Use these buttons'} to import saved lists, export this list, or delete a custom list.`,
+					`${isMobileLayout() ? 'Open List actions' : 'Use these buttons'} to export this list or delete a custom list.`,
 					'bookmarks-management',
 					'/bookmarks'
 				),

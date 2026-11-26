@@ -358,6 +358,22 @@ for (const mobile of [false, true]) {
 				}));
 				expect(modalLayer).toBeGreaterThan(paneLayer);
 			}
+			const footerPositions = await dialog.evaluate((element) => {
+				const bounds = element.getBoundingClientRect();
+				const cancel = element
+					.querySelector('.sy-modal--footer-start button')!
+					.getBoundingClientRect();
+				const create = element
+					.querySelector('.sy-modal--footer > button')!
+					.getBoundingClientRect();
+				return {
+					midpoint: bounds.x + bounds.width / 2,
+					cancelRight: cancel.right,
+					createLeft: create.left,
+				};
+			});
+			expect(footerPositions.cancelRight).toBeLessThan(footerPositions.midpoint);
+			expect(footerPositions.createLeft).toBeGreaterThan(footerPositions.midpoint);
 			await page.screenshot({ path: testInfo.outputPath('bookmark-modal-open.png') });
 			const input = dialog.getByRole('textbox', {
 				name: 'What would you like to call this list?',

@@ -300,7 +300,7 @@
 	}
 	.sy-button.sy-button--filled:not(:disabled):active {
 		box-shadow: var(--sy-inner-shadow);
-		transform: translateY(1px);
+		transform: translateY(var(--sy-control-press-offset));
 		transition-duration: 90ms;
 	}
 	@media (prefers-reduced-motion: reduce) {
